@@ -126,8 +126,8 @@ private slots:
 private:
 
     /* Private functions */
-    void searchAbort (const QString &aReason);
-    void searchComplete (const QString &aFullList);
+    void networkAbort (const QString &aReason);
+    void processResponse (const QString &aResponse);
 
     /* Private variables */
     VBoxUpdateDlg **mSelf;

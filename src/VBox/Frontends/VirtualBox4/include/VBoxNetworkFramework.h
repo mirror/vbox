@@ -28,6 +28,7 @@
 /* Qt includes */
 #include <QThread>
 #include <QDataStream>
+#include <QStringList>
 
 typedef happyhttp::Connection HConnect;
 
@@ -51,7 +52,8 @@ public:
         delete mNetworkThread;
     }
 
-    void postRequest (const QString &aHost, const QString &aUrl);
+    void postRequest (const QString &aHost, const QString &aUrl, const QString &aBody,
+                      const QStringList &aHeaders = QStringList());
 
 signals:
 

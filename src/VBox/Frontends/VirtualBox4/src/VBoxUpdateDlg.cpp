@@ -220,7 +220,7 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
     , mSelf (aSelf)
     , mNetfw (0)
     , mTimeout (new QTimer (this))
-    , mUrl ("http://www.virtualbox.org/download/latest_version")
+    , mUrl ("http://innotek.de/query.php")
     , mForceRun (aForceRun)
     , mSuicide (false)
 {
@@ -283,10 +283,7 @@ void VBoxUpdateDlg::accept()
 
 void VBoxUpdateDlg::search()
 {
-    /* Show progress bar */
-    mPbCheck->show();
-
-    /* Start downloading latest releases file */
+    /* Create & setup network framework */
     mNetfw = new VBoxNetworkFramework();
     connect (mNetfw, SIGNAL (netBegin (int)),
              SLOT (onNetBegin (int)));
@@ -296,8 +293,18 @@ void VBoxUpdateDlg::search()
              SLOT (onNetEnd (const QByteArray&)));
     connect (mNetfw, SIGNAL (netError (const QString&)),
              SLOT (onNetError (const QString&)));
+
+    QString body = QString ("platform=%1")
+                   .arg (vboxGlobal().virtualBox().GetPackageType());
+    QStringList header ("User-Agent");
+    header << QString ("VirtualBox %1 <%2>")
+              .arg (vboxGlobal().virtualBox().GetVersion())
+              .arg (vboxGlobal().platformInfo());
+
+    /* Show progress bar & send composed information */
+    mPbCheck->show();
     mTimeout->start (MaxWaitTime);
-    mNetfw->postRequest (mUrl.host(), mUrl.path());
+    mNetfw->postRequest (mUrl.host(), mUrl.path(), body, header);
 }
 
 void VBoxUpdateDlg::retranslateUi()
@@ -308,7 +315,7 @@ void VBoxUpdateDlg::retranslateUi()
 
 void VBoxUpdateDlg::processTimeout()
 {
-    searchAbort (tr ("Connection timed out."));
+    networkAbort (tr ("Connection timed out."));
 }
 
 /* Handles the network request begining. */
@@ -317,7 +324,7 @@ void VBoxUpdateDlg::onNetBegin (int aStatus)
     if (mSuicide) return;
 
     if (aStatus == 404)
-        searchAbort (tr ("Could not locate the latest version "
+        networkAbort (tr ("Could not locate the latest version "
             "list on the server (response: %1).").arg (aStatus));
     else
         mTimeout->start (MaxWaitTime);
@@ -337,13 +344,13 @@ void VBoxUpdateDlg::onNetEnd (const QByteArray &aTotalData)
     if (mSuicide) return;
 
     mTimeout->stop();
-    searchComplete (aTotalData);
+    processResponse (aTotalData);
 }
 
 /* Handles the network error. */
 void VBoxUpdateDlg::onNetError (const QString &aError)
 {
-    searchAbort (aError);
+    networkAbort (aError);
 }
 
 void VBoxUpdateDlg::onPageShow()
@@ -354,7 +361,7 @@ void VBoxUpdateDlg::onPageShow()
         mBtnFinish->setFocus();
 }
 
-void VBoxUpdateDlg::searchAbort (const QString &aReason)
+void VBoxUpdateDlg::networkAbort (const QString &aReason)
 {
     /* Protect against double kill request. */
     if (mSuicide) return;
@@ -379,62 +386,48 @@ void VBoxUpdateDlg::searchAbort (const QString &aReason)
     }
 }
 
-void VBoxUpdateDlg::searchComplete (const QString &aFullList)
+void VBoxUpdateDlg::processResponse (const QString &aResponse)
 {
     /* Hide progress bar */
     mPbCheck->hide();
 
-    QStringList list = aFullList.split ("\n", QString::SkipEmptyParts);
-
-    QString latestVersion (list [0]);
-    latestVersion.remove (QRegExp ("Version: "));
-    QString currentVersion (vboxGlobal().virtualBox().GetVersion());
-    VBoxVersion cv (currentVersion);
-    VBoxVersion lv (latestVersion);
-
-    if (cv < lv)
+    if (aResponse.indexOf (QRegExp ("^\\d+\\.\\d+\\.\\d+ \\S+$")) == 0)
     {
-        /* Search for the current platform link */
-        QString packageType = vboxGlobal().virtualBox().GetPackageType();
-        for (int i = 1; i < list.size(); ++ i)
+        /* Newer version of necessary package found */
+        QStringList response = aResponse.split (" ", QString::SkipEmptyParts);
+
+        if (isHidden())
         {
-            QStringList platformInfo = list [i].split (": ");
-            if (packageType == platformInfo [0])
-            {
-                /* If newer version of necessary package found */
-                if (isHidden())
-                {
-                    /* For background update */
-                    vboxProblem().showUpdateSuccess (vboxGlobal().mainWindow(),
-                        lv.toString(), platformInfo [1]);
-                    QTimer::singleShot (0, this, SLOT (accept()));
-                }
-                else
-                {
-                    /* For wizard update */
-                    mTextSuccessInfo->setText (mTextSuccessInfo->text()
-                        .arg (lv.toString(), platformInfo [1], platformInfo [1]));
-                    mTextSuccessInfo->show();
-                    mPageStack->setCurrentIndex (1);
-                }
-                return;
-            }
+            /* For background update */
+            vboxProblem().showUpdateSuccess (vboxGlobal().mainWindow(),
+                response [0], response [1]);
+            QTimer::singleShot (0, this, SLOT (accept()));
+        }
+        else
+        {
+            /* For wizard update */
+            mTextSuccessInfo->setText (mTextSuccessInfo->text()
+                .arg (response [0], response [1], response [1]));
+            mTextSuccessInfo->show();
+            mPageStack->setCurrentIndex (1);
         }
     }
-
-    /* If no newer version of necessary package found */
-    if (isHidden())
+    else /* if (aResponse == "UPTODATE") */
     {
-        /* For background update */
-        if (mForceRun)
-            vboxProblem().showUpdateNotFound (vboxGlobal().mainWindow());
-        QTimer::singleShot (0, this, SLOT (accept()));
-    }
-    else
-    {
-        /* For wizard update */
-        mTextNotFoundInfo->show();
-        mPageStack->setCurrentIndex (1);
+        /* No newer version of necessary package found */
+        if (isHidden())
+        {
+            /* For background update */
+            if (mForceRun)
+                vboxProblem().showUpdateNotFound (vboxGlobal().mainWindow());
+            QTimer::singleShot (0, this, SLOT (accept()));
+        }
+        else
+        {
+            /* For wizard update */
+            mTextNotFoundInfo->show();
+            mPageStack->setCurrentIndex (1);
+        }
     }
 }
 

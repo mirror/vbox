@@ -131,51 +131,72 @@ bool VBoxNetworkFramework::event (QEvent *aEvent)
 }
 
 void VBoxNetworkFramework::postRequest (const QString &aHost,
-                                        const QString &aUrl)
+                                        const QString &aUrl,
+                                        const QString &aBody,
+                                        const QStringList &aHeaders)
 {
     /* Network requests thread class */
     class Thread : public QThread
     {
     public:
 
-        Thread (QObject *aProc, const QString &aHost, const QString &aUrl)
-            : mProc (aProc), mHost (aHost), mUrl (aUrl) {}
+        Thread (QObject *aHandler, const QString &aHost, const QString &aUrl,
+                const QString &aBody, const QStringList &aHeaders)
+            : mHandler (aHandler), mHost (aHost), mUrl (aUrl)
+            , mBody (aBody), mHeaders (aHeaders) {}
 
         virtual void run()
         {
             try
             {
+                /* Create & setup connection */
                 HConnect conn (mHost.toAscii().constData(), 80);
-                conn.setcallbacks (onBegin, onData, onFinish, mProc);
-                const char *headers[] =
-                {
-                    "Connection", "close",
-                    "Content-type", "application/x-www-form-urlencoded",
-                    "Accept", "text/plain",
-                    0
-                };
+                conn.setcallbacks (onBegin, onData, onFinish, mHandler);
 
-                conn.request ("POST", mUrl.toAscii().constData(), headers, 0, 0);
+                /* Format POST request */
+                conn.putrequest ("POST", mUrl.toAscii().constData());
+
+                /* Append standard headers */
+                conn.putheader ("Connection", "close");
+                conn.putheader ("Content-Length", mBody.size());
+                conn.putheader ("Content-type", "application/x-www-form-urlencoded");
+                conn.putheader ("Accept", "text/plain");
+
+                /* Append additional headers */
+                for (int i = 0; i < mHeaders.size(); i = i + 2)
+                    conn.putheader (mHeaders [i].toAscii().constData(),
+                                    mHeaders [i + 1].toAscii().constData());
+
+                /* Finishing header */
+                conn.endheaders();
+
+                /* Append & send body */
+                conn.send ((const unsigned char*) mBody.toAscii().constData(),
+                           mBody.toAscii().size());
+
+                /* Pull the connection for response */
                 while (conn.outstanding())
                     conn.pump();
             }
             catch (happyhttp::Wobbly &ex)
             {
-                QApplication::postEvent (mProc, new PostErrorEvent (ex.what()));
+                QApplication::postEvent (mHandler, new PostErrorEvent (ex.what()));
             }
         }
 
     private:
 
-        QObject  *mProc;
-        QString   mHost;
-        QString   mUrl;
+        QObject *mHandler;
+        QString mHost;
+        QString mUrl;
+        QString mBody;
+        QStringList mHeaders;
     };
 
     if (mNetworkThread)
         mNetworkThread->wait (1000);
     delete mNetworkThread;
-    mNetworkThread = new Thread (this, aHost, aUrl);
+    mNetworkThread = new Thread (this, aHost, aUrl, aBody, aHeaders);
     mNetworkThread->start();
 }
 

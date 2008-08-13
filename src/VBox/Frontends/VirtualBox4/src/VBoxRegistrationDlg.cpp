@@ -331,8 +331,8 @@ void VBoxRegistrationDlg::handshake()
     version = QUrl::toPercentEncoding (version);
 
     /* Handshake */
-    QString argument = QString ("?version=%1").arg (version);
-    postRequest (mUrl.host(), mUrl.path() + argument);
+    QString body = QString ("version=%1").arg (version);
+    postRequest (mUrl.host(), mUrl.path(), body);
 }
 
 void VBoxRegistrationDlg::registration()
@@ -340,7 +340,7 @@ void VBoxRegistrationDlg::registration()
     /* Registration arguments initializing */
     mHandshake = false;
     QString version = vboxGlobal().virtualBox().GetVersion();
-    QString platform = getPlatform();
+    QString platform = vboxGlobal().platformInfo();
     QString name = mLeName->text();
     QString email = mLeEmail->text();
     QString prvt = mCbUse->isChecked() ? "1" : "0";
@@ -350,15 +350,15 @@ void VBoxRegistrationDlg::registration()
     email = QUrl::toPercentEncoding (email);
 
     /* Registration */
-    QString argument;
-    argument += QString ("?version=%1").arg (version);
-    argument += QString ("&key=%1").arg (mKey);
-    argument += QString ("&platform=%1").arg (platform);
-    argument += QString ("&name=%1").arg (name);
-    argument += QString ("&email=%1").arg (email);
-    argument += QString ("&private=%1").arg (prvt);
+    QString body;
+    body += QString ("version=%1").arg (version);
+    body += QString ("&key=%1").arg (mKey);
+    body += QString ("&platform=%1").arg (platform);
+    body += QString ("&name=%1").arg (name);
+    body += QString ("&email=%1").arg (email);
+    body += QString ("&private=%1").arg (prvt);
 
-    postRequest (mUrl.host(), mUrl.path() + argument);
+    postRequest (mUrl.host(), mUrl.path(), body);
 }
 
 void VBoxRegistrationDlg::processTimeout()
@@ -441,7 +441,8 @@ void VBoxRegistrationDlg::onPageShow()
 }
 
 void VBoxRegistrationDlg::postRequest (const QString &aHost,
-                                       const QString &aPath)
+                                       const QString &aUrl,
+                                       const QString &aBody)
 {
     delete mNetfw;
     mNetfw = new VBoxNetworkFramework();
@@ -454,7 +455,7 @@ void VBoxRegistrationDlg::postRequest (const QString &aHost,
     connect (mNetfw, SIGNAL (netError (const QString&)),
              SLOT (onNetError (const QString&)));
     mTimeout->start (MaxWaitTime);
-    mNetfw->postRequest (aHost, aPath);
+    mNetfw->postRequest (aHost, aUrl, aBody);
 }
 
 /* This wrapper displays an error message box (unless aReason is
@@ -472,88 +473,6 @@ void VBoxRegistrationDlg::abortRegisterRequest (const QString &aReason)
 
     /* Allows all the queued signals to be processed before quit. */
     QTimer::singleShot (0, this, SLOT (reject()));
-}
-
-QString VBoxRegistrationDlg::getPlatform()
-{
-    QString platform;
-
-#if defined (Q_OS_WIN)
-    platform = "win";
-#elif defined (Q_OS_LINUX)
-    platform = "linux";
-#elif defined (Q_OS_MACX)
-    platform = "macosx";
-#elif defined (Q_OS_OS2)
-    platform = "os2";
-#elif defined (Q_OS_FREEBSD)
-    platform = "freebsd";
-#elif defined (Q_OS_SOLARIS)
-    platform = "solaris";
-#else
-    platform = "unknown";
-#endif
-
-    /* the format is <system>.<bitness> */
-    platform += QString (".%1").arg (ARCH_BITS);
-
-    /* add more system information */
-#if defined (Q_OS_WIN)
-    OSVERSIONINFO versionInfo;
-    ZeroMemory (&versionInfo, sizeof (OSVERSIONINFO));
-    versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-    GetVersionEx (&versionInfo);
-    int major = versionInfo.dwMajorVersion;
-    int minor = versionInfo.dwMinorVersion;
-    int build = versionInfo.dwBuildNumber;
-    QString sp = QString::fromUtf16 ((ushort*)versionInfo.szCSDVersion);
-
-    QString distrib;
-    if (major == 6)
-        distrib = QString ("Windows Vista %1");
-    else if (major == 5)
-    {
-        if (minor == 2)
-            distrib = QString ("Windows Server 2003 %1");
-        else if (minor == 1)
-            distrib = QString ("Windows XP %1");
-        else if (minor == 0)
-            distrib = QString ("Windows 2000 %1");
-        else
-            distrib = QString ("Unknown %1");
-    }
-    else if (major == 4)
-    {
-        if (minor == 90)
-            distrib = QString ("Windows Me %1");
-        else if (minor == 10)
-            distrib = QString ("Windows 98 %1");
-        else if (minor == 0)
-            distrib = QString ("Windows 95 %1");
-        else
-            distrib = QString ("Unknown %1");
-    }
-    else
-        distrib = QString ("Unknown %1");
-    distrib = distrib.arg (sp);
-    QString version = QString ("%1.%2").arg (major).arg (minor);
-    QString kernel = QString ("%1").arg (build);
-    platform += QString (" [Distribution: %1 | Version: %2 | Build: %3]")
-        .arg (distrib).arg (version).arg (kernel);
-#elif defined (Q_OS_OS2)
-    // TODO: add sys info for os2 if any...
-#elif defined (Q_OS_LINUX) || defined (Q_OS_MACX) || defined (Q_OS_FREEBSD) || defined (Q_OS_SOLARIS)
-    /* Get script path */
-    char szAppPrivPath [RTPATH_MAX];
-    int rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
-    Assert (RT_SUCCESS (rc));
-    /* Run script */
-    QByteArray result =
-        Process::singleShot (QString (szAppPrivPath) + "/VBoxSysInfo.sh");
-    if (!result.isNull())
-        platform += QString (" [%1]").arg (QString (result).trimmed());
-#endif
-    return platform;
 }
 
 void VBoxRegistrationDlg::finish()
