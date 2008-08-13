@@ -475,6 +475,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             if (!(fFlags & RTSTR_F_LEFT))
                                 while (--cchWidth >= cchStr)
                                     cch += pfnOutput(pvArgOutput, " ", 1);
+                            cchWidth -= cchStr;
                             while (cchStr-- > 0)
                             {
 #ifdef IN_RING3
@@ -488,7 +489,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                                 cch += pfnOutput(pvArgOutput, &ch, 1);
 #endif
                             }
-                            while (--cchWidth >= cchStr)
+                            while (--cchWidth >= 0)
                                 cch += pfnOutput(pvArgOutput, " ", 1);
                         }
                         else if (chArgSize == 'L')
@@ -507,6 +508,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                                 while (--cchWidth >= cchStr)
                                     cch += pfnOutput(pvArgOutput, " ", 1);
 
+                            cchWidth -= cchStr;
                             while (cchStr-- > 0)
                             {
 #ifdef IN_RING3
@@ -518,7 +520,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                                 cch += pfnOutput(pvArgOutput, &ch, 1);
 #endif
                             }
-                            while (--cchWidth >= cchStr)
+                            while (--cchWidth >= 0)
                                 cch += pfnOutput(pvArgOutput, " ", 1);
                         }
                         else
