@@ -145,7 +145,7 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
     pid_t pid2;
     char c;
     int iTmp;
-    uint64_t u64Tmp;
+    long long unsigned int u64Tmp;
     unsigned uTmp;
     unsigned long ulTmp;
     ULONG u32user, u32kernel;
