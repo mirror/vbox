@@ -61,7 +61,7 @@ int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t
 
     if (f)
     {
-        if (fscanf(f, "cpu %lu %lu %lu %lu", &u32user, &u32nice, &u32kernel, &u32idle) == 4)
+        if (fscanf(f, "cpu %u %u %u %u", &u32user, &u32nice, &u32kernel, &u32idle) == 4)
         {
             *user   = (uint64_t)u32user + u32nice;
             *kernel = u32kernel;
@@ -106,10 +106,10 @@ int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availab
 
     if (f)
     {
-        int processed = fscanf(f, "MemTotal: %lu kB\n", total);
-        processed    += fscanf(f, "MemFree: %lu kB\n", available);
-        processed    += fscanf(f, "Buffers: %lu kB\n", &buffers);
-        processed    += fscanf(f, "Cached: %lu kB\n", &cached);
+        int processed = fscanf(f, "MemTotal: %u kB\n", total);
+        processed    += fscanf(f, "MemFree: %u kB\n", available);
+        processed    += fscanf(f, "Buffers: %u kB\n", &buffers);
+        processed    += fscanf(f, "Cached: %u kB\n", &cached);
         if (processed == 4)
         {
             *available += buffers + cached;
@@ -147,7 +147,8 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
     int iTmp;
     uint64_t u64Tmp;
     unsigned uTmp;
-    ULONG ulTmp, u32user, u32kernel;
+    unsigned long ulTmp;
+    ULONG u32user, u32kernel;
     char buf[80]; /* @todo: this should be tied to max allowed proc name. */
 
     RTStrAPrintf(&pszName, "/proc/%d/stat", process);
@@ -157,8 +158,8 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
 
     if (f)
     {
-        if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu "
-                      "%ld %ld %ld %ld %ld %ld %llu %lu %ld",
+        if (fscanf(f, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %u %u "
+                      "%ld %ld %ld %ld %ld %ld %llu %lu %u",
                    &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
                    &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u32user, &u32kernel,
                    &ulTmp, &ulTmp, &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u64Tmp,
