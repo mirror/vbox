@@ -414,13 +414,6 @@ int main()
     CHECKSTR("cmd                                       description");
 
 
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", L"cmd", L"args", L"description");
-    CHECKSTR("cmd        args                           description");
-
-    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", L"cmd", L"", L"description");
-    CHECKSTR("cmd                                       description");
-
-
     cch = RTStrPrintf(szStr, sizeof(szStr),  "%*s", 0, "");
     CHECKSTR("");
 
@@ -437,6 +430,23 @@ int main()
     CHECKSTR("hello");
     cch = RTStrPrintf(szStr, sizeof(szStr), "%.5Ls", s_usz1);
     CHECKSTR("hello");
+
+    /*
+     * Unicode string formatting.
+     */
+    static RTUTF16 s_wszEmpty[]  = { 0 }; //assumes ascii.
+    static RTUTF16 s_wszCmd[]    = { 'c', 'm', 'd', 0 }; //assumes ascii.
+    static RTUTF16 s_wszArgs[]   = { 'a', 'r', 'g', 's', 0 }; //assumes ascii.
+    static RTUTF16 s_wszDesc[]   = { 'd', 'e', 's', 'c', 'r', 'i', 'p', 't', 'i', 'o', 'n', 0 }; //assumes ascii.
+
+//            0         1         2         3         4         5         6         7
+//            0....5....0....5....0....5....0....5....0....5....0....5....0....5....0
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", s_wszCmd, s_wszArgs, s_wszDesc);
+    CHECKSTR("cmd        args                           description");
+
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", s_wszCmd, s_wszEmpty, s_wszDesc);
+    CHECKSTR("cmd                                       description");
+
 
 #if 0
     static RTUNICP s_usz2[] = { 0xc5, 0xc6, 0xf8, 0 };
