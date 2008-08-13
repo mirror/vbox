@@ -414,6 +414,13 @@ int main()
     CHECKSTR("cmd                                       description");
 
 
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", L"cmd", L"args", L"description");
+    CHECKSTR("cmd        args                           description");
+
+    cch = RTStrPrintf(szStr, sizeof(szStr), "%-10ls %-30ls %ls", L"cmd", L"", L"description");
+    CHECKSTR("cmd                                       description");
+
+
     cch = RTStrPrintf(szStr, sizeof(szStr),  "%*s", 0, "");
     CHECKSTR("");
 
