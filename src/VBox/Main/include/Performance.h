@@ -80,7 +80,7 @@ namespace pm
     {
     public:
         BaseMetric(CollectorHAL *hal, const char *name, ComPtr<IUnknown> object)
-            : mHAL(hal), mLength(0), mName(name), mObject(object), mLastSampleTaken(0), mEnabled(false) {};
+            : mHAL(hal), mPeriod(0), mLength(0), mName(name), mObject(object), mLastSampleTaken(0), mEnabled(false) {};
 
         virtual void init(ULONG period, ULONG length) = 0;
         virtual void collect() = 0;
@@ -151,7 +151,7 @@ namespace pm
         void collect();
         const char *getUnit() { return "MHz"; };
         ULONG getMinValue() { return 0; };
-        ULONG getMaxValue() { return UINT32_MAX; };
+        ULONG getMaxValue() { return INT32_MAX; };
     private:
         SubMetric *mMHz;
     };
@@ -166,7 +166,7 @@ namespace pm
         void collect();
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
-        ULONG getMaxValue() { return UINT32_MAX; };
+        ULONG getMaxValue() { return INT32_MAX; };
     private:
         SubMetric *mTotal;
         SubMetric *mUsed;
@@ -213,7 +213,7 @@ namespace pm
         void collect();
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
-        ULONG getMaxValue() { return UINT32_MAX; };
+        ULONG getMaxValue() { return INT32_MAX; };
     private:
         RTPROCESS  mProcess;
         SubMetric *mUsed;
