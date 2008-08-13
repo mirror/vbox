@@ -384,57 +384,57 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
 
 void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
 {
-    LogFlowThisFuncEnter();
+    //LogFlowThisFuncEnter();
     AutoCaller autoCaller (this);
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("obj=%p name=%s\n", (void *)baseMetric->getObject(), baseMetric->getName()));
+    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)baseMetric->getObject(), baseMetric->getName()));
     m.baseMetrics.push_back (baseMetric);
-    LogFlowThisFuncLeave();
+    //LogFlowThisFuncLeave();
 }
 
 void PerformanceCollector::registerMetric (pm::Metric *metric)
 {
-    LogFlowThisFuncEnter();
+    //LogFlowThisFuncEnter();
     AutoCaller autoCaller (this);
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("obj=%p name=%s\n", (void *)metric->getObject(), metric->getName()));
+    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)metric->getObject(), metric->getName()));
     m.metrics.push_back (metric);
-    LogFlowThisFuncLeave();
+    //LogFlowThisFuncLeave();
 }
 
 void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aObject)
 {
-    LogFlowThisFuncEnter();
+    //LogFlowThisFuncEnter();
     AutoCaller autoCaller (this);
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("before remove_if: m.baseMetrics.size()=%d, obj=%p\n", m.baseMetrics.size(), (void *)aObject));
+    LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
     BaseMetricList::iterator it = std::remove_if (
         m.baseMetrics.begin(), m.baseMetrics.end(), std::bind2nd (
             std::mem_fun (&pm::BaseMetric::associatedWith), aObject));
     m.baseMetrics.erase(it, m.baseMetrics.end());
-    LogFlowThisFunc (("after remove_if: m.baseMetrics.size()=%d\n", m.baseMetrics.size()));
-    LogFlowThisFuncLeave();
+    LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
+    //LogFlowThisFuncLeave();
 }
 
 void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObject)
 {
-    LogFlowThisFuncEnter();
+    //LogFlowThisFuncEnter();
     AutoCaller autoCaller (this);
     if (!SUCCEEDED (autoCaller.rc())) return;
 
     AutoWriteLock alock (this);
-    LogFlowThisFunc (("obj=%p\n", (void *)aObject));
+    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p\n", this, __PRETTY_FUNCTION__, (void *)aObject));
     MetricList::iterator it = std::remove_if (
         m.metrics.begin(), m.metrics.end(), std::bind2nd (
             std::mem_fun (&pm::Metric::associatedWith), aObject));
     m.metrics.erase(it, m.metrics.end());
-    LogFlowThisFuncLeave();
+    //LogFlowThisFuncLeave();
 }
 
 // private methods
@@ -456,14 +456,14 @@ void PerformanceCollector::staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUs
 
 void PerformanceCollector::samplerCallback()
 {
-    LogFlowThisFuncEnter();
+    Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
     AutoWriteLock alock (this);
 
     uint64_t timestamp = RTTimeMilliTS();
     std::for_each (m.baseMetrics.begin(), m.baseMetrics.end(),
                    std::bind2nd (std::mem_fun (&pm::BaseMetric::collectorBeat),
                                  timestamp));
-    LogFlowThisFuncLeave();
+    Log4(("{%p} " LOG_FN_FMT ": LEAVE\n", this, __PRETTY_FUNCTION__));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

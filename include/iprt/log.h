@@ -372,8 +372,10 @@ typedef enum RTLOGGRPFLAGS
     RTLOGGRPFLAGS_FRANK        = 0x00008000,
     /** bird logging. */
     RTLOGGRPFLAGS_BIRD         = 0x00010000,
+    /** aleksey logging. */
+    RTLOGGRPFLAGS_ALEKSEY      = 0x00020000,
     /** NoName logging. */
-    RTLOGGRPFLAGS_NONAME       = 0x00020000
+    RTLOGGRPFLAGS_NONAME       = 0x00040000
 } RTLOGGRPFLAGS;
 
 /**
@@ -552,6 +554,11 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * bird logging.
  */
 #define LogBird(a)      LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_BIRD,     LOG_GROUP, a)
+
+/** @def LogAleksey
+ * aleksey logging.
+ */
+#define LogAleksey(a)   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_ALEKSEY,  LOG_GROUP, a)
 
 /** @def LogNoName
  * NoName logging.

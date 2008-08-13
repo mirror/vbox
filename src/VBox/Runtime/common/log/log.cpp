@@ -1139,6 +1139,7 @@ static unsigned rtlogGroupFlags(const char *psz)
             { "frank",      RTLOGGRPFLAGS_FRANK },
             { "b",          RTLOGGRPFLAGS_BIRD },
             { "bird",       RTLOGGRPFLAGS_BIRD },
+            { "aleksey",    RTLOGGRPFLAGS_ALEKSEY },
             { "n",          RTLOGGRPFLAGS_NONAME },
             { "noname",     RTLOGGRPFLAGS_NONAME }
         };
