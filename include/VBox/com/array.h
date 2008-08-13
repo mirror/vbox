@@ -983,7 +983,7 @@ public:
         m.arr = arg;
         m.isWeak = true;
 
-        AssertReturnVoid (accessRaw() != NULL);
+        //AssertReturnVoid (accessRaw() != NULL);
 
 #endif /* defined (VBOX_WITH_XPCOM) */
     }

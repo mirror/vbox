@@ -73,6 +73,7 @@
 #define USAGE_GUESTPROPERTY         RT_BIT_64(40)
 #endif  /* VBOX_WITH_GUEST_PROPS defined */
 #define USAGE_CONVERTTORAW          RT_BIT_64(41)
+#define USAGE_METRICS               RT_BIT_64(42)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
