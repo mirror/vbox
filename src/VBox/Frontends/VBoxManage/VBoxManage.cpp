@@ -655,9 +655,9 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_METRICS)
     {
-        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [metric1[,metric2[,...]]]]\n"
-                 "                            setup <period> <count> [*|host|<vmname> [metric1[,metric2[,...]]]]\n"
-                 "                            query [*|host|<vmname> [metric1[,metric2[,...]]]]\n"
+        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] (comma-separated) |\n"
+                 "                            setup <period> <count> [*|host|<vmname> [<metric_list>]] |\n"
+                 "                            query [*|host|<vmname> [<metric_list>]]\n"
                  "\n");
     }
 
