@@ -318,7 +318,6 @@ sdk/include/ipcITransactionService.h
 sdk/include/ipcIDConnectService.h
 sdk/include/ipcITransactionObserver.h
 sdk/include/VirtualBox_XPCOM.h
-sdk/bin/xpidl
 sdk/idl/nsIDebug.idl
 sdk/idl/nsIInterfaceRequestor.idl
 sdk/idl/nsIMemory.idl
