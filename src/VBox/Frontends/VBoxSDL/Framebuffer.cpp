@@ -951,9 +951,10 @@ void VBoxSDLFB::setFullscreen(bool fFullscreen)
 }
 
 /**
- *
+ * Return the geometry of the host. This isn't very well tested but it seems
+ * to work at least on Linux hosts.
  */
-void VBoxSDLFB::getFullScreenGeometry(uint32_t *width, uint32_t *height)
+void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
 {
     SDL_Rect **modes;
 

@@ -4902,26 +4902,27 @@ static void SetFullscreen(bool enable)
     if (!gfFullscreenResize)
     {
         /*
-         * The old/default way: SDL will resize the host to fit the guest
-         * screen resolution.
+         * The old/default way: SDL will resize the host to fit the guest screen resolution.
          */
         gpFrameBuffer->setFullscreen(enable);
     }
     else
     {
         /*
-         * Just switch to fullscreen and adapt the guest screen resolution
-         * to the host window geometry.
+         * The alternate way: Switch to fullscreen with the host screen resolution and adapt
+         * the guest screen resolution to the host window geometry.
          */
         uint32_t NewWidth = 0, NewHeight = 0;
-        if (!gpFrameBuffer->getFullscreen())
+        if (enable)
         {
+            /* switch to fullscreen */
             gmGuestNormalXRes = gpFrameBuffer->getGuestXRes();
             gmGuestNormalYRes = gpFrameBuffer->getGuestYRes();
-            gpFrameBuffer->getFullScreenGeometry(&NewWidth, &NewHeight);
+            gpFrameBuffer->getFullscreenGeometry(&NewWidth, &NewHeight);
         }
         else
         {
+            /* switch back to saved geometry */
             NewWidth  = gmGuestNormalXRes;
             NewHeight = gmGuestNormalYRes;
         }
