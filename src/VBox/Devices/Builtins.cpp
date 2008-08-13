@@ -141,6 +141,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_BUSLOGIC
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceBusLogic);
+    if (VBOX_FAILURE(rc))
+        return rc;
+#endif
 
     return VINF_SUCCESS;
 }

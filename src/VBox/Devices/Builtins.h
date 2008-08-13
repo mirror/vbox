@@ -62,6 +62,10 @@ extern const PDMDEVREG g_DeviceParallelPort;
 #ifdef VBOX_WITH_AHCI
 extern const PDMDEVREG g_DeviceAHCI;
 #endif
+#ifdef VBOX_WITH_BUSLOGIC
+extern const PDMDEVREG g_DeviceBusLogic;
+#endif
+
 
 extern const PDMDRVREG g_DrvMouseQueue;
 extern const PDMDRVREG g_DrvKeyboardQueue;
