@@ -30,14 +30,13 @@ VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
 
 [Manufacturer]
-;x86 %SUN%=SUN
-;amd64 %SUN%=SUN, NTamd64
+%SUN%=Model, NTamd64
 
 [Model]
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
 [VBoxVideo]
-CopyFiles=VBoxVideo.Miniport, VBoxVideo.Display
+CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
 
 [VBoxVideo.Miniport]
 VBoxVideo.sys
@@ -46,7 +45,7 @@ VBoxVideo.sys
 VBoxDisp.dll
 
 [VBoxVideo.Services]
-AddService=vboxvideo, 0x00000002, vboxvideo_Service_Inst, vboxvideo_EventLog_Inst
+AddService=VBoxVideo, 0x00000002, vboxvideo_Service_Inst, vboxvideo_EventLog_Inst
 
 [vboxvideo_Service_Inst]
 ServiceType=1                   ; SERVICE_KERNEL_DRIVER
