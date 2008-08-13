@@ -323,7 +323,7 @@ static bool darwinDictGetData(CFMutableDictionaryRef DictRef, CFStringRef KeyStr
 #  define DARWIN_IOKIT_LOG_FLUSH()  RTStrmFlush(g_pStdOut)
 # else
 #  define DARWIN_IOKIT_LOG(a)       RTLogPrintf a
-#  define DARWIN_IOKIT_LOG(a)       RTLogFlush()
+#  define DARWIN_IOKIT_LOG_FLUSH()  RTLogFlush(NULL)
 # endif
 # define DARWIN_IOKIT_DUMP_OBJ(o)   darwinDumpObj(o)
 
