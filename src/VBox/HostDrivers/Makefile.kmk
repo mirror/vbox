@@ -35,7 +35,9 @@ ifdef VBOX_WITH_USB
  include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
 endif
 if1of ($(KBUILD_TARGET), darwin)
- include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+ ifndef VBOX_OSE
+  include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+ endif
 endif
 
 # Let kBuild generate the rules.
