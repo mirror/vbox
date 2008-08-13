@@ -879,10 +879,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PX86PDE         pPdeDst   = &pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst    = GCPtrPage >> SHW_PD_SHIFT;      /* no mask; flat index into the 2048 entry array. */
-    const unsigned  iPdpte    = (GCPtrPage >> X86_PDPT_SHIFT);
+    const unsigned  iPdpte    = (GCPtrPage >> X86_PDPT_SHIFT);  NOREF(iPdpte);
     PX86PDEPAE      pPdeDst   = &pVM->pgm.s.CTXMID(ap,PaePDs[0])->a[iPDDst];
-    PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);
-# else /* AMD64 */
+    PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);   NOREF(pPdptDst);
+# else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
     /* PML4 */
     AssertReturn(pVM->pgm.s.pHCPaePML4, VERR_INTERNAL_ERROR);
 
@@ -914,7 +914,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         return VINF_SUCCESS;
     }
 
-# endif
+# endif /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
 
     const SHWPDE PdeDst = *pPdeDst;
     if (!PdeDst.n.u1Present)
@@ -930,7 +930,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PX86PD          pPDSrc      = CTXSUFF(pVM->pgm.s.pGuestPD);
     const unsigned  iPDSrc      = GCPtrPage >> GST_PD_SHIFT;
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
-# else
+# else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
     unsigned        iPDSrc;
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
     PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
@@ -945,7 +945,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         PdeSrc = pPDSrc->a[iPDSrc];
     else
         PdeSrc.u = 0;
-# endif
+# endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     const bool      fIsBigPage  = PdeSrc.b.u1Size;
@@ -1065,7 +1065,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePagePDNAs));
         PGM_INVL_GUEST_TLBS();
     }
-# endif /* PGM_GST_TYPE != PGM_TYPE_AMD64 */
+# endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE
 
@@ -1513,8 +1513,8 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     X86PDE          PdeDst   = pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;
-    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT);   /* no mask; flat index into the 2048 entry array. */
-    PX86PDPT        pPdptDst = pVM->pgm.s.CTXMID(p,PaePDPT);
+    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT); NOREF(iPdpte); /* no mask; flat index into the 2048 entry array. */
+    PX86PDPT        pPdptDst = pVM->pgm.s.CTXMID(p,PaePDPT);  NOREF(pPdptDst);
     X86PDEPAE       PdeDst   = pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst   = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -1782,7 +1782,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     X86PDEPAE       PdeDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst   = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
-    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64; NOREF(iPdpte);
     PX86PDPAE       pPDDst;
     X86PDEPAE       PdeDst;
     PX86PDPT        pPdptDst;
@@ -2226,8 +2226,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PX86PD          pPDDst   = pVM->pgm.s.CTXMID(p,32BitPD);
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst   = GCPtrPage >> SHW_PD_SHIFT;               /* no mask; flat index into the 2048 entry array. */
-    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT);
-    PX86PDPT        pPdptDst = pVM->pgm.s.CTXMID(p,PaePDPT);
+    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT); NOREF(iPdpte);
+    PX86PDPT        pPdptDst = pVM->pgm.s.CTXMID(p,PaePDPT);  NOREF(pPdptDst);
     PX86PDPAE       pPDDst   = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3130,7 +3130,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
             PX86PDEPAE      pPDEDst   = &pPDPAE->a[iPdpte * X86_PG_PAE_ENTRIES];
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPdpte << X86_PDPT_SHIFT, &iPDSrc);
-            PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);
+            PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);   NOREF(pPdptDst);
             X86PDPE         PdpeSrc   = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte];
 
             if (pPDSrc == NULL)
