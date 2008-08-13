@@ -119,7 +119,7 @@
  * Expands to @true if the given input safearray parameter is a "null pointer"
  * which makes it impossible to use it for reading safearray data.
  */
-#define ComSafeArrayInIsNull(aArg)      (aArg == NULL)
+#define ComSafeArrayInIsNull(aArg)      (aArg == NULL || *aArg == NULL)
 
 /**
  * Wraps the given parameter name to generate an expression that is suitable for
