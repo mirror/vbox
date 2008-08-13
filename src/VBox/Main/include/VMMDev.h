@@ -66,6 +66,10 @@ private:
 
     RTSEMEVENT mCredentialsEvent;
     uint32_t mu32CredentialsFlags;
+    
+#ifdef VBOX_HGCM
+    bool m_fHGCMActive;
+#endif /* VBOX_HGCM */
 };
 
 #endif // ____H_VMMDEV

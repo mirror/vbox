@@ -93,6 +93,7 @@ VMMDev::VMMDev(Console *console) : mpDrv(NULL)
 #ifdef VBOX_HGCM
     rc = HGCMHostInit ();
     AssertRC(rc);
+    m_fHGCMActive = true;
 #endif /* VBOX_HGCM */
     mu32CredentialsFlags = 0;
 }
@@ -574,17 +575,26 @@ static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uin
 
 int VMMDev::hgcmLoadService (const char *pszServiceLibrary, const char *pszServiceName)
 {
+    if (ASMAtomicReadBool(&m_fHGCMActive) == false)
+    {
+        return VERR_INVALID_STATE;
+    }
     return HGCMHostLoad (pszServiceLibrary, pszServiceName);
 }
 
 int VMMDev::hgcmHostCall (const char *pszServiceName, uint32_t u32Function,
                           uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
+    if (ASMAtomicReadBool(&m_fHGCMActive) == false)
+    {
+        return VERR_INVALID_STATE;
+    }
     return HGCMHostCall (pszServiceName, u32Function, cParms, paParms);
 }
 
 void VMMDev::hgcmShutdown (void)
 {
+    ASMAtomicWriteBool(&m_fHGCMActive, false);
     HGCMHostShutdown ();
 }
 
