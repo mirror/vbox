@@ -79,6 +79,11 @@ static void *g_pvExtension;
 
 static VBOXCLIPBOARDCLIENTDATA *g_pClient;
 
+/* Serialization of data reading and format announcements from the RDP client. */
+static bool g_fReadingData = false;
+static bool g_fDelayedAnnouncement = false;
+static uint32_t g_u32DelayedFormats = 0;
+
 static uint32_t vboxSvcClipboardMode (void)
 {
     return g_u32Mode;
@@ -471,7 +476,16 @@ static DECLCALLBACK(void) svcCall (void *,
                             parms.pvData = pv;
                             parms.cbData = cb;
                             
+                            g_fReadingData = true;
                             rc = g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof (parms));
+                            LogFlow(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
+                            if (g_fDelayedAnnouncement)
+                            {
+                                vboxSvcClipboardReportMsg (g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, g_u32DelayedFormats);
+                                g_fDelayedAnnouncement = false;
+                                g_u32DelayedFormats = 0;
+                            }
+                            g_fReadingData = false;
                             
                             if (VBOX_SUCCESS (rc))
                             {
@@ -691,7 +705,16 @@ static DECLCALLBACK(int) extCallback (uint32_t u32Function, uint32_t u32Format, 
         {
             case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
             {
-                vboxSvcClipboardReportMsg (g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, u32Format);
+                LogFlow(("ANNOUNCE: g_fReadingData = %d\n", g_fReadingData));
+                if (g_fReadingData)
+                {
+                    g_fDelayedAnnouncement = true;
+                    g_u32DelayedFormats = u32Format;
+                }
+                else
+                {
+                    vboxSvcClipboardReportMsg (g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, u32Format);
+                }
             } break;
 
             case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
