@@ -69,9 +69,8 @@ private slots:
 
 private:
 
-    void postRequest (const QString &aHost, const QString &aPath);
+    void postRequest (const QString &aHost, const QString &aUrl, const QString &aBody);
     void abortRegisterRequest (const QString &aReason);
-    QString getPlatform();
     void finish();
 
     VBoxRegistrationDlg **mSelf;
