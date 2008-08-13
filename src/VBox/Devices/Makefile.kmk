@@ -142,6 +142,9 @@ endif
 ifdef VBOX_WITH_E1000
  VBoxDD_DEFS           += VBOX_WITH_E1000
 endif
+ifdef VBOX_WITH_BUSLOGIC
+ VBoxDD_DEFS           += VBOX_WITH_BUSLOGIC
+endif
 ifndef VBOX_OSE
  VBoxDD_DEFS           += VBOX_WITH_INIP
 endif
@@ -305,6 +308,12 @@ DevicesR3_DEFS	       += VBOX_WITH_AHCI IN_AHCI_R3
 DevicesR3_SOURCES      += \
 	Storage/DevAHCI.cpp \
 	Storage/ATAController.cpp
+endif
+
+ifdef VBOX_WITH_BUSLOGIC
+DevicesR3_DEFS	       += VBOX_WITH_BUSLOGIC
+DevicesR3_SOURCES      += \
+	Storage/DevBusLogic.cpp
 endif
 
 ifdef VBOX_WITH_USB

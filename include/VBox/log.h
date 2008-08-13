@@ -87,6 +87,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_APIC,
     /** Audio Device group. */
     LOG_GROUP_DEV_AUDIO,
+    /** BusLogic SCSI host adapter group. */
+    LOG_GROUP_DEV_BUSLOGIC,
     /** DMA Controller group. */
     LOG_GROUP_DEV_DMA,
     /** Gigabit Ethernet Device group. */
@@ -336,6 +338,7 @@ typedef enum LOGGROUP
     "DEV_AHCI",     \
     "DEV_APIC",     \
     "DEV_AUDIO",    \
+    "DEV_BUSLOGIC", \
     "DEV_DMA",      \
     "DEV_E1000",    \
     "DEV_FDC",      \
