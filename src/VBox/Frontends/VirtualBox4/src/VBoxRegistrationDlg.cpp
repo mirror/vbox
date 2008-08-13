@@ -543,17 +543,15 @@ QString VBoxRegistrationDlg::getPlatform()
 #elif defined (Q_OS_OS2)
     // TODO: add sys info for os2 if any...
 #elif defined (Q_OS_LINUX) || defined (Q_OS_MACX) || defined (Q_OS_FREEBSD) || defined (Q_OS_SOLARIS)
+    /* Get script path */
     char szAppPrivPath [RTPATH_MAX];
-    int rc;
-
-    rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
+    int rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
     Assert (RT_SUCCESS (rc));
-    QProcess infoScript (this);
-    infoScript.setWorkingDirectory (QString (szAppPrivPath));
-    infoScript.start (QString ("VBoxSysInfo.sh"));
-    bool result = infoScript.waitForFinished();
-    if (result && infoScript.exitStatus() == QProcess::NormalExit)
-        platform += QString (" [%1]").arg (QString (infoScript.readAllStandardOutput()));
+    /* Run script */
+    QByteArray result =
+        Process::singleShot (QString (szAppPrivPath) + "/VBoxSysInfo.sh");
+    if (!result.isNull())
+        platform += QString (" [%1]").arg (QString (result).trimmed());
 #endif
     return platform;
 }
