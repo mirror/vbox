@@ -1015,7 +1015,8 @@ endif
 # XPCOM setup for all but win32.
 ifneq ($(KBUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
- VBOX_XPIDL          ?= $(VBOX_PATH_SDK)/bin/xpidl$(HOSTSUFF_EXE)
+ # if updating, also update xpidl_INST var in src/libs/xpcom18a4/Makefile.kmk
+ VBOX_XPIDL          ?= $(PATH_BIN)/xpidl$(HOSTSUFF_EXE)
  VBOX_PATH_XPCOM_IDL ?= $(VBOX_PATH_SDK)/idl
  VBOX_XPCOM_INCS     ?= \
 	$(VBOX_PATH_SDK)/include \
