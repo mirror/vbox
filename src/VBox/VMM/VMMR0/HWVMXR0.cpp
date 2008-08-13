@@ -1192,7 +1192,8 @@ ResumeExecution:
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? u8TPR : 0);
         AssertRC(rc);
 
-        fSyncTPR = !fPending;
+        /* Always sync back the TPR; we should optimize this though (@todo) */
+        fSyncTPR = true;
     }
 
     /*
