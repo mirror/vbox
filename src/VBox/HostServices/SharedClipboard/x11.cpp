@@ -31,6 +31,7 @@
 #include <iprt/alloc.h>
 #include <iprt/asm.h>        /* For atomic operations */
 #include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
@@ -166,6 +167,9 @@ struct _VBOXCLIPBOARDCONTEXT
 
 /* Only one client is supported. There seems to be no need for more clients. */
 static VBOXCLIPBOARDCONTEXT g_ctx;
+
+/* Are we actually connected to the X11 servicer? */
+static bool g_fHaveX11;
 
 /**
  * Send a request to the guest to transfer the contents of its clipboard to the host.
@@ -774,6 +778,20 @@ int vboxClipboardInit (void)
 {
     int rc;
 
+    if (!RTEnvGet("DISPLAY"))
+    {
+        /*
+         * If we don't find the DISPLAY environment variable we assume that we are not
+         * connected to an X11 server. Don't actually try to do this then, just fail
+         * silently and report success on every call. This is important for VBoxHeadless.
+         */
+        LogRel(("vboxClipboardInit: no X11 detected -- host clipboard disabled\n"));
+        g_fHaveX11 = false;
+        return VINF_SUCCESS;
+    }
+
+    g_fHaveX11 = true;
+
     LogRel(("vboxClipboardInit: initializing host clipboard\n"));
     RTSemEventCreate(&g_ctx.waitForData);
     RTSemMutexCreate(&g_ctx.asyncMutex);
@@ -792,10 +810,17 @@ int vboxClipboardInit (void)
 /** Terminate the host side of the shared clipboard - called by the hgcm layer. */
 void vboxClipboardDestroy (void)
 {
-    LogRel(("vboxClipboardDestroy: shutting down host clipboard\n"));
     int rc, rcThread;
     unsigned count = 0;
     XEvent ev;
+
+    /*
+     * Immetiately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return;
+
+    LogRel(("vboxClipboardDestroy: shutting down host clipboard\n"));
 
     /* Set the termination flag. */
     XtAppSetExitFlag(g_ctx.appContext);
@@ -827,6 +852,12 @@ void vboxClipboardDestroy (void)
   */
 int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
+    /*
+     * Immetiately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return VINF_SUCCESS;
+
     LogFlow(("vboxClipboardConnect\n"));
 
     /* Only one client is supported for now */
@@ -849,6 +880,12 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
  */
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
+    /*
+     * Immetiately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return VINF_SUCCESS;
+
     /* On a Linux host, the guest should never synchronise/cache its clipboard contents, as
        we have no way of reliably telling when the host clipboard data changes.  So instead
        of synchronising, we tell the guest to empty its clipboard, and we set the cached
@@ -864,6 +901,12 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
  */
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
+    /*
+     * Immetiately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return;
+
     LogFlow(("vboxClipboardDisconnect\n"));
 
     RTSemMutexRequest(g_ctx.asyncMutex, RT_INDEFINITE_WAIT);
@@ -1305,6 +1348,12 @@ static void vboxClipboardLoseProc(Widget, Atom *)
  */
 void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
 {
+    /*
+     * Immetiately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+        return;
+
     pClient->pCtx->guestFormats = u32Formats;
     LogFlowFunc (("u32Formats=%d\n", u32Formats));
     if (u32Formats == 0)
@@ -1352,6 +1401,16 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
 int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv,
                            uint32_t cb, uint32_t *pcbActual)
 {
+    /*
+     * Immetiately return if we are not connected to the host X server.
+     */
+    if (!g_fHaveX11)
+    {
+        /* no data available */
+        *pcbActual = 0;
+        return VINF_SUCCESS;
+    }
+
     LogFlow(("vboxClipboardReadData: u32Format = %d, cb = %d\n", u32Format, cb));
 
     /*
@@ -1408,6 +1467,9 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
  */
 void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
 {
+    if (!g_fHaveX11)
+        return;
+
     LogFlow(("vboxClipboardWriteData\n"));
 
     /*
