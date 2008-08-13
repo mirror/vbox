@@ -161,7 +161,7 @@
           not currently being executed (i.e., it is completely out of
           action).
         </note>
-        <note>
+        <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
           aforementioned comparisons valid, this state must immediately
           preceed the Paused state.
@@ -175,9 +175,9 @@
           This value can be used in comparison expressions: all state values
           above it represent unstable states of the running virtual
           machine. Unless explicitly stated otherwise, no machine settings can
-          be altered when it is in one of the unstable sates.
+          be altered when it is in one of the unstable states.
         </note>
-        <note>
+        <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
           aforementioned comparisons valid, this state must immediately
           follow the Running state.
@@ -186,7 +186,7 @@
     </const>
     <const name="Stuck"                 value="6">
       <desc>
-        The execution of the machine has reached the Guru Meditaion
+        The execution of the machine has reached the "Guru Meditation"
         condition. This condition indicates an internal VMM failure which may
         happen as a result of either an unhandled low-level virtual hardware
         exception or one of the recompiler exceptions (such as
@@ -771,15 +771,17 @@
         media the specified @a mediaId refers to. Possible
         values are:
 
-        - <link to="DeviceType::HardDisk"/>: the media is a hard disk
+        <ul>
+        <li><link to="DeviceType::HardDisk"/>: the media is a hard disk
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getHardDisk"/> call.
-        - <link to="DeviceType::DVD"/>: the media is a CD/DVD image
+        <link to="IVirtualBox::getHardDisk"/> call.</li>
+        <li><link to="DeviceType::DVD"/>: the media is a CD/DVD image
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getDVDImage"/> call.
-        - <link to="DeviceType::Floppy"/>: the media is a Floppy image
+        <link to="IVirtualBox::getDVDImage"/> call.</li>
+        <li><link to="DeviceType::Floppy"/>: the media is a Floppy image
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getFloppyImage"/> call.
+        <link to="IVirtualBox::getFloppyImage"/> call.</li>
+        </ul>
 
         Note that if this is a deregistration notification,
         there is no way to access the object representing the
@@ -2066,9 +2068,9 @@
         describe properties the caller is interested in. The property mask is
         a string in the following format:
 
-        @code
+        <pre>
         [[group.]subgroup.]name
-        @endcode
+        </pre>
 
         where @c name is the property name and @c group, @c subgroup are zero
         or or more property group specifiers. Each element (group or name) in
@@ -2532,10 +2534,6 @@
     <desc>
         The IBIOSSettings interface represents BIOS settings of the virtual
         machine. This is used only in the <link to="IMachine::BIOSSettings" /> attribute.
-
-        <note>With the COM API, this is an interface like all the others. With the webservice,
-        this is mapped to a structure, so querying the attribute will not return an object,
-        but a complete structure.</note>
     </desc>
     <attribute name="logoFadeIn" type="boolean">
       <desc>Fade in flag for BIOS logo animation.</desc>
@@ -4121,10 +4119,6 @@
      <desc>
         Contains information about the remote display (VRDP) capabilities and status.
         This is used in the <link to="IConsole::remoteDisplayInfo" /> attribute.
-
-        <note>With the COM API, this is an interface like all the others. With the webservice,
-        this is mapped to a structure, so querying the attribute will not return an object,
-        but a complete structure.</note>
      </desc>
 
     <attribute name="active" type="boolean" readonly="yes">
@@ -4229,7 +4223,7 @@
       from a session object after the session for the given machine has been
       opened using one of <link to="IVirtualBox::openSession"/>,
       <link to="IVirtualBox::openRemoteSession"/> or
-      <link to="IVirtualBox::openExistingSession"/> methdods.
+      <link to="IVirtualBox::openExistingSession"/> methods.
 
       Methods of the IConsole interface allow the caller to query the current
       virtual machine execution state, pause the machine or power it down, save
@@ -5440,9 +5434,6 @@
      wsmap="struct"
      >
     <desc>
-        <note>With the COM API, this is an interface like all the others. With the webservice,
-        this is mapped to a structure, so querying the attribute will not return an object,
-        but a complete structure.</note>
     </desc>
 
     <attribute name="id" type="wstring" readonly="yes">
@@ -6049,9 +6040,6 @@
      wsmap="struct"
      >
     <desc>
-        <note>With the COM API, this is an interface like all the others. With the webservice,
-        this is mapped to a structure, so querying the attribute will not return an object,
-        but a complete structure.</note>
     </desc>
     <attribute name="hardDisk" type="IHardDisk" readonly="yes">
       <desc>Harddisk object this attachment is about.</desc>
@@ -9800,10 +9788,6 @@
       are in different name spaces, so they don't overlap and don't need to
       have unique logical names.
 
-      <note>With the COM API, this is an interface like all the others. With the webservice,
-        this is mapped to a structure, so querying the attribute will not return an object,
-        but a complete structure.</note>
-
       <note>
         Global shared folders are not implemented in the current vesion of the
         product.
@@ -9910,7 +9894,7 @@
 
     <method name="onNetworkAdapterChange">
       <desc>
-        Triggered when settions of a network adapter of the
+        Triggered when settings of a network adapter of the
         associated virtual machine have changed.
       </desc>
       <param name="networkAdapter" type="INetworkAdapter" dir="in"/>
@@ -10221,7 +10205,7 @@
      wscpp="hardcoded"
      >
     <desc>
-      Webservice only: Managed object reference.
+      Managed object reference.
 
       Only within the webservice, a managed object reference (which is really
       an opaque number) allows a webservice client to address an object
@@ -10271,7 +10255,7 @@
      wscpp="hardcoded"
      >
     <desc>
-      Webservice only: Websession manager. This provides essential services
+      Websession manager. This provides essential services
       to webservice clients.
     </desc>
     <method name="logon">
@@ -10380,19 +10364,19 @@
       The IPerformanceCollector interface represents a service that collects and
       stores performance metrics data.
 
-      Performance metrics are associated with objects like IHost and 
-      IMachine. Each object has a distinct set of performance metrics. 
+      Performance metrics are associated with objects like IHost and
+      IMachine. Each object has a distinct set of performance metrics.
       The set can be obtained with <link to="IPerformanceCollector::getMetrics"/>.
 
-      Metric data are collected at the specified intervals and are retained 
-      internally. The interval and the number of samples retained can be set 
+      Metric data are collected at the specified intervals and are retained
+      internally. The interval and the number of samples retained can be set
       with <link to="IPerformanceCollector::setMetrics" />.
-    
-      Metrics are organized hierarchically, each level separated by slash (/). 
-      General scheme for metric name is 
-      "Category/Metric[/SubMetric][:aggregation]". For example CPU/Load/User:avg 
-      metric name stands for: CPU category, Load metric, User submetric, average 
-      aggregate. An aggregate function is computed over all retained data. Valid 
+
+      Metrics are organized hierarchically, each level separated by slash (/).
+      General scheme for metric name is
+      "Category/Metric[/SubMetric][:aggregation]". For example CPU/Load/User:avg
+      metric name stands for: CPU category, Load metric, User submetric, average
+      aggregate. An aggregate function is computed over all retained data. Valid
       aggregate functions are:
 
       <ul>
@@ -10415,7 +10399,7 @@
       <li>CPU/MHz</li>
       <li>RAM/Usage</li>
       </ul>
-    
+
       The general sequence for collecting and retrieving the metrics is:
       <ul>
         <li>
@@ -10423,11 +10407,11 @@
           <link to="IVirtualBox::performanceCollector" />
         </li>
         <li>
-          Allocate and populate an array with references to objects the metrics 
+          Allocate and populate an array with references to objects the metrics
           will be collected for. Use references to IHost and IMachine objects.
         </li>
         <li>
-          Allocate and populate an array with base metric names the data will be 
+          Allocate and populate an array with base metric names the data will be
           collected for.
         </li>
         <li>
@@ -10438,12 +10422,12 @@
           Wait for the data to get collected.
         </li>
         <li>
-          Allocate and populate an array with references to objects the metric 
+          Allocate and populate an array with references to objects the metric
           values will be queried for. You can re-use the object array used for
           setting base metrics.
         </li>
         <li>
-          Allocate and populate an array with metric names the data will be 
+          Allocate and populate an array with metric names the data will be
           collected for. Note that metric names differ from base metric names.
         </li>
         <li>
@@ -10587,13 +10571,13 @@
         </note>
         <note>
           Data collection continues behind the scenes after call to @c
-          queryMetricsData. The return data can be seen as the snapshot of 
-          the current state at the time of @c queryMetricsData call. The 
+          queryMetricsData. The return data can be seen as the snapshot of
+          the current state at the time of @c queryMetricsData call. The
           internally kept metric values are not cleared by the call. This makes
           possible querying different subsets of metrics or aggregates with
           subsequent calls. If periodic querying is needed it is highly
           suggested to query the values with @c interval*count period to avoid
-          confusion. This way a completely new set of data values will be 
+          confusion. This way a completely new set of data values will be
           provided by each query.
         </note>
       </desc>
