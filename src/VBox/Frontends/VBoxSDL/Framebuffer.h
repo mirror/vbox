@@ -124,7 +124,7 @@ public:
     void setFullscreen(bool fFullscreen);
     int  getXOffset();
     int  getYOffset();
-    void getFullScreenGeometry(uint32_t *width, uint32_t *height);
+    void getFullscreenGeometry(uint32_t *width, uint32_t *height);
     uint32_t getGuestXRes() { return mGuestXRes; }
     uint32_t getGuestYRes() { return mGuestYRes; }
 #ifdef VBOX_SECURELABEL
