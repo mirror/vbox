@@ -202,7 +202,8 @@ else # the gcc guys:
  ifeq ($(KBUILD_TARGET),linux)
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
-    $(VBOX_XCURSOR_LIBS)
+    $(VBOX_XCURSOR_LIBS) \
+    Xext
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH += \
     $(VBOX_LIBPATH_X11)
  else ifeq ($(KBUILD_TARGET),darwin)
