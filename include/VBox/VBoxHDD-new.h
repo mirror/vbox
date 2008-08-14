@@ -223,6 +223,10 @@ typedef struct VDBACKENDINFO
     char *pszBackend;
     /** Capabilities of the backend (a combination of the VD_CAP_* flags). */
     uint64_t uBackendCaps;
+    /** Pointer to a NULL-terminated array of strings, containing the supported
+     * file extensions. Note that some backends do not work on files, so this
+     * pointer may just contain NULL. */
+    const char * const *papszFileExtensions;
 } VDBACKENDINFO, *PVDBACKENDINFO;
 
 /**
