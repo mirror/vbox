@@ -1769,6 +1769,13 @@
     </method>
 
     <method name="getGuestOSType">
+      <desc>
+        Obtain guest os type information from guest os typeid, such as
+        "win31" or "ubuntu". Use <link to="IMachine::OSTypeId"/> attribute 
+        to figure out typeid of particular guest VM. See 
+        <link to="IVirtualBox::guestOSTypes"/> for the list of available 
+        OS types.
+      </desc>
       <param name="id" type="wstring" dir="in"/>
       <param name="type" type="IGuestOSType" dir="return"/>
     </method>
