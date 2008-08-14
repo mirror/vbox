@@ -37,7 +37,9 @@
 #include <iprt/err.h>
 
 
-/* WARNING: This implementation ASSUMES little endian. Needs testing on big endian! */
+/* WARNING: This implementation ASSUMES little endian. Does not work on big endian! */
+
+/* Remember, the time fields in the UUID must be little endian. */
 
 
 RTDECL(int)  RTUuidClear(PRTUUID pUuid)
@@ -80,8 +82,10 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
         return pUuid1->Gen.u16TimeMid < pUuid2->Gen.u16TimeMid ? -1 : 1;
     if (pUuid1->Gen.u16TimeHiAndVersion != pUuid2->Gen.u16TimeHiAndVersion)
         return pUuid1->Gen.u16TimeHiAndVersion < pUuid2->Gen.u16TimeHiAndVersion ? -1 : 1;
-    if (pUuid1->Gen.u16ClockSeq != pUuid2->Gen.u16ClockSeq)
-        return pUuid1->Gen.u16ClockSeq < pUuid2->Gen.u16ClockSeq ? -1 : 1;
+    if (pUuid1->Gen.u8ClockSeqHiAndReserved != pUuid2->Gen.u8ClockSeqHiAndReserved)
+        return pUuid1->Gen.u8ClockSeqHiAndReserved < pUuid2->Gen.u8ClockSeqHiAndReserved ? -1 : 1;
+    if (pUuid1->Gen.u8ClockSeqLow != pUuid2->Gen.u8ClockSeqLow)
+        return pUuid1->Gen.u8ClockSeqLow < pUuid2->Gen.u8ClockSeqLow ? -1 : 1;
     if (pUuid1->Gen.au8Node[0] != pUuid2->Gen.au8Node[0])
         return pUuid1->Gen.au8Node[0] < pUuid2->Gen.au8Node[0] ? -1 : 1;
     if (pUuid1->Gen.au8Node[1] != pUuid2->Gen.au8Node[1])
@@ -159,11 +163,10 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
     pszString[16] = s_achDigits[(u >>  4) & 0xf];
     pszString[17] = s_achDigits[(u/*>>0*/)& 0xf];
     pszString[18] = '-';
-    u = pUuid->Gen.u16ClockSeq;
-    pszString[19] = s_achDigits[(u >>  4) & 0xf];
-    pszString[20] = s_achDigits[(u/*>>0*/)& 0xf];
-    pszString[21] = s_achDigits[(u >> 12)/*& 0xf*/];
-    pszString[22] = s_achDigits[(u >>  8) & 0xf];
+    pszString[19] = s_achDigits[pUuid->Gen.u8ClockSeqHiAndReserved >> 4];
+    pszString[20] = s_achDigits[pUuid->Gen.u8ClockSeqHiAndReserved & 0xf];
+    pszString[21] = s_achDigits[pUuid->Gen.u8ClockSeqLow >> 4];
+    pszString[22] = s_achDigits[pUuid->Gen.u8ClockSeqLow & 0xf];
     pszString[23] = '-';
     pszString[24] = s_achDigits[pUuid->Gen.au8Node[0] >> 4];
     pszString[25] = s_achDigits[pUuid->Gen.au8Node[0] & 0xf];
@@ -275,10 +278,12 @@ RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
                           | (uint16_t)MY_TONUM(pszString[15]) << 8
                           | (uint16_t)MY_TONUM(pszString[16]) << 4
                           | (uint16_t)MY_TONUM(pszString[17]);
-    pUuid->Gen.u16ClockSeq =(uint16_t)MY_TONUM(pszString[19]) << 4
-                          | (uint16_t)MY_TONUM(pszString[20])
-                          | (uint16_t)MY_TONUM(pszString[21]) << 12
-                          | (uint16_t)MY_TONUM(pszString[22]) << 8;
+    pUuid->Gen.u8ClockSeqHiAndReserved =
+                            (uint16_t)MY_TONUM(pszString[19]) << 4
+                          | (uint16_t)MY_TONUM(pszString[20]);
+    pUuid->Gen.u8ClockSeqLow =
+                            (uint16_t)MY_TONUM(pszString[21]) << 4
+                          | (uint16_t)MY_TONUM(pszString[22]);
     pUuid->Gen.au8Node[0] = (uint8_t)MY_TONUM(pszString[24]) << 4
                           | (uint8_t)MY_TONUM(pszString[25]);
     pUuid->Gen.au8Node[1] = (uint8_t)MY_TONUM(pszString[26]) << 4
