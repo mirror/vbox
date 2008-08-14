@@ -46,6 +46,8 @@ typedef struct RAWIMAGE
     /** File descriptor. */
     RTFILE          File;
 
+    /** Pointer to list of VD interfaces. */
+    PVDINTERFACE      pVDIfs;
     /** Error callback. */
     PVDINTERFACE      pInterfaceError;
     /** Opaque data for error callback. */
@@ -115,6 +117,10 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
 
     pImage->uOpenFlags = uOpenFlags;
 
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+
     /*
      * Open the image.
      */
@@ -174,6 +180,10 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
     pImage->uImageFlags = uImageFlags;
     pImage->PCHSGeometry = *pPCHSGeometry;
     pImage->LCHSGeometry = *pLCHSGeometry;
+
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Create image file. */
     rc = RTFileOpen(&File, pImage->pszFilename,
@@ -319,7 +329,7 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
-                   PVDINTERFACE pInterfaces, void **ppBackendData)
+                   PVDINTERFACE pVDIfs, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x ppBackendData=%#p\n", pszFilename, uOpenFlags, ppBackendData));
     int rc;
@@ -351,10 +361,7 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->File = NIL_RTFILE;
     pImage->pInterfaceError = NULL;
     pImage->pInterfaceErrorCallbacks = NULL;
-
-    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+    pImage->pVDIfs = pVDIfs;
 
     rc = rawOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
@@ -373,10 +380,10 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
                      PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                      unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
                      void *pvUser, unsigned uPercentStart,
-                     unsigned uPercentSpan, PVDINTERFACE pInterfaces,
+                     unsigned uPercentSpan, PVDINTERFACE pVDIfs,
                      void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pInterfaces=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pInterfaces, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pVDIfs=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pVDIfs, ppBackendData));
     int rc;
     PRAWIMAGE pImage;
 
@@ -406,11 +413,7 @@ static int rawCreate(const char *pszFilename, VDIMAGETYPE enmType,
     }
     pImage->pszFilename = pszFilename;
     pImage->File = NIL_RTFILE;
-
-    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
-
+    pImage->pVDIfs = pVDIfs;
 
     rc = rawCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry,

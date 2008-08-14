@@ -55,6 +55,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     PVBOXHDD pVD = NULL;
     PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+    PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;
     VDINTERFACEERROR VDIErrorCallbacks;
 
@@ -74,8 +75,8 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
 
-    rc = VDInterfaceCreate(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                           NULL, NULL);
+    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                        NULL, &pVDIfs);
     AssertRC(rc);
 
     rc = VDCreate(&VDIError, &pVD);
@@ -430,6 +431,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
     uint64_t u64DiskSize  = 1000 * _1M;
     uint32_t u32SectorSize = 512;
+    PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;
     VDINTERFACEERROR VDIErrorCallbacks;
 
@@ -449,8 +451,8 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
 
-    rc = VDInterfaceCreate(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                           NULL, NULL);
+    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                        NULL, &pVDIfs);
     AssertRC(rc);
 
 
@@ -548,6 +550,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
     uint64_t u64DiskSize  = 1000 * _1M;
     uint32_t u32SectorSize = 512;
+    PVDINTERFACE     pVDIfs;
     VDINTERFACE      VDIError;
     VDINTERFACEERROR VDIErrorCallbacks;
 
@@ -567,8 +570,8 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
 
-    rc = VDInterfaceCreate(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                           NULL, NULL);
+    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                        NULL, &pVDIfs);
     AssertRC(rc);
 
 

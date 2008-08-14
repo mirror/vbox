@@ -748,6 +748,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     VBOXHDDRAW RawDescriptor;
     HOSTPARTITIONS partitions;
     uint32_t uPartitions = 0;
+    PVDINTERFACE pVDIfs = NULL;
 
     /* let's have a closer look at the arguments */
     for (int i = 0; i < argc; i++)
@@ -1149,8 +1150,8 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     vdInterfaceErrorCallbacks.pfnError     = handleVDError;
 
-    vrc = VDInterfaceCreate(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                            &vdInterfaceErrorCallbacks, NULL, NULL);
+    vrc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
     vrc = VDCreate(&vdInterfaceError, &pDisk);
@@ -1256,14 +1257,15 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 
     PVBOXHDD pDisk = NULL;
 
+    PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      vdInterfaceError;
     VDINTERFACEERROR vdInterfaceErrorCallbacks;
     vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     vdInterfaceErrorCallbacks.pfnError     = handleVDError;
 
-    int vrc = VDInterfaceCreate(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                                &vdInterfaceErrorCallbacks, NULL, NULL);
+    int vrc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                             &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
     vrc = VDCreate(&vdInterfaceError, &pDisk);
@@ -1336,14 +1338,15 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
 
     PVBOXHDD pDisk = NULL;
 
+    PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      vdInterfaceError;
     VDINTERFACEERROR vdInterfaceErrorCallbacks;
     vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     vdInterfaceErrorCallbacks.pfnError     = handleVDError;
 
-    int vrc = VDInterfaceCreate(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                                &vdInterfaceErrorCallbacks, NULL, NULL);
+    int vrc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                             &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
     vrc = VDCreate(&vdInterfaceError, &pDisk);

@@ -279,24 +279,24 @@ typedef const PVDINTERFACE PCVDINTERFACE;
  * Get a specific interface from a list of interfaces specified by the type.
  *
  * @return  Pointer to the matching interface or NULL if none was found.
- * @param   pInterfaces     Pointer to the first interface in the list.
+ * @param   pVDIfs          Pointer to the VD interface list.
  * @param   enmInterface    Interface to search for.
  */
-DECLINLINE(PVDINTERFACE) VDGetInterfaceFromList(PVDINTERFACE pInterfaces, VDINTERFACETYPE enmInterface)
+DECLINLINE(PVDINTERFACE) VDInterfaceGet(PVDINTERFACE pVDIfs, VDINTERFACETYPE enmInterface)
 {
     AssertMsgReturn(   (enmInterface >= VDINTERFACETYPE_FIRST)
                     && (enmInterface < VDINTERFACETYPE_INVALID),
                     ("enmInterface=%u", enmInterface), NULL);
 
-    while (pInterfaces)
+    while (pVDIfs)
     {
         /* Sanity checks. */
-        AssertMsgBreak(pInterfaces->cbSize == sizeof(VDINTERFACE),
-                       ("cbSize=%u\n", pInterfaces->cbSize));
+        AssertMsgBreak(pVDIfs->cbSize == sizeof(VDINTERFACE),
+                       ("cbSize=%u\n", pVDIfs->cbSize));
                        
-        if (pInterfaces->enmInterface == enmInterface)
-            return pInterfaces;
-        pInterfaces = pInterfaces->pNext;
+        if (pVDIfs->enmInterface == enmInterface)
+            return pVDIfs;
+        pVDIfs = pVDIfs->pNext;
     }
 
     /* No matching interface was found. */
@@ -304,7 +304,7 @@ DECLINLINE(PVDINTERFACE) VDGetInterfaceFromList(PVDINTERFACE pInterfaces, VDINTE
 }
 
 /**
- * Initialize a common interface structure.
+ * Add an interface to a list of interfaces.
  *
  * @return VBox status code.
  * @param  pInterface   Pointer to an unitialized common interface structure.
@@ -312,11 +312,11 @@ DECLINLINE(PVDINTERFACE) VDGetInterfaceFromList(PVDINTERFACE pInterfaces, VDINTE
  * @param  enmInterface Type of the interface.
  * @param  pCallbacks   The callback table of the interface.
  * @param  pvUser       Opaque user data passed on every function call.
- * @param  pNext        Pointer to the next supported interface if any.
+ * @param  ppVDIfs      Pointer to the VD interface list.
  */
-DECLINLINE(int) VDInterfaceCreate(PVDINTERFACE pInterface, const char *pszName,
-                                  VDINTERFACETYPE enmInterface, void *pCallbacks,
-                                  void *pvUser, PVDINTERFACE pNext)
+DECLINLINE(int) VDInterfaceAdd(PVDINTERFACE pInterface, const char *pszName,
+                               VDINTERFACETYPE enmInterface, void *pCallbacks,
+                               void *pvUser, PVDINTERFACE *ppVDIfs)
 {
 
     /** Argument checks. */
@@ -328,12 +328,21 @@ DECLINLINE(int) VDInterfaceCreate(PVDINTERFACE pInterface, const char *pszName,
                     ("pCallbacks=%#p", pCallbacks),
                     VERR_INVALID_PARAMETER);
 
+    AssertMsgReturn(VALID_PTR(ppVDIfs),
+                    ("pInterfaceList=%#p", ppVDIfs),
+                    VERR_INVALID_PARAMETER);
+
+    /* Fill out interface descriptor. */
     pInterface->cbSize           = sizeof(VDINTERFACE);
     pInterface->pszInterfaceName = pszName;
     pInterface->enmInterface     = enmInterface;
     pInterface->pCallbacks       = pCallbacks;
     pInterface->pvUser           = pvUser;
-    pInterface->pNext            = pNext;
+    pInterface->pNext            = *ppVDIfs;
+
+    /* Remember the new start of the list. */
+    *ppVDIfs = pInterface;
+
     return VINF_SUCCESS;
 }
 
@@ -892,10 +901,10 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
  * No image files are opened.
  *
  * @return  VBox status code.
- * @param   pInterfaces     Pointer to the first supported interface.
+ * @param   pVDIfs          Pointer to the VD interface list.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pInterfaces, PVBOXHDD *ppDisk);
+VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfs, PVBOXHDD *ppDisk);
 
 /**
  * Destroys HDD container.

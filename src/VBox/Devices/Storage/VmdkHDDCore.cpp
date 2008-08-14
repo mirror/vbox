@@ -358,6 +358,9 @@ typedef struct VMDKIMAGE
     /** Descriptor file if applicable. */
     PVMDKFILE        pFile;
 
+    /** Pointer to list of VD interfaces. */
+    PVDINTERFACE     pVDIfs;
+
     /** Error interface. */
     PVDINTERFACE      pInterfaceError;
     /** Error interface callbacks. */
@@ -2325,6 +2328,16 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
 
     pImage->uOpenFlags = uOpenFlags;
 
+    /* Try to get error interface. */
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+
+    /* Try to get async I/O interface. */
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ASYNCIO);
+    if (pImage->pInterfaceAsyncIO)
+        pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
+
     /*
      * Open the image.
      * We don't have to check for asynchronous access because
@@ -3112,6 +3125,17 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
     int rc;
 
     pImage->uImageFlags = uImageFlags;
+
+    /* Try to get error interface. */
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+
+    /* Try to get async I/O interface. */
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ASYNCIO);
+    if (pImage->pInterfaceAsyncIO)
+        pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
+
     rc = vmdkCreateDescriptor(pImage, pImage->pDescData, pImage->cbDescAlloc,
                               &pImage->Descriptor);
     if (RT_FAILURE(rc))
@@ -3677,6 +3701,9 @@ static int vmdkCheckIfValid(const char *pszFilename)
     pImage->pDescData = NULL;
     pImage->pInterfaceError = NULL;
     pImage->pInterfaceErrorCallbacks = NULL;
+    pImage->pInterfaceAsyncIO = NULL;
+    pImage->pInterfaceAsyncIOCallbacks = NULL;
+    pImage->pVDIfs = NULL;
     /** @todo speed up this test open (VD_OPEN_FLAGS_INFO) by skipping as
      * much as possible in vmdkOpenImage. */
     rc = vmdkOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
@@ -3689,8 +3716,7 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
-                    PVDINTERFACE pInterfaces,
-                    void **ppBackendData)
+                    PVDINTERFACE pVDIfs, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x ppBackendData=%#p\n", pszFilename, uOpenFlags, ppBackendData));
     int rc;
@@ -3727,17 +3753,9 @@ static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->pDescData = NULL;
     pImage->pInterfaceError = NULL;
     pImage->pInterfaceErrorCallbacks = NULL;
-
-    /* Try to get error interface. */
-    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
-
-    /* Try to get async I/O interface. */
-    pImage->pInterfaceAsyncIO = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ASYNCIO);
-    if (pImage->pInterfaceAsyncIO)
-        pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
-
+    pImage->pInterfaceAsyncIO = NULL;
+    pImage->pInterfaceAsyncIOCallbacks = NULL;
+    pImage->pVDIfs = NULL;
 
     rc = vmdkOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
@@ -3756,10 +3774,10 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
                       PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                       unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
                       void *pvUser, unsigned uPercentStart,
-                      unsigned uPercentSpan, PVDINTERFACE pInterfaces,
+                      unsigned uPercentSpan, PVDINTERFACE pVDIfs,
                       void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pInterfaces=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pInterfaces, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pVDIfs=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pVDIfs, ppBackendData));
     int rc;
     PVMDKIMAGE pImage;
 
@@ -3800,6 +3818,9 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
     pImage->pDescData = NULL;
     pImage->pInterfaceError = NULL;
     pImage->pInterfaceErrorCallbacks = NULL;
+    pImage->pInterfaceAsyncIO = NULL;
+    pImage->pInterfaceAsyncIOCallbacks = NULL;
+    pImage->pVDIfs = NULL;
     pImage->cbDescAlloc = VMDK_SECTOR2BYTE(20);
     pImage->pDescData = (char *)RTMemAllocZ(pImage->cbDescAlloc);
     if (!pImage->pDescData)
@@ -3807,11 +3828,6 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
         rc = VERR_NO_MEMORY;
         goto out;
     }
-
-    /* Get error interface. */
-    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     rc = vmdkCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
                          pPCHSGeometry, pLCHSGeometry, pUuid,

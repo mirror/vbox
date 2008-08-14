@@ -818,7 +818,7 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pInterfaces, PVBOXHDD *ppDisk)
             pDisk->pInterfaceError = NULL;
             pDisk->pInterfaceErrorCallbacks = NULL;
 
-            pDisk->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
+            pDisk->pInterfaceError = VDInterfaceGet(pInterfaces, VDINTERFACETYPE_ERROR);
             if (pDisk->pInterfaceError)
                 pDisk->pInterfaceErrorCallbacks = VDGetInterfaceError(pDisk->pInterfaceError);
             *ppDisk = pDisk;
