@@ -872,7 +872,7 @@ unsigned __stdcall VBoxClipboardThread (void *pInstance)
                         } break;
                         default:
                         {
-                            Log(("Unsupported message from host!!!"));
+                            Log(("Unsupported message from host!!!\n"));
                         }
                     }
                 }
