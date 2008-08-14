@@ -762,6 +762,9 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         mask = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0;
         /* Note: We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
         mask &= ~X86_CR0_NE;
+        /* We support protected mode without paging using identity mapping. */
+        mask &= ~X86_CR0_PG;
+
 #ifdef HWACCM_VMX_EMULATE_ALL
         /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
         mask &= ~(X86_CR0_PG|X86_CR0_PE);
