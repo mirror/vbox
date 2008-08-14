@@ -43,7 +43,7 @@ public:
         Mode_File
     };
 
-    VBoxFilePathSelectorWidget (QWidget *aParent = 0);
+    VBoxFilePathSelectorWidget (QWidget *aParent);
    ~VBoxFilePathSelectorWidget();
 
     void setMode (Mode aMode);
@@ -52,20 +52,7 @@ public:
     void setResetEnabled (bool aEnabled);
     bool isResetEnabled () const;
 
-#if 0
-
-    /// @todo enabling this requires to allow to customize the names of the
-    /// "Other..." and "Reset" items too which is not yet done.
-
-    void setNoneToolTip (const QString &aText);
-    void setSelectToolTip (const QString &aText);
-    void setResetToolTip (const QString &aText);
-
-#endif /* 0 */
-
     bool isModified() const;
-
-public slots:
 
     void setPath (const QString &aPath);
     QString path() const;
@@ -73,7 +60,6 @@ public slots:
 signals:
 
     void selectPath();
-    void resetPath();
 
 protected:
 
@@ -88,7 +74,7 @@ private slots:
 private:
 
     QIcon defaultIcon() const;
-    QString filePath() const;
+    QString fullPath (bool aAbsolute = true) const;
     QString shrinkText (int aWidth) const;
     void refreshText();
 

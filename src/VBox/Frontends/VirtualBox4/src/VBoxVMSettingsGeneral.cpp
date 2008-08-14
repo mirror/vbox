@@ -76,8 +76,6 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
              this, SLOT (textChangedVRAM (const QString&)));
     connect (mPsSnapshot, SIGNAL (selectPath()),
              this, SLOT (selectSnapshotFolder()));
-    connect (mPsSnapshot, SIGNAL (resetPath()),
-             this, SLOT (resetSnapshotFolder()));
     connect (mTbBootItemUp, SIGNAL (clicked()),
              this, SLOT (moveBootItemUp()));
     connect (mTbBootItemDown, SIGNAL (clicked()),
@@ -464,11 +462,6 @@ void VBoxVMSettingsGeneral::selectSnapshotFolder()
     folder.remove (QRegExp ("[\\\\/]$"));
 
     mPsSnapshot->setPath (folder);
-}
-
-void VBoxVMSettingsGeneral::resetSnapshotFolder()
-{
-    mPsSnapshot->setPath (QString::null);
 }
 
 void VBoxVMSettingsGeneral::adjustBootOrderTWSize()
