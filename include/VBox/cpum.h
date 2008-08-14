@@ -89,41 +89,49 @@ typedef struct CPUMCTXCORE
 {
     union
     {
+        uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
     };
     union
     {
+        uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
     };
     union
     {
+        uint16_t        bp;
         uint32_t        ebp;
         uint64_t        rbp;
     };
     union
     {
+        uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
     };
     union
     {
+        uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
     };
     union
     {
+        uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
     };
     union
     {
+        uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
     };
     union
     {
+        uint16_t        sp;
         uint32_t        esp;
         uint64_t        rsp;
     };
@@ -150,6 +158,7 @@ typedef struct CPUMCTXCORE
     };
     union
     {
+        uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
     };
@@ -192,41 +201,49 @@ typedef struct CPUMCTX
      * @{ */
     union
     {
+        uint16_t        di;
         uint32_t        edi;
         uint64_t        rdi;
     };
     union
     {
+        uint16_t        si;
         uint32_t        esi;
         uint64_t        rsi;
     };
     union
     {
+        uint16_t        bp;
         uint32_t        ebp;
         uint64_t        rbp;
     };
     union
     {
+        uint16_t        ax;
         uint32_t        eax;
         uint64_t        rax;
     };
     union
     {
+        uint16_t        bx;
         uint32_t        ebx;
         uint64_t        rbx;
     };
     union
     {
+        uint16_t        dx;
         uint32_t        edx;
         uint64_t        rdx;
     };
     union
     {
+        uint16_t        cx;
         uint32_t        ecx;
         uint64_t        rcx;
     };
     union
     {
+        uint16_t        sp;
         uint32_t        esp;
         uint64_t        rsp;
     };
@@ -253,6 +270,7 @@ typedef struct CPUMCTX
     };
     union
     {
+        uint16_t        ip;
         uint32_t        eip;
         uint64_t        rip;
     };
