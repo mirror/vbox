@@ -3403,11 +3403,12 @@ HRESULT HVMDKImage::FinalConstruct()
     mActualSize = 0;
 
     /* Create supported error interface. */
+    mVDInterfaces = NULL;
     mInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     mInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     mInterfaceErrorCallbacks.pfnError     = VDError;
-    int vrc = VDInterfaceCreate(&mInterfaceError, "VMDK_IError", VDINTERFACETYPE_ERROR,
-                                &mInterfaceErrorCallbacks, this, NULL);
+    int vrc = VDInterfaceAdd(&mInterfaceError, "VMDK_IError", VDINTERFACETYPE_ERROR,
+                             &mInterfaceErrorCallbacks, this, &mVDInterfaces);
     ComAssertRCRet (vrc, E_FAIL);
 
     /* initialize the container */
@@ -4291,11 +4292,12 @@ HRESULT HCustomHardDisk::FinalConstruct()
     ComAssertRCRet (rc, E_FAIL);
 
     /* Create supported error interface. */
+    mVDInterfaces = NULL;
     mInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     mInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     mInterfaceErrorCallbacks.pfnError     = VDError;
-    int vrc = VDInterfaceCreate(&mInterfaceError, "Custom_IError", VDINTERFACETYPE_ERROR,
-                                &mInterfaceErrorCallbacks, this, NULL);
+    int vrc = VDInterfaceAdd(&mInterfaceError, "Custom_IError", VDINTERFACETYPE_ERROR,
+                             &mInterfaceErrorCallbacks, this, &mVDInterfaces);
     ComAssertRCRet (vrc, E_FAIL);
 
     return S_OK;
@@ -5137,11 +5139,12 @@ HRESULT HVHDImage::FinalConstruct()
     mActualSize = 0;
 
     /* Create supported error interface. */
+    mVDInterfaces = NULL;
     mInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     mInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     mInterfaceErrorCallbacks.pfnError     = VDError;
-    int vrc = VDInterfaceCreate(&mInterfaceError, "VHD_IError", VDINTERFACETYPE_ERROR,
-                                &mInterfaceErrorCallbacks, this, NULL);
+    int vrc = VDInterfaceAdd(&mInterfaceError, "VHD_IError", VDINTERFACETYPE_ERROR,
+                             &mInterfaceErrorCallbacks, this, &mVDInterfaces);
     ComAssertRCRet (vrc, E_FAIL);
 
     /* initialize the container */

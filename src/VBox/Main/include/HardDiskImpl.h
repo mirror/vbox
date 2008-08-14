@@ -538,6 +538,8 @@ private:
 
     PVBOXHDD mContainer;
 
+    PVDINTERFACE     mVDInterfaces;
+
     VDINTERFACE      mInterfaceError;
     VDINTERFACEERROR mInterfaceErrorCallbacks;
 
@@ -652,6 +654,8 @@ private:
     Bstr mFormat;
 
     PVBOXHDD mContainer;
+
+    PVDINTERFACE     mVDInterfaces;
 
     VDINTERFACE      mInterfaceError;
     VDINTERFACEERROR mInterfaceErrorCallbacks;
@@ -768,6 +772,8 @@ private:
     Bstr mFilePathFull;
 
     PVBOXHDD mContainer;
+
+    PVDINTERFACE     mVDInterfaces;
 
     VDINTERFACE      mInterfaceError;
     VDINTERFACEERROR mInterfaceErrorCallbacks;

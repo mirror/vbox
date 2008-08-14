@@ -578,6 +578,8 @@ typedef struct VDIIMAGEDESC
     const char             *pszFilename;
     /** Physical geometry of this image (never actually stored). */
     PDMMEDIAGEOMETRY        PCHSGeometry;
+    /** Pointer to list of VD interfaces. */
+    PVDINTERFACE            pVDIfs;
     /** Error interface. */
     PVDINTERFACE            pInterfaceError;
     /** Error interface callback table. */

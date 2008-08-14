@@ -346,6 +346,10 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
     Assert(VALID_PTR(pPCHSGeometry));
     Assert(VALID_PTR(pLCHSGeometry));
 
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+
     vdiInitPreHeader(&pImage->PreHeader);
     vdiInitHeader(&pImage->Header, enmType, uImageFlags, pszComment, cbSize, VDI_IMAGE_DEFAULT_BLOCK_SIZE, 0);
     /* Save PCHS geometry. Not much work, and makes the flow of information
@@ -527,6 +531,10 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
         return VERR_NOT_SUPPORTED;
 
     pImage->uOpenFlags = uOpenFlags;
+
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    if (pImage->pInterfaceError)
+        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /*
      * Open the image.
@@ -750,6 +758,7 @@ static int vdiCheckIfValid(const char *pszFilename)
     pImage->paBlocks = NULL;
     pImage->pInterfaceError = NULL;
     pImage->pInterfaceErrorCallbacks = NULL;
+    pImage->pVDIfs = NULL;
 
     rc = vdiOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
     vdiFreeImage(pImage, false);
@@ -761,8 +770,7 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
-                   PVDINTERFACE pInterfaces,
-                   void **ppBackendData)
+                   PVDINTERFACE pVDIfs, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x ppBackendData=%#p\n", pszFilename, uOpenFlags, ppBackendData));
     int rc;
@@ -794,10 +802,7 @@ static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->paBlocks = NULL;
     pImage->pInterfaceError = NULL;
     pImage->pInterfaceErrorCallbacks = NULL;
-
-    pImage->pInterfaceError = VDGetInterfaceFromList(pInterfaces, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+    pImage->pVDIfs = pVDIfs;
 
     rc = vdiOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
@@ -816,10 +821,10 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
                      PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                      unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
                      void *pvUser, unsigned uPercentStart,
-                     unsigned uPercentSpan, PVDINTERFACE pInterfaces,
+                     unsigned uPercentSpan, PVDINTERFACE pVDIfs,
                      void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pInterfaces=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pInterfaces, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pVDIfs=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pVDIfs, ppBackendData));
     int rc;
     PVDIIMAGEDESC pImage;
 
@@ -854,6 +859,7 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     pImage->paBlocks = NULL;
     pImage->pInterfaceError = NULL;
     pImage->pInterfaceErrorCallbacks = NULL;
+    pImage->pVDIfs = pVDIfs;
 
     rc = vdiCreateImage(pImage, enmType, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry, pUuid,

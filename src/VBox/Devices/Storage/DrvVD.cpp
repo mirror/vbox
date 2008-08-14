@@ -88,6 +88,8 @@ typedef struct VBOXDISK
     PPDMDRVINS         pDrvIns;
     /** Flag whether suspend has changed image open mode to read only. */
     bool               fTempReadOnly;
+    /** Pointer to list of VD interfaces. */
+    PVDINTERFACE       pVDIfs;
     /** Common structure for the supported error interface. */
     VDINTERFACE        VDIError;
     /** Callback table for error interface. */
@@ -534,12 +536,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->ITransportAsyncPort.pfnTaskCompleteNotify  = drvvdTasksCompleteNotify;
 
     /* Initialize supported VD interfaces. */
+    pThis->pVDIfs = NULL;
+
     pThis->VDIErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     pThis->VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     pThis->VDIErrorCallbacks.pfnError     = drvvdErrorCallback;
 
-    rc = VDInterfaceCreate(&pThis->VDIError, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
-                           &pThis->VDIErrorCallbacks, pDrvIns, NULL);
+    rc = VDInterfaceAdd(&pThis->VDIError, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
+                        &pThis->VDIErrorCallbacks, pDrvIns, &pThis->pVDIfs);
     AssertRC(rc);
 
     pThis->VDIAsyncIOCallbacks.cbSize                  = sizeof(VDINTERFACEASYNCIO);
@@ -553,8 +557,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->VDIAsyncIOCallbacks.pfnPrepareWrite         = drvvdAsyncIOPrepareWrite;
     pThis->VDIAsyncIOCallbacks.pfnTasksSubmit          = drvvdAsyncIOTasksSubmit;
 
-    rc = VDInterfaceCreate(&pThis->VDIAsyncIO, "DrvVD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
-                           &pThis->VDIAsyncIOCallbacks, pThis, &pThis->VDIError);
+    rc = VDInterfaceAdd(&pThis->VDIAsyncIO, "DrvVD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
+                        &pThis->VDIAsyncIOCallbacks, pThis, &pThis->pVDIfs);
     AssertRC(rc);
 
     pThis->VDIConfigCallbacks.cbSize                = sizeof(VDINTERFACECONFIG);
@@ -572,8 +576,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      * as CFGM needs access to the right configuration node for each image.
      * At the moment this is harmless, as iSCSI can only be used as a base
      * image, and no other backend uses the private data for these callbacks. */
-    rc = VDInterfaceCreate(&pThis->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
-                           &pThis->VDIConfigCallbacks, NULL /**< @todo TEMP */, &pThis->VDIAsyncIO);
+    rc = VDInterfaceAdd(&pThis->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
+                        &pThis->VDIConfigCallbacks, NULL /**< @todo TEMP */, &pThis->pVDIfs);
     AssertRC(rc);
 
     /* Try to attach async media port interface above.*/
