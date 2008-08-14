@@ -56,9 +56,9 @@ DECLCALLBACK(int) vboxWndThread(RTTHREAD ThreadSelf, void *pvUser)
     HWND        hwnd;
 
     hwnd = pClient->hwnd= CreateWindow("VBoxOGL", "VirtualBox OpenGL",
-		                               WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE,
-		                               0, 0, 0, 0,
-        	                        NULL, NULL, 0, NULL);
+                                       WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE,
+                                       0, 0, 0, 0,
+                                    NULL, NULL, 0, NULL);
     Assert(hwnd);
     while(true)
     {
@@ -86,9 +86,12 @@ DECLCALLBACK(int) vboxWndThread(RTTHREAD ThreadSelf, void *pvUser)
  */
 int vboxglGlobalInit()
 {
-#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
-    WNDCLASS wc;
+    Log(("vboxglGlobalInit\n"));
 
+    WNDCLASS wc;
+    HWND hWnd;
+
+#ifdef VBOX_OGL_DEBUG_WINDOW_OUTPUT
     wc.style            = CS_OWNDC;
     wc.lpfnWndProc      = VBoxOGLWndProc;
     wc.cbClsExtra       = 0;
@@ -104,8 +107,26 @@ int vboxglGlobalInit()
 
     PIXELFORMATDESCRIPTOR pfd;
     int iFormat;
-    /** @todo should NOT use the desktop window -> crashes the Intel OpenGL driver */
-    HDC hdc = GetDC(0);
+
+    wc.style = CS_OWNDC;
+    wc.lpfnWndProc = DefWindowProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = 0;
+    wc.hIcon = NULL;
+    wc.hCursor = NULL;
+    wc.hbrBackground = NULL;
+    wc.lpszMenuName = NULL;
+    wc.lpszClassName = "VBoxOGLDummy";
+    RegisterClass( &wc );
+
+    /* create dummy window to avoid Intel/Nvidia opengl drivers 
+     * problem with DC from desktop window */
+    hWnd = CreateWindow("VBoxOGLDummy", "", WS_POPUPWINDOW,
+            0, 0, 0, 0, NULL, NULL, 0, NULL );
+    Assert(hWnd);
+
+    HDC hdc = GetDC(hWnd);
 
     ZeroMemory(&pfd, sizeof(pfd));
     pfd.nSize       = sizeof(pfd);
@@ -125,7 +146,8 @@ int vboxglGlobalInit()
 
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(hRC);
-    ReleaseDC(0, hdc);
+    ReleaseDC(hWnd, hdc);
+    DestroyWindow(hWnd);
 
     return VINF_SUCCESS;
 }
@@ -137,7 +159,7 @@ int vboxglGlobalInit()
  */
 int vboxglGlobalUnload()
 {
-    Log(("vboxglGlobalUnload"));
+    Log(("vboxglGlobalUnload\n"));
 
     return VINF_SUCCESS;
 }
@@ -153,8 +175,14 @@ int vboxglEnableOpenGL(PVBOXOGLCTX pClient)
     PIXELFORMATDESCRIPTOR pfd;
     int iFormat;
 
-    /** @todo should NOT use the desktop window -> crashes the Intel OpenGL driver */
-    pClient->enable.hdc = GetDC(0);
+    if (!pClient->enable.hwnd) 
+    {
+        pClient->enable.hwnd = CreateWindow("VBoxOGLDummy", "", WS_POPUPWINDOW,
+                                             0, 0, 0, 0, NULL, NULL, 0, NULL );
+    }
+
+    Assert(pClient->enable.hwnd);
+    pClient->enable.hdc = GetDC(pClient->enable.hwnd);
 
     ZeroMemory(&pfd, sizeof(pfd));
     pfd.nSize       = sizeof(pfd);
@@ -183,7 +211,12 @@ int vboxglDisableOpenGL(PVBOXOGLCTX pClient)
 {
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(pClient->enable.hglrc);
-    ReleaseDC(0, pClient->enable.hdc);
+    ReleaseDC(pClient->enable.hwnd, pClient->enable.hdc);
+    if (pClient->enable.hwnd)
+    {
+        DestroyWindow(pClient->enable.hwnd);
+        pClient->enable.hwnd = 0;
+    }   
     return VINF_SUCCESS;
 }
 
@@ -213,7 +246,7 @@ int vboxglDisconnect(PVBOXOGLCTX pClient)
     {
         if (pClient->hdc)
             ReleaseDC(pClient->hwnd, pClient->hdc);
-    	PostMessage(pClient->hwnd, WM_CLOSE, 0, 0);
+        PostMessage(pClient->hwnd, WM_CLOSE, 0, 0);
         pClient->hwnd = 0;
     }
 #endif
