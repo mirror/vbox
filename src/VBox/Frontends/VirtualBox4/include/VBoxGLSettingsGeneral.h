@@ -48,7 +48,6 @@ protected:
 
 private slots:
 
-    void onResetFolderClicked();
     void onSelectFolderClicked();
 };
 

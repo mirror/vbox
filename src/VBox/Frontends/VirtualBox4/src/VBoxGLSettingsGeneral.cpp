@@ -36,9 +36,6 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     connect (mPsVdi,  SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
     connect (mPsMach, SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
     connect (mPsVRDP, SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
-    connect (mPsVdi,  SIGNAL (resetPath()), this, SLOT (onResetFolderClicked()));
-    connect (mPsMach, SIGNAL (resetPath()), this, SLOT (onResetFolderClicked()));
-    connect (mPsVRDP, SIGNAL (resetPath()), this, SLOT (onResetFolderClicked()));
 
     /* Applying language settings */
     retranslateUi();
@@ -86,13 +83,6 @@ void VBoxGLSettingsGeneral::retranslateUi()
     mPsVRDP->setWhatsThis (tr ("Displays the path to the library that "
                                "provides authentication for Remote Display "
                                "(VRDP) clients."));
-}
-
-void VBoxGLSettingsGeneral::onResetFolderClicked()
-{
-    VBoxFilePathSelectorWidget *ps = qobject_cast<VBoxFilePathSelectorWidget*> (sender());
-    Assert (ps);
-    ps->setPath (QString::null);
 }
 
 void VBoxGLSettingsGeneral::onSelectFolderClicked()

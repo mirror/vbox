@@ -63,7 +63,6 @@ private slots:
                                    QTreeWidgetItem *aPrev = 0);
 
     void selectSnapshotFolder();
-    void resetSnapshotFolder();
 
 private:
 
