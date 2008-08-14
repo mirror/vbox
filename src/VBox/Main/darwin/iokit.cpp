@@ -1523,7 +1523,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
 
                             RTUuidClear(&pNew->Uuid);
                             memcpy(&pNew->Uuid, pNew->szBSDName, RT_MIN(sizeof(pNew->szBSDName), sizeof(pNew->Uuid)));
-                            pNew->Uuid.Gen.u16ClockSeq = (pNew->Uuid.Gen.u16ClockSeq & 0x3fff) | 0x8000;
+                            pNew->Uuid.Gen.u8ClockSeqHiAndReserved = (pNew->Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
                             pNew->Uuid.Gen.u16TimeHiAndVersion = (pNew->Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
                             pNew->Uuid.Gen.au8Node[0] = Mac.au8[0];
                             pNew->Uuid.Gen.au8Node[1] = Mac.au8[1];
