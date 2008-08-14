@@ -2048,7 +2048,7 @@ QString VBoxGlobal::platformInfo()
 #elif defined (Q_OS_LINUX) || defined (Q_OS_MACX) || defined (Q_OS_FREEBSD) || defined (Q_OS_SOLARIS)
     /* Get script path */
     char szAppPrivPath [RTPATH_MAX];
-    int rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
+    int rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath)); NOREF(rc);
     Assert (RT_SUCCESS (rc));
     /* Run script */
     QByteArray result =
