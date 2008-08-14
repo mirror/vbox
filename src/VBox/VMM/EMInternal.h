@@ -140,6 +140,8 @@ typedef struct EMSTATS
     STAMCOUNTER             StatHCXAdd;
     STAMCOUNTER             StatGCClts;
     STAMCOUNTER             StatHCClts;
+    STAMCOUNTER             StatGCStosWD;
+    STAMCOUNTER             StatHCStosWD;
     STAMCOUNTER             StatHCRdmsr;
     STAMCOUNTER             StatHCWrmsr;
     STAMCOUNTER             StatGCRdmsr;

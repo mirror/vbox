@@ -1301,6 +1301,109 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
     return VERR_EM_INTERPRETER;
 }
 
+#ifndef IN_GC
+/*
+ * [REP] STOSWD emulation
+ *
+ */
+static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    int      rc;
+    RTGCPTR  GCDest, GCOffset;
+    uint32_t cbSize;
+    uint64_t cTransfers;
+
+    /* Don't support any but these three prefix bytes. */
+    if ((pCpu->prefix & ~(PREFIX_ADDRSIZE|PREFIX_OPSIZE|PREFIX_REP|PREFIX_REX)))
+        return VERR_EM_INTERPRETER;
+
+    switch (pCpu->addrmode)
+    {
+    case CPUMODE_16BIT:
+        GCOffset   = pRegFrame->di;
+        cTransfers = pRegFrame->cx;
+        break;
+    case CPUMODE_32BIT:
+        GCOffset   = pRegFrame->edi;
+        cTransfers = pRegFrame->ecx;
+        break;
+    case CPUMODE_64BIT:
+        GCOffset   = pRegFrame->rdi;
+        cTransfers = pRegFrame->rcx;
+        break;
+    default:
+        AssertFailed();
+        return VERR_EM_INTERPRETER;
+    }
+
+    GCDest = SELMToFlat(pVM, DIS_SELREG_ES, pRegFrame, GCOffset);
+    switch (pCpu->opmode)
+    {
+    case CPUMODE_16BIT:
+        cbSize = 2;
+        break;
+    case CPUMODE_32BIT:
+        cbSize = 4;
+        break;
+    case CPUMODE_64BIT:
+        cbSize = 8;
+        break;
+    default:
+        AssertFailed();
+        return VERR_EM_INTERPRETER;
+    }
+
+    LogFlow(("emInterpretStosWD dest=%VGv cbSize=%d\n", GCDest, cbSize));
+
+    if (!(pCpu->prefix & PREFIX_REP))
+    {
+        rc = PGMPhysWriteGCPtrSafe(pVM, GCDest, &pRegFrame->rax, cbSize);
+        if (VBOX_FAILURE(rc))
+            return VERR_EM_INTERPRETER;
+        Assert(rc == VINF_SUCCESS);
+    }
+    else
+    {    
+        /* REP case */
+        while (cTransfers)
+        {
+            rc = PGMPhysWriteGCPtrSafe(pVM, GCDest, &pRegFrame->rax, cbSize);
+            if (VBOX_FAILURE(rc))
+            {
+                rc = VERR_EM_INTERPRETER;
+                break;
+            }
+
+            Assert(rc == VINF_SUCCESS);
+            GCOffset += cbSize;
+            GCDest   += cbSize;
+            cTransfers--;
+        }
+
+        /* Update the registers. */
+        switch (pCpu->addrmode)
+        {
+        case CPUMODE_16BIT:
+            pRegFrame->di = GCOffset;
+            pRegFrame->cx = cTransfers;
+            break;
+        case CPUMODE_32BIT:
+            pRegFrame->edi = GCOffset;
+            pRegFrame->ecx = cTransfers;
+            break;
+        case CPUMODE_64BIT:
+            pRegFrame->rdi = GCOffset;
+            pRegFrame->rcx = cTransfers;
+            break;
+        }
+    }
+
+    *pcbSize = cbSize;
+    return rc;
+}
+#endif
+
+
 /*
  * [LOCK] CMPXCHG emulation.
  */
@@ -2530,7 +2633,10 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
             )
        )
 #else
-    if (    (pCpu->prefix & (PREFIX_REPNE | PREFIX_REP))
+    if (    (pCpu->prefix & PREFIX_REPNE)
+        ||  (   (pCpu->prefix & PREFIX_REP)
+             && pCpu->pCurInstr->opcode != OP_STOSWD
+            )
         ||  (   (pCpu->prefix & PREFIX_LOCK)
              && pCpu->pCurInstr->opcode != OP_OR
              && pCpu->pCurInstr->opcode != OP_BTR
@@ -2593,6 +2699,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE_EX_PARAM3(OP_XOR,Xor, OrXorAnd, EMEmulateXor);
         INTERPRET_CASE_EX_PARAM3(OP_AND,And, OrXorAnd, EMEmulateAnd);
         INTERPRET_CASE(OP_MOV,Mov);
+#ifndef IN_GC
+        INTERPRET_CASE(OP_STOSWD,StosWD);
+#endif
         INTERPRET_CASE(OP_INVLPG,InvlPg);
         INTERPRET_CASE(OP_CPUID,CpuId);
         INTERPRET_CASE(OP_MOV_CR,MovCRx);
@@ -2625,7 +2734,6 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_STAT_CASE(OP_XADD, XAdd);
 #endif
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);
-        INTERPRET_STAT_CASE(OP_STOSWD,StosWD);
         INTERPRET_STAT_CASE(OP_WBINVD,WbInvd);
 #endif
         default:
