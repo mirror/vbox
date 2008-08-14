@@ -648,6 +648,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
             }
             pEntries[cEntries].pszBackend = pszName;
             pEntries[cEntries].uBackendCaps = aBackends[i]->uBackendCaps;
+            pEntries[cEntries].papszFileExtensions = aBackends[i]->papszFileExtensions;
             cEntries++;
             if (cEntries >= cEntriesAlloc)
             {
@@ -736,6 +737,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                         }
                         pEntries[cEntries].pszBackend = pszName;
                         pEntries[cEntries].uBackendCaps = pBackend->uBackendCaps;
+                        pEntries[cEntries].papszFileExtensions = pBackend->papszFileExtensions;
                         cEntries++;
                         if (cEntries >= cEntriesAlloc)
                         {
@@ -750,6 +752,8 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                 RTLdrClose(hPlugin);
             }
         }
+        if (rc == VERR_NO_MORE_FILES)
+            rc = VINF_SUCCESS;
         RTStrFree(pszPluginFilter);
         if (pPluginDirEntry)
             RTMemFree(pPluginDirEntry);
@@ -2890,6 +2894,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
         {
             pBackendInfo->pszBackend = RTStrDup(pImage->Backend->pszBackendName);
             pBackendInfo->uBackendCaps = pImage->Backend->uBackendCaps;
+            pBackendInfo->papszFileExtensions = pImage->Backend->papszFileExtensions;
             rc = VINF_SUCCESS;
         }
         else

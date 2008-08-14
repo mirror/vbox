@@ -52,6 +52,7 @@ static const char  *g_apszExclude[] =
     "testcase/tstSemMutex",
     "testcase/tstVD",
 #endif
+    "testcase/tstVD-2",
     "testcase/tstFileLock",
     "testcase/tstCritSect",
     "testcase/tstCritSectW32",

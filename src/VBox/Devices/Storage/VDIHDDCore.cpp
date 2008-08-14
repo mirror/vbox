@@ -38,6 +38,17 @@
 #define VDI_IMAGE_DEFAULT_BLOCK_SIZE _1M
 
 /*******************************************************************************
+*   Static Variables                                                           *
+*******************************************************************************/
+
+/** NULL-terminated array of supported file extensions. */
+static const char *const s_apszVdiFileExtensions[] =
+{
+    "vdi",
+    NULL
+};
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static unsigned getPowerOfTwo(unsigned uNumber);
@@ -1795,6 +1806,8 @@ VBOXHDDBACKEND g_VDIBackend =
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
     | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE,
+    /* papszFileExtensions */
+    s_apszVdiFileExtensions,
     /* pfnCheckIfValid */
     vdiCheckIfValid,
     /* pfnOpen */

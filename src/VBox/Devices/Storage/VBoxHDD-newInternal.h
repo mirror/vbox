@@ -56,6 +56,13 @@ typedef struct VBOXHDDBACKEND
     uint64_t uBackendCaps;
 
     /**
+     * Pointer to a NULL-terminated array of strings, containing the supported
+     * file extensions. Note that some backends do not work on files, so this
+     * pointer may just contain NULL.
+     */
+    const char * const *papszFileExtensions;
+
+    /**
      * Check if a file is valid for the backend.
      *
      * @returns VBox status code.
