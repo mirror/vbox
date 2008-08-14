@@ -148,7 +148,7 @@ ifdef VBOX_WITH_DOCS
  LINUXNOSTRIP += \
 	UserManual.pdf
  LINUXSTRIPBIN += \
-	$(if $(VBOX_WITH_QT4GUI),kchmviewer,)
+	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
  ifneq ($(wildcard $(PATH_BIN)/VirtualBox.chm),)
   # our 64-bit tinderboxes are not able to generate VirtualBox.chm so far
   # but for building .deb/.rpm packages we use precompiled binaries.
