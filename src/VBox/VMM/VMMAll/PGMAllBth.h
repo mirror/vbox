@@ -882,6 +882,15 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     const unsigned  iPdpte    = (GCPtrPage >> X86_PDPT_SHIFT);  NOREF(iPdpte);
     PX86PDEPAE      pPdeDst   = &pVM->pgm.s.CTXMID(ap,PaePDs[0])->a[iPDDst];
     PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);   NOREF(pPdptDst);
+
+    /* If the shadow PDPE isn't present, then skip the invalidate. */
+    if (!pPdptDst->a[iPdpte].n.u1Present)
+    {
+        Assert(!(pPdptDst->a[iPdpte].u & PGM_PLXFLAGS_MAPPING));
+        STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,InvalidatePageSkipped));
+        return VINF_SUCCESS;
+    }
+
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
     /* PML4 */
     AssertReturn(pVM->pgm.s.pHCPaePML4, VERR_INTERNAL_ERROR);
@@ -934,6 +943,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     unsigned        iPDSrc;
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
     PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    X86PDPE         PdpeSrc     = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte];
 #  else /* AMD64 */
     PX86PML4E       pPml4eSrc;
     X86PDPE         PdpeSrc;
@@ -1068,7 +1078,31 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE
+    /* Note: This shouldn't actually be necessary as we monitor the PDPT page for changes. */
+    if (!pPDSrc)
+    {
+        /* Guest PDPE not present */
+        PX86PDPAE  pPDPAE  = pVM->pgm.s.CTXMID(ap,PaePDs)[0]; /* root of the 2048 PDE array */
+        PX86PDEPAE pPDEDst = &pPDPAE->a[iPdpte * X86_PG_PAE_ENTRIES];
+        PPGMPOOL   pPool   = pVM->pgm.s.CTXSUFF(pPool);
 
+        Assert(!(CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte].n.u1Present));
+        LogFlow(("InvalidatePage: guest PDPE %d not present; clear shw pdpe\n", iPdpte));
+ 	    /* for each page directory entry */
+ 	    for (unsigned iPD = 0; iPD < X86_PG_PAE_ENTRIES; iPD++)
+ 	    {
+ 	        if (   pPDEDst[iPD].n.u1Present
+ 	            && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
+ 	        {
+                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdpte * X86_PG_PAE_ENTRIES + iPD);
+                pPDEDst[iPD].u = 0;
+ 	        }
+	    }
+        if (!(pPdptDst->a[iPdpte].u & PGM_PLXFLAGS_MAPPING))
+ 	        pPdptDst->a[iPdpte].n.u1Present = 0;
+        PGM_INVL_GUEST_TLBS();
+    }
+    Assert((PdpeSrc.u & X86_PDPE_PG_MASK) == pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte]);
 # endif
 
 
