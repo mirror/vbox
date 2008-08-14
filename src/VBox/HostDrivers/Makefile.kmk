@@ -34,7 +34,7 @@ endif
 ifdef VBOX_WITH_USB
  include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
 endif
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin solaris)
  ifndef VBOX_OSE
   include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
  endif
