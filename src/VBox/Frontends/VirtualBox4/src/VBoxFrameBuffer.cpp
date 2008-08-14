@@ -571,9 +571,9 @@ void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     putenv (sdlHack);
     X11ScreenSaverSettingsSave();
     int rc = SDL_InitSubSystem (SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
+    X11ScreenSaverSettingsRestore();
     AssertMsg (rc == 0, ("SDL initialization failed: %s\n", SDL_GetError()));
     NOREF(rc);
-    X11ScreenSaverSettingsRestore();
 
 #ifdef Q_WS_X11
     /* undo signal redirections from SDL, it'd steal keyboard events from us! */
