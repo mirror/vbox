@@ -1156,6 +1156,11 @@ typedef RTRAND                                     *PRTRAND;
 
 /**
  * UUID data type.
+ *
+ * @note IPRT defines that the first three integers in the @c Gen struct
+ * interpretation are in little endian representation. This is different to
+ * many other UUID implementation, and requires conversion if you need to
+ * achieve consistent results.
  */
 typedef union RTUUID
 {
@@ -1167,13 +1172,14 @@ typedef union RTUUID
     uint32_t    au32[4];
     /** 64-bit view. */
     uint64_t    au64[2];
-    /** The way the UUID is declared by the ext2 guys. */
+    /** The way the UUID is declared by the DCE specification. */
     struct
     {
         uint32_t    u32TimeLow;
         uint16_t    u16TimeMid;
         uint16_t    u16TimeHiAndVersion;
-        uint16_t    u16ClockSeq;
+        uint8_t     u8ClockSeqHiAndReserved;
+        uint8_t     u8ClockSeqLow;
         uint8_t     au8Node[6];
     } Gen;
 } RTUUID;

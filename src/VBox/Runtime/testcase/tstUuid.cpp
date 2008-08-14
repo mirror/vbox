@@ -96,9 +96,9 @@ int main(int argc, char **argv)
     Uuid3.au8[13] = 0xba;
     Uuid3.au8[14] = 0xdc;
     Uuid3.au8[15] = 0xfe;
-    Uuid3.Gen.u16ClockSeq = (Uuid3.Gen.u16ClockSeq & 0x3fff) | 0x8000;
+    Uuid3.Gen.u8ClockSeqHiAndReserved = (Uuid3.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
     Uuid3.Gen.u16TimeHiAndVersion = (Uuid3.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
-    const char *pszUuid3 = "67452301-ab89-4fcd-10b2-547698badcfe";
+    const char *pszUuid3 = "67452301-ab89-4fcd-90b2-547698badcfe";
     rc = RTUuidToStr(&Uuid3, sz, sizeof(sz)); CHECK_RC();
     CHECK_EXPR(strcmp(sz, pszUuid3) == 0);
     rc = RTUuidFromStr(&Uuid, pszUuid3); CHECK_RC();
