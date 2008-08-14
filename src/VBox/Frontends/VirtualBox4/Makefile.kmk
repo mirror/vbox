@@ -578,7 +578,8 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
   	src/VBoxLicenseViewer.cpp
  endif
  VirtualBox4_SOURCES += \
- 	src/linux/XKeyboard-new.cpp
+ 	src/linux/XKeyboard-new.cpp \
+	src/VBoxX11Helper.cpp
 endif
 
 VirtualBox4_SOURCES.win += \

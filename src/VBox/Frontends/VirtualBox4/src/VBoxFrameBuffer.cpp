@@ -458,6 +458,8 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 
 #if defined (VBOX_GUI_USE_SDL)
 
+#include "VBoxX11Helper.h"
+
 /** @class VBoxSDLFrameBuffer
  *
  *  The VBoxSDLFrameBuffer class is a class that implements the IFrameBuffer
@@ -471,6 +473,7 @@ VBoxSDLFrameBuffer::VBoxSDLFrameBuffer (VBoxConsoleView *aView) :
     mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
     mSurfVRAM = NULL;
 
+    X11ScreenSaverSettingsInit();
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                       NULL, 0, 0, 640, 480));
 }
@@ -482,7 +485,9 @@ VBoxSDLFrameBuffer::~VBoxSDLFrameBuffer()
         SDL_FreeSurface (mSurfVRAM);
         mSurfVRAM = NULL;
     }
+    X11ScreenSaverSettingsSave();
     SDL_QuitSubSystem (SDL_INIT_VIDEO);
+    X11ScreenSaverSettingsRestore();
 }
 
 /** @note This method is called on EMT from under this object's lock */
@@ -548,7 +553,9 @@ void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     }
     if (mScreen)
     {
+        X11ScreenSaverSettingsSave();
         SDL_QuitSubSystem (SDL_INIT_VIDEO);
+        X11ScreenSaverSettingsRestore();
         mScreen = NULL;
     }
 
@@ -562,9 +569,11 @@ void VBoxSDLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
     /* Note: SDL_WINDOWID must be decimal (not hex) to work on Win32 */
     sprintf (sdlHack, "SDL_WINDOWID=%lu", mView->viewport()->winId());
     putenv (sdlHack);
+    X11ScreenSaverSettingsSave();
     int rc = SDL_InitSubSystem (SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
     AssertMsg (rc == 0, ("SDL initialization failed: %s\n", SDL_GetError()));
     NOREF(rc);
+    X11ScreenSaverSettingsRestore();
 
 #ifdef Q_WS_X11
     /* undo signal redirections from SDL, it'd steal keyboard events from us! */
