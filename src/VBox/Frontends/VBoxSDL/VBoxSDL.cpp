@@ -56,15 +56,17 @@ using namespace com;
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
-#include <iprt/path.h>
-#include <iprt/string.h>
-#include <iprt/runtime.h>
+
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
+#include <iprt/env.h>
+#include <iprt/ldr.h>
+#include <iprt/path.h>
+#include <iprt/runtime.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/uuid.h>
-#include <iprt/ldr.h>
-#include <iprt/alloca.h>
 
 #include <signal.h>
 
@@ -968,7 +970,7 @@ int main(int argc, char *argv[])
      * to ensure a defined environment and work around the missing KeyPress/KeyRelease
      * events in ProcessKeys().
      */
-    setenv("SDL_DISABLE_LOCK_KEYS", "1", 1);
+    RTEnvSet("SDL_DISABLE_LOCK_KEYS", "1");
 #endif
 
     /*
@@ -1297,7 +1299,7 @@ int main(int argc, char *argv[])
         {
             gfFullscreenResize = true;
 #ifdef VBOXSDL_WITH_X11
-            setenv("SDL_VIDEO_X11_VIDMODE", "0", 1);
+            RTEnvSet("SDL_VIDEO_X11_VIDMODE", "0");
 #endif
         }
         else if (strcmp(argv[curArg], "-fixedmode") == 0)

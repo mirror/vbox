@@ -139,7 +139,7 @@ VBoxSDLFB::VBoxSDLFB(bool fFullscreen, bool fResizable, bool fShowSDLConfig,
 #ifdef VBOXSDL_WITH_X11
     /* On some X servers the mouse is stuck inside the bottom right corner.
      * See http://wiki.clug.org.za/wiki/QEMU_mouse_not_working */
-    setenv("SDL_VIDEO_X11_DGAMOUSE", "0", 1);
+    RTEnvSet("SDL_VIDEO_X11_DGAMOUSE", "0");
 #endif
     rc = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE);
     if (rc != 0)
