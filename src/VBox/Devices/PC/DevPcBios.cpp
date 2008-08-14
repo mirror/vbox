@@ -831,15 +831,21 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     int  iDmiBIOSReleaseMajor, iDmiBIOSReleaseMinor, iDmiBIOSFirmwareMajor, iDmiBIOSFirmwareMinor;
     char *pszDmiSystemVendor, *pszDmiSystemProduct, *pszDmiSystemVersion, *pszDmiSystemSerial, *pszDmiSystemUuid, *pszDmiSystemFamily;
 
-#define STRCPY(p, s) \
+#define SETSTRING(memb, str) \
     do { \
-        size_t _len = strlen(s) + 1; \
-        size_t _max = (size_t)(pszStr + _len - (char *)pTable) + 5; /* +1 for strtab terminator +4 for end-of-table entry */ \
-        if (_max > cbMax) \
+        if (!str[0]) \
+          memb = 0; /* empty string */ \
+        else \
+        { \
+          memb = iStrNr++; \
+          size_t _len = strlen(str) + 1; \
+          size_t _max = (size_t)(pszStr + _len - (char *)pTable) + 5; /* +1 for strtab terminator +4 for end-of-table entry */ \
+          if (_max > cbMax) \
             return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
                     N_("One of the DMI strings is too long. Check all bios/Dmi* configuration entries. At least %zu bytes are needed but there is no space for more than %d bytes"), _max, cbMax); \
-        memcpy(p, s, _len); \
-        p += _len; \
+          memcpy(pszStr, str, _len); \
+          pszStr += _len; \
+        } \
     } while (0)
 #define READCFGSTR(name, variable, default_value) \
     do { \
@@ -849,6 +855,8 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
         else if (RT_FAILURE(rc)) \
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
                     N_("Configuration error: Querying \"" name "\" as a string failed")); \
+        else if (!strcmp(variable, "<EMPTY>")) \
+            variable[0] = '\0'; \
     } while (0)
 #define READCFGINT(name, variable, default_value) \
     do { \
@@ -908,13 +916,10 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     iStrNr                       = 1;
     pBIOSInf->header.u8Type      = 0; /* BIOS Information */
     pBIOSInf->header.u16Handle   = 0x0000;
-    pBIOSInf->u8Vendor           = iStrNr++;
-    STRCPY(pszStr, pszDmiBIOSVendor);
-    pBIOSInf->u8Version          = iStrNr++;
-    STRCPY(pszStr, pszDmiBIOSVersion);
+    SETSTRING(pBIOSInf->u8Vendor,  pszDmiBIOSVendor);
+    SETSTRING(pBIOSInf->u8Version, pszDmiBIOSVersion);
     pBIOSInf->u16Start           = 0xE000;
-    pBIOSInf->u8Release          = iStrNr++;
-    STRCPY(pszStr, pszDmiBIOSReleaseDate);
+    SETSTRING(pBIOSInf->u8Release, pszDmiBIOSReleaseDate);
     pBIOSInf->u8ROMSize          = 1; /* 128K */
     pBIOSInf->u64Characteristics = RT_BIT(4)   /* ISA is supported */
                                  | RT_BIT(7)   /* PCI is supported */
@@ -939,14 +944,10 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     pSystemInf->header.u8Type    = 1; /* System Information */
     pSystemInf->header.u8Length  = sizeof(*pSystemInf);
     pSystemInf->header.u16Handle = 0x0001;
-    pSystemInf->u8Manufacturer   = iStrNr++;
-    STRCPY(pszStr, pszDmiSystemVendor);
-    pSystemInf->u8ProductName    = iStrNr++;
-    STRCPY(pszStr, pszDmiSystemProduct);
-    pSystemInf->u8Version        = iStrNr++;
-    STRCPY(pszStr, pszDmiSystemVersion);
-    pSystemInf->u8SerialNumber   = iStrNr++;
-    STRCPY(pszStr, pszDmiSystemSerial);
+    SETSTRING(pSystemInf->u8Manufacturer, pszDmiSystemVendor);
+    SETSTRING(pSystemInf->u8ProductName,  pszDmiSystemProduct);
+    SETSTRING(pSystemInf->u8Version,      pszDmiSystemVersion);
+    SETSTRING(pSystemInf->u8SerialNumber, pszDmiSystemSerial);
 
     RTUUID uuid;
     if (pszDmiSystemUuid)
@@ -964,8 +965,7 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
 
     pSystemInf->u8WakeupType     = 6; /* Power Switch */
     pSystemInf->u8SKUNumber      = 0;
-    pSystemInf->u8Family         = iStrNr++;
-    STRCPY(pszStr, pszDmiSystemFamily);
+    SETSTRING(pSystemInf->u8Family, pszDmiSystemFamily);
     *pszStr++                    = '\0';
 
     /* End-of-table marker - includes padding to account for fixed table size. */
@@ -974,9 +974,9 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     pEndOfTable->u8Length        = cbMax - ((char *)pszStr - (char *)pTable) - 2;
     pEndOfTable->u16Handle       = 0xFFFF;
 
-    /* If more fields are added here, fix the size check in STRCPY */
+    /* If more fields are added here, fix the size check in SETSTRING */
 
-#undef STRCPY
+#undef SETSTRING
 #undef READCFG
 
     MMR3HeapFree(pszDmiBIOSVendor);
