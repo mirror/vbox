@@ -92,7 +92,7 @@ int vboxglGlobalInit()
  */
 int vboxglGlobalUnload()
 {
-    Log(("vboxglGlobalUnload"));
+    Log(("vboxglGlobalUnload\n"));
 
     if (glXDisplay)
         XCloseDisplay(glXDisplay);

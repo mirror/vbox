@@ -438,7 +438,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
 
                             if (pCtx->pfnChangeDisplaySettingsEx != 0)
                             {
-                                Log(("VBoxDisplayThread : Detected W2K or later."));
+                                Log(("VBoxDisplayThread : Detected W2K or later.\n"));
 
                                 /* W2K or later. */
                                 if (!ResizeDisplayDevice(displayChangeRequest.display,

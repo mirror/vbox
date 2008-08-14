@@ -102,7 +102,7 @@ int CollectorSolaris::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64
         if (strcmp(ksp->ks_module, "cpu_stat") == 0) {
             if (kstat_read(mKC, ksp, &cpu_stats) == -1)
             {
-                Log(("kstat_read() -> %d", errno));
+                Log(("kstat_read() -> %d\n", errno));
                 return VERR_INTERNAL_ERROR;
             }
             ++cpus;
@@ -149,14 +149,14 @@ int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, ui
         }
         else
         {
-            Log(("read() -> %d", errno));
+            Log(("read() -> %d\n", errno));
             rc = VERR_FILE_IO_ERROR;
         }
         close(h);
     }
     else
     {
-        Log(("open() -> %d", errno));
+        Log(("open() -> %d\n", errno));
         rc = VERR_ACCESS_DENIED;
     }
 
@@ -179,18 +179,18 @@ int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
 
     if (kstat_read(mKC, mSysPages, 0) == -1)
     {
-        Log(("kstat_read(sys_pages) -> %d", errno));
+        Log(("kstat_read(sys_pages) -> %d\n", errno));
         return VERR_INTERNAL_ERROR;
     }
     if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, "freemem")) == 0)
     {
-        Log(("kstat_data_lookup(freemem) -> %d", errno));
+        Log(("kstat_data_lookup(freemem) -> %d\n", errno));
         return VERR_INTERNAL_ERROR;
     }
     *available = kn->value.ul * (PAGE_SIZE/1024);
     if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, "physmem")) == 0)
     {
-        Log(("kstat_data_lookup(physmem) -> %d", errno));
+        Log(("kstat_data_lookup(physmem) -> %d\n", errno));
         return VERR_INTERNAL_ERROR;
     }
     *total = kn->value.ul * (PAGE_SIZE/1024);
@@ -220,14 +220,14 @@ int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
         }
         else
         {
-            Log(("read() -> %d", errno));
+            Log(("read() -> %d\n", errno));
             rc = VERR_FILE_IO_ERROR;
         }
         close(h);
     }
     else
     {
-        Log(("open() -> %d", errno));
+        Log(("open() -> %d\n", errno));
         rc = VERR_ACCESS_DENIED;
     }
 

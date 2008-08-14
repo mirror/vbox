@@ -67,7 +67,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
        a missing API function "UnhookWinEvent" used by the dynamically loaded VBoxHook.dll below */
     if (OSinfo.dwMajorVersion <= 4)         /* Windows NT 4.0 or older */
     {
-        Log(("VBoxSeamlessInit: Windows NT 4.0 or older not supported!"));
+        Log(("VBoxSeamlessInit: Windows NT 4.0 or older not supported!\n"));
         return VERR_NOT_SUPPORTED;
     }
 
