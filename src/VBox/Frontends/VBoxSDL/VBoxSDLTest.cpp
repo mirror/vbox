@@ -103,7 +103,7 @@ main(int argc, char **argv)
 #ifdef RT_OS_WINDOWS
     _putenv("SDL_VIDEO_WINDOW_POS=0,0");
 #else
-    setenv("SDL_VIDEO_WINDOW_POS", "0,0", 1);
+    RTEnvSet("SDL_VIDEO_WINDOW_POS", "0,0");
 #endif
 
     rc = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE);
