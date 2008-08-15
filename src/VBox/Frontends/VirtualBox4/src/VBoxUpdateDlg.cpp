@@ -298,8 +298,9 @@ void VBoxUpdateDlg::search()
     QString version = vboxGlobal().virtualBox().GetVersion();
     package = QUrl::toPercentEncoding (package);
     version = QUrl::toPercentEncoding (version);
-    QString body = QString ("platform=%1&version=%2")
-                   .arg (package).arg (version);
+    QString body;
+    body += QString ("platform=%1").arg (package);
+    body += QString ("&version=%1").arg (version);
 
     QStringList header ("User-Agent");
     header << QString ("VirtualBox %1 <%2>")
