@@ -31,7 +31,7 @@ ifdef VBOX_WITH_PYTHON
 # bridge for XPCOM to invoke Python
 XPCOM_PYTHON = VBox-xpcom-python
 # bridge for Python to invoke XPCOM
-XPCOM_PYMOD  = VBox-xpcom-pymod
+XPCOM_PYMOD = VBox-xpcom-pymod
 PYTHON_LIBS  = python2.5
 endif
 
@@ -1262,7 +1262,7 @@ VBoxXPCOMIPCC_LIBS = \
 # Python XPCOM bindings
 VBox-xpcom-python_TEMPLATE = XPCOM
 VBox-xpcom-python_NOINST = 1
-VBox-xpcom-python_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API
+VBox-xpcom-python_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
 VBox-xpcom-python_INCS += /usr/include/python2.5
 VBox-xpcom-python_SOURCES =                         	\
 	python/src/dllmain.cpp     			\
@@ -1288,12 +1288,42 @@ VBox-xpcom-python_SOURCES =                         	\
         python/src/VariantUtils.cpp			\
 
 
-# Python Clienr Module
+# Python Client Module
+PY_DEST=$(VBOX_PATH_SDK)/bindings/com/python/xpcom
+
+
 VBox-xpcom-pymod_TEMPLATE = XPCOM
-VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API
+# sucky name, maybe rename?
+VBox-xpcom-pymod_NAME = _xpcom
+VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
 VBox-xpcom-pymod_INCS += /usr/include/python2.5 python/src
 VBox-xpcom-pymod_SOURCES =                         	\
-	python/src/module/_xpcom.cpp                    
+	python/src/module/_xpcom.cpp               
+VBox-xpcom-pymod_LDFLAGS += $(PATH_BIN)/VBoxXPCOM.so
+VBox-xpcom-pymod_DEPS =       		\
+        $(PY_DEST)/components.py   	\
+	$(PY_DEST)/file.py         	\
+	$(PY_DEST)/__init__.py     	\
+	$(PY_DEST)/nsError.py      	\
+	$(PY_DEST)/primitives.py   	\
+	$(PY_DEST)/xpcom_consts.py 	\
+        $(PY_DEST)/xpt.py          	\
+	$(PY_DEST)/client/__init__.py 	\
+	$(PY_DEST)/server/__init__.py   \
+	$(PY_DEST)/server/enumerator.py \
+	$(PY_DEST)/server/factory.py  	\
+	$(PY_DEST)/server/loader.py     \
+	$(PY_DEST)/server/module.py     \
+	$(PY_DEST)/server/policy.py	
+
+$(PY_DEST):
+	$(QUIET)$(MKDIR) -p $@
+	$(QUIET)$(MKDIR) $@/client
+	$(QUIET)$(MKDIR) $@/server
+
+$(PY_DEST)/%.py: $(PATH_SUB_CURRENT)/python/%.py $(PY_DEST)
+	$(QUIET)$(CP) $< $@
+
 
 # DCONNECT daemon executable
 VBoxXPCOMIPCD_TEMPLATE = XPCOMIPCEXE
