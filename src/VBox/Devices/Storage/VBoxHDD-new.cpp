@@ -69,6 +69,9 @@ typedef struct VDIMAGE
     RTLDRMOD            hPlugin;
     /** Function pointers for the various backend methods. */
     PCVBOXHDDBACKEND    Backend;
+
+    /** Pointer to list of VD interfaces, per-image. */
+    PVDINTERFACE        pVDIfsImage;
 } VDIMAGE, *PVDIMAGE;
 
 /**
@@ -107,8 +110,8 @@ struct VBOXHDD
     /** Cached LCHS geometry for this disk. */
     PDMMEDIAGEOMETRY    LCHSGeometry;
 
-    /** List of interfaces the caller supports. */
-    PVDINTERFACE        pInterfaces;
+    /** Pointer to list of VD interfaces, per-disk. */
+    PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the common interface structure for error reporting. */
     PVDINTERFACE        pInterfaceError;
     /** Pointer to the error interface we use if available. */
@@ -784,15 +787,15 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
  * No image files are opened.
  *
  * @returns VBox status code.
- * @param   pInterfaces     Pointer to the first supported interface.
+ * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pInterfaces, PVBOXHDD *ppDisk)
+VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = NULL;
 
-    LogFlowFunc(("pInterfaces=%#p\n", pInterfaces));
+    LogFlowFunc(("pVDIfsDisk=%#p\n", pVDIfsDisk));
     do
     {
         /* Check arguments. */
@@ -814,11 +817,11 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pInterfaces, PVBOXHDD *ppDisk)
             pDisk->LCHSGeometry.cCylinders = 0;
             pDisk->LCHSGeometry.cHeads     = 0;
             pDisk->LCHSGeometry.cSectors   = 0;
-            pDisk->pInterfaces  = pInterfaces;
+            pDisk->pVDIfsDisk  = pVDIfsDisk;
             pDisk->pInterfaceError = NULL;
             pDisk->pInterfaceErrorCallbacks = NULL;
 
-            pDisk->pInterfaceError = VDInterfaceGet(pInterfaces, VDINTERFACETYPE_ERROR);
+            pDisk->pInterfaceError = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ERROR);
             if (pDisk->pInterfaceError)
                 pDisk->pInterfaceErrorCallbacks = VDGetInterfaceError(pDisk->pInterfaceError);
             *ppDisk = pDisk;
@@ -1042,15 +1045,17 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
  * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the image file to open.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  */
 VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
-                         const char *pszFilename, unsigned uOpenFlags)
+                         const char *pszFilename, unsigned uOpenFlags,
+                         PVDINTERFACE pVDIfsImage)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x\n",
-                 pDisk, pszBackend, pszFilename, uOpenFlags));
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x\n, pVDIfsImage=%#p",
+                 pDisk, pszBackend, pszFilename, uOpenFlags, pVDIfsImage));
     do
     {
         /* sanity check */
@@ -1081,6 +1086,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             rc = VERR_NO_MEMORY;
             break;
         }
+        pImage->pVDIfsImage = pVDIfsImage;
 
         rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
         if (RT_FAILURE(rc))
@@ -1095,7 +1101,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
         rc = pImage->Backend->pfnOpen(pImage->pszFilename,
                                       uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
-                                      pDisk->pInterfaces,
+                                      pDisk->pVDIfsDisk,
+                                      pImage->pVDIfsImage,
                                       &pImage->pvBackendData);
         /* If the open in read-write mode failed, retry in read-only mode. */
         if (RT_FAILURE(rc))
@@ -1109,7 +1116,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                 rc = pImage->Backend->pfnOpen(pImage->pszFilename,
                                                 (uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME)
                                                | VD_OPEN_FLAGS_READONLY,
-                                               pDisk->pInterfaces,
+                                               pDisk->pVDIfsDisk,
+                                               pImage->pVDIfsImage,
                                                &pImage->pvBackendData);
             if (RT_FAILURE(rc))
             {
@@ -1260,8 +1268,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pLCHSGeometry   Pointer to logical disk geometry <= (1024,255,63). Not NULL.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszFilename, VDIMAGETYPE enmType,
@@ -1270,18 +1278,26 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                PCPDMMEDIAGEOMETRY pLCHSGeometry,
                                PCRTUUID pUuid, unsigned uOpenFlags,
-                               PFNVMPROGRESS pfnProgress, void *pvUser)
+                               PVDINTERFACE pVDIfsImage,
+                               PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
     RTUUID uuid;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" enmType=%#x cbSize=%llu uImageFlags=%#x pszComment=\"%s\" PCHS=%u/%u/%u LCHS=%u/%u/%u Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" enmType=%#x cbSize=%llu uImageFlags=%#x pszComment=\"%s\" PCHS=%u/%u/%u LCHS=%u/%u/%u Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
                  pDisk, pszBackend, pszFilename, enmType, cbSize, uImageFlags, pszComment,
                  pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
                  pPCHSGeometry->cSectors, pLCHSGeometry->cCylinders,
                  pLCHSGeometry->cHeads, pLCHSGeometry->cSectors, pUuid,
-                 uOpenFlags, pfnProgress, pvUser));
+                 uOpenFlags, pVDIfsImage, pVDIfsOperation));
+
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+
     do
     {
         /* sanity check */
@@ -1348,6 +1364,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
             rc = VERR_NO_MEMORY;
             break;
         }
+        pImage->pVDIfsImage = pVDIfsImage;
 
         rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
         if (RT_FAILURE(rc))
@@ -1378,8 +1395,10 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                         uImageFlags, pszComment, pPCHSGeometry,
                                         pLCHSGeometry, pUuid,
                                         uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
-                                        pfnProgress, pvUser, 0, 99,
-                                        pDisk->pInterfaces,
+                                        0, 99,
+                                        pDisk->pVDIfsDisk,
+                                        pImage->pVDIfsImage,
+                                        pVDIfsOperation,
                                         &pImage->pvBackendData);
 
         if (RT_SUCCESS(rc))
@@ -1463,8 +1482,9 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
     }
 
-    if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
+    if (RT_SUCCESS(rc) && pCbProgress->pfnProgress)
+        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
+                                 pIfProgress->pvUser);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1482,22 +1502,29 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszFilename, unsigned uImageFlags,
                                const char *pszComment, PCRTUUID pUuid,
-                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
-                               void *pvUser)
+                               unsigned uOpenFlags, PVDINTERFACE pVDIfsImage,
+                               PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
     RTUUID uuid;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p\n",
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
                  pDisk, pszBackend, pszFilename, uImageFlags, pszComment, pUuid, uOpenFlags,
-                 pfnProgress, pvUser));
+                 pVDIfsImage, pVDIfsOperation));
+
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+
     do
     {
         /* sanity check */
@@ -1572,8 +1599,10 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                         &pDisk->PCHSGeometry,
                                         &pDisk->LCHSGeometry, pUuid,
                                         uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
-                                        pfnProgress, pvUser, 0, 99,
-                                        pDisk->pInterfaces,
+                                        0, 99,
+                                        pDisk->pVDIfsDisk,
+                                        pImage->pVDIfsImage,
+                                        pVDIfsOperation,
                                         &pImage->pvBackendData);
 
         if (RT_SUCCESS(rc) && pDisk->cImages != 0)
@@ -1648,8 +1677,9 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         }
     }
 
-    if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
+    if (RT_SUCCESS(rc) && pCbProgress->pfnProgress)
+        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
+                                 pIfProgress->pvUser);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1666,18 +1696,23 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pDisk           Pointer to HDD container.
  * @param   nImageFrom      Name of the image file to merge from.
  * @param   nImageTo        Name of the image file to merge to.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
-                          unsigned nImageTo, PFNVMPROGRESS pfnProgress,
-                          void *pvUser)
+                          unsigned nImageTo, PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
     void *pvBuf = NULL;
 
-    LogFlowFunc(("pDisk=%#p nImageFrom=%u nImageTo=%u pfnProgress=%#p pvUser=%#p\n",
-                 pDisk, nImageFrom, nImageTo, pfnProgress, pvUser));
+    LogFlowFunc(("pDisk=%#p nImageFrom=%u nImageTo=%u pVDIfsOperation=%#p\n",
+                 pDisk, nImageFrom, nImageTo, pVDIfsOperation));
+
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+
     do
     {
         /* sanity check */
@@ -1767,6 +1802,15 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
                 uOffset += cbThisRead;
                 cbRemaining -= cbThisRead;
+
+                if (pCbProgress->pfnProgress)
+                {
+                    rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
+                                                  uOffset * 99 / cbSize,
+                                                  pIfProgress->pvUser);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
             } while (uOffset < cbSize);
         }
         else
@@ -1807,6 +1851,15 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
                 uOffset += cbThisRead;
                 cbRemaining -= cbThisRead;
+
+                if (pCbProgress->pfnProgress)
+                {
+                    rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
+                                                  uOffset * 99 / cbSize,
+                                                  pIfProgress->pvUser);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
             } while (uOffset < cbSize);
         }
 
@@ -1867,8 +1920,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
-    if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL */, 100, pvUser);
+    if (RT_SUCCESS(rc) && pCbProgress->pfnProgress)
+        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
+                                 pIfProgress->pvUser);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1893,20 +1947,37 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
+ *                          destination image.
+ * @param   pDstVDIfsOperation Pointer to the per-image VD interface list,
+ *                          for the destination image.
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          const char *pszBackend, const char *pszFilename,
                          bool fMoveByRename, uint64_t cbSize,
-                         PFNVMPROGRESS pfnProgress, void *pvUser)
+                         PVDINTERFACE pVDIfsOperation,
+                         PVDINTERFACE pDstVDIfsImage,
+                         PVDINTERFACE pDstVDIfsOperation)
 {
     int rc, rc2 = VINF_SUCCESS;
     void *pvBuf = NULL;
     PVDIMAGE pImageTo = NULL;
 
-    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu pfnProgress=%#p pvUser=%#p\n",
-                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, pfnProgress, pvUser));
+    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
+                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
+
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+
+    PVDINTERFACE pDstIfProgress = VDInterfaceGet(pDstVDIfsOperation,
+                                                 VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pDstCbProgress = NULL;
+    if (pDstIfProgress)
+        pDstCbProgress = VDGetInterfaceProgress(pDstIfProgress);
 
     do {
         /* Check arguments. */
@@ -1941,7 +2012,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 break;
 
             /* Open the source image in the destination container. */
-            rc = VDOpen(pDiskTo, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags);
+            rc = VDOpen(pDiskTo, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags, pDstVDIfsImage);
             if (RT_FAILURE(rc))
                 goto movefail;
 
@@ -1967,7 +2038,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             break;
 movefail:
             /* In case of failure, re-open the source image in the source container. */
-            rc2 = VDOpen(pDiskFrom, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags);
+            rc2 = VDOpen(pDiskFrom, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags, pImageFrom->pVDIfsImage);
             if (RT_FAILURE(rc2))
                 /** @todo Uncertain what to do on error. If this happens pImageFrom and pImageTo are both closed. */
                 rc = rc2;
@@ -2052,11 +2123,20 @@ movefail:
 
             uOffset += cbThisRead;
             cbRemaining -= cbThisRead;
-            if (pfnProgress)
+
+            if (pCbProgress->pfnProgress)
             {
-                rc = pfnProgress(NULL /* WARNING! pVM=NULL  */,
-                                 ((cbSize - cbRemaining) * 100) / cbSize,
-                                 pvUser);
+                rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
+                                              uOffset * 99 / cbSize,
+                                              pIfProgress->pvUser);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            if (pDstCbProgress->pfnProgress)
+            {
+                rc = pDstCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
+                                                 uOffset * 99 / cbSize,
+                                                 pDstIfProgress->pvUser);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -2107,8 +2187,15 @@ movefail:
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
-    if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL  */, 100, pvUser);
+    if (RT_SUCCESS(rc))
+    {
+        if (pCbProgress->pfnProgress)
+            pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
+                                     pIfProgress->pvUser);
+        if (pDstCbProgress->pfnProgress)
+            pDstCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
+                                        pDstIfProgress->pvUser);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

@@ -77,11 +77,13 @@ typedef struct VBOXHDDBACKEND
      * @param   pszFilename     Name of the image file to open. Guaranteed to be available and
      *                          unchanged during the lifetime of this image.
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
-     * @param   pInterfaces     Pointer to the first element of supported interfaces of the caller.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   ppvBackendData  Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(int, pfnOpen, (const char *pszFilename, unsigned uOpenFlags,
-                                        PVDINTERFACE pInterfaces, void **ppvBackendData));
+                                        PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                        void **ppvBackendData));
 
     /**
      * Create a disk image.
@@ -97,14 +99,24 @@ typedef struct VBOXHDDBACKEND
      * @param   pLCHSGeometry   Logical drive geometry CHS <= (1024,255,63).
      * @param   pUuid           New UUID of the image. Not NULL.
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
-     * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
-     * @param   pvUser          User argument for the progress callback.
      * @param   uPercentStart   Starting value for progress percentage.
      * @param   uPercentSpan    Span for varying progress percentage.
-     * @param   pInterfaces     Pointer to the supported interfaces of the caller.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+     * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
      * @param   ppvBackendData  Opaque state data for this image.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType, uint64_t cbSize, unsigned uImageFlags, const char *pszComment, PCPDMMEDIAGEOMETRY pPCHSGeometry, PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid, unsigned uOpenFlags, PFNVMPROGRESS pfnProgress, void *pvUser, unsigned uPercentStart, unsigned uPercentSpan, PVDINTERFACE pInterfaces, void **ppvBackendData));
+    DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, VDIMAGETYPE enmType,
+                                          uint64_t cbSize, unsigned uImageFlags,
+                                          const char *pszComment,
+                                          PCPDMMEDIAGEOMETRY pPCHSGeometry,
+                                          PCPDMMEDIAGEOMETRY pLCHSGeometry,
+                                          PCRTUUID pUuid, unsigned uOpenFlags,
+                                          unsigned uPercentStart, unsigned uPercentSpan,
+                                          PVDINTERFACE pVDIfsDisk,
+                                          PVDINTERFACE pVDIfsImage,
+                                          PVDINTERFACE pVDIfsOperation,
+                                          void **ppvBackendData));
 
     /**
      * Rename a disk image. Only needs to work as long as the operating
@@ -143,7 +155,8 @@ typedef struct VBOXHDDBACKEND
      * @param   cbRead          Number of bytes to read.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvBackendData, uint64_t off, void *pvBuf, size_t cbRead, size_t *pcbActuallyRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvBackendData, uint64_t off, void *pvBuf,
+                                        size_t cbRead, size_t *pcbActuallyRead));
 
     /**
      * Write data to a disk image. The area written never crosses a block
@@ -173,7 +186,10 @@ typedef struct VBOXHDDBACKEND
      * @param   fWrite          Flags which affect write behavior. Combination
      *                          of the VD_WRITE_* flags.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t off, const void *pvBuf, size_t cbWrite, size_t *pcbWriteProcess, size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite));
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvBackendData, uint64_t off,
+                                         const void *pvBuf, size_t cbWrite,
+                                         size_t *pcbWriteProcess, size_t *pcbPreRead,
+                                         size_t *pcbPostRead, unsigned fWrite));
 
     /**
      * Flush data to disk.

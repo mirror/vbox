@@ -236,13 +236,13 @@ typedef enum VDINTERFACETYPE
 {
     /** First valid interface. */
     VDINTERFACETYPE_FIRST = 0,
-    /** Interface to pass error message to upper layers. */
+    /** Interface to pass error message to upper layers. Per-disk. */
     VDINTERFACETYPE_ERROR = VDINTERFACETYPE_FIRST,
-    /** Interface for asynchronous I/O operations. */
+    /** Interface for asynchronous I/O operations. Per-disk. */
     VDINTERFACETYPE_ASYNCIO,
-    /** Interface for progress notification. */
+    /** Interface for progress notification. Per-operation. */
     VDINTERFACETYPE_PROGRESS,
-    /** Interface for configuration information. */
+    /** Interface for configuration information. Per-image. */
     VDINTERFACETYPE_CONFIG,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
@@ -273,6 +273,12 @@ typedef const PVDINTERFACE PCVDINTERFACE;
 
 /**
  * Helper functions to handle interface lists.
+ *
+ * @note These interface lists are used consistently to pass per-disk,
+ * per-image and/or per-operation callbacks. Those three purposes are strictly
+ * separate. See the individual interface declarations for what context they
+ * apply to. The caller is responsible for ensuring that the lifetime of the
+ * interface descriptors is appropriate for the category of interface.
  */
 
 /**
@@ -348,6 +354,9 @@ DECLINLINE(int) VDInterfaceAdd(PVDINTERFACE pInterface, const char *pszName,
 
 /**
  * Interface to deliver error messages to upper layers.
+ *
+ * Per disk interface. Optional, but think twice if you want to miss the
+ * opportunity of reporting better human-readable error messages.
  */
 typedef struct VDINTERFACEERROR
 {
@@ -400,7 +409,7 @@ DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(PVDINTERFACE pInterface)
 /** 
  * Completion callback which is called by the interface owner
  * to inform the backend that a task finished.
- * 
+ *
  * @return  VBox status code.
  * @param   pvUser          Opaque user data which is passed on request submission.
  */
@@ -411,6 +420,8 @@ typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 
 /**
  * Support interface for asynchronous I/O
+ *
+ * Per-disk. Optional.
  */
 typedef struct VDINTERFACEASYNCIO
 {
@@ -550,6 +561,8 @@ DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(PVDINTERFACE pInterface)
 
 /**
  * Progress notification interface
+ * 
+ * Per-operation. Optional.
  */
 typedef struct VDINTERFACEPROGRESS
 {
@@ -613,6 +626,9 @@ typedef VDCFGVALUETYPE *PVDCFGVALUETYPE;
 
 /**
  * Configuration information interface
+ *
+ * Per-image. Optional for most backends, but mandatory for images which do
+ * not operate on files (including standard block or character devices).
  */
 typedef struct VDINTERFACECONFIG
 {
@@ -901,10 +917,10 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
  * No image files are opened.
  *
  * @return  VBox status code.
- * @param   pVDIfs          Pointer to the VD interface list.
+ * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfs, PVBOXHDD *ppDisk);
+VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk);
 
 /**
  * Destroys HDD container.
@@ -942,9 +958,11 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat);
  * @param   pszBackend      Name of the image file backend to use.
  * @param   pszFilename     Name of the image file to open.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  */
 VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
-                         const char *pszFilename, unsigned uOpenFlags);
+                         const char *pszFilename, unsigned uOpenFlags,
+                         PVDINTERFACE pVDIfsImage);
 
 /**
  * Creates and opens a new base image file.
@@ -961,8 +979,8 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pLCHSGeometry   Pointer to logical disk geometry <= (1024,255,63). Not NULL.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszFilename, VDIMAGETYPE enmType,
@@ -971,7 +989,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                PCPDMMEDIAGEOMETRY pPCHSGeometry,
                                PCPDMMEDIAGEOMETRY pLCHSGeometry,
                                PCRTUUID pUuid, unsigned uOpenFlags,
-                               PFNVMPROGRESS pfnProgress, void *pvUser);
+                               PVDINTERFACE pVDIfsImage,
+                               PVDINTERFACE pVDIfsOperation);
 
 /**
  * Creates and opens a new differencing image file in HDD container.
@@ -985,14 +1004,14 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszFilename, unsigned uImageFlags,
                                const char *pszComment, PCRTUUID pUuid,
-                               unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
-                               void *pvUser);
+                               unsigned uOpenFlags, PVDINTERFACE pVDIfsImage,
+                               PVDINTERFACE pVDIfsOperation);
 
 /**
  * Merges two images (not necessarily with direct parent/child relationship).
@@ -1005,12 +1024,10 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
  * @param   pDisk           Pointer to HDD container.
  * @param   nImageFrom      Name of the image file to merge from.
  * @param   nImageTo        Name of the image file to merge to.
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  */
 VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
-                          unsigned nImageTo, PFNVMPROGRESS pfnProgress,
-                          void *pvUser);
+                          unsigned nImageTo, PVDINTERFACE pVDIfsOperation);
 
 /**
  * Copies an image from one HDD container to another.
@@ -1031,13 +1048,18 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
- * @param   pfnProgress     Progress callback. Optional. NULL if not to be used.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
+ *                          destination image.
+ * @param   pDstVDIfsOperation Pointer to the per-operation VD interface list,
+ *                          for the destination operation.
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          const char *pszBackend, const char *pszFilename,
                          bool fMoveByRename, uint64_t cbSize,
-                         PFNVMPROGRESS pfnProgress, void *pvUser);
+                         PVDINTERFACE pVDIfsOperation,
+                         PVDINTERFACE pDstVDIfsImage,
+                         PVDINTERFACE pDstVDIfsOperation);
 
 /**
  * Closes the last opened image file in HDD container.

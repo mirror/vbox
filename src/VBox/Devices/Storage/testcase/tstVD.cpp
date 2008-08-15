@@ -474,7 +474,8 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
         RTStrFree(pszFormat);
         CHECK("VDGetFormat()");
 
-        rc = VDOpen(pVD, pszBackend, pszBaseFilename, VD_OPEN_FLAGS_NORMAL);
+        rc = VDOpen(pVD, pszBackend, pszBaseFilename, VD_OPEN_FLAGS_NORMAL,
+                    NULL);
         CHECK("VDOpen()");
     }
     else
@@ -519,7 +520,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     VDDumpImages(pVD);
 
     RTPrintf("Merging diff into base..\n");
-    rc = VDMerge(pVD, (unsigned)-1, 0, NULL, NULL);
+    rc = VDMerge(pVD, VD_LAST_IMAGE, 0, NULL);
     CHECK("VDMerge()");
 
     mergeSegments(paBaseSegments, paDiffSegments, paMergeSegments, _1M);
@@ -609,7 +610,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
 
     VDCloseAll(pVD);
 
-    rc = VDOpen(pVD, pszBackend, pszFilename, VD_OPEN_FLAGS_NORMAL);
+    rc = VDOpen(pVD, pszBackend, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
     CHECK("VDOpen()");
     rc = readAndCompareSegments(pVD, pvBuf, paSegments);
     CHECK("readAndCompareSegments()");

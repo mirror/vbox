@@ -358,8 +358,8 @@ typedef struct VMDKIMAGE
     /** Descriptor file if applicable. */
     PVMDKFILE        pFile;
 
-    /** Pointer to list of VD interfaces. */
-    PVDINTERFACE     pVDIfs;
+    /** Pointer to the per-disk VD interface list. */
+    PVDINTERFACE     pVDIfsDisk;
 
     /** Error interface. */
     PVDINTERFACE      pInterfaceError;
@@ -2329,12 +2329,12 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     pImage->uOpenFlags = uOpenFlags;
 
     /* Try to get error interface. */
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Try to get async I/O interface. */
-    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ASYNCIO);
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
     if (pImage->pInterfaceAsyncIO)
         pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
 
@@ -3127,12 +3127,12 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
     pImage->uImageFlags = uImageFlags;
 
     /* Try to get error interface. */
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ERROR);
+    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Try to get async I/O interface. */
-    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfs, VDINTERFACETYPE_ASYNCIO);
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
     if (pImage->pInterfaceAsyncIO)
         pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
 
@@ -3699,11 +3699,7 @@ static int vmdkCheckIfValid(const char *pszFilename)
     pImage->pFiles = NULL;
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
-    pImage->pInterfaceError = NULL;
-    pImage->pInterfaceErrorCallbacks = NULL;
-    pImage->pInterfaceAsyncIO = NULL;
-    pImage->pInterfaceAsyncIOCallbacks = NULL;
-    pImage->pVDIfs = NULL;
+    pImage->pVDIfsDisk = NULL;
     /** @todo speed up this test open (VD_OPEN_FLAGS_INFO) by skipping as
      * much as possible in vmdkOpenImage. */
     rc = vmdkOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
@@ -3716,9 +3712,10 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
-                    PVDINTERFACE pVDIfs, void **ppBackendData)
+                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                    void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x ppBackendData=%#p\n", pszFilename, uOpenFlags, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc;
     PVMDKIMAGE pImage;
 
@@ -3751,11 +3748,7 @@ static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->pFiles = NULL;
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
-    pImage->pInterfaceError = NULL;
-    pImage->pInterfaceErrorCallbacks = NULL;
-    pImage->pInterfaceAsyncIO = NULL;
-    pImage->pInterfaceAsyncIOCallbacks = NULL;
-    pImage->pVDIfs = NULL;
+    pImage->pVDIfsDisk = pVDIfsDisk;
 
     rc = vmdkOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
@@ -3772,14 +3765,26 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
                       const char *pszComment,
                       PCPDMMEDIAGEOMETRY pPCHSGeometry,
                       PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
-                      unsigned uOpenFlags, PFNVMPROGRESS pfnProgress,
-                      void *pvUser, unsigned uPercentStart,
-                      unsigned uPercentSpan, PVDINTERFACE pVDIfs,
+                      unsigned uOpenFlags, unsigned uPercentStart,
+                      unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
+                      PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation,
                       void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x pfnProgress=%#p pvUser=%#p uPercentStart=%u uPercentSpan=%u pVDIfs=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, pfnProgress, pvUser, uPercentStart, uPercentSpan, pVDIfs, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" enmType=%d cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p", pszFilename, enmType, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
     int rc;
     PVMDKIMAGE pImage;
+
+    PFNVMPROGRESS pfnProgress = NULL;
+    void *pvUser = NULL;
+    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
+                                              VDINTERFACETYPE_PROGRESS);
+    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    if (pIfProgress)
+    {
+        pCbProgress = VDGetInterfaceProgress(pIfProgress);
+        pfnProgress = pCbProgress->pfnProgress;
+        pvUser = pIfProgress->pvUser;
+    }
 
     /* Check open flags. All valid flags are supported. */
     if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
@@ -3816,11 +3821,7 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
     pImage->pFiles = NULL;
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
-    pImage->pInterfaceError = NULL;
-    pImage->pInterfaceErrorCallbacks = NULL;
-    pImage->pInterfaceAsyncIO = NULL;
-    pImage->pInterfaceAsyncIOCallbacks = NULL;
-    pImage->pVDIfs = NULL;
+    pImage->pVDIfsDisk = NULL;
     pImage->cbDescAlloc = VMDK_SECTOR2BYTE(20);
     pImage->pDescData = (char *)RTMemAllocZ(pImage->cbDescAlloc);
     if (!pImage->pDescData)
