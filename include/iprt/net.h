@@ -193,7 +193,7 @@ typedef RTNETIPV4 const *PCRTNETIPV4;
 /** @name IPv4 Protocol Numbers
  * @{ */
 /** IPv4: ICMP */
-#define RTNETIPV4_PROT_ICMP     (0)
+#define RTNETIPV4_PROT_ICMP     (1)
 /** IPv4: TCP */
 #define RTNETIPV4_PROT_TCP      (6)
 /** IPv4: UDP */
