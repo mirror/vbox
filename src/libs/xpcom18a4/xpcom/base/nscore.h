@@ -156,6 +156,10 @@
 #define NS_DEFCALL
 #endif
 
+/* XXX: nike, maybe fix */
+#define NS_EXPORT_STATIC_MEMBER_(type) type
+#define NS_IMPORT_STATIC_MEMBER_(type) type
+
 #ifdef NS_WIN32
 
 #define NS_IMPORT __declspec(dllimport)
