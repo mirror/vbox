@@ -63,7 +63,7 @@ typedef struct
 
     OVERLAPPED              overlappedRead;
     DWORD                   dwNumberOfBytesRead;
-    uint8_t                 readBuffer[4096];
+    uint8_t                 readBuffer[16384];
 
     TAP_VERSION             tapVersion;
 
