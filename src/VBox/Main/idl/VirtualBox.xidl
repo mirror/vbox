@@ -1770,14 +1770,25 @@
 
     <method name="getGuestOSType">
       <desc>
-        Obtain guest os type information from guest os typeid, such as
-        "win31" or "ubuntu". Use <link to="IMachine::OSTypeId"/> attribute 
-        to figure out typeid of particular guest VM. See 
-        <link to="IVirtualBox::guestOSTypes"/> for the list of available 
-        OS types.
+        Returns an object describing the specified guest OS type.
+
+        The requested guest OS type is specified using a string which is a
+        mnemonic identifier of the guest operating system, such as
+        <tt>"win31"</tt> or <tt>"ubuntu"</tt>. The guest OS type ID of a
+        particular virtual machine can be read or set using the
+        <link to="IMachine::OSTypeId"/> attribute.
+
+        The <link to="IVirtualBox::guestOSTypes"/> collection contains all
+        available guest OS type objects. Each object has an
+        <link to="IGuestOSType::id"/> attribute which contains an identifier of
+        the guest OS this object describes.
       </desc>
-      <param name="id" type="wstring" dir="in"/>
-      <param name="type" type="IGuestOSType" dir="return"/>
+      <param name="id" type="wstring" dir="in">
+        <desc>Guest OS type ID string.</desc>
+      </param>
+      <param name="type" type="IGuestOSType" dir="return">
+        <desc>Guest OS type object.</desc>
+      </param>
     </method>
 
     <method name="createSharedFolder">
@@ -4724,10 +4735,8 @@
       <desc>
 
         This method is equivalent to
-        doing <link to="#discardSnapshot">discardSnapshot</link>
-        (<link
-        to="IMachine::currentSnapshot">currentSnapshot</link>.<link
-        to="ISnapshot::id">id()</link>, ...) followed by
+        doing <link to="IConsole::discardSnapshot">discardSnapshot</link>
+        (currentSnapshot.id(), progress) followed by
         <link to="#discardCurrentState()"/>.
 
         As a result, the machine will be fully restored from the
@@ -4740,8 +4749,8 @@
         machine will be restored from its last snapshot, before discarding
         it. This differs from performing a single
         <link to="#discardSnapshot()"/> call (note that no
-        <link to="#discardCurrentState()"/> will be possible after it) to the
-        effect that the latter will preserve the current state instead of
+        <link to="#discardCurrentState()"/> will be possible after it)
+        to the effect that the latter will preserve the current state instead of
         discarding it.
 
         Unless explicitly mentioned otherwise, all remarks and
@@ -4755,8 +4764,9 @@
         <note>
           If the machine state is <link to="MachineState::Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          discarded (as if <link to="IConsole::discardSavedState()"/> were
-          called).</note>
+          discarded (as if <link to="#discardSavedState()"/> were
+          called).
+        </note>
 
         <note>
           This method is more efficient than calling two above
@@ -8719,17 +8729,18 @@
       <desc>
         Flag whether this serial port acts as a server (creates a new pipe on
         the host) or as a client (uses the existing pipe). This attribute is
-        used only when #hostMode is PortMode::HostPipePort.
+        used only when <link to="#hostMode"/> is PortMode::HostPipe.
       </desc>
     </attribute>
 
     <attribute name="path" type="wstring">
       <desc>
-        Path to the serial port's pipe on the host when #hostMode is
-        PortMode::HostPipePort, or the host serial device name when #hostMode
-        is PortMode::HostDevicePort. In either of the above cases, setting a
-        @c null or an empty string as the attribute's value will result into
-        an error. Otherwise, the value of this property is ignored.
+        Path to the serial port's pipe on the host when <link to="#hostMode"/> is
+        PortMode::HostPipe, or the host serial device name when
+        <link to="#hostMode"/> is PortMode::HostDevice. In either of the above
+        cases, setting a @c  null or an empty string as the attribute's value
+        will result into an error. Otherwise, the value of this property is
+        ignored.
       </desc>
     </attribute>
 
@@ -9390,7 +9401,7 @@
         states #Busy and #Available are applicable only to the Linux version of
         the product. This also means that (<link
         to="IConsole::attachUSBDevice()"/>) can only succeed on Win32 if
-        the device state is #USBDeviceHeld.
+        the device state is #Held.
       </note>
 
       <see>IHostUSBDevice, IHostUSBDeviceFilter</see>
