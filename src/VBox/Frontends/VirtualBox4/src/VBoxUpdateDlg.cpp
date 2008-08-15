@@ -294,8 +294,13 @@ void VBoxUpdateDlg::search()
     connect (mNetfw, SIGNAL (netError (const QString&)),
              SLOT (onNetError (const QString&)));
 
-    QString body = QString ("platform=%1")
-                   .arg (vboxGlobal().virtualBox().GetPackageType());
+    QString package = vboxGlobal().virtualBox().GetPackageType();
+    QString version = vboxGlobal().virtualBox().GetVersion();
+    package = QUrl::toPercentEncoding (package);
+    version = QUrl::toPercentEncoding (version);
+    QString body = QString ("platform=%1&version=%2")
+                   .arg (package).arg (version);
+
     QStringList header ("User-Agent");
     header << QString ("VirtualBox %1 <%2>")
               .arg (vboxGlobal().virtualBox().GetVersion())
