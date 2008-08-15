@@ -930,7 +930,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
             pR0Logger->fCreated = true;
         }
 
-        rc = RTLogCopyGroupsAndFlags(&pR0Logger->Logger, NULL /* default */, RTLOGFLAGS_BUFFERED, 0);
+        rc = RTLogCopyGroupsAndFlags(&pR0Logger->Logger, NULL /* default */, pVM->vmm.s.pLoggerHC->fFlags, RTLOGFLAGS_BUFFERED);
         AssertRC(rc);
     }
 
