@@ -76,6 +76,20 @@ typedef struct DRVVDASYNCTASK
 } DRVVDASYNCTASK, *PDRVVDASYNCTASK;
 
 /**
+ * VBox disk container, image information, private part.
+ */
+
+typedef struct VBOXIMAGE
+{
+    /** Pointer to next image. */
+    struct VBOXIMAGE    *pNext;
+    /** Pointer to list of VD interfaces. Per-image. */
+    PVDINTERFACE       pVDIfsImage;
+    /** Common structure for the configuration information interface. */
+    VDINTERFACE        VDIConfig;
+} VBOXIMAGE, *PVBOXIMAGE;
+
+/**
  * VBox disk container media main structure, private part.
  */
 typedef struct VBOXDISK
@@ -88,8 +102,8 @@ typedef struct VBOXDISK
     PPDMDRVINS         pDrvIns;
     /** Flag whether suspend has changed image open mode to read only. */
     bool               fTempReadOnly;
-    /** Pointer to list of VD interfaces. */
-    PVDINTERFACE       pVDIfs;
+    /** Pointer to list of VD interfaces. Per-disk. */
+    PVDINTERFACE       pVDIfsDisk;
     /** Common structure for the supported error interface. */
     VDINTERFACE        VDIError;
     /** Callback table for error interface. */
@@ -98,8 +112,6 @@ typedef struct VBOXDISK
     VDINTERFACE        VDIAsyncIO;
     /** Callback table for async I/O interface. */
     VDINTERFACEASYNCIO VDIAsyncIOCallbacks;
-    /** Common structure for the configuration information interface. */
-    VDINTERFACE        VDIConfig;
     /** Callback table for the configuration information interface. */
     VDINTERFACECONFIG  VDIConfigCallbacks;
     /** Flag whether opened disk suppports async I/O operations. */
@@ -114,6 +126,8 @@ typedef struct VBOXDISK
     PDMITRANSPORTASYNCPORT   ITransportAsyncPort;
     /** Our cache to reduce allocation overhead. */
     PRTOBJCACHE              pCache;
+    /** Pointer to the list of data we need to keep per image. */
+    PVBOXIMAGE               pImages;
 } VBOXDISK, *PVBOXDISK;
 
 /*******************************************************************************
@@ -125,6 +139,40 @@ static void drvvdErrorCallback(void *pvUser, int rc, RT_SRC_POS_DECL,
 {
     PPDMDRVINS pDrvIns = (PPDMDRVINS)pvUser;
     pDrvIns->pDrvHlp->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+}
+
+
+/**
+ * Internal: allocate new image descriptor and put it in the list
+ */
+static PVBOXIMAGE drvvdNewImage(PVBOXDISK pThis)
+{
+    AssertPtr(pThis);
+    PVBOXIMAGE pImage = (PVBOXIMAGE)RTMemAllocZ(sizeof(VBOXIMAGE));
+    if (pImage)
+    {
+        pImage->pVDIfsImage = NULL;
+        PVBOXIMAGE *pp = &pThis->pImages;
+        while (*pp != NULL)
+            pp = &(*pp)->pNext;
+        *pp = pImage;
+        pImage->pNext = NULL;
+    }
+
+    return pImage;
+}
+
+/**
+ * Internal: free the list of images descriptors.
+ */
+static void drvvdFreeImages(PVBOXDISK pThis)
+{
+    while (pThis->pImages != NULL)
+    {
+        PVBOXIMAGE p = pThis->pImages;
+        pThis->pImages = pThis->pImages->pNext;
+        RTMemFree(p);
+    }
 }
 
 /*******************************************************************************
@@ -536,14 +584,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->ITransportAsyncPort.pfnTaskCompleteNotify  = drvvdTasksCompleteNotify;
 
     /* Initialize supported VD interfaces. */
-    pThis->pVDIfs = NULL;
+    pThis->pVDIfsDisk = NULL;
 
     pThis->VDIErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     pThis->VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     pThis->VDIErrorCallbacks.pfnError     = drvvdErrorCallback;
 
     rc = VDInterfaceAdd(&pThis->VDIError, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
-                        &pThis->VDIErrorCallbacks, pDrvIns, &pThis->pVDIfs);
+                        &pThis->VDIErrorCallbacks, pDrvIns, &pThis->pVDIfsDisk);
     AssertRC(rc);
 
     pThis->VDIAsyncIOCallbacks.cbSize                  = sizeof(VDINTERFACEASYNCIO);
@@ -558,9 +606,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->VDIAsyncIOCallbacks.pfnTasksSubmit          = drvvdAsyncIOTasksSubmit;
 
     rc = VDInterfaceAdd(&pThis->VDIAsyncIO, "DrvVD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
-                        &pThis->VDIAsyncIOCallbacks, pThis, &pThis->pVDIfs);
+                        &pThis->VDIAsyncIOCallbacks, pThis, &pThis->pVDIfsDisk);
     AssertRC(rc);
 
+    /* This is just prepared here, the actual interface is per-image, so it's
+     * added later. No need to have separate callback tables. */
     pThis->VDIConfigCallbacks.cbSize                = sizeof(VDINTERFACECONFIG);
     pThis->VDIConfigCallbacks.enmInterface          = VDINTERFACETYPE_CONFIG;
     pThis->VDIConfigCallbacks.pfnAreValuesValid     = drvvdCfgAreValuesValid;
@@ -572,13 +622,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->VDIConfigCallbacks.pfnQueryStringDef     = drvvdCfgQueryStringDef;
     pThis->VDIConfigCallbacks.pfnQueryBytes         = drvvdCfgQueryBytes;
 
-    /** @todo TEMP! this isn't really correct - this needs to be made per image,
-     * as CFGM needs access to the right configuration node for each image.
-     * At the moment this is harmless, as iSCSI can only be used as a base
-     * image, and no other backend uses the private data for these callbacks. */
-    rc = VDInterfaceAdd(&pThis->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
-                        &pThis->VDIConfigCallbacks, NULL /**< @todo TEMP */, &pThis->pVDIfs);
-    AssertRC(rc);
+    /* List of images is empty now. */
+    pThis->pImages = NULL;
 
     /* Try to attach async media port interface above.*/
     pThis->pDrvMediaAsyncPort = (PPDMIMEDIAASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MEDIA_ASYNC_PORT);
@@ -661,14 +706,20 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      */
     if (RT_SUCCESS(rc))
     {
-        /** @todo TEMP! later the iSCSI config callbacks won't be included here */
-        rc = VDCreate(&pThis->VDIConfig, &pThis->pDisk);
+        rc = VDCreate(pThis->pVDIfsDisk, &pThis->pDisk);
         /* Error message is already set correctly. */
     }
 
-    unsigned cImages = iLevel;
     while (pCurNode && RT_SUCCESS(rc))
     {
+        /* Allocate per-image data. */
+        PVBOXIMAGE pImage = drvvdNewImage(pThis);
+        if (!pImage)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
         /*
          * Read the image configuration.
          */
@@ -716,12 +767,10 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             fHonorZeroWrites = false;
         }
 
-        /** @todo TEMP! Later this needs to be done for each image. */
-        if (iLevel == cImages)
-        {
-            PCFGMNODE pCfg = CFGMR3GetChild(pCurNode, "VDConfig");
-            pThis->VDIConfig.pvUser = pCfg; /**< @todo TEMP! */
-        }
+        PCFGMNODE pCfg = CFGMR3GetChild(pCurNode, "VDConfig");
+        rc = VDInterfaceAdd(&pImage->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
+                            &pThis->VDIConfigCallbacks, pCfg, &pImage->pVDIfsImage);
+        AssertRC(rc);
 
         /*
          * Open the image.
@@ -737,12 +786,12 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             uOpenFlags |= VD_OPEN_FLAGS_ASYNC_IO;
 
         /** Try to open backend in asyc I/O mode first. */
-        rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags);
+        rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
         if (rc == VERR_NOT_SUPPORTED)
         {
             /* Seems async I/O is not supported by the backend, open in normal mode. */
             uOpenFlags &= ~VD_OPEN_FLAGS_ASYNC_IO;
-            rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags);
+            rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
         }
 
         if (RT_SUCCESS(rc))
@@ -773,6 +822,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             VDDestroy(pThis->pDisk);
             pThis->pDisk = NULL;
         }
+        drvvdFreeImages(pThis);
         if (VALID_PTR(pszName))
             MMR3HeapFree(pszName);
         if (VALID_PTR(pszFormat))
@@ -840,6 +890,7 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlow(("%s:\n", __FUNCTION__));
 
+    drvvdFreeImages(pThis);
     if (pThis->pCache)
     {
         rc = RTCacheDestroy(pThis->pCache);

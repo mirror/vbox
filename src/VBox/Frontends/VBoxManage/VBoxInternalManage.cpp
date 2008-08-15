@@ -1276,14 +1276,14 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
     }
     else
     {
-        vrc = VDOpen(pDisk, "VMDK", Utf8Str(src).raw(), VD_OPEN_FLAGS_NORMAL);
+        vrc = VDOpen(pDisk, "VMDK", Utf8Str(src).raw(), VD_OPEN_FLAGS_NORMAL, NULL);
         if (VBOX_FAILURE(vrc))
         {
             RTPrintf("Error while opening the source image: %Vrc\n", vrc);
         }
         else
         {
-            vrc = VDCopy(pDisk, 0, pDisk, "VMDK", Utf8Str(dst).raw(), true, 0, NULL, NULL);
+            vrc = VDCopy(pDisk, 0, pDisk, "VMDK", Utf8Str(dst).raw(), true, 0, NULL, NULL, NULL);
             if (VBOX_FAILURE(vrc))
             {
                 RTPrintf("Error while renaming the image: %Vrc\n", vrc);
@@ -1388,7 +1388,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
         srcformat = pszFormat;
         RTStrFree(pszFormat);
     }
-    vrc = VDOpen(pDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY);
+    vrc = VDOpen(pDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY, NULL);
     if (VBOX_FAILURE(vrc))
     {
         VDCloseAll(pDisk);

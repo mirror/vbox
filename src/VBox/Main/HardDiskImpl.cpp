@@ -4085,7 +4085,7 @@ HRESULT HVMDKImage::queryInformation (Bstr *aAccessError)
         /// yield a null UUID. It cannot be added to a VMDK opened readonly,
         /// obviously. This of course changes locking behavior, but for now
         /// this is acceptable. A better solution needs to be found later.
-        vrc = VDOpen (mContainer, "VMDK", filePath, VD_OPEN_FLAGS_NORMAL);
+        vrc = VDOpen (mContainer, "VMDK", filePath, VD_OPEN_FLAGS_NORMAL, NULL);
         if (VBOX_FAILURE (vrc))
             break;
 
@@ -4931,7 +4931,7 @@ HRESULT HCustomHardDisk::queryInformation (Bstr *aAccessError)
     {
         Guid id, parentId;
 
-        vrc = VDOpen (mContainer, Utf8Str (mFormat), location, VD_OPEN_FLAGS_INFO);
+        vrc = VDOpen (mContainer, Utf8Str (mFormat), location, VD_OPEN_FLAGS_INFO, NULL);
         if (VBOX_FAILURE (vrc))
             break;
 
@@ -5819,7 +5819,7 @@ HRESULT HVHDImage::queryInformation (Bstr *aAccessError)
         /// yield a null UUID. It cannot be added to a VHD opened readonly,
         /// obviously. This of course changes locking behavior, but for now
         /// this is acceptable. A better solution needs to be found later.
-        vrc = VDOpen (mContainer, "VHD", filePath, VD_OPEN_FLAGS_NORMAL);
+        vrc = VDOpen (mContainer, "VHD", filePath, VD_OPEN_FLAGS_NORMAL, NULL);
         if (VBOX_FAILURE (vrc))
             break;
 
