@@ -1364,6 +1364,14 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     }
     else
     {    
+        /* Access verification first; we currently can't recover properly from traps inside this instruction */
+        rc = PGMVerifyAccess(pVM, GCDest, cTransfers * cbSize, X86_PTE_RW | X86_PTE_US);
+        if (rc != VINF_SUCCESS)
+        {
+            Log(("STOSWD will generate a trap -> recompiler, rc=%d\n", rc));
+            return VERR_EM_INTERPRETER;
+        }
+
         /* REP case */
         while (cTransfers)
         {
