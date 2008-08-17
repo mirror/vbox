@@ -47,6 +47,8 @@
 # include <unistd.h>
 # include <sys/poll.h>
 # include <sys/ioctl.h>
+# include <pthread.h>
+# include <sys/signal.h>
 
 /*
  * TIOCM_LOOP is not defined in the above header files for some reason but in asm/termios.h.
@@ -766,6 +768,12 @@ ioctl_error:
     return VINF_SUCCESS;
 }
 
+static void drvHostSerialSignalHandler(int iSignal)
+{
+    /* Do nothing. */
+    return;
+}
+
 /**
  * Unblock the monitor thread so it can respond to a state change.
  * We need to execute this code exactly once during initialization.
@@ -778,19 +786,32 @@ ioctl_error:
 static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
-    int rc;
-    unsigned int uSerialLineFlags;
-    unsigned int uSerialLineStatus;
-    unsigned int uIoctl;
+    int rc = VINF_SUCCESS;
+#if 0
+     unsigned int uSerialLineFlags;
+     unsigned int uSerialLineStatus;
+     unsigned int uIoctl;
+#endif
 
     /*
      * Linux is a bit difficult as the thread is sleeping in an ioctl call.
      * So there is no way to have a wakeup pipe.
-     * Thatswhy we set the serial device into loopback mode and change one of the
-     * modem control bits.
-     * This should make the ioctl call return.
+     *
+     * 1. Thatswhy we set the serial device into loopback mode and change one of the
+     *    modem control bits.
+     *    This should make the ioctl call return.
+     *
+     * 2. We still got reports about long shutdown times. It may bepossible
+     *    that the loopback mode is not implemented on all devices.
+     *    The next possible solution is to close the device file to make the ioctl
+     *    return with EBADF and be able to suspend the thread.
+     *
+     * 3. The second approach doesn't work too, the ioctl doesn't return.
+     *    But it seems that the ioctl is interruptible (return code in errno is EINTR).
+     *    We get the native thread id of the PDM thread and send a signal with pthread_kill().
      */
 
+#if 0 /* Disabled because it does not work for all. */
     /* Get current status of control lines. */
     rc = ioctl(pThis->DeviceFile, TIOCMGET, &uSerialLineStatus);
     if (rc < 0)
@@ -831,6 +852,44 @@ ioctl_error:
     PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
                                 N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
                                 pThis->pszDevicePath, RTErrConvertFromErrno(errno));
+#endif
+
+#if 0
+    /* Close file to make ioctl return. */
+    RTFileClose(pData->DeviceFile);
+    /* Open again to make use after suspend possible again. */
+    rc = RTFileOpen(&pData->DeviceFile, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
+    AssertMsg(RT_SUCCESS(rc), ("Opening device file again failed rc=%Vrc\n", rc));
+
+    if (RT_FAILURE(rc))
+        PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+                                    N_("Opening failed for serial host device '%s' (%Vrc). The device will not work"),
+                                    pData->pszDevicePath, rc);
+#endif
+
+    pthread_t        ThreadId = (pthread_t)RTThreadGetNative(pThread->Thread);
+    struct sigaction SigactionThread;
+    struct sigaction SigactionThreadOld;
+
+    memset(&SigactionThread, 0, sizeof(struct sigaction));
+    sigemptyset(&SigactionThread.sa_mask);
+    SigactionThread.sa_flags = 0;
+    SigactionThread.sa_handler = drvHostSerialSignalHandler;
+    rc = sigaction(SIGUSR2, &SigactionThread, &SigactionThreadOld);
+    if (rc < 0)
+        PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long."),
+                                    pThis->pszDevicePath, RTErrConvertFromErrno(errno));
+
+    rc = pthread_kill(ThreadId, SIGUSR2);
+    if (rc < 0)
+        PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long."),
+                                    pThis->pszDevicePath, RTErrConvertFromErrno(rc));
+
+    /* Restore old action handler. */
+    sigaction(SIGUSR2, &SigactionThreadOld, NULL);
+
     return VINF_SUCCESS;
 }
 #endif /* RT_OS_LINUX */
