@@ -1102,7 +1102,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
  	        pPdptDst->a[iPdpte].n.u1Present = 0;
         PGM_INVL_GUEST_TLBS();
     }
-    Assert((PdpeSrc.u & X86_PDPE_PG_MASK) == pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte]);
+    AssertMsg(pVM->pgm.s.fMappingsFixed || (PdpeSrc.u & X86_PDPE_PG_MASK) == pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte], ("%VGp vs %VGp (mon)\n", (PdpeSrc.u & X86_PDPE_PG_MASK), pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte]));
 # endif
 
 
