@@ -220,7 +220,7 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
     , mSelf (aSelf)
     , mNetfw (0)
     , mTimeout (new QTimer (this))
-    , mUrl ("http://innotek.de/query.php")
+    , mUrl ("http://update.virtualbox.org/query.php")
     , mForceRun (aForceRun)
     , mSuicide (false)
 {
