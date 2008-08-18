@@ -171,16 +171,15 @@ $(MODULE)-y  := $(OBJS)
 ifeq ($(KERNELRELEASE),)
  KFLAGS += $(foreach inc,$(KERN_INCL),\
              $(if $(wildcard $(inc)/linux/utsrelease.h),\
-               $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
-                            then echo yes; fi),-DKERNEL_FC6,),) \
-             $(if $(wildcard $(inc)/linux/utsrelease.h),\
-               $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
-                            then echo yes; fi),-DKERNEL_FC6,),))
+               $(if $(shell grep '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h; \
+			    grep '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h; \
+			    grep '"2.6.18.*cc4.*"' $(inc)/linux/utsrelease.h),\
+		-DKERNEL_FC6,),))
 else
- KFLAGS += $(if $(shell if echo "$(KERNELRELEASE)"|grep -q '2.6.18.*fc6.*';\
-                        then echo yes; fi),-DKERNEL_FC6,) \
-           $(if $(shell if echo "$(KERNELRELEASE)"|grep -q '2.6.18.*el5.*';\
-                        then echo yes; fi),-DKERNEL_FC6,)
+ KFLAGS += $(if $(shell echo "$(KERNELRELEASE)"|grep '2.6.18.*fc6.*';\
+			echo "$(KERNELRELEASE)"|grep '2.6.18.*el5.*';\
+			echo "$(KERNELRELEASE)"|grep '2.6.18.*cc4.*'),\
+		-DKERNEL_FC6,)
 endif
 
 # build defs
