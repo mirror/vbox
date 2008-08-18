@@ -1323,20 +1323,21 @@ unsigned ParseImmZ(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     }
     else
     {
-        pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
-        /* 64 bits op mode means zero extend to 64 bits. */
+        /* 64 bits op mode means *sign* extend to 64 bits. */
         if (pCpu->opmode == CPUMODE_64BIT)
         {
+            pParam->parval = (uint64_t)(int32_t)DISReadDWord(pCpu, lpszCodeBlock);           
             pParam->flags |= USE_IMMEDIATE64;
             pParam->size   = sizeof(uint64_t);
+            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%VX64h", pParam->parval);
         }
         else
         {
+            pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_IMMEDIATE32;
             pParam->size   = sizeof(uint32_t);
+            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
         }
-
-        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%08Xh", (uint32_t)pParam->parval);
         return sizeof(uint32_t);
     }
 }

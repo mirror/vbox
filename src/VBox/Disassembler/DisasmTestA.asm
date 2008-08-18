@@ -70,6 +70,14 @@ ENDPROC   TestProc
 BITS 64
 align 16
 BEGINPROC TestProc64
+      db 48h
+      db 0c7h
+      db 42h
+      db 18h
+      db 20h
+      db 3eh
+      db 23h
+      db 80h
       call qword [r8+10h]
       ; test
       db 48h
