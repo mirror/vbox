@@ -904,8 +904,8 @@ static int iomInterpretBT(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault,
 {
     Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
-    uint64_t    uBit;
-    uint64_t    uData1;
+    uint64_t    uBit = 0;
+    uint64_t    uData1 = 0;
     int         rc;
     unsigned    cb;
 
@@ -1026,7 +1026,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     STAM_PROFILE_START(&pVM->iom.s.StatGCMMIOHandler, a);
-    Log3(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv eip=%VGv\n",
+    Log(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv eip=%VGv\n",
           GCPhysFault, (uint32_t)uErrorCode, pvFault, pCtxCore->rip));
 
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
