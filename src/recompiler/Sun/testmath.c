@@ -17,12 +17,9 @@
 # include <math.h>
 #endif
 
-#if defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3) || (__GNUC__ > 4))
-  /* gcc starting with version 4.3 uses the MPFR library which results in more accurate results */
-# define SIN180 -0.8011526357338304777463731115L
-#else
-# define SIN180 -0.801152635733830477871L
-#endif
+/* gcc starting with version 4.3 uses the MPFR library which results in more accurate results. gcc-4.3.1 seems to emit the less accurate result. So just allow both results. */
+#define SIN180a -0.8011526357338304777463731115L
+#define SIN180b -0.801152635733830477871L
 
 static void bitch(const char *pszWhat, const long double *plrdResult, const long double *plrdExpected)
 {
@@ -53,7 +50,7 @@ static void bitchl(const char *pszWhat, long lResult, long lExpected)
 
 extern int testsin(void)
 {
-    return sinl(180.0L) == SIN180;
+    return sinl(180.0L) == SIN180a || sinl(180.0L) == SIN180b;
 }
 
 extern int testremainder(void)
@@ -291,7 +288,21 @@ extern int testmath(void)
     CHECK(sinl(1.0L),  0.84147098480789650664L);
     lrd = 180.0L;
     CHECK(sinl(lrd), -0.801152635733830477871L);
+#if 0
     CHECK(sinl(180.0L), SIN180);
+#else
+    lrdExpect = SIN180a;
+    lrdResult = sinl(180.0L);
+    if (lrdResult != lrdExpect)
+    {
+        lrdExpect = SIN180b;
+        if (lrdResult != lrdExpect)
+        {
+            bitch("sinl(180.0L)",  &lrdResult, &lrdExpect);
+            cErrors++;
+        }
+    }
+#endif
     CHECKLL(testsin(), 1);
 
     CHECK(sqrtl(1.0L), 1.0);
