@@ -385,6 +385,7 @@ check_gcc()
           log "  ** distributions and call configure with parameter --with-gcc-compat=gcc34."
           fail really
         fi
+        log_success "found version $cc_ver + compat version $cc_compat_ver"
       # gcc-4.0 is allowed for Darwin only
       elif [ $cc_maj -lt 3 \
              -o \( $cc_maj -eq 3 -a $cc_min -lt 2 \) \
