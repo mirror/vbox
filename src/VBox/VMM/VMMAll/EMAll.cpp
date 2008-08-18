@@ -1482,11 +1482,11 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 
             if (VBOX_FAILURE(rc))
             {
-                Log(("%s %VGv=%08x eax=%08x %08x -> emulation failed due to page fault!\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar));
+                Log(("%s %VGv eax=%08x %08x -> emulation failed due to page fault!\n", pszInstr, pParam1, pRegFrame->eax, valpar));
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VRv=%08x eax=%08x %08x ZF=%d\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("%s %VRv eax=%08x %08x ZF=%d\n", pszInstr, pParam1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1599,9 +1599,6 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
         {
             RTRCPTR pParam1;
             uint32_t eflags;
-#ifdef VBOX_STRICT
-            uint32_t valpar1 = 0; /// @todo used uninitialized...
-#endif
 
             AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
             switch(param1.type)
@@ -1629,11 +1626,11 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 
             if (VBOX_FAILURE(rc))
             {
-                Log(("XAdd %VGv=%08x reg=%08x -> emulation failed due to page fault!\n", pParam1, valpar1, *pParamReg2));
+                Log(("XAdd %VGv reg=%08x -> emulation failed due to page fault!\n", pParam1, *pParamReg2));
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("XAdd %VGv=%08x reg=%08x ZF=%d\n", pParam1, valpar1, *pParamReg2, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("XAdd %VGv reg=%08x ZF=%d\n", pParam1, *pParamReg2, !!(eflags & X86_EFL_ZF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
