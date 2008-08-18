@@ -716,8 +716,8 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
      * Get the operands.
      */
     unsigned cb = 0;
-    uint64_t uData1;
-    uint64_t uData2;
+    uint64_t uData1 = 0;
+    uint64_t uData2 = 0;
     int rc;
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
         /* cmp reg, [MMIO]. */
@@ -764,9 +764,9 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
  */
 static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange, PFN_EMULATE_PARAM3 pfnEmulate)
 {
-    unsigned    cb = 0;
-    uint64_t    uData1;
-    uint64_t    uData2;
+    unsigned    cb     = 0;
+    uint64_t    uData1 = 0;
+    uint64_t    uData2 = 0;
     bool        fAndWrite;
     int         rc;
 
@@ -853,9 +853,9 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 {
     Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
-    unsigned    cb = 0;
-    uint64_t    uData1;
-    uint64_t    uData2;
+    unsigned    cb     = 0;
+    uint64_t    uData1 = 0;
+    uint64_t    uData2 = 0;
     int         rc;
 
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
@@ -904,10 +904,10 @@ static int iomInterpretBT(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault,
 {
     Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
-    uint64_t    uBit = 0;
+    uint64_t    uBit   = 0;
     uint64_t    uData1 = 0;
+    unsigned    cb     = 0;
     int         rc;
-    unsigned    cb;
 
     if (iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uBit, &cb))
     {
@@ -958,9 +958,9 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         return VINF_IOM_HC_MMIO_READ_WRITE;
 
     int         rc;
-    unsigned    cb = 0;
-    uint64_t    uData1;
-    uint64_t    uData2;
+    unsigned    cb     = 0;
+    uint64_t    uData1 = 0;
+    uint64_t    uData2 = 0;
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
     {
         /* xchg reg, [MMIO]. */
