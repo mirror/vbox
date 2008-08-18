@@ -410,7 +410,12 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
      * First time only.
      */
     if (!g_szrtProgramPath[0])
-    {
+    {      
+        char* envPath = getenv("VBOX_PROGRAM_PATH");
+        if (envPath) 
+        {
+          strncpy(g_szrtProgramPath, envPath, sizeof(g_szrtProgramPath));
+        } else {
         /*
          * Linux have no API for obtaining the executable path, but provides a symbolic link
          * in the proc file system. Note that readlink is one of the weirdest Unix apis around.
@@ -451,7 +456,7 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
 #else
 # error needs porting.
 #endif
-
+        }
         /*
          * Convert to UTF-8 and strip of the filename.
          */
