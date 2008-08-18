@@ -1482,19 +1482,19 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                                    bool withLinks, bool aDoRefresh)
 {
     static const char *sTableTpl =
-        "<table border=0 cellspacing=0 cellpadding=0>%1</table>";
+        "<table border=0 cellspacing=4 cellpadding=0>%1</table>";
     static const char *sSectionHrefTpl =
-        "<tr><td width=26 rowspan=%1 align=left><img src='%2'></td>"
+        "<tr><td width=22 rowspan=%1 align=left><img src='%2'></td>"
             "<td colspan=2><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
             "%5"
         "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionBoldTpl =
-        "<tr><td width=26 rowspan=%1 align=left><img src='%2'></td>"
+        "<tr><td width=22 rowspan=%1 align=left><img src='%2'></td>"
             "<td colspan=2><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
             "%5"
         "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionItemTpl =
-        "<tr><td width=30%><nobr>%1</nobr></td><td>%2</td></tr>";
+        "<tr><td width=40%><nobr>%1</nobr></td><td>%2</td></tr>";
 
     static QString sGeneralBasicHrefTpl, sGeneralBasicBoldTpl;
     static QString sGeneralFullHrefTpl, sGeneralFullBoldTpl;
@@ -1530,16 +1530,17 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             + QString (sSectionItemTpl).arg (tr ("ACPI", "details report"), "%6")
             + QString (sSectionItemTpl).arg (tr ("IO APIC", "details report"), "%7")
             + QString (sSectionItemTpl).arg (tr ("VT-x/AMD-V", "details report"), "%8")
-            + QString (sSectionItemTpl).arg (tr ("PAE/NX", "details report"), "%9");
+            + QString (sSectionItemTpl).arg (tr ("Nested Paging", "details report"), "%9")
+            + QString (sSectionItemTpl).arg (tr ("PAE/NX", "details report"), "%10");
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
-            .arg (2 + 9) /* rows */
+            .arg (2 + 10) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
         sGeneralFullBoldTpl = QString (sSectionBoldTpl)
-            .arg (2 + 9) /* rows */
+            .arg (2 + 10) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
@@ -1647,10 +1648,14 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             : tr ("Disabled", "details report (IO APIC)");
 
         /* VT-x/AMD-V */
-        CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
         QString virt = m.GetHWVirtExEnabled() == KTSBool_True ?
                        tr ("Enabled", "details report (VT-x/AMD-V)") :
                        tr ("Disabled", "details report (VT-x/AMD-V)");
+
+        /* Nested paging status */
+        QString nested = m.GetHWVirtExNestedPagingEnabled() ?
+                       tr ("Enabled", "details report (Nested Paging)") :
+                       tr ("Disabled", "details report (Nested Paging)");
 
         /* PAE/NX */
         QString pae = m.GetPAEEnabled()
@@ -1668,6 +1673,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 .arg (acpi)
                 .arg (ioapic)
                 .arg (virt)
+                .arg (nested)
                 .arg (pae)
             + hardDisks;
 

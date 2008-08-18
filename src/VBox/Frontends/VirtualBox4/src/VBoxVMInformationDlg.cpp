@@ -77,8 +77,13 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     /* Setup browsers */
     mDetailsText->viewport()->setAutoFillBackground (false);
     mStatisticText->viewport()->setAutoFillBackground (false);
+
+    /* For further tuning can be used setViewportMargins method of
+     * QRichTextEdit extended class: */
+#if 0
     mDetailsText->setViewportMargins (5, 5, 5, 5);
     mStatisticText->setViewportMargins (5, 5, 5, 5);
+#endif
 
     /* Setup handlers */
     connect (mInfoStack, SIGNAL (currentChanged (int)),
@@ -143,8 +148,8 @@ void VBoxVMInformationDlg::retranslateUi()
     updateDetails();
 
     AssertReturnVoid (!mSession.isNull());
- 	CMachine machine = mSession.GetMachine();
- 	AssertReturnVoid (!machine.isNull());
+    CMachine machine = mSession.GetMachine();
+    AssertReturnVoid (!machine.isNull());
 
     /* Setup a dialog caption */
     setWindowTitle (tr ("%1 - Session Information").arg (machine.GetName()));
@@ -386,9 +391,9 @@ void VBoxVMInformationDlg::refreshStatistics()
     if (mSession.isNull())
         return;
 
-    QString table = "<table border=0 cellspacing=0 cellpadding=0>%1</table>";
-    QString hdrRow = "<tr><td width=26 align=left><img src='%1'></td><td colspan=3><b>%2</b></td></tr>";
-    QString bdyRow = "<tr><td></td><td><nobr>%1</nobr></td><td colspan=2><nobr>%2</nobr></td></tr>";
+    QString table = "<table border=0 cellspacing=4 cellpadding=0>%1</table>";
+    QString hdrRow = "<tr><td width=22 align=left><img src='%1'></td><td colspan=3><nobr><b>%2</b></nobr></td></tr>";
+    QString bdyRow = "<tr><td></td><td width=50%><nobr>%1</nobr></td><td colspan=2><nobr>%2</nobr></td></tr>";
     QString paragraph = "<tr><td colspan=4></td></tr>";
     QString result;
 
@@ -406,6 +411,9 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString virt = console.GetDebugger().GetHWVirtExEnabled() ?
             VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
+        QString nested = console.GetDebugger().GetHWVirtExNestedPagingEnabled() ?
+            VBoxGlobal::tr ("Enabled", "details report (Nested Paging)") :
+            VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
         QString addInfo = console.GetGuest().GetAdditionsVersion();
         uint addVersion = addInfo.toUInt();
         QString addVerisonStr = !addInfo.isNull() ?
@@ -419,8 +427,9 @@ void VBoxVMInformationDlg::refreshStatistics()
             osType = vboxGlobal().vmGuestOSTypeDescription (osType);
 
         result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
-        result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution) +
-                  bdyRow.arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report")).arg (virt);
+        result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution);
+        result += bdyRow.arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report")).arg (virt);
+        result += bdyRow.arg (VBoxGlobal::tr ("Nested Paging", "details report")).arg (nested);
         result += bdyRow.arg (tr ("Guest Additions")).arg (addVerisonStr);
         result += bdyRow.arg (tr ("Guest OS Type")).arg (osType);
         result += paragraph;
@@ -544,8 +553,8 @@ QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
 
 QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo)
 {
-    QString body = "<tr><td></td><td><nobr>%1</nobr></td><td align=right>"
-                   "<nobr>%2%3</nobr></td><td></td></tr>";
+    QString body = "<tr><td></td><td width=50%><nobr>%1</nobr></td><td colspan=2 align=right>"
+                   "<nobr>%2%3</nobr></td></tr>";
     QString result;
 
     if (mLinksMap.contains (aBelongsTo))
