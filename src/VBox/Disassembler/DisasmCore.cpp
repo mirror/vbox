@@ -440,11 +440,11 @@ unsigned ParseInstruction(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, PDISCPUSTATE pC
     if (pCpu->mode == CPUMODE_64BIT)
     {
         if (pOp->optype & OPTYPE_FORCED_64_OP_SIZE)
-            pCpu->opsize = CPUMODE_64BIT;
+            pCpu->opmode = CPUMODE_64BIT;
         else
         if (    (pOp->optype & OPTYPE_DEFAULT_64_OP_SIZE)
             &&  !(pCpu->prefix & PREFIX_OPSIZE))
-            pCpu->opsize = CPUMODE_64BIT;
+            pCpu->opmode = CPUMODE_64BIT;
     }
 
     if (pOp->idxParse1 != IDX_ParseNop)
@@ -514,11 +514,11 @@ unsigned ParseEscFP(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     {
         /* Note: redundant, but just in case this ever changes */
         if (fpop->optype & OPTYPE_FORCED_64_OP_SIZE)
-            pCpu->opsize = CPUMODE_64BIT;
+            pCpu->opmode = CPUMODE_64BIT;
         else
         if (    (fpop->optype & OPTYPE_DEFAULT_64_OP_SIZE)
             &&  !(pCpu->prefix & PREFIX_OPSIZE))
-            pCpu->opsize = CPUMODE_64BIT;
+            pCpu->opmode = CPUMODE_64BIT;
     }
 
     // Little hack to make sure the ModRM byte is included in the returned size
