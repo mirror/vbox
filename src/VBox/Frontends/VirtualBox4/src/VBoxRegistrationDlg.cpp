@@ -199,7 +199,7 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
     : QIWithRetranslateUI2<QIAbstractWizard> (aParent, aFlags)
     , mSelf (aSelf)
     , mWvalReg (0)
-    , mUrl ("http://www.innotek.de/register762.php")
+    , mUrl ("http://registration.virtualbox.org/register762.php")
     , mKey (QString::null)
     , mTimeout (new QTimer (this))
     , mHandshake (true)
