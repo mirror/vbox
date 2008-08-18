@@ -71,6 +71,7 @@ int main(int argc, char **argv)
         printf("\n64 bits disassembly\n");
         pInstr = (RTUINTPTR)TestProc64;
 
+////__debugbreak();
         for (int i=0;i<50;i++)
         {
             unsigned    cb;
