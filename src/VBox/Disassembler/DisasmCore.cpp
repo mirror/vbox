@@ -403,22 +403,6 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
 
     return VINF_SUCCESS;
 }
-/**************************************************************************************/
-/* Correct the operand size if the instruction is marked as forced or default 64 bits */
-/**************************************************************************************/
-static void CheckForceFlags(PDISCPUSTATE pCpu, PCOPCODE pOp)
-{
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    if (pCpu->mode == CPUMODE_64BIT)
-    {
-        if (pOp->optype & OPTYPE_FORCED_64_OP_SIZE)
-            pCpu->opsize = CPUMODE_64BIT;
-        else
-        if (    (pOp->optype & OPTYPE_DEFAULT_64_OP_SIZE)
-            &&  !(pCpu->prefix & PREFIX_OPSIZE))
-            pCpu->opsize = CPUMODE_64BIT;
-    }
-}
 //*****************************************************************************
 //*****************************************************************************
 unsigned ParseInstruction(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, PDISCPUSTATE pCpu)
@@ -453,7 +437,15 @@ unsigned ParseInstruction(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, PDISCPUSTATE pC
     pCpu->param3.param = pOp->param3;
 
     /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
+    if (pCpu->mode == CPUMODE_64BIT)
+    {
+        if (pOp->optype & OPTYPE_FORCED_64_OP_SIZE)
+            pCpu->opsize = CPUMODE_64BIT;
+        else
+        if (    (pOp->optype & OPTYPE_DEFAULT_64_OP_SIZE)
+            &&  !(pCpu->prefix & PREFIX_OPSIZE))
+            pCpu->opsize = CPUMODE_64BIT;
+    }
 
     if (pOp->idxParse1 != IDX_ParseNop)
     {
@@ -1799,9 +1791,6 @@ unsigned ParseNopPause(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     else
         pOp = &g_aMapX86_NopPause[0]; /* NOP */
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     size += ParseInstruction(pu8CodeBlock, pOp, pCpu);
     return size;
 }
@@ -1819,9 +1808,6 @@ unsigned ParseImmGrpl(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     size += ParseInstruction(lpszCodeBlock, pOp, pCpu);
 
@@ -1858,9 +1844,6 @@ unsigned ParseShiftGrp2(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPa
 
     pOp = (PCOPCODE)&g_aMapX86_Group2[idx+reg];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -1881,9 +1864,6 @@ unsigned ParseGrp3(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     pOp = (PCOPCODE)&g_aMapX86_Group3[idx+reg];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -1903,9 +1883,6 @@ unsigned ParseGrp4(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     pOp = (PCOPCODE)&g_aMapX86_Group4[reg];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -1924,9 +1901,6 @@ unsigned ParseGrp5(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     reg   = MODRM_REG(modrm);
 
     pOp = (PCOPCODE)&g_aMapX86_Group5[reg];
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -1962,9 +1936,6 @@ unsigned Parse3DNow(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     pOp = (PCOPCODE)&g_aTwoByteMapX86_3DNow[opcode];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
     {
@@ -1989,9 +1960,6 @@ unsigned ParseGrp6(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     reg   = MODRM_REG(modrm);
 
     pOp = (PCOPCODE)&g_aMapX86_Group6[reg];
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2020,9 +1988,6 @@ unsigned ParseGrp7(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     else
         pOp = (PCOPCODE)&g_aMapX86_Group7_mem[reg];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -2041,9 +2006,6 @@ unsigned ParseGrp8(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
     reg   = MODRM_REG(modrm);
 
     pOp = (PCOPCODE)&g_aMapX86_Group8[reg];
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2064,9 +2026,6 @@ unsigned ParseGrp9(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
 
     pOp = (PCOPCODE)&g_aMapX86_Group9[reg];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -2085,9 +2044,6 @@ unsigned ParseGrp10(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     reg   = MODRM_REG(modrm);
 
     pOp = (PCOPCODE)&g_aMapX86_Group10[reg];
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2111,9 +2067,6 @@ unsigned ParseGrp12(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
 
     pOp = (PCOPCODE)&g_aMapX86_Group12[reg];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -2133,9 +2086,6 @@ unsigned ParseGrp13(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         reg += 8;   //2nd table
 
     pOp = (PCOPCODE)&g_aMapX86_Group13[reg];
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2157,9 +2107,6 @@ unsigned ParseGrp14(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
         reg += 8;   //2nd table
 
     pOp = (PCOPCODE)&g_aMapX86_Group14[reg];
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
@@ -2185,9 +2132,6 @@ unsigned ParseGrp15(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     else
         pOp = (PCOPCODE)&g_aMapX86_Group15_mem[reg];
 
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
-
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
         size = sizeof(uint8_t); //ModRM byte
@@ -2205,9 +2149,6 @@ unsigned ParseGrp16(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam,
     reg   = MODRM_REG(modrm);
 
     pOp = (PCOPCODE)&g_aMapX86_Group16[reg];
-
-    /* Correct the operand size if the instruction is marked as forced or default 64 bits */
-    CheckForceFlags(pCpu, pOp);
 
     //little hack to make sure the ModRM byte is included in the returned size
     if (pOp->idxParse1 != IDX_ParseModRM && pOp->idxParse2 != IDX_ParseModRM)
