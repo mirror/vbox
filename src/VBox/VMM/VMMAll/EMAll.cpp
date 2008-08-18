@@ -1445,9 +1445,6 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         {
             RTRCPTR pParam1;
             uint32_t valpar, eflags;
-#ifdef VBOX_STRICT
-            uint32_t valpar1 = 0; /// @todo used uninitialized...
-#endif
 
             AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
             switch(param1.type)
@@ -1474,7 +1471,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VRv=%08x eax=%08x %08x\n", pszInstr, pParam1, valpar1, pRegFrame->eax, valpar));
+            LogFlow(("%s %VRv eax=%08x %08x\n", pszInstr, pParam1, pRegFrame->eax, valpar));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
