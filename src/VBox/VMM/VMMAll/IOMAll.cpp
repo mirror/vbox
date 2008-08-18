@@ -37,42 +37,14 @@
 #include <iprt/assert.h>
 
 
-/**
- * Calculates the size of register parameter.
- *
- * @returns 1, 2, 4 on success.
- * @returns 0 if non-register parameter.
- * @param   pCpu                Pointer to current disassembler context.
- * @param   pParam              Pointer to parameter of instruction to proccess.
- */
-static unsigned iomGetRegSize(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam)
-{
-    if (pParam->flags & (USE_BASE | USE_INDEX | USE_SCALE | USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_IMMEDIATE8 | USE_IMMEDIATE16 | USE_IMMEDIATE32 | USE_IMMEDIATE16_SX8 | USE_IMMEDIATE32_SX8))
-        return 0;
-
-    if (pParam->flags & USE_REG_GEN32)
-        return 4;
-
-    if (pParam->flags & USE_REG_GEN16)
-        return 2;
-
-    if (pParam->flags & USE_REG_GEN8)
-        return 1;
-
-    if (pParam->flags & USE_REG_GEN64)
-        return 8;
-
-    if (pParam->flags & USE_REG_SEG)
-        return 2;
-    return 0;
-}
-
 
 /**
  * Returns the contents of register or immediate data of instruction's parameter.
  *
  * @returns true on success.
  *
+ * @todo Get rid of this code. Use DISQueryParamVal instead
+ * 
  * @param   pCpu                Pointer to current disassembler context.
  * @param   pParam              Pointer to parameter of instruction to proccess.
  * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
@@ -883,7 +855,7 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     bool fRc = iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uPort, &cbSize);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
 
-    cbSize = iomGetRegSize(pCpu, &pCpu->param1);
+    cbSize = DISGetParamSize(pCpu, &pCpu->param1);
     Assert(cbSize > 0);
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, uPort, cbSize);
     if (rc == VINF_SUCCESS)
