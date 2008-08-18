@@ -31,7 +31,9 @@ ifdef VBOX_WITH_PYTHON
 # bridge for XPCOM to invoke Python
 XPCOM_PYTHON = VBox-xpcom-python
 # bridge for Python to invoke XPCOM
-XPCOM_PYMOD = VBox-xpcom-pymod
+XPCOM_PYMOD = VBox-xpcom-pymod VBox-xpcom-helper
+# bridge between PYMOD and VirtualBox, to minimize mods
+XPCOM_VBOX_HELPER=VBox-xpcom-helper
 PYTHON_LIBS  = python2.5
 endif
 
@@ -1288,17 +1290,27 @@ VBox-xpcom-python_SOURCES =                         	\
         python/src/VariantUtils.cpp			\
 
 
-# Python Client Module
-PY_DEST=$(VBOX_PATH_SDK)/bindings/com/python/xpcom
+# Helper for initialization of XPCOM
+VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
+VBox-xpcom-helper_NAME = VBoxHlp
+VBox-xpcom-helper_DEFS = 
+VBox-xpcom-helper_SOURCES =  \
+       python/src/module/helper.cpp
 
+# Python Client Module
+PY_PATH=sdk/bindings/com/python/xpcom
+PY_DEST=$(PATH_BIN)/$(PY_PATH)
+PY_SAMPLE=$(PATH_BIN)/sdk/bindings/com/python/sample
 
 VBox-xpcom-pymod_TEMPLATE = XPCOM
 # sucky name, maybe rename?
 VBox-xpcom-pymod_NAME = _xpcom
+VBox-xpcom-pymod_INST = bin/$(PY_PATH)/
 VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
 VBox-xpcom-pymod_INCS += /usr/include/python2.5 python/src
 VBox-xpcom-pymod_SOURCES =                         	\
-	python/src/module/_xpcom.cpp               
+	python/src/module/_xpcom.cpp              
+VBox-xpcom-pymod_LIBS = $(TARGET_VBox-xpcom-helper)
 VBox-xpcom-pymod_LDFLAGS += $(PATH_BIN)/VBoxXPCOM.so
 VBox-xpcom-pymod_DEPS =       		\
         $(PY_DEST)/components.py   	\
@@ -1314,14 +1326,19 @@ VBox-xpcom-pymod_DEPS =       		\
 	$(PY_DEST)/server/factory.py  	\
 	$(PY_DEST)/server/loader.py     \
 	$(PY_DEST)/server/module.py     \
-	$(PY_DEST)/server/policy.py	
+	$(PY_DEST)/server/policy.py     \
+	$(PY_SAMPLE)/vbox.py            \
+	$(TARGET_VBox-xpcom-helper)
 
 $(PY_DEST):
 	$(QUIET)$(MKDIR) -p $@
-	$(QUIET)$(MKDIR) $@/client
-	$(QUIET)$(MKDIR) $@/server
+	$(QUIET)$(MKDIR) -p $(PY_SAMPLE)
+	$(QUIET)$(MKDIR) -p $@/client
+	$(QUIET)$(MKDIR) -p $@/server
 
 $(PY_DEST)/%.py: $(PATH_SUB_CURRENT)/python/%.py $(PY_DEST)
+	$(QUIET)$(CP) $< $@
+$(PY_SAMPLE)/%.py: $(PATH_SUB_CURRENT)/python/sample%.py $(PY_DEST)
 	$(QUIET)$(CP) $< $@
 
 
