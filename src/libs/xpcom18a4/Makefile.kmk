@@ -1338,7 +1338,7 @@ $(PY_DEST):
 
 $(PY_DEST)/%.py: $(PATH_SUB_CURRENT)/python/%.py $(PY_DEST)
 	$(QUIET)$(CP) $< $@
-$(PY_SAMPLE)/%.py: $(PATH_SUB_CURRENT)/python/sample%.py $(PY_DEST)
+$(PY_SAMPLE)/%.py: $(PATH_SUB_CURRENT)/python/sample/%.py $(PY_DEST)
 	$(QUIET)$(CP) $< $@
 
 
