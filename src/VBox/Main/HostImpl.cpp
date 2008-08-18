@@ -2738,6 +2738,7 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
     pm::SubMetric *cpuLoadUser   = new pm::SubMetric ("CPU/Load/User");
     pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel");
     pm::SubMetric *cpuLoadIdle   = new pm::SubMetric ("CPU/Load/Idle");
+    pm::SubMetric *cpuMhzSM      = new pm::SubMetric ("CPU/MHZ");
     pm::SubMetric *ramUsageTotal = new pm::SubMetric ("RAM/Usage/Total");
     pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used");
     pm::SubMetric *ramUsageFree  = new pm::SubMetric ("RAM/Usage/Free");
@@ -2749,6 +2750,9 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
         metricFactory->createHostCpuLoad (objptr, cpuLoadUser, cpuLoadKernel,
                                           cpuLoadIdle);
     aCollector->registerBaseMetric (cpuLoad);
+    pm::BaseMetric *cpuMhz =
+        metricFactory->createHostCpuMHz (objptr, cpuMhzSM);
+    aCollector->registerBaseMetric (cpuMhz);
     pm::BaseMetric *ramUsage =
         metricFactory->createHostRamUsage (objptr, ramUsageTotal, ramUsageUsed,
                                            ramUsageFree);
@@ -2776,6 +2780,14 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
                                                new pm::AggregateMin()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
+                                               new pm::AggregateMax()));
+
+    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM, 0));
+    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM,
+                                               new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM,
+                                               new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM,
                                                new pm::AggregateMax()));
 
     aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal, 0));

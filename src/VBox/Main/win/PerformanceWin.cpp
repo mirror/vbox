@@ -22,7 +22,11 @@
  */
 
 #include <Wbemidl.h>
+extern "C" {
+#include <powrprof.h>
+}
 #include <iprt/err.h>
+#include <iprt/mp.h>
 
 #include "Logging.h"
 #include "Performance.h"
@@ -333,9 +337,37 @@ int CollectorWin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *
     return rc;
 }
 
+typedef struct _PROCESSOR_POWER_INFORMATION {
+  ULONG  Number;
+  ULONG  MaxMhz;
+  ULONG  CurrentMhz;
+  ULONG  MhzLimit;
+  ULONG  MaxIdleState;
+  ULONG  CurrentIdleState;
+} PROCESSOR_POWER_INFORMATION , *PPROCESSOR_POWER_INFORMATION;
+
 int CollectorWin::getHostCpuMHz(ULONG *mhz)
 {
-    return VERR_NOT_IMPLEMENTED;
+    uint64_t uTotalMhz   = 0;
+    RTCPUID  nProcessors = RTMpGetCount();
+    PPROCESSOR_POWER_INFORMATION ppi = new PROCESSOR_POWER_INFORMATION[nProcessors];
+    LONG ns = CallNtPowerInformation(ProcessorInformation, NULL, 0, ppi,
+        nProcessors * sizeof(PROCESSOR_POWER_INFORMATION));
+    if (ns)
+    {
+        Log(("CallNtPowerInformation() -> %x\n", ns));
+        return VERR_INTERNAL_ERROR;
+    }
+
+    /* Compute an average over all CPUs */
+    for (unsigned i = 0; i < nProcessors;  i++)
+        uTotalMhz += ppi[i].CurrentMhz;
+    *mhz = (ULONG)(uTotalMhz / nProcessors);
+
+    LogFlowThisFunc(("mhz=%u\n", *mhz));
+    LogFlowThisFuncLeave();
+
+    return VINF_SUCCESS;
 }
 
 int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
