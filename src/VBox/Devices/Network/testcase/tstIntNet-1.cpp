@@ -480,7 +480,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                 if (pFileText)
                     RTStrmPrintf(pFileText, "%3RU64.%09u: cb=%04x dst=%.6Rhxs src=%.6Rhxs type=%04x%s\n",
                                  NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
-                                 cbFrame, &pEthHdr->SrcMac, &pEthHdr->DstMac, RT_BE2H_U16(pEthHdr->EtherType),
+                                 cbFrame, &pEthHdr->DstMac, &pEthHdr->SrcMac, RT_BE2H_U16(pEthHdr->EtherType),
                                  !memcmp(&pEthHdr->DstMac, pSrcMac, sizeof(*pSrcMac)) ? " Mine!" : "");
                 tstIntNetTestFrame(pvFrame, cbFrame, pFileText);
 
