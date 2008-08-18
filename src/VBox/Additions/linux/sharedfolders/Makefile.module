@@ -172,13 +172,15 @@ ifeq ($(KERNELRELEASE),)
  KFLAGS += $(foreach inc,$(KERN_INCL),\
              $(if $(wildcard $(inc)/linux/utsrelease.h),\
                $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
-                 then echo yes; fi),-DKERNEL_FC6,),) \
+                            then echo yes; fi),-DKERNEL_FC6,),) \
              $(if $(wildcard $(inc)/linux/utsrelease.h),\
                $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
-                 then echo yes; fi),-DKERNEL_FC6,),))
+                            then echo yes; fi),-DKERNEL_FC6,),))
 else
- KFLAGS += $(filter -DKERNEL_FC6,$(patsubst 2.6.18%fc6,-DKERNEL_FC6,$(KERNELRELEASE)) \
-                                 $(patsubst 2.6.18%el5,-DKERNEL_FC6,$(KERNELRELEASE)))
+ KFLAGS += $(if $(shell if echo "$(KERNELRELEASE)"|grep -q '2.6.18.*fc6.*';\
+                        then echo yes; fi),-DKERNEL_FC6,) \
+           $(if $(shell if echo "$(KERNELRELEASE)"|grep -q '2.6.18.*el5.*';\
+                        then echo yes; fi),-DKERNEL_FC6,)
 endif
 
 # build defs
