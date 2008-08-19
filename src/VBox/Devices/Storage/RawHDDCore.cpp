@@ -1086,6 +1086,8 @@ VBOXHDDBACKEND g_RawBackend =
     VD_CAP_CREATE_FIXED | VD_CAP_FILE,
     /* papszFileExtensions */
     s_apszRawFileExtensions,
+    /* paConfigInfo */
+    NULL,
     /* pfnCheckIfValid */
     rawCheckIfValid,
     /* pfnOpen */

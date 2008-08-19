@@ -652,6 +652,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
             pEntries[cEntries].pszBackend = pszName;
             pEntries[cEntries].uBackendCaps = aBackends[i]->uBackendCaps;
             pEntries[cEntries].papszFileExtensions = aBackends[i]->papszFileExtensions;
+            pEntries[cEntries].paConfigInfo = aBackends[i]->paConfigInfo;
             cEntries++;
             if (cEntries >= cEntriesAlloc)
             {
@@ -741,6 +742,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                         pEntries[cEntries].pszBackend = pszName;
                         pEntries[cEntries].uBackendCaps = pBackend->uBackendCaps;
                         pEntries[cEntries].papszFileExtensions = pBackend->papszFileExtensions;
+                        pEntries[cEntries].paConfigInfo = pBackend->paConfigInfo;
                         cEntries++;
                         if (cEntries >= cEntriesAlloc)
                         {
@@ -2982,6 +2984,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
             pBackendInfo->pszBackend = RTStrDup(pImage->Backend->pszBackendName);
             pBackendInfo->uBackendCaps = pImage->Backend->uBackendCaps;
             pBackendInfo->papszFileExtensions = pImage->Backend->papszFileExtensions;
+            pBackendInfo->paConfigInfo = pImage->Backend->paConfigInfo;
             rc = VINF_SUCCESS;
         }
         else

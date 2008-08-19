@@ -63,6 +63,14 @@ typedef struct VBOXHDDBACKEND
     const char * const *papszFileExtensions;
 
     /**
+     * Pointer to an array of structs describing each supported config key.
+     * Terminated by a NULL config key. Note that some backends do not support
+     * the configuration interface, so this pointer may just contain NULL.
+     * Mandatory if the backend sets VD_CAP_CONFIG.
+     */
+    PCVDCONFIGINFO paConfigInfo;
+
+    /**
      * Check if a file is valid for the backend.
      *
      * @returns VBox status code.

@@ -71,10 +71,74 @@ static int tstVDBackendInfo(void)
             }
             if (papsz == aVDInfo[i].papszFileExtensions)
                 RTPrintf("<EMPTY>");
-            RTPrintf("\n");
         }
         else
-            RTPrintf("<NONE>\n");
+            RTPrintf("<NONE>");
+        RTPrintf(" config=");
+        if (aVDInfo[i].paConfigInfo)
+        {
+            PCVDCONFIGINFO pa = aVDInfo[i].paConfigInfo;
+            while (pa->pszKey != NULL)
+            {
+                if (pa != aVDInfo[i].paConfigInfo)
+                    RTPrintf(",");
+                RTPrintf("(key=%s type=", pa->pszKey);
+                switch (pa->enmValueType)
+                {
+                    case VDCFGVALUETYPE_INTEGER:
+                        RTPrintf("integer default=");
+                        if (pa->pDefaultValue)
+                            RTPrintf("%RU64", pa->pDefaultValue->Integer.u64);
+                        else
+                            RTPrintf("<NONE>");
+                        break;
+                    case VDCFGVALUETYPE_STRING:
+                        RTPrintf("string default=");
+                        if (pa->pDefaultValue)
+                            RTPrintf("%s", pa->pDefaultValue->String.psz);
+                        else
+                            RTPrintf("<NONE>");
+                        break;
+                    case VDCFGVALUETYPE_BYTES:
+                        RTPrintf("bytes default=");
+                        if (pa->pDefaultValue)
+                            RTPrintf("length=%RTuint %.*Rhxs",
+                                     pa->pDefaultValue->Bytes.cb,
+                                     pa->pDefaultValue->Bytes.cb,
+                                     pa->pDefaultValue->Bytes.pv);
+                        else
+                            RTPrintf("<NONE>");
+                        break;
+                    default:
+                        RTPrintf("INVALID!");
+                }
+                RTPrintf(" flags=");
+                if (!pa->uKeyFlags)
+                    RTPrintf("none");
+                unsigned cFlags = 0;
+                if (pa->uKeyFlags & VD_CFGKEY_MANDATORY)
+                {
+                    if (cFlags)
+                        RTPrintf(",");
+                    RTPrintf("mandatory");
+                    cFlags++;
+                }
+                if (pa->uKeyFlags & VD_CFGKEY_EXPERT)
+                {
+                    if (cFlags)
+                        RTPrintf(",");
+                    RTPrintf("expert");
+                    cFlags++;
+                }
+                RTPrintf(")");
+                pa++;
+            }
+            if (pa == aVDInfo[i].paConfigInfo)
+                RTPrintf("<EMPTY>");
+        }
+        else
+            RTPrintf("<NONE>");
+        RTPrintf("\n");
     }
 
 #undef CHECK

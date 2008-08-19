@@ -5181,6 +5181,8 @@ VBOXHDDBACKEND g_VmdkBackend =
     | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE |VD_CAP_ASYNC,
     /* papszFileExtensions */
     s_apszVmdkFileExtensions,
+    /* paConfigInfo */
+    NULL,
     /* pfnCheckIfValid */
     vmdkCheckIfValid,
     /* pfnOpen */
