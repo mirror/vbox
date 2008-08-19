@@ -1185,7 +1185,7 @@ ResumeExecution:
 
         /* Two options here:
          * - external interrupt pending, but masked by the TPR value.
-         *   -> CR8 updates that lower the TPR value to below the current value should cause an exit
+         *   -> a CR8 update that lower the current TPR value should cause an exit
          * - no pending interrupts
          *   -> We don't need to be explicitely notified. There are enough world switches for detecting pending interrupts.
          */
