@@ -1312,6 +1312,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     RTGCPTR  GCDest, GCOffset;
     uint32_t cbSize;
     uint64_t cTransfers;
+    int      offIncrement;
 
     /* Don't support any but these three prefix bytes. */
     if ((pCpu->prefix & ~(PREFIX_ADDRSIZE|PREFIX_OPSIZE|PREFIX_REP|PREFIX_REX)))
@@ -1353,21 +1354,38 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         return VERR_EM_INTERPRETER;
     }
 
-    LogFlow(("emInterpretStosWD dest=%VGv cbSize=%d\n", GCDest, cbSize));
+    offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cbSize : (signed)cbSize;
 
     if (!(pCpu->prefix & PREFIX_REP))
     {
+        LogFlow(("emInterpretStosWD dest=%04X:%VGv (%VGv) cbSize=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize));
+
         rc = PGMPhysWriteGCPtrSafe(pVM, GCDest, &pRegFrame->rax, cbSize);
         if (VBOX_FAILURE(rc))
             return VERR_EM_INTERPRETER;
         Assert(rc == VINF_SUCCESS);
+
+        /* Update (e/r)di. */
+        switch (pCpu->addrmode)
+        {
+        case CPUMODE_16BIT:
+            pRegFrame->di  += offIncrement;
+            break;
+        case CPUMODE_32BIT:
+            pRegFrame->edi += offIncrement;
+            break;
+        case CPUMODE_64BIT:
+            pRegFrame->rdi += offIncrement;
+            break;
+        }
+
     }
     else
     {    
-        int offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cbSize : (signed)cbSize;
-
         if (!cTransfers) 
             return VINF_SUCCESS;
+
+        LogFlow(("emInterpretStosWD dest=%04X:%VGv (%VGv) cbSize=%d cTransfers=%x DF=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize, cTransfers, pRegFrame->eflags.Bits.u1DF));
 
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
         rc = PGMVerifyAccess(pVM, GCDest - (offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize), cTransfers * cbSize, X86_PTE_RW | X86_PTE_US);
