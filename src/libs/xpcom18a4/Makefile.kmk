@@ -1330,7 +1330,7 @@ VBox-xpcom-pymod_DEPS = \
 	$(PY_DEST)/server/loader.py \
 	$(PY_DEST)/server/module.py \
 	$(PY_DEST)/server/policy.py \
-	$(PY_SAMPLE)/vbox.py \
+	$(PY_SAMPLE)/vboxshell.py \
 	$(TARGET_VBox-xpcom-helper)
 
 $(PY_DEST):
