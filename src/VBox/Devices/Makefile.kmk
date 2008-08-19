@@ -789,6 +789,12 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 	Storage/DrvTransportAsync.cpp
 endif #VBOX_WITH_PDM_ASYNC_COMPLETION
 
+ifdef VBOX_WITH_BUSLOGIC
+ Drivers_DEFS += VBOX_WITH_BUSLOGIC
+ Drivers_SOURCES += \
+	Storage/DrvSCSI.cpp
+endif # VBOX_WITH_BUSLOGIC
+
 #
 # Ring-0 Services (library, linked into VMMR0.r0)
 #

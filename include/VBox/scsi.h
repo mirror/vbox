@@ -423,8 +423,8 @@ typedef const SCSIINQUIRYCDB *PCSCSIINQUIRYCDB;
 #pragma pack(1)
 typedef struct SCSIINQUIRYDATA
 {
-    unsigned u5PeripherialDeviceType : 5;   /**< 0x00 / 00 */
-    unsigned u3PeripherialQualifier : 3;
+    unsigned u5PeripheralDeviceType : 5;   /**< 0x00 / 00 */
+    unsigned u3PeripheralQualifier : 3;
     unsigned u6DeviceTypeModifier : 7;      /**< 0x01 */
     unsigned fRMB : 1;
     unsigned u3AnsiVersion : 3;             /**< 0x02 */
@@ -456,6 +456,16 @@ typedef struct SCSIINQUIRYDATA
 AssertCompileSize(SCSIINQUIRYDATA, 97);
 typedef SCSIINQUIRYDATA *PSCSIINQUIRYDATA;
 typedef const SCSIINQUIRYDATA *PCSCSIINQUIRYDATA;
+
+#define SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED                   0x00
+#define SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_BUT_SUPPORTED 0x01
+#define SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_NOT_SUPPORTED 0x03
+
+#define SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS     0x00
+#define SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_SEQUENTIAL_ACCESS 0x01
+#define SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_CD_DVD            0x05
+#define SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN           0x1f
+
 /** @} */
 
 #endif

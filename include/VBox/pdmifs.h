@@ -159,6 +159,11 @@ typedef enum PDMINTERFACE
     /** PDMIHOSTPARALLELCONNECTOR - The Host Parallel connector interface (Up)   Coupled with PDMINTERFACE_HOST_PARALLEL_PORT. */
     PDMINTERFACE_HOST_PARALLEL_CONNECTOR,
 
+    /** PDMISCSIPORT            - The SCSI command execution port interface (Down) Coupled with PDMINTERFACE_SCSI_CONNECTOR. */
+    PDMINTERFACE_SCSI_PORT,
+    /** PDMISCSICONNECTOR       - The SCSI command execution connector interface (Up) Coupled with PDMINTERFACE_SCSI_PORT. */
+    PDMINTERFACE_SCSI_CONNECTOR,
+
     /** Maximum interface number. */
     PDMINTERFACE_MAX
 } PDMINTERFACE;
@@ -2484,6 +2489,69 @@ typedef struct PDMIHGCMCONNECTOR
 
 #endif
 
+/**
+ * SCSI request structure.
+ */
+typedef struct PDMSCSIREQUEST
+{
+    /** Size of the SCSI CDB. */
+    uint32_t    cbCDB;
+    /** Pointer to the SCSI CDB. */
+    uint8_t    *pCDB;
+    /** Overall size of all scatter gather list elements
+     *  for data transfer if any. */
+    uint32_t    cbScatterGather;
+    /** Number of elements in the scatter gather list. */
+    uint32_t    cScatterGatherEntries;
+    /** Pointer to the head of the scatter gather list. */
+    PPDMDATASEG paScatterGatherHead;
+    /** Opaque user data for use by the device. Left untouched by everything else! */
+    void       *pvUser;
+} PDMSCSIREQUEST, *PPDMSCSIREQUEST;
+/** Pointer to a const SCSI request structure. */
+typedef const PDMSCSIREQUEST *PCSCSIREQUEST;
+
+/** Pointer to a SCSI port interface. */
+typedef struct PDMISCSIPORT *PPDMISCSIPORT;
+
+/**
+ * SCSI port interface.
+ * Pair with PDMISCSICONNECTOR.
+ */
+typedef struct PDMISCSIPORT
+{
+
+    /**
+     * Notify the device on request completion.
+     *
+     * @returns VBox status code.
+     * @param   pInterface    Pointer to this interface.
+     * @param   pSCSIRequest  Pointer to the finished SCSI request.
+     */
+     DECLR3CALLBACKMEMBER(int, pfnSCSIRequestCompleted, (PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest));
+
+} PDMISCSIPORT;
+
+/** Pointer to a SCSI connector interface. */
+typedef struct PDMISCSICONNECTOR *PPDMISCSICONNECTOR;
+
+/**
+ * SCSI connector interface.
+ * Pair with PDMISCSIPORT.
+ */
+typedef struct PDMISCSICONNECTOR
+{
+
+    /**
+     * Submits a SCSI request for execution.
+     *
+     * @returns VBox status code.
+     * @param   pInterface    Pointer to this interface.
+     * @param   pSCSIRequest  Pointer to the SCSI request to execute.
+     */
+     DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
+
+} PDMISCSICONNECTOR;
 /** @} */
 
 __END_DECLS
