@@ -91,10 +91,10 @@ filelist_fixup prototype '$3 == "opt/VirtualBox/VBox.png=VBox.png"'             
 filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox-webservice.xml=virtualbox-webservice.xml"'   '$3 = "var/svc/manifest/application/virtualbox/webservice.xml=virtualbox-webservice.xml"'
 
 # webservice SMF start/stop script
-filelist_fixup prototype '$3 == "opt/VirtualBox/smf-vboxwebsrv.sh=smf-vboxwebsrv.sh"'                   '$3 = "var/svc/manifest/application/virtualbox/smf-vboxwebsrv=smf-vboxwebsrv.sh"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/smf-vboxwebsrv.sh=smf-vboxwebsrv.sh"'                   '$3 = "opt/VirtualBox/smf-vboxwebsrv=smf-vboxwebsrv.sh"'
 
 # webservice SMF configuration file, mark as editable.
-filelist_fixup prototype '$3 == "opt/VirtualBox/etc/webservice.cfg=webservice.cfg"'   '$1 = "e"'
+filelist_fixup prototype '$3 == "opt/VirtualBox/etc/webservice.cfg=webservice.cfg"'                     '$1 = "e"'
 
 # explicitly set timestamp to shutup warning
 VBOXPKG_TIMESTAMP=vbox`date '+%Y%m%d%H%M%S'`
