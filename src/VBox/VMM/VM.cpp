@@ -1225,7 +1225,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
  * @returns VBox error code on failure.
  * @param   pVM     VM which should be destroyed.
  * @thread      Any thread.
- * @vmstate     Suspended, Running, Guru Mediation, Load Failure
+ * @vmstate     Suspended, Running, Guru Meditation, Load Failure
  * @vmstateto   Off
  */
 VMR3DECL(int)   VMR3PowerOff(PVM pVM)
@@ -2235,7 +2235,7 @@ VMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
         case VMSTATE_SAVING:            return "SAVING";
         case VMSTATE_SUSPENDED:         return "SUSPENDED";
         case VMSTATE_RESETTING:         return "RESETTING";
-        case VMSTATE_GURU_MEDITATION:   return "GURU_MEDIATION";
+        case VMSTATE_GURU_MEDITATION:   return "GURU_MEDITATION";
         case VMSTATE_OFF:               return "OFF";
         case VMSTATE_DESTROYING:        return "DESTROYING";
         case VMSTATE_TERMINATED:        return "TERMINATED";
