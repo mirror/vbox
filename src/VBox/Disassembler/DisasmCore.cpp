@@ -1387,12 +1387,13 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
     else
     if (pCpu->opmode == CPUMODE_64BIT)
     {
-        pParam->parval = DISReadQWord(pCpu, lpszCodeBlock);
+        /* 32 bits relative immediate sign extended to 64 bits. */
+        pParam->parval = (uint64_t)(int32_t)DISReadDWord(pCpu, lpszCodeBlock);
         pParam->flags |= USE_IMMEDIATE64_REL;
-        pParam->size   = sizeof(int64_t);
+        pParam->size   = sizeof(uint64_t);
 
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%VX64h)", pParam->parval);
-        return sizeof(int64_t);
+        return sizeof(int32_t);
     }
     else
     {
@@ -1409,12 +1410,10 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
 //*****************************************************************************
 unsigned ParseImmVRel_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
 {
-    if (pCpu->opmode == CPUMODE_32BIT)
-        return sizeof(int32_t);
-    else
-    if (pCpu->opmode == CPUMODE_64BIT)
-        return sizeof(int64_t);
-    return sizeof(uint16_t);
+    if (pCpu->opmode == CPUMODE_16BIT)
+        return sizeof(uint16_t);
+    /* Both 32 & 64 bits mode use 32 bits relative immediates. */
+    return sizeof(int32_t);
 }
 //*****************************************************************************
 //*****************************************************************************
