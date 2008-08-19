@@ -61,10 +61,10 @@ public:
 protected:
 
     void retranslateUi();
-    
+
 private slots:
 
-    void selectPath();
+    void onSelectPath();
     void validate();
 
 private:

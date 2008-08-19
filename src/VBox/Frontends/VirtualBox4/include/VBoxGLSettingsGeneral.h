@@ -45,10 +45,6 @@ protected:
     void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
-
-private slots:
-
-    void onSelectFolderClicked();
 };
 
 #endif // __VBoxGLSettingsGeneral_h__

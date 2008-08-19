@@ -53,17 +53,20 @@ public:
     bool isResetEnabled () const;
 
     bool isModified() const;
+    bool isPathLineChosen() const;
 
-    void setPath (const QString &aPath);
     QString path() const;
 
-signals:
+public slots:
 
-    void selectPath();
+    void setPath (const QString &aPath);
+    void setHomeDir (const QString &aHomeDir);
 
 protected:
 
     void resizeEvent (QResizeEvent *aEvent);
+    void focusInEvent (QFocusEvent *aEvent);
+    void focusOutEvent (QFocusEvent *aEvent);
     void retranslateUi();
 
 private slots:
@@ -73,6 +76,7 @@ private slots:
 
 private:
 
+    void selectPath();
     QIcon defaultIcon() const;
     QString fullPath (bool aAbsolute = true) const;
     QString shrinkText (int aWidth) const;
@@ -83,8 +87,10 @@ private:
     QAction *mCopyAction;
     Mode mMode;
     QString mPath;
+    QString mHomeDir;
     QString mNoneStr;
     QString mNoneTip;
+    bool mIsEditableMode;
 };
 
 #endif /* __VBoxFilePathSelectorWidget_h__ */

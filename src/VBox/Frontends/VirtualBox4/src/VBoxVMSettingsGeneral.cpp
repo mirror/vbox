@@ -74,8 +74,6 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
              this, SLOT (textChangedRAM (const QString&)));
     connect (mLeVideo, SIGNAL (textChanged (const QString&)),
              this, SLOT (textChangedVRAM (const QString&)));
-    connect (mPsSnapshot, SIGNAL (selectPath()),
-             this, SLOT (selectSnapshotFolder()));
     connect (mTbBootItemUp, SIGNAL (clicked()),
              this, SLOT (moveBootItemUp()));
     connect (mTbBootItemDown, SIGNAL (clicked()),
@@ -214,6 +212,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
 
     /* Snapshot folder */
     mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
+    mPsSnapshot->setHomeDir (QFileInfo (mMachine.GetSettingsFilePath()).absolutePath());
 
     /* Description */
     mTeDescription->setPlainText (aMachine.GetDescription());
@@ -445,23 +444,6 @@ void VBoxVMSettingsGeneral::onCurrentBootItemChanged (QTreeWidgetItem *aItem,
         mTwBootOrder->setFocus();
     mTbBootItemUp->setEnabled (upEnabled);
     mTbBootItemDown->setEnabled (downEnabled);
-}
-
-void VBoxVMSettingsGeneral::selectSnapshotFolder()
-{
-    QString settingsFolder = VBoxGlobal::getFirstExistingDir (mPsSnapshot->path());
-    if (settingsFolder.isNull())
-        settingsFolder = QFileInfo (mMachine.GetSettingsFilePath()).absolutePath();
-
-    QString folder = vboxGlobal().getExistingDirectory (settingsFolder, this);
-    if (folder.isNull())
-        return;
-
-    folder = QDir::convertSeparators (folder);
-    /* Remove trailing slash if any */
-    folder.remove (QRegExp ("[\\\\/]$"));
-
-    mPsSnapshot->setPath (folder);
 }
 
 void VBoxVMSettingsGeneral::adjustBootOrderTWSize()

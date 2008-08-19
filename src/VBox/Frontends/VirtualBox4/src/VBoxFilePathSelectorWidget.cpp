@@ -29,6 +29,7 @@
 #include <QClipboard>
 #include <QDir>
 #include <QFileIconProvider>
+#include <QLineEdit>
 
 enum
 {
@@ -42,6 +43,8 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     , mIconProvider (new QFileIconProvider())
     , mCopyAction (new QAction (this))
     , mMode (Mode_Folder)
+    , mHomeDir (QDir::current().absolutePath())
+    , mIsEditableMode (false)
 {
     /* Populate items */
     insertItem (PathId, "");
@@ -57,16 +60,21 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     mCopyAction->setShortcut (QKeySequence (QKeySequence::Copy));
     mCopyAction->setShortcutContext (Qt::WidgetShortcut);
 
+    /* Initial Setup */
+    setEditable (true);
+    Assert (lineEdit());
+    setInsertPolicy (QComboBox::NoInsert);
+    setContextMenuPolicy (Qt::ActionsContextMenu);
+    setMinimumWidth (200);
+
     /* Setup connections */
+    connect (lineEdit(), SIGNAL (textEdited (const QString &)),
+             this, SLOT (setPath (const QString &)));
     connect (this, SIGNAL (activated (int)), this, SLOT (onActivated (int)));
     connect (mCopyAction, SIGNAL (triggered (bool)), this, SLOT (copyToClipboard()));
 
     /* Applying language settings */
     retranslateUi();
-
-    /* Initial Setup */
-    setContextMenuPolicy (Qt::ActionsContextMenu);
-    setMinimumWidth (200);
 }
 
 VBoxFilePathSelectorWidget::~VBoxFilePathSelectorWidget()
@@ -106,10 +114,9 @@ bool VBoxFilePathSelectorWidget::isModified() const
     return true;
 }
 
-void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
+bool VBoxFilePathSelectorWidget::isPathLineChosen() const
 {
-    mPath = aPath.isEmpty() ? QString::null : aPath;
-    refreshText();
+    return (currentIndex() == PathId);
 }
 
 QString VBoxFilePathSelectorWidget::path() const
@@ -117,10 +124,42 @@ QString VBoxFilePathSelectorWidget::path() const
     return mPath;
 }
 
+void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
+{
+    mPath = aPath.isEmpty() ? QString::null :
+            QDir::toNativeSeparators (aPath);
+    refreshText();
+}
+
+void VBoxFilePathSelectorWidget::setHomeDir (const QString &aHomeDir)
+{
+    mHomeDir = aHomeDir;
+}
+
 void VBoxFilePathSelectorWidget::resizeEvent (QResizeEvent *aEvent)
 {
     QIWithRetranslateUI<QComboBox>::resizeEvent (aEvent);
     refreshText();
+}
+
+void VBoxFilePathSelectorWidget::focusInEvent (QFocusEvent *aEvent)
+{
+    if (isPathLineChosen())
+    {
+        mIsEditableMode = true;
+        refreshText();
+    }
+    QIWithRetranslateUI<QComboBox>::focusInEvent (aEvent);
+}
+
+void VBoxFilePathSelectorWidget::focusOutEvent (QFocusEvent *aEvent)
+{
+    if (isPathLineChosen())
+    {
+        mIsEditableMode = false;
+        refreshText();
+    }
+    QIWithRetranslateUI<QComboBox>::focusOutEvent (aEvent);
 }
 
 void VBoxFilePathSelectorWidget::retranslateUi()
@@ -187,7 +226,7 @@ void VBoxFilePathSelectorWidget::onActivated (int aIndex)
     {
         case SelectId:
         {
-            emit selectPath();
+            selectPath();
             break;
         }
         case ResetId:
@@ -199,6 +238,7 @@ void VBoxFilePathSelectorWidget::onActivated (int aIndex)
             break;
     }
     setCurrentIndex (PathId);
+    setFocus();
 }
 
 void VBoxFilePathSelectorWidget::copyToClipboard()
@@ -210,6 +250,25 @@ void VBoxFilePathSelectorWidget::copyToClipboard()
     QApplication::clipboard()->setText (text, QClipboard::Clipboard);
 }
 
+void VBoxFilePathSelectorWidget::selectPath()
+{
+    /* Preparing initial directory. */
+    QString initDir = mPath.isNull() ? mHomeDir :
+        VBoxGlobal::getFirstExistingDir (mPath);
+    if (initDir.isNull())
+        initDir = mHomeDir;
+
+    /* Open existing file or directory. */
+    QString path = mMode == Mode_File ?
+        VBoxGlobal::getOpenFileName (initDir, QString::null, parentWidget(), QString::null) :
+        VBoxGlobal::getExistingDirectory (initDir, parentWidget());
+    if (path.isNull())
+        return;
+
+    path.remove (QRegExp ("[\\\\/]$"));
+    setPath (path);
+}
+
 QIcon VBoxFilePathSelectorWidget::defaultIcon() const
 {
     if (mMode == Mode_Folder)
@@ -218,23 +277,26 @@ QIcon VBoxFilePathSelectorWidget::defaultIcon() const
         return mIconProvider->icon (QFileIconProvider::File);
 }
 
-QString VBoxFilePathSelectorWidget::fullPath (bool aAbsolute) const
+QString VBoxFilePathSelectorWidget::fullPath (bool aAbsolute /* = true */) const
 {
-    if (!mPath.isNull())
+    if (mPath.isNull())
+        return mPath;
+
+    QString result;
+    switch (mMode)
     {
-        switch (mMode)
-        {
-            case Mode_Folder:
-                return aAbsolute ? QDir (mPath).absolutePath() :
-                                   QDir (mPath).path();
-            case Mode_File:
-                return aAbsolute ? QFileInfo (mPath).absoluteFilePath() :
-                                   QFileInfo (mPath).filePath();
-            default:
-                AssertFailedBreak();
-        }
+        case Mode_Folder:
+            result = aAbsolute ? QDir (mPath).absolutePath() :
+                                 QDir (mPath).path();
+            break;
+        case Mode_File:
+            result = aAbsolute ? QFileInfo (mPath).absoluteFilePath() :
+                                 QFileInfo (mPath).filePath();
+            break;
+        default:
+            AssertFailedBreak();
     }
-    return QString::null;
+    return QDir::toNativeSeparators (result);
 }
 
 QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
@@ -244,7 +306,7 @@ QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
         return fullText;
 
     int oldSize = fontMetrics().width (fullText);
-    int indentSize = fontMetrics().width ("...x");
+    int indentSize = fontMetrics().width ("x...x");
 
     /* Compress text */
     int start = 0;
@@ -280,8 +342,18 @@ QString VBoxFilePathSelectorWidget::shrinkText (int aWidth) const
 
 void VBoxFilePathSelectorWidget::refreshText()
 {
-    if (mPath.isNull())
+    if (mIsEditableMode)
     {
+        /* In editable mode there should be no any icon
+         * and text have be corresponding real stored path
+         * which can be absolute or relative. */
+        setItemText (PathId, mPath);
+        setItemIcon (PathId, QIcon());
+    }
+    else if (mPath.isNull())
+    {
+        /* If we are not in editable mode and no path is
+         * stored here - show the translated 'none' string. */
         if (itemText (PathId) != mNoneStr)
         {
             setItemText (PathId, mNoneStr);

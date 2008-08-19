@@ -43,8 +43,8 @@ VBoxVMSettingsSFDetails::VBoxVMSettingsSFDetails (DialogType aType,
 
     /* No reset button */
     mPsPath->setResetEnabled (false);
-    connect (mPsPath, SIGNAL (selectPath()),
-             this, SLOT (selectPath()));
+    connect (mPsPath, SIGNAL (currentIndexChanged (int)),
+             this, SLOT (onSelectPath()));
 
     connect (mLeName, SIGNAL (textChanged (const QString &)),
              this, SLOT (validate()));
@@ -140,23 +140,19 @@ void VBoxVMSettingsSFDetails::validate()
                                                            !mUsedNames.contains (pair));
 }
 
-void VBoxVMSettingsSFDetails::selectPath()
+void VBoxVMSettingsSFDetails::onSelectPath()
 {
-    QString folderName = vboxGlobal()
-        .getExistingDirectory (mPsPath->path().isEmpty() ? QDir::homePath() : mPsPath->path(),
-                               this,
-                               tr ("Select a folder to share"));
-    if (folderName.isNull())
+    if (!mPsPath->isPathLineChosen())
         return;
 
+    QString folderName (mPsPath->path());
     QDir folder (folderName);
-    mPsPath->setPath (QDir::toNativeSeparators (folder.absolutePath()));
     if (!folder.isRoot())
-        /* processing non-root folder */
+        /* Processing non-root folder */
         mLeName->setText (folder.dirName());
     else
     {
-        /* processing root folder */
+        /* Processing root folder */
 #if defined (Q_OS_WIN) || defined (Q_OS_OS2)
         mLeName->setText (folderName.toUpper()[0] + "_DRIVE");
 #elif defined (Q_OS_UNIX)
@@ -165,6 +161,5 @@ void VBoxVMSettingsSFDetails::selectPath()
     }
     /* Validate the fields */
     validate();
-
 }
 
