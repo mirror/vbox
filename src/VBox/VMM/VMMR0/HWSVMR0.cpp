@@ -195,7 +195,10 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
     }
 
     /* Invalidate the last cpu we were running on. */
-    pVM->hwaccm.s.svm.idLastCpu = NIL_RTCPUID;
+    pVM->hwaccm.s.svm.idLastCpu    = NIL_RTCPUID;
+
+    /* we'll aways increment this the first time (host uses ASID 0) */
+    pVM->hwaccm.s.svm.uCurrentASID = 0;
     return VINF_SUCCESS;
 }
 
@@ -950,7 +953,8 @@ ResumeExecution:
         else
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
 
-        pVM->hwaccm.s.svm.cTLBFlushes = pCpu->cTLBFlushes;
+        pVM->hwaccm.s.svm.cTLBFlushes  = pCpu->cTLBFlushes;
+        pVM->hwaccm.s.svm.uCurrentASID = pCpu->uCurrentASID;
     }
     else
     {
@@ -958,13 +962,14 @@ ResumeExecution:
 
         /* We never increase uCurrentASID in the fAlwaysFlushTLB (erratum 170) case. */
         if (!pCpu->uCurrentASID)
-            pCpu->uCurrentASID = 1;
+            pVM->hwaccm.s.svm.uCurrentASID = pCpu->uCurrentASID = 1;
 
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
     }
     AssertMsg(pVM->hwaccm.s.svm.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVM->hwaccm.s.svm.cTLBFlushes, pCpu->cTLBFlushes));
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    pVMCB->ctrl.TLBCtrl.n.u32ASID = pCpu->uCurrentASID;
+    AssertMsg(pVM->hwaccm.s.svm.uCurrentASID >= 1 && pVM->hwaccm.s.svm.uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVM->hwaccm.s.svm.uCurrentASID));
+    pVMCB->ctrl.TLBCtrl.n.u32ASID = pVM->hwaccm.s.svm.uCurrentASID;
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVMCB->ctrl.TLBCtrl.n.u1TLBFlush)
@@ -1919,7 +1924,7 @@ HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.svm.fSupported);
 
-    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVM->hwaccm.s.svm.idLastCpu, pCpu->uCurrentASID));
+    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVM->hwaccm.s.svm.idLastCpu, pVM->hwaccm.s.svm.uCurrentASID));
     pVM->hwaccm.s.svm.fResumeVM = false;
 
     /* Force to reload LDTR, so we'll execute VMLoad to load additional guest state. */
