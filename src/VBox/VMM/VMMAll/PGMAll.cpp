@@ -373,7 +373,7 @@ typedef struct PGMHVUSTATE
  */
 PGMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-    LogFlow(("PGMTrap0eHandler: uErr=%#x pvFault=%VGv eip=%VGv\n", (uint32_t)uErr, pvFault, pRegFrame->rip));
+    LogFlow(("PGMTrap0eHandler: uErr=%RGu pvFault=%VGv eip=%VGv\n", uErr, pvFault, pRegFrame->rip));
     STAM_PROFILE_START(&pVM->pgm.s.StatGCTrap0e, a);
     STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = NULL; } );
 
