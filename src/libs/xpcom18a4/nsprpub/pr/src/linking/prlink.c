@@ -1064,6 +1064,9 @@ pr_LoadLibraryByPathname(const char *name, PRIntn flags)
 #endif
     if (!h) {
         oserr = _MD_ERRNO();
+#ifdef DEBUG
+        fprintf(stderr, "pr_LoadLibraryByPathname(): Failed to load '%s'\n", name);
+#endif
         PR_DELETE(lm);
         goto unlock;
     }
