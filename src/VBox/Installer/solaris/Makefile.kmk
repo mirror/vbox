@@ -128,6 +128,7 @@ SOLARIS_EXTRAS = \
 	vnic_term.sh \
 	virtualbox-webservice.xml \
 	smf-vboxwebsrv.sh \
+	webservice.cfg \
 	vbox.copyright \
 	ReadMe.txt
 
@@ -302,6 +303,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARIS_INST_DIR)/webtest,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(PATH_CURRENT)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(PATH_CURRENT)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
+	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(PATH_CURRENT)/webservice.cfg                    $(SOLARIS_INST_DIR)/etc/webservice.cfg,)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/vboxdrv.sh                                                   $(SOLARIS_INST_DIR)/vboxdrv.sh
