@@ -1393,7 +1393,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                     "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
                     "%sldtr={%04x base=%016RX64 limit=%08x flags=%08x}\n"
                     "%str  ={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-                    "%sSysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
+                    "%sSysEnter={cs=%04llx eip=%016RX64 esp=%016RX64}\n"
                     ,
                     pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
                     pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
