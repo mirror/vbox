@@ -100,7 +100,7 @@ int CollectorLinux::getHostCpuMHz(ULONG *mhz)
     uint64_t uTotalMHz  = 0;
 
     for (RTCPUID i = 0; i < nProcessors; ++i)
-        uTotalMHz += RTMpGetCurFrequency(i);
+        uTotalMHz += RTMpGetCurFrequency(RTMpCpuIdFromSetIndex(i));
 
     *mhz = (ULONG)(uTotalMHz / nProcessors);
     return VINF_SUCCESS;
