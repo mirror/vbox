@@ -66,7 +66,7 @@ namespace pm
     {
     public:
         virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
-        virtual int getHostCpuMHz(ULONG *mhz) = 0;
+        virtual int getHostCpuMHz(ULONG *mhz);
         virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available) = 0;
         virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
         virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used) = 0;
