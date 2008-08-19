@@ -24,12 +24,10 @@
 /*
  * @todo list:
  *
- * 1) Solaris backend
- * 2) Linux backend
- * 3) Detection of erroneous metric names
- * 4) Min/max ranges for metrics
- * 5) Darwin backend
- * 6) [OS/2 backend]
+ * 1) Detection of erroneous metric names
+ * 2) Wildcards in metric names
+ * 3) Darwin backend
+ * 4) [OS/2 backend]
  */
 
 #include <VBox/com/array.h>
@@ -38,6 +36,7 @@
 #include <VBox/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/mp.h>
 
 #include "Logging.h"
 #include "Performance.h"
@@ -92,6 +91,24 @@ int CollectorHAL::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *
 int CollectorHAL::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
     return E_NOTIMPL;
+}
+
+/* Generic implementations */
+
+int CollectorHAL::getHostCpuMHz(ULONG *mhz)
+{
+    RTCPUID nProcessors = RTMpGetCount();
+
+    if (nProcessors == 0)
+        return VERR_NOT_IMPLEMENTED;
+
+    uint64_t uTotalMHz  = 0;
+
+    for (RTCPUID i = 0; i < nProcessors; ++i)
+        uTotalMHz += RTMpGetCurFrequency(RTMpCpuIdFromSetIndex(i));
+
+    *mhz = (ULONG)(uTotalMHz / nProcessors);
+    return VINF_SUCCESS;
 }
 
 void BaseMetric::collectorBeat(uint64_t nowAt)
