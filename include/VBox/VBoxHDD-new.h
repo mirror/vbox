@@ -212,22 +212,10 @@ typedef struct VBOXHDDRAW
 /** The backend operates on files. The caller needs to know to handle the
  * location appropriately. */
 #define VD_CAP_FILE                 RT_BIT(6)
+/** The backend uses the config interface. The caller needs to know how to
+ * provide the mandatory configuration parts this way. */
+#define VD_CAP_CONFIG               RT_BIT(7)
 /** @}*/
-
-/**
- * Data structure for returning a list of backend capabilities.
- */
-typedef struct VDBACKENDINFO
-{
-    /** Name of the backend. */
-    char *pszBackend;
-    /** Capabilities of the backend (a combination of the VD_CAP_* flags). */
-    uint64_t uBackendCaps;
-    /** Pointer to a NULL-terminated array of strings, containing the supported
-     * file extensions. Note that some backends do not work on files, so this
-     * pointer may just contain NULL. */
-    const char * const *papszFileExtensions;
-} VDBACKENDINFO, *PVDBACKENDINFO;
 
 /**
  * Supported interface types.
@@ -625,6 +613,35 @@ typedef enum VDCFGVALUETYPE
 typedef VDCFGVALUETYPE *PVDCFGVALUETYPE;
 
 /**
+ * Configuration value. This is not identical to CFGMVALUE.
+ */
+typedef union VDCFGVALUE
+{
+    /** Integer value. */
+    struct VDCFGVALUE_INTEGER
+    {
+        /** The integer represented as 64-bit unsigned. */
+        uint64_t    u64;
+    } Integer;
+
+    /** String value. (UTF-8 of course) */
+    struct VDCFGVALUE_STRING
+    {
+        /** Pointer to the string. */
+        char        *psz;
+    } String;
+
+    /** Byte string value. */
+    struct VDCFGVALUE_BYTES
+    {
+        /** Length of byte string. (in bytes) */
+        RTUINT      cb;
+        /** Pointer to the byte string. */
+        void        *pv;
+    } Bytes;
+} VDCFGVALUE, *PVDCFGVALUE;
+
+/**
  * Configuration information interface
  *
  * Per-image. Optional for most backends, but mandatory for images which do
@@ -878,6 +895,61 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
     }
     return rc;
 }
+
+
+/** @name Configuration interface key handling flags.
+ * @{
+ */
+/** Mandatory config key. Not providing a value for this key will cause
+ * the backend to fail. */
+#define VD_CFGKEY_MANDATORY         RT_BIT(0)
+/** Expert config key. Not showing it by default in the GUI is is probably
+ * a good idea, as the average user won't understand it easily. */
+#define VD_CFGKEY_EXPERT            RT_BIT(1)
+/** @}*/
+
+/**
+ * Structure describing configuration keys required/supported by a backend
+ * through the config interface.
+ */
+typedef struct VDCONFIGINFO
+{
+    /** Key name of the configuration. */
+    const char *pszKey;
+    /** Pointer to default value (descriptor). NULL if no useful default value
+     * can be specified. */
+    const PVDCFGVALUE pDefaultValue;
+    /** Value type for this key. */
+    VDCFGVALUETYPE enmValueType;
+    /** Key handling flags (a combination of VD_CFGKEY_* flags). */
+    uint64_t uKeyFlags;
+} VDCONFIGINFO;
+
+/** Pointer to structure describing configuration keys. */
+typedef VDCONFIGINFO *PVDCONFIGINFO;
+
+/** Pointer to const structure describing configuration keys. */
+typedef const VDCONFIGINFO *PCVDCONFIGINFO;
+
+/**
+ * Data structure for returning a list of backend capabilities.
+ */
+typedef struct VDBACKENDINFO
+{
+    /** Name of the backend. */
+    char *pszBackend;
+    /** Capabilities of the backend (a combination of the VD_CAP_* flags). */
+    uint64_t uBackendCaps;
+    /** Pointer to a NULL-terminated array of strings, containing the supported
+     * file extensions. Note that some backends do not work on files, so this
+     * pointer may just contain NULL. */
+    const char * const *papszFileExtensions;
+    /** Pointer to an array of structs describing each supported config key.
+     * Terminated by a NULL config key. Note that some backends do not support
+     * the configuration interface, so this pointer may just contain NULL.
+     * Mandatory if the backend sets VD_CAP_CONFIG. */
+    PCVDCONFIGINFO paConfigInfo;
+} VDBACKENDINFO, *PVDBACKENDINFO;
 
 
 /**

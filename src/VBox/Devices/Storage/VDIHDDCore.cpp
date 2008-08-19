@@ -1821,6 +1821,8 @@ VBOXHDDBACKEND g_VDIBackend =
     | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE,
     /* papszFileExtensions */
     s_apszVdiFileExtensions,
+    /* paConfigInfo */
+    NULL,
     /* pfnCheckIfValid */
     vdiCheckIfValid,
     /* pfnOpen */

@@ -790,9 +790,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pCfg,   "TargetName",   psz);                       RC_CHECK();
                 STR_FREE();
 
-                // @todo currently there is no Initiator name config.
-                rc = CFGMR3InsertString(pCfg,   "InitiatorName", "iqn.2008-04.com.sun.virtualbox.initiator"); RC_CHECK();
-
                 ULONG64 lun;
                 hrc = iSCSIDisk->COMGETTER(Lun)(&lun);                                      H();
                 rc = CFGMR3InsertInteger(pCfg,   "LUN",         lun);                       RC_CHECK();
