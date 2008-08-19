@@ -30,12 +30,10 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     /* Apply UI decorations */
     Ui::VBoxGLSettingsGeneral::setupUi (this);
 
+    mPsVdi->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
+    mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
+    mPsVRDP->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsVRDP->setMode (VBoxFilePathSelectorWidget::Mode_File);
-
-    /* Setup connections */
-    connect (mPsVdi,  SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
-    connect (mPsMach, SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
-    connect (mPsVRDP, SIGNAL (selectPath()), this, SLOT (onSelectFolderClicked()));
 
     /* Applying language settings */
     retranslateUi();
@@ -83,28 +81,5 @@ void VBoxGLSettingsGeneral::retranslateUi()
     mPsVRDP->setWhatsThis (tr ("Displays the path to the library that "
                                "provides authentication for Remote Display "
                                "(VRDP) clients."));
-}
-
-void VBoxGLSettingsGeneral::onSelectFolderClicked()
-{
-    VBoxFilePathSelectorWidget *ps = qobject_cast<VBoxFilePathSelectorWidget*> (sender());
-    Assert (ps);
-
-    QString initDir = VBoxGlobal::getFirstExistingDir (ps->path());
-    if (initDir.isNull())
-        initDir = vboxGlobal().virtualBox().GetHomeFolder();
-
-
-    QString path = ps == mPsVRDP ?
-        VBoxGlobal::getOpenFileName (initDir, QString::null, this, QString::null) :
-        VBoxGlobal::getExistingDirectory (initDir, this);
-    if (path.isNull())
-        return;
-
-    path = QDir::convertSeparators (path);
-    /* remove trailing slash if any */
-    path.remove (QRegExp ("[\\\\/]$"));
-
-    ps->setPath (path);
 }
 

@@ -62,8 +62,6 @@ private slots:
     void onCurrentBootItemChanged (QTreeWidgetItem *aItem,
                                    QTreeWidgetItem *aPrev = 0);
 
-    void selectSnapshotFolder();
-
 private:
 
     void adjustBootOrderTWSize ();
