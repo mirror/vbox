@@ -265,9 +265,18 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
             LogFlow (("PerformanceCollector::SetupMetrics() setting period to %u,"
                       " count to %u for %s\n", aPeriod, aCount, (*it)->getName()));
             (*it)->init(aPeriod, aCount);
-            LogFlow (("PerformanceCollector::SetupMetrics() enabling %s\n",
-                      aPeriod, aCount, (*it)->getName()));
-            (*it)->enable();
+            if (aPeriod == 0 || aCount == 0)
+            {
+                LogFlow (("PerformanceCollector::SetupMetrics() disabling %s\n",
+                          (*it)->getName()));
+                (*it)->disable();
+            }
+            else
+            {
+                LogFlow (("PerformanceCollector::SetupMetrics() enabling %s\n",
+                          (*it)->getName()));
+                (*it)->enable();
+            }
         }
 
     return S_OK;
