@@ -36,6 +36,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 LIBRARIES       += VBoxCOM
 DLLS            += VBoxSettings VBoxC
 PROGRAMS        += VBoxSVC
+OTHERS           += $(VBOX_PATH_SDK)/bindings/VirtualBox.xidl
 VBOX_MAIN_DEFS   =
 ifneq ($(KBUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
@@ -119,6 +120,9 @@ $(PATH_TARGET)/docs.Main: \
 $(call DIRDEP, $(PATH_OUT)/docs/Main):
 	$(MKDIR) -p $@
 
+$(VBOX_PATH_SDK)/bindings/VirtualBox.xidl: $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
+	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings
+	$(QUIET)$(CP) $< $@
 
 #
 # VBoxSVC executable
