@@ -33,8 +33,8 @@ XPCOM_PYTHON = VBox-xpcom-python
 # bridge for Python to invoke XPCOM
 XPCOM_PYMOD = VBox-xpcom-pymod VBox-xpcom-helper
 # bridge between PYMOD and VirtualBox, to minimize mods
-XPCOM_VBOX_HELPER=VBox-xpcom-helper
-PYTHON_LIBS  = python2.5
+XPCOM_VBOX_HELPER = VBox-xpcom-helper
+PYTHON_LIBS = python2.5
 endif
 
 #
@@ -95,7 +95,8 @@ TEMPLATE_XPCOM_LDFLAGS.x86         = -m32
 TEMPLATE_XPCOM_LDFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(TEMPLATE_VBOXR3NP_LDFLAGS.darwin) \
                                      -fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
-                                     -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon
+                                     -framework CoreServices -framework CoreFoundation -framework Foundation -framework AppKit -framework Carbon \
+                                     -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 ifn1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_XPCOM_CXXFLAGS          += -fPIC
  TEMPLATE_XPCOM_CFLAGS            += -fPIC
@@ -168,7 +169,7 @@ TEMPLATE_XPCOMEXE_LIBS             = \
 TEMPLATE_XPCOMEXE_LIBS.freebsd     = $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.linux       = dl $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.l4          = $(LIB_RUNTIME) $(VBOX_GCC_LIBGCC)
-TEMPLATE_XPCOMEXE_LDFLAGS.darwin   = -bind_at_load $(TEMPLATE_XPCOM_LDFLAGS.darwin)
+TEMPLATE_XPCOMEXE_LDFLAGS.darwin   = -bind_at_load $(filter-out -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD),$(TEMPLATE_XPCOM_LDFLAGS.darwin))
 TEMPLATE_XPCOMEXE_LDFLAGS.l4       = $(L4_DIR)/lib/x86_586/crt0.o \
     -T$(L4_DIR)/lib/x86_586/main_dyn.ld -nostdlib -lgcc \
     -Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
@@ -186,7 +187,7 @@ TEMPLATE_XPCOMBLDPROG                   = XPCOM Build programs executables
 TEMPLATE_XPCOMBLDPROG_EXTENDS           = VBOXBLDPROG
 ## @todo Verify that this doesn't blow up because of template inheriance ordering. (we're assuming XPCOMEXE is expanded when this is being used.)
 
-TEMPLATE_XPCOMBLDPROG_DEFS                       = $(TEMPLATE_BLDPROG_DEFS)                      $(TEMPLATE_XPCOMEXE_DEFS)
+TEMPLATE_XPCOMBLDPROG_DEFS                       = $(TEMPLATE_BLDPROG_DEFS)                       $(TEMPLATE_XPCOMEXE_DEFS)
 TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET)      = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET))      $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET))
 TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_TARGET_ARCH)) $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_CXXFLAGS          = -ansi -Wall -Wno-non-virtual-dtor
@@ -264,7 +265,7 @@ LIBRARIES += \
 DLLS += \
 	VBoxXPCOM \
 	VBoxXPCOMIPCC \
-        $(XPCOM_PYMOD)
+	$(XPCOM_PYMOD)
 
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS += \
@@ -1122,8 +1123,8 @@ VBoxXPCOM_LIBS = \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
 	$(TARGET_$(XPCOM_PYTHON)) \
-        $(PYTHON_LIBS)            \
-	$(TARGET_VBoxXPCOMGlue_s) 
+	$(PYTHON_LIBS) \
+	$(TARGET_VBoxXPCOMGlue_s)
 
 ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
 VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
@@ -1261,46 +1262,48 @@ VBoxXPCOMIPCC_LIBS = \
 #VBoxXPCOMIPCC_LIBS += $(LIB_RUNTIME)
 
 
+#
 # Python XPCOM bindings
+#
 VBox-xpcom-python_TEMPLATE = XPCOM
 VBox-xpcom-python_NOINST = 1
 VBox-xpcom-python_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
 VBox-xpcom-python_INCS += /usr/include/python2.5
-VBox-xpcom-python_SOURCES =                         	\
-	python/src/dllmain.cpp     			\
-        python/src/ErrorUtils.cpp  			\
-        python/src/PyGBase.cpp 				\
-        python/src/PyGInputStream.cpp			\
-        python/src/PyGModule.cpp			\
-        python/src/PyGStub.cpp				\
-        python/src/PyGWeakReference.cpp			\
-        python/src/PyIClassInfo.cpp			\
-        python/src/PyIComponentManager.cpp		\
-        python/src/PyIComponentManagerObsolete.cpp	\
-        python/src/PyIEnumerator.cpp			\
-        python/src/PyIID.cpp				\
-        python/src/PyIInputStream.cpp			\
-        python/src/PyIInterfaceInfo.cpp			\
-        python/src/PyIInterfaceInfoManager.cpp		\
-        python/src/PyISimpleEnumerator.cpp		\
-        python/src/PyISupports.cpp			\
-        python/src/PyIVariant.cpp			\
-        python/src/Pyxpt_info.cpp			\
-        python/src/TypeObject.cpp			\
-        python/src/VariantUtils.cpp			\
+VBox-xpcom-python_SOURCES = \
+	python/src/dllmain.cpp \
+	python/src/ErrorUtils.cpp \
+	python/src/PyGBase.cpp \
+	python/src/PyGInputStream.cpp \
+	python/src/PyGModule.cpp \
+	python/src/PyGStub.cpp \
+	python/src/PyGWeakReference.cpp \
+	python/src/PyIClassInfo.cpp \
+	python/src/PyIComponentManager.cpp \
+	python/src/PyIComponentManagerObsolete.cpp \
+	python/src/PyIEnumerator.cpp \
+	python/src/PyIID.cpp \
+	python/src/PyIInputStream.cpp \
+	python/src/PyIInterfaceInfo.cpp \
+	python/src/PyIInterfaceInfoManager.cpp \
+	python/src/PyISimpleEnumerator.cpp \
+	python/src/PyISupports.cpp \
+	python/src/PyIVariant.cpp \
+	python/src/Pyxpt_info.cpp \
+	python/src/TypeObject.cpp \
+	python/src/VariantUtils.cpp
 
 
 # Helper for initialization of XPCOM
 VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
 VBox-xpcom-helper_NAME = VBoxHlp
-VBox-xpcom-helper_DEFS = 
-VBox-xpcom-helper_SOURCES =  \
-       python/src/module/helper.cpp
+VBox-xpcom-helper_DEFS =
+VBox-xpcom-helper_SOURCES = \
+	python/src/module/helper.cpp
 
 # Python Client Module
-PY_PATH=sdk/bindings/com/python/xpcom
-PY_DEST=$(PATH_BIN)/$(PY_PATH)
-PY_SAMPLE=$(PATH_BIN)/sdk/bindings/com/python/sample
+PY_PATH = sdk/bindings/com/python/xpcom
+PY_DEST = $(PATH_BIN)/$(PY_PATH)
+PY_SAMPLE = $(PATH_BIN)/sdk/bindings/com/python/sample
 
 VBox-xpcom-pymod_TEMPLATE = XPCOM
 # sucky name, maybe rename?
@@ -1308,38 +1311,40 @@ VBox-xpcom-pymod_NAME = _xpcom
 VBox-xpcom-pymod_INST = bin/$(PY_PATH)/
 VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
 VBox-xpcom-pymod_INCS += /usr/include/python2.5 python/src
-VBox-xpcom-pymod_SOURCES =                         	\
-	python/src/module/_xpcom.cpp              
+VBox-xpcom-pymod_SOURCES = \
+	python/src/module/_xpcom.cpp
 VBox-xpcom-pymod_LIBS = $(TARGET_VBox-xpcom-helper)
 VBox-xpcom-pymod_LDFLAGS += $(PATH_BIN)/VBoxXPCOM.so
-VBox-xpcom-pymod_DEPS =       		\
-        $(PY_DEST)/components.py   	\
-	$(PY_DEST)/file.py         	\
-	$(PY_DEST)/__init__.py     	\
-	$(PY_DEST)/nsError.py      	\
-	$(PY_DEST)/primitives.py   	\
-	$(PY_DEST)/xpcom_consts.py 	\
-        $(PY_DEST)/xpt.py          	\
-	$(PY_DEST)/client/__init__.py 	\
-	$(PY_DEST)/server/__init__.py   \
+VBox-xpcom-pymod_DEPS = \
+	$(PY_DEST)/components.py \
+	$(PY_DEST)/file.py \
+	$(PY_DEST)/__init__.py \
+	$(PY_DEST)/nsError.py \
+	$(PY_DEST)/primitives.py \
+	$(PY_DEST)/xpcom_consts.py \
+	$(PY_DEST)/xpt.py \
+	$(PY_DEST)/client/__init__.py \
+	$(PY_DEST)/server/__init__.py \
 	$(PY_DEST)/server/enumerator.py \
-	$(PY_DEST)/server/factory.py  	\
-	$(PY_DEST)/server/loader.py     \
-	$(PY_DEST)/server/module.py     \
-	$(PY_DEST)/server/policy.py     \
-	$(PY_SAMPLE)/vbox.py            \
+	$(PY_DEST)/server/factory.py \
+	$(PY_DEST)/server/loader.py \
+	$(PY_DEST)/server/module.py \
+	$(PY_DEST)/server/policy.py \
+	$(PY_SAMPLE)/vbox.py \
 	$(TARGET_VBox-xpcom-helper)
 
 $(PY_DEST):
-	$(QUIET)$(MKDIR) -p $@
-	$(QUIET)$(MKDIR) -p $(PY_SAMPLE)
-	$(QUIET)$(MKDIR) -p $@/client
-	$(QUIET)$(MKDIR) -p $@/server
+	$(QUIET)$(MKDIR) -p -- \
+		$@ \
+		$(PY_SAMPLE) \
+		$@/client \
+		$@/server
 
 $(PY_DEST)/%.py: $(PATH_SUB_CURRENT)/python/%.py $(PY_DEST)
-	$(QUIET)$(CP) $< $@
+	$(QUIET)$(CP) -f -- $< $@
+
 $(PY_SAMPLE)/%.py: $(PATH_SUB_CURRENT)/python/sample/%.py $(PY_DEST)
-	$(QUIET)$(CP) $< $@
+	$(QUIET)$(CP) -f -- $< $@
 
 
 # DCONNECT daemon executable
@@ -1350,11 +1355,11 @@ VBoxXPCOMIPCD_SOURCES = \
 	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
 	ipc/ipcd/daemon/src/ipcCommandModule.cpp
 ifeq ($(KBUILD_TARGET),win)
-VBoxXPCOMIPCD_SOURCES += \
-	ipc/ipcd/daemon/src/ipcdWin.cpp
+ VBoxXPCOMIPCD_SOURCES += \
+ 	ipc/ipcd/daemon/src/ipcdWin.cpp
 else
-VBoxXPCOMIPCD_SOURCES += \
-	ipc/ipcd/daemon/src/ipcdUnix.cpp
+ VBoxXPCOMIPCD_SOURCES += \
+ 	ipc/ipcd/daemon/src/ipcdUnix.cpp
 endif
 
 #
