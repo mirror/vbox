@@ -59,15 +59,17 @@ if test -f /opt/VirtualBox/VBoxHeadless; then
 fi
 if test -f /var/svc/manifest/application/virtualbox/webservice.xml; then
     /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/webservice.xml
+    /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
 fi
 /usr/sbin/removef $PKGINST /opt/VirtualBox/etc/devlink.tab 1>/dev/null
-/usr/sbin/removef $PKGINST /opt/VirtualBox/etc 1>/dev/null
-rm -rf /opt/VirtualBox/etc
+#disabled as /opt/VirtualBox/etc is actually used for permanent config files.
+#/usr/sbin/removef $PKGINST /opt/VirtualBox/etc 1>/dev/null
+#rm -rf /opt/VirtualBox/etc
 /usr/sbin/removef -f $PKGINST
 
 /usr/sbin/installf -f $PKGINST
 
-# We need to touch the desktop link inorder to add it to the menu right away
+# We need to touch the desktop link in order to add it to the menu right away
 if test "$currentzone" = "global"; then
     if test -f "/usr/share/applications/virtualbox.desktop"; then
         touch /usr/share/applications/virtualbox.desktop
