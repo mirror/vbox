@@ -271,7 +271,10 @@ void CircularBuffer::init(ULONG length)
     if (mData)
         RTMemFree(mData);
     mLength = length;
-    mData = (ULONG *)RTMemAllocZ(length * sizeof(ULONG));
+    if (mLength)
+        mData = (ULONG *)RTMemAllocZ(length * sizeof(ULONG));
+    else
+        mData = NULL;
     mWrapped = false;
     mEnd = 0;
 }
