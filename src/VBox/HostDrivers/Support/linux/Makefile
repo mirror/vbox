@@ -221,11 +221,13 @@ ifndef CONFIG_VBOXDRV_FIXEDMAJOR
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS  += -DRT_ARCH_AMD64
+ # must be consistent with Config.kmk!
+ KFLAGS  += -DVBOX_WITH_64_BITS_GUESTS
 else
  KFLAGS  += -DRT_ARCH_X86
 endif
 ifeq ($(BUILD_TYPE),debug)
- KFLAGS  += -DDEBUG -DDEBUG_$(USER)
+ KFLAGS  += -DDEBUG -DDEBUG_$(USER) -g
  # IPRT_DEBUG_SEMS indicates thread wrt sems state via the comm field.
  KFLAGS  += -DIPRT_DEBUG_SEMS
 endif
