@@ -87,7 +87,7 @@ typedef struct VMMR0LOGGER
 #if HC_ARCH_BITS == 32
     uint32_t                    u32Alignment;
 #endif
-    /** The ring-0 logger instance. This extends beyon the size.*/
+    /** The ring-0 logger instance. This extends beyond the size.*/
     RTLOGGER                    Logger;
 } VMMR0LOGGER, *PVMMR0LOGGER;
 
