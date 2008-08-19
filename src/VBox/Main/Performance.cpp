@@ -118,7 +118,8 @@ void BaseMetric::collectorBeat(uint64_t nowAt)
         if (nowAt - mLastSampleTaken >= mPeriod * 1000)
         {
             mLastSampleTaken = nowAt;
-            Log4(("{%p} " LOG_FN_FMT ": Collecting data for obj(%p)...\n", this, __PRETTY_FUNCTION__, (void *)mObject));
+            Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n", 
+                        this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
             collect();
         }
     }
