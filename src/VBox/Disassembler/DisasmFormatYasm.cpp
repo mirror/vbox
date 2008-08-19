@@ -887,7 +887,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
                             if (fPrefix)
                                 PUT_SZ("near ");
                             offDisplacement = (int32_t)pParam->parval;
-                            Assert(pParam->flags & USE_IMMEDIATE32_REL);
+                            Assert(pParam->flags & (USE_IMMEDIATE32_REL|USE_IMMEDIATE64_REL));
                             Assert(*pszFmt == 'v'); pszFmt++;
 
                             if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
