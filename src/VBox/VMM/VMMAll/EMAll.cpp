@@ -1364,8 +1364,13 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     }
     else
     {    
+        int offIncrement = pRegFrame->eflags.Bits.u1DF ? -(signed)cbSize : (signed)cbSize;
+
+        if (!cTransfers) 
+            return VINF_SUCCESS;
+
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
-        rc = PGMVerifyAccess(pVM, GCDest, cTransfers * cbSize, X86_PTE_RW | X86_PTE_US);
+        rc = PGMVerifyAccess(pVM, GCDest - (offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize), cTransfers * cbSize, X86_PTE_RW | X86_PTE_US);
         if (rc != VINF_SUCCESS)
         {
             Log(("STOSWD will generate a trap -> recompiler, rc=%d\n", rc));
@@ -1383,8 +1388,8 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             }
 
             Assert(rc == VINF_SUCCESS);
-            GCOffset += cbSize;
-            GCDest   += cbSize;
+            GCOffset += offIncrement;
+            GCDest   += offIncrement;
             cTransfers--;
         }
 
