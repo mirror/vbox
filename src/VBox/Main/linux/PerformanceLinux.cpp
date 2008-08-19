@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <iprt/alloc.h>
 #include <iprt/err.h>
+#include <iprt/mp.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include "Performance.h"
@@ -95,7 +96,14 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint
 
 int CollectorLinux::getHostCpuMHz(ULONG *mhz)
 {
-    return E_NOTIMPL;
+    RTCPUID nProcessors = RTMpGetCount();
+    uint64_t uTotalMHz  = 0;
+
+    for (RTCPUID i = 0; i < nProcessors; ++i)
+        uTotalMHz += RTMpGetCurFrequency(i);
+
+    *mhz = (ULONG)(uTotalMHz / nProcessors);
+    return VINF_SUCCESS;
 }
 
 int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
