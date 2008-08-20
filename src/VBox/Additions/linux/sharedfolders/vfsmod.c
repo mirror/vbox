@@ -450,11 +450,11 @@ init (void)
 
         TRACE ();
 
-        if (sizeof (struct vbsf_mount_info_old) > PAGE_SIZE) {
+        if (sizeof (struct vbsf_mount_info_new) > PAGE_SIZE) {
                 printk (KERN_ERR
                         "Mount information structure is too large %lu\n"
                         "Must be less than or equal to %lu\n",
-                        (unsigned long)sizeof (struct vbsf_mount_info_old),
+                        (unsigned long)sizeof (struct vbsf_mount_info_new),
                         PAGE_SIZE);
                 return -EINVAL;
         }
