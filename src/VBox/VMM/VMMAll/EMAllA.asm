@@ -49,7 +49,7 @@ BEGINCODE
 ; Emulate CMP instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateCmp(uint32_t u32Param1, uint64_t u64Param2, size_t cb);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]  rdi  rcx       Param 1 - First parameter (Dst).
 ; @param    [esp + 08h]  rsi  edx       Param 2 - Second parameter (Src).
 ; @param    [esp + 10h]    Param 3 - Size of parameters, only 1/2/4/8 (64 bits host only) is valid.
@@ -113,7 +113,7 @@ ENDPROC     EMEmulateCmp
 ; Emulate AND instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateAnd(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @param    [esp + 10h]    Param 3 - Size of parameters, only 1/2/4/8 (64 bits host only) is valid.
@@ -178,7 +178,7 @@ ENDPROC     EMEmulateAnd
 ; Emulate OR instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateOr(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @param    [esp + 10h]    Param 3 - Size of parameters, only 1/2/4/8 (64 bits host only) is valid.
@@ -325,7 +325,7 @@ ENDPROC     EMEmulateLockOr
 ; Emulate XOR instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateXor(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @param    [esp + 10h]    Param 3 - Size of parameters, only 1/2/4/8 (64 bits host only) is valid.
@@ -514,7 +514,7 @@ ENDPROC     EMEmulateDec
 ; Emulate ADD instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateAdd(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @param    [esp + 10h]    Param 3 - Size of parameters, only 1/2/4/8 (64 bits host only) is valid.
@@ -578,7 +578,7 @@ ENDPROC     EMEmulateAdd
 ; Emulate ADC instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateAdcWithCarrySet(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @param    [esp + 10h]    Param 3 - Size of parameters, only 1/2/4/8 (64 bits host only) is valid.
@@ -646,7 +646,7 @@ ENDPROC     EMEmulateAdcWithCarrySet
 ; Emulate SUB instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateSub(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @param    [esp + 10h]    Param 3 - Size of parameters, only 1/2/4/8 (64 bits host only) is valid.
@@ -711,7 +711,7 @@ ENDPROC     EMEmulateSub
 ; Emulate BTR instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateBtr(void *pvParam1, uint64_t u64Param2);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @uses     eax, ecx, edx
@@ -784,7 +784,7 @@ ENDPROC     EMEmulateLockBtr
 ; Emulate BTC instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateBtc(void *pvParam1, uint64_t u64Param2);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
 ; @param    [esp + 08h]    Param 2 - Second parameter.
 ; @uses     eax, ecx, edx
@@ -841,28 +841,43 @@ BEGINPROC   EMEmulateBts
 ENDPROC     EMEmulateBts
 
 
-%if 0
-;; untested code!!
-
 ;;
 ; Emulate LOCK CMPXCHG instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateLockCmpXchg32(RTHCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
+; EMDECL(uint32_t) EMEmulateLockCmpXchg(void *pvParam1, uint64_t *pu64Param2, uint64_t u64Param3, size_t cbSize);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to first parameter
 ; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - pointer to second parameter (eax)
 ; @param    [esp + 0ch]  gcc:rdx  msc:r8    Param 3 - third parameter
-; @param    [esp + 10h]  gcc:rcx  msc:r9    Param 4 - Size of parameters, only 1/2/4 is valid
+; @param    [esp + 14h]  gcc:rcx  msc:r9    Param 4 - Size of parameters, only 1/2/4/8 is valid
 ; @uses     eax, ecx, edx
 ;
 align 16
-BEGINPROC   EMEmulateLockCmpXchg32
-    push    ebx
+BEGINPROC   EMEmulateLockCmpXchg
+    push    xBX
+%ifdef RT_ARCH_AMD64
+%ifdef RT_OS_WINDOWS
+    ; rcx contains the first parameter already
+    mov     rbx, rdx                    ; rdx = 2nd parameter
+    mov     rdx, r8                     ; r8  = 3rd parameter
+    mov     rax, r9                     ; r9  = size of parameters
+%else
+    mov     rax, rcx                    ; rcx = size of parameters (4th)
+    mov     rcx, rdi                    ; rdi = 1st parameter
+    mov     rbx, rsi                    ; rsi = second parameter
+    ;rdx contains the 3rd parameter already
+%endif  ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
     mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter (eax)
     mov     edx, [esp + 0ch + 4]        ; edx = third parameter
-    mov     eax, [esp + 10h + 4]        ; eax = size of parameters
+    mov     eax, [esp + 14h + 4]        ; eax = size of parameters
+%endif
 
+%ifdef RT_ARCH_AMD64
+    cmp     al, 8
+    je short .do_qword                  ; 4 bytes variant
+%endif
     cmp     al, 4
     je short .do_dword                  ; 4 bytes variant
     cmp     al, 2
@@ -871,58 +886,85 @@ BEGINPROC   EMEmulateLockCmpXchg32
     je short .do_byte                   ; 1 bytes variant
     int3
 
+%ifdef RT_ARCH_AMD64
+.do_qword:
+    ; load 2nd parameter's value
+    mov     rax, qword [rbx]
+
+    lock cmpxchg qword [rcx], rdx            ; do 8 bytes CMPXCHG
+    mov     qword [rbx], rax
+    jmp     short .done
+%endif
+
 .do_dword:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [xBX]
 
-    lock cmpxchg dword [ecx], edx            ; do 4 bytes CMPXCHG
-    mov     dword [ebx], eax
+    lock cmpxchg dword [xCX], edx            ; do 4 bytes CMPXCHG
+    mov     dword [xBX], eax
     jmp     short .done
 
 .do_word:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [xBX]
 
-    lock cmpxchg word [ecx], dx              ; do 2 bytes CMPXCHG
-    mov     word [ebx], ax
+    lock cmpxchg word [xCX], dx              ; do 2 bytes CMPXCHG
+    mov     word [xBX], ax
     jmp     short .done
 
 .do_byte:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [xBX]
 
-    lock cmpxchg byte [ecx], dl              ; do 1 bytes CMPXCHG
-    mov     byte [ebx], al
+    lock cmpxchg byte [xCX], dl              ; do 1 byte CMPXCHG
+    mov     byte [xBX], al
 
 .done:
     ; collect flags and return.
     pushf
-    pop     eax
+    pop     MY_RET_REG
 
-    pop     ebx
+    pop     xBX
     retn
-
-ENDPROC     EMEmulateLockCmpXchg32
+ENDPROC     EMEmulateLockCmpXchg
 
 ;;
 ; Emulate CMPXCHG instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateCmpXchg32(RTHCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize);
+; EMDECL(uint32_t) EMEmulateCmpXchg(void *pvParam1, uint64_t *pu32Param2, uint64_t u32Param3, size_t cbSize);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to first parameter
 ; @param    [esp + 08h]  gcc:rsi  msc:rdx   Param 2 - pointer to second parameter (eax)
 ; @param    [esp + 0ch]  gcc:rdx  msc:r8    Param 3 - third parameter
-; @param    [esp + 10h]  gcc:rcx  msc:r9    Param 4 - Size of parameters, only 1/2/4 is valid.
+; @param    [esp + 14h]  gcc:rcx  msc:r9    Param 4 - Size of parameters, only 1/2/4 is valid.
 ; @uses     eax, ecx, edx
 ;
 align 16
-BEGINPROC   EMEmulateCmpXchg32
-    push    ebx
+BEGINPROC   EMEmulateCmpXchg
+    push    xBX
+%ifdef RT_ARCH_AMD64
+%ifdef RT_OS_WINDOWS
+    ; rcx contains the first parameter already
+    mov     rbx, rdx                    ; rdx = 2nd parameter
+    mov     rdx, r8                     ; r8  = 3rd parameter
+    mov     rax, r9                     ; r9  = size of parameters
+%else
+    mov     rax, rcx                    ; rcx = size of parameters (4th)
+    mov     rcx, rdi                    ; rdi = 1st parameter
+    mov     rbx, rsi                    ; rsi = second parameter
+    ;rdx contains the 3rd parameter already
+%endif  ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
     mov     ecx, [esp + 04h + 4]        ; ecx = first parameter
     mov     ebx, [esp + 08h + 4]        ; ebx = 2nd parameter (eax)
     mov     edx, [esp + 0ch + 4]        ; edx = third parameter
-    mov     eax, [esp + 10h + 4]        ; eax = size of parameters
+    mov     eax, [esp + 14h + 4]        ; eax = size of parameters
+%endif
 
+%ifdef RT_ARCH_AMD64
+    cmp     al, 8
+    je short .do_qword                  ; 4 bytes variant
+%endif
     cmp     al, 4
     je short .do_dword                  ; 4 bytes variant
     cmp     al, 2
@@ -931,44 +973,56 @@ BEGINPROC   EMEmulateCmpXchg32
     je short .do_byte                   ; 1 bytes variant
     int3
 
+%ifdef RT_ARCH_AMD64
+.do_qword:
+    ; load 2nd parameter's value
+    mov     rax, qword [rbx]
+
+    cmpxchg qword [rcx], rdx            ; do 8 bytes CMPXCHG
+    mov     qword [rbx], rax
+    jmp     short .done
+%endif
+
 .do_dword:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [xBX]
 
-    cmpxchg dword [ecx], edx            ; do 4 bytes CMPXCHG
-    mov     dword [ebx], eax
+    cmpxchg dword [xCX], edx            ; do 4 bytes CMPXCHG
+    mov     dword [xBX], eax
     jmp     short .done
 
 .do_word:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [xBX]
 
-    cmpxchg word [ecx], dx              ; do 2 bytes CMPXCHG
-    mov     word [ebx], ax
+    cmpxchg word [xCX], dx              ; do 2 bytes CMPXCHG
+    mov     word [xBX], ax
     jmp     short .done
 
 .do_byte:
     ; load 2nd parameter's value
-    mov     eax, dword [ebx]
+    mov     eax, dword [xBX]
 
-    cmpxchg byte [ecx], dl              ; do 1 bytes CMPXCHG
-    mov     byte [ebx], al
+    cmpxchg byte [xCX], dl              ; do 1 byte CMPXCHG
+    mov     byte [xBX], al
 
 .done:
     ; collect flags and return.
     pushf
-    pop     eax
+    pop     MY_RET_REG
 
-    pop     ebx
+    pop     xBX
     retn
+ENDPROC     EMEmulateCmpXchg
 
-ENDPROC     EMEmulateCmpXchg32
+%if 0
+;; not tested!!
 
 ;;
 ; Emulate LOCK CMPXCHG8B instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateLockCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
 ; @param    [esp + 08h]    Param 2 - Address of the eax register
 ; @param    [esp + 0ch]    Param 3 - Address of the edx register
@@ -977,7 +1031,7 @@ ENDPROC     EMEmulateCmpXchg32
 ; @uses     eax, ecx, edx
 ;
 align 16
-BEGINPROC   EMEmulateLockCmpXchg8b32
+BEGINPROC   EMEmulateLockCmpXchg8b
     push    ebp
     push    ebx
     mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
@@ -1002,13 +1056,13 @@ BEGINPROC   EMEmulateLockCmpXchg8b32
     pop     ebp
     retn
 
-ENDPROC     EMEmulateLockCmpXchg8b32
+ENDPROC     EMEmulateLockCmpXchg8b
 
 ;;
 ; Emulate CMPXCHG8B instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateCmpXchg8b32(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+; EMDECL(uint32_t) EMEmulateCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags is valid.
+; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
 ; @param    [esp + 08h]    Param 2 - Address of the eax register
 ; @param    [esp + 0ch]    Param 3 - Address of the edx register
@@ -1017,7 +1071,7 @@ ENDPROC     EMEmulateLockCmpXchg8b32
 ; @uses     eax, ecx, edx
 ;
 align 16
-BEGINPROC   EMEmulateCmpXchg8b32
+BEGINPROC   EMEmulateCmpXchg8b
     push    ebp
     push    ebx
     mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
@@ -1041,6 +1095,6 @@ BEGINPROC   EMEmulateCmpXchg8b32
     pop     ebx
     pop     ebp
     retn
-ENDPROC     EMEmulateCmpXchg8b32
+ENDPROC     EMEmulateCmpXchg8b
 
 %endif
