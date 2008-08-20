@@ -142,7 +142,7 @@ void VBoxVMSettingsSFDetails::validate()
 
 void VBoxVMSettingsSFDetails::onSelectPath()
 {
-    if (!mPsPath->isPathLineChosen())
+    if (!mPsPath->isPathSelected())
         return;
 
     QString folderName (mPsPath->path());

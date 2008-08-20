@@ -114,7 +114,15 @@ bool VBoxFilePathSelectorWidget::isModified() const
     return true;
 }
 
-bool VBoxFilePathSelectorWidget::isPathLineChosen() const
+/**
+ * Returns @c true if the selected (active) combobox item is a path item.
+ *
+ * May be used in @c activated() signal handlers to distinguish between
+ * non-path items like "Other..." or "Reset" that get temporarily activated
+ * when performing the corresponding actiojn and the item that contains a
+ * real selected file/folder path.
+ */
+bool VBoxFilePathSelectorWidget::isPathSelected() const
 {
     return (currentIndex() == PathId);
 }
@@ -144,7 +152,7 @@ void VBoxFilePathSelectorWidget::resizeEvent (QResizeEvent *aEvent)
 
 void VBoxFilePathSelectorWidget::focusInEvent (QFocusEvent *aEvent)
 {
-    if (isPathLineChosen())
+    if (isPathSelected())
     {
         mIsEditableMode = true;
         refreshText();
@@ -154,7 +162,7 @@ void VBoxFilePathSelectorWidget::focusInEvent (QFocusEvent *aEvent)
 
 void VBoxFilePathSelectorWidget::focusOutEvent (QFocusEvent *aEvent)
 {
-    if (isPathLineChosen())
+    if (isPathSelected())
     {
         mIsEditableMode = false;
         refreshText();
