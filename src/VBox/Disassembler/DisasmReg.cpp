@@ -642,7 +642,8 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         if (pParam->flags & USE_RIPDISPLACEMENT32)
         {
             Assert(pCpu->mode == CPUMODE_64BIT);
-            pParamVal->val.val64 += pParam->disp32 + pCtx->rip;
+            /* Relative to the RIP of the next instruction. */
+            pParamVal->val.val64 += pParam->disp32 + pCtx->rip + pCpu->opsize;
         }
         return VINF_SUCCESS;
     }
