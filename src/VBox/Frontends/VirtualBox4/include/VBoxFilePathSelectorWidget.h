@@ -53,7 +53,7 @@ public:
     bool isResetEnabled () const;
 
     bool isModified() const;
-    bool isPathLineChosen() const;
+    bool isPathSelected() const;
 
     QString path() const;
 
