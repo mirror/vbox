@@ -43,7 +43,7 @@
 
 #include <linux/spinlock.h> /** @todo why is this here and not in the-linux-kernel.h? */
 
-#if defined(IN_GUEST_R0)
+#if defined(IN_GUEST_R0) && defined(IN_MODULE)
 EXPORT_SYMBOL(RTSpinlockCreate);
 EXPORT_SYMBOL(RTSpinlockDestroy);
 EXPORT_SYMBOL(RTSpinlockAcquireNoInts);
