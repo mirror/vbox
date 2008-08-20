@@ -2671,7 +2671,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         rc = TRPMQueryTrapAll(pVM, &u8Vector, 0, 0, 0);
         if (rc == VINF_SUCCESS)
         {
-            Log(("Pending hardware interrupt %d\n", u8Vector));
+            Log(("Pending hardware interrupt=0x%x ) cs:eip=%04X:%VGv gs.base=%VGv\n", u8Vector, pCtx->cs, pCtx->rip, pCtx->gsHid.u64Base));
         }
         /*
          * Log important stuff before entering GC.
@@ -2682,9 +2682,9 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
         else
         if (CPUMIsGuestIn64BitCode(pVM, CPUMCTX2CORE(pCtx)))
-            Log(("HWR%d: %VGv ESP=%VGv IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+            Log(("HWR%d: %04X:%VGv ESP=%VGv IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
         else
-            Log(("HWR%d: %08X ESP=%08X IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+            Log(("HWR%d: %04X:%08X ESP=%08X IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
 #endif
 
         /*
