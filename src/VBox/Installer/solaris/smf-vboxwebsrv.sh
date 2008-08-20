@@ -38,13 +38,15 @@ case $VW_OPT in
             return $SMF_EXIT_ERR_CONFIG
         fi
 
-        if [ ! -f /opt/VirtualBox/etc/webservice.cfg ]; then
-            echo "ERROR: /opt/VirtualBox/etc/webservice.cfg does not exist."
-            return $SMF_EXIT_ERR_CONFIG
-        fi
+        # Get svc configuration
+        VW_USER=`/usr/bin/svcprop -p config/user $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_USER=
+        VW_HOST=`/usr/bin/svcprop -p config/host $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_HOST=
+        VW_PORT=`/usr/bin/svcprop -p config/port $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_PORT=
 
-        . /opt/VirtualBox/etc/webservice.cfg
-
+        # Provide sensible defaults
         [ -z "$VW_USER" ] && VW_USER=root
         [ -z "$VW_HOST" ] && VW_HOST=localhost
         [ -z "$VW_PORT" -o "$VW_PORT" -eq 0 ] && VW_PORT=18083

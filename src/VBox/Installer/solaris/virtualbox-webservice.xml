@@ -74,12 +74,18 @@
     <exec_method
         type='method'
         name='stop'
-        exec='/opt/VirtualBox/smf-vboxwebsrv %m'
+        exec='/opt/VirtualBox/smf-vboxwebsrv %m %{restarter/contract}'
         timeout_seconds='15'>
         <method_context>
             <method_credential user='root' group='root' />
         </method_context>
     </exec_method>
+
+    <property_group name='config' type='application'>
+        <propval name='user' type='astring' value='root' />
+        <propval name='host' type='astring' value='localhost' />
+        <propval name='port' type='integer' value='18083' />
+    </property_group>
 
     <stability value='External' />
 
