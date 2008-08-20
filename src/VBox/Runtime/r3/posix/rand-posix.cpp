@@ -47,55 +47,95 @@
 #endif
 
 #include <iprt/rand.h>
+#include <iprt/mem.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include "internal/rand.h"
+#include "internal/magics.h"
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/** File handle of /dev/random. */
-static int g_fhDevRandom = -1;
 
-
-void rtRandLazyInitNative(void)
+/** @copydoc RTRANDINT::pfnGetBytes */
+static DECLCALLBACK(void) rtRandAdvPosixGetBytes(PRTRANDINT pThis, uint8_t *pb, size_t cb)
 {
-    if (g_fhDevRandom != -1)
-        return;
-
-    int fh = open("/dev/urandom", O_RDONLY);
-    if (fh <= 0)
-        fh = open("/dev/random", O_RDONLY | O_NONBLOCK);
-    if (fh >= 0)
-    {
-        fcntl(fh, F_SETFD, FD_CLOEXEC);
-        g_fhDevRandom = fh;
-    }
-}
-
-
-int rtRandGenBytesNative(void *pv, size_t cb)
-{
-    int fh = g_fhDevRandom;
-    if (fh == -1)
-        return VERR_NOT_SUPPORTED;
-
-    ssize_t cbRead = read(fh, pv, cb);
+    ssize_t cbRead = read(pThis->u.File.hFile, pb, cb);
     if ((size_t)cbRead != cb)
     {
-        /* 
-         * Use the fallback for the remainder if /dev/urandom / /dev/random 
-         * is out to lunch. 
-         */
-        if (cbRead <= 0)
-            rtRandGenBytesFallback(pv, cb);
-        else 
+        ssize_t cTries = RT_MIN(cb, 256);
+        do
         {
-            AssertRelease((size_t)cbRead < cb);
-            rtRandGenBytesFallback((uint8_t *)pv + cbRead, cb - cbRead);
-        }
+            if (cbRead > 0)
+            {
+                cb -= cbRead;
+                pb += cbRead;
+            }
+            cbRead = read(pThis->u.File.hFile, pb, cb);
+        } while (   (size_t)cbRead != cb
+                 && cTries-- > 0);
+        AssertReleaseMsg((size_t)cbRead == cb, ("%zu != %zu, cTries=%zd errno=%d\n", cbRead, cb, cTries, errno));
     }
+}
+
+
+/** @copydoc RTRANDINT::pfnDestroy */
+static DECLCALLBACK(int) rtRandAdvPosixDestroy(PRTRANDINT pThis)
+{
+    pThis->u32Magic = ~RTRANDINT_MAGIC;
+    int fd = pThis->u.File.hFile;
+    pThis->u.File.hFile = NIL_RTFILE;
+    RTMemFree(pThis);
+    close(fd);
     return VINF_SUCCESS;
 }
+
+
+static int rtRandAdvPosixCreateNonPseudo(PRTRAND phRand, const char *pszDev) RT_NO_THROW
+{
+    /*
+     * Try open it first and then setup the handle structure.
+     */
+    int fd = open(pszDev, O_RDONLY);
+    if (fd < 0)
+        return RTErrConvertFromErrno(errno);
+    int rc;
+    if (fcntl(fd, F_SETFD, FD_CLOEXEC) != -1)
+    {
+        PRTRANDINT pThis = (PRTRANDINT)RTMemAlloc(sizeof(*pThis));
+        if (pThis)
+        {
+            pThis->u32Magic     = RTRANDINT_MAGIC;
+            pThis->pfnGetBytes  = rtRandAdvPosixGetBytes;
+            pThis->pfnGetU32    = rtRandAdvSynthesizeU32FromBytes;
+            pThis->pfnGetU64    = rtRandAdvSynthesizeU64FromBytes;
+            pThis->pfnSeed      = rtRandAdvStubSeed;
+            pThis->pfnSaveState = rtRandAdvStubSaveState;
+            pThis->pfnRestoreState = rtRandAdvStubRestoreState;
+            pThis->pfnDestroy   = rtRandAdvPosixDestroy;
+            pThis->u.File.hFile = fd;
+
+            *phRand = pThis;
+            return VINF_SUCCESS;
+        }
+
+        /* bail out */
+        rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = RTErrConvertFromErrno(errno);
+    close(fd);
+    return rc;
+}
+
+
+RTDECL(int) RTRandAdvCreateNonPseudo(PRTRAND phRand) RT_NO_THROW
+{
+    return rtRandAdvPosixCreateNonPseudo(phRand, "/dev/urandom");
+}
+
+
+RTDECL(int) RTRandAdvCreatePureNonPseudo(PRTRAND phRand) RT_NO_THROW
+{
+    return rtRandAdvPosixCreateNonPseudo(phRand, "/dev/random");
+}
+
 
