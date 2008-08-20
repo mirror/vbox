@@ -2671,7 +2671,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         rc = TRPMQueryTrapAll(pVM, &u8Vector, 0, 0, 0);
         if (rc == VINF_SUCCESS)
         {
-            Log(("Pending hardware interrupt=0x%x ) cs:eip=%04X:%VGv gs.base=%VGv\n", u8Vector, pCtx->cs, pCtx->rip, pCtx->gsHid.u64Base));
+            Log(("Pending hardware interrupt=0x%x ) cs:eip=%04X:%VGv\n", u8Vector, pCtx->cs, pCtx->rip));
         }
         /*
          * Log important stuff before entering GC.
