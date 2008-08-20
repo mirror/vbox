@@ -26,8 +26,6 @@
     type='service'
     version='1'>
 
-    <create_default_instance enabled='false' />
-
     <single_instance />
 
     <dependency
@@ -54,48 +52,52 @@
             <service_fmri value='svc:/milestone/name-services' />
     </dependency>
 
-    <dependent
-        name='virtualbox-webservice_multi-user'
-        grouping='optional_all'
-        restart_on='none'>
-            <service_fmri value='svc:/milestone/multi-user' />
-    </dependent>
+    <instance name='default' enabled='false'>
 
-    <exec_method
-        type='method'
-        name='start'
-        exec='/opt/VirtualBox/smf-vboxwebsrv %m'
-        timeout_seconds='15'>
-        <method_context>
-            <method_credential user='root' group='root' />
-        </method_context>
-    </exec_method>
+        <dependent
+            name='virtualbox-webservice_multi-user'
+            grouping='optional_all'
+            restart_on='none'>
+                <service_fmri value='svc:/milestone/multi-user' />
+        </dependent>
 
-    <exec_method
-        type='method'
-        name='stop'
-        exec='/opt/VirtualBox/smf-vboxwebsrv %m %{restarter/contract}'
-        timeout_seconds='15'>
-        <method_context>
-            <method_credential user='root' group='root' />
-        </method_context>
-    </exec_method>
+        <exec_method
+            type='method'
+            name='start'
+            exec='/opt/VirtualBox/smf-vboxwebsrv %m'
+            timeout_seconds='15'>
+            <method_context>
+                <method_credential user='root' group='root' />
+            </method_context>
+        </exec_method>
 
-    <property_group name='config' type='application'>
-        <propval name='user' type='astring' value='root' />
-        <propval name='host' type='astring' value='localhost' />
-        <propval name='port' type='integer' value='18083' />
-    </property_group>
+        <exec_method
+            type='method'
+            name='stop'
+            exec='/opt/VirtualBox/smf-vboxwebsrv %m %{restarter/contract}'
+            timeout_seconds='15'>
+            <method_context>
+                <method_credential user='root' group='root' />
+            </method_context>
+        </exec_method>
+
+        <property_group name='config' type='application'>
+            <propval name='user' type='astring' value='root' />
+            <propval name='host' type='astring' value='localhost' />
+            <propval name='port' type='integer' value='18083' />
+        </property_group>
+
+        <template>
+            <common_name>
+                <loctext xml:lang='C'>
+                    VirtualBox Webservice
+                </loctext>
+            </common_name>
+        </template>
+
+    </instance>
 
     <stability value='External' />
-
-    <template>
-        <common_name>
-            <loctext xml:lang='C'>
-                VirtualBox Webservice
-            </loctext>
-        </common_name>
-    </template>
 
 </service>
 
