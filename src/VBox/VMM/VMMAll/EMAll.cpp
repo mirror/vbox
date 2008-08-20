@@ -1438,7 +1438,80 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 /*
  * [LOCK] CMPXCHG emulation.
  */
-#ifdef IN_GC
+#ifndef IN_GC
+static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    OP_PARAMVAL param1, param2;
+
+#ifdef LOG_ENABLED
+    const char *pszInstr;
+
+    if (pCpu->prefix & PREFIX_LOCK)
+        pszInstr = "Lock CmpXchg";
+    else
+        pszInstr = "CmpXchg";
+#endif
+
+    /* Source to make DISQueryParamVal read the register value - ugly hack */
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param2, &param2, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    RTGCPTR  GCPtrPar1;
+    void    *pvParam1;
+    uint64_t valpar, eflags;
+
+    AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
+    switch(param1.type)
+    {
+    case PARMTYPE_ADDRESS:
+        GCPtrPar1 = param1.val.val64;
+        GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
+
+        rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrPar1, &pvParam1);
+        if (VBOX_FAILURE(rc))
+        {
+            AssertRC(rc);
+            return VERR_EM_INTERPRETER;
+        }
+        break;
+
+    default:
+        return VERR_EM_INTERPRETER;
+    }
+
+    switch(param2.type)
+    {
+    case PARMTYPE_IMMEDIATE: /* register actually */
+        valpar = param2.val.val64;
+        break;
+
+    default:
+        return VERR_EM_INTERPRETER;
+    }
+
+    LogFlow(("%s %VGv rax=%RX64 %RX64\n", pszInstr, GCPtrPar1, pRegFrame->rax, valpar));
+
+    if (pCpu->prefix & PREFIX_LOCK)
+        eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pCpu->param2.size);
+    else
+        eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pCpu->param2.size);
+    
+    LogFlow(("%s %VGv rax=%RX64 %RX64 ZF=%d\n", pszInstr, GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
+
+    /* Update guest's eflags and finish. */
+    pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
+                            | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
+
+    *pcbSize = param2.size;
+    return VINF_SUCCESS;
+}
+
+#else
 static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
