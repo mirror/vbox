@@ -62,10 +62,8 @@ if test -f /var/svc/manifest/application/virtualbox/webservice.xml; then
     /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
 fi
 /usr/sbin/removef $PKGINST /opt/VirtualBox/etc/devlink.tab 1>/dev/null
-rm -f /opt/VirtualBox/etc/devlink.tab
-#disabled as /opt/VirtualBox/etc is actually used for permanent config files.
-#/usr/sbin/removef $PKGINST /opt/VirtualBox/etc 1>/dev/null
-#rm -rf /opt/VirtualBox/etc
+/usr/sbin/removef $PKGINST /opt/VirtualBox/etc 1>/dev/null
+rm -rf /opt/VirtualBox/etc
 /usr/sbin/removef -f $PKGINST
 
 /usr/sbin/installf -f $PKGINST
