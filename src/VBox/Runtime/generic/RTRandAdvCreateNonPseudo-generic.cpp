@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Random Numbers and Byte Streams, Generic Stubs.
+ * IPRT - Random Numbers, generic RTRandAdvCreateNonPseudo.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,24 +28,17 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/rand.h>
 #include <iprt/err.h>
-#include "internal/rand.h"
 
 
-void rtRandLazyInitNative(void)
+RTDECL(int) RTRandAdvCreateNonPseudo(PRTRAND phRand)
 {
-}
-
-
-int rtRandGenBytesNative(void *pv, size_t cb)
-{
-    NOREF(pv);
-    NOREF(cb);
+    NOREF(phRand);
     return VERR_NOT_SUPPORTED;
 }
-                   
+
+

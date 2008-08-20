@@ -84,10 +84,48 @@ typedef struct RTRANDINT
      * Generic seeding.
      *
      * @returns IPRT status code.
+     * @retval  VERR_NOT_SUPPORTED if it isn't a pseudo generator.
+     *
      * @param   pThis       Pointer to the instance data.
      * @param   u64Seed     The seed.
      */
     DECLCALLBACKMEMBER(int, pfnSeed)(PRTRANDINT pThis, uint64_t u64Seed);
+
+    /**
+     * Save the current state of a pseudo generator.
+     *
+     * This can be use to save the state so it can later be resumed at the same
+     * position.
+     *
+     * @returns IPRT status code.
+     * @retval  VINF_SUCCESS on success. *pcbState contains the length of the
+     *          returned string and pszState contains the state string.
+     * @retval  VERR_BUFFER_OVERFLOW if the supplied buffer is too small. *pcbState
+     *          will contain the necessary buffer size.
+     * @retval  VERR_NOT_SUPPORTED by non-psuedo generators.
+     *
+     * @param   hRand       Handle to the random number generator.
+     * @param   pszState    Where to store the state. The returned string will be
+     *                      null terminated and printable.
+     * @param   pcbState    The size of the buffer pszState points to on input, the
+     *                      size required / used on return (including the
+     *                      terminator, thus the 'cb' instead of 'cch').
+     */
+    DECLCALLBACKMEMBER(int, pfnSaveState)(RTRAND hRand, char *pszState, size_t *pcbState);
+
+    /**
+     * Restores the state of a pseudo generator.
+     *
+     * The state must've been obtained using pfnGetState.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_PARSE_ERROR if the state string is malformed.
+     * @retval  VERR_NOT_SUPPORTED by non-psuedo generators.
+     *
+     * @param   hRand       Handle to the random number generator.
+     * @param   pszState    The state to load.
+     */
+    DECLCALLBACKMEMBER(int, pfnRestoreState)(RTRAND hRand, char const *pszState);
 
     /**
      * Destroys the instance.
@@ -112,6 +150,12 @@ typedef struct RTRANDINT
             /** The number bits in u32Bits. */
             uint32_t    cBits;
         } ParkMiller;
+
+        struct RTRandFile
+        {
+            /** The file handle. */
+            RTFILE      hFile;
+        } File;
     } u;
 } RTRANDINT;
 
@@ -140,6 +184,10 @@ DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromBytes(PRTRANDINT pThis, uint32
 DECLCALLBACK(uint32_t)  rtRandAdvSynthesizeU32FromU64(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last);
 DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromBytes(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
 DECLCALLBACK(uint64_t)  rtRandAdvSynthesizeU64FromU32(PRTRANDINT pThis, uint64_t u64First, uint64_t u64Last);
+DECLCALLBACK(int)       rtRandAdvStubSeed(PRTRANDINT pThis, uint64_t u64Seed);
+DECLCALLBACK(int)       rtRandAdvStubSaveState(PRTRANDINT pThis, char *pszState, size_t *pcbState);
+DECLCALLBACK(int)       rtRandAdvStubRestoreState(PRTRANDINT pThis, char const *pszState);
+DECLCALLBACK(int)       rtRandAdvDefaultDestroy(PRTRANDINT pThis);
 
 __END_DECLS
 

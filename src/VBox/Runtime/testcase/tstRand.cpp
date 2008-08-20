@@ -316,9 +316,38 @@ static int tstRandAdv(RTRAND hRand)
 #endif
 
     /*
+     * Test saving and restoring the state.
+     */
+    RTPrintf("tstRand:   TESTING RTRandAdvSave/RestoreSave\n");
+    char szState[256];
+    size_t cbState = sizeof(szState);
+    int rc = RTRandAdvSaveState(hRand, szState, &cbState);
+    if (rc != VERR_NOT_SUPPORTED)
+    {
+        CHECK_EXPR_MSG(rc == VINF_SUCCESS,  ("RTRandAdvSaveState(%p,,256) -> %Rrc (%d)\n", (uintptr_t)hRand, rc, rc));
+        uint32_t const u32A1 = RTRandAdvU32(hRand);
+        uint32_t const u32B1 = RTRandAdvU32(hRand);
+        RTPrintf("tstRand:   state:\"%s\"  A=%RX32 B=%RX32\n", szState, u32A1, u32B1);
+
+        rc = RTRandAdvRestoreState(hRand, szState);
+        CHECK_EXPR_MSG(rc == VINF_SUCCESS,  ("RTRandAdvRestoreState(%p,\"%s\") -> %Rrc (%d)\n", (uintptr_t)hRand, szState, rc, rc));
+        uint32_t const u32A2 = RTRandAdvU32(hRand);
+        uint32_t const u32B2 = RTRandAdvU32(hRand);
+        CHECK_EXPR_MSG(u32A1 == u32A2, ("u32A1=%RX32 u32A2=%RX32\n", u32A1, u32A2));
+        CHECK_EXPR_MSG(u32B1 == u32B2, ("u32B1=%RX32 u32B2=%RX32\n", u32B1, u32B2));
+    }
+    else
+    {
+        szState[0] = '\0';
+        rc = RTRandAdvRestoreState(hRand, szState);
+        CHECK_EXPR_MSG(rc == VERR_NOT_SUPPORTED,  ("RTRandAdvRestoreState(%p,\"\") -> %Rrc (%d)\n", (uintptr_t)hRand, rc, rc));
+    }
+
+
+    /*
      * Destroy it.
      */
-    int rc = RTRandAdvDestroy(hRand);
+    rc = RTRandAdvDestroy(hRand);
     CHECK_EXPR_MSG(rc == VINF_SUCCESS,  ("RTRandAdvDestroy(%p) -> %Rrc (%d)\n", (uintptr_t)hRand, rc, rc));
 
     return 0;

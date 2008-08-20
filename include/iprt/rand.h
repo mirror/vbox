@@ -139,6 +139,34 @@ RTDECL(int) RTRandAdvCreatePseudo(PRTRAND phRand) RT_NO_THROW;
 RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW;
 
 /**
+ * Create an instance of the default non-pseudo random number generator.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED on platforms which doesn't have this feature
+ *          (Windows & OS/2).
+ * @param   phRand      Where to store the handle to the generator.
+ *
+ * @remarks Think /dev/urandom.
+ */
+RTDECL(int) RTRandAdvCreateNonPseudo(PRTRAND phRand) RT_NO_THROW;
+
+/**
+ * Create an instance of the default pure non-pseudo random number generator.
+ *
+ * Don't use this unless you seriously need good random numbers because most
+ * systems will have will have problems producing sufficient randomness for this
+ * and you'll end up blocking.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED on platforms which doesn't have this feature
+ *          (Windows & OS/2).
+ * @param   phRand      Where to store the handle to the generator.
+ *
+ * @remarks Think /dev/random.
+ */
+RTDECL(int) RTRandAdvCreatePureNonPseudo(PRTRAND phRand) RT_NO_THROW;
+
+/**
  * Destroys a random number generator.
  *
  * @returns IPRT status code.
@@ -154,10 +182,48 @@ RTDECL(int) RTRandAdvDestroy(RTRAND hRand) RT_NO_THROW;
  * over ther result.
  *
  * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if it isn't a pseudo generator.
+ *
  * @param   hRand       Handle to the random number generator.
  * @param   u64Seed     Seed.
  */
 RTDECL(int) RTRandAdvSeed(RTRAND hRand, uint64_t u64Seed) RT_NO_THROW;
+
+/**
+ * Save the current state of a pseudo generator.
+ *
+ * This can be use to save the state so it can later be resumed at the same
+ * position.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success. *pcbState contains the length of the
+ *          returned string and pszState contains the state string.
+ * @retval  VERR_BUFFER_OVERFLOW if the supplied buffer is too small. *pcbState
+ *          will contain the necessary buffer size.
+ * @retval  VERR_NOT_SUPPORTED by non-psuedo generators.
+ *
+ * @param   hRand       Handle to the random number generator.
+ * @param   pszState    Where to store the state. The returned string will be
+ *                      null terminated and printable.
+ * @param   pcbState    The size of the buffer pszState points to on input, the
+ *                      size required / used on return (including the
+ *                      terminator, thus the 'cb' instead of 'cch').
+ */
+RTDECL(int) RTRandAdvSaveState(RTRAND hRand, char *pszState, size_t *pcbState) RT_NO_THROW;
+
+/**
+ * Restores the state of a pseudo generator.
+ *
+ * The state must've been obtained using RTRandAdvGetState.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_PARSE_ERROR if the state string is malformed.
+ * @retval  VERR_NOT_SUPPORTED by non-psuedo generators.
+ *
+ * @param   hRand       Handle to the random number generator.
+ * @param   pszState    The state to load.
+ */
+RTDECL(int) RTRandAdvRestoreState(RTRAND hRand, char const *pszState) RT_NO_THROW;
 
 /**
  * Fills a buffer with random bytes.

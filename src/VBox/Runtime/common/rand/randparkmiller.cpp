@@ -34,6 +34,7 @@
 #include <iprt/rand.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
+#include <iprt/string.h>
 #include <iprt/err.h>
 #include "internal/rand.h"
 #include "internal/magics.h"
@@ -64,7 +65,7 @@ DECLINLINE(uint32_t) rtRandParkMillerU31(uint32_t *pu32Ctx)
 
 
 /** @copydoc RTRANDINT::pfnGetU32 */
-static uint32_t rtRandParkMillerGetU32(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last)
+static DECLCALLBACK(uint32_t) rtRandParkMillerGetU32(PRTRANDINT pThis, uint32_t u32First, uint32_t u32Last)
 {
     uint32_t off;
     uint32_t offLast = u32Last - u32First;
@@ -114,7 +115,7 @@ static uint32_t rtRandParkMillerGetU32(PRTRANDINT pThis, uint32_t u32First, uint
 
 
 /** @copydoc RTRANDINT::pfnSeed */
-static int rtRandParkMillerSeed(PRTRANDINT pThis, uint64_t u64Seed)
+static DECLCALLBACK(int) rtRandParkMillerSeed(PRTRANDINT pThis, uint64_t u64Seed)
 {
     pThis->u.ParkMiller.u32Ctx = u64Seed;
     pThis->u.ParkMiller.u32Bits = 0;
@@ -123,11 +124,66 @@ static int rtRandParkMillerSeed(PRTRANDINT pThis, uint64_t u64Seed)
 }
 
 
-/** @copydoc RTRANDINT::pfnDestroy */
-static int rtRandParkMillerDestroy(PRTRANDINT pThis)
+/** @copydoc RTRANDINT::pfnSaveState */
+static DECLCALLBACK(int) rtRandParkMillerSaveState(PRTRANDINT pThis, char *pszState, size_t *pcbState)
 {
-    pThis->u32Magic = ~RTRANDINT_MAGIC;
-    RTMemFree(pThis);
+#define RTRAND_PARKMILLER_STATE_SIZE (3+8+1+8+1+2+1+1)
+
+    if (*pcbState < RTRAND_PARKMILLER_STATE_SIZE)
+    {
+        *pcbState = RTRAND_PARKMILLER_STATE_SIZE;
+        return VERR_BUFFER_OVERFLOW;
+    }
+    RTStrPrintf(pszState, *pcbState, "PM:%08RX32,%08RX32,%02x;",
+                pThis->u.ParkMiller.u32Ctx,
+                pThis->u.ParkMiller.u32Bits,
+                pThis->u.ParkMiller.cBits);
+    return VINF_SUCCESS;
+}
+
+
+/** @copydoc RTRANDINT::pfnRestoreState */
+static DECLCALLBACK(int) rtRandParkMillerRestoreState(PRTRANDINT pThis, char const *pszState)
+{
+    /* marker */
+    if (    pszState[0] != 'P'
+        ||  pszState[1] != 'M'
+        ||  pszState[2] != ':')
+        return VERR_PARSE_ERROR;
+    pszState += 3;
+
+    /* u32Ctx */
+    char *pszNext = NULL;
+    uint32_t u32Ctx;
+    int rc = RTStrToUInt32Ex(pszState, &pszNext, 16, &u32Ctx);
+    if (    rc != VWRN_TRAILING_CHARS
+        ||  pszNext !=  pszState + 8
+        ||  *pszNext != ',')
+        return VERR_PARSE_ERROR;
+    pszState += 8 + 1;
+
+    /* u32Bits */
+    uint32_t u32Bits;
+    rc = RTStrToUInt32Ex(pszState, &pszNext, 16, &u32Bits);
+    if (    rc != VWRN_TRAILING_CHARS
+        ||  pszNext !=  pszState + 8
+        ||  *pszNext != ',')
+        return VERR_PARSE_ERROR;
+    pszState += 8 + 1;
+
+    /* cBits */
+    uint32_t cBits;
+    rc = RTStrToUInt32Ex(pszState, &pszNext, 16, &cBits);
+    if (    rc != VWRN_TRAILING_CHARS
+        ||  pszNext !=  pszState + 2
+        ||  *pszNext != ';'
+        ||  pszNext[1] != '\0')
+        return VERR_PARSE_ERROR;
+
+    /* commit */
+    pThis->u.ParkMiller.u32Ctx  = u32Ctx;
+    pThis->u.ParkMiller.u32Bits = u32Bits;
+    pThis->u.ParkMiller.cBits   = cBits;
     return VINF_SUCCESS;
 }
 
@@ -142,7 +198,9 @@ RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW
     pThis->pfnGetU32  = rtRandParkMillerGetU32;
     pThis->pfnGetU64  = rtRandAdvSynthesizeU64FromU32;
     pThis->pfnSeed    = rtRandParkMillerSeed;
-    pThis->pfnDestroy = rtRandParkMillerDestroy;
+    pThis->pfnSaveState = rtRandParkMillerSaveState;
+    pThis->pfnRestoreState = rtRandParkMillerRestoreState;
+    pThis->pfnDestroy = rtRandAdvDefaultDestroy;
     pThis->u.ParkMiller.u32Ctx = 0x20080806;
     pThis->u.ParkMiller.u32Bits = 0;
     pThis->u.ParkMiller.cBits = 0;
