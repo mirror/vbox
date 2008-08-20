@@ -493,7 +493,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
             uint8_t u8Interrupt;
 
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
-            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
+            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Vrc cs:eip=%04X:%VGv\n", u8Interrupt, u8Interrupt, rc, pCtx->cs, pCtx->rip));
             if (VBOX_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
@@ -1686,7 +1686,7 @@ ResumeExecution:
                     break;
                 }
 
-                Log(("Trap %x at %VGv\n", vector, pCtx->rip));
+                Log(("Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
                 rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
