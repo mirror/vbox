@@ -68,7 +68,7 @@ static struct super_operations  sf_super_ops;
 
 /* allocate global info, try to map host share */
 static int
-sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
+sf_glob_alloc (struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
 {
         int err, rc;
         SHFLSTRING *str_name;
@@ -81,6 +81,28 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
                 err = -ENOMEM;
                 LogRelFunc(("could not allocate memory for global info\n"));
                 goto fail0;
+        }
+
+        memset(sf_g, sizeof(*sf_g), 0);
+
+        if (   info->nullchar     != '\0'
+            || info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
+            || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
+            || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2)
+        {
+            /* An old version of mount.vboxsf made the syscall. Translate the
+             * old parameters to the new structure. */
+            struct vbsf_mount_info_old *info_old = (struct vbsf_mount_info_old *)info;
+            static struct vbsf_mount_info_new info_compat;
+
+            info = &info_compat;
+            memset(info, sizeof(*info), 0);
+            memcpy(&info->name, &info_old->name, MAX_HOST_NAME);
+            memcpy(&info->nls_name, &info_old->nls_name, MAX_NLS_NAME);
+            info->length = offsetof(struct vbsf_mount_info_new, dmode);
+            info->uid    = info_old->uid;
+            info->gid    = info_old->gid;
+            info->ttl    = info_old->ttl;
         }
 
         info->name[sizeof (info->name) - 1] = 0;
@@ -126,9 +148,23 @@ sf_glob_alloc (struct vbsf_mount_info *info, struct sf_glob_info **sf_gp)
                 goto fail2;
         }
 
-        sf_g->ttl = info->ttl;
-        sf_g->uid = info->uid;
-        sf_g->gid = info->gid;
+        sf_g->ttl   = info->ttl;
+        sf_g->uid   = info->uid;
+        sf_g->gid   = info->gid;
+
+        if (info->length >= sizeof(struct vbsf_mount_info_new))
+        {
+            /* new fields */
+            sf_g->dmode = info->dmode;
+            sf_g->fmode = info->fmode;
+            sf_g->dmask = info->dmask;
+            sf_g->fmask = info->fmask;
+        }
+        else
+        {
+            sf_g->dmode = ~0;
+            sf_g->fmode = ~0;
+        }
 
         *sf_gp = sf_g;
         return 0;
@@ -179,7 +215,7 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         struct sf_inode_info *sf_i;
         struct sf_glob_info *sf_g;
         RTFSOBJINFO fsinfo;
-        struct vbsf_mount_info *info;
+        struct vbsf_mount_info_new *info;
 
         TRACE ();
         if (!data) {
@@ -414,11 +450,11 @@ init (void)
 
         TRACE ();
 
-        if (sizeof (struct vbsf_mount_info) > PAGE_SIZE) {
+        if (sizeof (struct vbsf_mount_info_old) > PAGE_SIZE) {
                 printk (KERN_ERR
                         "Mount information structure is too large %lu\n"
                         "Must be less than or equal to %lu\n",
-                        (unsigned long)sizeof (struct vbsf_mount_info),
+                        (unsigned long)sizeof (struct vbsf_mount_info_old),
                         PAGE_SIZE);
                 return -EINVAL;
         }

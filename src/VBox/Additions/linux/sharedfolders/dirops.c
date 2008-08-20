@@ -117,7 +117,7 @@ sf_dir_release (struct inode *inode, struct file *file)
    0       all ok
    1       end reached
    -errno  some form of error*/
-int
+static int
 sf_getdent (struct file *dir, char d_name[NAME_MAX])
 {
         loff_t cur;

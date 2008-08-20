@@ -62,6 +62,8 @@ sf_reg_read (struct file *file, char *buf, size_t size, loff_t *off)
                 return -EINVAL;
         }
 
+        /** XXX Check read permission accoring to inode->i_mode! */
+
         if (!size) {
                 return 0;
         }
@@ -132,13 +134,15 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
                 return -EINVAL;
         }
 
+        /** XXX Check write permission accoring to inode->i_mode! */
+
         if (!size) {
                 return 0;
         }
 
         tmp = kmalloc (CHUNK_SIZE, GFP_KERNEL);
         if (!tmp) {
-                LogRelFunc(("could not allocate bounce buffer memory %d\n", CHUNK_SIZE));
+                LogRelFunc(("could not allocate bounce buffer memory %d bytes\n", CHUNK_SIZE));
                 return -ENOMEM;
         }
 
