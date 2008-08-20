@@ -43,6 +43,12 @@
 
 #include "internal/magics.h"
 
+#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX)
+#include "the-linux-kernel.h"
+EXPORT_SYMBOL(RTHeapSimpleAlloc);
+EXPORT_SYMBOL(RTHeapSimpleInit);
+EXPORT_SYMBOL(RTHeapSimpleFree);
+#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
