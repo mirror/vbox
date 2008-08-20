@@ -43,7 +43,7 @@
 
 #include "internal/magics.h"
 
-#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX)
+#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX) && defined(IN_MODULE)
 #include "the-linux-kernel.h"
 EXPORT_SYMBOL(RTHeapSimpleAlloc);
 EXPORT_SYMBOL(RTHeapSimpleInit);
