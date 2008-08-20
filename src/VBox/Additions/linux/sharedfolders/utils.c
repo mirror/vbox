@@ -110,17 +110,21 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
 #endif
 
         if (is_dir) {
-                inode->i_mode = S_IFDIR | mode;
-                inode->i_op = &sf_dir_iops;
-                inode->i_fop = &sf_dir_fops;
+                inode->i_mode  = sf_g->dmode != ~0 ? (sf_g->dmode & 0777) : mode;
+                inode->i_mode &= ~sf_g->dmask;
+                inode->i_mode |= S_IFDIR;
+                inode->i_op    = &sf_dir_iops;
+                inode->i_fop   = &sf_dir_fops;
                 /* XXX: this probably should be set to the number of entries
                    in the directory plus two (. ..) */
                 inode->i_nlink = 1;
         }
         else {
-                inode->i_mode = S_IFREG | mode;
-                inode->i_op = &sf_reg_iops;
-                inode->i_fop = &sf_reg_fops;
+                inode->i_mode  = sf_g->fmode != ~0 ? (sf_g->fmode & 0x777): mode;
+                inode->i_mode &= ~sf_g->fmask;
+                inode->i_mode |= S_IFREG;
+                inode->i_op    = &sf_reg_iops;
+                inode->i_fop   = &sf_reg_fops;
                 inode->i_nlink = 1;
         }
 

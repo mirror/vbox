@@ -35,6 +35,10 @@ struct sf_glob_info {
         int ttl;
         int uid;
         int gid;
+        int dmode;
+        int fmode;
+        int dmask;
+        int fmask;
 };
 
 struct sf_inode_info {

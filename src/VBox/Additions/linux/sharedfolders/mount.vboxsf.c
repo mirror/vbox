@@ -57,14 +57,18 @@
     } while (0)
 
 struct opts {
-    int uid;
-    int gid;
-    int ttl;
-    int ronly;
-    int noexec;
-    int nodev;
-    int nosuid;
-    int remount;
+    int  uid;
+    int  gid;
+    int  ttl;
+    int  dmode;
+    int  fmode;
+    int  dmask;
+    int  fmask;
+    int  ronly;
+    int  noexec;
+    int  nodev;
+    int  nosuid;
+    int  remount;
     char nls_name[MAX_NLS_NAME];
     char *convertcp;
 };
@@ -96,10 +100,10 @@ panic_err (const char *fmt, ...)
 }
 
 static int
-safe_atoi (const char *s, size_t size)
+safe_atoi (const char *s, size_t size, int base)
 {
     char *endptr;
-    long long int val = strtoll (s, &endptr, 10);
+    long long int val = strtoll (s, &endptr, base);
 
     if (val < INT_MIN || val > INT_MAX || endptr < s + size) {
         errno = ERANGE;
@@ -121,6 +125,11 @@ process_mount_opts (const char *s, struct opts *opts)
         HOUID,
         HOGID,
         HOTTL,
+        HODMODE,
+        HOFMODE,
+        HOUMASK,
+        HODMASK,
+        HOFMASK,
         HOIOCHARSET,
         HOCONVERTCP,
         HONOEXEC,
@@ -144,6 +153,11 @@ process_mount_opts (const char *s, struct opts *opts)
         {"ttl",       HOTTL,       1, "time to live for dentry"},
         {"iocharset", HOIOCHARSET, 1, "i/o charset (default utf8)"},
         {"convertcp", HOCONVERTCP, 1, "convert share name from given charset to utf8"},
+        {"dmode",     HODMODE,     1, "mode of all directories"},
+        {"fmode",     HOFMODE,     1, "mode of all regular files"},
+        {"umask",     HOUMASK,     1, "umask of directories and regular files"},
+        {"dmask",     HODMASK,     1, "umask of directories"},
+        {"fmask",     HOFMASK,     1, "umask of regular files"},
         {"noexec",    HONOEXEC,    0, 0 }, /* don't document these options directly here */
         {"exec",      HOEXEC,      0, 0 }, /* as they are well known and described in the */
         {"nodev",     HONODEV,     0, 0 }, /* usual manpages */
@@ -226,13 +240,28 @@ process_mount_opts (const char *s, struct opts *opts)
                     opts->remount = 1;
                     break;
                 case HOUID:
-                    opts->uid = safe_atoi (val, val_len);
+                    opts->uid = safe_atoi (val, val_len, 10);
                     break;
                 case HOGID:
-                    opts->gid = safe_atoi (val, val_len);
+                    opts->gid = safe_atoi (val, val_len, 10);
                     break;
                 case HOTTL:
-                    opts->ttl = safe_atoi (val, val_len);
+                    opts->ttl = safe_atoi (val, val_len, 10);
+                    break;
+                case HODMODE:
+                    opts->dmode = safe_atoi (val, val_len, 8);
+                    break;
+                case HOFMODE:
+                    opts->fmode = safe_atoi (val, val_len, 8);
+                    break;
+                case HOUMASK:
+                    opts->dmask = opts->fmask = safe_atoi (val, val_len, 8);
+                    break;
+                case HODMASK:
+                    opts->dmask = safe_atoi (val, val_len, 8);
+                    break;
+                case HOFMASK:
+                    opts->fmask = safe_atoi (val, val_len, 8);
                     break;
                 case HOIOCHARSET:
                     if (val_len + 1 > sizeof (opts->nls_name)) {
@@ -335,7 +364,7 @@ complete (char *host_name, char *mount_point,
 }
 
 static void
-convertcp (char *in_codeset, char *host_name, struct vbsf_mount_info *info)
+convertcp (char *in_codeset, char *host_name, struct vbsf_mount_info_new *info)
 {
     char *i = host_name;
     char *o = info->name;
@@ -372,18 +401,24 @@ static void __attribute ((noreturn)) usage(char *name)
            "\n"
            "  -w                    mount the shared folder writably (the default)\n"
            "  -r                    mount the shared folder read-only\n"
-           "  -n                    do not add information about the folder to the mtab file\n"
+           "  -n                    do not create an mtab entry\n"
            "  -o OPTION[,OPTION...] use the mount options specified\n"
            "\n", name);
     printf("Available mount options are:\n"
-           "\n"
            "     rw                 mount writably (the default)\n"
            "     ro                 mount read only\n"
            "     uid=UID            set the default file owner user id to UID\n"
            "     gid=GID            set the default file owner group id to GID\n"
-           "     ttl=TTL            set the \"time to live\" to TID for the dentry\n"
-           "     iocharset CHARSET  use the character set CHARSET for i/o operations (default utf8)\n"
-           "     convertcp CHARSET  convert the shared folder name from the character set CHARSET to utf8\n");
+           "     ttl=TTL            set the \"time to live\" to TID for the dentry\n");
+    printf("     dmode=MODE         override the mode of all directories to (octal) MODE\n"
+           "     fmode=MODE         override the mode of all regular files to (octal) MODE\n"
+           "     umask=UMASK        set the umask to (octal) UMASK\n");
+    printf("     dmask=UMASK        set the umask applied to directories only\n"
+           "     fmask=UMASK        set the umask applied to regular files only\n"
+           "     iocharset CHARSET  use the character set CHARSET for I/O operations\n"
+           "                        (default set is utf8)\n"
+           "     convertcp CHARSET  convert the folder name from CHARSET to utf8\n"
+           "\n");
     printf("Less common used options:\n"
            "     noexec,exec,nodev,dev,nosuid,suid\n");
     exit(1);
@@ -398,11 +433,16 @@ main (int argc, char **argv)
     unsigned long flags = MS_NODEV;
     char *host_name;
     char *mount_point;
-    struct vbsf_mount_info mntinf;
-    struct opts opts = {
+    struct vbsf_mount_info_new mntinf;
+    struct opts opts =
+    {
         0,     /* uid */
         0,     /* gid */
         0,     /* ttl */
+       ~0,     /* dmode */
+       ~0,     /* fmode*/
+        0,     /* dmask */
+        0,     /* fmask */
         0,     /* ronly */
         0,     /* noexec */
         0,     /* nodev */
@@ -411,6 +451,11 @@ main (int argc, char **argv)
         "\0",  /* nls_name */
         NULL,  /* convertcp */
     };
+
+    mntinf.nullchar = '\0';
+    mntinf.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
+    mntinf.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
+    mntinf.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
 
     if (getuid ())
         panic ("Only root can mount shared folders from the host.\n");
@@ -475,11 +520,27 @@ main (int argc, char **argv)
     if (opts.nodev)
         flags |= MS_NODEV;
 
-    mntinf.uid = opts.uid;
-    mntinf.gid = opts.gid;
-    mntinf.ttl = opts.ttl;
+    mntinf.uid   = opts.uid;
+    mntinf.gid   = opts.gid;
+    mntinf.ttl   = opts.ttl;
+    mntinf.dmode = opts.dmode;
+    mntinf.fmode = opts.fmode;
+    mntinf.dmask = opts.dmask;
+    mntinf.fmask = opts.fmask;
 
     err = mount (NULL, mount_point, "vboxsf", flags, &mntinf);
+    if (err == -1 && errno == EPROTO)
+    {
+        /* New mount tool with old vboxsf module? Try again using the old
+         * vbsf_mount_info_old structure. */
+        struct vbsf_mount_info_old mntinf_old;
+        memcpy(&mntinf_old.name, &mntinf.name, MAX_HOST_NAME);
+        memcpy(&mntinf_old.nls_name, mntinf.nls_name, MAX_NLS_NAME);
+        mntinf_old.uid = mntinf.uid;
+        mntinf_old.gid = mntinf.gid;
+        mntinf_old.ttl = mntinf.ttl;
+        err = mount (NULL, mount_point, "vboxsf", flags, &mntinf_old);
+    }
     if (err)
         panic_err ("%s: mounting failed with the error", argv[0]);
 
