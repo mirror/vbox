@@ -264,7 +264,7 @@ public:
     template <typename T>
     static void FromSafeArray (const com::SafeArray <T> &aArr, QVector <T> &aVec)
     {
-        aVec.resize (aArr.size());
+        aVec.resize (static_cast<int> (aArr.size()));
         for (int i = 0; i < aVec.size(); ++i)
             aVec [i] = aArr [i];
     }
