@@ -334,7 +334,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = 0 */,
 
     /* Toolbar composing */
     mActionsToolBar = new VBoxToolBar (this);
-    mActionsToolBar->setIconSize (QSize (32, 32));
+    mActionsToolBar->setIconSize (QSize (22, 22));
     mActionsToolBar->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
     mActionsToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
@@ -357,7 +357,7 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = 0 */,
     /* Set spacing/margin like in the selector window */
     centralLayout->setSpacing (0);
     VBoxGlobal::setLayoutMargin (centralLayout, 0);
-    mainLayout->setSpacing (9);
+    mainLayout->setSpacing (5);
     VBoxGlobal::setLayoutMargin (mainLayout, 5);
 #endif /* MAC_LEOPARD_STYLE */
 
