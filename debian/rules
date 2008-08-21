@@ -168,8 +168,6 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
 	mv $(archdir)/*.so $(prefix)/usr/lib
 	mv $(archdir)/*.so.4 $(prefix)/usr/lib || true
-	mv $(archdir)/sdk/bin/xpidl $(prefix)/usr/lib/$(package)
-	rmdir $(archdir)/sdk/bin
 	mv $(archdir)/sdk  $(prefix)/usr/share/$(package)
 	$(if $(HEADLESS),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)
