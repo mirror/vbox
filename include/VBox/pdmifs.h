@@ -2557,16 +2557,6 @@ typedef struct PDMISCSICONNECTOR
      */
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
 
-    /**
-     * Sets the maximum number of requests the driver implementing this interface has to expect.
-     *
-     * @return VBox status code.
-     * @param  pInterface    Pointer to this interface.
-     * @param  cRequestsMax  Maximum number of simultaneous requests.
-     * @remark Before calling pfnSCSIRequestSend this function must be called.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSetSimultaneousRequestsMax, (PPDMISCSICONNECTOR pInterface, uint32_t cRequestsMax));
-
 } PDMISCSICONNECTOR;
 /** @} */
 
