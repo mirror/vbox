@@ -73,7 +73,7 @@ typedef struct RTNETADDRIPX
     /** The node ID. (Defaults to the MAC address apparently.) */
     RTMAC Node;
 } RTNETADDRIPX;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETADDRIPX, 4+6);
 /** Pointer to an IPX address. */
 typedef RTNETADDRIPX *PRTNETADDRIPX;
@@ -179,7 +179,7 @@ typedef struct RTNETIPV4
     /** 14 - Options (optional). */
     uint32_t        ip_options[1];
 } RTNETIPV4;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETIPV4, 6 * 4);
 /** Pointer to a IPv4 header. */
 typedef RTNETIPV4 *PRTNETIPV4;
@@ -233,7 +233,7 @@ typedef struct RTNETUDP
     /** The checksum of the pseudo header, the UDP header and the data. */
     uint16_t    uh_sum;
 } RTNETUDP;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETUDP, 8);
 /** Pointer to an UDP header. */
 typedef RTNETUDP *PRTNETUDP;
@@ -301,7 +301,7 @@ typedef struct RTNETBOOTP
     }               bp_vend;
 
 } RTNETBOOTP;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETBOOTP, 0xec + 128);
 /** Pointer to a BOOTP / DHCP packet. */
 typedef RTNETBOOTP *PRTNETBOOTP;
@@ -405,7 +405,7 @@ typedef struct RTNETDHCP
     uint8_t         DhcpReq;
     uint8_t         abOptions[57];
 } RTNETDHCP;
-#pragma pack(0)
+#pragma pack()
 /** @todo AssertCompileSize(RTNETDHCP, ); */
 /** Pointer to a DHCP packet. */
 typedef RTNETDHCP *PRTNETDHCP;
@@ -448,7 +448,7 @@ typedef struct RTNETTCP
     uint16_t        th_urp;
     /* (options follows here and then the data (aka text).) */
 } RTNETTCP;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETTCP, 20);
 /** Pointer to a TCP packet. */
 typedef RTNETTCP *PRTNETTCP;
@@ -477,7 +477,7 @@ typedef struct RTNETICMPV4HDR
     /** 02 - Checksum of the ICMP message. */
     uint16_t        icmp_cksum;
 } RTNETICMPV4HDR;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETICMPV4HDR, 4);
 /** Pointer to an ICMP packet header. */
 typedef RTNETICMPV4HDR *PRTNETICMPV4HDR;
@@ -508,7 +508,7 @@ typedef struct RTNETICMPV4ECHO
     /** 08 - Variable length data that is to be returned unmodified in the reply. */
     uint8_t         icmp_data[1];
 } RTNETICMPV4ECHO;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETICMPV4ECHO, 9);
 /** Pointer to an ICMP ECHO packet. */
 typedef RTNETICMPV4ECHO *PRTNETICMPV4ECHO;
@@ -537,7 +537,7 @@ typedef struct RTNETICMPV4TRACEROUTE
     /** 10 - Output link MTU, 0 if not known. */
     uint32_t        icmp_mtu;
 } RTNETICMPV4TRACEROUTE;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETICMPV4TRACEROUTE, 20);
 /** Pointer to an ICMP TRACEROUTE packet. */
 typedef RTNETICMPV4TRACEROUTE *PRTNETICMPV4TRACEROUTE;
@@ -581,7 +581,7 @@ typedef struct RTNETARPHDR
     /** The operation. */
     uint16_t    ar_oper;
 } RTNETARPHDR;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETARPHDR, 8);
 /** Pointer to an ethernet ARP header. */
 typedef RTNETARPHDR *PRTNETARPHDR;
@@ -623,7 +623,7 @@ typedef struct RTNETARPIPV4
     /** The arget protocol address. */
     RTNETADDRIPV4   ar_tpa;
 } RTNETARPIPV4;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(RTNETARPIPV4, 8+6+4+6+4);
 /** Pointer to an ethernet IPv4+MAC ARP request packet. */
 typedef RTNETARPIPV4 *PRTNETARPIPV4;
