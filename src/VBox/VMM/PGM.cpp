@@ -1127,6 +1127,7 @@ PGMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.GCPhysCR3        = NIL_RTGCPHYS;
     pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
     pVM->pgm.s.fA20Enabled      = true;
+    pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
     pVM->pgm.s.pGstPaePDPTHC    = NULL;
     pVM->pgm.s.pGstPaePDPTGC    = 0;
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGstPaePDsHC); i++)
@@ -1804,6 +1805,21 @@ PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         AssertRCReturn(rc, rc);
     }
 
+    /* Note that AMD uses all the 8 reserved bits for the address (so 40 bits in total); Intel only goes up to 36 bits, so
+     * we stick to 36 as well.
+     *
+     * @todo How to test for the 40 bits support? Long mode seems to be the test criterium.
+     */
+    uint32_t u32Dummy, u32Features;
+    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+
+    if (u32Features & X86_CPUID_FEATURE_EDX_PSE36)
+        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(36) - 1;
+    else
+        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1;
+
+    LogRel(("PGMR3InitFinalize: 4 MB PSE mask %VGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
+
     return rc;
 }
 
@@ -1819,22 +1835,6 @@ PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PGMR3Relocate\n"));
-
-    /* Note that AMD uses all the 8 reserved bits for the address (so 40 bits in total); Intel only goes up to 36 bits, so
-     * we stick to 36 as well.
-     *
-     * @todo How to test for the 40 bits support? Long mode seems to be the test criterium.
-     */
-    uint32_t u32Dummy, u32Features;
-    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
-
-    if (u32Features & X86_CPUID_FEATURE_EDX_PSE36)
-        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(36) - 1;
-    else
-        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1;
-
-    LogRel(("PGMR3Relocate: 4 MB PSE mask %VGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
-
 
     /*
      * Paging stuff.
