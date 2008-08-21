@@ -137,9 +137,15 @@ __asm__ (
 	".type  " SYMBOL_UNDERSCORE "_XPTC_InvokeByIndex,@function\n"
 	SYMBOL_UNDERSCORE "_XPTC_InvokeByIndex:\n\t"
 #else
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+	".globl " SYMBOL_UNDERSCORE "VBoxNsxpXPTC_InvokeByIndex\n\t"
+	".type  " SYMBOL_UNDERSCORE "VBoxNsxpXPTC_InvokeByIndex,@function\n"
+	SYMBOL_UNDERSCORE "VBoxNsxpXPTC_InvokeByIndex:\n\t"
+#else
 	".globl " SYMBOL_UNDERSCORE "XPTC_InvokeByIndex\n\t"
 	".type  " SYMBOL_UNDERSCORE "XPTC_InvokeByIndex,@function\n"
 	SYMBOL_UNDERSCORE "XPTC_InvokeByIndex:\n\t"
+#endif
 #endif
 	"pushl %ebp\n\t"
 	"movl  %esp, %ebp\n\t"
@@ -196,7 +202,11 @@ __asm__ (
 #ifdef XP_WIN32
 	".size " SYMBOL_UNDERSCORE "_XPTC_InvokeByIndex, . -" SYMBOL_UNDERSCORE "_XPTC_InvokeByIndex\n\t"
 #else
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+	".size " SYMBOL_UNDERSCORE "VBoxNsxpXPTC_InvokeByIndex, . -" SYMBOL_UNDERSCORE "VBoxNsxpXPTC_InvokeByIndex\n\t"
+#else
 	".size " SYMBOL_UNDERSCORE "XPTC_InvokeByIndex, . -" SYMBOL_UNDERSCORE "XPTC_InvokeByIndex\n\t"
+#endif
 #endif
 );
 
