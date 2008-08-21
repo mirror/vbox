@@ -391,10 +391,10 @@ void VBoxVMInformationDlg::refreshStatistics()
     if (mSession.isNull())
         return;
 
-    QString table = "<table border=0 cellspacing=4 cellpadding=0>%1</table>";
-    QString hdrRow = "<tr><td width=22 align=left><img src='%1'></td><td colspan=3><nobr><b>%2</b></nobr></td></tr>";
-    QString bdyRow = "<tr><td></td><td width=50%><nobr>%1</nobr></td><td colspan=2><nobr>%2</nobr></td></tr>";
-    QString paragraph = "<tr><td colspan=4></td></tr>";
+    QString table = "<table width=100% cellspacing=1 cellpadding=0>%1</table>";
+    QString hdrRow = "<tr><td width=22><img src='%1'></td>"
+                     "<td colspan=2><nobr><b>%2</b></nobr></td></tr>";
+    QString paragraph = "<tr><td colspan=3></td></tr>";
     QString result;
 
     CMachine m = mSession.GetMachine();
@@ -408,7 +408,7 @@ void VBoxVMInformationDlg::refreshStatistics()
             .arg (console.GetDisplay().GetHeight());
         if (bpp)
             resolution += QString ("x%1").arg (bpp);
-        QString virt = console.GetDebugger().GetHWVirtExEnabled() ?
+        QString virtualization = console.GetDebugger().GetHWVirtExEnabled() ?
             VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
         QString nested = console.GetDebugger().GetHWVirtExNestedPagingEnabled() ?
@@ -426,12 +426,20 @@ void VBoxVMInformationDlg::refreshStatistics()
         else
             osType = vboxGlobal().vmGuestOSTypeDescription (osType);
 
+        /* Searching for longest string */
+        QStringList valuesList;
+        valuesList << resolution << virtualization << nested << addVerisonStr << osType;
+        int maxLength = 0;
+        foreach (QString value, valuesList)
+            maxLength = maxLength < fontMetrics().width (value) ?
+                        fontMetrics().width (value) : maxLength;
+
         result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
-        result += bdyRow.arg (tr ("Screen Resolution")).arg (resolution);
-        result += bdyRow.arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report")).arg (virt);
-        result += bdyRow.arg (VBoxGlobal::tr ("Nested Paging", "details report")).arg (nested);
-        result += bdyRow.arg (tr ("Guest Additions")).arg (addVerisonStr);
-        result += bdyRow.arg (tr ("Guest OS Type")).arg (osType);
+        result += formatValue (tr ("Screen Resolution"), resolution, maxLength);
+        result += formatValue (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization, maxLength);
+        result += formatValue (VBoxGlobal::tr ("Nested Paging", "details report"), nested, maxLength);
+        result += formatValue (tr ("Guest Additions"), addVerisonStr, maxLength);
+        result += formatValue (tr ("Guest OS Type"), osType, maxLength);
         result += paragraph;
     }
 
@@ -516,10 +524,29 @@ void VBoxVMInformationDlg::refreshStatistics()
 
         result += naStat;
     }
+
     /* Show full composed page & save/restore scroll-bar position */
     int vv = mStatisticText->verticalScrollBar()->value();
     mStatisticText->setText (table.arg (result));
     mStatisticText->verticalScrollBar()->setValue (vv);
+}
+
+/**
+ *  Allows left-aligned values formatting in right column.
+ *
+ *  aValueName - the name of value in the left column.
+ *  aValue - left-aligned value itself in the right column.
+ *  aMaxSize - maximum width (in pixels) of value in right column.
+ */
+QString VBoxVMInformationDlg::formatValue (const QString &aValueName,
+                                           const QString &aValue, int aMaxSize)
+{
+    QString bdyRow = "<tr><td></td><td width=50%><nobr>%1</nobr></td>"
+                     "<td align=right><nobr>%2"
+                     "<img src=:/tpixel.png width=%3 height=1></nobr></td></tr>";
+
+    int size = aMaxSize - fontMetrics().width (aValue);
+    return bdyRow.arg (aValueName).arg (aValue).arg (size);
 }
 
 QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus,
@@ -531,7 +558,7 @@ QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus,
         return QString::null;
 
     CHardDisk hd = mSession.GetMachine().GetHardDisk (aBus, aChannel, aDevice);
-    QString header = "<tr><td></td><td colspan=3><nobr><u>%1</u></nobr></td></tr>";
+    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
     QString name = vboxGlobal().toFullString (aBus, aChannel, aDevice);
     QString result = hd.isNull() ? QString::null : header.arg (name);
     result += composeArticle (aBelongsTo);
@@ -544,7 +571,7 @@ QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
     if (mSession.isNull())
         return QString::null;
 
-    QString header = "<tr><td></td><td colspan=3><nobr><u>%1</u></nobr></td></tr>";
+    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
     QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot);
     QString result = header.arg (name);
     result += composeArticle (aBelongsTo);
@@ -553,8 +580,8 @@ QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
 
 QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo)
 {
-    QString body = "<tr><td></td><td width=50%><nobr>%1</nobr></td><td colspan=2 align=right>"
-                   "<nobr>%2%3</nobr></td></tr>";
+    QString body = "<tr><td></td><td width=50%><nobr>%1</nobr></td>"
+                   "<td align=right><nobr>%2%3</nobr></td></tr>";
     QString result;
 
     if (mLinksMap.contains (aBelongsTo))
