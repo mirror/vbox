@@ -2223,6 +2223,9 @@ typedef struct PGM
      * The cache size is covering half of the mapping area. */
     RTHCPHYS                        aHCPhysDynPageMapCache[MM_HYPER_DYNAMIC_SIZE >> (PAGE_SHIFT + 1)];
 
+    /** 4 MB page mask; 32 or 36 bits depending on PSE-36 */
+    RTGCPHYS                        GCPhys4MBPSEMask;
+
     /** A20 gate mask.
      * Our current approach to A20 emulation is to let REM do it and don't bother
      * anywhere else. The interesting Guests will be operating with it enabled anyway.
@@ -3241,6 +3244,21 @@ DECLINLINE(int) pgmRamFlagsSetByGCPhysWithHint(PPGM pPGM, RTGCPHYS GCPhys, unsig
     return VINF_SUCCESS;
 }
 
+/**
+ * Calculated the guest physical address of the large (4 MB) page in 32 bits paging mode.
+ * Takes PSE-36 into account.
+ *
+ * @returns guest physical address
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   Pde         Guest Pde
+ */
+DECLINLINE(RTGCPHYS) pgmGstGet4MBPhysPage(PPGM pPGM, X86PDE Pde)
+{
+    RTGCPHYS GCPhys = Pde.u & X86_PDE4M_PG_MASK;
+    GCPhys |= (RTGCPHYS)Pde.b.u8PageNoHigh << 32;
+
+    return GCPhys & pPGM->GCPhys4MBPSEMask;
+}
 
 /**
  * Gets the page directory for the specified address.

@@ -263,7 +263,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_FEATURE_EDX_MCA
                                        | X86_CPUID_FEATURE_EDX_CMOV
                                        | X86_CPUID_FEATURE_EDX_PAT
-                                       //| X86_CPUID_FEATURE_EDX_PSE36 - not virtualized.
+                                       | X86_CPUID_FEATURE_EDX_PSE36
                                        //| X86_CPUID_FEATURE_EDX_PSN   - no serial number.
                                        | X86_CPUID_FEATURE_EDX_CLFSH
                                        //| X86_CPUID_FEATURE_EDX_DS    - no debug store.
@@ -310,7 +310,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_AMD_FEATURE_EDX_MCA
                                        | X86_CPUID_AMD_FEATURE_EDX_CMOV
                                        | X86_CPUID_AMD_FEATURE_EDX_PAT
-                                       //| X86_CPUID_AMD_FEATURE_EDX_PSE36  - not virtualized.
+                                       | X86_CPUID_AMD_FEATURE_EDX_PSE36
                                        //| X86_CPUID_AMD_FEATURE_EDX_NX     - not virtualized, requires PAE.
                                        //| X86_CPUID_AMD_FEATURE_EDX_AXMMX
                                        | X86_CPUID_AMD_FEATURE_EDX_MMX
