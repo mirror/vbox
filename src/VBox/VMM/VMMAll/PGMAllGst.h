@@ -46,6 +46,7 @@
 #undef GST_PDPT_SHIFT
 #undef GST_PDPT_MASK
 #undef GST_PDPE_PG_MASK
+#undef GST_GET_PDE_BIG_PG_GCPHYS
 
 #if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
@@ -71,6 +72,7 @@
 # define GST_BIG_PAGE_OFFSET_MASK   X86_PAGE_4M_OFFSET_MASK
 # define GST_PDE_PG_MASK            X86_PDE_PG_MASK
 # define GST_PDE_BIG_PG_MASK        X86_PDE4M_PG_MASK
+# define GST_GET_PDE_BIG_PG_GCPHYS(PdeGst)  pgmGstGet4MBPhysPage(&pVM->pgm.s, PdeGst)
 # define GST_PD_SHIFT               X86_PD_SHIFT
 # define GST_PD_MASK                X86_PD_MASK
 # define GST_TOTAL_PD_ENTRIES       X86_PG_ENTRIES
@@ -92,6 +94,7 @@
 # define GST_BIG_PAGE_OFFSET_MASK   X86_PAGE_2M_OFFSET_MASK
 # define GST_PDE_PG_MASK            X86_PDE_PAE_PG_MASK_FULL
 # define GST_PDE_BIG_PG_MASK        X86_PDE2M_PAE_PG_MASK
+# define GST_GET_PDE_BIG_PG_GCPHYS(PdeGst)  (PdeGst.u & GST_PDE_BIG_PG_MASK)
 # define GST_PD_SHIFT               X86_PD_PAE_SHIFT
 # define GST_PD_MASK                X86_PD_PAE_MASK
 # if PGM_GST_TYPE == PGM_TYPE_PAE

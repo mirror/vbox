@@ -1820,6 +1820,22 @@ PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PGMR3Relocate\n"));
 
+    /* Note that AMD uses all the 8 reserved bits for the address (so 40 bits in total); Intel only goes up to 36 bits, so
+     * we stick to 36 as well.
+     *
+     * @todo How to test for the 40 bits support? Long mode seems to be the test criterium.
+     */
+    uint32_t u32Dummy, u32Features;
+    CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+
+    if (u32Features & X86_CPUID_FEATURE_EDX_PSE36)
+        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(36) - 1;
+    else
+        pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1;
+
+    LogRel(("PGMR3Relocate: 4 MB PSE mask %VGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
+
+
     /*
      * Paging stuff.
      */
@@ -2548,7 +2564,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %VGp P=%d U=%d RW=%d G=%d - BIG\n",
                                 iPD,
-                                PdeSrc.u & X86_PDE_PG_MASK,
+                                pgmGstGet4MBPhysPage(&pVM->pgm.s, PdeSrc),
                                 PdeSrc.b.u1Present, PdeSrc.b.u1User, PdeSrc.b.u1Write, PdeSrc.b.u1Global && fPGE);
             }
             else
@@ -2556,7 +2572,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %VGp P=%d U=%d RW=%d [G=%d]\n",
                                 iPD,
-                                PdeSrc.u & X86_PDE4M_PG_MASK,
+                                PdeSrc.u & X86_PDE_PG_MASK,
                                 PdeSrc.n.u1Present, PdeSrc.n.u1User, PdeSrc.n.u1Write, PdeSrc.b.u1Global && fPGE);
             }
         }
@@ -3926,7 +3942,7 @@ PGMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
                      Pde.u & RT_BIT(9)      ? '1' : '0',
                      Pde.u & RT_BIT(10)     ? '1' : '0',
                      Pde.u & RT_BIT(11)     ? '1' : '0',
-                     Pde.u & X86_PDE4M_PG_MASK));
+                     pgmGstGet4MBPhysPage(&pVM->pgm.s, Pde)));
             /** @todo PhysSearch */
             else
             {
