@@ -317,6 +317,8 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems);
 PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortReadBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 #ifdef IN_GC
 PDMBOTHCBDECL(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #endif
@@ -3651,6 +3653,75 @@ static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *p
 }
 #endif /* IN_RING3 */
 
+/* -=-=-=-=-=- All rings: VGA BIOS I/Os -=-=-=-=-=- */
+
+/**
+ * Port I/O Handler for VGA BIOS IN operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument - ignored.
+ * @param   Port        Port number used for the IN operation.
+ * @param   pu32        Where to store the result.
+ * @param   cb          Number of bytes read.
+ */
+PDMBOTHCBDECL(int) vgaIOPortReadBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    NOREF(pDevIns);
+    NOREF(pvUser);
+    NOREF(Port);
+    NOREF(pu32);
+    NOREF(cb);
+    return VERR_IOM_IOPORT_UNUSED;
+}
+
+/**
+ * Port I/O Handler for VGA BIOS OUT operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument - ignored.
+ * @param   Port        Port number used for the IN operation.
+ * @param   u32         The value to output.
+ * @param   cb          The value size in bytes.
+ */
+PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    static int lastWasNotNewline = 0;  /* We are only called in a single-threaded way */
+    /*
+     * VGA BIOS char printing.
+     */
+    if (    cb == 1
+        &&  Port == VBE_PRINTF_PORT)
+    {
+#if 0
+        switch (u32)
+        {
+            case '\r': Log(("vgabios: <return>\n")); break;
+            case '\n': Log(("vgabios: <newline>\n")); break;
+            case '\t': Log(("vgabios: <tab>\n")); break;
+            default:
+                Log(("vgabios: %c\n", u32));
+        }
+#else
+        if (lastWasNotNewline == 0)
+            Log(("vgabios: "));
+        if (u32 != '\r')  /* return - is only sent in conjunction with '\n' */
+            Log(("%c", u32));
+        if (u32 == '\n')
+            lastWasNotNewline = 0;
+        else
+            lastWasNotNewline = 1;
+#endif
+        return VINF_SUCCESS;
+    }
+
+    /* not in use. */
+    return VINF_SUCCESS;
+}
+
 
 /* -=-=-=-=-=- Ring 3 -=-=-=-=-=- */
 
@@ -4159,76 +4230,6 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 }
 
 
-
-
-/* -=-=-=-=-=- Ring 3: VGA BIOS I/Os -=-=-=-=-=- */
-
-/**
- * Port I/O Handler for VGA BIOS IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
- */
-static DECLCALLBACK(int) vgaIOPortReadBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
-{
-    NOREF(pDevIns);
-    NOREF(pvUser);
-    NOREF(Port);
-    NOREF(pu32);
-    NOREF(cb);
-    return VERR_IOM_IOPORT_UNUSED;
-}
-
-/**
- * Port I/O Handler for VGA BIOS OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument - ignored.
- * @param   Port        Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
- */
-static DECLCALLBACK(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    static int lastWasNotNewline = 0;  /* We are only called in a single-threaded way */
-    /*
-     * VGA BIOS char printing.
-     */
-    if (    cb == 1
-        &&  Port == VBE_PRINTF_PORT)
-    {
-#if 0
-        switch (u32)
-        {
-            case '\r': Log(("vgabios: <return>\n")); break;
-            case '\n': Log(("vgabios: <newline>\n")); break;
-            case '\t': Log(("vgabios: <tab>\n")); break;
-            default:
-                Log(("vgabios: %c\n", u32));
-        }
-#else
-        if (lastWasNotNewline == 0)
-            Log(("vgabios: "));
-        if (u32 != '\r')  /* return - is only sent in conjunction with '\n' */
-            Log(("%c", u32));
-        if (u32 == '\n')
-            lastWasNotNewline = 0;
-        else
-            lastWasNotNewline = 1;
-#endif
-        return VINF_SUCCESS;
-    }
-
-    /* not in use. */
-    return VINF_SUCCESS;
-}
 
 
 /* -=-=-=-=-=- Ring 3: IBase -=-=-=-=-=- */
@@ -5396,6 +5397,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpIOPortRegister(pDevIns, VBE_PRINTF_PORT, 1, NULL, vgaIOPortWriteBIOS, vgaIOPortReadBIOS, NULL, NULL, "VGA BIOS debug/panic");
     if (RT_FAILURE(rc))
         return rc;
+    if (pThis->fR0Enabled)
+    {
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, VBE_PRINTF_PORT,  1, 0, "vgaIOPortWriteBIOS", "vgaIOPortReadBIOS", NULL, NULL, "VGA BIOS debug/panic");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     AssertReleaseMsg(g_cbVgaBiosBinary <= _64K && g_cbVgaBiosBinary >= 32*_1K, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
     AssertReleaseMsg(RT_ALIGN_Z(g_cbVgaBiosBinary, PAGE_SIZE) == g_cbVgaBiosBinary, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
     rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, g_cbVgaBiosBinary, &g_abVgaBiosBinary[0],
