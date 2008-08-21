@@ -49,7 +49,7 @@ if test -n "$old_id"; then
 else
     echo "* If it fails below, run: $SUDO add_drv -m'* 0666 root sys' vboxdrv"
 fi
-if/usr/xpg4/bin/grep  -q vboxdrv /etc/devlink.tab; then
+if /usr/xpg4/bin/grep  -q vboxdrv /etc/devlink.tab; then
     echo "* vboxdrv already present in /etc/devlink.tab"
 else 
     echo "* Adding vboxdrv to /etc/devlink.tab"
