@@ -129,7 +129,6 @@ RTDECL(int) RTRandAdvCreate(PRTRAND phRand) RT_NO_THROW;
  */
 RTDECL(int) RTRandAdvCreatePseudo(PRTRAND phRand) RT_NO_THROW;
 
-
 /**
  * Create an instance of the Park-Miller pseudo random number generator.
  *
@@ -139,32 +138,38 @@ RTDECL(int) RTRandAdvCreatePseudo(PRTRAND phRand) RT_NO_THROW;
 RTDECL(int) RTRandAdvCreateParkMiller(PRTRAND phRand) RT_NO_THROW;
 
 /**
- * Create an instance of the default non-pseudo random number generator.
+ * Create an instance of the faster random number generator for the OS.
  *
  * @returns IPRT status code.
- * @retval  VERR_NOT_SUPPORTED on platforms which doesn't have this feature
- *          (Windows & OS/2).
+ * @retval  VERR_NOT_SUPPORTED on platforms which doesn't have this feature.
+ * @retval  VERR_FILE_NOT_FOUND on system where the random generator hasn't
+ *          been installed or configured correctly.
+ * @retval  VERR_PATH_NOT_FOUND for the same reasons as VERR_FILE_NOT_FOUND.
+ *
  * @param   phRand      Where to store the handle to the generator.
  *
  * @remarks Think /dev/urandom.
  */
-RTDECL(int) RTRandAdvCreateNonPseudo(PRTRAND phRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvCreateSystemFaster(PRTRAND phRand) RT_NO_THROW;
 
 /**
- * Create an instance of the default pure non-pseudo random number generator.
+ * Create an instance of the truer random number generator for the OS.
  *
  * Don't use this unless you seriously need good random numbers because most
- * systems will have will have problems producing sufficient randomness for this
- * and you'll end up blocking.
+ * systems will have will have problems producing sufficient entropy for this
+ * and you'll end up blocking while it accumulates.
  *
  * @returns IPRT status code.
- * @retval  VERR_NOT_SUPPORTED on platforms which doesn't have this feature
- *          (Windows & OS/2).
+ * @retval  VERR_NOT_SUPPORTED on platforms which doesn't have this feature.
+ * @retval  VERR_FILE_NOT_FOUND on system where the random generator hasn't
+ *          been installed or configured correctly.
+ * @retval  VERR_PATH_NOT_FOUND for the same reasons as VERR_FILE_NOT_FOUND.
+ *
  * @param   phRand      Where to store the handle to the generator.
  *
  * @remarks Think /dev/random.
  */
-RTDECL(int) RTRandAdvCreatePureNonPseudo(PRTRAND phRand) RT_NO_THROW;
+RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW;
 
 /**
  * Destroys a random number generator.
