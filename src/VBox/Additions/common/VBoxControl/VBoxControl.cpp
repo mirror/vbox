@@ -532,9 +532,14 @@ int handleSetVideoMode(int argc, char *argv[])
             /* Horizontal resolution must be a multiple of 8, round down. */
             xres &= ~0x7;
 
+            RTPrintf("Setting resolution of display %d to %dx%dx%d ...", scr, xres, yres, bpp);
             ResizeDisplayDevice(scr, xres, yres, bpp);
+            RTPrintf("done.\n");
         }
+        else VBoxControlError("Error retrieving API for display change!");
     }
+    else VBoxControlError("Error retrieving handle to user32.dll!");
+    
     return 0;
 }
 
@@ -857,6 +862,8 @@ int handleRemoveCustomMode(int argc, char *argv[])
         writeCustomModes(hkeyVideo);
         RegCloseKey(hkeyVideo);
     }
+    
+    return 0;
 }
 
 #endif /* RT_OS_WINDOWS */
