@@ -63,6 +63,7 @@
 #include <iprt/critsect.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/net.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
 # include <iprt/semaphore.h>
@@ -4385,38 +4386,42 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *p
 {
     PCNetState *pThis = INETWORKPORT_2_DATA(pInterface);
     int         rc;
-    static bool firstBigFrameLoss = true;
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
     rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
     /*
-     * Determine max ethernet frame size with vlan tag (TPID == 0x8100) or without it
-     * (excluding CRC which is not transferred).
-     * It consists of 14-byte header [+ 4-byte vlan tag] + 1500-byte body.
+     * Check for the max ethernet frame size, taking the IEEE 802.1Q (VLAN) tag into
+     * account. Note that we are *not* expecting the CRC Checksum.
+     * Ethernet frames consists of a 14-byte header [+ 4-byte vlan tag] + a 1500-byte body.
      */
-    register unsigned maxFrameSize = ((uint16_t*)pvBuf)[6] == 0x81 ? 1518 : 1514;
-    if (RT_UNLIKELY(cb > maxFrameSize))
-    {
-        if (RT_UNLIKELY(firstBigFrameLoss))
-        {
-            firstBigFrameLoss = false;
-            Log(("#%d Received frame exceeds max size (%u > %u). "
-                 "Further frame losses will be reported at level5\n",
-                 PCNET_INST_NR, (unsigned)cb, maxFrameSize));
-        }
-        else
-            Log5(("#%d Received frame exceeds max size (%u > %u)\n",
-                  PCNET_INST_NR, (unsigned)cb, (unsigned)maxFrameSize));
-    }
-    else
+    if (RT_LIKELY(   cb <= 1514
+                  || (   cb <= 1518
+                      && ((PCRTNETETHERHDR)pvBuf)->EtherType == RT_H2BE_U16_C(RTNET_ETHERTYPE_VLAN))))
     {
         if (cb > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
         pcnetReceiveNoSync(pThis, (const uint8_t *)pvBuf, cb);
         pThis->Led.Actual.s.fReading = 0;
     }
+#ifdef LOG_ENABLED
+    else
+    {
+        static bool s_fFirstBigFrameLoss = true;
+        unsigned cbMaxFrame = ((PCRTNETETHERHDR)pvBuf)->EtherType == RT_H2BE_U16_C(RTNET_ETHERTYPE_VLAN)
+                            ? 1518 : 1514;
+        if (s_fFirstBigFrameLoss)
+        {
+            s_fFirstBigFrameLoss = false;
+            Log(("PCNet#%d: Received giant frame %zu, max %u. (Further giants will be reported at level5.)\n",
+                 PCNET_INST_NR, cb, cbMaxFrame));
+        }
+        else
+            Log5(("PCNet#%d: Received giant frame %zu bytes, max %u.\n",
+                  PCNET_INST_NR, cb, cbMaxFrame));
+    }
+#endif /* LOG_ENABLED */
 
     PDMCritSectLeave(&pThis->CritSect);
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
