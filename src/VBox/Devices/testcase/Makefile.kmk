@@ -63,6 +63,9 @@ endif
 ifdef VBOX_WITH_E1000
 tstDeviceStructSizeGC_DEFS     += VBOX_WITH_E1000
 endif
+ifdef VBOX_WITH_BUSLOGIC
+tstDeviceStructSizeGC_DEFS     += VBOX_WITH_BUSLOGIC
+endif
 tstDeviceStructSizeGC_SOURCES   = tstDeviceStructSizeGC.cpp
 tstDeviceStructSizeGC_INCS      = \
 	$(VBOX_PATH_DEVICES_SRC) \
@@ -83,6 +86,9 @@ tstDeviceStructSize_DEFS     += VBOX_WITH_AHCI
 endif
 ifdef VBOX_WITH_E1000
 tstDeviceStructSize_DEFS     += VBOX_WITH_E1000
+endif
+ifdef VBOX_WITH_BUSLOGIC
+tstDeviceStructSize_DEFS     += VBOX_WITH_BUSLOGIC
 endif
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \

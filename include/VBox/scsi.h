@@ -104,7 +104,10 @@ typedef enum SCSICMD
     /** Report LUNs command. */
     SCSI_REPORT_LUNS                    = 0xa0,
     /** Rezero Unit command. Obsolete for ages now, but used by cdrecord. */
-    SCSI_REZERO_UNIT                    = 0x01
+    SCSI_REZERO_UNIT                    = 0x01,
+    SCSI_SERVICE_ACTION_IN_16           = 0x9e,
+    SCSI_READ_16                        = 0x88,
+    SCSI_WRITE_16                       = 0x8a
 } SCSICMD;
 
 #ifdef DEBUG
