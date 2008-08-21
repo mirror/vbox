@@ -105,14 +105,25 @@ int main(int argc, char **argv)
     CHECK_EXPR(RTUuidCompare(&Uuid, &Uuid3) == 0);
     CHECK_EXPR(memcmp(&Uuid3, &Uuid, sizeof(Uuid)) == 0);
 
-#if 0 /** @todo make less verbose and print the bits that remain unchanged. */
     /*
      * checking the clock seq and time hi and version bits...
      */
+    RTUUID Uuid4Changes;
+    Uuid4Changes.au64[0] = 0;
+    Uuid4Changes.au64[1] = 0;
+
+    RTUUID Uuid4Prev;
+    RTUuidCreate(&Uuid4Prev);
+
     for (unsigned i = 0; i < 1024; i++)
     {
         RTUUID Uuid4;
         RTUuidCreate(&Uuid4);
+
+        Uuid4Changes.au64[0] |= Uuid4.au64[0] ^ Uuid4Prev.au64[0];
+        Uuid4Changes.au64[1] |= Uuid4.au64[1] ^ Uuid4Prev.au64[1];
+
+#if 0   /** @todo make a bit string/dumper similar to %Rhxs/d. */
         RTPrintf("tstUuid: %d %d %d %d-%d %d %d %d  %d %d %d %d-%d %d %d %d ; %d %d %d %d-%d %d %d %d  %d %d %d %d-%d %d %d %d\n",
                  !!(Uuid4.Gen.u16ClockSeq & RT_BIT(0)),
                  !!(Uuid4.Gen.u16ClockSeq & RT_BIT(1)),
@@ -131,7 +142,6 @@ int main(int argc, char **argv)
                  !!(Uuid4.Gen.u16ClockSeq & RT_BIT(14)),
                  !!(Uuid4.Gen.u16ClockSeq & RT_BIT(15)),
 
-
                  !!(Uuid4.Gen.u16TimeHiAndVersion & RT_BIT(0)),
                  !!(Uuid4.Gen.u16TimeHiAndVersion & RT_BIT(1)),
                  !!(Uuid4.Gen.u16TimeHiAndVersion & RT_BIT(2)),
@@ -149,8 +159,20 @@ int main(int argc, char **argv)
                  !!(Uuid4.Gen.u16TimeHiAndVersion & RT_BIT(14)),
                  !!(Uuid4.Gen.u16TimeHiAndVersion & RT_BIT(15))
                  );
-    }
 #endif
+        Uuid4Prev = Uuid4;
+    }
+
+    RTUUID Uuid4Fixed;
+    Uuid4Fixed.au64[0] = ~Uuid4Changes.au64[0];
+    Uuid4Fixed.au64[1] = ~Uuid4Changes.au64[1];
+    RTPrintf("tstUuid: fixed bits: %RTuuid (mask)\n", &Uuid4Fixed);
+    RTPrintf("tstUuid:        raw: %.*Rhxs\n", sizeof(Uuid4Fixed), &Uuid4Fixed);
+
+    Uuid4Prev.au64[0] &= Uuid4Fixed.au64[0];
+    Uuid4Prev.au64[1] &= Uuid4Fixed.au64[1];
+    RTPrintf("tstUuid: fixed bits: %RTuuid (value)\n", &Uuid4Prev);
+    RTPrintf("tstUuid:        raw: %.*Rhxs\n", sizeof(Uuid4Prev), &Uuid4Prev);
 
     /*
      * Summary.
