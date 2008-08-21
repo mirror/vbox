@@ -261,7 +261,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
 # endif
         }
         if (pGCPhys)
-            *pGCPhys = (Pde.u & GST_PDE_BIG_PG_MASK) | (GCPtr & (~GST_PDE_BIG_PG_MASK ^ ~GST_PTE_PG_MASK)); /** @todo pse36 */
+            *pGCPhys = GST_GET_PDE_BIG_PG_GCPHYS(Pde) | (GCPtr & (~GST_PDE_BIG_PG_MASK ^ ~GST_PTE_PG_MASK));
     }
     return VINF_SUCCESS;
 #else
@@ -354,7 +354,11 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
             /*
              * 4MB Page table
              */
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+            Pde.u = (Pde.u & (fMask | ((fMask & X86_PTE_PAT) << X86_PDE4M_PAT_SHIFT) | GST_PDE_BIG_PG_MASK | X86_PDE4M_PG_HIGH_MASK | X86_PDE4M_PS))
+# else
             Pde.u = (Pde.u & (fMask | ((fMask & X86_PTE_PAT) << X86_PDE4M_PAT_SHIFT) | GST_PDE_BIG_PG_MASK | X86_PDE4M_PS)) /** @todo pse36 */
+# endif
                   | (fFlags & ~GST_PTE_PG_MASK)
                   | ((fFlags & X86_PTE_PAT) << X86_PDE4M_PAT_SHIFT);
             *pPde = Pde;
