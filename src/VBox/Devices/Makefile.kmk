@@ -400,6 +400,12 @@ VBoxDDGC_SOURCES       += \
 	Storage/ATAController.cpp
 endif
 
+ifdef VBOX_WITH_BUSLOGIC
+VBoxDDGC_DEFS          += VBOX_WITH_BUSLOGIC
+VBoxDDGC_SOURCES       += \
+	Storage/DevBusLogic.cpp
+endif
+
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDDGC_LDFLAGS        = -Entry:vgaMMIOWrite
 endif
@@ -455,6 +461,12 @@ VBoxDDR0_DEFS          += VBOX_WITH_AHCI IN_AHCI_R0
 VBoxDDR0_SOURCES       += \
 	Storage/DevAHCI.cpp \
 	Storage/ATAController.cpp
+endif
+
+ifdef VBOX_WITH_BUSLOGIC
+VBoxDDR0_DEFS          += VBOX_WITH_BUSLOGIC
+VBoxDDR0_SOURCES       += \
+	Storage/DevBusLogic.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)

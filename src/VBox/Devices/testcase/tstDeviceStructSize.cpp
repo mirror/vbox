@@ -67,6 +67,10 @@
 # undef LOG_GROUP
 # include "../Network/DevE1000.cpp"
 #endif
+#ifdef VBOX_WITH_BUSLOGIC
+# undef LOG_GROUP
+# include "../Storage/DevBusLogic.cpp"
+#endif
 
 #include <stdio.h>
 

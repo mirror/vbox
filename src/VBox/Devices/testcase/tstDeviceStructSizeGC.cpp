@@ -77,6 +77,10 @@
 # undef LOG_GROUP
 # include "../Network/DevE1000.cpp"
 #endif
+#ifdef VBOX_WITH_BUSLOGIC
+# undef LOG_GROUP
+# include "../Storage/DevBusLogic.cpp"
+#endif
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -1104,6 +1108,57 @@ int main()
     GEN_CHECK_OFF(E1KSTATE, eeprom);
     GEN_CHECK_OFF(E1KSTATE, phy);
 #endif /* VBOX_WITH_E1000 */
+
+#ifdef VBOX_WITH_BUSLOGIC
+    GEN_CHECK_SIZE(BUSLOGICDEVICE);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, pBusLogicR3);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, pBusLogicR0);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, pBusLogicRC);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, fPresent);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, iLUN);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, IBase);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, ISCSIPort);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, pDrvBase);
+    GEN_CHECK_OFF(BUSLOGICDEVICE, pDrvSCSIConnector);
+
+    GEN_CHECK_SIZE(BUSLOGIC);
+    GEN_CHECK_OFF(BUSLOGIC, dev);
+    GEN_CHECK_OFF(BUSLOGIC, pDevInsR3);
+    GEN_CHECK_OFF(BUSLOGIC, pDevInsR0);
+    GEN_CHECK_OFF(BUSLOGIC, pDevInsRC);
+    GEN_CHECK_OFF(BUSLOGIC, IOPortBase);
+    GEN_CHECK_OFF(BUSLOGIC, MMIOBase);
+    GEN_CHECK_OFF(BUSLOGIC, regStatus);
+    GEN_CHECK_OFF(BUSLOGIC, regInterrupt);
+    GEN_CHECK_OFF(BUSLOGIC, regGeometry);
+    GEN_CHECK_OFF(BUSLOGIC, LocalRam);
+    GEN_CHECK_OFF(BUSLOGIC, uOperationCode);
+    GEN_CHECK_OFF(BUSLOGIC, aCommandBuffer);
+    GEN_CHECK_OFF(BUSLOGIC, aCommandBuffer[BUSLOGIC_COMMAND_SIZE_MAX]);
+    GEN_CHECK_OFF(BUSLOGIC, iParameter);
+    GEN_CHECK_OFF(BUSLOGIC, cbCommandParametersLeft);
+    GEN_CHECK_OFF(BUSLOGIC, fUseLocalRam);
+    GEN_CHECK_OFF(BUSLOGIC, aReplyBuffer);
+    GEN_CHECK_OFF(BUSLOGIC, aReplyBuffer[BUSLOGIC_REPLY_SIZE_MAX]);
+    GEN_CHECK_OFF(BUSLOGIC, iReply);
+    GEN_CHECK_OFF(BUSLOGIC, cbReplyParametersLeft);
+    GEN_CHECK_OFF(BUSLOGIC, fIRQEnabled);
+    GEN_CHECK_OFF(BUSLOGIC, cMailbox);
+    GEN_CHECK_OFF(BUSLOGIC, GCPhysAddrMailboxOutgoingBase);
+    GEN_CHECK_OFF(BUSLOGIC, uMailboxOutgoingPositionCurrent);
+    GEN_CHECK_OFF(BUSLOGIC, cMailboxesReady);
+    GEN_CHECK_OFF(BUSLOGIC, fNotificationSend);
+    GEN_CHECK_OFF(BUSLOGIC, GCPhysAddrMailboxIncomingBase);
+    GEN_CHECK_OFF(BUSLOGIC, uMailboxIncomingPositionCurrent);
+    GEN_CHECK_OFF(BUSLOGIC, fStrictRoundRobinMode);
+    GEN_CHECK_OFF(BUSLOGIC, fExtendedLunCCBFormat);
+    GEN_CHECK_OFF(BUSLOGIC, pNotifierQueueR3);
+    GEN_CHECK_OFF(BUSLOGIC, pNotifierQueueR0);
+    GEN_CHECK_OFF(BUSLOGIC, pNotifierQueueRC);
+    GEN_CHECK_OFF(BUSLOGIC, pTaskCache);
+    GEN_CHECK_OFF(BUSLOGIC, aDeviceStates);
+    GEN_CHECK_OFF(BUSLOGIC, aDeviceStates[BUSLOGIC_MAX_DEVICES]);
+#endif /* VBOX_WITH_BUSLOGIC */
 
     return (0);
 }

@@ -2497,7 +2497,7 @@ typedef struct PDMSCSIREQUEST
     /** Size of the SCSI CDB. */
     uint32_t    cbCDB;
     /** Pointer to the SCSI CDB. */
-    uint8_t    *pCDB;
+    uint8_t    *paCDB;
     /** Overall size of all scatter gather list elements
      *  for data transfer if any. */
     uint32_t    cbScatterGather;
@@ -2505,6 +2505,11 @@ typedef struct PDMSCSIREQUEST
     uint32_t    cScatterGatherEntries;
     /** Pointer to the head of the scatter gather list. */
     PPDMDATASEG paScatterGatherHead;
+    /** Size of the sense buffer. */
+    uint32_t    cbSenseBuffer;
+    /** Pointer to the sense buffer. *
+     * Current assumption that the sense buffer is not scattered. */
+    uint8_t    *pu8SenseBuffer;
     /** Opaque user data for use by the device. Left untouched by everything else! */
     void       *pvUser;
 } PDMSCSIREQUEST, *PPDMSCSIREQUEST;
@@ -2548,8 +2553,19 @@ typedef struct PDMISCSICONNECTOR
      * @returns VBox status code.
      * @param   pInterface    Pointer to this interface.
      * @param   pSCSIRequest  Pointer to the SCSI request to execute.
+     * @remark  pfnSetSimultaneousRequestsMax must be called before this function can be used.
      */
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
+
+    /**
+     * Sets the maximum number of requests the driver implementing this interface has to expect.
+     *
+     * @return VBox status code.
+     * @param  pInterface    Pointer to this interface.
+     * @param  cRequestsMax  Maximum number of simultaneous requests.
+     * @remark Before calling pfnSCSIRequestSend this function must be called.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetSimultaneousRequestsMax, (PPDMISCSICONNECTOR pInterface, uint32_t cRequestsMax));
 
 } PDMISCSICONNECTOR;
 /** @} */
