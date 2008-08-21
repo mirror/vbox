@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Random Numbers, generic RTRandAdvCreateNonPseudo.
+ * IPRT - Random Numbers, generic RTRandAdvCreateSystemTruer.
  */
 
 /*
@@ -35,10 +35,9 @@
 #include <iprt/err.h>
 
 
-RTDECL(int) RTRandAdvCreateNonPseudo(PRTRAND phRand)
+RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand)
 {
     NOREF(phRand);
     return VERR_NOT_SUPPORTED;
 }
-
 

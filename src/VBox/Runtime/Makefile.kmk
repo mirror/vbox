@@ -286,8 +286,8 @@ RuntimeR3_SOURCES.win = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
 	generic/RTMpGetMaxFrequency-generic.cpp \
-	generic/RTRandAdvCreateNonPseudo-generic.cpp \
-	generic/RTRandAdvCreatePureNonPseudo-generic.cpp \
+	generic/RTRandAdvCreateSystemFaster-generic.cpp \
+	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
@@ -371,8 +371,8 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTRandAdvCreateNonPseudo-generic.cpp \
-	generic/RTRandAdvCreatePureNonPseudo-generic.cpp \
+	generic/RTRandAdvCreateSystemFaster-generic.cpp \
+	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \

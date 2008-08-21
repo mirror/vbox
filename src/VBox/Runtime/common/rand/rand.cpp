@@ -64,7 +64,7 @@ static DECLCALLBACK(int) rtRandInitOnce(void *pvUser1, void *pvUser2)
     NOREF(pvUser2);
 
     RTRAND hRand;
-    int rc = RTRandAdvCreateNonPseudo(&hRand);
+    int rc = RTRandAdvCreateSystemFaster(&hRand);
     if (RT_FAILURE(rc))
         rc = RTRandAdvCreateParkMiller(&hRand);
     if (RT_SUCCESS(rc))
