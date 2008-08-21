@@ -108,7 +108,7 @@ safe_atoi (const char *s, size_t size, int base)
     if (val < INT_MIN || val > INT_MAX || endptr < s + size) {
         errno = ERANGE;
         panic_err ("could not convert %.*s to integer, result = %d",
-                   size, s, (int) val);
+                   (int)size, s, (int) val);
     }
     return (int) val;
 }
@@ -206,7 +206,7 @@ process_mount_opts (const char *s, struct opts *opts)
                 if (handler->has_arg) {
                     if (!(val && *val)) {
                         panic ("%.*s requires an argument (i.e. %.*s=<arg>)\n",
-                               len, s, len, s);
+                               (int)len, s, (int)len, s);
                     }
                 }
 
@@ -285,7 +285,7 @@ process_mount_opts (const char *s, struct opts *opts)
         }
 
         if (!handler->name) {
-            fprintf (stderr, "unknown mount option `%.*s'\n", len, s);
+            fprintf (stderr, "unknown mount option `%.*s'\n", (int)len, s);
             fprintf (stderr, "valid options:\n");
 
             for (handler = handlers; handler->name; ++handler) {
@@ -382,7 +382,7 @@ convertcp (char *in_codeset, char *host_name, struct vbsf_mount_info_new *info)
         size_t c = iconv (cd, &i, &ib, &o, &ob);
         if (c == (size_t) -1) {
             panic_err ("could not convert share name(%s) at %d",
-                       host_name, strlen (host_name) - ib);
+                       host_name, (int)(strlen (host_name) - ib));
         }
     }
     *o = 0;
