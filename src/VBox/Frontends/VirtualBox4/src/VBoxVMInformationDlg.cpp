@@ -82,8 +82,8 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
      * QRichTextEdit extended class: */
 #if 0
     mDetailsText->setViewportMargins (5, 5, 5, 5);
-    mStatisticText->setViewportMargins (5, 5, 5, 5);
 #endif
+    mStatisticText->setViewportMargins (0, 0, 5, 0);
 
     /* Setup handlers */
     connect (mInfoStack, SIGNAL (currentChanged (int)),
