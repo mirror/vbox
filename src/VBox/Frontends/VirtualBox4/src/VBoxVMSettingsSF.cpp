@@ -216,7 +216,7 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
     /* Prepare toolbar */
     VBoxToolBar *toolBar = new VBoxToolBar (mGbSharedFolders);
     toolBar->setUsesTextLabel (false);
-    toolBar->setUsesBigPixmaps (false);
+    toolBar->setIconSize (QSize (16, 16));
     toolBar->setOrientation (Qt::Vertical);
     toolBar->addAction (mNewAction);
     toolBar->addAction (mEdtAction);
@@ -367,7 +367,7 @@ void VBoxVMSettingsSF::addTriggered()
 {
     /* Invoke Add-Box Dialog */
     VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::AddType,
-                                 mDialogType & ConsoleType, 
+                                 mDialogType & ConsoleType,
                                  usedList (true),
                                  this);
     if (dlg.exec() == QDialog::Accepted)
@@ -411,7 +411,7 @@ void VBoxVMSettingsSF::edtTriggered()
 
     /* Invoke Edit-Box Dialog */
     VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::EditType,
-                                 mDialogType & ConsoleType, 
+                                 mDialogType & ConsoleType,
                                  usedList (false),
                                  this);
     dlg.setPath (item->getText (1));

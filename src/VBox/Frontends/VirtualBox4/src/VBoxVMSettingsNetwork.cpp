@@ -449,7 +449,7 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
     /* Prepare toolbar */
     VBoxToolBar *toolBar = new VBoxToolBar (this);
     toolBar->setUsesTextLabel (false);
-    toolBar->setUsesBigPixmaps (false);
+    toolBar->setIconSize (QSize (16, 16));
     toolBar->setOrientation (Qt::Vertical);
 # if defined (Q_WS_WIN)
     toolBar->addAction (mAddAction);

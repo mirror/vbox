@@ -266,7 +266,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     /* ToolBar creation */
     VBoxToolBar *toolBar = new VBoxToolBar (this);
     toolBar->setUsesTextLabel (false);
-    toolBar->setUsesBigPixmaps (true);
+    toolBar->setIconSize (QSize (22, 22));
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     toolBar->addAction (mTakeSnapshotAction);

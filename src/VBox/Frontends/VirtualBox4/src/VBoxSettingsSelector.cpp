@@ -94,7 +94,7 @@ QWidget *VBoxSettingsSelector::idToPage (int aId) const
     return page;
 }
 
-QList<VBoxSettingsPage*> VBoxSettingsSelector::settingPages() const 
+QList<VBoxSettingsPage*> VBoxSettingsSelector::settingPages() const
 {
     QList<VBoxSettingsPage*> list;
     foreach (SelectorItem *item, mItemList)
@@ -103,7 +103,7 @@ QList<VBoxSettingsPage*> VBoxSettingsSelector::settingPages() const
     return list;
 }
 
-QList<QWidget*> VBoxSettingsSelector::rootPages() const 
+QList<QWidget*> VBoxSettingsSelector::rootPages() const
 {
     QList<QWidget*> list;
     foreach (SelectorItem *item, mItemList)
@@ -200,9 +200,9 @@ QWidget *VBoxSettingsTreeViewSelector::widget() const
     return mTwSelector;
 }
 
-QWidget *VBoxSettingsTreeViewSelector::addItem (const QString &aBigIcon, 
-                                                const QString &aSmallIcon, 
-                                                int aId, 
+QWidget *VBoxSettingsTreeViewSelector::addItem (const QString &aBigIcon,
+                                                const QString &aSmallIcon,
+                                                int aId,
                                                 const QString &aLink,
                                                 VBoxSettingsPage* aPage /* = NULL */,
                                                 int aParentId /* = -1 */)
@@ -361,7 +361,7 @@ VBoxSettingsToolBarSelector::VBoxSettingsToolBarSelector (QWidget *aParent /* = 
     /* Init the toolbar */
     mTbSelector = new VBoxToolBar (aParent);
     mTbSelector->setUsesTextLabel (true);
-    mTbSelector->setUsesBigPixmaps (true);
+    mTbSelector->setIconSize (QSize (32, 32));
     /* Init the action group for house keeping */
     mActionGroup = new QActionGroup (this);
     mActionGroup->setExclusive (true);
@@ -378,9 +378,9 @@ QWidget *VBoxSettingsToolBarSelector::widget() const
     return mTbSelector;
 }
 
-QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon, 
-                                               const QString &aSmallIcon, 
-                                               int aId, 
+QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
+                                               const QString &aSmallIcon,
+                                               int aId,
                                                const QString &aLink,
                                                VBoxSettingsPage* aPage /* = NULL */,
                                                int aParentId /* = -1 */)
@@ -548,7 +548,7 @@ void VBoxSettingsToolBarSelector::clear()
 {
     QList<QAction*> list = mActionGroup->actions();
     foreach (QAction *action, list)
-       delete action; 
+       delete action;
 }
 
 int VBoxSettingsToolBarSelector::minWidth() const
