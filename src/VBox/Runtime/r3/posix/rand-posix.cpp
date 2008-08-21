@@ -89,7 +89,7 @@ static DECLCALLBACK(int) rtRandAdvPosixDestroy(PRTRANDINT pThis)
 }
 
 
-static int rtRandAdvPosixCreateNonPseudo(PRTRAND phRand, const char *pszDev) RT_NO_THROW
+static int rtRandAdvPosixCreateSystem(PRTRAND phRand, const char *pszDev) RT_NO_THROW
 {
     /*
      * Try open it first and then setup the handle structure.
@@ -127,15 +127,15 @@ static int rtRandAdvPosixCreateNonPseudo(PRTRAND phRand, const char *pszDev) RT_
 }
 
 
-RTDECL(int) RTRandAdvCreateNonPseudo(PRTRAND phRand) RT_NO_THROW
+RTDECL(int) RTRandAdvCreateSystemFaster(PRTRAND phRand) RT_NO_THROW
 {
-    return rtRandAdvPosixCreateNonPseudo(phRand, "/dev/urandom");
+    return rtRandAdvPosixCreateSystem(phRand, "/dev/urandom");
 }
 
 
-RTDECL(int) RTRandAdvCreatePureNonPseudo(PRTRAND phRand) RT_NO_THROW
+RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW
 {
-    return rtRandAdvPosixCreateNonPseudo(phRand, "/dev/random");
+    return rtRandAdvPosixCreateSystem(phRand, "/dev/random");
 }
 
 
