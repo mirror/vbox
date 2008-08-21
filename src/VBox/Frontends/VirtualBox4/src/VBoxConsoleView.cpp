@@ -1449,11 +1449,21 @@ bool VBoxConsoleView::event (QEvent *e)
                     }
                     else if (ke->key() == Qt::Key_Home)
                     {
-                        /* activate the main menu */
+                        /* Activate the main menu */
                         if (mMainWnd->isTrueSeamless() || mMainWnd->isTrueFullscreen())
                             mMainWnd->popupMainMenu (mMouseCaptured);
                         else
-                            mMainWnd->menuBar()->setFocus();
+                        {
+                            /* In Qt4 it is not enough to just set the focus to
+                             * menu-bar. So to get the menu-bar we have to send
+                             * Qt::Key_Alt press/release events directly. */
+                            QKeyEvent e1 (QEvent::KeyPress, Qt::Key_Alt,
+                                          Qt::NoModifier);
+                            QKeyEvent e2 (QEvent::KeyRelease, Qt::Key_Alt,
+                                          Qt::NoModifier);
+                            QApplication::sendEvent (mMainWnd->menuBar(), &e1);
+                            QApplication::sendEvent (mMainWnd->menuBar(), &e2);
+                        }
                     }
                     else
                     {
