@@ -43,6 +43,22 @@
 */
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_SetLibraryPath VBoxNsprPR_SetLibraryPath
+#define PR_GetLibraryPath VBoxNsprPR_GetLibraryPath
+#define PR_GetLibraryName VBoxNsprPR_GetLibraryName
+#define PR_FreeLibraryName VBoxNsprPR_FreeLibraryName
+#define PR_LoadLibrary VBoxNsprPR_LoadLibrary
+#define PR_LoadLibraryWithFlags VBoxNsprPR_LoadLibraryWithFlags
+#define PR_UnloadLibrary VBoxNsprPR_UnloadLibrary
+#define PR_FindSymbol VBoxNsprPR_FindSymbol
+#define PR_FindFunctionSymbol VBoxNsprPR_FindFunctionSymbol
+#define PR_FindSymbolAndLibrary VBoxNsprPR_FindSymbolAndLibrary
+#define PR_FindFunctionSymbolAndLibrary VBoxNsprPR_FindFunctionSymbolAndLibrary
+#define PR_LoadStaticLibrary VBoxNsprPR_LoadStaticLibrary
+#define PR_GetLibraryFilePathname VBoxNsprPR_GetLibraryFilePathname
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PRLibrary PRLibrary;

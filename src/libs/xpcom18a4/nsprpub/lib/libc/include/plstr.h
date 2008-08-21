@@ -61,6 +61,41 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_strlen VBoxNsplPL_strlen
+#define PL_strcmp VBoxNsplPL_strcmp
+#define PL_strncmp VBoxNsplPL_strncmp
+#define PL_strcasecmp VBoxNsplPL_strcasecmp
+#define PL_strncasecmp VBoxNsplPL_strncasecmp
+#define PL_strdup VBoxNsplPL_strdup
+#define PL_strfree VBoxNsplPL_strfree
+#define PL_strncpy VBoxNsplPL_strncpy
+#define PL_strncpyz VBoxNsplPL_strncpyz
+#define PL_strrchr VBoxNsplPL_strrchr
+#define PL_strcaserstr VBoxNsplPL_strcaserstr
+#define PL_strcasestr VBoxNsplPL_strcasestr
+#define PL_strcat VBoxNsplPL_strcat
+#define PL_strcatn VBoxNsplPL_strcatn
+#define PL_strchr VBoxNsplPL_strchr
+#define PL_strcpy VBoxNsplPL_strcpy
+#define PL_strncaserstr VBoxNsplPL_strncaserstr
+#define PL_strncasestr VBoxNsplPL_strncasestr
+#define PL_strncat VBoxNsplPL_strncat
+#define PL_strnchr VBoxNsplPL_strnchr
+#define PL_strndup VBoxNsplPL_strndup
+#define PL_strnlen VBoxNsplPL_strnlen
+#define PL_strnpbrk VBoxNsplPL_strnpbrk
+#define PL_strnprbrk VBoxNsplPL_strnprbrk
+#define PL_strnrchr VBoxNsplPL_strnrchr
+#define PL_strnrstr VBoxNsplPL_strnrstr
+#define PL_strnstr VBoxNsplPL_strnstr
+#define PL_strpbrk VBoxNsplPL_strpbrk
+#define PL_strprbrk VBoxNsplPL_strprbrk
+#define PL_strrstr VBoxNsplPL_strrstr
+#define PL_strstr VBoxNsplPL_strstr
+#define PL_strtok_r VBoxNsplPL_strtok_r
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 /*
  * PL_strlen

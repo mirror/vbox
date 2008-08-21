@@ -47,6 +47,10 @@
 #include "xptinfo.h"
 #include "nsIInterfaceInfo.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define XPTC_InvokeByIndex VBoxNsxpXPTC_InvokeByIndex
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 /***************************************************************************/
 /*
  * The linkage of XPTC API functions differs depending on whether the file is

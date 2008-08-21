@@ -41,6 +41,19 @@
 #include "nscore.h"
 #include "nsXPCOMCID.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_InitXPCOM2 VBoxNsxpNS_InitXPCOM2
+#define NS_ShutdownXPCOM VBoxNsxpNS_ShutdownXPCOM
+#define NS_NewNativeLocalFile VBoxNsxpNS_NewNativeLocalFile
+#define NS_GetServiceManager VBoxNsxpNS_GetServiceManager
+#define NS_GetComponentManager VBoxNsxpNS_GetComponentManager
+#define NS_GetComponentRegistrar VBoxNsxpNS_GetComponentRegistrar
+#define NS_GetDebug VBoxNsxpNS_GetDebug
+#define NS_GetMemoryManager VBoxNsxpNS_GetMemoryManager
+#define NS_GetTraceRefcnt VBoxNsxpNS_GetTraceRefcnt
+#define NS_NewLocalFile VBoxNsxpNS_NewLocalFile
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 class nsAString;
 class nsACString;
 

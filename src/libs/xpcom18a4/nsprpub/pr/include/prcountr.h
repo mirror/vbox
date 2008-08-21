@@ -106,6 +106,21 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CreateCounter VBoxNsprPR_CreateCounter
+#define PR_DestroyCounter VBoxNsprPR_DestroyCounter
+#define PR_GetCounterHandleFromName VBoxNsprPR_GetCounterHandleFromName
+#define PR_GetCounterNameFromHandle VBoxNsprPR_GetCounterNameFromHandle
+#define PR_IncrementCounter VBoxNsprPR_IncrementCounter
+#define PR_DecrementCounter VBoxNsprPR_DecrementCounter
+#define PR_AddToCounter VBoxNsprPR_AddToCounter
+#define PR_SubtractFromCounter VBoxNsprPR_SubtractFromCounter
+#define PR_GetCounter VBoxNsprPR_GetCounter
+#define PR_SetCounter VBoxNsprPR_SetCounter
+#define PR_FindNextCounterQname VBoxNsprPR_FindNextCounterQname
+#define PR_FindNextCounterRname VBoxNsprPR_FindNextCounterRname
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

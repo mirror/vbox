@@ -45,6 +45,17 @@
 #include "prtypes.h"
 #include <stdlib.h>
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define XPT_NewArena VBoxNsxpXPT_NewArena
+#define XPT_ArenaMalloc VBoxNsxpXPT_ArenaMalloc
+#define XPT_DestroyArena VBoxNsxpXPT_DestroyArena
+#define XPT_ArenaFree VBoxNsxpXPT_ArenaFree
+#define XPT_DestroyArena VBoxNsxpXPT_DestroyArena
+#define XPT_DumpStats VBoxNsxpXPT_DumpStats
+#define XPT_NotifyDoneLoading VBoxNsxpXPT_NotifyDoneLoading
+#define XPT_ArenaStrDup VBoxNsxpXPT_ArenaStrDup
+#define XPT_AssertFailed VBoxNsxpXPT_AssertFailed
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 /*
  * The linkage of XPT API functions differs depending on whether the file is

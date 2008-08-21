@@ -48,6 +48,13 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define LL_MaxInt VBoxNsllLL_MaxInt
+#define LL_MaxUint VBoxNsllLL_MaxUint
+#define LL_MinInt VBoxNsllLL_MinInt
+#define LL_Zero VBoxNsllLL_Zero
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /***********************************************************************

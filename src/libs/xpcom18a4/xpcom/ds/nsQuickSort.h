@@ -44,6 +44,11 @@
 #define nsQuickSort_h___
 
 #include "prtypes.h"
+
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_QuickSort VBoxNsxpNS_QuickSort
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /**

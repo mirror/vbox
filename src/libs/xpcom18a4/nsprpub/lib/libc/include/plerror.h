@@ -48,6 +48,11 @@
 #include "prio.h"
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_FPrintError VBoxNsplPL_FPrintError
+#define PL_PrintError VBoxNsplPL_PrintError
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 /*
 ** Print the messages to "syserr" prepending 'msg' if not NULL.

@@ -44,6 +44,32 @@
 
 #include "xpt_struct.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define XPT_Do8 VBoxNsxpXPT_Do8
+#define XPT_Do16 VBoxNsxpXPT_Do16
+#define XPT_Do32 VBoxNsxpXPT_Do32
+#define XPT_Do64 VBoxNsxpXPT_Do64
+#define XPT_DoIID VBoxNsxpXPT_DoIID
+#define XPT_DoCString VBoxNsxpXPT_DoCString
+#define XPT_DoString VBoxNsxpXPT_DoString
+#define XPT_DoStringInline VBoxNsxpXPT_DoStringInline
+#define XPT_NewXDRState VBoxNsxpXPT_NewXDRState
+#define XPT_SetDataOffset VBoxNsxpXPT_SetDataOffset
+#define XPT_SeekTo VBoxNsxpXPT_SeekTo
+#define XPT_MakeCursor VBoxNsxpXPT_MakeCursor
+#define XPT_DestroyXDRState VBoxNsxpXPT_DestroyXDRState
+#define XPT_GetXDRData VBoxNsxpXPT_GetXDRData
+#define XPT_GetXDRDataLength VBoxNsxpXPT_GetXDRDataLength
+#define XPT_DoHeader VBoxNsxpXPT_DoHeader
+#define XPT_DoHeaderPrologue VBoxNsxpXPT_DoHeaderPrologue
+#define XPT_UpdateFileLength VBoxNsxpXPT_UpdateFileLength
+#define XPT_DataOffset VBoxNsxpXPT_DataOffset
+#define XPT_GetOffsetForAddr VBoxNsxpXPT_GetOffsetForAddr
+#define XPT_SetOffsetForAddr VBoxNsxpXPT_SetOffsetForAddr
+#define XPT_SetAddrForOffset VBoxNsxpXPT_SetAddrForOffset
+#define XPT_GetAddrForOffset VBoxNsxpXPT_GetAddrForOffset
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct XPTState         XPTState;

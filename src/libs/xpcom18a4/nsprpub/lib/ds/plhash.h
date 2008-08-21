@@ -43,6 +43,24 @@
 #include <stdio.h>
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_CompareStrings VBoxNsplPL_CompareStrings
+#define PL_CompareValues VBoxNsplPL_CompareValues
+#define PL_HashString VBoxNsplPL_HashString
+#define PL_HashTableAdd VBoxNsplPL_HashTableAdd
+#define PL_HashTableDestroy VBoxNsplPL_HashTableDestroy
+#define PL_HashTableLookup VBoxNsplPL_HashTableLookup
+#define PL_HashTableRemove VBoxNsplPL_HashTableRemove
+#define PL_NewHashTable VBoxNsplPL_NewHashTable
+#define PL_HashTableDump VBoxNsplPL_HashTableDump
+#define PL_HashTableEnumerateEntries VBoxNsplPL_HashTableEnumerateEntries
+#define PL_HashTableLookupConst VBoxNsplPL_HashTableLookupConst
+#define PL_HashTableRawAdd VBoxNsplPL_HashTableRawAdd
+#define PL_HashTableRawLookup VBoxNsplPL_HashTableRawLookup
+#define PL_HashTableRawLookupConst VBoxNsplPL_HashTableRawLookupConst
+#define PL_HashTableRawRemove VBoxNsplPL_HashTableRawRemove
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PLHashEntry  PLHashEntry;

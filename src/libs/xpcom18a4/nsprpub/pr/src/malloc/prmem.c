@@ -43,6 +43,10 @@
 
 #ifdef _PR_ZONE_ALLOCATOR
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_FPrintZoneStats VBoxNsprPR_FPrintZoneStats
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 /*
 ** The zone allocator code must use native mutexes and cannot
 ** use PRLocks because PR_NewLock calls PR_Calloc, resulting

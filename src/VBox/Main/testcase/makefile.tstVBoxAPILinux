@@ -20,12 +20,21 @@
 PATH_XPCOM     = ../..
 PATH_BIN       = ../../..
 
+# This setting must be the same as used when building VBoxXPCOM.so.
+# If you get a lot of unresolved symbols, try commenting it out.
+VBOX_WITH_XPCOM_NAMESPACE_CLEANUP=1
+
 PATH_XPCOM_IDL = $(PATH_XPCOM)/idl
 INCS_XPCOM     = $(PATH_XPCOM)/include \
                  $(PATH_XPCOM)/include/xpcom/nsprpub \
                  $(PATH_XPCOM)/include/xpcom/string \
                  $(PATH_XPCOM)/include/xpcom/xpcom \
                  $(PATH_XPCOM)/include/xpcom/ipcd
+
+ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+ DEFS_XPCOM   += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+endif
+
 
 #
 # Link with the public XPCOM libraries
@@ -37,7 +46,7 @@ tstVBoxAPILinux: tstVBoxAPILinux.o
 		-ldl -lpthread
 
 tstVBoxAPILinux.o: tstVBoxAPILinux.cpp
-	g++ -c -DRT_OS_LINUX -g -fshort-wchar $(addprefix -I, $(INCS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
+	g++ -c -DRT_OS_LINUX -g -fshort-wchar $(addprefix -I, $(INCS_XPCOM)) $(addprefix -D, $(DEFS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
 
 clean:
 	rm -f tstVBoxAPILinux tstVBoxAPILinux.o

@@ -34,6 +34,9 @@ VBoxFB_SOURCES    = \
 	Framebuffer.cpp \
 	Helper.cpp
 VBoxFB_DEFS       = IN_RING3 IN_RT_R3 _GNU_SOURCE
+ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+ VBoxFB_DEFS     += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+endif
 VBoxFB_INCS       = \
 	/usr/include/directfb \
 	$(VBOX_PATH_SDK)/include \

@@ -50,6 +50,19 @@
 
 #include "prlong.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_Now VBoxNsprPR_Now
+#define PR_ExplodeTime VBoxNsprPR_ExplodeTime
+#define PR_ImplodeTime VBoxNsprPR_ImplodeTime
+#define PR_NormalizeTime VBoxNsprPR_NormalizeTime
+#define PR_LocalTimeParameters VBoxNsprPR_LocalTimeParameters
+#define PR_GMTParameters VBoxNsprPR_GMTParameters
+#define PR_USPacificTimeParameters VBoxNsprPR_USPacificTimeParameters
+#define PR_ParseTimeString VBoxNsprPR_ParseTimeString
+#define PR_FormatTime VBoxNsprPR_FormatTime
+#define PR_FormatTimeUSEnglish VBoxNsprPR_FormatTimeUSEnglish
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /**********************************************************************/

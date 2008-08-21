@@ -40,6 +40,11 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_GetEnv VBoxNsprPR_GetEnv
+#define PR_SetEnv VBoxNsprPR_SetEnv
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 /*******************************************************************************/
 /*******************************************************************************/
 /****************** THESE FUNCTIONS MAY NOT BE THREAD SAFE *********************/

@@ -50,6 +50,15 @@
 #include "prtypes.h"
 #include "prinrval.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PRP_DestroyNakedCondVar VBoxNsprPRP_DestroyNakedCondVar
+#define PRP_NakedBroadcast VBoxNsprPRP_NakedBroadcast
+#define PRP_NakedNotify VBoxNsprPRP_NakedNotify
+#define PRP_NakedWait VBoxNsprPRP_NakedWait
+#define PRP_NewNakedCondVar VBoxNsprPRP_NewNakedCondVar
+#define PRP_TryLock VBoxNsprPRP_TryLock
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 #define _PR_NAKED_CV_LOCK (PRLock*)0xdce1dce1

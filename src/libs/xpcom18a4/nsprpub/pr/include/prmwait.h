@@ -43,6 +43,18 @@
 #include "prtypes.h"
 #include "prclist.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_AddWaitFileDesc VBoxNsprPR_AddWaitFileDesc
+#define PR_CancelWaitFileDesc VBoxNsprPR_CancelWaitFileDesc
+#define PR_CancelWaitGroup VBoxNsprPR_CancelWaitGroup
+#define PR_CreateWaitGroup VBoxNsprPR_CreateWaitGroup
+#define PR_CreateMWaitEnumerator VBoxNsprPR_CreateMWaitEnumerator
+#define PR_DestroyWaitGroup VBoxNsprPR_DestroyWaitGroup
+#define PR_DestroyMWaitEnumerator VBoxNsprPR_DestroyMWaitEnumerator
+#define PR_EnumerateWaitGroup VBoxNsprPR_EnumerateWaitGroup
+#define PR_WaitRecvReady VBoxNsprPR_WaitRecvReady
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /********************************************************************************/

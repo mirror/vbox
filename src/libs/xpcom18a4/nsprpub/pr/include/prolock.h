@@ -40,6 +40,13 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CreateOrderedLock VBoxNsprPR_CreateOrderedLock
+#define PR_DestroyOrderedLock VBoxNsprPR_DestroyOrderedLock
+#define PR_LockOrderedLock VBoxNsprPR_LockOrderedLock
+#define PR_UnlockOrderedLock VBoxNsprPR_UnlockOrderedLock
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

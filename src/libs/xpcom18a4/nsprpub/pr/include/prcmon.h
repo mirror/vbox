@@ -51,6 +51,15 @@
 #include "prmon.h"
 #include "prinrval.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CEnterMonitor VBoxNsprPR_CEnterMonitor
+#define PR_CExitMonitor VBoxNsprPR_CExitMonitor
+#define PR_CNotify VBoxNsprPR_CNotify
+#define PR_CWait VBoxNsprPR_CWait
+#define PR_CNotifyAll VBoxNsprPR_CNotifyAll
+#define PR_CSetOnMonitorRecycle VBoxNsprPR_CSetOnMonitorRecycle
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /**

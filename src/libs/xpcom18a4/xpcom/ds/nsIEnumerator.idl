@@ -39,6 +39,11 @@
 
 %{C++
 #define NS_ENUMERATOR_FALSE 1
+
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_NewEmptyEnumerator VBoxNsxpNS_NewEmptyEnumerator
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 extern "C" NS_COM nsresult
 NS_NewEmptyEnumerator(nsISimpleEnumerator** aResult);
 %}

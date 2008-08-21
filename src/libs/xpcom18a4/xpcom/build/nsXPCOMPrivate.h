@@ -45,6 +45,12 @@
 class nsStringContainer;
 class nsCStringContainer;
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_GetFrozenFunctions VBoxNsxpNS_GetFrozenFunctions
+#define NS_RegisterXPCOMExitRoutine VBoxNsxpNS_RegisterXPCOMExitRoutine
+#define NS_UnregisterXPCOMExitRoutine VBoxNsxpNS_UnregisterXPCOMExitRoutine
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 /**
  * Private Method to register an exit routine.  This method
  * allows you to setup a callback that will be called from 

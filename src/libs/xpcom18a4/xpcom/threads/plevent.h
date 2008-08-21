@@ -201,6 +201,35 @@ and to ensure that no more events will be delivered for that owner.
 #include <os2.h>
 #endif
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_DestroyEvent VBoxNsplPL_DestroyEvent
+#define PL_HandleEvent VBoxNsplPL_HandleEvent
+#define PL_InitEvent VBoxNsplPL_InitEvent
+#define PL_CreateEventQueue VBoxNsplPL_CreateEventQueue
+#define PL_CreateMonitoredEventQueue VBoxNsplPL_CreateMonitoredEventQueue
+#define PL_CreateNativeEventQueue VBoxNsplPL_CreateNativeEventQueue
+#define PL_DequeueEvent VBoxNsplPL_DequeueEvent
+#define PL_DestroyEventQueue VBoxNsplPL_DestroyEventQueue
+#define PL_EventAvailable VBoxNsplPL_EventAvailable
+#define PL_EventLoop VBoxNsplPL_EventLoop
+#define PL_GetEvent VBoxNsplPL_GetEvent
+#define PL_GetEventOwner VBoxNsplPL_GetEventOwner
+#define PL_GetEventQueueMonitor VBoxNsplPL_GetEventQueueMonitor
+#define PL_GetEventQueueSelectFD VBoxNsplPL_GetEventQueueSelectFD
+#define PL_MapEvents VBoxNsplPL_MapEvents
+#define PL_PostEvent VBoxNsplPL_PostEvent
+#define PL_PostSynchronousEvent VBoxNsplPL_PostSynchronousEvent
+#define PL_ProcessEventsBeforeID VBoxNsplPL_ProcessEventsBeforeID
+#define PL_ProcessPendingEvents VBoxNsplPL_ProcessPendingEvents
+#define PL_RegisterEventIDFunc VBoxNsplPL_RegisterEventIDFunc
+#define PL_RevokeEvents VBoxNsplPL_RevokeEvents
+#define PL_UnregisterEventIDFunc VBoxNsplPL_UnregisterEventIDFunc
+#define PL_WaitForEvent VBoxNsplPL_WaitForEvent
+#define PL_IsQueueNative VBoxNsplPL_IsQueueNative
+#define PL_IsQueueOnCurrentThread VBoxNsplPL_IsQueueOnCurrentThread
+#define PL_FavorPerformanceHint VBoxNsplPL_FavorPerformanceHint
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /* Typedefs */

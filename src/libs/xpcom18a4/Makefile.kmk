@@ -27,6 +27,17 @@ DEPTH     = ../../..
 endif
 include $(KBUILD_PATH)/subheader.kmk
 
+# File for filtering out C symbols from the XPCOM library. Used to avoid
+# symbol namespace pollution, causing trouble with system libraries.
+XPCOM_C_NAMESPACE_MAP=$(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
+
+# @todo check whether VBoxXPCOMIPCC.so or VBoxXPCOMIPCD contain undefined
+# symbols starting with NS_, PL_, PR_ or XPT. Would move the test time failure
+# when missing a symbol renaming to a build time failure. Likewise, there
+# should be a check whether VBoxXPCOM.so contains global C symbols (at least
+# where the whitelisting of symbols via the map file is not used).
+
+
 ifdef VBOX_WITH_PYTHON
 # bridge for Python to invoke XPCOM
 XPCOM_PYMOD = VBox-xpcom-pymod
@@ -77,6 +88,9 @@ TEMPLATE_XPCOM_CFLAGS.solaris      = -fno-omit-frame-pointer # for now anyway.
 TEMPLATE_XPCOM_DEFS                = MOZILLA_CLIENT=1 NDEBUG=1 _IMPL_NS_COM \
                                      XPCOM_DLL_BASE=\"$(basename $(notdir $(LIB_XPCOM)))\" \
                                      MOZ_DLL_SUFFIX=\"$(suffix $(LIB_XPCOM))\"
+ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+TEMPLATE_XPCOM_DEFS				  += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+endif
 TEMPLATE_XPCOM_DEFS.x86            = i386=1
 TEMPLATE_XPCOM_DEFS.amd64          = HAVE_VA_LIST_AS_ARRAY HAVE_VA_COPY VA_COPY\(a\,b\)=__builtin_va_copy\(a\,b\)
 TEMPLATE_XPCOM_DEFS.darwin         = OSTYPE=\"Darwin8.8.1\" OSARCH=\"Darwin\" XP_UNIX=1 XP_MACOSX=1 TARGET_CARBON=1 HAVE_VISIBILITY_ATTRIBUTE=1 DARWIN=1 $(TEMPLATE_VBOXR3NP_DEFS.darwin)
@@ -1098,6 +1112,12 @@ VBoxXPCOMGlue_SOURCES += \
 VBoxXPCOM_TEMPLATE = XPCOM
 VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
 VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
+ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+VBoxXPCOM_LDFLAGS.linux     = -Wl,--version-script=$(XPCOM_C_NAMESPACE_MAP)
+VBoxXPCOM_DEPS.linux       += $(XPCOM_C_NAMESPACE_MAP)
+VBoxXPCOM_LDFLAGS.solaris   = -Wl,-M,$(XPCOM_C_NAMESPACE_MAP)
+VBoxXPCOM_DEPS.solaris     += $(XPCOM_C_NAMESPACE_MAP)
+endif
 VBoxXPCOM_SOURCES = \
 	xpcom/build/nsXPComInit.cpp \
 	xpcom/build/nsStringAPI.cpp

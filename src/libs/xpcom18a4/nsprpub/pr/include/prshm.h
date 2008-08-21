@@ -134,6 +134,14 @@
 #include "prtypes.h"
 #include "prio.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_OpenSharedMemory VBoxNsprPR_OpenSharedMemory
+#define PR_AttachSharedMemory VBoxNsprPR_AttachSharedMemory
+#define PR_DetachSharedMemory VBoxNsprPR_DetachSharedMemory
+#define PR_CloseSharedMemory VBoxNsprPR_CloseSharedMemory
+#define PR_DeleteSharedMemory VBoxNsprPR_DeleteSharedMemory
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

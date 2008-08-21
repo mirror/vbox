@@ -52,6 +52,17 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_IntervalNow VBoxNsprPR_IntervalNow
+#define PR_TicksPerSecond VBoxNsprPR_TicksPerSecond
+#define PR_SecondsToInterval VBoxNsprPR_SecondsToInterval
+#define PR_MillisecondsToInterval VBoxNsprPR_MillisecondsToInterval
+#define PR_MicrosecondsToInterval VBoxNsprPR_MicrosecondsToInterval
+#define PR_IntervalToSeconds VBoxNsprPR_IntervalToSeconds
+#define PR_IntervalToMilliseconds VBoxNsprPR_IntervalToMilliseconds
+#define PR_IntervalToMicroseconds VBoxNsprPR_IntervalToMicroseconds
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /**********************************************************************/

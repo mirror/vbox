@@ -46,6 +46,17 @@
 #include "prtypes.h"
 #include "prlock.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_AtomicDecrement VBoxNsprPR_AtomicDecrement
+#define PR_AtomicIncrement VBoxNsprPR_AtomicIncrement
+#define PR_AtomicAdd VBoxNsprPR_AtomicAdd
+#define PR_AtomicSet VBoxNsprPR_AtomicSet
+#define PR_CreateStack VBoxNsprPR_CreateStack
+#define PR_StackPush VBoxNsprPR_StackPush
+#define PR_StackPop VBoxNsprPR_StackPop
+#define PR_DestroyStack VBoxNsprPR_DestroyStack
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

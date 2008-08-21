@@ -51,6 +51,41 @@
 #include <os2.h>
 #endif
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_AttachThread VBoxNsprPR_AttachThread
+#define PR_DetachThread VBoxNsprPR_DetachThread
+#define PR_GetThreadID VBoxNsprPR_GetThreadID
+#define PR_SetThreadDumpProc VBoxNsprPR_SetThreadDumpProc
+#define PR_GetThreadAffinityMask VBoxNsprPR_GetThreadAffinityMask
+#define PR_SetThreadAffinityMask VBoxNsprPR_SetThreadAffinityMask
+#define PR_SetCPUAffinityMask VBoxNsprPR_SetCPUAffinityMask
+#define PR_ShowStatus VBoxNsprPR_ShowStatus
+#define PR_SetThreadRecycleMode VBoxNsprPR_SetThreadRecycleMode
+#define PR_CreateThreadGCAble VBoxNsprPR_CreateThreadGCAble
+#define PR_AttachThreadGCAble VBoxNsprPR_AttachThreadGCAble
+#define PR_SetThreadGCAble VBoxNsprPR_SetThreadGCAble
+#define PR_ClearThreadGCAble VBoxNsprPR_ClearThreadGCAble
+#define PR_SuspendAll VBoxNsprPR_SuspendAll
+#define PR_ResumeAll VBoxNsprPR_ResumeAll
+#define PR_GetSP VBoxNsprPR_GetSP
+#define PR_GetGCRegisters VBoxNsprPR_GetGCRegisters
+#define GetExecutionEnvironment VBoxNsprGetExecutionEnvironment
+#define SetExecutionEnvironment VBoxNsprSetExecutionEnvironment
+#define PR_EnumerateThreads VBoxNsprPR_EnumerateThreads
+#define PR_ThreadScanStackPointers VBoxNsprPR_ThreadScanStackPointers
+#define PR_ScanStackPointers VBoxNsprPR_ScanStackPointers
+#define PR_GetStackSpaceLeft VBoxNsprPR_GetStackSpaceLeft
+#define PR_NewNamedMonitor VBoxNsprPR_NewNamedMonitor
+#define PR_TestAndLock VBoxNsprPR_TestAndLock
+#define PR_TestAndEnterMonitor VBoxNsprPR_TestAndEnterMonitor
+#define PR_GetMonitorEntryCount VBoxNsprPR_GetMonitorEntryCount
+#define PR_CTestAndEnterMonitor VBoxNsprPR_CTestAndEnterMonitor
+#define PR_Mac_WaitForAsyncNotify VBoxNsprPR_Mac_WaitForAsyncNotify
+#define PR_Mac_PostAsyncNotify VBoxNsprPR_Mac_PostAsyncNotify
+#define PR_OS2_SetFloatExcpHandler VBoxNsprPR_OS2_SetFloatExcpHandler
+#define PR_OS2_UnsetFloatExcpHandler VBoxNsprPR_OS2_UnsetFloatExcpHandler
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*---------------------------------------------------------------------------

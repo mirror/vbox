@@ -40,6 +40,19 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_SetError VBoxNsprPR_SetError
+#define PR_SetErrorText VBoxNsprPR_SetErrorText
+#define PR_GetError VBoxNsprPR_GetError
+#define PR_GetOSError VBoxNsprPR_GetOSError
+#define PR_GetErrorTextLength VBoxNsprPR_GetErrorTextLength
+#define PR_GetErrorText VBoxNsprPR_GetErrorText
+#define PR_ErrorToString VBoxNsprPR_ErrorToString
+#define PR_ErrorToName VBoxNsprPR_ErrorToName
+#define PR_ErrorLanguages VBoxNsprPR_ErrorLanguages
+#define PR_ErrorInstallTable VBoxNsprPR_ErrorInstallTable
+#define PR_ErrorInstallCallback VBoxNsprPR_ErrorInstallCallback
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 PR_BEGIN_EXTERN_C
 
 typedef PRInt32 PRErrorCode;

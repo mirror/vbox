@@ -41,6 +41,10 @@
 #include <stdio.h> // for FILE
 #include "nsITraceRefcnt.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_MeanAndStdDev VBoxNsxpNS_MeanAndStdDev
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 class nsTraceRefcntImpl : public nsITraceRefcnt
 {
 public:

@@ -41,6 +41,21 @@
 #include "prtypes.h"
 #include "prio.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CreateProcessDetached VBoxNsprPR_CreateProcessDetached
+#define PR_ProcessAttrSetInheritableFD VBoxNsprPR_ProcessAttrSetInheritableFD
+#define PR_DestroyProcessAttr VBoxNsprPR_DestroyProcessAttr
+#define PR_NewProcessAttr VBoxNsprPR_NewProcessAttr
+#define PR_ResetProcessAttr VBoxNsprPR_ResetProcessAttr
+#define PR_ProcessAttrSetStdioRedirect VBoxNsprPR_ProcessAttrSetStdioRedirect
+#define PR_SetStdioRedirect VBoxNsprPR_SetStdioRedirect
+#define PR_ProcessAttrSetCurrentDirectory VBoxNsprPR_ProcessAttrSetCurrentDirectory
+#define PR_CreateProcess VBoxNsprPR_CreateProcess
+#define PR_DetachProcess VBoxNsprPR_DetachProcess
+#define PR_WaitProcess VBoxNsprPR_WaitProcess
+#define PR_KillProcess VBoxNsprPR_KillProcess
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /************************************************************************/

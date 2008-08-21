@@ -45,6 +45,19 @@
 
 #include "prio.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_Yield VBoxNsprPR_Yield
+#define PR_Select VBoxNsprPR_Select
+#define PR_FD_ZERO VBoxNsprPR_FD_ZERO
+#define PR_FD_SET VBoxNsprPR_FD_SET
+#define PR_FD_CLR VBoxNsprPR_FD_CLR
+#define PR_FD_ISSET VBoxNsprPR_FD_ISSET
+#define PR_FD_NSET VBoxNsprPR_FD_NSET
+#define PR_FD_NCLR VBoxNsprPR_FD_NCLR
+#define PR_FD_NISSET VBoxNsprPR_FD_NISSET
+#define PR_Stat VBoxNsprPR_Stat
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*
