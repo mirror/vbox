@@ -69,6 +69,7 @@ private:
     QString parseStatistics (const QString &aText);
     void refreshStatistics();
 
+    QString formatValue (const QString &aValueName, const QString &aValue, int aMaxSize);
     QString formatHardDisk (KStorageBus aBus, LONG aChannel, LONG aDevice, const QString &aBelongsTo);
     QString formatAdapter (ULONG aSlot, const QString &aBelongsTo);
 
