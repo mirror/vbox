@@ -47,6 +47,35 @@
 #include "prtypes.h"
 #include "prio.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_GetFileMethods VBoxNsprPR_GetFileMethods
+#define PR_GetTCPMethods VBoxNsprPR_GetTCPMethods
+#define PR_GetUDPMethods VBoxNsprPR_GetUDPMethods
+#define PR_GetPipeMethods VBoxNsprPR_GetPipeMethods
+#define PR_FileDesc2NativeHandle VBoxNsprPR_FileDesc2NativeHandle
+#define PR_ChangeFileDescNativeHandle VBoxNsprPR_ChangeFileDescNativeHandle
+#define PR_AllocFileDesc VBoxNsprPR_AllocFileDesc
+#define PR_FreeFileDesc VBoxNsprPR_FreeFileDesc
+#define PR_ImportFile VBoxNsprPR_ImportFile
+#define PR_ImportPipe VBoxNsprPR_ImportPipe
+#define PR_ImportTCPSocket VBoxNsprPR_ImportTCPSocket
+#define PR_ImportUDPSocket VBoxNsprPR_ImportUDPSocket
+#define PR_CreateSocketPollFd VBoxNsprPR_CreateSocketPollFd
+#define PR_DestroySocketPollFd VBoxNsprPR_DestroySocketPollFd
+#define PR_Socket VBoxNsprPR_Socket
+#define PR_LockFile VBoxNsprPR_LockFile
+#define PR_TLockFile VBoxNsprPR_TLockFile
+#define PR_UnlockFile VBoxNsprPR_UnlockFile
+#define PR_EmulateAcceptRead VBoxNsprPR_EmulateAcceptRead
+#define PR_EmulateSendFile VBoxNsprPR_EmulateSendFile
+#define PR_NTFast_AcceptRead VBoxNsprPR_NTFast_AcceptRead
+#define PR_NTFast_AcceptRead_WithTimeoutCallback VBoxNsprPR_NTFast_AcceptRead_WithTimeoutCallback
+#define PR_NTFast_Accept VBoxNsprPR_NTFast_Accept
+#define PR_NTFast_UpdateAcceptContext VBoxNsprPR_NTFast_UpdateAcceptContext
+#define PR_NT_CancelIo VBoxNsprPR_NT_CancelIo
+#define PR_Init_Log VBoxNsprPR_Init_Log
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /************************************************************************/

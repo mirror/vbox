@@ -41,6 +41,11 @@
 #include "nsIEnumerator.h"
 #include "nsISupportsArray.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_NewSingletonEnumerator VBoxNsxpNS_NewSingletonEnumerator
+#define NS_NewUnionEnumerator VBoxNsxpNS_NewUnionEnumerator
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 class NS_COM nsArrayEnumerator : public nsISimpleEnumerator
 {
 public:

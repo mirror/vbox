@@ -45,6 +45,14 @@
 */
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_NewSem VBoxNsprPR_NewSem
+#define PR_DestroySem VBoxNsprPR_DestroySem
+#define PR_WaitSem VBoxNsprPR_WaitSem
+#define PR_PostSem VBoxNsprPR_PostSem
+#define PR_GetValueSem VBoxNsprPR_GetValueSem
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PRSemaphore PRSemaphore;

@@ -59,6 +59,14 @@
 #include "prtypes.h"
 #include "prio.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_OpenSemaphore VBoxNsprPR_OpenSemaphore
+#define PR_WaitSemaphore VBoxNsprPR_WaitSemaphore
+#define PR_PostSemaphore VBoxNsprPR_PostSemaphore
+#define PR_CloseSemaphore VBoxNsprPR_CloseSemaphore
+#define PR_DeleteSemaphore VBoxNsprPR_DeleteSemaphore
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

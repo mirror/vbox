@@ -41,6 +41,16 @@
 #include "prtypes.h"
 #include "prinrval.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_EnterMonitor VBoxNsprPR_EnterMonitor
+#define PR_ExitMonitor VBoxNsprPR_ExitMonitor
+#define PR_Notify VBoxNsprPR_Notify
+#define PR_NotifyAll VBoxNsprPR_NotifyAll
+#define PR_Wait VBoxNsprPR_Wait
+#define PR_NewMonitor VBoxNsprPR_NewMonitor
+#define PR_DestroyMonitor VBoxNsprPR_DestroyMonitor
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PRMonitor PRMonitor;

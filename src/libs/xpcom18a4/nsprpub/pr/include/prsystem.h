@@ -43,6 +43,16 @@
 */
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_GetDirectorySeparator VBoxNsprPR_GetDirectorySeparator
+#define PR_GetDirectorySepartor VBoxNsprPR_GetDirectorySepartor
+#define PR_GetPathSeparator VBoxNsprPR_GetPathSeparator
+#define PR_GetSystemInfo VBoxNsprPR_GetSystemInfo
+#define PR_GetPageSize VBoxNsprPR_GetPageSize
+#define PR_GetPageShift VBoxNsprPR_GetPageShift
+#define PR_GetNumberOfProcessors VBoxNsprPR_GetNumberOfProcessors
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

@@ -50,6 +50,83 @@
 #include "prinrval.h"
 #include "prinet.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_GetInheritedFD VBoxNsprPR_GetInheritedFD
+#define PR_SetFDInheritable VBoxNsprPR_SetFDInheritable
+#define PR_Access VBoxNsprPR_Access
+#define PR_Open VBoxNsprPR_Open
+#define PR_Read VBoxNsprPR_Read
+#define PR_Write VBoxNsprPR_Write
+#define PR_Seek VBoxNsprPR_Seek
+#define PR_Seek64 VBoxNsprPR_Seek64
+#define PR_Poll VBoxNsprPR_Poll
+#define PR_NewPollableEvent VBoxNsprPR_NewPollableEvent
+#define PR_SetPollableEvent VBoxNsprPR_SetPollableEvent
+#define PR_WaitForPollableEvent VBoxNsprPR_WaitForPollableEvent
+#define PR_DestroyPollableEvent VBoxNsprPR_DestroyPollableEvent
+#define PR_Close VBoxNsprPR_Close
+#define PR_GetSpecialFD VBoxNsprPR_GetSpecialFD
+#define PR_Connect VBoxNsprPR_Connect
+#define PR_OpenTCPSocket VBoxNsprPR_OpenTCPSocket
+#define PR_SetSocketOption VBoxNsprPR_SetSocketOption
+#define PR_Bind VBoxNsprPR_Bind
+#define PR_Listen VBoxNsprPR_Listen
+#define PR_Accept VBoxNsprPR_Accept
+#define PR_AcceptRead VBoxNsprPR_AcceptRead
+#define PR_OpenDir VBoxNsprPR_OpenDir
+#define PR_ReadDir VBoxNsprPR_ReadDir
+#define PR_CloseDir VBoxNsprPR_CloseDir
+#define PR_CreatePipe VBoxNsprPR_CreatePipe
+#define PR_GetDescType VBoxNsprPR_GetDescType
+#define PR_GetSpecialFD VBoxNsprPR_GetSpecialFD
+#define PR_GetUniqueIdentity VBoxNsprPR_GetUniqueIdentity
+#define PR_GetNameForIdentity VBoxNsprPR_GetNameForIdentity
+#define PR_GetLayersIdentity VBoxNsprPR_GetLayersIdentity
+#define PR_GetIdentitiesLayer VBoxNsprPR_GetIdentitiesLayer
+#define PR_GetDefaultIOMethods VBoxNsprPR_GetDefaultIOMethods
+#define PR_CreateIOLayerStub VBoxNsprPR_CreateIOLayerStub
+#define PR_CreateIOLayer VBoxNsprPR_CreateIOLayer
+#define PR_PushIOLayer VBoxNsprPR_PushIOLayer
+#define PR_PopIOLayer VBoxNsprPR_PopIOLayer
+#define PR_OpenFile VBoxNsprPR_OpenFile
+#define PR_Writev VBoxNsprPR_Writev
+#define PR_Delete VBoxNsprPR_Delete
+#define PR_Rename VBoxNsprPR_Rename
+#define PR_GetFileInfo VBoxNsprPR_GetFileInfo
+#define PR_GetFileInfo64 VBoxNsprPR_GetFileInfo64
+#define PR_GetOpenFileInfo VBoxNsprPR_GetOpenFileInfo
+#define PR_GetOpenFileInfo64 VBoxNsprPR_GetOpenFileInfo64
+#define PR_Available VBoxNsprPR_Available
+#define PR_Available64 VBoxNsprPR_Available64
+#define PR_Sync VBoxNsprPR_Sync
+#define PR_MkDir VBoxNsprPR_MkDir
+#define PR_MakeDir VBoxNsprPR_MakeDir
+#define PR_RmDir VBoxNsprPR_RmDir
+#define PR_NewUDPSocket VBoxNsprPR_NewUDPSocket
+#define PR_NewTCPSocket VBoxNsprPR_NewTCPSocket
+#define PR_OpenUDPSocket VBoxNsprPR_OpenUDPSocket
+#define PR_OpenTCPSocket VBoxNsprPR_OpenTCPSocket
+#define PR_ConnectContinue VBoxNsprPR_ConnectContinue
+#define PR_GetConnectStatus VBoxNsprPR_GetConnectStatus
+#define PR_Shutdown VBoxNsprPR_Shutdown
+#define PR_Recv VBoxNsprPR_Recv
+#define PR_Send VBoxNsprPR_Send
+#define PR_RecvFrom VBoxNsprPR_RecvFrom
+#define PR_SendTo VBoxNsprPR_SendTo
+#define PR_TransmitFile VBoxNsprPR_TransmitFile
+#define PR_SendFile VBoxNsprPR_SendFile
+#define PR_NewTCPSocketPair VBoxNsprPR_NewTCPSocketPair
+#define PR_GetSockName VBoxNsprPR_GetSockName
+#define PR_GetPeerName VBoxNsprPR_GetPeerName
+#define PR_GetSocketOption VBoxNsprPR_GetSocketOption
+#define PR_CreateFileMap VBoxNsprPR_CreateFileMap
+#define PR_GetMemMapAlignment VBoxNsprPR_GetMemMapAlignment
+#define PR_MemMap VBoxNsprPR_MemMap
+#define PR_MemUnmap VBoxNsprPR_MemUnmap
+#define PR_CloseFileMap VBoxNsprPR_CloseFileMap
+#define PR_CreatePipe VBoxNsprPR_CreatePipe
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /* Typedefs */

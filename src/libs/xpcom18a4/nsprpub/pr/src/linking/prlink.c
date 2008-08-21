@@ -34,6 +34,10 @@
 
 #include "primpl.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_FindLibrary VBoxNsprPR_FindLibrary
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 #include <string.h>
 
 #ifdef XP_BEOS

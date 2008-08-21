@@ -40,6 +40,11 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_Base64Decode VBoxNsplPL_Base64Decode
+#define PL_Base64Encode VBoxNsplPL_Base64Encode
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

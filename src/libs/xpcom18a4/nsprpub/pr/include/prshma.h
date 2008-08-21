@@ -135,6 +135,14 @@
 #include "prio.h"
 #include "prproces.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_OpenAnonFileMap VBoxNsprPR_OpenAnonFileMap
+#define PR_ProcessAttrSetInheritableFileMap VBoxNsprPR_ProcessAttrSetInheritableFileMap
+#define PR_GetInheritedFileMap VBoxNsprPR_GetInheritedFileMap
+#define PR_ExportFileMapAsString VBoxNsprPR_ExportFileMapAsString
+#define PR_ImportFileMapFromString VBoxNsprPR_ImportFileMapFromString
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

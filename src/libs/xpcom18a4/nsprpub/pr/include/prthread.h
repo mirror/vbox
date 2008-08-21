@@ -78,6 +78,25 @@
 #include "prtypes.h"
 #include "prinrval.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CreateThread VBoxNsprPR_CreateThread
+#define PR_JoinThread VBoxNsprPR_JoinThread
+#define PR_Sleep VBoxNsprPR_Sleep
+#define PR_GetCurrentThread VBoxNsprPR_GetCurrentThread
+#define PR_GetThreadState VBoxNsprPR_GetThreadState
+#define PR_SetThreadPrivate VBoxNsprPR_SetThreadPrivate
+#define PR_GetThreadPrivate VBoxNsprPR_GetThreadPrivate
+#define PR_NewThreadPrivateIndex VBoxNsprPR_NewThreadPrivateIndex
+#define PR_GetThreadPriority VBoxNsprPR_GetThreadPriority
+#define PR_SetThreadPriority VBoxNsprPR_SetThreadPriority
+#define PR_Interrupt VBoxNsprPR_Interrupt
+#define PR_ClearInterrupt VBoxNsprPR_ClearInterrupt
+#define PR_BlockInterrupt VBoxNsprPR_BlockInterrupt
+#define PR_UnblockInterrupt VBoxNsprPR_UnblockInterrupt
+#define PR_GetThreadScope VBoxNsprPR_GetThreadScope
+#define PR_GetThreadType VBoxNsprPR_GetThreadType
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PRThread PRThread;

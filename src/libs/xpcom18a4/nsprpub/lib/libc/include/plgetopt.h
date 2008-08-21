@@ -46,6 +46,12 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_CreateOptState VBoxNsplPL_CreateOptState
+#define PL_DestroyOptState VBoxNsplPL_DestroyOptState
+#define PL_GetNextOpt VBoxNsplPL_GetNextOpt
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PLOptionInternal PLOptionInternal; 

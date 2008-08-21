@@ -65,6 +65,12 @@
 #include "prtypes.h"
 #include "prinrval.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CreateAlarm VBoxNsprPR_CreateAlarm
+#define PR_DestroyAlarm VBoxNsprPR_DestroyAlarm
+#define PR_SetAlarm VBoxNsprPR_SetAlarm
+#define PR_ResetAlarm VBoxNsprPR_ResetAlarm
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
 

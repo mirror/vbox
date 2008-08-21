@@ -266,6 +266,11 @@ VBOX_WITH_TESTSUITE = 1
 VBOX_WITH_TESTCASES = 1
 # Set this to not use COM or XPCOM in places where it can be avoided.
 #VBOX_WITHOUT_COM = 1
+# Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
+# caused by our XPCOM library polluting the symbol namespace for system libs.
+if1of ($(KBUILD_TARGET), linux)
+VBOX_WITH_XPCOM_NAMESPACE_CLEANUP=1
+endif
 # Set this to skip installing the redistributable compiler runtime.
 #VBOX_WITHOUT_COMPILER_REDIST = 1
 # Enabled internal networking.
@@ -2338,6 +2343,9 @@ TEMPLATE_VBOXMAINEXE_LIBS               += \
 ifdef VBOX_WITH_XPCOM
  ## @todo may be worth creating the VBOX_XPCOM SDK def
  TEMPLATE_VBOXMAINEXE_DEFS              += VBOX_WITH_XPCOM
+ ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+  TEMPLATE_VBOXMAINEXE_DEFS             += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+ endif
  TEMPLATE_VBOXMAINEXE_INCS              += \
 	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXMAINEXE_LIBS              += \
@@ -2551,6 +2559,9 @@ TEMPLATE_VBOXQTGUIEXE_LIBS += \
 ifdef VBOX_WITH_XPCOM
  ## @todo may be worth creating the VBOX_XPCOM SDK def
  TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM
+ ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+  TEMPLATE_VBOXQTGUIEXE_DEFS += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+ endif
  TEMPLATE_VBOXQTGUIEXE_INCS += \
 	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXQTGUIEXE_LIBS += \

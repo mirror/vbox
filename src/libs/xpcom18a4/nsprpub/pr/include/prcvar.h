@@ -41,6 +41,14 @@
 #include "prlock.h"
 #include "prinrval.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_NewCondVar VBoxNsprPR_NewCondVar
+#define PR_DestroyCondVar VBoxNsprPR_DestroyCondVar
+#define PR_WaitCondVar VBoxNsprPR_WaitCondVar
+#define PR_NotifyCondVar VBoxNsprPR_NotifyCondVar
+#define PR_NotifyAllCondVar VBoxNsprPR_NotifyAllCondVar
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PRCondVar PRCondVar;

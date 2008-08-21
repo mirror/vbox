@@ -43,6 +43,24 @@
 #include "prwin16.h"
 #include <stdio.h>
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_Abort VBoxNsprPR_Abort
+#define PR_Cleanup VBoxNsprPR_Cleanup
+#define PR_DisableClockInterrupts VBoxNsprPR_DisableClockInterrupts
+#define PR_EnableClockInterrupts VBoxNsprPR_EnableClockInterrupts
+#define PR_BlockClockInterrupts VBoxNsprPR_BlockClockInterrupts
+#define PR_UnblockClockInterrupts VBoxNsprPR_UnblockClockInterrupts
+#define PR_Init VBoxNsprPR_Init
+#define PR_Initialize VBoxNsprPR_Initialize
+#define PR_Initialized VBoxNsprPR_Initialized
+#define PR_VersionCheck VBoxNsprPR_VersionCheck
+#define PR_SetConcurrency VBoxNsprPR_SetConcurrency
+#define PR_SetFDCacheSize VBoxNsprPR_SetFDCacheSize
+#define PR_ProcessExit VBoxNsprPR_ProcessExit
+#define PR_CallOnce VBoxNsprPR_CallOnce
+#define PR_CallOnceWithArg VBoxNsprPR_CallOnceWithArg
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /************************************************************************/

@@ -39,6 +39,17 @@
 #else  /* defined(PLARENAS_H) */
 #define PLARENAS_H
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_ArenaAllocate VBoxNsplPL_ArenaAllocate
+#define PL_ArenaFinish VBoxNsplPL_ArenaFinish
+#define PL_ArenaGrow VBoxNsplPL_ArenaGrow
+#define PL_ArenaRelease VBoxNsplPL_ArenaRelease
+#define PL_CompactArenaPool VBoxNsplPL_CompactArenaPool
+#define PL_FinishArenaPool VBoxNsplPL_FinishArenaPool
+#define PL_FreeArenaPool VBoxNsplPL_FreeArenaPool
+#define PL_InitArenaPool VBoxNsplPL_InitArenaPool
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PLArenaPool      PLArenaPool;

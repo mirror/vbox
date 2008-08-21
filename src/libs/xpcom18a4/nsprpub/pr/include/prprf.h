@@ -59,6 +59,21 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_snprintf VBoxNsprPR_snprintf
+#define PR_vsnprintf VBoxNsprPR_vsnprintf
+#define PR_smprintf VBoxNsprPR_smprintf
+#define PR_smprintf_free VBoxNsprPR_smprintf_free
+#define PR_sprintf_append VBoxNsprPR_sprintf_append
+#define PR_sxprintf VBoxNsprPR_sxprintf
+#define PR_fprintf VBoxNsprPR_fprintf
+#define PR_vsmprintf VBoxNsprPR_vsmprintf
+#define PR_vsprintf_append VBoxNsprPR_vsprintf_append
+#define PR_vsxprintf VBoxNsprPR_vsxprintf
+#define PR_vfprintf VBoxNsprPR_vfprintf
+#define PR_sscanf VBoxNsprPR_sscanf
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

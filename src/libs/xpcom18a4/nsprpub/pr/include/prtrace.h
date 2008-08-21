@@ -97,6 +97,20 @@
 #include "prthread.h"
 #include "prtime.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CreateTrace VBoxNsprPR_CreateTrace
+#define PR_DestroyTrace VBoxNsprPR_DestroyTrace
+#define PR_Trace VBoxNsprPR_Trace
+#define PR_SetTraceOption VBoxNsprPR_SetTraceOption
+#define PR_GetTraceOption VBoxNsprPR_GetTraceOption
+#define PR_GetTraceHandleFromName VBoxNsprPR_GetTraceHandleFromName
+#define PR_GetTraceNameFromHandle VBoxNsprPR_GetTraceNameFromHandle
+#define PR_FindNextTraceQname VBoxNsprPR_FindNextTraceQname
+#define PR_FindNextTraceRname VBoxNsprPR_FindNextTraceRname
+#define PR_RecordTraceEntries VBoxNsprPR_RecordTraceEntries
+#define PR_GetTraceEntries VBoxNsprPR_GetTraceEntries
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

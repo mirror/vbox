@@ -44,6 +44,29 @@
  */
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PL_DHashTableInit VBoxNsplPL_DHashTableInit
+#define PL_DHashTableFinish VBoxNsplPL_DHashTableFinish
+#define PL_DHashTableOperate VBoxNsplPL_DHashTableOperate
+#define PL_DHashTableEnumerate VBoxNsplPL_DHashTableEnumerate
+#define PL_DHashAllocTable VBoxNsplPL_DHashAllocTable
+#define PL_DHashFreeTable VBoxNsplPL_DHashFreeTable
+#define PL_DHashMoveEntryStub VBoxNsplPL_DHashMoveEntryStub
+#define PL_DHashFinalizeStub VBoxNsplPL_DHashFinalizeStub
+#define PL_DHashClearEntryStub VBoxNsplPL_DHashClearEntryStub
+#define PL_DHashFreeStringKey VBoxNsplPL_DHashFreeStringKey
+#define PL_DHashGetKeyStub VBoxNsplPL_DHashGetKeyStub
+#define PL_DHashGetStubOps VBoxNsplPL_DHashGetStubOps
+#define PL_DHashMatchEntryStub VBoxNsplPL_DHashMatchEntryStub
+#define PL_DHashMatchStringKey VBoxNsplPL_DHashMatchStringKey
+#define PL_DHashStringKey VBoxNsplPL_DHashStringKey
+#define PL_DHashTableDestroy VBoxNsplPL_DHashTableDestroy
+#define PL_DHashTableRawRemove VBoxNsplPL_DHashTableRawRemove
+#define PL_DHashTableSetAlphaBounds VBoxNsplPL_DHashTableSetAlphaBounds
+#define PL_DHashVoidPtrKeyStub VBoxNsplPL_DHashVoidPtrKeyStub
+#define PL_NewDHashTable VBoxNsplPL_NewDHashTable
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 #ifdef DEBUG_XXXbrendan

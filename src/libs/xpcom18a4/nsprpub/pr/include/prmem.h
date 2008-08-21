@@ -47,6 +47,13 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_Malloc VBoxNsprPR_Malloc
+#define PR_Calloc VBoxNsprPR_Calloc
+#define PR_Realloc VBoxNsprPR_Realloc
+#define PR_Free VBoxNsprPR_Free
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

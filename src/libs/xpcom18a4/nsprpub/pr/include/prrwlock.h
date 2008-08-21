@@ -46,6 +46,14 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_NewRWLock VBoxNsprPR_NewRWLock
+#define PR_DestroyRWLock VBoxNsprPR_DestroyRWLock
+#define PR_RWLock_Rlock VBoxNsprPR_RWLock_Rlock
+#define PR_RWLock_Wlock VBoxNsprPR_RWLock_Wlock
+#define PR_RWLock_Unlock VBoxNsprPR_RWLock_Unlock
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

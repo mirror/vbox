@@ -43,6 +43,11 @@
 #include "prtypes.h"
 #include "xpt_struct.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define XPTI_GetInterfaceInfoManager VBoxNsxpXPTI_GetInterfaceInfoManager
+#define XPTI_FreeInterfaceInfoManager VBoxNsxpXPTI_FreeInterfaceInfoManager
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 /*
  * The linkage of XPTI API functions differs depending on whether the file is
  * used within the XPTI library or not.  Any source file within the XPTI

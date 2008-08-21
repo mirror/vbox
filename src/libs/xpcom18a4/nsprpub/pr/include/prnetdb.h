@@ -41,6 +41,31 @@
 #include "prtypes.h"
 #include "prio.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_StringToNetAddr VBoxNsprPR_StringToNetAddr
+#define PR_NetAddrToString VBoxNsprPR_NetAddrToString
+#define PR_GetHostByName VBoxNsprPR_GetHostByName
+#define PR_GetIPNodeByName VBoxNsprPR_GetIPNodeByName
+#define PR_GetHostByAddr VBoxNsprPR_GetHostByAddr
+#define PR_EnumerateHostEnt VBoxNsprPR_EnumerateHostEnt
+#define PR_InitializeNetAddr VBoxNsprPR_InitializeNetAddr
+#define PR_SetNetAddr VBoxNsprPR_SetNetAddr
+#define PR_IsNetAddrType VBoxNsprPR_IsNetAddrType
+#define PR_ConvertIPv4AddrToIPv6 VBoxNsprPR_ConvertIPv4AddrToIPv6
+#define PR_GetProtoByName VBoxNsprPR_GetProtoByName
+#define PR_GetProtoByNumber VBoxNsprPR_GetProtoByNumber
+#define PR_GetAddrInfoByName VBoxNsprPR_GetAddrInfoByName
+#define PR_FreeAddrInfo VBoxNsprPR_FreeAddrInfo
+#define PR_EnumerateAddrInfo VBoxNsprPR_EnumerateAddrInfo
+#define PR_GetCanonNameFromAddrInfo VBoxNsprPR_GetCanonNameFromAddrInfo
+#define PR_htonl VBoxNsprPR_htonl
+#define PR_htonll VBoxNsprPR_htonll
+#define PR_htons VBoxNsprPR_htons
+#define PR_ntohl VBoxNsprPR_ntohl
+#define PR_ntohll VBoxNsprPR_ntohll
+#define PR_ntohs VBoxNsprPR_ntohs
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 

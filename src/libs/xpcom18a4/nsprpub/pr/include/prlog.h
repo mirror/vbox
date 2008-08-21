@@ -40,6 +40,15 @@
 
 #include "prtypes.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_NewLogModule VBoxNsprPR_NewLogModule
+#define PR_SetLogFile VBoxNsprPR_SetLogFile
+#define PR_SetLogBuffering VBoxNsprPR_SetLogBuffering
+#define PR_LogPrint VBoxNsprPR_LogPrint
+#define PR_LogFlush VBoxNsprPR_LogFlush
+#define PR_Assert VBoxNsprPR_Assert
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

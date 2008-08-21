@@ -39,6 +39,12 @@
 #define prbit_h___
 
 #include "prtypes.h"
+
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CeilingLog2 VBoxNsprPR_CeilingLog2
+#define PR_FloorLog2 VBoxNsprPR_FloorLog2
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

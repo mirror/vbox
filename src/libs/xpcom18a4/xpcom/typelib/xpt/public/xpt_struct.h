@@ -45,6 +45,27 @@
 
 #include "xpt_arena.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define XPT_NewHeader VBoxNsxpXPT_NewHeader
+#define XPT_NewStringZ VBoxNsxpXPT_NewStringZ
+#define XPT_NewAnnotation VBoxNsxpXPT_NewAnnotation
+#define XPT_SizeOfHeaderBlock VBoxNsxpXPT_SizeOfHeaderBlock
+#define XPT_NewInterfaceDescriptor VBoxNsxpXPT_NewInterfaceDescriptor
+#define XPT_FillInterfaceDirectoryEntry VBoxNsxpXPT_FillInterfaceDirectoryEntry
+#define XPT_FillMethodDescriptor VBoxNsxpXPT_FillMethodDescriptor
+#define XPT_FreeHeader VBoxNsxpXPT_FreeHeader
+#define XPT_ParseVersionString VBoxNsxpXPT_ParseVersionString
+#define XPT_DestroyInterfaceDirectoryEntry VBoxNsxpXPT_DestroyInterfaceDirectoryEntry
+#define XPT_FillParamDescriptor VBoxNsxpXPT_FillParamDescriptor
+#define XPT_FreeInterfaceDescriptor VBoxNsxpXPT_FreeInterfaceDescriptor
+#define XPT_InterfaceDescriptorAddConsts VBoxNsxpXPT_InterfaceDescriptorAddConsts
+#define XPT_InterfaceDescriptorAddMethods VBoxNsxpXPT_InterfaceDescriptorAddMethods
+#define XPT_InterfaceDescriptorAddTypes VBoxNsxpXPT_InterfaceDescriptorAddTypes
+#define XPT_GetInterfaceIndexByName VBoxNsxpXPT_GetInterfaceIndexByName
+#define XPT_NewString VBoxNsxpXPT_NewString
+#define XPT_SizeOfHeader VBoxNsxpXPT_SizeOfHeader
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 /*

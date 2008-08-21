@@ -49,6 +49,21 @@
  *		CHANGE
  */
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PR_CreateThreadPool VBoxNsprPR_CreateThreadPool
+#define PR_QueueJobPR_QueueJob_Read VBoxNsprPR_QueueJobPR_QueueJob_Read
+#define PR_QueueJob VBoxNsprPR_QueueJob
+#define PR_QueueJob_Read VBoxNsprPR_QueueJob_Read
+#define PR_QueueJob_Write VBoxNsprPR_QueueJob_Write
+#define PR_QueueJob_Accept VBoxNsprPR_QueueJob_Accept
+#define PR_QueueJob_Connect VBoxNsprPR_QueueJob_Connect
+#define PR_QueueJob_Timer VBoxNsprPR_QueueJob_Timer
+#define PR_CancelJob VBoxNsprPR_CancelJob
+#define PR_JoinJob VBoxNsprPR_JoinJob
+#define PR_ShutdownThreadPool VBoxNsprPR_ShutdownThreadPool
+#define PR_JoinThreadPool VBoxNsprPR_JoinThreadPool
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct PRJobIoDesc {

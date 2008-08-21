@@ -138,6 +138,10 @@ In <source>.c, the implementation is:
 PR_IMPLEMENT(PRInt32) _MD_GetFileInfo(const char *fn, PRFileInfo *info);
 */
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define PT_FPrintStats VBoxNsprPT_FPrintStats
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 PR_BEGIN_EXTERN_C
 
 typedef struct _MDLock _MDLock;

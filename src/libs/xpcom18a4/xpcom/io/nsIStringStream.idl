@@ -100,6 +100,13 @@ interface nsIStringInputStream : nsIInputStream
 #include "nsIInputStream.h"
 #include "nsString.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define NS_NewByteInputStream VBoxNsxpNS_NewByteInputStream
+#define NS_NewCStringInputStream VBoxNsxpNS_NewCStringInputStream
+#define NS_NewCharInputStream VBoxNsxpNS_NewCharInputStream
+#define NS_NewStringInputStream VBoxNsxpNS_NewStringInputStream
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 //-----------------------------------------------------------------------------
 // Factory method to get an nsInputStream from an nsAString.  Result will
 // implement nsIStringInputStream and nsIRandomAccessStore
