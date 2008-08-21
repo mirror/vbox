@@ -483,10 +483,7 @@ vslick.h: include/VBox/cdefs.h Makefile
 	echo '#define NS_IMETHOD NS_IMETHOD_(nsresult) ' >> $@.tmp
 	echo '#define NS_IMETHOD_(type) type ' >> $@.tmp
 	echo '#define PARSERS_EXPORT ' >> $@.tmp
-	echo '#define SAX_EXPORT ' >> $@.tmp
 	echo '#define STDMETHOD(a) NS_IMETHOD a ' >> $@.tmp
-	echo '#define XERCES_CPP_NAMESPACE_BEGIN ' >> $@.tmp
-	echo '#define XERCES_CPP_NAMESPACE_END ' >> $@.tmp
 
 	echo '#define CTXAllSUFF(var)                 var##R3 ' >> $@.tmp
 	echo '#define CTXSUFF(var)                    var##HC ' >> $@.tmp
@@ -495,8 +492,10 @@ vslick.h: include/VBox/cdefs.h Makefile
 	echo '#define CTXMID(first, last)             first##HC##last ' >> $@.tmp
 	echo '#define OTHERCTXMID(first, last)        first##GC##last ' >> $@.tmp
 	echo '#define CTXTYPE(GCType, R3Type, R0Type) R3Type ' >> $@.tmp
-	echo '#define GCPTRTYPE(GCType)               GCType ' >> $@.tmp
+	echo '#define RCTYPE(RCType, HCType)          RCType ' >> $@.tmp
 	echo '#define GCTYPE(GCType, HCType)          GCType ' >> $@.tmp
+	echo '#define RCPTRTYPE(RCType)               RCType ' >> $@.tmp
+	echo '#define GCPTRTYPE(GCType)               GCType ' >> $@.tmp
 	echo '#define HCPTRTYPE(HCType)               HCType ' >> $@.tmp
 	echo '#define R3R0PTRTYPE(HCType)             HCType ' >> $@.tmp
 	echo '#define R0PTRTYPE(R3Type)               R3Type ' >> $@.tmp
@@ -507,9 +506,6 @@ vslick.h: include/VBox/cdefs.h Makefile
 	echo '#define RTCALL' >> $@.tmp
 	echo '#define DECLINLINE(type)                inline type ' >> $@.tmp
 
-	echo '#define PDM_SRC_POS                     __FILE__, __LINE__, __PRETTY_FUNCTION__ ' >> $@.tmp
-	echo '#define PDM_SRC_POS_DECL                const char *pszFile, unsigned iLine, const char *pszFunction ' >> $@.tmp
-	echo '#define PDM_SRC_POS_ARGS                pszFile, iLine, pszFunction ' >> $@.tmp
 	echo '#define PDMDEVINSINT_DECLARED           1' >> $@.tmp
 	echo '#define VBOXCALL' >> $@.tmp
 
@@ -537,7 +533,11 @@ vslick.h: include/VBox/cdefs.h Makefile
 	$(CAT_EXT) $@.tmp | sort | $(SED_EXT) -e 's/$$/\n/' --output $@.tmp2
 	$(MV) -f $@.tmp2 $@
 	$(RM) -f $@.tmp $@.tmp2 $@.tmp3
+ifeq ($(KBUILD_HOST),win)
+	$(ECHO) 'TODO: Merge vslick.h with your "$(HOMEDRIVE)$(HOMEPATH)\Documents\My SlickEdit Config\x.y.z\usercpp.h" file.'
+else
 	$(ECHO) "TODO: Merge ./vslick.h with your ~/.slickedit/x.y.z/unxcpp.h file."
+endif
 
 
 #
