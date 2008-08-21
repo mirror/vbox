@@ -53,7 +53,7 @@ public:
         setMovable (false);
         if (layout())
             layout()->setContentsMargins (0, 0, 0, 0);;
-        
+
         setContextMenuPolicy (Qt::NoContextMenu);
 
         /* Remove that ugly frame panel around the toolbar. */
@@ -122,23 +122,6 @@ public:
 #else  /* Q_WS_MAC */
         NOREF (aShow);
 #endif /* !Q_WS_MAC */
-    }
-
-
-    /**
-     *  Substitutes for QMainWindow::setUsesBigPixmaps() when QMainWindow is
-     *  not used (otherwise just redirects the call to #mainWindow()).
-     */
-    void setUsesBigPixmaps (bool enable)
-    {
-        QSize size (24, 24);
-        if (!enable)
-            size = QSize (16, 16);
-
-        if (mMainWindow)
-            mMainWindow->setIconSize (size);
-        else
-            setIconSize (size);
     }
 
     void setUsesTextLabel (bool enable)
