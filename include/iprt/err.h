@@ -939,18 +939,6 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_CACHE_EMPTY                        (-851)
 /** @} */
 
-/** @name RTFifo status code
- * @{ */
-/** RTFifo: Returned when destroy function is called
- *          and the Fifo is not empty.
- */
-#define VERR_FIFO_NOT_EMPTY                     (-875)
-/** RTFifo: fifo is full. */
-#define VERR_FIFO_FULL                          (-876)
-/** RTFifo: fifo is empty. */
-#define VERR_FIFO_EMPTY                         (-877)
-/** @} */
-
 /* SED-END */
 
 /** @} */

@@ -184,7 +184,6 @@ RuntimeR3_SOURCES       = \
 	common/misc/assert.cpp \
 	common/misc/cache.cpp \
 	common/misc/cidr.cpp \
-	common/misc/fifo.cpp \
 	common/misc/getopt.cpp \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
