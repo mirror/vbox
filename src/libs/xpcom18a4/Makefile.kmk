@@ -28,13 +28,12 @@ endif
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_PYTHON
-# bridge for XPCOM to invoke Python
-XPCOM_PYTHON = VBox-xpcom-python
 # bridge for Python to invoke XPCOM
-XPCOM_PYMOD = VBox-xpcom-pymod VBox-xpcom-helper
+XPCOM_PYMOD = VBox-xpcom-pymod
+# VBox-xpcom-helper
 # bridge between PYMOD and VirtualBox, to minimize mods
 XPCOM_VBOX_HELPER = VBox-xpcom-helper
-PYTHON_LIBS = python2.5
+PYTHON_INCS=/usr/include/python2.5
 endif
 
 #
@@ -258,9 +257,7 @@ LIBRARIES += \
 	VBox-xpcom-ipcshared \
 	VBox-xpcom-ipcdlock \
 	VBox-xpcom-ipctransmgr \
-	VBox-xpcom-ipctmgrcom  \
-	$(XPCOM_PYTHON) \
-	$(PYTHON_LIBS)
+	VBox-xpcom-ipctmgrcom 
 
 DLLS += \
 	VBoxXPCOM \
@@ -1122,8 +1119,6 @@ VBoxXPCOM_LIBS = \
 	$(TARGET_VBox-xpcom-xptcall) \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
-	$(TARGET_$(XPCOM_PYTHON)) \
-	$(PYTHON_LIBS) \
 	$(TARGET_VBoxXPCOMGlue_s)
 
 ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
@@ -1139,7 +1134,6 @@ VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
 	$(TARGET_VBox-xpcom-xptcall) \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
-	$(TARGET_$(XPCOM_PYTHON))\
 	$(TARGET_VBoxXPCOMGlue_s) \
 	-Wl,--no-whole-archive
 endif
@@ -1155,7 +1149,6 @@ VBoxXPCOM_LDFLAGS.solaris = -Wl,-z,allextract \
 	$(TARGET_VBox-xpcom-xptinfo) \
 	$(TARGET_VBox-xpcom-xptcall) \
 	$(TARGET_VBox-xpcom-proxy) \
-	$(TARGET_$(XPCOM_PYTHON))\
 	$(TARGET_VBox-xpcom-nspr) \
 	$(TARGET_VBoxXPCOMGlue_s) \
 	-Wl,-z,defaultextract
@@ -1262,15 +1255,27 @@ VBoxXPCOMIPCC_LIBS = \
 #VBoxXPCOMIPCC_LIBS += $(LIB_RUNTIME)
 
 
-#
-# Python XPCOM bindings
-#
-VBox-xpcom-python_TEMPLATE = XPCOM
-VBox-xpcom-python_NOINST = 1
-VBox-xpcom-python_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
-VBox-xpcom-python_INCS += /usr/include/python2.5
-VBox-xpcom-python_SOURCES = \
-	python/src/dllmain.cpp \
+# Helper for initialization of XPCOM
+VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
+VBox-xpcom-helper_NAME = VBoxHlp
+VBox-xpcom-helper_DEFS =
+VBox-xpcom-helper_SOURCES = \
+	python/src/module/helper.cpp
+
+# Python Client Module
+PY_PATH = sdk/bindings/com/python/xpcom
+PY_DEST = $(PATH_BIN)/$(PY_PATH)
+PY_SAMPLE = $(PATH_BIN)/sdk/bindings/com/python/sample
+
+VBox-xpcom-pymod_TEMPLATE = XPCOM
+# sucky name, maybe rename?
+VBox-xpcom-pymod_NAME = _xpcom
+VBox-xpcom-pymod_INST = bin/$(PY_PATH)/
+VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
+VBox-xpcom-pymod_INCS += $(PYTHON_INCS) python/src
+VBox-xpcom-pymod_SOURCES = \
+	python/src/module/_xpcom.cpp \
+        python/src/dllmain.cpp \
 	python/src/ErrorUtils.cpp \
 	python/src/PyGBase.cpp \
 	python/src/PyGInputStream.cpp \
@@ -1291,28 +1296,6 @@ VBox-xpcom-python_SOURCES = \
 	python/src/Pyxpt_info.cpp \
 	python/src/TypeObject.cpp \
 	python/src/VariantUtils.cpp
-
-
-# Helper for initialization of XPCOM
-VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
-VBox-xpcom-helper_NAME = VBoxHlp
-VBox-xpcom-helper_DEFS =
-VBox-xpcom-helper_SOURCES = \
-	python/src/module/helper.cpp
-
-# Python Client Module
-PY_PATH = sdk/bindings/com/python/xpcom
-PY_DEST = $(PATH_BIN)/$(PY_PATH)
-PY_SAMPLE = $(PATH_BIN)/sdk/bindings/com/python/sample
-
-VBox-xpcom-pymod_TEMPLATE = XPCOM
-# sucky name, maybe rename?
-VBox-xpcom-pymod_NAME = _xpcom
-VBox-xpcom-pymod_INST = bin/$(PY_PATH)/
-VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
-VBox-xpcom-pymod_INCS += /usr/include/python2.5 python/src
-VBox-xpcom-pymod_SOURCES = \
-	python/src/module/_xpcom.cpp
 VBox-xpcom-pymod_LIBS = $(TARGET_VBox-xpcom-helper)
 VBox-xpcom-pymod_LDFLAGS += $(PATH_BIN)/VBoxXPCOM.so
 VBox-xpcom-pymod_DEPS = \
