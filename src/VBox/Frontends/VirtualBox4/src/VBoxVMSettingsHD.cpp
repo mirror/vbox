@@ -447,7 +447,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     /* Prepare toolbar */
     VBoxToolBar *toolBar = new VBoxToolBar (mGbAts);
     toolBar->setUsesTextLabel (false);
-    toolBar->setUsesBigPixmaps (false);
+    toolBar->setIconSize (QSize (16, 16));
     toolBar->setOrientation (Qt::Vertical);
     toolBar->addAction (mNewAction);
     toolBar->addAction (mDelAction);

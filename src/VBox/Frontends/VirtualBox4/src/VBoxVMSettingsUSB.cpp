@@ -84,7 +84,7 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     /* Prepare toolbar */
     VBoxToolBar *toolBar = new VBoxToolBar (mWtFilterHandler);
     toolBar->setUsesTextLabel (false);
-    toolBar->setUsesBigPixmaps (false);
+    toolBar->setIconSize (QSize (16, 16));
     toolBar->setOrientation (Qt::Vertical);
     toolBar->addAction (mNewAction);
     toolBar->addAction (mAddAction);
