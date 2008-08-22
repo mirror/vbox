@@ -48,7 +48,7 @@
 #define SDL_USER_EVENT_TIMER              (SDL_USEREVENT + 11)
 /** custom SDL user event for resetting mouse cursor */
 #define SDL_USER_EVENT_GUEST_CAP_CHANGED  (SDL_USEREVENT + 12)
-/** custom SDL user event for window resize down */
+/** custom SDL user event for window resize done */
 #define SDL_USER_EVENT_WINDOW_RESIZE_DONE (SDL_USEREVENT + 13)
 
 
