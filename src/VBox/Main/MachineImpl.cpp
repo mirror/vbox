@@ -7582,9 +7582,12 @@ void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachi
 {
     pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
     /* Create sub metrics */
-    pm::SubMetric *cpuLoadUser = new pm::SubMetric ("CPU/Load/User");
-    pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel");
-    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used");
+    pm::SubMetric *cpuLoadUser = new pm::SubMetric ("CPU/Load/User",
+        "Percentage of processor time spent in user mode by VM process.");
+    pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel",
+        "Percentage of processor time spent in kernel mode by VM process.");
+    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used",
+        "Size of resident portion of VM process in memory.");
     /* Create and register base metrics */
     IUnknown *objptr;
 

@@ -2735,13 +2735,20 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
 {
     pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
     /* Create sub metrics */
-    pm::SubMetric *cpuLoadUser   = new pm::SubMetric ("CPU/Load/User");
-    pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel");
-    pm::SubMetric *cpuLoadIdle   = new pm::SubMetric ("CPU/Load/Idle");
-    pm::SubMetric *cpuMhzSM      = new pm::SubMetric ("CPU/MHz");
-    pm::SubMetric *ramUsageTotal = new pm::SubMetric ("RAM/Usage/Total");
-    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used");
-    pm::SubMetric *ramUsageFree  = new pm::SubMetric ("RAM/Usage/Free");
+    pm::SubMetric *cpuLoadUser   = new pm::SubMetric ("CPU/Load/User",
+        "Percentage of processor time spent in user mode.");
+    pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel",
+        "Percentage of processor time spent in kernel mode.");
+    pm::SubMetric *cpuLoadIdle   = new pm::SubMetric ("CPU/Load/Idle",
+        "Percentage of processor time spent idling.");
+    pm::SubMetric *cpuMhzSM      = new pm::SubMetric ("CPU/MHz",
+        "Average of current frequency of all processors.");
+    pm::SubMetric *ramUsageTotal = new pm::SubMetric ("RAM/Usage/Total",
+        "Total physical memory installed.");
+    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used",
+        "Physical memory currently occupied.");
+    pm::SubMetric *ramUsageFree  = new pm::SubMetric ("RAM/Usage/Free",
+        "Physical memory currently available to applications.");
     /* Create and register base metrics */
     IUnknown *objptr;
     ComObjPtr <Host> tmp = this;

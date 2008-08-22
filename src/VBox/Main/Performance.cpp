@@ -25,9 +25,6 @@
  * @todo list:
  *
  * 1) Detection of erroneous metric names
- * 2) Wildcards in metric names
- * 3) Darwin backend
- * 4) [OS/2 backend]
  */
 
 #include <VBox/com/array.h>

@@ -52,12 +52,14 @@ namespace pm
     class SubMetric : public CircularBuffer
     {
     public:
-        SubMetric(const char *name)
-        : mName(name) {};
+        SubMetric(const char *name, const char *description)
+        : mName(name), mDescription(description) {};
         void query(ULONG *data);
         const char *getName() { return mName; };
+        const char *getDescription() { return mDescription; };
     private:
         const char *mName;
+        const char *mDescription;
     };
 
 
@@ -270,11 +272,14 @@ namespace pm
 
         const char *getName() { return mName.c_str(); };
         ComPtr<IUnknown> getObject() { return mBaseMetric->getObject(); };
+        const char *getDescription()
+            { return mAggregate ? "" : mSubMetric->getDescription(); };
         const char *getUnit() { return mBaseMetric->getUnit(); };
         ULONG getMinValue() { return mBaseMetric->getMinValue(); };
         ULONG getMaxValue() { return mBaseMetric->getMaxValue(); };
         ULONG getPeriod() { return mBaseMetric->getPeriod(); };
-        ULONG getLength() { return mAggregate ? 1 : mBaseMetric->getLength(); };
+        ULONG getLength()
+            { return mAggregate ? 1 : mBaseMetric->getLength(); };
         void query(ULONG **data, ULONG *count);
 
     private:

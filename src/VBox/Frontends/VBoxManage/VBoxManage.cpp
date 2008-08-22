@@ -7691,11 +7691,12 @@ static int handleMetrics(int argc, char *argv[],
                        ComSafeArrayAsOutParam(metricInfo)));
 
         ComPtr<IUnknown> object;
-        Bstr metricName, unit;
+        Bstr metricName, unit, description;
         ULONG period, count;
         LONG minimum, maximum;
-        RTPrintf("Object     Metric               Unit Minimum    Maximum    Period     Count\n"
-                 "---------- -------------------- ---- ---------- ---------- ---------- ----------\n");
+        RTPrintf(
+"Object     Metric               Unit Minimum    Maximum    Period     Count      Description\n"
+"---------- -------------------- ---- ---------- ---------- ---------- ---------- -----------\n");
         for (size_t i = 0; i < metricInfo.size(); i++)
         {
             CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
@@ -7705,9 +7706,10 @@ static int handleMetrics(int argc, char *argv[],
             CHECK_ERROR(metricInfo[i], COMGETTER(MinimumValue)(&minimum));
             CHECK_ERROR(metricInfo[i], COMGETTER(MaximumValue)(&maximum));
             CHECK_ERROR(metricInfo[i], COMGETTER(Unit)(unit.asOutParam()));
-            RTPrintf("%-10ls %-20ls %-4ls %10d %10d %10u %10u\n",
+            CHECK_ERROR(metricInfo[i], COMGETTER(Description)(description.asOutParam()));
+            RTPrintf("%-10ls %-20ls %-4ls %10d %10d %10u %10u %ls\n",
                 getObjectName(aVirtualBox, object).raw(), metricName.raw(), unit.raw(),
-                minimum, maximum, period, count);
+                minimum, maximum, period, count, description.raw());
         }
     }
     else if (!strcmp(argv[0], "setup"))

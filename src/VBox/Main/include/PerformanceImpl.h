@@ -72,6 +72,7 @@ public:
     // IPerformanceMetric properties
     STDMETHOD(COMGETTER(MetricName)) (BSTR *aMetricName);
     STDMETHOD(COMGETTER(Object)) (IUnknown **anObject);
+    STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
     STDMETHOD(COMGETTER(Period)) (ULONG *aPeriod);
     STDMETHOD(COMGETTER(Count)) (ULONG *aCount);
     STDMETHOD(COMGETTER(Unit)) (BSTR *aUnit);
@@ -94,6 +95,7 @@ private:
 
         Bstr             name;
         ComPtr<IUnknown> object;
+        Bstr             description;
         ULONG            period;
         ULONG            count;
         Bstr             unit;
