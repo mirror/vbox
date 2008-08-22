@@ -42,6 +42,9 @@ XPCOM_C_NAMESPACE_MAP=$(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
 ifneq ($(KBUILD_TARGET),solaris)
 # Find most appropriate Python headers
 PYTHON_INCS=$(lastword $(sort $(wildcard /usr/include/python2.*/)))
+ifeq ($(wildcard $(PYTHON_INCS)/Python.h),)
+PYTHON_INCS=
+endif
 endif
 
 # build Python<->XPCOM bridge only if Python headers found
