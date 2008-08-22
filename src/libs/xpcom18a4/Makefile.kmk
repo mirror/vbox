@@ -38,14 +38,16 @@ XPCOM_C_NAMESPACE_MAP=$(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
 # where the whitelisting of symbols via the map file is not used).
 
 
-ifdef VBOX_WITH_PYTHON
+# Temporary disable Python on Solaris, as there's header conflict
+ifneq ($(KBUILD_TARGET),solaris)
+# Find most appropriate Python headers
+PYTHON_INCS=$(lastword $(sort $(wildcard /usr/include/python2.*/)))
+endif
+
+# build Python<->XPCOM bridge only if Python headers found
+ifneq ($(PYTHON_INCS),)
 # bridge for Python to invoke XPCOM
 XPCOM_PYMOD = VBox-xpcom-pymod
-# VBox-xpcom-helper
-# bridge between host application and VirtualBox library, for embedded case
-XPCOM_VBOX_HELPER = VBox-xpcom-helper
-# XXX: to be defined in configure
-PYTHON_INCS=/usr/include/python2.5
 endif
 
 #
@@ -277,8 +279,13 @@ LIBRARIES += \
 DLLS +=     			\
 	VBoxXPCOM 		\
 	VBoxXPCOMIPCC 		\
-	$(XPCOM_PYMOD) 		\
-	$(XPCOM_VBOX_HELPER)
+	$(XPCOM_PYMOD) 		
+
+# we put it here, as template it uses depends on VBoxRT, 
+# which may not be built yet
+OTHERS +=                       \
+        $(TARGET_VBox-xpcom-helper)
+
 
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS += \
