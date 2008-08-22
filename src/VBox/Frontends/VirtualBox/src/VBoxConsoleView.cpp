@@ -3207,8 +3207,7 @@ void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey /* = true*/)
 
 void VBoxConsoleView::saveKeyStates()
 {
-    ::memcpy (mPressedKeysCopy, mPressedKeys,
-              SIZEOF_ARRAY (mPressedKeys));
+    ::memcpy (mPressedKeysCopy, mPressedKeys, sizeof (mPressedKeys));
 }
 
 void VBoxConsoleView::sendChangedKeyStates()
