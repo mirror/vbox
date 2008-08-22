@@ -1149,6 +1149,9 @@ ResumeExecution:
 
     pCtx->msrKERNELGSBASE = pVMCB->guest.u64KernelGSBase;    /* swapgs exchange value */
 
+    /* Can be updated behind our back in the nested paging case. */
+    pCtx->cr2        = pVMCB->guest.u64CR2;
+
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     SVM_READ_SELREG(SS, ss);
     SVM_READ_SELREG(CS, cs);
