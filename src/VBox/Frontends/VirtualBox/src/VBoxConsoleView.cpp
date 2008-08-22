@@ -678,7 +678,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     initXKeyboard (this->x11Display());
 #endif
 
-    ::memset (mPressedKeys, 0, SIZEOF_ARRAY (mPressedKeys));
+    ::memset (mPressedKeys, 0, sizeof (mPressedKeys));
 
     resize_hint_timer = new QTimer (this);
     connect (resize_hint_timer, SIGNAL (timeout()),
