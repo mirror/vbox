@@ -10319,7 +10319,7 @@
 
   <interface
     name="IPerformanceMetric" extends="$unknown"
-    uuid="50831d4c-ed55-4221-836c-87b487d3b44a" wsmap="managed"
+    uuid="2a1a60ae-9345-4019-ad53-d34ba41cbfe9" wsmap="managed"
   >
     <desc>
       The IPerformanceMetric interface represents parameters of the given
@@ -10335,6 +10335,12 @@
     <attribute name="object" type="$unknown" readonly="yes">
       <desc>
         Object this metric belongs to.
+      </desc>
+    </attribute>
+
+    <attribute name="description" type="wstring" readonly="yes">
+      <desc>
+        Textual description of the metric.
       </desc>
     </attribute>
 
