@@ -348,7 +348,7 @@ complete (char *host_name, char *mount_point,
     {
         if (size > 0)
         {
-            memset (buf, size, 0);
+            memset (buf, 0, size);
             free (buf);
         }
         panic_err ("could not add an entry to the mount table");
@@ -358,7 +358,7 @@ complete (char *host_name, char *mount_point,
 
     if (size > 0)
     {
-        memset (buf, size, 0);
+        memset (buf, 0, size);
         free (buf);
     }
 }

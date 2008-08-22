@@ -83,7 +83,7 @@ sf_glob_alloc (struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
                 goto fail0;
         }
 
-        memset(sf_g, sizeof(*sf_g), 0);
+        memset(sf_g, 0, sizeof(*sf_g));
 
         if (   info->nullchar     != '\0'
             || info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
@@ -96,7 +96,7 @@ sf_glob_alloc (struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
             static struct vbsf_mount_info_new info_compat;
 
             info = &info_compat;
-            memset(info, sizeof(*info), 0);
+            memset(info, 0, sizeof(*info));
             memcpy(&info->name, &info_old->name, MAX_HOST_NAME);
             memcpy(&info->nls_name, &info_old->nls_name, MAX_NLS_NAME);
             info->length = offsetof(struct vbsf_mount_info_new, dmode);
