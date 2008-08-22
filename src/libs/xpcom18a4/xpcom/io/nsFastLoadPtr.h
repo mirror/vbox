@@ -57,6 +57,10 @@
 #include "nsIFastLoadService.h"
 #endif
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define gFastLoadService_ VBoxNsxpgFastLoadService_
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 /**
  * nsFastLoadPtr is a template class, so we don't want a class static service
  * pointer member declared in nsFastLoadPtr, above.  Plus, we need special

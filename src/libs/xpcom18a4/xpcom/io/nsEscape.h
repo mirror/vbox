@@ -45,6 +45,14 @@
 #include "nsError.h"
 #include "nsString.h"
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#define nsEscape VBoxNsxpnsEscape
+#define nsUnescape VBoxNsxpnsUnescape
+#define nsUnescapeCount VBoxNsxpnsUnescapeCount
+#define nsEscapeHTML VBoxNsxpnsEscapeHTML
+#define nsEscapeHTML2 VBoxNsxpnsEscapeHTML2
+#endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
+
 /**
  * Valid mask values for nsEscape
  */
