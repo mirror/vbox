@@ -1127,11 +1127,10 @@ VBoxXPCOM_TEMPLATE = XPCOM
 VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
 VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-# @todo disabled, causes trouble at the moment
-#VBoxXPCOM_LDFLAGS.linux     = -Wl,--version-script=$(XPCOM_C_NAMESPACE_MAP)
-#VBoxXPCOM_DEPS.linux       += $(XPCOM_C_NAMESPACE_MAP)
-#VBoxXPCOM_LDFLAGS.solaris   = -Wl,-M,$(XPCOM_C_NAMESPACE_MAP)
-#VBoxXPCOM_DEPS.solaris     += $(XPCOM_C_NAMESPACE_MAP)
+VBoxXPCOM_LDFLAGS.linux     = -Wl,--version-script=$(XPCOM_C_NAMESPACE_MAP)
+VBoxXPCOM_DEPS.linux       += $(XPCOM_C_NAMESPACE_MAP)
+VBoxXPCOM_LDFLAGS.solaris   = -Wl,-M,$(XPCOM_C_NAMESPACE_MAP)
+VBoxXPCOM_DEPS.solaris     += $(XPCOM_C_NAMESPACE_MAP)
 endif
 VBoxXPCOM_SOURCES = \
 	xpcom/build/nsXPComInit.cpp \
