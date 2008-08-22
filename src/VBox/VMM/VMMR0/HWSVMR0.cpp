@@ -286,7 +286,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
     pVMCB->ctrl.u32InterceptException = HWACCM_SVM_TRAP_MASK;
 #ifndef DEBUG
     if (pVM->hwaccm.s.fNestedPaging)
-        pVMCB->ctrl.u32InterceptException &= ~RT_BIT(14);   /* no longer need to intercept #PF. */
+        pVMCB->ctrl.u32InterceptException &= ~RT_BIT(X86_XCPT_PF);   /* no longer need to intercept #PF. */
 #endif
 
     pVMCB->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR
@@ -607,7 +607,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
                 if (!pVM->hwaccm.s.fFPUOldStyleOverride)
                 {
-                    pVMCB->ctrl.u32InterceptException |= RT_BIT(16);
+                    pVMCB->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_MF);
                     pVM->hwaccm.s.fFPUOldStyleOverride = true;
                 }
             }
@@ -753,9 +753,9 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #ifdef DEBUG
     /* Intercept X86_XCPT_DB if stepping is enabled */
     if (DBGFIsStepping(pVM))
-        pVMCB->ctrl.u32InterceptException |=  RT_BIT(1);
+        pVMCB->ctrl.u32InterceptException |=  RT_BIT(X86_XCPT_DB);
     else
-        pVMCB->ctrl.u32InterceptException &= ~RT_BIT(1);
+        pVMCB->ctrl.u32InterceptException &= ~RT_BIT(X86_XCPT_DB);
 #endif
 
     /* Done. */
