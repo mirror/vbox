@@ -705,7 +705,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     initXKeyboard (QX11Info::display());
 #endif
 
-    ::memset (mPressedKeys, 0, SIZEOF_ARRAY (mPressedKeys));
+    ::memset (mPressedKeys, 0, sizeof (mPressedKeys));
 
     /* setup rendering */
 
@@ -3247,8 +3247,7 @@ void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey /* = true*/)
 
 void VBoxConsoleView::saveKeyStates()
 {
-    ::memcpy (mPressedKeysCopy, mPressedKeys,
-              SIZEOF_ARRAY (mPressedKeys));
+    ::memcpy (mPressedKeysCopy, mPressedKeys, sizeof (mPressedKeys));
 }
 
 void VBoxConsoleView::sendChangedKeyStates()
