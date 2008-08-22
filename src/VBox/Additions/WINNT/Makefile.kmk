@@ -53,7 +53,8 @@ INSTALLS += VBoxGuest-inf
 VBoxGuest-inf_INST = $(INST_ADDITIONS)
 VBoxGuest-inf_MODE = a+r,u+w
 ifndef VBOX_SIGN_ADDITIONS
-VBoxGuest-inf_SOURCES = VBoxGuest/VBoxGuest.inf
+VBoxGuest-inf_SOURCES = \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf
 else
 VBoxGuest-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
@@ -62,6 +63,7 @@ VBoxGuest-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
+endif # signing
 VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
 VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
 
@@ -89,8 +91,6 @@ $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat: \
 		$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxGuest-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
-
-endif # signing
 
 include $(KBUILD_PATH)/subfooter.kmk
 

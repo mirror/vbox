@@ -41,13 +41,15 @@ INSTALLS += VBoxVideo-inf
 VBoxVideo-inf_INST = $(INST_ADDITIONS)
 VBoxVideo-inf_MODE = a+r,u+w
 ifndef VBOX_SIGN_ADDITIONS
-VBoxVideo-inf_SOURCES = Miniport/VBoxVideo.inf
+VBoxVideo-inf_SOURCES = \
+	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf
 else
 VBoxVideo-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat
+endif # signing
 VBoxVideo-inf_CLEAN = $(VBoxVideo-inf_SOURCES)
 VBoxVideo-inf_BLDDIRS = $(PATH_TARGET)/VBoxVideoCat.dir
 
@@ -67,8 +69,6 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
 	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
-
-endif # signing
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
