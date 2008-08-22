@@ -453,6 +453,53 @@ void Filter::processMetricList(const std::string &name, const ComPtr<IUnknown> o
     mElements.push_back(std::make_pair(object, name.substr(startPos)));
 }
 
+/* The following method was borrowed from VMM/STAM.cpp */
+bool Filter::patternMatch(const char *pszPat, const char *pszName)
+{
+    /* ASSUMES ASCII */
+    for (;;)
+    {
+        char chPat = *pszPat;
+        switch (chPat)
+        {
+            default:
+                if (*pszName != chPat)
+                    return false;
+                break;
+
+            case '*':
+            {
+                while ((chPat = *++pszPat) == '*' || chPat == '?')
+                    /* nothing */;
+
+                for (;;)
+                {
+                    char ch = *pszName++;
+                    if (    ch == chPat
+                        &&  (   !chPat
+                             || patternMatch(pszPat + 1, pszName)))
+                        return true;
+                    if (!ch)
+                        return false;
+                }
+                /* won't ever get here */
+                break;
+            }
+
+            case '?':
+                if (!*pszName)
+                    return false;
+                break;
+
+            case '\0':
+                return !*pszName;
+        }
+        pszName++;
+        pszPat++;
+    }
+    return true;
+}
+
 bool Filter::match(const ComPtr<IUnknown> object, const std::string &name) const
 {
     ElementList::const_iterator it;
@@ -464,7 +511,7 @@ bool Filter::match(const ComPtr<IUnknown> object, const std::string &name) const
         if ((*it).first.isNull() || (*it).first == object)
         {
             // Objects match, compare names
-            if ((*it).second == "*" || (*it).second == name)
+            if (patternMatch((*it).second.c_str(), name.c_str()))
             {
                 LogFlowThisFunc(("...found!\n"));
                 return true;
