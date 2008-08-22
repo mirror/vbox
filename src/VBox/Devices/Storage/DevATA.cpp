@@ -1567,7 +1567,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     }
     else
     {
-        if (s->cErrors++ < MAX_LOG_REL_ERRORS)
+        if (s->cErrors < MAX_LOG_REL_ERRORS)
         {
             uint8_t u8Cmd = s->aATAPICmd[0];
             do
@@ -1578,6 +1578,7 @@ static bool atapiPassthroughSS(ATADevState *s)
                         || u8Cmd == SCSI_READ_CAPACITY
                         || u8Cmd == SCSI_READ_TOC_PMA_ATIP))
                     break;
+                s->cErrors++;
                 LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d %Rrc\n", s->iLUN, u8Cmd, uATAPISenseKey, rc));
             } while (0);
         }
