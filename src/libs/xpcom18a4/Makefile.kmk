@@ -37,24 +37,6 @@ XPCOM_C_NAMESPACE_MAP=$(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
 # should be a check whether VBoxXPCOM.so contains global C symbols (at least
 # where the whitelisting of symbols via the map file is not used).
 
-
-# Temporary disable everywhere, as there's no decent Python headers
-# installed on build servers
-#if1of ($(KBUILD_TARGET), linux)
-ifeq ($(VBOX_WITH_PYTHON),1)
-# Find most appropriate Python headers
-PYTHON_INCS=$(lastword $(sort $(wildcard /usr/include/python2.*/)))
-ifeq ($(wildcard $(PYTHON_INCS)/Python.h),)
-PYTHON_INCS=
-endif
-endif
-
-# build Python<->XPCOM bridge only if Python headers found
-ifneq ($(PYTHON_INCS),)
-# bridge for Python to invoke XPCOM
-XPCOM_PYMOD = VBox-xpcom-pymod
-endif
-
 #
 # Globals.
 #
@@ -279,16 +261,15 @@ LIBRARIES += \
 	VBox-xpcom-ipcshared \
 	VBox-xpcom-ipcdlock \
 	VBox-xpcom-ipctransmgr \
-	VBox-xpcom-ipctmgrcom 
+	VBox-xpcom-ipctmgrcom
 
-DLLS +=     			\
-	VBoxXPCOM 		\
-	VBoxXPCOMIPCC 		\
-	$(XPCOM_PYMOD) 		
+DLLS += \
+	VBoxXPCOM \
+	VBoxXPCOMIPCC
 
-# we put it here, as template it uses depends on VBoxRT, 
+# we put it here, as template it uses depends on VBoxRT,
 # which may not be built yet
-OTHERS +=                       \
+OTHERS += \
         $(TARGET_VBox-xpcom-helper)
 
 
@@ -1259,7 +1240,9 @@ VBox-xpcom-ipctmgrcom_SOURCES = \
 	ipc/ipcd/extensions/transmngr/common/tmVector.cpp
 
 
+#
 # DCONNECT client shared object
+#
 VBoxXPCOMIPCC_TEMPLATE = XPCOMIPC
 VBoxXPCOMIPCC_NAME.os2 = VBoxIPCC
 ifneq ($(KBUILD_TARGET),linux)
@@ -1289,22 +1272,63 @@ VBoxXPCOMIPCC_LIBS = \
 #VBoxXPCOMIPCC_LIBS += $(LIB_RUNTIME)
 
 
+#
+# DCONNECT daemon executable
+#
+VBoxXPCOMIPCD_TEMPLATE = XPCOMIPCEXE
+VBoxXPCOMIPCD_SOURCES = \
+	ipc/ipcd/daemon/src/ipcd.cpp \
+	ipc/ipcd/daemon/src/ipcClient.cpp \
+	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
+	ipc/ipcd/daemon/src/ipcCommandModule.cpp
+ifeq ($(KBUILD_TARGET),win)
+ VBoxXPCOMIPCD_SOURCES += \
+ 	ipc/ipcd/daemon/src/ipcdWin.cpp
+else
+ VBoxXPCOMIPCD_SOURCES += \
+ 	ipc/ipcd/daemon/src/ipcdUnix.cpp
+endif
+
+
+#
 # Helper for initialization of XPCOM
+#
 VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
+## @todo why isn't this targetd called VBoxHlp and what is it good for anyway? it's not in any of the lists so it won't be processed or anything...
 VBox-xpcom-helper_NAME = VBoxHlp
 VBox-xpcom-helper_DEFS =
 VBox-xpcom-helper_SOURCES = \
 	xpcom/helper/helper.cpp
 
-# Python Client Module
+
+#
+# Python<->XPCOM bridge.
+#
+
+# Find the Python headers for the Python<->XPCOM bridge if enabled.
+ifdef VBOX_WITH_PYTHON
+  ifndef VBOX_PATH_PYTHON_INC
+   VBOX_PATH_PYTHON_INC := $(patsubst %/Python.h,%, $(lastword $(sort $(wildcard \
+   	/usr/include/python2.*/Python.h \
+   	/usr/local/include/python2.*/Python.h \
+   	))))
+   ifeq ($(VBOX_PATH_PYTHON_INC),)
+    $(warning Unable to determin the python include directory (VBOX_PATH_PYTHON_INC).)
+   endif
+ endif
+ DLLS +=VBox-xpcom-pymod
+endif
+
+# Python Client Module.
 PY_PATH = sdk/bindings/com/python/xpcom
 PY_DEST = $(PATH_BIN)/$(PY_PATH)
 PY_SAMPLE = $(PATH_BIN)/sdk/bindings/com/python/sample
 
 VBox-xpcom-pymod_TEMPLATE = XPCOM
+## @todo why isn't this target called VBoxPython?
 VBox-xpcom-pymod_NAME = VBoxPython
 VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
-VBox-xpcom-pymod_INCS += $(PYTHON_INCS) python/src
+VBox-xpcom-pymod_INCS += $(VBOX_PATH_PYTHON_INC) python/src
 VBox-xpcom-pymod_SOURCES = \
 	python/src/module/_xpcom.cpp \
         python/src/dllmain.cpp \
@@ -1328,7 +1352,8 @@ VBox-xpcom-pymod_SOURCES = \
 	python/src/Pyxpt_info.cpp \
 	python/src/TypeObject.cpp \
 	python/src/VariantUtils.cpp
-VBox-xpcom-pymod_LIBS = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) 
+VBox-xpcom-pymod_LIBS = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+## @todo rewrite this to an INSTALLS target, it's just copying.
 VBox-xpcom-pymod_DEPS = \
 	$(PY_DEST)/components.py \
 	$(PY_DEST)/file.py \
@@ -1360,21 +1385,6 @@ $(PY_DEST)/%.py: $(PATH_SUB_CURRENT)/python/%.py $(PY_DEST)
 $(PY_SAMPLE)/%.py: $(PATH_SUB_CURRENT)/python/sample/%.py $(PY_DEST)
 	$(QUIET)$(CP) -f -- $< $@
 
-
-# DCONNECT daemon executable
-VBoxXPCOMIPCD_TEMPLATE = XPCOMIPCEXE
-VBoxXPCOMIPCD_SOURCES = \
-	ipc/ipcd/daemon/src/ipcd.cpp \
-	ipc/ipcd/daemon/src/ipcClient.cpp \
-	ipc/ipcd/daemon/src/ipcModuleReg.cpp \
-	ipc/ipcd/daemon/src/ipcCommandModule.cpp
-ifeq ($(KBUILD_TARGET),win)
- VBoxXPCOMIPCD_SOURCES += \
- 	ipc/ipcd/daemon/src/ipcdWin.cpp
-else
- VBoxXPCOMIPCD_SOURCES += \
- 	ipc/ipcd/daemon/src/ipcdUnix.cpp
-endif
 
 #
 # testcases
