@@ -269,6 +269,7 @@ DLLS += \
 
 # we put it here, as template it uses depends on VBoxRT,
 # which may not be built yet
+# r=bird: This doesn't work, it won't be built this way. The way to fix it is to make the order change in src/Makefile.kmk (or was it src/lib/Makefile.kmk) that puts src/VBox/Runtime before src/lib/xpcom18a4 standard for all builds.
 OTHERS += \
         $(TARGET_VBox-xpcom-helper)
 
