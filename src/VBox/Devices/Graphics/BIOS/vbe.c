@@ -47,7 +47,7 @@
 
 
 // The current OEM Software Revision of this VBE Bios
-#define VBE_OEM_SOFTWARE_REV 0x0002;
+#define VBE_OEM_SOFTWARE_REV 0x0002
 
 extern char vbebios_copyright;
 extern char vbebios_vendor_name;
@@ -1105,7 +1105,9 @@ void vbe_biosfn_return_controller_information(AX, ES, DI)
 Bit16u *AX;Bit16u ES;Bit16u DI;
 {
         Bit16u            ss=get_SS();
+#ifndef VBOX
         VbeInfoBlock      vbe_info_block;
+#endif
         Bit16u            status;
         Bit16u            result;
         Bit16u            vbe2_info;
@@ -1140,11 +1142,75 @@ Bit16u *AX;Bit16u ES;Bit16u DI;
 #endif
 
         vbe2_info = 0;
+#ifdef VBOX
+  #define RT_OFFSETOF(type, member)   ( (int)(unsigned)&( ((type *)(void *)0)->member) )
+
+        /* Don't use a local copy of VbeInfoBlock on the stack; it's too big. 
+         * The Ubuntu 8.04 64 bits splash screen emulator can't handle this.
+         */
 #ifdef VBE2_NO_VESA_CHECK
+#else
+        // check for VBE2 signature
+        if (((read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[0])) == 'V') &&
+             (read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[1])) == 'B') &&
+             (read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[2])) == 'E') &&
+             (read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[3])) == '2')) ||
+
+            ((read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[0])) == 'V') &&
+             (read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[1])) == 'E') &&
+             (read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[2])) == 'S') &&
+             (read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[3])) == 'A')) )
+        {
+                vbe2_info = 1;
+#ifdef DEBUG
+                printf("VBE correct VESA/VBE2 signature found\n");
+#endif
+        }
+#endif
+
+        // VBE Signature
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[0]), 'V');
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[1]), 'E');
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[2]), 'S');
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[3]), 'A');
+
+        // VBE Version supported
+        write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeVersion), 0x0200);
+
+        // OEM String
+        write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemStringPtr_Seg), 0xc000);
+        write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemStringPtr_Off), &vbebios_copyright);
+
+        // Capabilities
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, Capabilities[0]), VBE_CAPABILITY_8BIT_DAC);
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, Capabilities[1]), 0);
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, Capabilities[2]), 0);
+        write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, Capabilities[3]), 0);
+
+        // VBE Video Mode Pointer (dynamicly generated from the mode_info_list)
+        write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, VideoModePtr_Seg), ES);
+        write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, VideoModePtr_Off), DI + 34);
+
+        // VBE Total Memory (in 64b blocks)
+        write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, TotalMemory), in_word(VBE_EXTRA_PORT, 0xffff));
+
+        if (vbe2_info)
+	{
+                // OEM Stuff
+                write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemSoftwareRev), VBE_OEM_SOFTWARE_REV);
+                write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemVendorNamePtr_Seg), 0xc000);
+                write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemVendorNamePtr_Off), &vbebios_vendor_name);
+                write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemProductNamePtr_Seg), 0xc000);
+                write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemProductNamePtr_Off), &vbebios_product_name);
+                write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemProductRevPtr_Seg), 0xc000);
+                write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemProductRevPtr_Off), &vbebios_product_revision);
+        }
 #else
         // get vbe_info_block into local variable
         memcpyb(ss, &vbe_info_block, ES, DI, sizeof(vbe_info_block));
 
+#ifdef VBE2_NO_VESA_CHECK
+#else
         // check for VBE2 signature
         if (((vbe_info_block.VbeSignature[0] == 'V') &&
              (vbe_info_block.VbeSignature[1] == 'B') &&
@@ -1208,6 +1274,7 @@ Bit16u *AX;Bit16u ES;Bit16u DI;
                 // copy updates in vbe_info_block back (VBE 1.x compatibility)
                 memcpyb(ES, DI, ss, &vbe_info_block, 256);
 	}
+#endif /* VBOX */
 
 #ifdef VBE_NEW_DYN_LIST
         do
