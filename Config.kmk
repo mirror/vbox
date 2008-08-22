@@ -330,6 +330,10 @@ VBOX_WITH_GUEST_PROPS = 1
 VBOX_WITH_RESOURCE_USAGE_API = 1
 # Enables all the doxgen bits.
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
+# Enables the Python<->XPCOM and later Python<->COM bindings.
+# (Current not enabled by default because all the build servers has
+# different Python versions installed and would start burning.)
+#VBOX_WITH_PYTHON = 1
 
 
 #
