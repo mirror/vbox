@@ -42,8 +42,9 @@ ifdef VBOX_WITH_PYTHON
 # bridge for Python to invoke XPCOM
 XPCOM_PYMOD = VBox-xpcom-pymod
 # VBox-xpcom-helper
-# bridge between PYMOD and VirtualBox, to minimize mods
+# bridge between host application and VirtualBox library, for embedded case
 XPCOM_VBOX_HELPER = VBox-xpcom-helper
+# XXX: to be defined in configure
 PYTHON_INCS=/usr/include/python2.5
 endif
 
@@ -273,10 +274,11 @@ LIBRARIES += \
 	VBox-xpcom-ipctransmgr \
 	VBox-xpcom-ipctmgrcom 
 
-DLLS += \
-	VBoxXPCOM \
-	VBoxXPCOMIPCC \
-	$(XPCOM_PYMOD)
+DLLS +=     			\
+	VBoxXPCOM 		\
+	VBoxXPCOMIPCC 		\
+	$(XPCOM_PYMOD) 		\
+	$(XPCOM_VBOX_HELPER)
 
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS += \
@@ -1281,7 +1283,7 @@ VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
 VBox-xpcom-helper_NAME = VBoxHlp
 VBox-xpcom-helper_DEFS =
 VBox-xpcom-helper_SOURCES = \
-	python/src/module/helper.cpp
+	xpcom/helper/helper.cpp
 
 # Python Client Module
 PY_PATH = sdk/bindings/com/python/xpcom
@@ -1289,9 +1291,7 @@ PY_DEST = $(PATH_BIN)/$(PY_PATH)
 PY_SAMPLE = $(PATH_BIN)/sdk/bindings/com/python/sample
 
 VBox-xpcom-pymod_TEMPLATE = XPCOM
-# sucky name, maybe rename?
-VBox-xpcom-pymod_NAME = _xpcom
-VBox-xpcom-pymod_INST = bin/$(PY_PATH)/
+VBox-xpcom-pymod_NAME = VBoxPython
 VBox-xpcom-pymod_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
 VBox-xpcom-pymod_INCS += $(PYTHON_INCS) python/src
 VBox-xpcom-pymod_SOURCES = \
@@ -1317,8 +1317,7 @@ VBox-xpcom-pymod_SOURCES = \
 	python/src/Pyxpt_info.cpp \
 	python/src/TypeObject.cpp \
 	python/src/VariantUtils.cpp
-VBox-xpcom-pymod_LIBS = $(TARGET_VBox-xpcom-helper)
-VBox-xpcom-pymod_LDFLAGS += $(PATH_BIN)/VBoxXPCOM.so
+VBox-xpcom-pymod_LIBS = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) 
 VBox-xpcom-pymod_DEPS = \
 	$(PY_DEST)/components.py \
 	$(PY_DEST)/file.py \
@@ -1335,7 +1334,7 @@ VBox-xpcom-pymod_DEPS = \
 	$(PY_DEST)/server/module.py \
 	$(PY_DEST)/server/policy.py \
 	$(PY_SAMPLE)/vboxshell.py \
-	$(TARGET_VBox-xpcom-helper)
+	$(TARGET_VBoxXPCOM)
 
 $(PY_DEST):
 	$(QUIET)$(MKDIR) -p -- \
