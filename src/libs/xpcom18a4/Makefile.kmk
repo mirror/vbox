@@ -1309,14 +1309,28 @@ VBox-xpcom-helper_SOURCES = \
 
 # Find the Python headers for the Python<->XPCOM bridge if enabled.
 ifdef VBOX_WITH_PYTHON
-  ifndef VBOX_PATH_PYTHON_INC
-   VBOX_PATH_PYTHON_INC := $(patsubst %/Python.h,%, $(lastword $(sort $(wildcard \
-   	/usr/include/python2.*/Python.h \
-   	/usr/local/include/python2.*/Python.h \
-   	))))
-   ifeq ($(VBOX_PATH_PYTHON_INC),)
-    $(warning Unable to determin the python include directory (VBOX_PATH_PYTHON_INC).)
-   endif
+ ifndef VBOX_PATH_PYTHON_INC
+  VBOX_PATH_PYTHON_INC := $(patsubst %/Python.h,%, $(lastword $(sort $(wildcard \
+  	/usr/include/python2.*/Python.h \
+  	/usr/local/include/python2.*/Python.h \
+  	))))
+  ifeq ($(VBOX_PATH_PYTHON_INC),)
+   $(warning Unable to determin the python include directory (VBOX_PATH_PYTHON_INC).)
+  endif
+ endif
+ VBOX_PYTHON_VER := 2$(lastword $(subst ., .,$(VBOX_PATH_PYTHON_INC)))
+ ifndef VBOX_LIB_PYTHON
+  VBOX_LIB_PYTHON := $(firstword $(wildcard \
+  	/usr/lib/libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
+  	/usr/local/lib/libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
+  	/usr/lib/libpython2$(SUFF_DLL) \
+  	/usr/local/lib/libpython2$(SUFF_DLL) \
+  	/usr/lib/libpython$(SUFF_DLL) \
+  	/usr/local/lib/libpython$(SUFF_DLL) \
+  	))
+  ifeq ($(VBOX_LIB_PYTHON),)
+   $(warning Unable to determin the python library (VBOX_LIB_PYTHON).)
+  endif
  endif
  DLLS += VBoxPython
  INSTALLS += VBoxPython-inst-py-xpcom
@@ -1327,8 +1341,8 @@ endif
 VBoxPython_TEMPLATE = XPCOM
 VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
 VBoxPython_INCS = \
-	$(VBOX_PATH_PYTHON_INC) \
-	python/src
+	python/src \
+	$(VBOX_PATH_PYTHON_INC)
 VBoxPython_SOURCES = \
 	python/src/module/_xpcom.cpp \
 	python/src/dllmain.cpp \
@@ -1352,7 +1366,15 @@ VBoxPython_SOURCES = \
 	python/src/Pyxpt_info.cpp \
 	python/src/TypeObject.cpp \
 	python/src/VariantUtils.cpp
-VBoxPython_LIBS = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+VBoxPython_LIBS = \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+	$(VBOX_LIB_PYTHON)
+
+## @todo we'll have to use the 10.5 SDK if we wish to build this. :-/
+#VBoxPython_DEFS.darwin = MAC_OS_X_VERSION_MIN_REQUIRED=1050 MAC_OS_X_VERSION_MAX_ALLOWED=1050
+#VBoxPython_CXXFLAGS.darwin = -mmacosx-version-min=10.5 -isysroot $(subst MacOSX10.4u,MacOSX10.5,$(VBOX_PATH_MACOSX_SDK)) -framework Python
+#VBoxPython_LDFLAGS.darwin  = -mmacosx-version-min=10.5 -isysroot $(subst MacOSX10.4u,MacOSX10.5,$(VBOX_PATH_MACOSX_SDK)) -framework Python
+
 
 # Python Client Module - the Python bits.
 VBoxPython-inst-py-xpcom_INST = $(INST_SDK)/bindings/com/python/xpcom/
