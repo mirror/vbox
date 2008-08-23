@@ -52,7 +52,7 @@ ifdef VBOX_ONLY_ADDITIONS
  SUBDIRS = VBox
 
 else  # !VBOX_ONLY_ADDITIONS
- # Build Runtime first because xpcom (IPC, nspr, python) depends on it.
+ # Build IPRT first because xpcom (IPC, nspr, python) depends on it.
  SUBDIRS = VBox/Runtime	bldprogs libs VBox recompiler
  ifneq ($(wildcard apps),)
   SUBDIRS += apps
