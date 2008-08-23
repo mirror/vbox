@@ -1296,6 +1296,7 @@ endif
 #
 VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
 ## @todo why isn't this targetd called VBoxHlp and what is it good for anyway? it's not in any of the lists so it won't be processed or anything...
+## update: Since r35225 this is no longer necessary, VBoxRT is already available when VBoxPython is linked. Do all the initialization from there!
 VBox-xpcom-helper_NAME = VBoxHlp
 VBox-xpcom-helper_DEFS =
 VBox-xpcom-helper_SOURCES = \
@@ -1330,7 +1331,7 @@ VBoxPython_INCS = \
 	python/src
 VBoxPython_SOURCES = \
 	python/src/module/_xpcom.cpp \
-        python/src/dllmain.cpp \
+	python/src/dllmain.cpp \
 	python/src/ErrorUtils.cpp \
 	python/src/PyGBase.cpp \
 	python/src/PyGInputStream.cpp \
