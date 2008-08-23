@@ -113,7 +113,7 @@ static PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, unsigne
  * thread id. RTThreadSelf() then have to be implemented using a pointer stored
  * in thread local storage (TLS).
  *
- * In Ring-0 we only try keep track of kernel threads created by RTCreateThread
+ * In Ring-0 we only try keep track of kernel threads created by RTThreadCreate
  * at the moment. There we really only need the 'join' feature, but doing things
  * the same way allow us to name threads and similar stuff.
  */
@@ -715,6 +715,56 @@ RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUse
         rc = VERR_NO_TMP_MEMORY;
     LogFlow(("RTThreadCreate: Failed to create thread, rc=%Vrc\n", rc));
     AssertReleaseRC(rc);
+    return rc;
+}
+
+
+/**
+ * Create a new thread. 
+ *  
+ * Same as RTThreadCreate except the name is given in the RTStrPrintfV form.
+ *
+ * @returns iprt status code.
+ * @param   pThread     See RTThreadCreate.
+ * @param   pfnThread   See RTThreadCreate.
+ * @param   pvUser      See RTThreadCreate.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   fFlags      See RTThreadCreate.
+ * @param   pszName     Thread name format.
+ * @param   va          Format arguments.
+ */
+RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
+                            RTTHREADTYPE enmType, uint32_t fFlags, const char *pszNameFmt, va_list va)
+{
+    char szName[RTTHREAD_NAME_LEN * 2];
+    RTStrPrintfV(szName, sizeof(szName), pszNameFmt, va);
+    return RTThreadCreate(pThread, pfnThread, pvUser, cbStack, enmType, fFlags, szName);
+}
+
+
+/**
+ * Create a new thread. 
+ *  
+ * Same as RTThreadCreate except the name is given in the RTStrPrintf form.
+ *
+ * @returns iprt status code.
+ * @param   pThread     See RTThreadCreate.
+ * @param   pfnThread   See RTThreadCreate.
+ * @param   pvUser      See RTThreadCreate.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   fFlags      See RTThreadCreate.
+ * @param   pszName     Thread name format.
+ * @param   ...         Format arguments.
+ */
+RTDECL(int) RTThreadCreateF(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
+                            RTTHREADTYPE enmType, uint32_t fFlags, const char *pszNameFmt, ...)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTThreadCreateV(pThread, pfnThread, pvUser, cbStack, enmType, fFlags, pszNameFmt, va);
+    va_end(va);
     return rc;
 }
 
