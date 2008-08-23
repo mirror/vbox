@@ -32,6 +32,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/stdarg.h>
 
 #ifdef IN_GC
 # error "There are no threading APIs available Guest Context!"
@@ -213,6 +214,42 @@ typedef enum RTTHREADFLAGS
  */
 RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
                            RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
+
+/**
+ * Create a new thread. 
+ *  
+ * Same as RTThreadCreate except the name is given in the RTStrPrintfV form.
+ *
+ * @returns iprt status code.
+ * @param   pThread     See RTThreadCreate.
+ * @param   pfnThread   See RTThreadCreate.
+ * @param   pvUser      See RTThreadCreate.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   fFlags      See RTThreadCreate.
+ * @param   pszName     Thread name format.
+ * @param   va          Format arguments.
+ */
+RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
+                            RTTHREADTYPE enmType, uint32_t fFlags, const char *pszNameFmt, va_list va);
+
+/**
+ * Create a new thread. 
+ *  
+ * Same as RTThreadCreate except the name is given in the RTStrPrintf form.
+ *
+ * @returns iprt status code.
+ * @param   pThread     See RTThreadCreate.
+ * @param   pfnThread   See RTThreadCreate.
+ * @param   pvUser      See RTThreadCreate.
+ * @param   cbStack     See RTThreadCreate.
+ * @param   enmType     See RTThreadCreate.
+ * @param   fFlags      See RTThreadCreate.
+ * @param   pszName     Thread name format.
+ * @param   ...         Format arguments.
+ */
+RTDECL(int) RTThreadCreateF(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
+                            RTTHREADTYPE enmType, uint32_t fFlags, const char *pszNameFmt, ...);
 
 /**
  * Gets the native thread id of a IPRT thread.
