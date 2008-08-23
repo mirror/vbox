@@ -94,6 +94,7 @@ int CollectorHAL::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64
 
 int CollectorHAL::getHostCpuMHz(ULONG *mhz)
 {
+#if 1 /** @todo r=bird: this isn't taking offline cpus and gaps into account. The result may be way too low. Suggestion in the disabled #else case. */
     RTCPUID nProcessors = RTMpGetCount();
 
     if (nProcessors == 0)
@@ -105,6 +106,27 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
         uTotalMHz += RTMpGetCurFrequency(RTMpCpuIdFromSetIndex(i));
 
     *mhz = (ULONG)(uTotalMHz / nProcessors);
+
+#else
+    unsigned cCpus = 0;
+    uint64_t u64TotalMHz = 0;
+    RTCPUSET OnlineSet;
+    RTMpGetOnlineSet(&OnlineSet);
+    for (RTCPUID iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+        if (RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
+        {
+            uint32_t uMHz = RTMpGetCurFrequency(RTMpCpuIdFromSetIndex(iCpu));
+            if (uMHz != 0)
+            {
+                u64TotalMHz += uMHz;
+                cCpus++;
+            }
+        }
+
+     AssertReturn(cCpus, VERR_NOT_IMPLEMENTED);
+     *mhz = (ULONG)(u64TotalMHz / cCpus);
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -115,7 +137,7 @@ void BaseMetric::collectorBeat(uint64_t nowAt)
         if (nowAt - mLastSampleTaken >= mPeriod * 1000)
         {
             mLastSampleTaken = nowAt;
-            Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n", 
+            Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n",
                         this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
             collect();
         }
@@ -177,7 +199,7 @@ void HostCpuLoadRaw::collect()
             mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * kernelDiff / totalDiff));
             mIdle->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * idleDiff / totalDiff));
         }
-    
+
         mUserPrev   = user;
         mKernelPrev = kernel;
         mIdlePrev   = idle;
@@ -259,7 +281,7 @@ void MachineCpuLoadRaw::collect()
             mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev)));
             mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev)));
         }
-    
+
         mHostTotalPrev     = hostTotal;
         mProcessUserPrev   = processUser;
         mProcessKernelPrev = processKernel;
@@ -329,7 +351,7 @@ void SubMetric::query(ULONG *data)
 {
     copyTo(data);
 }
-    
+
 void Metric::query(ULONG **data, ULONG *count)
 {
     ULONG length;
