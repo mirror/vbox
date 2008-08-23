@@ -52,6 +52,13 @@
 #include <string.h>
 #include <signal.h>
 
+#ifdef VBOX_USE_IPRT_IN_NSPR
+# include <iprt/thread.h>
+# include <iprt/mem.h>
+# include <iprt/asm.h>
+# include <iprt/err.h>
+#endif /* VBOX_USE_IPRT_IN_NSPR */
+
 /*
  * Record whether or not we have the privilege to set the scheduling
  * policy and priority of threads.  0 means that privilege is available.
@@ -257,6 +264,16 @@ static void *_pt_root(void *arg)
     return NULL;
 }  /* _pt_root */
 
+#ifdef VBOX_USE_IPRT_IN_NSPR
+static DECLCALLBACK(int) _pt_iprt_root(
+    RTTHREAD Thread, void *pvUser)
+{
+    PRThread *thred = (PRThread *)pvUser;
+    _pt_root(thred);
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_USE_IPRT_IN_NSPR */
+
 static PRThread* pt_AttachThread(void)
 {
     PRThread *thred = NULL;
@@ -304,7 +321,14 @@ static PRThread* _PR_CreateThread(
 {
     int rv;
     PRThread *thred;
+#ifndef VBOX_USE_IPRT_IN_NSPR
     pthread_attr_t tattr;
+#else
+    static uint32_t volatile s_iThread = 0;
+    RTTHREADTYPE enmType;
+    RTTHREAD hThread;
+    uint32_t fFlags = 0;
+#endif
 
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
@@ -313,6 +337,7 @@ static PRThread* _PR_CreateThread(
     else if ((PRIntn)PR_PRIORITY_LAST < (PRIntn)priority)
         priority = PR_PRIORITY_LAST;
 
+#ifndef VBOX_USE_IPRT_IN_NSPR
     rv = _PT_PTHREAD_ATTR_INIT(&tattr);
     PR_ASSERT(0 == rv);
 
@@ -344,7 +369,19 @@ static PRThread* _PR_CreateThread(
 #endif
 #endif /* !defined(_PR_DCETHREADS) */
     }
+#else  /* VBOX_USE_IPRT_IN_NSPR */
+    /* calc priority */
+    switch (priority)
+    {
+        default:
+        case PR_PRIORITY_NORMAL:    enmType = RTTHREADTYPE_DEFAULT; break;
+        case PR_PRIORITY_LOW:       enmType = RTTHREADTYPE_MAIN_HEAVY_WORKER; break;
+        case PR_PRIORITY_HIGH:      enmType = RTTHREADTYPE_MAIN_WORKER; break;
+        case PR_PRIORITY_URGENT:    enmType = RTTHREADTYPE_IO; break;
+    }
+#endif /* VBOX_USE_IPRT_IN_NSPR */
 
+#ifndef VBOX_USE_IPRT_IN_NSPR
     /*
      * DCE threads can't set detach state before creating the thread.
      * AIX can't set detach late. Why can't we all just get along?
@@ -355,11 +392,16 @@ static PRThread* _PR_CreateThread(
             PTHREAD_CREATE_JOINABLE : PTHREAD_CREATE_DETACHED));
     PR_ASSERT(0 == rv);
 #endif /* !defined(_PR_DCETHREADS) */
+#else
+    if (state == PR_JOINABLE_THREAD)
+        fFlags |= RTTHREADFLAGS_WAITABLE;
+#endif /* !VBOX_USE_IPRT_IN_NSPR */
 
     if (0 == stackSize) stackSize = (64 * 1024);  /* default == 64K */
 #ifdef _MD_MINIMUM_STACK_SIZE
     if (stackSize < _MD_MINIMUM_STACK_SIZE) stackSize = _MD_MINIMUM_STACK_SIZE;
 #endif
+#ifndef VBOX_USE_IPRT_IN_NSPR
     /*
      * Linux doesn't have pthread_attr_setstacksize.
      */
@@ -367,6 +409,7 @@ static PRThread* _PR_CreateThread(
     rv = pthread_attr_setstacksize(&tattr, stackSize);
     PR_ASSERT(0 == rv);
 #endif
+#endif /* !VBOX_USE_IPRT_IN_NSPR */
 
     thred = PR_NEWZAP(PRThread);
     if (NULL == thred)
@@ -387,6 +430,7 @@ static PRThread* _PR_CreateThread(
         if (PR_LOCAL_THREAD == scope)
         	scope = PR_GLOBAL_THREAD;
 			
+#ifndef VBOX_USE_IPRT_IN_NSPR
         if (PR_GLOBAL_BOUND_THREAD == scope) {
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
     		rv = pthread_attr_setscope(&tattr, PTHREAD_SCOPE_SYSTEM);
@@ -403,6 +447,7 @@ static PRThread* _PR_CreateThread(
 			}
 #endif
 		}
+#endif /* !VBOX_USE_IPRT_IN_NSPR */
         if (PR_GLOBAL_THREAD == scope)
             thred->state |= PT_THREAD_GLOBAL;
         else if (PR_GLOBAL_BOUND_THREAD == scope)
@@ -442,6 +487,7 @@ static PRThread* _PR_CreateThread(
          * to pthread_create() because who knows what wacky things
          * pthread_create() may be doing to its argument.
          */
+#ifndef VBOX_USE_IPRT_IN_NSPR
         rv = _PT_PTHREAD_CREATE(&id, tattr, _pt_root, thred);
 
 #if !defined(_PR_DCETHREADS)
@@ -471,6 +517,13 @@ static PRThread* _PR_CreateThread(
             rv = _PT_PTHREAD_CREATE(&id, tattr, _pt_root, thred);
         }
 #endif
+#else  /* VBOX_USE_IPRT_IN_NSPR */
+		rv = RTThreadCreateF(&hThread, _pt_iprt_root, thred, stackSize, enmType, fFlags, "nspr-%u", ASMAtomicIncU32(&s_iThread));
+		if (RT_SUCCESS(rv)) {
+			id = (pthread_t)RTThreadGetNative(hThread);
+            rv = 0;
+        } 
+#endif /* VBOX_USE_IPRT_IN_NSPR */
 
         if (0 != rv)
         {
@@ -514,8 +567,10 @@ static PRThread* _PR_CreateThread(
     }
 
 done:
+#ifndef VBOX_USE_IPRT_IN_NSPR
     rv = _PT_PTHREAD_ATTR_DESTROY(&tattr);
     PR_ASSERT(0 == rv);
+#endif
 
     return thred;
 }  /* _PR_CreateThread */
@@ -577,6 +632,7 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
     }
     else
     {
+#ifndef VBOX_USE_IPRT_IN_NSPR
         pthread_t id = thred->id;
         rv = pthread_join(id, &result);
         PR_ASSERT(rv == 0 && result == NULL);
@@ -606,6 +662,26 @@ PR_IMPLEMENT(PRStatus) PR_JoinThread(PRThread *thred)
             }
             PR_SetError(prerror, rv);
         }
+#else  /* VBOX_USE_IPRT_IN_NSPR */
+        rv = VERR_INVALID_HANDLE;
+        RTTHREAD hThread = RTThreadFromNative((RTNATIVETHREAD)thred->id);
+        if (hThread != NIL_RTTHREAD)
+        {
+            int rcThread = 0;
+            rv = RTThreadWait(hThread, RT_INDEFINITE_WAIT, &rcThread);
+            PR_ASSERT(RT_SUCCESS(rv) && rcThread == VINF_SUCCESS);
+            if (RT_SUCCESS(rv))
+            {
+                rv = 0;
+                _pt_thread_death(thred);
+            }
+            else
+                PR_SetError(rv == VERR_THREAD_NOT_WAITABLE 
+                            ? PR_INVALID_ARGUMENT_ERROR 
+                            : PR_UNKNOWN_ERROR, 
+                            rv);
+        }
+#endif /* VBOX_USE_IPRT_IN_NSPR */
     }
     return (0 == rv) ? PR_SUCCESS : PR_FAILURE;
 }  /* PR_JoinThread */

@@ -38,6 +38,9 @@
 #include "primpl.h"
 #include <ctype.h>
 #include <string.h>
+#ifdef VBOX_USE_IPRT_IN_NSPR
+# include <iprt/initterm.h>
+#endif 
 
 PRLogModuleInfo *_pr_clock_lm;
 PRLogModuleInfo *_pr_cmon_lm;
@@ -172,6 +175,9 @@ static void _PR_InitStuff(void)
 
     if (_pr_initialized) return;
     _pr_initialized = PR_TRUE;
+#ifdef VBOX_USE_IPRT_IN_NSPR
+    RTR3Init(false /* fInitSUPLib */, 0 /* cbReserve */);
+#endif 
 #ifdef _PR_ZONE_ALLOCATOR
     _PR_InitZones();
 #endif
