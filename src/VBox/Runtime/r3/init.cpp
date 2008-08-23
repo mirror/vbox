@@ -63,6 +63,11 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** The number of calls to RTR3Init. */
+static int32_t volatile g_cUsers = 0;
+/** Whether we're currently initializing the IPRT. */
+static bool volatile    g_fInitializing = false;
+
 /** Program path.
  * The size is hardcoded, so we'll have to check for overflow when setting it
  * since some hosts might support longer paths.
@@ -114,6 +119,24 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
 {
     /* no entry log flow, because prefixes and thread may freak out. */
 
+    /*
+     * Do reference counting, only initialize the first time around.
+     * 
+     * We are ASSUMING that nobody will be able to race RTR3Init calls when the 
+     * first one, the real init, is running (second assertion).
+     */
+    int32_t cUsers = ASMAtomicIncS32(&g_cUsers);
+    if (cUsers != 1)
+    {
+        AssertMsg(cUsers > 1, ("%d\n", cUsers));
+        Assert(!g_fInitializing);
+#if !defined(IN_GUEST) && !defined(RT_NO_GIP)
+        if (fInitSUPLib)
+            SUPInit(NULL, cbReserve);
+#endif 
+    }
+    ASMAtomicWriteBool(&g_fInitializing, true);
+
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # ifdef VBOX
     /*
@@ -141,6 +164,8 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to get executable directory path, rc=%d!\n", rc));
+        ASMAtomicWriteBool(&g_fInitializing, false);
+        ASMAtomicDecS32(&g_cUsers);
         return rc;
     }
 
@@ -186,6 +211,8 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to get executable directory path, rc=%d!\n", rc));
+        ASMAtomicWriteBool(&g_fInitializing, false);
+        ASMAtomicDecS32(&g_cUsers);
         return rc;
     }
 
@@ -203,6 +230,7 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
      */
 
     LogFlow(("RTR3Init: returns VINF_SUCCESS\n"));
+    ASMAtomicWriteBool(&g_fInitializing, false);
     return VINF_SUCCESS;
 }
 
