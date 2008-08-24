@@ -168,7 +168,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies)
             rc = rtReqProcessOne(pReq);
             AssertRC(rc);
             if (rc != VINF_SUCCESS)
-                break;
+                break; /** @todo r=bird: we're dropping requests here! Add 2nd queue that can hold them. (will fix when writing a testcase)  */
         }
     }
 
