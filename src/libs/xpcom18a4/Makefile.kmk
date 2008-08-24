@@ -267,7 +267,8 @@ LIBRARIES += \
 
 DLLS += \
 	VBoxXPCOM \
-	VBoxXPCOMIPCC
+	VBoxXPCOMIPCC \
+	VBox-xpcom-helper
 
 # we put it here, as template it uses depends on VBoxRT,
 # which may not be built yet
@@ -1314,7 +1315,7 @@ ifdef VBOX_WITH_PYTHON
   	/usr/local/include/python2.*/Python.h \
   	))))
   ifeq ($(VBOX_PATH_PYTHON_INC),)
-   $(warning Unable to determin the python include directory (VBOX_PATH_PYTHON_INC).)
+   $(warning Unable to determine the python include directory (VBOX_PATH_PYTHON_INC).)
   endif
  endif
  VBOX_PYTHON_VER := 2$(lastword $(subst ., .,$(VBOX_PATH_PYTHON_INC)))
@@ -1328,7 +1329,7 @@ ifdef VBOX_WITH_PYTHON
   	/usr/local/lib/libpython$(SUFF_DLL) \
   	))
   ifeq ($(VBOX_LIB_PYTHON),)
-   $(warning Unable to determin the python library (VBOX_LIB_PYTHON).)
+   $(warning Unable to determine the python library (VBOX_LIB_PYTHON).)
   endif
  endif
  DLLS += VBoxPython
@@ -1378,6 +1379,7 @@ VBoxPython_LIBS = \
 # Python Client Module - the Python bits.
 VBoxPython-inst-py-xpcom_INST = $(INST_SDK)/bindings/com/python/xpcom/
 VBoxPython-inst-py-xpcom_SOURCES = \
+	python/vboxxpcom.py \
 	python/components.py \
 	python/file.py \
 	python/__init__.py \
