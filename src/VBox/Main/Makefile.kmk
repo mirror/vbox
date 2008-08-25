@@ -67,25 +67,26 @@ endif
 
 ifeq ($(KBUILD_TARGET),win)
  INSTALLS       += VBoxMain-com-inst
- IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox.idl
+ IDLFILE         = $(VBOX_PATH_SDK)/bindings/mscom/idl/VirtualBox.idl
  OTHER_CLEAN    += \
- 	$(VBOX_PATH_SDK)/include/VirtualBox.h \
+ 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
  	$(IDLFILE) \
- 	$(VBOX_PATH_SDK)/lib/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
+ 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
+ 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
  	$(PATH_VBoxCOM)/VirtualBox.h \
  	$(PATH_VBoxCOM)/VirtualBox_i.c \
  	$(PATH_VBoxCOM)/VirtualBox.tlb
  VBOX_MAIN_PREREQS = $(PATH_VBoxCOM)/VirtualBox_i.c
+ BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
 else # xpcom
  INSTALLS       += xpcom-components
- IDLFILE         = $(VBOX_PATH_SDK)/idl/VirtualBox_XPCOM.idl
+ IDLFILE         = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
  ifeq ($(KBUILD_TARGET),linux)
   IDLTYPELIB     = $(PATH_BIN)/VirtualBox_XPCOM.xpt
  else
   IDLTYPELIB     = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
  endif
- IDLHEADER       = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
+ IDLHEADER       = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
  OTHERS         += $(IDLTYPELIB)
  OTHER_CLEAN    += \
     $(IDLFILE) \
@@ -93,8 +94,8 @@ else # xpcom
     $(IDLTYPELIB)
 
  VBOX_MAIN_PREREQS = $(IDLTYPELIB) $(IDLHEADER)
+ BLDDIRS += $(VBOX_PATH_SDK)/bindings/xpcom/idl
 endif # xpcom
-BLDDIRS += $(VBOX_PATH_SDK)/idl
 
 
 VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
@@ -635,7 +636,7 @@ endif
 
 $(IDLFILE): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(XIDLFILE)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/idl
+	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
 $(PATH_TARGET)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(XIDLFILE)
@@ -650,22 +651,22 @@ $(PATH_TARGET)/VBoxC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(XIDLFIL
 #
 # What needs to be done is to not depend on _i.c in the object subdir, but on all the final outputs.
 $(PATH_VBoxCOM)/VirtualBox_i.c \
-+ $(VBOX_PATH_SDK)/lib/VirtualBox_i.c \
++ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
 + $(PATH_VBoxCOM)/VirtualBox.h \
-+ $(VBOX_PATH_SDK)/include/VirtualBox.h \
++ $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
 + $(PATH_VBoxCOM)/VirtualBox.tlb \
-+ $(VBOX_PATH_SDK)/lib/VirtualBox.tlb: $(IDLFILE) | $(call DIRDEP,$(PATH_VBoxCOM))
++ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb: $(IDLFILE) | $(call DIRDEP,$(PATH_VBoxCOM))
 	$(MAIN_IDL) $(IDL_DEFS) \
 		/out $(subst /,\\,$(PATH_VBoxCOM)) \
 		/cpp_cmd $(subst /,\\,$(TOOL_$(VBOX_VCC_TOOL)_CC)) \
 		/I $(subst /,\\,$(PATH_SDK_WINPSDK_INC)) \
 		/I idl \
 		$(subst /,\\,$<)
-	$(MKDIR) -p $(VBOX_PATH_SDK)/include
-	$(CP) $(PATH_VBoxCOM)/VirtualBox.h $(VBOX_PATH_SDK)/include
-	$(MKDIR) -p $(VBOX_PATH_SDK)/lib
-	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(VBOX_PATH_SDK)/lib
-	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/lib
+	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/include
+	$(CP) $(PATH_VBoxCOM)/VirtualBox.h $(VBOX_PATH_SDK)/bindings/mscom/include
+	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/lib
+	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(VBOX_PATH_SDK)/bindings/mscom/lib
+	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/bindings/mscom/lib
 
 endif
 
