@@ -2293,7 +2293,7 @@ ifeq ($(KBUILD_TARGET),win)
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
  TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
  TEMPLATE_VBOXMAINEXE_INTERMEDIATES      = \
-	$(VBOX_PATH_SDK)/include/VirtualBox.h
+	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 
 else # the GCC guys:
 
