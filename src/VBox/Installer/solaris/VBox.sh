@@ -40,15 +40,7 @@ case "$APP" in
     exec "$INSTALL_DIR/VBoxHeadless" "$@"
   ;;
   VBoxQtconfig)
-    # qtconfig requires setting LD_LIBRARY_PATH
-    QT_DIR=$INSTALL_DIR/qtgcc/lib
-    if test "$LD_LIBRARY_PATH"; then
-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$QT_DIR"
-    else
-        LD_LIBRARY_PATH="$QT_DIR"
-    fi
-    export LD_LIBRARY_PATH
-    exec "$INSTALL_DIR/qtgcc/bin/qtconfig" "$@"
+    exec "$INSTALL_DIR/VBoxQtConfig" "$@"
     ;;
   *)
     echo "Unknown application - $APP"
