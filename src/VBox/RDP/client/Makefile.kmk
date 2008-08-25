@@ -80,12 +80,14 @@ rdesktop-vrdp_SOURCES = \
 	xclip.c \
 	cliprdr.c \
 	rdpsnd.c \
-	rdpsnd_dsp.c \
-	rdpsnd_oss.c
-# @todo implement usb proxy for Solaris
+	rdpsnd_dsp.c
 rdesktop-vrdp_SOURCES.linux = \
+	rdpsnd_oss.c \
 	vrdp/rdpusb.c \
 	vrdp/USBProxyDevice-linux.c
+# @todo implement usb proxy for Solaris
+rdesktop-vrdp_SOURCES.solaris = \
+	rdpsnd_sun.c
 rdesktop-vrdp_LIBPATH = \
 	/usr/lib \
 	$(VBOX_LIBPATH_X11)
