@@ -142,7 +142,7 @@ protected:
 
 #if defined(Q_WS_WIN32)
     bool winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &event);
-    bool winEvent (MSG *msg);
+    bool winEvent (MSG *aMsg, long *aResult);
 #elif defined(Q_WS_PM)
     bool pmEvent (QMSG *aMsg);
 #elif defined(Q_WS_X11)
@@ -242,7 +242,7 @@ private:
     QPoint mLastPos;
     QPoint mCapturedPos;
 
-	bool mDisableAutoCapture : 1;
+    bool mDisableAutoCapture : 1;
 
     enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
     uint8_t mPressedKeys [128];
