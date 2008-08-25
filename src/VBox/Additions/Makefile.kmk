@@ -174,7 +174,8 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
  ifdef VBOX_SIGNING_MODE
   GUESTADDITIONS_FILESPEC.win.amd64 += \
 	64Bit/Windows/Drivers/VBoxGuest/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxGuest.cat \
-	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxVideo.cat
+	64Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxVideo.cat \
+	64Bit/Windows/Drivers/VBoxGuest/VBoxMouse.cat=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxMouse.cat
  endif
 endif
 
@@ -207,7 +208,8 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
  ifdef VBOX_SIGNING_MODE
   GUESTADDITIONS_FILESPEC.win.x86 += \
 	32Bit/Windows/Drivers/VBoxGuest/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.cat \
-	32Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.cat
+	32Bit/Windows/Drivers/VBoxVideo/VBoxVideo.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.cat \
+	32Bit/Windows/Drivers/VBoxVideo/VBoxMouse.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.cat
  endif
 endif # win.x86
 
