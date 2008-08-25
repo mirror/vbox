@@ -228,7 +228,7 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
 
 int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, uint32_t cbData)
 {
-    Log(("vbglDriverIOCtl: pDriver: %p, Func: %d, pvData: %p, cbData: %d\n", pDriver, u32Function, pvData, cbData));
+    Log(("vbglDriverIOCtl: pDriver: %p, Func: %x, pvData: %p, cbData: %d\n", pDriver, u32Function, pvData, cbData));
 
 #ifdef RT_OS_WINDOWS
     IO_STATUS_BLOCK ioStatusBlock;
