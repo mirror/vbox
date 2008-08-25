@@ -168,7 +168,7 @@ ifdef VBOX_WITH_VRDP
  LINUXNOSTRIP += \
 	rdesktop-vrdp.tar.gz
 
- ifndef VBOX_HEADLESS
+ ifdef VBOX_WITH_VRDP_RDESKTOP
   LINUXNOSTRIP += \
 	rdesktop-vrdp-keymaps
   LINUXSTRIPBIN += \

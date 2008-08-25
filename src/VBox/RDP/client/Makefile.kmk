@@ -27,22 +27,29 @@ VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.6.0-vrdp
 #
 PROGRAMS += rdesktop-vrdp
 rdesktop-vrdp_TEMPLATE = VBOXR3NPEXE
-# rdesktop-vrdp_SDKS = VBOX_OPENSSL - crap, we don't build everything that's required here. :/
+rdesktop-vrdp_SDKS = VBOX_OPENSSL
 rdesktop-vrdp_DEFS = \
 	PACKAGE_NAME=\"rdesktop-vrdp\" PACKAGE_TARNAME=\"rdesktop-vrdp\" PACKAGE_VERSION=\"1.6.0\" \
 	PACKAGE_STRING=\"rdesktop\ 1.6.0\" PACKAGE_BUGREPORT=\"\" STDC_HEADERS=1 L_ENDIAN=1 \
 	HAVE_SYS_TYPES_H=1 HAVE_SYS_STAT_H=1 HAVE_STDLIB_H=1 HAVE_STRING_H=1 HAVE_MEMORY_H=1 \
 	HAVE_STRINGS_H=1 HAVE_INTTYPES_H=1 HAVE_STDINT_H=1 HAVE_UNISTD_H=1 HAVE_SYS_SELECT_H=1 \
-	HAVE_LOCALE_H=1 HAVE_LANGINFO_H=1 HAVE_ICONV_H=1 ssldir=\"/usr\" \
+	HAVE_LOCALE_H=1 HAVE_LANGINFO_H=1 HAVE_ICONV_H=1 \
 	EGD_SOCKET=\"/var/run/egd-pool\" WITH_RDPSND=1 HAVE_DIRENT_H=1 HAVE_DIRFD=1 HAVE_DECL_DIRFD=1 \
 	HAVE_ICONV=1 ICONV_CONST= HAVE_SYS_VFS_H=1 HAVE_SYS_STATVFS_H=1 HAVE_SYS_STATFS_H=1 \
-	HAVE_SYS_PARAM_H=1 HAVE_SYS_MOUNT_H=1 STAT_STATVFS=1 HAVE_STRUCT_STATVFS_F_NAMEMAX=1 \
-	HAVE_STRUCT_STATFS_F_NAMELEN=1 HAVE_MNTENT_H=1 HAVE_SETMNTENT=1 \
+	HAVE_SYS_PARAM_H=1 HAVE_SYS_MOUNT_H=1 HAVE_STRUCT_STATVFS_F_NAMEMAX=1 \
 	KEYMAP_PATH=$(if $(findstring RTPATH_APP_PRIVATE,$(DEFS)),RTPATH_APP_PRIVATE,\"/opt/VirtualBox-$(VBOX_VERSION_STRING)\")\"/rdesktop-vrdp-keymaps\" \
-	RDPSND_OSS=1 WITH_RDPUSB=1 RDESKTOP=1
+	WITH_RDPUSB=1 RDESKTOP=1
+
+rdesktop-vrdp_DEFS.linux = \
+	HAVE_MNTENT_H=1 HAVE_SETMNTENT=1 STAT_STATVFS=1 HAVE_STRUCT_STATFS_F_NAMELEN=1 \
+	RDPSND_OSS=1 WITH_RDPUSB=1
 ifdef VBOX_WITHOUT_LINUX_COMPILER_H
- rdesktop-vrdp_DEFS += VBOX_WITHOUT_LINUX_COMPILER_H
+ rdesktop-vrdp_DEFS.linux += VBOX_WITHOUT_LINUX_COMPILER_H
 endif
+# @todo once rdp proxy is available on Solaris, add WITH_RDPUSB=1
+rdesktop-vrdp_DEFS.solaris = \
+	HAVE_SYS_FILIO_H=1 RDPSND_SUN=1 HAVE_ICONV_H=1 ICONV_CONST=const STAT_STATVFS64=1 _FILE_OFFSET_BITS=64
+
 rdesktop-vrdp_SOURCES = \
 	tcp.c \
 	iso.c \
@@ -75,15 +82,15 @@ rdesktop-vrdp_SOURCES = \
 	rdpsnd.c \
 	rdpsnd_dsp.c \
 	rdpsnd_oss.c
-rdesktop-vrdp_SOURCES += \
+# @todo implement usb proxy for Solaris
+rdesktop-vrdp_SOURCES.linux = \
 	vrdp/rdpusb.c \
 	vrdp/USBProxyDevice-linux.c
 rdesktop-vrdp_LIBPATH = \
 	/usr/lib \
 	$(VBOX_LIBPATH_X11)
 rdesktop-vrdp_LIBS = \
-	X11 \
-	crypto
+	X11
 
 #
 # The keymaps.

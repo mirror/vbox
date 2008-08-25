@@ -431,7 +431,7 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
     Assert(pszDevices < psz);
     uint32_t uDev;
     int rc = RTStrToUInt32Ex(psz + 1, NULL, 10, &uDev);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* the bus number */
         *psz-- = '\0';
@@ -440,7 +440,7 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
         Assert(pszDevices < psz);
         uint32_t uBus;
         rc = RTStrToUInt32Ex(psz + 1, NULL, 10, &uBus);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             strcpy(psz + 1, "devices");
 
@@ -450,10 +450,10 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
              */
             PRTSTREAM pFile;
             rc = RTStrmOpen(pszDevices, "r", &pFile);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 char szLine[1024];
-                while (VBOX_SUCCESS(RTStrmGetLine(pFile, szLine, sizeof(szLine))))
+                while (RT_SUCCESS(RTStrmGetLine(pFile, szLine, sizeof(szLine))))
                 {
                     /* we're only interested in 'T:' lines. */
                     psz = RTStrStripL(szLine);
@@ -486,7 +486,7 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
                      * Ok, we've found the device.
                      * Scan until we find a selected configuration, the next device, or EOF.
                      */
-                    while (VBOX_SUCCESS(RTStrmGetLine(pFile, szLine, sizeof(szLine))))
+                    while (RT_SUCCESS(RTStrmGetLine(pFile, szLine, sizeof(szLine))))
                     {
                         psz = RTStrStripL(szLine);
                         if (psz[0] == 'T')
@@ -503,7 +503,7 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
                         {
                             psz = RTStrStripL(psz + 5);
                             rc = RTStrToUInt32Ex(psz, &pszNext, 10, &u); AssertRC(rc);
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                             {
                                 if (piFirstCfg)
                                 {
@@ -555,7 +555,7 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
     LogFlow(("usbProxyLinuxOpen: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
     RTFILE File;
     int rc = RTFileOpen(&File, pszAddress, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Allocate and initialize the linux backend data.
@@ -565,7 +565,7 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
         {
             pDevLnx->File = File;
             rc = RTCritSectInit(&pDevLnx->CritSect);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pProxyDev->Backend.pv = pDevLnx;
 
@@ -906,7 +906,7 @@ static int usbProxyLinuxReset(PUSBPROXYDEV pProxyDev)
             rc2 = usb_reset_logical_reconnect(pProxyDev);
             if (VBOX_FAILURE(rc2))
                 usbProxLinuxUrbUnplugged(pProxyDev);
-            if (VBOX_SUCCESS(rc2))
+            if (RT_SUCCESS(rc2))
             {
                 ASMAtomicDecU32(&g_cResetActive);
                 LogFlow(("usbProxyLinuxReset: returns success (after recovering disconnected device!)\n"));

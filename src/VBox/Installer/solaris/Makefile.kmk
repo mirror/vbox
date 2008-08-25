@@ -151,10 +151,15 @@ ifdef VBOX_WITH_VRDP
  SOLARIS_STRIP_BINS += \
 	VBoxVRDP.so
 
-#
-# @todo This later...
-# SOLARIS_NO_STRIP += \
-#	rdesktop-vrdp.tar.gz
+ SOLARIS_NO_STRIP += \
+	rdesktop-vrdp.tar.gz
+
+ ifdef VBOX_WITH_VRDP_RDESKTOP
+  SOLARIS_NO_STRIP += \
+	rdesktop-vrdp-keymaps
+  SOLARIS_STRIP_BINS += \
+	rdesktop-vrdp
+ endif
 endif
 
 ifdef VBOX_WITH_HEADLESS

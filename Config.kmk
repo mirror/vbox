@@ -409,8 +409,6 @@ endif
 
 ifeq ($(KBUILD_TARGET),solaris)
  VBOX_WITH_SECURELABEL=
- VBOX_WITH_VRDP_AUTHMOD=
- VBOX_WITH_VRDP_RDESKTOP=
  VBOX_WITH_USB=
  VBOX_WITH_OGL=
 endif
@@ -1411,6 +1409,10 @@ else
  SDK_VBOX_OPENSSL_INCS ?= $(PATH_ROOT)/src/libs/openssl-0.9.7e/include
 endif
 SDK_VBOX_OPENSSL_LIBS?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+# Build entire openssl library, not just the minimal subset.
+if1of ($(KBUILD_TARGET), linux solaris)
+ VBOX_OPENSSL_ALL=1
+endif
 
 SDK_VBOX_FFMPEG       = .
 if1of ($(KBUILD_TARGET), win os2 darwin)
