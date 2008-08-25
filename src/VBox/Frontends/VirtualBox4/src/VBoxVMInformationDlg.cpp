@@ -412,8 +412,7 @@ void VBoxVMInformationDlg::refreshStatistics()
             VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
         QString nested = console.GetDebugger().GetHWVirtExNestedPagingEnabled() ?
-            VBoxGlobal::tr ("Enabled", "details report (Nested Paging)") :
-            VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
+            tr ("Enabled", "nested paging") : tr ("Disabled", "nested paging");
         QString addInfo = console.GetGuest().GetAdditionsVersion();
         uint addVersion = addInfo.toUInt();
         QString addVerisonStr = !addInfo.isNull() ?
@@ -437,7 +436,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += hdrRow.arg (":/state_running_16px.png").arg (tr ("Runtime Attributes"));
         result += formatValue (tr ("Screen Resolution"), resolution, maxLength);
         result += formatValue (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization, maxLength);
-        result += formatValue (VBoxGlobal::tr ("Nested Paging", "details report"), nested, maxLength);
+        result += formatValue (tr ("Nested Paging"), nested, maxLength);
         result += formatValue (tr ("Guest Additions"), addVerisonStr, maxLength);
         result += formatValue (tr ("Guest OS Type"), osType, maxLength);
         result += paragraph;
