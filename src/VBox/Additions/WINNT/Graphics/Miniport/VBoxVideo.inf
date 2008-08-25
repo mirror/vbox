@@ -30,9 +30,11 @@ VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
 
 [Manufacturer]
-%SUN%=Model, NTamd64
+;x86   %SUN%=VBoxVideo
+;amd64 %SUN%=VBoxVideo, NTamd64
 
-[Model]
+;x86   [VBoxVideo]
+;amd64 [VBoxVideo.NTamd64]
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
 [VBoxVideo]

@@ -43,9 +43,11 @@ VBox_CoInstaller_CopyFiles = 11 ; system32
 VBoxTray_CopyFiles = 11 ; system32
 
 [Manufacturer]
-%SUN%=VBoxGuest, NTamd64
+;x86   %SUN%=VBoxGuest
+;amd64 %SUN%=VBoxGuest, NTamd64
 
-[VBoxGuest]
+;x86   [VBoxGuest]
+;amd64 [VBoxGuest.NTamd64]
 %VBoxGuest.DeviceDesc%=VBoxGuest_Install,PCI\VEN_80ee&DEV_cafe
 
 [VBoxGuest_Install]
