@@ -24,6 +24,9 @@
 #include <sys/sysmacros.h>
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
+#ifdef u
+#undef u
+#endif
 #include "vboxvfs.h"
 
 #if defined(DEBUG_ramshankar) && !defined(LOG_ENABLED)
