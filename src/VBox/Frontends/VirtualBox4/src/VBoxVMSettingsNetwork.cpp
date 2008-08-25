@@ -370,6 +370,8 @@ void VBoxVMSettingsNetwork::setTapVisible (bool aVisible)
     mLbTerminate_x11->setVisible (aVisible);
     mLeTerminate_x11->setVisible (aVisible);
     mTbTerminate_x11->setVisible (aVisible);
+    /* Make sure the layout is recalculated (Important on the mac). */
+    layout()->activate();
 }
 
 /* VBoxNIList Stuff */
@@ -415,14 +417,14 @@ private:
 VBoxNIList::VBoxNIList (QWidget *aParent)
     : QIWithRetranslateUI<QWidget> (aParent)
 {
-    QGridLayout *mainLayout = new QGridLayout (this);
+    QVBoxLayout *mainLayout = new QVBoxLayout (this);
     VBoxGlobal::setLayoutMargin (mainLayout, 0);
     mLbTitle = new QILabelSeparator();
-    mainLayout->addWidget (mLbTitle, 0, 0, 1, 2);
+    mainLayout->addWidget (mLbTitle);
 //    mainLayout->addItem (new QSpacerItem (8, 16, QSizePolicy::Fixed, QSizePolicy::Minimum), 1, 0);
     /* Creating List Widget */
     QHBoxLayout *layout = new QHBoxLayout ();
-    mainLayout->addLayout (layout, 1, 0);
+    mainLayout->addLayout (layout);
     mList = new QTreeWidget (this);
     setFocusProxy (mList);
     mLbTitle->setBuddy (mList);
@@ -446,16 +448,16 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
                                               ":/remove_host_iface_disabled_16px.png"));
 # endif /* Q_WS_WIN */
 
+# if defined (Q_WS_WIN)
     /* Prepare toolbar */
     VBoxToolBar *toolBar = new VBoxToolBar (this);
     toolBar->setUsesTextLabel (false);
     toolBar->setIconSize (QSize (16, 16));
     toolBar->setOrientation (Qt::Vertical);
-# if defined (Q_WS_WIN)
     toolBar->addAction (mAddAction);
     toolBar->addAction (mDelAction);
-# endif /* Q_WS_WIN */
     layout->addWidget (toolBar);
+# endif /* Q_WS_WIN */
 
     /* Setup connections */
     connect (mList, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
@@ -494,9 +496,20 @@ void VBoxNIList::setCurrentInterface (const QString &aName)
 
     if (aName.isEmpty())
     {
+#ifdef Q_WS_MAC
+        /* Always select the first item to have an initial value. */
+        QTreeWidgetItem *item = mList->topLevelItem (0);
+        if (item)
+        {
+            item->setSelected (true);
+            mList->setCurrentItem (item);
+            onCurrentItemChanged (mList->currentItem());
+        }
+#else
         /* Make sure no one of items selected in the list currently */
-        mList->setCurrentItem (0);
+        mList->setCurrentItem (NULL);
         mList->clearSelection();
+#endif 
     }
     else
     {
