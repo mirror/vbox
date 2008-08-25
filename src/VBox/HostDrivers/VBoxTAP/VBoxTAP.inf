@@ -26,6 +26,7 @@
 
 ; This version number should match the version
 ; number given in SOURCES.
+;; @todo: edit this too? what's the above comment about?
    DriverVer=02/19/2007,8.00.00.0005
 
 [Strings]

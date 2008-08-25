@@ -1323,11 +1323,22 @@ endif
 ## Edit an inf file an x86 target.
 # @param    1   The inf file to edit.
 # @param    2   The output file.
-VBOX_EDIT_INF32_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') -e 's/^;x86  *//' -e '/^;amd64 /d' --output $(2) $(1)
+VBOX_EDIT_INF32_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') \
+	-e 's/^;x86  *//' \
+	-e '/^;amd64 /d' \
+	-e 's/^;edit-DriverVer.*/DriverVer = $(date-utc %m\/%d\/%Y),$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)/' \
+	--output $(2) \
+	$(1)
 ## Edit an inf file an x86 target.
 # @param    1   The inf file to edit.
 # @param    2   The output file.
-VBOX_EDIT_INF64_FN = $(SED) $(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d') -e 's/^;amd64  *//' -e '/^;x86 /d' --output $(2) $(1)
+VBOX_EDIT_INF64_FN = $(SED) \
+	$(if $(VBOX_SIGNING_MODE),-e 's/^;cat  *//', -e '/^;cat /d')\
+	-e 's/^;amd64  *//' \
+	-e '/^;x86 /d' \
+	-e 's/^;edit-DriverVer.*/DriverVer = $(date-utc %m\/%d\/%Y),$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)/' \
+	--output $(2) \
+	$(1)
 
 #
 # Default prefixes and suffixes.

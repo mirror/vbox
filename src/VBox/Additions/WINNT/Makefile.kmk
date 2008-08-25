@@ -52,12 +52,10 @@ endif
 INSTALLS += VBoxGuest-inf
 VBoxGuest-inf_INST = $(INST_ADDITIONS)
 VBoxGuest-inf_MODE = a+r,u+w
-ifndef VBOX_SIGN_ADDITIONS
 VBoxGuest-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf
-else
-VBoxGuest-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
+ifdef VBOX_SIGN_ADDITIONS
+VBoxGuest-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
@@ -65,7 +63,8 @@ VBoxGuest-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBCoInst.dll
 endif # signing
 VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
-VBoxGuest-inf_BLDDIRS = $(PATH_TARGET)/VBoxGuestCat.dir
+VBoxGuest-inf_BLDDIRS = \
+	$(PATH_TARGET)/VBoxGuestCat.dir
 
 $(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf: $(PATH_SUB_CURRENT)/VBoxGuest/VBoxGuest.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 	$(call MSG_GENERATE,VBoxGuest-inf,$@,$<)

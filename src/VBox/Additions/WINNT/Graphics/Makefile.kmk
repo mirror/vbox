@@ -40,18 +40,17 @@ include $(PATH_SUB_CURRENT)/OpenGL/Makefile.kmk
 INSTALLS += VBoxVideo-inf
 VBoxVideo-inf_INST = $(INST_ADDITIONS)
 VBoxVideo-inf_MODE = a+r,u+w
-ifndef VBOX_SIGN_ADDITIONS
 VBoxVideo-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf
-else
-VBoxVideo-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf \
+ifdef VBOX_SIGN_ADDITIONS
+VBoxVideo-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat
 endif # signing
 VBoxVideo-inf_CLEAN = $(VBoxVideo-inf_SOURCES)
-VBoxVideo-inf_BLDDIRS = $(PATH_TARGET)/VBoxVideoCat.dir
+VBoxVideo-inf_BLDDIRS = \
+	$(PATH_TARGET)/VBoxVideoCat.dir
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/Miniport/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)

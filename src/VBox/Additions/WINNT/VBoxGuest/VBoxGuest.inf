@@ -22,7 +22,7 @@ Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
 Provider=%SUN%
 LayoutFile=layout.inf
-DriverVer=08/21/2006,5.00.2072
+;edit-DriverVer=08/26/2008,2.00.0000
 ;cat CatalogFile=VBoxGuest.cat
 
 [SourceDisksNames]
