@@ -1149,7 +1149,7 @@ Bit16u *AX;Bit16u ES;Bit16u DI;
          * The Ubuntu 8.04 64 bits splash screen emulator can't handle this.
          */
 #ifdef VBE2_NO_VESA_CHECK
-#else
+#else  /* !VBE2_NO_VESA_CHECK */
         // check for VBE2 signature
         if (((read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[0])) == 'V') &&
              (read_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[1])) == 'B') &&
@@ -1166,7 +1166,7 @@ Bit16u *AX;Bit16u ES;Bit16u DI;
                 printf("VBE correct VESA/VBE2 signature found\n");
 #endif
         }
-#endif
+#endif /* !VBE2_NO_VESA_CHECK */
 
         // VBE Signature
         write_byte(ES, DI + RT_OFFSETOF(VbeInfoBlock, VbeSignature[0]), 'V');
@@ -1205,7 +1205,7 @@ Bit16u *AX;Bit16u ES;Bit16u DI;
                 write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemProductRevPtr_Seg), 0xc000);
                 write_word(ES, DI + RT_OFFSETOF(VbeInfoBlock, OemProductRevPtr_Off), &vbebios_product_revision);
         }
-#else
+#else  /* !VBOX */
         // get vbe_info_block into local variable
         memcpyb(ss, &vbe_info_block, ES, DI, sizeof(vbe_info_block));
 
@@ -1274,7 +1274,7 @@ Bit16u *AX;Bit16u ES;Bit16u DI;
                 // copy updates in vbe_info_block back (VBE 1.x compatibility)
                 memcpyb(ES, DI, ss, &vbe_info_block, 256);
 	}
-#endif /* VBOX */
+#endif /* !VBOX */
 
 #ifdef VBE_NEW_DYN_LIST
         do
