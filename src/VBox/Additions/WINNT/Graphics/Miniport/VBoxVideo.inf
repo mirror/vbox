@@ -21,7 +21,7 @@ Signature="$WINDOWS NT$"
 Provider=%SUN%
 ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
 Class=Display
-;cat DriverVer = 05/17/2007,1.04.0000
+DriverVer = 05/17/2007,1.04.0000
 ;cat CatalogFile = VBoxVideo.cat
 
 [DestinationDirs]
