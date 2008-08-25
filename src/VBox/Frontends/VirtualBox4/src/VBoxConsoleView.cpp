@@ -1708,7 +1708,8 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
         message.lParam &= ~0x1000000;
 
     /* we suppose here that this hook is always called on the main GUI thread */
-    return winEvent (&message);
+    long dummyResult;
+    return winEvent (&message, &dummyResult);
 }
 
 /**
@@ -1716,42 +1717,42 @@ bool VBoxConsoleView::winLowKeyboardEvent (UINT msg, const KBDLLHOOKSTRUCT &even
  * the keyboard events directly and bypass the harmful Qt translation. A
  * return value of @c true indicates to Qt that the event has been handled.
  */
-bool VBoxConsoleView::winEvent (MSG *msg)
+bool VBoxConsoleView::winEvent (MSG *aMsg, long* /* aResult */)
 {
     if (!mAttached || ! (
-        msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN ||
-        msg->message == WM_KEYUP || msg->message == WM_SYSKEYUP
+        aMsg->message == WM_KEYDOWN || aMsg->message == WM_SYSKEYDOWN ||
+        aMsg->message == WM_KEYUP || aMsg->message == WM_SYSKEYUP
     ))
         return false;
 
     /* check for the special flag possibly set at the end of this function */
-    if (msg->lParam & (0x1 << 25))
+    if (aMsg->lParam & (0x1 << 25))
     {
-        msg->lParam &= ~(0x1 << 25);
+        aMsg->lParam &= ~(0x1 << 25);
         return false;
     }
 
 #if 0
     char buf [256];
     sprintf (buf, "WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d rzv=%01X ctx=%01d prev=%01d tran=%01d",
-             msg->message, msg->wParam,
-             (msg->lParam & 0xFFFF),
-             ((msg->lParam >> 16) & 0xFF),
-             ((msg->lParam >> 24) & 0x1),
-             ((msg->lParam >> 25) & 0xF),
-             ((msg->lParam >> 29) & 0x1),
-             ((msg->lParam >> 30) & 0x1),
-             ((msg->lParam >> 31) & 0x1));
+             aMsg->message, aMsg->wParam,
+             (aMsg->lParam & 0xFFFF),
+             ((aMsg->lParam >> 16) & 0xFF),
+             ((aMsg->lParam >> 24) & 0x1),
+             ((aMsg->lParam >> 25) & 0xF),
+             ((aMsg->lParam >> 29) & 0x1),
+             ((aMsg->lParam >> 30) & 0x1),
+             ((aMsg->lParam >> 31) & 0x1));
     mMainWnd->statusBar()->message (buf);
     LogFlow (("%s\n", buf));
 #endif
 
-    int scan = (msg->lParam >> 16) & 0x7F;
+    int scan = (aMsg->lParam >> 16) & 0x7F;
     /* scancodes 0x80 and 0x00 are ignored */
     if (!scan)
         return true;
 
-    int vkey = msg->wParam;
+    int vkey = aMsg->wParam;
 
     /* When one of the SHIFT keys is held and one of the cursor movement
      * keys is pressed, Windows duplicates SHIFT press/release messages,
@@ -1762,9 +1763,9 @@ bool VBoxConsoleView::winEvent (MSG *msg)
         return true;
 
     int flags = 0;
-    if (msg->lParam & 0x1000000)
+    if (aMsg->lParam & 0x1000000)
         flags |= KeyExtended;
-    if (!(msg->lParam & 0x80000000))
+    if (!(aMsg->lParam & 0x80000000))
         flags |= KeyPressed;
 
     switch (vkey)
@@ -1808,8 +1809,8 @@ bool VBoxConsoleView::winEvent (MSG *msg)
          * to let Qt process the message (to handle non-alphanumeric <HOST>+key
          * shortcuts for example). So send it direcltly to the window with the
          * special flag in the reserved area of lParam (to avoid recursion). */
-        ::SendMessage (msg->hwnd, msg->message,
-                       msg->wParam, msg->lParam | (0x1 << 25));
+        ::SendMessage (aMsg->hwnd, aMsg->message,
+                       aMsg->wParam, aMsg->lParam | (0x1 << 25));
         return true;
     }
 
