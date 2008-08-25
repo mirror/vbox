@@ -264,8 +264,12 @@ LIBRARIES += \
 
 DLLS += \
 	VBoxXPCOM \
-	VBoxXPCOMIPCC \
-	$(if $(VBOX_OSE),,VBoxHelper)
+	VBoxXPCOMIPCC 
+
+
+ifdef VBOX_WITH_PYTHON
+       DLLS += VBoxHelper
+endif
 
 # we put it here, as template it uses depends on VBoxRT,
 # which may not be built yet
