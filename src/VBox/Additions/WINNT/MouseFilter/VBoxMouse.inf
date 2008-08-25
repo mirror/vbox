@@ -19,10 +19,10 @@
 
 [Version]
 Signature="$Windows NT$"
+Class=Mouse
+ClassGuid={4D36E96F-E325-11CE-BFC1-08002BE10318}
+DriverVer=08/25/2008,2.00.000
 ;cat CatalogFile=VBoxMouse.cat
-;Class=Mouse
-;ClassGuid={4D36E96F-E325-11CE-BFC1-08002BE10318}
-DriverPackageType = ClassFilter
 
 [SourceDisksNames]
 1 = %VBoxMouse.MediaDesc%
@@ -33,6 +33,9 @@ VBoxMouse.sys = 1
 [DestinationDirs]
 DefaultDestDir = 12	; DIRID_DRIVERS
 
+[Manufacturer]
+;x86   %SUN%=VBoxMouse
+;amd64 %SUN%=VBoxMouse, NTamd64
 
 [DefaultInstall]
 ;
@@ -44,11 +47,7 @@ AddReg = VBoxMouse_AddReg
 [VBoxMouse_AddReg]
 HKLM, System\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}, UpperFilters, 0x00010000, "VBoxMouse", "mouclass"
 
-
 [DefaultInstall.Services]
-;
-; Services section is required for installation of drivers on NT-based operating systems.
-;
 AddService = VBoxMouse, , VBoxMouse_Service_Inst
 
 
@@ -63,7 +62,7 @@ ServiceBinary  = %12%\VBoxMouse.sys
 [Strings]
 VBoxMouse.SvcDesc       = "VirtualBox Guest Mouse Service"
 VBoxMouse.MediaDesc     = "VirtualBox Guest Mouse Driver Installation Media"
-
+SUN                     = "Sun Microsystems, Inc."
 
 ; Useful constants
 SERVICE_KERNEL_DRIVER = 1
