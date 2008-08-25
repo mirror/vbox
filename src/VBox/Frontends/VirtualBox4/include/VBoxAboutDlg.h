@@ -26,7 +26,7 @@
 #include "VBoxAboutDlg.gen.h"
 #include "QIWithRetranslateUI.h"
 
-class VBoxAboutDlg : public QIWithRetranslateUI<QDialog>,
+class VBoxAboutDlg : public QIWithRetranslateUI2<QDialog>,
                      public Ui::VBoxAboutDlg
 {
     Q_OBJECT;
