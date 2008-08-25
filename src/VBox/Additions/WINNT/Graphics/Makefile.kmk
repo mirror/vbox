@@ -55,7 +55,7 @@ VBoxVideo-inf_BLDDIRS = $(PATH_TARGET)/VBoxVideoCat.dir
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/Miniport/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)
-	$(call VBOX_EDIT_INF32_FN,$<,$@)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(TARGET_VBoxVideo) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
