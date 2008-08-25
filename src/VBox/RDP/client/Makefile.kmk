@@ -93,6 +93,8 @@ rdesktop-vrdp_LIBPATH = \
 	$(VBOX_LIBPATH_X11)
 rdesktop-vrdp_LIBS = \
 	X11
+rdesktop-vrdp_LIBS.solaris = \
+	nsl
 
 #
 # The keymaps.
