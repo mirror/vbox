@@ -66,9 +66,9 @@ endif
 tstAPI_TEMPLATE = VBOXMAINCLIENTEXE
 tstAPI_SOURCES  = tstAPI.cpp
 ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
-tstAPI_DEPS     = $(VBOX_PATH_SDK)/include/VirtualBox.h
+tstAPI_DEPS     = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 else
-tstAPI_DEPS     = $(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
+tstAPI_DEPS     = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 endif
 ifdef VBOX_WITH_RESOURCE_USAGE_API
 tstAPI_DEFS += VBOX_WITH_RESOURCE_USAGE_API
@@ -94,7 +94,7 @@ tstVBoxAPILinux_INCS     = \
 tstVBoxAPILinux_LIBPATH  = $(LIBPATH_XPCOM)
 tstVBoxAPILinux_LIBS     = $(LIB_XPCOM)
 tstVBoxAPILinux_DEPS     = \
-	$(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 #
 # tstVBoxAPIWin
@@ -104,7 +104,7 @@ tstVBoxAPIWin_SOURCES  = \
 	tstVBoxAPIWin.cpp \
 	$(PATH_BIN)/sdk/lib/VirtualBox_i.c
 tstVBoxAPIWin_DEPS     = \
-	$(VBOX_PATH_SDK)/include/VirtualBox.h
+	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 
 #
 # tstCollector

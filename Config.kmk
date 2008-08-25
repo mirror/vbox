@@ -1031,14 +1031,14 @@ ifneq ($(KBUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
  # if updating, also update xpidl_INST var in src/libs/xpcom18a4/Makefile.kmk
  VBOX_XPIDL          ?= $(PATH_BIN)/xpidl$(HOSTSUFF_EXE)
- VBOX_PATH_XPCOM_IDL ?= $(VBOX_PATH_SDK)/idl
- VBOX_XPCOM_INCS     ?= \
-	$(VBOX_PATH_SDK)/include \
-	$(VBOX_PATH_SDK)/include/xpcom \
-	$(VBOX_PATH_SDK)/include/xpcom/nsprpub \
-	$(VBOX_PATH_SDK)/include/xpcom/string \
-	$(VBOX_PATH_SDK)/include/xpcom/xpcom \
-	$(VBOX_PATH_SDK)/include/xpcom/ipcd
+ VBOX_PATH_XPCOM_IDL ?= $(VBOX_PATH_SDK)/bindings/xpcom/idl
+ VBOX_XPCOM_INCS     ?= 				\
+	$(VBOX_PATH_SDK)/bindings/xpcom/include 	\
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom 	\
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/string 	\
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom 	\
+        $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
  ifneq ($(KBUILD_TARGET),os2)
   # libIDL-config (for xpcom18a4)
   ifeq ($(origin VBOX_LIBIDL_CONFIG),undefined)
@@ -2257,10 +2257,10 @@ TEMPLATE_VBOXMAINEXE_DEFS                = IN_RING3 UNICODE NDEBUG=1
 TEMPLATE_VBOXMAINEXE_DEFS.win            = _UNICODE
 TEMPLATE_VBOXMAINEXE_RCDEFS              = $(TEMPLATE_VBOXR3EXE_RCDEFS)
 TEMPLATE_VBOXMAINEXE_LIBS.kprofile       = $(LIB_KPROFILE)
-TEMPLATE_VBOXMAINEXE_INCS                = \
-	$(VBOX_PATH_SDK)/include
 
 ifeq ($(KBUILD_TARGET),win)
+  TEMPLATE_VBOXMAINEXE_INCS              =  $(VBOX_PATH_SDK)/bindings/mscom/include
+
   TEMPLATE_VBOXMAINEXE_SDKS              = WINPSDK W2K3DDK
  ifdef VBOX_USE_VCC80
   TEMPLATE_VBOXMAINEXE_TOOL              = $(VBOX_VCC_TOOL)
@@ -2297,6 +2297,7 @@ ifeq ($(KBUILD_TARGET),win)
 
 else # the GCC guys:
 
+TEMPLATE_VBOXMAINEXE_INCS              =  $(VBOX_PATH_SDK)/bindings/xpcom/include
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -Wall -Wno-long-long -Wno-trigraphs -pipe -Wno-non-virtual-dtor -fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
@@ -2340,7 +2341,7 @@ TEMPLATE_VBOXMAINEXE_LIBS                =
 TEMPLATE_VBOXMAINEXE_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
  endif
 TEMPLATE_VBOXMAINEXE_INTERMEDIATES      = \
-	$(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 endif # !win
 
@@ -2438,11 +2439,12 @@ endif
 #
 TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
 TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT $(ARCH_BITS_DEFS)
-TEMPLATE_VBOXQTGUIEXE_INCS = \
-	$(VBOX_PATH_SDK)/include \
-	$(VBOX_PATH_QT)/include
+
 
 ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBOXQTGUIEXE_INCS = 			\
+	$(VBOX_PATH_SDK)/bindings/mscom/include \
+	$(VBOX_PATH_QT)/include
  # drag in library configuration (we need QMAKE_PRL_DEFINES)
  ifneq ($(LIB_QT_PRL),)
   include $(LIB_QT_PRL)
@@ -2480,6 +2482,9 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the gcc guys:
+ TEMPLATE_VBOXQTGUIEXE_INCS = 			\
+	$(VBOX_PATH_SDK)/bindings/xpcom/include	\
+	$(VBOX_PATH_QT)/include
  TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
  TEMPLATE_VBOXQTGUIEXE_DEFS.solaris = _REENTRANT
@@ -2574,10 +2579,10 @@ ifdef VBOX_WITH_XPCOM
  TEMPLATE_VBOXQTGUIEXE_LIBS += \
 	$(LIB_XPCOM)
  TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
-	$(VBOX_PATH_SDK)/include/VirtualBox_XPCOM.h
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 else
  TEMPLATE_VBOXQTGUIEXE_INTERMEDIATES += \
-	$(VBOX_PATH_SDK)/include/VirtualBox.h
+	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 endif
 
 #

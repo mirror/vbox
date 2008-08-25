@@ -122,12 +122,11 @@ TEMPLATE_XPCOM_INCS                = $(PATH_TARGET) \
                                      ipc/ipcd/extensions/transmngr/src \
                                      ipc/ipcd/extensions/dconnect/src \
                                      ipc/ipcd/extensions/transmngr/common \
-                                     $(VBOX_PATH_SDK)/include \
-                                     $(VBOX_PATH_SDK)/include/xpcom \
-                                     $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
-                                     $(VBOX_PATH_SDK)/include/xpcom/string \
-                                     $(VBOX_PATH_SDK)/include/xpcom/xpcom \
-                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/string \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
                                      .
 TEMPLATE_XPCOM_INCS.darwin         = $(VBOX_PATH_MACOSX_SDK)/Developer/Headers/FlatCarbon
 TEMPLATE_XPCOM_INCS.l4             = $(L4_INCDIR) $(VBOX_L4_GCC3_INCS)
@@ -160,12 +159,11 @@ TEMPLATE_XPCOMEXE_EXTENDS          = XPCOM
 ## @todo undo -fPIC.
 TEMPLATE_XPCOMEXE_INCS             = $(PATH_TARGET) \
                                      ipc/ipcd/shared/src \
-                                     $(VBOX_PATH_SDK)/include \
-                                     $(VBOX_PATH_SDK)/include/xpcom \
-                                     $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
-                                     $(VBOX_PATH_SDK)/include/xpcom/string \
-                                     $(VBOX_PATH_SDK)/include/xpcom/xpcom \
-                                     $(VBOX_PATH_SDK)/include/xpcom/ipcd \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/string \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+                                     $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd \
                                      .
 TEMPLATE_XPCOMEXE_LIBS             = \
 	$(TARGET_VBox-xpcom-ipcshared) \
@@ -207,12 +205,11 @@ TEMPLATE_XPCOMBLDPROG_CFLAGS.release    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.profile    = -O
 TEMPLATE_XPCOMBLDPROG_CFLAGS.freebsd    = -pthread
 TEMPLATE_XPCOMBLDPROG_CFLAGS.linux      = -pthread
-TEMPLATE_XPCOMBLDPROG_INCS              = $(VBOX_PATH_SDK)/include \
-                                          $(VBOX_PATH_SDK)/include/xpcom \
-                                          $(VBOX_PATH_SDK)/include/xpcom/nsprpub \
-                                          $(VBOX_PATH_SDK)/include/xpcom/string \
-                                          $(VBOX_PATH_SDK)/include/xpcom/xpcom \
-                                          $(VBOX_PATH_SDK)/include/xpcom/ipcd
+TEMPLATE_XPCOMBLDPROG_INCS              = $(VBOX_PATH_SDK)/bindings/xpcom/include \
+                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/string \
+                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+                                          $(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
 TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET)         = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET))
 TEMPLATE_XPCOMBLDPROG_INCS.$(KBUILD_TARGET_ARCH)    = $(TEMPLATE_XPCOMEXE_INCS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_XPCOMBLDPROG_LIBPATH.$(KBUILD_TARGET)      = $(TEMPLATE_XPCOMEXE_LIBPATH.$(KBUILD_TARGET))
@@ -268,13 +265,13 @@ LIBRARIES += \
 DLLS += \
 	VBoxXPCOM \
 	VBoxXPCOMIPCC \
-	$(if $(VBOX_OSE),,VBox-xpcom-helper)
+	$(if $(VBOX_OSE),,VBoxHelper)
 
 # we put it here, as template it uses depends on VBoxRT,
 # which may not be built yet
 # r=bird: This doesn't work, it won't be built this way. The way to fix it is to make the order change in src/Makefile.kmk (or was it src/lib/Makefile.kmk) that puts src/VBox/Runtime before src/lib/xpcom18a4 standard for all builds.
 OTHERS += \
-        $(TARGET_VBox-xpcom-helper)
+        $(TARGET_VBoxHlp)
 
 
 ifdef VBOX_WITH_TESTCASES
@@ -328,7 +325,7 @@ OTHER_CLEAN += \
 #      wish to do a `kmk uninstall' first to avoid have
 #      obsoleted files in the $(INST_SDK) directory.
 #
-NSPRPUB-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/
+NSPRPUB-HEADERS_INST = $(INST_SDK)/bindings/xpcom/include/nsprpub/
 NSPRPUB-HEADERS_IFFLAGS = -m 644
 NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/nspr.h \
@@ -381,7 +378,7 @@ NSPRPUB-HEADERS_SOURCES = \
 	nsprpub/pr/include/prwin16.h \
 	nsprpub/pr/include/md/_vbox.cfg=>prcpucfg.h \
 
-NSPRPUB-MD-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/md
+NSPRPUB-MD-HEADERS_INST = $(INST_SDK)/bindings/xpcom/include/nsprpub/md
 NSPRPUB-MD-HEADERS_IFFLAGS = -m 644
 NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_darwin.h \
@@ -410,7 +407,7 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_solaris64.cfg \
 	nsprpub/pr/include/md/_l4v2.cfg
 
-NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/obsolete
+NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)/bindings/xpcom/include/nsprpub/obsolete
 NSPRPUB-OBS-HEADERS_IFFLAGS = -m 644
 NSPRPUB-OBS-HEADERS_SOURCES = \
 	nsprpub/pr/include/obsolete/pralarm.h \
@@ -418,14 +415,14 @@ NSPRPUB-OBS-HEADERS_SOURCES = \
 	nsprpub/pr/include/obsolete/protypes.h \
 	nsprpub/pr/include/obsolete/prsem.h
 
-NSPRPUB-PRIV-HEADERS_INST = $(INST_SDK)include/xpcom/nsprpub/private
+NSPRPUB-PRIV-HEADERS_INST = $(INST_SDK)/bindings/xpcom/include/nsprpub/private
 NSPRPUB-PRIV-HEADERS_IFFLAGS = -m 644
 NSPRPUB-PRIV-HEADERS_SOURCES = \
 	nsprpub/pr/include/private/pprio.h \
 	nsprpub/pr/include/private/pprthred.h \
 	nsprpub/pr/include/private/prpriv.h
 
-STRING-HEADERS_INST = $(INST_SDK)include/xpcom/string
+STRING-HEADERS_INST = $(INST_SDK)/bindings/xpcom/include/string
 STRING-HEADERS_IFFLAGS = -m 644
 STRING-HEADERS_SOURCES = \
 	xpcom/string/public/nsAString.h \
@@ -459,7 +456,7 @@ STRING-HEADERS_SOURCES = \
 	xpcom/string/public/string-template-def-unichar.h \
 	xpcom/string/public/string-template-undef.h
 
-XPCOM-HEADERS_INST = $(INST_SDK)include/xpcom/xpcom
+XPCOM-HEADERS_INST = $(INST_SDK)/bindings/xpcom/include/xpcom
 XPCOM-HEADERS_IFFLAGS = -m 644
 XPCOM-HEADERS_SOURCES = \
 	xpcom/base/nsAgg.h \
@@ -578,7 +575,7 @@ XPCOM-HEADERS_SOURCES = \
 	\
 	xpcom-config.h
 
-IPCD-HEADERS_INST = $(INST_SDK)include/xpcom/ipcd
+IPCD-HEADERS_INST = $(INST_SDK)/bindings/xpcom/include/ipcd
 IPCD-HEADERS_IFFLAGS = -m 644
 IPCD-HEADERS_SOURCES = \
 	ipc/ipcd/client/public/ipcCID.h \
@@ -1294,12 +1291,10 @@ endif
 #
 # Helper for initialization of XPCOM
 #
-VBox-xpcom-helper_TEMPLATE = VBOXMAINCLIENTDLL
 ## @todo why isn't this targetd called VBoxHlp and what is it good for anyway? it's not in any of the lists so it won't be processed or anything...
 ## update: Since r35225 this is no longer necessary, VBoxRT is already available when VBoxPython is linked. Do all the initialization from there!
-VBox-xpcom-helper_NAME = VBoxHlp
-VBox-xpcom-helper_DEFS =
-VBox-xpcom-helper_SOURCES = \
+VBoxHlp_DEFS =
+VBoxHlp_SOURCES = \
 	xpcom/helper/helper.cpp
 
 
@@ -1377,7 +1372,7 @@ VBoxPython_LIBS = \
 
 
 # Python Client Module - the Python bits.
-VBoxPython-inst-py-xpcom_INST = $(INST_SDK)/bindings/com/python/xpcom/
+VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
 VBoxPython-inst-py-xpcom_SOURCES = \
 	python/vboxxpcom.py \
 	python/components.py \
@@ -1396,7 +1391,7 @@ VBoxPython-inst-py-xpcom_SOURCES = \
 	python/server/policy.py=>server/policy.py
 
 # Python Client Module - a sample script.
-VBoxPython-inst-sample_INST = $(INST_SDK)/bindings/com/python/sample/
+VBoxPython-inst-sample_INST = $(INST_SDK)/bindings/xpcom/python/sample/
 VBoxPython-inst-sample_SOURCES = \
 	python/sample/vboxshell.py
 
@@ -1557,9 +1552,9 @@ XPCOM_IDLFILES = \
 
 OTHER_CLEAN += \
 	$(PATH_VBox-xpcom-string)/idl_ts \
-	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES)))) \
-	$(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES)))) \
-	$(addprefix $(VBOX_PATH_SDK)/idl/,$(notdir $(XPCOM_IDLFILES))) \
+	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES)))) \
+	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES)))) \
+	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/idl/,$(notdir $(XPCOM_IDLFILES))) \
 	$(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES))))
 
 
@@ -1682,21 +1677,21 @@ XPIDL_INCS = \
 	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/threads/ \
 	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/reflect/xptinfo/public/
 define def_IDL
-$(VBOX_PATH_SDK)/include/$(notdir $(subst .idl,.h,$(idl))) \
+$(VBOX_PATH_SDK)/bindings/xpcom/include/$(notdir $(subst .idl,.h,$(idl))) \
 + $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): \
 		$(VBOX_PATH_XPCOM_SRC)/$(idl) \
 		| $$$$(TARGET_xpidl)
 	$$(call MSG_TOOL,xpidl,XPCOM,$$<,$$@)
-	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/include $(VBOX_PATH_SDK)/idl
+	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/xpcom/include $(VBOX_PATH_SDK)/bindings/xpcom/idl
 	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
 	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
-	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/idl
+	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/bindings/xpcom/idl
 endef
 
 $(foreach idl, $(XPCOM_IDLFILES), $(eval $(def_IDL)))
 
 # dummy target.
-$(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/include/,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES))))
+$(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include/,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES))))
 	$(call MSG_L1,IDL processing completed.)
 	$(QUIET)$(MKDIR) -p $(dir $@)
 	$(QUIET)$(ECHO_EXT) > $@
