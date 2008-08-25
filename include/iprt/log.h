@@ -1153,6 +1153,10 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
 # define LogFlow(a)     LogBackdoorFlow(a)
 # undef LogRel
 # define LogRel(a)      LogRelBackdoor(a)
+# if defined(LOG_USE_C99)
+#  undef _LogIt
+#  define _LogIt(pvInst, fFlags, iGroup, ...)  LogBackdoor((__VA_ARGS__))
+# endif
 #endif
 
 /** @} */
