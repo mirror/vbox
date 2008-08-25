@@ -23,7 +23,8 @@
 #include "VBoxAboutDlg.h"
 
 VBoxAboutDlg::VBoxAboutDlg (QWidget *aParent, const QString &aVersion)
-    : QIWithRetranslateUI<QDialog> (aParent)
+    : QIWithRetranslateUI2 <QDialog> (aParent, Qt::CustomizeWindowHint |
+                                      Qt::WindowTitleHint | Qt::WindowSystemMenuHint)
 {
     /* Apply UI decorations */
     Ui::VBoxAboutDlg::setupUi (this);
