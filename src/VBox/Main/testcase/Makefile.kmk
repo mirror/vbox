@@ -90,7 +90,7 @@ ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 endif
 tstVBoxAPILinux_INCS     = \
 	$(VBOX_XPCOM_INCS) \
-	$(PATH_BIN)/sdk/include
+	$(VBOX_PATH_SDK)/bindings/xpcom/include
 tstVBoxAPILinux_LIBPATH  = $(LIBPATH_XPCOM)
 tstVBoxAPILinux_LIBS     = $(LIB_XPCOM)
 tstVBoxAPILinux_DEPS     = \
@@ -102,7 +102,7 @@ tstVBoxAPILinux_DEPS     = \
 tstVBoxAPIWin_TEMPLATE = VBOXMAINCLIENTEXE
 tstVBoxAPIWin_SOURCES  = \
 	tstVBoxAPIWin.cpp \
-	$(PATH_BIN)/sdk/lib/VirtualBox_i.c
+	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
 tstVBoxAPIWin_DEPS     = \
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 
