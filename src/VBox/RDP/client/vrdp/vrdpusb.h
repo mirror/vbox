@@ -73,7 +73,7 @@
 #define VERR_ACCESS_DENIED (-38)
 #define VERR_VUSB_USBFS_PERMISSION (-2005)
 
-#define VBOX_SUCCESS(_rc) ((_rc) >= 0)
+#define RT_SUCCESS(_rc) ((_rc) >= 0)
 
 #define RTFILE int
 #define RTCRITSECT void *
@@ -98,9 +98,9 @@
     }                                                 \
 } while (0)
 
-#define AssertRC(_rc) Assert(VBOX_SUCCESS(_rc))
+#define AssertRC(_rc) Assert(RT_SUCCESS(_rc))
 
-#define RT_FAILURE(_rc) (!VBOX_SUCCESS(_rc))
+#define RT_FAILURE(_rc) (!RT_SUCCESS(_rc))
 
 #define NOREF(_a) ((void)_a)
 
