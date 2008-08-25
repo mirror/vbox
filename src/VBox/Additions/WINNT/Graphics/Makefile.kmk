@@ -68,7 +68,7 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
 		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
-	$(call VBOX_MAKE_CAT32_FN, $(@D),$@)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
