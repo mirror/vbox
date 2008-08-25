@@ -77,7 +77,7 @@
          <string>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</string>
         </property>
         <property name="text" >
-         <string>Enable USB E&amp;HCI Controller</string>
+         <string>Enable USB 2.0 (E&amp;HCI) Controller</string>
         </property>
        </widget>
       </item>
