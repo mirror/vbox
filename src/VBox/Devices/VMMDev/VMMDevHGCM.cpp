@@ -249,7 +249,7 @@ static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
 
         rc = PDMDevHlpPhysGCPtr2GCPhys(pDevIns, GCPtr, &GCPhys);
 
-        Log(("vmmdevHGCMSaveLinPtr: Page %d: %TGv -> %RGp. %Rrc\n", iPage, GCPtr, GCPhys, rc));
+        Log(("vmmdevHGCMSaveLinPtr: Page %d: %RGv -> %RGp. %Rrc\n", iPage, GCPtr, GCPhys, rc));
 
         if (RT_FAILURE (rc))
         {
