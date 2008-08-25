@@ -32,7 +32,7 @@ Signature="$Windows NT$"
 Class=System
 ClassGuid={ce4a90b5-1d8c-435d-b349-232ce55cb17f}
 Provider=%SUN%
-DriverVer=08/21/2006,8.1.0.0
+;edit-DriverVer=08/26/2008,2.00.0000
 DriverPackageType=KernelService
 ;cat CatalogFile=VBoxDrv.cat
 

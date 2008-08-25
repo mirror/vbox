@@ -42,5 +42,7 @@ vrdpvd_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
+$(error Fix inf editing and dirver signing)
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
