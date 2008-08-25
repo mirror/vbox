@@ -268,7 +268,7 @@ LIBRARIES += \
 DLLS += \
 	VBoxXPCOM \
 	VBoxXPCOMIPCC \
-	VBox-xpcom-helper
+	$(if $(VBOX_OSE),,VBox-xpcom-helper)
 
 # we put it here, as template it uses depends on VBoxRT,
 # which may not be built yet
