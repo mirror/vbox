@@ -31,6 +31,7 @@
 #include <sys/ddi.h>
 #include <sys/ddi_intr.h>
 #include <sys/sunddi.h>
+#include <sys/open.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include "VBoxGuestInternal.h"
