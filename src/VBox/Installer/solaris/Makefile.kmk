@@ -233,6 +233,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(and $(VBOX_WITH_QT4GUI), $(not $(VBOX_WITH_SEPARATE_SDK))),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/VBoxGuestAdditions.iso)
+	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/vboxdrv                                                          $(SOLARIS_INST_DIR)/vboxdrv
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                                          $(SOLARIS_INST_DIR)/VBoxBFE
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD.so                                                        $(SOLARIS_INST_DIR)/VBoxDD.so
@@ -263,6 +264,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/xpidl                                                            $(SOLARIS_INST_DIR)/xpidl
 	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVRDP.so                               $(SOLARIS_INST_DIR)/VBoxVRDP.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxHeadless                          $(SOLARIS_INST_DIR)/VBoxHeadless,)
+	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 0755 $(PATH_BIN)/rdesktop-vrdp                    $(SOLARIS_INST_DIR)/rdesktop-vrdp,)
+	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 644 $(wildcard $(PATH_BIN)/rdesktop-vrdp-keymaps/*) $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps/,)
 	$(call MSG_L1,Stripping binaries $(SOLARIS_INST_DIR))
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/vboxdrv,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxBFE,)
@@ -291,6 +294,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/xpidl,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VRDP),strip $(SOLARIS_INST_DIR)/VBoxVRDP.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_HEADLESS),strip $(SOLARIS_INST_DIR)/VBoxHeadless,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VRDP_RDESKTOP),strip $(SOLARIS_INST_DIR)/rdesktop-vrdp,),)
 	$(QUIET)$(call MSG_L1,Installing and stripping relocatable objects $(SOLARIS_INST_DIR))
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VBoxDD2GC.gc $(SOLARIS_INST_DIR)/VBoxDD2GC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2GC.gc $(SOLARIS_INST_DIR)/VBoxDD2GC.gc)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VBoxDD2R0.r0 $(SOLARIS_INST_DIR)/VBoxDD2R0.r0, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2R0.r0 $(SOLARIS_INST_DIR)/VBoxDD2R0.r0)
@@ -409,6 +413,7 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/xpidl                                                              $(SOLARIS_DBG_DIR)/xpidl
 	$(QUIET)$(if $(VBOX_WITH_VRDP),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxVRDP.so                                 $(SOLARIS_DBG_DIR)/VBoxVRDP.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxHeadless                            $(SOLARIS_DBG_DIR)/VBoxHeadless,)
+	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/rdesktop-vrdp                      $(SOLARIS_DBG_DIR)/rdesktop-vrdp,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxDbg.so                          $(SOLARIS_DBG_DIR)/VBoxDbg.so,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxwebsrv                           $(SOLARIS_DBG_DIR)/vboxwebsrv,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/webtest                              $(SOLARIS_DBG_DIR)/webtest,)
