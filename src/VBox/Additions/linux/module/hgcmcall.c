@@ -107,7 +107,8 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
             cbPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
             break;
         default:
-            LogRel(("VBOXGUEST_IOCTL_HGCM_CALL: unsupported or unknown parameter type\n"));
+            LogRel(("VBOXGUEST_IOCTL_HGCM_CALL: unsupported or unknown parameter type (index=%d, type=%d)\n",
+                     i, VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].type));
             kfree(hgcmR0);
             return -EINVAL;
         }
