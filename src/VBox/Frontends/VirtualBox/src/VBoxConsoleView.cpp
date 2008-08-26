@@ -1387,7 +1387,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 {
                     if (ke->key() >= Key_F1 && ke->key() <= Key_F12)
                     {
-                        QValueVector <LONG> combo (6);
+                        LONG combo [6];
                         combo [0] = 0x1d; /* Ctrl down */
                         combo [1] = 0x38; /* Alt  down */
                         combo [4] = 0xb8; /* Alt  up   */
@@ -1407,7 +1407,7 @@ bool VBoxConsoleView::event (QEvent *e)
                             Assert (0);
 
                         CKeyboard keyboard = mConsole.GetKeyboard();
-                        keyboard.PutScancodes (combo);
+                        keyboard.PutScancodes (combo, 6);
                     }
                     else if (ke->key() == Key_Home)
                     {
@@ -2614,9 +2614,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     }
 #endif
 
-    std::vector <LONG> tmp(codes, &codes[count]);
-    QValueVector <LONG> scancodes (tmp);
-    keyboard.PutScancodes (scancodes);
+    keyboard.PutScancodes (codes, count);
 
     /* grab the key from Qt */
     return true;
@@ -3186,10 +3184,10 @@ void VBoxConsoleView::releaseAllPressedKeys (bool aReleaseHostKey /* = true*/)
                 keyboard.PutScancode (0xFE);
                 fSentRESEND = true;
             }
-            QValueVector <LONG> codes (2);
+            LONG codes [2];
             codes[0] = 0xE0;
             codes[1] = i | 0x80;
-            keyboard.PutScancodes (codes);
+            keyboard.PutScancodes (codes, 2);
         }
         mPressedKeys [i] = 0;
     }
@@ -3216,7 +3214,7 @@ void VBoxConsoleView::sendChangedKeyStates()
 {
     AssertMsg (mAttached, ("Console must be attached"));
 
-    QValueVector <LONG> codes (2);
+    LONG codes [2];
     CKeyboard keyboard = mConsole.GetKeyboard();
     for (uint i = 0; i < SIZEOF_ARRAY (mPressedKeys); ++ i)
     {
@@ -3235,7 +3233,7 @@ void VBoxConsoleView::sendChangedKeyStates()
             codes [1] = i;
             if (!(ns & IsExtKeyPressed))
                 codes [1] |= 0x80;
-            keyboard.PutScancodes (codes);
+            keyboard.PutScancodes (codes, 2);
         }
     }
 }

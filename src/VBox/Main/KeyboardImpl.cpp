@@ -24,7 +24,6 @@
 
 #include "Logging.h"
 
-#include <VBox/com/array.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/asm.h>
 
@@ -148,10 +147,11 @@ STDMETHODIMP Keyboard::PutScancode(LONG scancode)
  *                    of scancodes that were sent to the keyboard.
                       This value can be NULL.
  */
-STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn (LONG, scancodes),
+STDMETHODIMP Keyboard::PutScancodes(LONG *scancodes,
+                                    ULONG count,
                                     ULONG *codesStored)
 {
-    if (ComSafeArrayInIsNull(scancodes))
+    if (!scancodes)
         return E_INVALIDARG;
 
     AutoWriteLock alock (this);
@@ -159,12 +159,12 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn (LONG, scancodes),
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    com::SafeArray <LONG> keys(ComSafeArrayInArg(scancodes));
+    LONG *currentScancode = scancodes;
     int rcVBox = VINF_SUCCESS;
 
-    for (uint32_t i = 0; (i < keys.size()) && VBOX_SUCCESS(rcVBox); i++)
+    for (uint32_t i = 0; (i < count) && VBOX_SUCCESS(rcVBox); i++, currentScancode++)
     {
-        rcVBox = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)keys[i]);
+        rcVBox = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, *(uint8_t*)currentScancode);
     }
 
     if (VBOX_FAILURE (rcVBox))
@@ -173,7 +173,7 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn (LONG, scancodes),
 
     /// @todo is it actually possible that not all scancodes can be transmitted?
     if (codesStored)
-        *codesStored = keys.size();
+        *codesStored = count;
 
     return S_OK;
 }
