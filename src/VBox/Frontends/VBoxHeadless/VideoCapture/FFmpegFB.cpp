@@ -161,7 +161,12 @@ FFmpegFB::~FFmpegFB()
                 av_freep(&mpFormatContext->streams[i]->codec);
                 av_freep(&mpFormatContext->streams[i]);
             }
+/* Changed sometime between 50.5.0 and 52.7.0 */
+#if LIBAVFORMAT_VERSION_INT >= (52 << 16)
             url_fclose(mpFormatContext->pb);
+#else /* older version */
+            url_fclose(&mpFormatContext->pb);
+#endif /* older version */
         }
         av_free(mpFormatContext);
     }
