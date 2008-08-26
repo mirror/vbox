@@ -4741,21 +4741,17 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
         case SDLK_F7: case SDLK_F8: case SDLK_F9:
         case SDLK_F10: case SDLK_F11: case SDLK_F12:
         {
-            /* send Ctrl-Alt-Fx to guest */
-            static LONG keySequence[] = {
-                0x1d, // Ctrl down
-                0x38, // Alt down
-                0x00, // Fx down (placeholder)
-                0x00, // Fx up (placeholder)
-                0xb8, // Alt up
-                0x9d  // Ctrl up
-            };
+            // /* send Ctrl-Alt-Fx to guest */
+            com::SafeArray<LONG> keys(6);
+            
+            keys[0] = 0x1d; // Ctrl down
+            keys[1] = 0x38; // Alt down
+            keys[2] = Keyevent2Keycode(pEv); // Fx down
+            keys[3] = keys[2] + 0x80; // Fx up
+            keys[4] = 0xb8; // Alt up
+            keys[5] = 0x9d;  // Ctrl up
 
-            /* put in the right Fx key */
-            keySequence[2] = Keyevent2Keycode(pEv);
-            keySequence[3] = keySequence[2] + 0x80;
-
-            gKeyboard->PutScancodes(keySequence, ELEMENTS(keySequence), NULL);
+            gKeyboard->PutScancodes(ComSafeArrayAsInParam(keys), NULL);
             return VINF_SUCCESS;
         }
 
