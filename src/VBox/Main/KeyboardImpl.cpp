@@ -24,6 +24,7 @@
 
 #include "Logging.h"
 
+#include <VBox/com/array.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/asm.h>
 
@@ -147,11 +148,10 @@ STDMETHODIMP Keyboard::PutScancode(LONG scancode)
  *                    of scancodes that were sent to the keyboard.
                       This value can be NULL.
  */
-STDMETHODIMP Keyboard::PutScancodes(LONG *scancodes,
-                                    ULONG count,
+STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn (LONG, scancodes),
                                     ULONG *codesStored)
 {
-    if (!scancodes)
+    if (ComSafeArrayInIsNull(scancodes))
         return E_INVALIDARG;
 
     AutoWriteLock alock (this);
@@ -159,12 +159,12 @@ STDMETHODIMP Keyboard::PutScancodes(LONG *scancodes,
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    LONG *currentScancode = scancodes;
+    com::SafeArray <LONG> keys(ComSafeArrayInArg(scancodes));
     int rcVBox = VINF_SUCCESS;
 
-    for (uint32_t i = 0; (i < count) && VBOX_SUCCESS(rcVBox); i++, currentScancode++)
+    for (uint32_t i = 0; (i < keys.size()) && VBOX_SUCCESS(rcVBox); i++)
     {
-        rcVBox = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, *(uint8_t*)currentScancode);
+        rcVBox = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)keys[i]);
     }
 
     if (VBOX_FAILURE (rcVBox))
@@ -173,7 +173,7 @@ STDMETHODIMP Keyboard::PutScancodes(LONG *scancodes,
 
     /// @todo is it actually possible that not all scancodes can be transmitted?
     if (codesStored)
-        *codesStored = count;
+        *codesStored = keys.size();
 
     return S_OK;
 }
@@ -187,16 +187,16 @@ STDMETHODIMP Keyboard::PutScancodes(LONG *scancodes,
  */
 STDMETHODIMP Keyboard::PutCAD()
 {
-    static LONG cadSequence[] = {
-        0x1d, // Ctrl down
-        0x38, // Alt down
-        0x53, // Del down
-        0xd3, // Del up
-        0xb8, // Alt up
-        0x9d  // Ctrl up
-    };
+    static com::SafeArray<LONG> cadSequence(6);
+    
+    cadSequence[0] = 0x1d; // Ctrl down
+    cadSequence[1] = 0x38; // Alt down
+    cadSequence[2] = 0x53; // Del down
+    cadSequence[3] = 0xd3; // Del up
+    cadSequence[4] = 0xb8; // Alt up
+    cadSequence[5] = 0x9d; // Ctrl up
 
-    return PutScancodes (cadSequence, ELEMENTS (cadSequence), NULL);
+    return PutScancodes (ComSafeArrayAsInParam(cadSequence), NULL);
 }
 
 //
