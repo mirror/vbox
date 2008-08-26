@@ -46,11 +46,19 @@
     hypervisor pointers from within guest additions */
 
 /** Hypervisor linear pointer size type */
-/* @todo support 64 bits virtual addresses (interface change) */
-typedef RTGCPTR32 vmmDevHypPtr;
+typedef RTGCPTR32 VMMDEVHYPPTR32;
+typedef RTGCPTR64 VMMDEVHYPPTR64;
 /** Hypervisor physical pointer size type */
-/* @todo support 64 bits physical addresses (interface change) */
-typedef RTGCPHYS32 vmmDevHypPhys;
+typedef RTGCPHYS32 VMMDEVHYPPHYS32;
+typedef RTGCPHYS64 VMMDEVHYPPHYS64;
+
+#if defined(VBOX_WITH_64_BITS_GUESTS) && defined(ARCH_BITS == 64)
+# define VMMDEVHYPPTR  VMMDEVHYPPTR64
+# define VMMDEVHYPPHYS VMMDEVHYPPHYS64
+# else
+# define VMMDEVHYPPTR  VMMDEVHYPPTR32
+# define VMMDEVHYPPHYS VMMDEVHYPPHYS32
+#endif
 
 #if defined(RT_OS_LINUX)
 /** The support device name. */
@@ -361,7 +369,8 @@ typedef struct
     /** header */
     VMMDevRequestHeader header;
     /** guest virtual address of proposed hypervisor start */
-    vmmDevHypPtr hypervisorStart;
+    /** TODO: Make this 64-bit compatible */
+    VMMDEVHYPPTR32 hypervisorStart;
     /** hypervisor size in bytes */
     uint32_t hypervisorSize;
 } VMMDevReqHypervisorInfo;
@@ -706,8 +715,8 @@ typedef struct _HGCMFUNCTIONPARAMETER32
 
             union
             {
-                vmmDevHypPhys physAddr;
-                vmmDevHypPtr  linearAddr;
+                VMMDEVHYPPHYS32 physAddr;
+                VMMDEVHYPPTR32  linearAddr;
             } u;
         } Pointer;
     } u;
@@ -726,13 +735,13 @@ typedef struct _HGCMFUNCTIONPARAMETER64
 
             union
             {
-                uint64_t physAddr;
-                uint64_t linearAddr;
+                VMMDEVHYPPHYS64 physAddr;
+                VMMDEVHYPPTR64  linearAddr;
             } u;
         } Pointer;
     } u;
 } HGCMFunctionParameter64;
-#else
+#else /* !VBOX_WITH_64_BITS_GUESTS */
 typedef struct _HGCMFUNCTIONPARAMETER
 {
     HGCMFunctionParameterType type;
@@ -746,13 +755,13 @@ typedef struct _HGCMFUNCTIONPARAMETER
 
             union
             {
-                vmmDevHypPhys physAddr;
-                vmmDevHypPtr  linearAddr;
+                VMMDEVHYPPHYS32 physAddr;
+                VMMDEVHYPPTR32  linearAddr;
             } u;
         } Pointer;
     } u;
 } HGCMFunctionParameter;
-#endif /* VBOX_WITH_64_BITS_GUESTS */
+#endif /* !VBOX_WITH_64_BITS_GUESTS */
 
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
