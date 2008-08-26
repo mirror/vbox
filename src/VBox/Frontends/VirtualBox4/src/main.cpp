@@ -171,10 +171,12 @@ int main (int argc, char **argv)
     {
         QIApplication a (argc, argv);
 
+#ifdef Q_WS_X11
         /* Cause Qt4 has the conflict with fontconfig application as a result
          * substituting some fonts with non anti-aliased bitmap font we are
          * reseting all the substitutes here for the current application font. */
         QFont::removeSubstitution (QApplication::font().family());
+#endif
 
 #ifdef Q_WS_WIN
         /* Drag in the sound drivers and DLLs early to get rid of the delay taking
