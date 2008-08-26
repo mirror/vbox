@@ -68,14 +68,7 @@
        </item>
        <item row="1" column="1" >
         <layout class="QGridLayout" >
-         <item row="0" column="2" >
-          <widget class="QLineEdit" name="mLeName" >
-           <property name="whatsThis" >
-            <string>Displays the name of the virtual machine.</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1" >
+         <item row="0" column="0" >
           <widget class="QLabel" name="mLbName" >
            <property name="text" >
             <string>&amp;Name:</string>
@@ -88,17 +81,14 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2" >
-          <widget class="QComboBox" name="mCbOsType" >
-           <property name="focusPolicy" >
-            <enum>Qt::StrongFocus</enum>
-           </property>
+         <item row="0" column="1" >
+          <widget class="QLineEdit" name="mLeName" >
            <property name="whatsThis" >
-            <string>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</string>
+            <string>Displays the name of the virtual machine.</string>
            </property>
           </widget>
          </item>
-         <item row="1" column="1" >
+         <item row="1" column="0" >
           <widget class="QLabel" name="mLbOsType" >
            <property name="text" >
             <string>OS &amp;Type:</string>
@@ -111,37 +101,15 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0" >
-          <spacer>
-           <property name="orientation" >
-            <enum>Qt::Horizontal</enum>
+         <item row="1" column="1" >
+          <widget class="QComboBox" name="mCbOsType" >
+           <property name="focusPolicy" >
+            <enum>Qt::StrongFocus</enum>
            </property>
-           <property name="sizeType" >
-            <enum>QSizePolicy::Fixed</enum>
+           <property name="whatsThis" >
+            <string>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</string>
            </property>
-           <property name="sizeHint" >
-            <size>
-             <width>20</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="0" column="3" >
-          <spacer>
-           <property name="orientation" >
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType" >
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" >
-            <size>
-             <width>20</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
+          </widget>
          </item>
         </layout>
        </item>
