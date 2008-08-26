@@ -74,29 +74,24 @@ void VBoxVMSettingsAudio::prepareComboboxes()
     /* Clear the driver box */
     mCbAudioDriver->clear();
     /* Refill them */
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_Null));
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_Null));
 #if defined Q_WS_WIN32
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_DirectSound));
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_DirectSound));
 # ifdef VBOX_WITH_WINMM
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_WinMM));
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_WinMM));
 # endif
+#elif defined Q_OS_SOLARIS
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_SolAudio));
 #elif defined Q_OS_LINUX
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_OSS));
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_OSS));
 # ifdef VBOX_WITH_ALSA
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_ALSA));
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_ALSA));
 # endif
 # ifdef VBOX_WITH_PULSE
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_Pulse));
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_Pulse));
 # endif
 #elif defined Q_OS_MACX
-    mCbAudioDriver->insertItem (mCbAudioDriver->count(),
-        vboxGlobal().toString (KAudioDriverType_CoreAudio));
+    mCbAudioDriver->addItem (vboxGlobal().toString (KAudioDriverType_CoreAudio));
 #endif
     /* Set the old value */
     mCbAudioDriver->setCurrentIndex (currentDriver);
