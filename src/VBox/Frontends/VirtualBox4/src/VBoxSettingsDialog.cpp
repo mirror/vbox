@@ -98,7 +98,7 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     connect (mWhatsThisTimer, SIGNAL (timeout()), this, SLOT (updateWhatsThis()));
     mLbWhatsThis->setAutoFillBackground (true);
     QPalette pal = mLbWhatsThis->palette();
-    pal.setBrush (QPalette::Window, pal.brush (QPalette::Base));
+    pal.setBrush (QPalette::Window, pal.brush (QPalette::Midlight));
     mLbWhatsThis->setPalette (pal);
     mLbWhatsThis->setFixedHeight (mLbWhatsThis->frameWidth() * 2 +
                                   mLbWhatsThis->margin() * 2 +
