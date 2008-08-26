@@ -121,11 +121,16 @@ SOLARIS_NO_STRIP = \
 	components/VirtualBox_XPCOM.xpt
 
 # Things packed explicitly, not from $(PATH_BIN), track these to clean-up properly
+# The extra Qt libs packed under EXTRAS are purely for running VBoxQtconfig
 SOLARIS_EXTRAS = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QT4GUI)),License-$(VBOX_LICENSE_VER).html) \
 	$(if $(VBOX_WITH_QT4GUI),VBoxQtconfig,) \
 	$(if $(VBOX_WITH_QT4GUI),virtualbox.desktop,) \
+	$(if $(VBOX_WITH_QT4GUI),libVBoxQtNetwork.so.4,) \
+	$(if $(VBOX_WITH_QT4GUI),libVBoxQtXml.so.4,) \
+	$(if $(VBOX_WITH_QT4GUI),libVBoxQtSql.so.4,) \
+	$(if $(VBOX_WITH_QT4GUI),libVBoxQt3Support.so.4,) \
 	VBox.png \
 	autoresponse \
 	vboxdrv.conf \
@@ -255,6 +260,10 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox                              $(SOLARIS_INST_DIR)/VirtualBox,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_BIN)/libVBoxQtCore.so.4                      $(SOLARIS_INST_DIR)/libVBoxQtCore.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_BIN)/libVBoxQtGui.so.4                       $(SOLARIS_INST_DIR)/libVBoxQtGui.so.4,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3/lib/libVBoxQtNetwork.so.4        $(SOLARIS_INST_DIR)/libVBoxQtNetwork.so.4,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3/lib/libVBoxQtXml.so.4        $(SOLARIS_INST_DIR)/libVBoxQtXml.so.4,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3/lib/libVBoxQtSql.so.4        $(SOLARIS_INST_DIR)/libVBoxQtSql.so.4,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3/lib/libVBoxQt3Support.so.4        $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3/bin/qtconfig         $(SOLARIS_INST_DIR)/VBoxQtconfig,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARIS_INST_DIR)/VBoxDbg.so,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSettings.so                                                  $(SOLARIS_INST_DIR)/VBoxSettings.so
@@ -285,6 +294,10 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VirtualBox,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtCore.so.4,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtGui.so.4,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtNetwork.so.4,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtXml.so.4,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtSql.so.4,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VBoxQtconfig,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_DEBUGGER_GUI),strip $(SOLARIS_INST_DIR)/VBoxDbg.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxSettings.so,)
