@@ -266,11 +266,6 @@ DLLS += \
 	VBoxXPCOM \
 	VBoxXPCOMIPCC
 
-
-ifdef VBOX_WITH_PYTHON
-       DLLS += VBoxHelper
-endif
-
 # we put it here, as template it uses depends on VBoxRT,
 # which may not be built yet
 # r=bird: This doesn't work, it won't be built this way. The way to fix it is to make the order change in src/Makefile.kmk (or was it src/lib/Makefile.kmk) that puts src/VBox/Runtime before src/lib/xpcom18a4 standard for all builds.
@@ -1293,16 +1288,6 @@ endif
 
 
 #
-# Helper for initialization of XPCOM
-#
-## @todo why isn't this targetd called VBoxHlp and what is it good for anyway? it's not in any of the lists so it won't be processed or anything...
-## update: Since r35225 this is no longer necessary, VBoxRT is already available when VBoxPython is linked. Do all the initialization from there!
-VBoxHlp_DEFS =
-VBoxHlp_SOURCES = \
-	xpcom/helper/helper.cpp
-
-
-#
 # Python<->XPCOM bridge.
 #
 
@@ -1338,7 +1323,8 @@ endif
 
 # Python Client Module - the C++/XPCOM bits.
 VBoxPython_TEMPLATE = XPCOM
-VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API VBOX_PYXPCOM
+VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
+                  VBOX_PYXPCOM VBOX_WITH_XPCOM
 VBoxPython_INCS = \
 	python/src \
 	$(VBOX_PATH_PYTHON_INC)
@@ -1367,6 +1353,7 @@ VBoxPython_SOURCES = \
 	python/src/VariantUtils.cpp
 VBoxPython_LIBS = \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
 	$(VBOX_LIB_PYTHON)
 
 ## @todo we'll have to use the 10.5 SDK if we wish to build this. :-/
