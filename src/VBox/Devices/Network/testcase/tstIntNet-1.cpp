@@ -49,6 +49,7 @@ static int      g_cErrors = 0;
 static uint64_t g_StartTS = 0;
 static uint32_t g_DhcpXID = 0;
 static bool     g_fDhcpReply = false;
+static bool     g_fPingReply = false;
 static uint32_t g_cOtherPkts = 0;
 static uint32_t g_cArpPkts = 0;
 static uint32_t g_cIpv4Pkts = 0;
@@ -419,6 +420,95 @@ static void doXmitTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF p
 }
 
 
+static uint16_t icmpChecksum(PRTNETICMPV4HDR pHdr, int cbHdr)
+{
+    int cbLeft = cbHdr;
+    uint16_t *pbSrc = (uint16_t *)pHdr;
+    uint16_t oddByte = 0;
+    int cSum = 0;
+
+    while (cbLeft > 1)
+    {
+        cSum += *pbSrc++;
+        cbLeft -= 2;
+    }
+
+    if (cbLeft == 1)
+    {
+        *(uint16_t *)(&oddByte) = *(uint16_t *)pbSrc;
+        cSum += oddByte;
+    }
+
+    cSum = (cSum >> 16) + (cSum & 0xffff);
+    cSum += (cSum >> 16);
+    uint16_t Result = ~cSum;
+    return Result;
+}
+
+
+/**
+ * Does the rudimentary ping test with fixed destination and source IPs.
+ *
+ * @param   hIf             The interface handle.
+ * @param   pSession        The session.
+ * @param   pBuf            The shared interface buffer.
+ * @param   pSrcMac         The mac address to use as source.
+ * @param   pFileRaw        The file to write the raw data to (optional).
+ * @param   pFileText       The file to write a textual packet summary to (optional).
+ */
+static void doPingTest(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF pBuf, PCRTMAC pSrcMac, PRTSTREAM pFileRaw, PRTSTREAM pFileText)
+{
+    uint8_t abFrame[4096];
+    PRTNETETHERHDR      pEthHdr  = (PRTNETETHERHDR)&abFrame[0];
+    PRTNETIPV4          pIpHdr   = (PRTNETIPV4)         (pEthHdr + 1);
+    PRTNETICMPV4ECHO    pIcmpEcho = (PRTNETICMPV4ECHO)  (pIpHdr + 1);
+
+    /*
+     * Create a simple ping request.
+     */
+    memset(&abFrame, 0, sizeof(abFrame));
+
+    pIcmpEcho->Hdr.icmp_type = RTNETICMPV4_TYPE_ECHO_REQUEST;
+    pIcmpEcho->Hdr.icmp_code = 0;
+    pIcmpEcho->icmp_id = 0x06;
+    pIcmpEcho->icmp_seq = 0x05;
+    size_t cbPad = 56;
+    memset(&pIcmpEcho->icmp_data, '\0', cbPad);
+    pIcmpEcho->Hdr.icmp_cksum = icmpChecksum(&pIcmpEcho->Hdr, cbPad + 8);
+
+    /* IP */
+    pIpHdr->ip_v = 4;
+    pIpHdr->ip_hl = sizeof(*pIpHdr) / sizeof(uint32_t);
+    pIpHdr->ip_tos = 0;
+    pIpHdr->ip_len = RT_H2BE_U16(sizeof(*pIcmpEcho) + cbPad + sizeof(*pIpHdr));
+    pIpHdr->ip_id = (uint16_t)RTRandU32();
+    pIpHdr->ip_off = 0;
+    pIpHdr->ip_ttl = 255;
+    pIpHdr->ip_p = 0x01; /*ICMP */
+    pIpHdr->ip_sum = 0;
+    pIpHdr->ip_src.u = UINT32_C(0x9701A8C0);    /* 192.168.1.151 */
+    pIpHdr->ip_dst.u = UINT32_C(0xF9A344D0);    /* 208.68.163.249 */
+    pIpHdr->ip_sum = RTNetIPv4HdrChecksum(pIpHdr);
+
+    /* Ethernet */
+    memset(&pEthHdr->DstMac, 0xff, sizeof(pEthHdr->DstMac)); /* broadcast */
+
+    pEthHdr->SrcMac = *pSrcMac;
+#if 0   /* Enable with host's real Mac address for testing of the testcase. */
+    pEthHdr->SrcMac.au8[0] = 0x00;
+    pEthHdr->SrcMac.au8[1] = 0x1b;
+    pEthHdr->SrcMac.au8[2] = 0x24;
+    pEthHdr->SrcMac.au8[3] = 0xa0;
+    pEthHdr->SrcMac.au8[4] = 0x2f;
+    pEthHdr->SrcMac.au8[5] = 0xce;
+#endif
+
+    pEthHdr->EtherType = RT_H2BE_U16(RTNET_ETHERTYPE_IPV4); /* IP */
+
+    doXmitFrame(hIf, pSession, pBuf, &abFrame[0], (uint8_t *)(pIcmpEcho + 1) + cbPad - (uint8_t *)&abFrame[0], pFileRaw, pFileText);
+}
+
+
 /**
  * Does packet sniffing for a given period of time.
  *
@@ -509,6 +599,39 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                                      pDhcpMsg->YIAddr.au8[3]);
                         }
                     }
+                    else if (pIpHdr->ip_p == 0x01)  /* ICMP */
+                    {
+                        PRTNETICMPV4HDR pIcmpHdr = (PRTNETICMPV4HDR)(pIpHdr + 1);
+                        PRTNETICMPV4ECHO pIcmpEcho = (PRTNETICMPV4ECHO)(pIpHdr + 1);
+                        if (   pIcmpHdr->icmp_type == RTNETICMPV4_TYPE_ECHO_REPLY
+                            && pIcmpEcho->icmp_seq == 0x05
+                            && pIpHdr->ip_dst.u == UINT32_C(0x9701A8C0)
+#if 0
+                            /** Enable with the host's real Mac address for testing of the testcase.*/
+                            && pEthHdr->DstMac.au8[0] == 0x00
+                            && pEthHdr->DstMac.au8[1] == 0x1b
+                            && pEthHdr->DstMac.au8[2] == 0x24
+                            && pEthHdr->DstMac.au8[3] == 0xa0
+                            && pEthHdr->DstMac.au8[4] == 0x2f
+                            && pEthHdr->DstMac.au8[5] == 0xce
+#else
+                            && pEthHdr->DstMac.au16[0] == pSrcMac->au16[0]
+                            && pEthHdr->DstMac.au16[1] == pSrcMac->au16[1]
+                            && pEthHdr->DstMac.au16[2] == pSrcMac->au16[2]
+#endif
+                         )
+                        {
+                            g_fPingReply = true;
+                            RTPrintf("tstIntNet-1: Ping reply! From %d.%d.%d.%d\n",
+                                    pIpHdr->ip_src.au8[0],
+                                    pIpHdr->ip_src.au8[1],
+                                    pIpHdr->ip_src.au8[2],
+                                    pIpHdr->ip_src.au8[3]);
+                        }
+                        else
+                            RTPrintf("type=%d seq=%d dstmac=%.6Rhxs ip=%d.%d.%d.%d\n", pIcmpHdr->icmp_type, pIcmpEcho->icmp_seq,
+                                    &pEthHdr->DstMac, pIpHdr->ip_dst.au8[0], pIpHdr->ip_dst.au8[1], pIpHdr->ip_dst.au8[2], pIpHdr->ip_dst.au8[3]);
+                    }
                 }
             }
             else
@@ -559,6 +682,7 @@ int main(int argc, char **argv)
         { "--sniffer",      'S', RTGETOPT_REQ_NOTHING },
         { "--text-file",    't', RTGETOPT_REQ_STRING },
         { "--xmit-test",    'x', RTGETOPT_REQ_NOTHING },
+        { "--ping-test",    'P', RTGETOPT_REQ_NOTHING },
         { "--help",         'h', RTGETOPT_REQ_NOTHING },
         { "--?",            '?', RTGETOPT_REQ_NOTHING },
     };
@@ -582,6 +706,7 @@ int main(int argc, char **argv)
     bool        fSniffer = false;
     PRTSTREAM   pFileText = g_pStdOut;
     bool        fXmitTest = false;
+    bool        fPingTest = false;
     RTMAC       SrcMac;
     SrcMac.au8[0] = 0x08;
     SrcMac.au8[1] = 0x03;
@@ -671,6 +796,10 @@ int main(int argc, char **argv)
 
             case 'x':
                 fXmitTest = true;
+                break;
+
+            case 'P':
+                fPingTest = true;
                 break;
 
             case '?':
@@ -806,15 +935,26 @@ int main(int argc, char **argv)
                     if (fXmitTest)
                         doXmitTest(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw, pFileText);
 
+                    if (fPingTest)
+                        doPingTest(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw, pFileText);                    
+                    
                     /*
                      * Either enter sniffing mode or do a timeout thing.
                      */
                     if (fSniffer)
                     {
                         doPacketSniffing(OpenReq.hIf, pSession, pBuf, cMillies, pFileRaw, pFileText, &SrcMac);
-                        if (fXmitTest != g_fDhcpReply)
+                        if (   fXmitTest
+                            && !g_fDhcpReply)
                         {
                             RTPrintf("tstIntNet-1: Error! The DHCP server didn't reply... (Perhaps you don't have one?)\n", rc);
+                            g_cErrors++;
+                        }
+                        
+                        if (   fPingTest
+                            && !g_fPingReply)
+                        {
+                            RTPrintf("tstIntNet-1: Error! No reply for ping request...\n", rc);
                             g_cErrors++;
                         }
                     }
