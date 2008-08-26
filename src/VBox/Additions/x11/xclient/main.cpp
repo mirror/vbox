@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
         rcClipboard = gClipboard.init();
         if (RT_FAILURE(rcClipboard))
         {
-            LogRel(("VBoxClient: vboxClipboardConnect failed with rc = %Rrc\n", rc));
+            LogRel(("VBoxClient: vboxClipboardConnect failed with rc = %Rrc\n", rcClipboard));
         }
 #endif  /* VBOX_X11_CLIPBOARD defined */
 #ifdef DYNAMIC_RESIZE

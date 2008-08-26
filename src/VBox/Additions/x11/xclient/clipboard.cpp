@@ -1380,12 +1380,12 @@ int vboxClipboardConnect(void)
     rc = VbglR3ClipboardConnect(&g_ctx.client);
     if (VBOX_FAILURE(rc))
     {
-        LogRel(("Error connecting to host. rc=%Vrc", rc));
+        LogRel(("Error connecting to host. rc=%Vrc\n", rc));
         return rc;
     }
     if (!g_ctx.client)
     {
-        LogRel(("Invalid client ID of 0"));
+        LogRel(("Invalid client ID of 0\n"));
         return VERR_NOT_SUPPORTED;
     }
     g_ctx.eOwner = HOST;
