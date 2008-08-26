@@ -24,7 +24,7 @@
 # include "COMDefs.h"
 #else
 # include <VBox/com/defs.h>
-//# include <VBox/com/array.h>
+# include <VBox/com/array.h>
 #endif
 #include <VBox/pdm.h>
 #include <VBox/cfgm.h>
