@@ -1382,7 +1382,7 @@ VBoxPython-inst-py-xpcom_SOURCES = \
 	python/server/policy.py=>server/policy.py
 
 # Python Client Module - a sample script.
-VBoxPython-inst-sample_INST = $(INST_SDK)/bindings/xpcom/python/sample/
+VBoxPython-inst-sample_INST = $(INST_SDK)bindings/xpcom/python/sample/
 VBoxPython-inst-sample_SOURCES = \
 	python/sample/vboxshell.py
 
