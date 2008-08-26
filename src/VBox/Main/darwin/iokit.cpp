@@ -37,6 +37,7 @@
 #include <IOKit/IOKitLib.h>
 #include <IOKit/storage/IOStorageDeviceCharacteristics.h>
 #include <IOKit/scsi-commands/SCSITaskLib.h>
+#include <SystemConfiguration/SystemConfiguration.h>
 #include <mach/mach_error.h>
 #ifdef VBOX_WITH_USB
 # include <IOKit/usb/IOUSBLib.h>
@@ -108,7 +109,7 @@ static bool darwinOpenMasterPort(void)
  * @param   DictRef     The dictionary.
  * @param   KeyStrRef   The key name.
  */
-static bool darwinDictIsPresent(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef)
+static bool darwinDictIsPresent(CFDictionaryRef DictRef, CFStringRef KeyStrRef)
 {
     return !!CFDictionaryGetValue(DictRef, KeyStrRef);
 }
@@ -122,7 +123,7 @@ static bool darwinDictIsPresent(CFMutableDictionaryRef DictRef, CFStringRef KeyS
  * @param   KeyStrRef   The key name.
  * @param   pf          Where to store the key value.
  */
-static bool darwinDictGetBool(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, bool *pf)
+static bool darwinDictGetBool(CFDictionaryRef DictRef, CFStringRef KeyStrRef, bool *pf)
 {
     CFTypeRef BoolRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (    BoolRef
@@ -144,7 +145,7 @@ static bool darwinDictGetBool(CFMutableDictionaryRef DictRef, CFStringRef KeyStr
  * @param   KeyStrRef   The key name.
  * @param   pu8         Where to store the key value.
  */
-static bool darwinDictGetU8(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, uint8_t *pu8)
+static bool darwinDictGetU8(CFDictionaryRef DictRef, CFStringRef KeyStrRef, uint8_t *pu8)
 {
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
@@ -165,7 +166,7 @@ static bool darwinDictGetU8(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRe
  * @param   KeyStrRef   The key name.
  * @param   pu16        Where to store the key value.
  */
-static bool darwinDictGetU16(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, uint16_t *pu16)
+static bool darwinDictGetU16(CFDictionaryRef DictRef, CFStringRef KeyStrRef, uint16_t *pu16)
 {
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
@@ -186,7 +187,7 @@ static bool darwinDictGetU16(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
  * @param   KeyStrRef   The key name.
  * @param   pu32        Where to store the key value.
  */
-static bool darwinDictGetU32(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, uint32_t *pu32)
+static bool darwinDictGetU32(CFDictionaryRef DictRef, CFStringRef KeyStrRef, uint32_t *pu32)
 {
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
@@ -207,7 +208,7 @@ static bool darwinDictGetU32(CFMutableDictionaryRef DictRef, CFStringRef KeyStrR
  * @param   KeyStrRef   The key name.
  * @param   pu64        Where to store the key value.
  */
-static bool darwinDictGetU64(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, uint64_t *pu64)
+static bool darwinDictGetU64(CFDictionaryRef DictRef, CFStringRef KeyStrRef, uint64_t *pu64)
 {
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
@@ -250,7 +251,7 @@ static bool darwinDictGetProcess(CFMutableDictionaryRef DictRef, CFStringRef Key
  * @param   psz         The string buffer. On failure this will be an empty string ("").
  * @param   cch         The size of the buffer.
  */
-static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, char *psz, size_t cch)
+static bool darwinDictGetString(CFDictionaryRef DictRef, CFStringRef KeyStrRef, char *psz, size_t cch)
 {
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
@@ -272,7 +273,7 @@ static bool darwinDictGetString(CFMutableDictionaryRef DictRef, CFStringRef KeyS
  * @param   KeyStrRef   The key name.
  * @param   ppsz        Where to store the key value. Free with RTStrFree. Set to NULL on failure.
  */
-static bool darwinDictDupString(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, char **ppsz)
+static bool darwinDictDupString(CFDictionaryRef DictRef, CFStringRef KeyStrRef, char **ppsz)
 {
     char szBuf[512];
     if (darwinDictGetString(DictRef, KeyStrRef, szBuf, sizeof(szBuf)))
@@ -295,7 +296,7 @@ static bool darwinDictDupString(CFMutableDictionaryRef DictRef, CFStringRef KeyS
  * @param   pvBuf       The buffer to store the bytes in.
  * @param   cbBuf       The size of the buffer. This must exactly match the data size.
  */
-static bool darwinDictGetData(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef, void *pvBuf, size_t cbBuf)
+static bool darwinDictGetData(CFDictionaryRef DictRef, CFStringRef KeyStrRef, void *pvBuf, size_t cbBuf)
 {
     CFTypeRef ValRef = CFDictionaryGetValue(DictRef, KeyStrRef);
     if (ValRef)
@@ -438,7 +439,7 @@ static void darwinDumpDictCallback(const void *pvKey, const void *pvValue, void 
  *
  * @param   DictRef     The dictionary to dump.
  */
-static void darwinDumpDict(CFMutableDictionaryRef DictRef, unsigned cIndents)
+static void darwinDumpDict(CFDictionaryRef DictRef, unsigned cIndents)
 {
     CFDictionaryApplyFunction(DictRef, darwinDumpDictCallback, (void *)(uintptr_t)cIndents);
     DARWIN_IOKIT_LOG_FLUSH();
@@ -1424,11 +1425,17 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     /*
+     * Get a copy of the current network interfaces from the system configuration service.
+     * We'll use this for looking up the proper interface names.
+     */
+    CFArrayRef IfsRef = SCNetworkInterfaceCopyAll();
+    CFIndex cIfs = IfsRef ? CFArrayGetCount(IfsRef) : 0;
+
+    /*
      * Enumerate the ethernet controller services.
      */
     PDARWINETHERNIC pHead = NULL;
     PDARWINETHERNIC pTail = NULL;
-    unsigned acCategories[8] = { 0,0,0,0, 0,0,0,0 };
     io_object_t EtherIfService;
     while ((EtherIfService = IOIteratorNext(EtherIfServices)) != 0)
     {
@@ -1496,19 +1503,38 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                             fAirPort = fWireless = false;
 
                         /** @todo IOPacketFilters / IONetworkFilterGroup?  */
-
                         /*
-                         * Create a base name for it, we'll sort it later and add numbers where required.
+                         * Create the interface name.
+                         *
                          * Note! The ConsoleImpl2.cpp code ASSUMES things about the name. It is also
                          *       stored in the VM config files. (really bright idea)
                          */
-                        /** @todo not sure about "Wireless" here, none of my wireless sticks work on the mac. */
-                        size_t cchName = RTStrPrintf(szTmp, sizeof(szTmp), "%s: %s%s",
-                                                     szBSDName,
-                                                     fUSB ? "USB " : "",
-                                                     fWireless ? fAirPort ? "AirPort " : "Wireless" : "Ethernet");
-                        int iCat = fUSB * 4 | fWireless * 2 | fAirPort;
-                        acCategories[iCat]++;
+                        strcpy(szTmp, szBSDName);
+                        char *psz = strchr(szTmp, '\0');
+                        *psz++ = ':';
+                        *psz++ = ' ';
+                        size_t cchLeft = sizeof(szTmp) - (psz - &szTmp[0]);
+                        CFIndex i;
+                        for (i = 0; i < cIfs; i++)
+                        {
+                            SCNetworkInterfaceRef IfRef = (SCNetworkInterfaceRef)CFArrayGetValueAtIndex(IfsRef, i);
+                            CFStringRef BSDNameRef = SCNetworkInterfaceGetBSDName(IfRef);
+                            if (     BSDNameRef
+                                &&   CFStringGetCString(BSDNameRef, psz, cchLeft, kCFStringEncodingUTF8)
+                                &&  !strcmp(psz, szBSDName))
+                            {
+                                CFStringRef DisplayNameRef = SCNetworkInterfaceGetLocalizedDisplayName(IfRef);
+                                if (    DisplayNameRef
+                                    &&  CFStringGetCString(DisplayNameRef, psz, cchLeft, kCFStringEncodingUTF8))
+                                    break;
+                            }
+                        }
+                        /* Generate a half plausible name if we for some silly reason didn't find the interface. */
+                        if (i >= cIfs)
+                            RTStrPrintf(szTmp, sizeof(szTmp), "%s: %s%s(?)",
+                                        szBSDName,
+                                        fUSB ? "USB " : "",
+                                        fWireless ? fAirPort ? "AirPort " : "Wireless" : "Ethernet");
 
                         /*
                          * Create the list entry.
@@ -1516,7 +1542,8 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                         DARWIN_IOKIT_LOG(("Found: if=%s mac=%.6Rhxs fWireless=%RTbool fAirPort=%RTbool fBuiltin=%RTbool fPrimaryIf=%RTbool fUSB=%RTbool\n",
                                           szBSDName, &Mac, fWireless, fAirPort, fBuiltin, fPrimaryIf, fUSB));
 
-                        PDARWINETHERNIC pNew = (PDARWINETHERNIC)RTMemAlloc(RT_OFFSETOF(DARWINETHERNIC, szName[cchName + 8])); /* extra for the number */
+                        size_t cchName = strlen(szTmp);
+                        PDARWINETHERNIC pNew = (PDARWINETHERNIC)RTMemAlloc(RT_OFFSETOF(DARWINETHERNIC, szName[cchName + 1]));
                         if (pNew)
                         {
                             strncpy(pNew->szBSDName, szBSDName, sizeof(pNew->szBSDName)); /* the '\0' padding is intentional! */
@@ -1533,7 +1560,6 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                             pNew->Uuid.Gen.au8Node[5] = Mac.au8[5];
 
                             pNew->Mac = Mac;
-                            pNew->iCat = iCat;
                             pNew->fWireless = fWireless;
                             pNew->fAirPort = fAirPort;
                             pNew->fBuiltin = fBuiltin;
@@ -1590,28 +1616,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
     }
 
     IOObjectRelease(EtherIfServices);
-
-    /*
-     * Add numbers if required.
-     */
-    if (    acCategories[0] > 1
-        ||  acCategories[1] > 1
-        ||  acCategories[2] > 1
-        ||  acCategories[3] > 1
-        ||  acCategories[4] > 1
-        ||  acCategories[5] > 1
-        ||  acCategories[6] > 1
-        ||  acCategories[7] > 1)
-    {
-        unsigned aiCategories[8] = { 0,0,0,0, 0,0,0,0 };
-        for (PDARWINETHERNIC pCur = pHead; pCur; pCur = pCur->pNext)
-        {
-            aiCategories[pCur->iCat]++;
-            if (acCategories[pCur->iCat] > 1)
-                RTStrPrintf(strchr(pCur->szName, '\0'), 7, " %u", aiCategories[pCur->iCat]);
-        }
-    }
-
+    CFRelease(IfsRef);
     return pHead;
 }
 
@@ -1619,31 +1624,113 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
 /**
  * This file can optionally be compiled into a testcase, this is the main function.
  * To build:
- *      g++ -I ../../../../include -D IN_RING3 iokit.cpp   ../../../../out/darwin.x86/debug/lib/RuntimeR3.a  ../../../../out/darwin.x86/debug/lib/SUPR3.a  ../../../../out/darwin.x86/debug/lib/RuntimeR3.a ../../../../out/darwin.x86/debug/lib/VBox-kStuff.a  ../../../../out/darwin.x86/debug/lib/RuntimeR3.a -framework CoreFoundation -framework IOKit -liconv -D STANDALONE_TESTCASE
+ *      g++ -I ../../../../include -D IN_RING3 iokit.cpp   ../../../../out/darwin.x86/debug/lib/RuntimeR3.a  ../../../../out/darwin.x86/debug/lib/SUPR3.a  ../../../../out/darwin.x86/debug/lib/RuntimeR3.a ../../../../out/darwin.x86/debug/lib/VBox-kStuff.a  ../../../../out/darwin.x86/debug/lib/RuntimeR3.a -framework CoreFoundation -framework IOKit -framework SystemConfiguration -liconv -D STANDALONE_TESTCASE -o iokit -g && ./iokit
  */
 int main(int argc, char **argv)
 {
     RTR3Init(false);
 
-    /*
-     * Get and display the ethernet controllers.
-     */
-    RTPrintf("Ethernet controllers:\n");
-    PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
-    for (PDARWINETHERNIC pCur = pEtherNICs; pCur; pCur = pCur->pNext)
+    if (1)
     {
-        RTPrintf("%s\n", pCur->szName);
-        RTPrintf("    szBSDName=%d\n", pCur->szBSDName);
-        RTPrintf("         UUID=%RTuuid\n", &pCur->Uuid);
-        RTPrintf("          Mac=%.6Rhxs\n", &pCur->Mac);
-        RTPrintf("    fWireless=%RTbool\n", pCur->fWireless);
-        RTPrintf("     fAirPort=%RTbool\n", pCur->fAirPort);
-        RTPrintf("     fBuiltin=%RTbool\n", pCur->fBuiltin);
-        RTPrintf("         fUSB=%RTbool\n", pCur->fUSB);
-        RTPrintf("   fPrimaryIf=%RTbool\n", pCur->fPrimaryIf);
+        /*
+         * Get and display the ethernet controllers.
+         */
+        RTPrintf("Ethernet controllers:\n");
+        PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
+        for (PDARWINETHERNIC pCur = pEtherNICs; pCur; pCur = pCur->pNext)
+        {
+            RTPrintf("%s\n", pCur->szName);
+            RTPrintf("    szBSDName=%d\n", pCur->szBSDName);
+            RTPrintf("         UUID=%RTuuid\n", &pCur->Uuid);
+            RTPrintf("          Mac=%.6Rhxs\n", &pCur->Mac);
+            RTPrintf("    fWireless=%RTbool\n", pCur->fWireless);
+            RTPrintf("     fAirPort=%RTbool\n", pCur->fAirPort);
+            RTPrintf("     fBuiltin=%RTbool\n", pCur->fBuiltin);
+            RTPrintf("         fUSB=%RTbool\n", pCur->fUSB);
+            RTPrintf("   fPrimaryIf=%RTbool\n", pCur->fPrimaryIf);
+        }
     }
 
+    if (0)
+    {
+        /*
+         * Network preferences.
+         */
+        RTPrintf("Preferences: Network Services\n");
+        SCPreferencesRef PrefsRef = SCPreferencesCreate(kCFAllocatorDefault, CFSTR("org.virtualbox.VBoxSVC"), NULL);
+        if (PrefsRef)
+        {
+            CFDictionaryRef  NetworkServiceRef = (CFDictionaryRef)SCPreferencesGetValue(PrefsRef, kSCPrefNetworkServices);
+            darwinDumpDict(NetworkServiceRef, 4);
+            CFRelease(PrefsRef);
+        }
+    }   
 
+    if (1)
+    {
+        /*
+         * Network services interfaces in the current config.
+         */
+        RTPrintf("Preferences: Network Service Interfaces\n");
+        SCPreferencesRef PrefsRef = SCPreferencesCreate(kCFAllocatorDefault, CFSTR("org.virtualbox.VBoxSVC"), NULL);
+        if (PrefsRef)
+        {
+            SCNetworkSetRef SetRef = SCNetworkSetCopyCurrent(PrefsRef);
+            if (SetRef)
+            {
+                CFArrayRef ServicesRef = SCNetworkSetCopyServices(SetRef);
+                CFIndex cServices = CFArrayGetCount(ServicesRef);
+                for (CFIndex i = 0; i < cServices; i++)
+                {
+                    SCNetworkServiceRef ServiceRef = (SCNetworkServiceRef)CFArrayGetValueAtIndex(ServicesRef, i);
+                    char szServiceName[128] = {0};
+                    CFStringGetCString(SCNetworkServiceGetName(ServiceRef), szServiceName, sizeof(szServiceName), kCFStringEncodingUTF8);
+
+                    SCNetworkInterfaceRef IfRef = SCNetworkServiceGetInterface(ServiceRef);
+                    char szBSDName[16] = {0};
+                    if (SCNetworkInterfaceGetBSDName(IfRef))
+                        CFStringGetCString(SCNetworkInterfaceGetBSDName(IfRef), szBSDName, sizeof(szBSDName), kCFStringEncodingUTF8);
+                    char szDisplayName[128] = {0};
+                    if (SCNetworkInterfaceGetLocalizedDisplayName(IfRef))
+                        CFStringGetCString(SCNetworkInterfaceGetLocalizedDisplayName(IfRef), szDisplayName, sizeof(szDisplayName), kCFStringEncodingUTF8);
+
+                    RTPrintf(" #%u ServiceName=\"%s\" IfBSDName=\"%s\" IfDisplayName=\"%s\"\n", 
+                             i, szServiceName, szBSDName, szDisplayName);
+                }
+
+                CFRelease(SetRef);
+            }
+
+            CFRelease(PrefsRef);
+        }
+    }   
+
+    if (1)
+    {
+        /*
+         * Network interfaces.
+         */
+        RTPrintf("Preferences: Network Interfaces\n");
+        CFArrayRef IfsRef = SCNetworkInterfaceCopyAll();
+        if (IfsRef)
+        {
+            CFIndex cIfs = CFArrayGetCount(IfsRef);
+            for (CFIndex i = 0; i < cIfs; i++)
+            {
+                SCNetworkInterfaceRef IfRef = (SCNetworkInterfaceRef)CFArrayGetValueAtIndex(IfsRef, i);
+                char szBSDName[16] = {0};
+                if (SCNetworkInterfaceGetBSDName(IfRef))
+                    CFStringGetCString(SCNetworkInterfaceGetBSDName(IfRef), szBSDName, sizeof(szBSDName), kCFStringEncodingUTF8);
+                char szDisplayName[128] = {0};
+                if (SCNetworkInterfaceGetLocalizedDisplayName(IfRef))
+                    CFStringGetCString(SCNetworkInterfaceGetLocalizedDisplayName(IfRef), szDisplayName, sizeof(szDisplayName), kCFStringEncodingUTF8);
+                RTPrintf(" #%u BSDName=\"%s\" DisplayName=\"%s\"\n", 
+                         i, szBSDName, szDisplayName);
+            }
+
+            CFRelease(IfsRef);
+        }
+    }   
 
     return 0;
 }

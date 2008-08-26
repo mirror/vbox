@@ -283,7 +283,7 @@ VBoxSVC_LDFLAGS.solaris += -lkstat
 VBoxSVC_LDFLAGS.win     += wbemuuid.lib powrprof.lib
 endif
 
-VBoxSVC_LDFLAGS.darwin  = -framework IOKit
+VBoxSVC_LDFLAGS.darwin  = -framework IOKit -framework SystemConfiguration
 ifeq ($(KBUILD_TYPE),debug)
 VBoxSVC_LDFLAGS.linux  += -rdynamic # for backtrace_symbols()
 endif

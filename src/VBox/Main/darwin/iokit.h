@@ -55,8 +55,6 @@ typedef struct DARWINETHERNIC
     RTUUID Uuid;
     /** The MAC address. */
     RTMAC Mac;
-    /** Internal category number (0..7). */
-    int iCat;
     /** Whether it's wireless (true) or wired (false). */
     bool fWireless;
     /** Whether it is an AirPort device. */
