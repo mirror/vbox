@@ -1795,10 +1795,14 @@ bool VBoxDiskImageManagerDlg::checkImage (DiskImageItem *aItem)
         case VBoxDefs::HD:
         {
             CHardDisk hd = aItem->media().disk;
-            QUuid machineId = hd.GetMachineId();
-            if (machineId.isNull() ||
-                (mVBox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
-                 mVBox.GetMachine (machineId).GetState() != KMachineState_Aborted))
+            if (!hd.isNull())
+            {
+                QUuid machineId = hd.GetMachineId();
+                if (machineId.isNull() ||
+                    (mVBox.GetMachine (machineId).GetState() != KMachineState_PoweredOff &&
+                     mVBox.GetMachine (machineId).GetState() != KMachineState_Aborted))
+                    return false;
+            }else
                 return false;
             break;
         }
