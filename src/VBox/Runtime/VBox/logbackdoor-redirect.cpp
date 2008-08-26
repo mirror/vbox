@@ -72,6 +72,11 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args)
     RTLogBackdoorPrintfV(pszFormat, args);
 }
 
+#if defined(LOG_USE_C99)
+RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, ...)
+{
+}
+#endif
 
 RTDECL(void) RTLogPrintf(const char *pszFormat, ...)
 {
