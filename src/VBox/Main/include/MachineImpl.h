@@ -736,7 +736,7 @@ protected:
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics (PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid);
-    void unregisterMetrics (PerformanceCollector *aCollector);
+    void unregisterMetrics (PerformanceCollector *aCollector, Machine *aMachine);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     const InstanceType mType;
