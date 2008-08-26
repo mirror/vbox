@@ -7706,7 +7706,7 @@
 
   <interface
      name="IKeyboard" extends="$unknown"
-     uuid="2d1a531b-4c6e-49cc-8af6-5c857b78b5d7"
+     uuid="FD443EC1-000A-4F5B-9282-D72760A66916"
      wsmap="managed"
      >
     <desc>
@@ -7723,7 +7723,8 @@
 
     <method name="putScancodes">
       <desc>Sends an array of scancode to the keyboard.</desc>
-      <param name="scancodes" type="long" dir="in" safearray="yes"/>
+      <param name="scancodes" type="long" dir="in" array="count"/>
+      <param name="count" type="unsigned long" dir="in"/>
       <param name="codesStored" type="unsigned long" dir="return"/>
     </method>
 

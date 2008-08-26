@@ -71,7 +71,8 @@ public:
     void uninit();
 
     STDMETHOD(PutScancode)(LONG scancode);
-    STDMETHOD(PutScancodes)(ComSafeArrayIn (LONG, scancodes),
+    STDMETHOD(PutScancodes)(LONG *scancodes,
+                            ULONG count,
                             ULONG *codesStored);
     STDMETHOD(PutCAD)();
 
