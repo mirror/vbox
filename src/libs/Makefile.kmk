@@ -131,6 +131,7 @@ SUBDIRS_LIBRARIES      = $(subdirs)
 SUBDIRS_BINARIES       = $(filter xpcom18a4,$(subdirs))
 SUBDIRS_DLLS           = $(filter xpcom18a4 ffmpeg-20060710,$(subdirs))
 SUBDIRS_OTHERS         = $(filter xpcom18a4,$(subdirs))
+SUBDIRS_INSTALLS       = $(filter xpcom18a4,$(subdirs))
 SUBDIRS_CLEAN          = $(subdirs)
 SUBDIRS_NOTHING        = $(subdirs)
 
