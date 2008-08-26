@@ -572,7 +572,10 @@ int main(int argc, char *argv[])
             uint32_t codesStored;
             if (numKeyEvents > 1)
             {
-                keyboard->PutScancodes((PRInt32*)keyEvents, numKeyEvents,
+                com::SafeArray <LONG> keys (numKeyEvents);
+                for (size_t idx = 0; idx < keys.size();  ++idx)
+                    keys[idx] = keyEvents[idx];
+                keyboard->PutScancodes(ComSafeArrayAsInParam(keys),
                                        &codesStored);
             } else
             {

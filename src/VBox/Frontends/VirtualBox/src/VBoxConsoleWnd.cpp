@@ -2357,16 +2357,14 @@ void VBoxConsoleWnd::vmTypeCABS()
     {
         CKeyboard keyboard  = console->console().GetKeyboard();
         Assert (!keyboard.isNull());
-        static LONG sSequence[] =
-        {
-            0x1d, // Ctrl down
-            0x38, // Alt down
-            0x0E, // Backspace down
-            0x8E, // Backspace up
-            0xb8, // Alt up
-            0x9d  // Ctrl up
-        };
-        keyboard.PutScancodes (sSequence, ELEMENTS (sSequence));
+        static QValueVector <LONG> sSequence (6);
+        sSequence[0] = 0x1d; // Ctrl down
+        sSequence[1] = 0x38; // Alt down
+        sSequence[2] = 0x0E; // Backspace down
+        sSequence[3] = 0x8E; // Backspace up
+        sSequence[4] = 0xb8; // Alt up
+        sSequence[5] = 0x9d; // Ctrl up
+        keyboard.PutScancodes (sSequence);
         AssertWrapperOk (keyboard);
     }
 #else
