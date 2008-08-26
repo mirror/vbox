@@ -178,7 +178,7 @@ BOOL VBoxOGLThreadAttach()
     parms.name.u.value32                 = GL_VERSION;
     parms.pString.type                   = VMMDevHGCMParmType_LinAddr;
     parms.pString.u.Pointer.size         = sizeof(szOpenGLVersion);
-    parms.pString.u.Pointer.u.linearAddr = (vmmDevHypPtr)szOpenGLVersion;
+    parms.pString.u.Pointer.u.linearAddr = (VMMDEVHYPPTR)szOpenGLVersion;
 
     int rc = vboxHGCMCall(&parms, sizeof (parms));
 
@@ -355,7 +355,7 @@ uint64_t VBoxOGLFlush()
 
     parms.pCmdBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
     parms.pCmdBuffer.u.Pointer.size         = pCtx->pCurrentCmd - pCtx->pCmdBuffer;
-    parms.pCmdBuffer.u.Pointer.u.linearAddr = (vmmDevHypPtr)pCtx->pCmdBuffer;
+    parms.pCmdBuffer.u.Pointer.u.linearAddr = (VMMDEVHYPPTR)pCtx->pCmdBuffer;
     parms.cCommands.type                    = VMMDevHGCMParmType_32bit;
     parms.cCommands.u.value32               = pCtx->cCommands;
     parms.retval.type                       = VMMDevHGCMParmType_64bit;
@@ -403,7 +403,7 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
 
     parms.pCmdBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
     parms.pCmdBuffer.u.Pointer.size         = pCtx->pCurrentCmd - pCtx->pCmdBuffer;
-    parms.pCmdBuffer.u.Pointer.u.linearAddr = (vmmDevHypPtr)pCtx->pCmdBuffer;
+    parms.pCmdBuffer.u.Pointer.u.linearAddr = (VMMDEVHYPPTR)pCtx->pCmdBuffer;
     parms.cCommands.type                    = VMMDevHGCMParmType_32bit;
     parms.cCommands.u.value32               = pCtx->cCommands;
     parms.retval.type                       = VMMDevHGCMParmType_64bit;
@@ -415,7 +415,7 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
         Assert(pLastParam);
         parms.pLastParam.type                   = VMMDevHGCMParmType_LinAddr;
         parms.pLastParam.u.Pointer.size         = cbParam;
-        parms.pLastParam.u.Pointer.u.linearAddr = (vmmDevHypPtr)pLastParam;
+        parms.pLastParam.u.Pointer.u.linearAddr = (VMMDEVHYPPTR)pLastParam;
     }
     else
     {
@@ -461,7 +461,7 @@ bool VBoxIsExtensionAvailable(const char *pszExtFunctionName)
 
     parms.pszExtFnName.type                   = VMMDevHGCMParmType_LinAddr_In;
     parms.pszExtFnName.u.Pointer.size         = strlen(pszExtFunctionName)+1;
-    parms.pszExtFnName.u.Pointer.u.linearAddr = (vmmDevHypPtr)pszExtFunctionName;
+    parms.pszExtFnName.u.Pointer.u.linearAddr = (VMMDEVHYPPTR)pszExtFunctionName;
 
     int rc = vboxHGCMCall(&parms, sizeof (parms));
 

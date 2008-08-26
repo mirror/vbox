@@ -146,7 +146,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
                 return -EFAULT;
             }
             VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr
-                = (vmmDevHypPtr)&pu8PointerData[offPointerData];
+                = (VMMDEVHYPPTR)&pu8PointerData[offPointerData];
             VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size
                 = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
             offPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
@@ -156,7 +156,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
         {
             /* This type of pointer means that we are reading data from the host. */
             VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.u.linearAddr
-                = (vmmDevHypPtr)&pu8PointerData[offPointerData];
+                = (VMMDEVHYPPTR)&pu8PointerData[offPointerData];
             VBOXGUEST_HGCM_CALL_PARMS(hgcmR0)[i].u.Pointer.size
                 = VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;
             offPointerData += VBOXGUEST_HGCM_CALL_PARMS(hgcmR3)[i].u.Pointer.size;

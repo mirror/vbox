@@ -49,7 +49,7 @@ int vboxInitOpenGLExtensions(PVBOX_OGL_THREAD_CTX pCtx)
     parms.name.u.value32                 = GL_EXTENSIONS;
     parms.pString.type                   = VMMDevHGCMParmType_LinAddr;
     parms.pString.u.Pointer.size         = sizeof(szOpenGLExtensions);
-    parms.pString.u.Pointer.u.linearAddr = (vmmDevHypPtr)szOpenGLExtensions;
+    parms.pString.u.Pointer.u.linearAddr = (VMMDEVHYPPTR)szOpenGLExtensions;
 
     rc = vboxHGCMCall(&parms, sizeof (parms));
 
