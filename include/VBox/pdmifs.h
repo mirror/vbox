@@ -2494,6 +2494,8 @@ typedef struct PDMIHGCMCONNECTOR
  */
 typedef struct PDMSCSIREQUEST
 {
+    /** The logical unit. */
+    uint32_t    uLogicalUnit;
     /** Size of the SCSI CDB. */
     uint32_t    cbCDB;
     /** Pointer to the SCSI CDB. */

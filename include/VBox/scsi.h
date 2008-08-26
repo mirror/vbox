@@ -107,7 +107,8 @@ typedef enum SCSICMD
     SCSI_REZERO_UNIT                    = 0x01,
     SCSI_SERVICE_ACTION_IN_16           = 0x9e,
     SCSI_READ_16                        = 0x88,
-    SCSI_WRITE_16                       = 0x8a
+    SCSI_WRITE_16                       = 0x8a,
+    SCSI_READ_6                         = 0x08
 } SCSICMD;
 
 #ifdef DEBUG
