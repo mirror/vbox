@@ -1634,27 +1634,6 @@ int main(int argc, char **argv)
     if (1)
     {
         /*
-         * Get and display the ethernet controllers.
-         */
-        RTPrintf("Ethernet controllers:\n");
-        PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
-        for (PDARWINETHERNIC pCur = pEtherNICs; pCur; pCur = pCur->pNext)
-        {
-            RTPrintf("%s\n", pCur->szName);
-            RTPrintf("    szBSDName=%d\n", pCur->szBSDName);
-            RTPrintf("         UUID=%RTuuid\n", &pCur->Uuid);
-            RTPrintf("          Mac=%.6Rhxs\n", &pCur->Mac);
-            RTPrintf("    fWireless=%RTbool\n", pCur->fWireless);
-            RTPrintf("     fAirPort=%RTbool\n", pCur->fAirPort);
-            RTPrintf("     fBuiltin=%RTbool\n", pCur->fBuiltin);
-            RTPrintf("         fUSB=%RTbool\n", pCur->fUSB);
-            RTPrintf("   fPrimaryIf=%RTbool\n", pCur->fPrimaryIf);
-        }
-    }
-
-    if (0)
-    {
-        /*
          * Network preferences.
          */
         RTPrintf("Preferences: Network Services\n");
@@ -1732,6 +1711,28 @@ int main(int argc, char **argv)
             CFRelease(IfsRef);
         }
     }   
+
+    if (1)
+    {
+        /*
+         * Get and display the ethernet controllers.
+         */
+        RTPrintf("Ethernet controllers:\n");
+        PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
+        for (PDARWINETHERNIC pCur = pEtherNICs; pCur; pCur = pCur->pNext)
+        {
+            RTPrintf("%s\n", pCur->szName);
+            RTPrintf("    szBSDName=%d\n", pCur->szBSDName);
+            RTPrintf("         UUID=%RTuuid\n", &pCur->Uuid);
+            RTPrintf("          Mac=%.6Rhxs\n", &pCur->Mac);
+            RTPrintf("    fWireless=%RTbool\n", pCur->fWireless);
+            RTPrintf("     fAirPort=%RTbool\n", pCur->fAirPort);
+            RTPrintf("     fBuiltin=%RTbool\n", pCur->fBuiltin);
+            RTPrintf("         fUSB=%RTbool\n", pCur->fUSB);
+            RTPrintf("   fPrimaryIf=%RTbool\n", pCur->fPrimaryIf);
+        }
+    }
+
 
     return 0;
 }
