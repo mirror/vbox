@@ -161,7 +161,7 @@ FFmpegFB::~FFmpegFB()
                 av_freep(&mpFormatContext->streams[i]->codec);
                 av_freep(&mpFormatContext->streams[i]);
             }
-            url_fclose(&mpFormatContext->pb);
+            url_fclose(mpFormatContext->pb);
         }
         av_free(mpFormatContext);
     }
