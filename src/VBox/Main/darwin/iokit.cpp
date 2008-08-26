@@ -1577,8 +1577,9 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                                 {
                                     pPrev = NULL;
                                     for (PDARWINETHERNIC pCur = pHead; pCur; pPrev = pCur, pCur = pCur->pNext)
-                                        if (    (int)pNew->fPrimaryIf - (int)pCur->fPrimaryIf >= 0
-                                            &&  strcmp(pNew->szBSDName, pCur->szBSDName) >= 0)
+                                        if (    (int)pNew->fPrimaryIf - (int)pCur->fPrimaryIf > 0
+                                            ||  (   (int)pNew->fPrimaryIf - (int)pCur->fPrimaryIf == 0
+                                                 && strcmp(pNew->szBSDName, pCur->szBSDName) >= 0))
                                             break;
                                 }
                                 if (pPrev)
