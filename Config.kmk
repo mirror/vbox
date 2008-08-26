@@ -279,9 +279,7 @@ VBOX_WITH_INTERNAL_NETWORKING = 1
 # Enables the ffmpeg module for recording test runs.
 # Enable this for non-Linux builds later.
 ifeq ($(KBUILD_TARGET),linux)
- ifndef VBOX_OSE
-  VBOX_WITH_FFMPEG = 1
- endif
+ VBOX_WITH_FFMPEG = 1
 endif
 # Enable OpenGL service
 VBOX_WITH_OGL = 1
@@ -469,6 +467,7 @@ ifdef VBOX_OSE
  VBOX_WITH_DOCS=
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_INTEL_PXE=
+ VBOX_WITH_FFMPEG=
  ifeq ($(KBUILD_TARGET),darwin)
   # Qt/Mac v3.3.x requires patching to work for us.
   VBOX_WITH_QTGUI=
