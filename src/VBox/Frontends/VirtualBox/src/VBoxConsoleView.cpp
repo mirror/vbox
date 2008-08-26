@@ -2614,8 +2614,9 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
     }
 #endif
 
-    std::vector <LONG> tmp(codes, &codes[count]);
-    QValueVector <LONG> scancodes (tmp);
+    QValueVector <LONG> scancodes (count);
+    for (size_t i = 0; i < count; ++i)
+        scancodes[i] = codes[i];
     keyboard.PutScancodes (scancodes);
 
     /* grab the key from Qt */
