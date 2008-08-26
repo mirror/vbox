@@ -45,8 +45,6 @@
      && !defined(RT_OS_OS2) \
      && !defined(RT_OS_WINDOWS))
 # define VBOX_RTASSERT_WITH_GDB
-#else
-# error VBOX_RTASSERT_WITH_GDB
 #endif
 
 #ifdef VBOX_RTASSERT_WITH_GDB
