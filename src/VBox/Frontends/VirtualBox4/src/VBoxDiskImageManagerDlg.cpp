@@ -1087,9 +1087,10 @@ void VBoxDiskImageManagerDlg::addImage()
     {
         case VBoxDefs::HD:
         {
-            filter = tr ("All hard disk images (*.vdi *.vmdk);;"
+            filter = tr ("All hard disk images (*.vdi *.vmdk *.vhd);;"
                          "Virtual Disk images (*.vdi);;"
                          "VMDK images (*.vmdk);;"
+                         "VHD images (*.vhd);;"
                          "All files (*)");
             title = tr ("Select a hard disk image file");
             break;
