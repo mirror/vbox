@@ -71,13 +71,20 @@
 
 # define SUCCEEDED      NS_SUCCEEDED
 # define FAILED         NS_FAILED
-#endif /* !RT_OS_WINDOWS */
 
 #define ComSafeArrayIn(aType, aArg)         unsigned aArg##Size, aType *aArg
 #define ComSafeArrayInIsNull(aArg)          (aArg == NULL)
 #define ComSafeArrayInArg(aArg)             aArg##Size, aArg
 #define ComSafeArrayAsInParam(aArray)   \
     (aArray).size(), aArray.raw()
+#else /* !RT_OS_WINDOWS */
+#define ComSafeArrayIn(aType, aArg)     SAFEARRAY **aArg
+#define ComSafeArrayInIsNull(aArg)      (aArg == NULL || *aArg == NULL)
+#define ComSafeArrayInArg(aArg)         aArg
+#define ComSafeArrayAsInParam(aArray)   (SAFEARRAY **)NULL
+
+#endif /* !RT_OS_WINDOWS */
+
 
 
 namespace com
