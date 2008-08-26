@@ -357,6 +357,9 @@ void VBoxFilePathSelectorWidget::refreshText()
          * which can be absolute or relative. */
         setItemText (PathId, mPath);
         setItemIcon (PathId, QIcon());
+        setToolTip (mMode == Mode_Folder ?
+            tr ("Please type the desired folder path here.") :
+            tr ("Please type the desired file path here."));
     }
     else if (mPath.isNull())
     {
