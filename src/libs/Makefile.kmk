@@ -65,9 +65,11 @@ ifdef VBOX_WITH_MAIN
  endif
 
  # FFmpeg for test videos.
- ifdef VBOX_WITH_FFMPEG
-  if1of ($(KBUILD_TARGET), darwin)
-   include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
+ ifndef VBOX_OSE
+  ifdef VBOX_WITH_FFMPEG
+   if1of ($(KBUILD_TARGET), darwin)
+    include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
+   endif
   endif
  endif
 endif
@@ -118,9 +120,11 @@ ifdef VBOX_WITH_MAIN
   subdirs += libxslt-1.1.22
  endif
  # FFmpeg for test videos
- ifdef VBOX_WITH_FFMPEG
-  ifeq ($(KBUILD_TARGET),darwin)
-   subdirs += ffmpeg-20060710
+ ifndef VBOX_OSE
+  ifdef VBOX_WITH_FFMPEG
+   ifeq ($(KBUILD_TARGET),darwin)
+    subdirs += ffmpeg-20060710
+   endif
   endif
  endif
 endif
