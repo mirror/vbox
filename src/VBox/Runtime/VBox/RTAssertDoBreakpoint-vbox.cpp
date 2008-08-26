@@ -53,6 +53,7 @@
 # include <iprt/process.h>
 # include <iprt/path.h>
 # include <iprt/thread.h>
+# include <iprt/asm.h>
 #endif
 
 
@@ -75,6 +76,11 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
     /* 'gdb' - means try launch a gdb session in xterm. */
     if (!strcmp(psz, "gdb"))
     {
+        /* Did we already fire up gdb? If so, just hit the breakpoint. */
+        static bool volatile s_fAlreadyLaunchedGdb = false;
+        if (ASMAtomicUoReadBool(&s_fAlreadyLaunchedGdb))
+            return true;
+
         /* Try find a suitable terminal program. */
         const char *pszTerm = RTEnvGet("VBOX_ASSERT_TERM");
         if (    !pszTerm 
@@ -117,6 +123,8 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
         int rc = RTProcCreate(apszArgs[0], &apszArgs[0], RTENV_DEFAULT, 0, &Process);
         if (RT_FAILURE(rc))
             return false;
+
+        ASMAtomicWriteBool(&s_fAlreadyLaunchedGdb, true);
 
         /* Wait for gdb to attach. */
         RTThreadSleep(15000);
