@@ -24,9 +24,6 @@ case "$APP" in
   VirtualBox)
     exec "$INSTALL_DIR/VirtualBox" "$@"
   ;;
-  VirtualBox3)
-    exec "$INSTALL_DIR/VirtualBox3" "$@"
-  ;;
   VBoxManage)
     exec "$INSTALL_DIR/VBoxManage" "$@"
   ;;
@@ -40,7 +37,7 @@ case "$APP" in
     exec "$INSTALL_DIR/VBoxHeadless" "$@"
   ;;
   VBoxQtconfig)
-    exec "$INSTALL_DIR/VBoxQtConfig" "$@"
+    exec "$INSTALL_DIR/VBoxQtconfig" "$@"
     ;;
   *)
     echo "Unknown application - $APP"
