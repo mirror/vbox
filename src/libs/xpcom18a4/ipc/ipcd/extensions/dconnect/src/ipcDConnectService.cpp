@@ -2796,6 +2796,9 @@ ipcDConnectService::CreateWorker()
   if (NS_SUCCEEDED(rv))
   {
     nsAutoLock lock(mLock);
+#ifdef VBOX /* tracking an illegal join in Shutdown. */
+    NS_ASSERTION(!mDisconnected, "CreateWorker racing Shutdown");
+#endif 
     if (!mWorkers.AppendElement(worker))
       rv = NS_ERROR_OUT_OF_MEMORY;
   }
