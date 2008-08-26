@@ -103,6 +103,8 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
                 mCbHostFD->setCurrentIndex (mCbHostFD->findText (fullName));
             }
             mRbHostFD->setChecked (true);
+            mRbHostFD->setAutoExclusive (true);
+            mRbIsoFD->setAutoExclusive (true);
             break;
         }
         case KDriveState_ImageMounted:
@@ -113,11 +115,15 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
             QFileInfo fi (src);
             mRbIsoFD->setChecked (true);
             mUuidIsoFD = QUuid (img.GetId());
+            mRbHostFD->setAutoExclusive (true);
+            mRbIsoFD->setAutoExclusive (true);
             break;
         }
         case KDriveState_NotMounted:
         {
             mGbFD->setChecked (false);
+            mRbHostFD->setAutoExclusive (false);
+            mRbIsoFD->setAutoExclusive (false);
             break;
         }
         default:

@@ -102,6 +102,8 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
             }
             mRbHostCD->setChecked (true);
             mCbPassthrough->setChecked (dvd.GetPassthrough());
+            mRbHostCD->setAutoExclusive (true);
+            mRbIsoCD->setAutoExclusive (true);
             break;
         }
         case KDriveState_ImageMounted:
@@ -112,11 +114,15 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
             QFileInfo fi (src);
             mRbIsoCD->setChecked (true);
             mUuidIsoCD = QUuid (img.GetId());
+            mRbHostCD->setAutoExclusive (true);
+            mRbIsoCD->setAutoExclusive (true);
             break;
         }
         case KDriveState_NotMounted:
         {
             mGbCD->setChecked (false);
+            mRbHostCD->setAutoExclusive (false);
+            mRbIsoCD->setAutoExclusive (false);
             break;
         }
         default:
