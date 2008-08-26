@@ -406,9 +406,9 @@ VBoxDiskImageManagerDlg::VBoxDiskImageManagerDlg (QWidget *aParent /* = 0 */,
 }
 
 void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
-                                     const QUuid &aTargetVMId /* = 0 */,
+                                     const QUuid &aTargetVMId /* = QUuid() */,
                                      bool aRefresh /* = true */,
-                                     CMachine aMachine /* = 0 */,
+                                     CMachine aMachine /* = CMachine() */,
                                      const QUuid &aHdId,
                                      const QUuid &aCdId,
                                      const QUuid &aFdId)
@@ -489,15 +489,15 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
 }
 
 /* static */
-void VBoxDiskImageManagerDlg::showModeless (bool aRefresh /* = true */)
+void VBoxDiskImageManagerDlg::showModeless (QWidget *aParent /* = NULL */, bool aRefresh /* = true */)
 {
     if (!mModelessDialog)
     {
         mModelessDialog =
-            new VBoxDiskImageManagerDlg (0, Qt::Window);
+            new VBoxDiskImageManagerDlg (aParent, Qt::Window);
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
         mModelessDialog->setup (VBoxDefs::HD | VBoxDefs::CD | VBoxDefs::FD,
-                                false, 0, aRefresh);
+                                false, QUuid(), aRefresh);
 
         /* listen to events that may change the media status and refresh
          * the contents of the modeless dialog */
@@ -1447,6 +1447,10 @@ void VBoxDiskImageManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem,
     }
 
     bool notInEnum      = !vboxGlobal().isMediaEnumerationStarted();
+    /* If we are currently enumerating the media go out of here. We are coming
+     * back here from the finished signal. */
+    if (!notInEnum)
+        return;
     bool modifyEnabled  = notInEnum &&
                           item &&  item->usage().isNull() &&
                           (item->childCount() == 0) && !item->path().isNull();

@@ -744,7 +744,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
 void VBoxSelectorWnd::fileDiskMgr()
 {
-    VBoxDiskImageManagerDlg::showModeless();
+    VBoxDiskImageManagerDlg::showModeless (this);
 }
 
 void VBoxSelectorWnd::fileSettings()
@@ -1460,10 +1460,7 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
         {
             /* Show the VDM dialog but don't refresh once more after a
              * just-finished refresh */
-            /* Todo: Changed this to true to temporary fix #3000 comment 4.
-             * We have to find the real trouble here. */
-//            VBoxDiskImageManagerDlg::showModeless (false /* aRefresh */);
-            VBoxDiskImageManagerDlg::showModeless (true /* aRefresh */);
+            VBoxDiskImageManagerDlg::showModeless (this, false /* aRefresh */);
         }
     }
     while (0);

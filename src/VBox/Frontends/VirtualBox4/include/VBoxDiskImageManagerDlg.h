@@ -47,12 +47,12 @@ public:
                              Qt::WindowFlags aFlags = Qt::Dialog);
 
     void setup (int aType, bool aDoSelect, const QUuid &aTargetVMId = QUuid(),
-                bool aRefresh = true, CMachine aMachine = 0,
+                bool aRefresh = true, CMachine aMachine = CMachine(),
                 const QUuid &aHdId = QUuid(),
                 const QUuid &aCdId = QUuid(),
                 const QUuid &aFdId = QUuid());
 
-    static void showModeless (bool aRefresh = true);
+    static void showModeless (QWidget *aParent = NULL, bool aRefresh = true);
 
     QUuid selectedUuid() const;
     QString selectedPath() const;
