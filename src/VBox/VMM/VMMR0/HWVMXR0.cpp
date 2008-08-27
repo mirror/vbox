@@ -384,7 +384,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 #endif
     AssertRC(rc);
 
-    /* Clear MSR controls. */
+    /* Set the MSR bitmap address. */
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
     {
         /* Optional */
@@ -394,6 +394,8 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 #endif
         AssertRC(rc);
     }
+
+    /* Clear MSR controls. */
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, 0);
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL, 0);
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, 0);
