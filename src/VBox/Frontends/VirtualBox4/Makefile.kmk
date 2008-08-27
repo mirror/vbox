@@ -205,7 +205,7 @@ else # the gcc guys:
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH += \
     $(VBOX_LIBPATH_X11)
  else ifeq ($(KBUILD_TARGET),darwin)
-  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += -framework Carbon -framework QuickTime -bind_at_load
+  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS.darwin += -bind_at_load
   TEMPLATE_VBOXQT4GUIEXE_LIBS +=
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH +=
  else
@@ -230,8 +230,10 @@ else # the gcc guys:
         rt socket nsl
   endif
  endif
- ifdef VBOX_WITH_ORIGIN
-  # Assume the Qt shared objects are in the same directory as the executable, on Solaris too.
+ # Assume the Qt shared objects are in the same directory as the executable, on Solaris too.
+ ifdef VBOX_WITH_RUNPATH
+  TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+ else ifdef VBOX_WITH_ORIGIN
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
  endif
 
@@ -259,10 +261,10 @@ endif # COM
 # Template for building Qt GUI components.
 #
 TEMPLATE_VBOXQT4GUI = VBox Qt GUI Components
-TEMPLATE_VBOXQT4GUI_EXTENDS = VBOXQTGUIEXE
+TEMPLATE_VBOXQT4GUI_EXTENDS = VBOXQT4GUIEXE
 TEMPLATE_VBOXQT4GUI_LIBS = $(filter-out $(QTMAIN),$(TEMPLATE_VBOXQT4GUIEXE_LIBS))
 ifeq ($(KBUILD_TARGET),darwin)
- TEMPLATE_VBOXQT4GUI_LDFLAGS = $(filter-out -framework Carbon -framework QuickTime -bind_at_load,$(TEMPLATE_VBOXQT4GUIEXE_LDFLAGS)) \
+ TEMPLATE_VBOXQT4GUI_LDFLAGS.darwin += $(filter-out -bind_at_load,$(TEMPLATE_VBOXQT4GUIEXE_LDFLAGS.darwin)) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 endif
 ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
@@ -278,7 +280,12 @@ endif
 #
 # The targets.
 #
+ifdef VBOX_WITH_HARDENING
+PROGRAMS += VirtualBox4Hardened
+DLLS += VirtualBox4
+else
 PROGRAMS += VirtualBox4
+endif
 ifndef VBOX_ONLY_SDK
  ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
   DLLS += VBoxKeyboard
@@ -329,6 +336,18 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: \
 
 
 #
+# Hardened VirtualBox4.
+#
+VirtualBox4Hardened_TEMPLATE = VBOXR3HARDENEDEXE
+VirtualBox4Hardened_SOURCES = src/hardenedmain.cpp
+VirtualBox4Hardened_NAME = VirtualBox
+ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
+ #VirtualBox4Hardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+ VirtualBox4Hardened_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+endif
+
+
+#
 # Include Qt project file, we'll use FORMS and TRANSLATIONS in
 # the VirtualBox4 setup below.
 #
@@ -339,22 +358,23 @@ include $(PATH_SUB_CURRENT)/VBoxUI.pro
 #
 # VirtualBox4 - The GUI program.
 #
-VirtualBox4_TEMPLATE = VBOXQT4GUIEXE
+VirtualBox4_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE)
 VirtualBox4_NAME = VirtualBox
+ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
+ ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
+  #VirtualBox4_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+  VirtualBox4_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
+ endif
+endif
 VirtualBox4_SDKS.win = WINPSDK DXSDK
 ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(KBUILD_TARGET)),) # X11 + os2 ## @todo solaris
  VirtualBox4_SDKS += LIBSDL
 endif
 
-ifeq ($(KBUILD_TARGET),darwin)
- # For the launch trick we need different inode numbers.
- VirtualBox4_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
-
+ifdef VBOX_WITH_ICHAT_THEATER
  # For testing iChat Theater stuff change the sdk path (HACK ALERT!)
- ifdef VBOX_WITH_ICHAT_THEATER
-  VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
- endif
-endif # darwin
+ VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
+endif
 
 VirtualBox4_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox4_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
@@ -417,8 +437,10 @@ else
   VirtualBox4_LDFLAGS.win += /SUBSYSTEM:console
  endif
 endif
-# r=bird: what is -lz doing here? it belongs in LIBS
-VirtualBox4_LDFLAGS.darwin = -framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -lz
+# r=bird: what is -lz doing here? it belongs in LIBS.
+VirtualBox4_LDFLAGS.darwin = -lz \
+	-framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -framework Carbon -framework QuickTime \
+	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox.dylib)
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox4_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif

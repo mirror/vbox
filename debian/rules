@@ -166,8 +166,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    mv $(archdir)/VBoxREM2.rel $(prefix)/usr/lib/$(package),)
 	mv $(archdir)/VBoxXPCOMIPCD $(prefix)/usr/lib/$(package)
 	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
-	mv $(archdir)/*.so $(prefix)/usr/lib
-	mv $(archdir)/*.so.4 $(prefix)/usr/lib || true
+	mv $(archdir)/*.so $(prefix)/usr/lib/$(package)
+	mv $(archdir)/*.so.4 $(prefix)/usr/lib/$(package) || true
 	mv $(archdir)/sdk  $(prefix)/usr/share/$(package)
 	$(if $(HEADLESS),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)

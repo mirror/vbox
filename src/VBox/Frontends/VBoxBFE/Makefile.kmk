@@ -27,12 +27,31 @@ SUB_DEPTH = ..
 endif
 include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += VBoxBFE
+#
+# Targets.
+#
+ifdef VBOX_WITH_HARDENING
+ ifneq ($(KBUILD_TARGET),darwin) # No hardened VBoxBFE on darwin (.m).
+  PROGRAMS += VBoxBFEHardened
+  DLLS += VBoxBFE
+ endif
+else
+ PROGRAMS += VBoxBFE
+endif
+
+#
+# Hardened VBoxBFE.
+#
+VBoxBFEHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxBFEHardened_SOURCES = VBoxBFEHardened.cpp
+VBoxBFEHardened_NAME = VBoxBFE
+
 
 #
 # VBoxBFE
 #
-VBoxBFE_TEMPLATE = VBOXR3NPEXE
+VBoxBFE_TEMPLATE =
+VBoxBFE_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXR3NP,VBOXR3NPEXE)
 #ifdef VBOX_WITH_SECURELABEL
 #VBoxBFE_DEFS += VBOX_SECURELABEL
 #endif

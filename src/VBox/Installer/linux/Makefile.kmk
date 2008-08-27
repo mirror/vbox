@@ -69,7 +69,7 @@ LINUXSTRIPBIN = \
 	VBoxManage \
 	VBoxREM.so \
 	VBoxRT.so \
-	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
+	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
 	VBoxSettings.so \
 	VBoxSVC \
 	VBoxDDU.so \
@@ -112,7 +112,8 @@ LINUXNOSTRIP = \
 ifdef VBOX_WITH_QT4GUI
   LINUXSTRIPBIN += \
 	VBoxKeyboard.so \
-	VirtualBox
+	VirtualBox \
+	$(if $(VBOX_WITH_HARDENING),VirtualBox.so)
   LINUXNOSTRIP += \
 	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
 	$(foreach f,\
@@ -172,7 +173,8 @@ ifdef VBOX_WITH_VRDP
 endif
 ifdef VBOX_WITH_HEADLESS
  LINUXSTRIPBIN += \
-	VBoxHeadless
+	VBoxHeadless \
+	$(if $(VBOX_WITH_HARDENING),VBoxHeadless.so)
 endif
 ifdef VBOX_WITH_WEBSERVICES
  LINUXSTRIPBIN += \
@@ -199,9 +201,11 @@ $(PATH_BIN)/$(PACKAGE_NAME): \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt)
 	$(call MSG_TOOL,makeself,,$@)
 	$(QUIET)$(RM) -f $(wildcard $(PATH_BIN)/VirtualBox-*.run)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
-		-e "s;_BUILD_;$(shell date);g" \
-		-e "s;_ARCH_;${KBUILD_TARGET_ARCH};g" \
+	$(QUIET)$(SED) \
+		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
+		-e "s;_BUILD_;$(date-utc );g" \
+		-e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
+		-e "s;_HARDENED_;$(VBOX_WITH_HARDENING);g" \
 		< install.sh > $(PATH_TARGET)/install/install.sh
 	$(QUIET)chmod 0744 $(PATH_TARGET)/install/install.sh
 	$(QUIET)$(INSTALL) -m 0755 routines.sh $(PATH_TARGET)/install
@@ -267,7 +271,7 @@ $(PATH_TARGET)/VirtualBox-$(VBOX_VERSION_STRING): $(PATH_TARGET)/archive
 
 $(PATH_BIN)/VBoxAddIF.sh: VBoxAddIF.sh $(VBOX_VERSION_STAMP)
 	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" $< > $@
+	$(QUIET)$(SED) -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" $< > $@
 	$(QUIET)chmod 0755 $@
 
 $(PATH_BIN)/VirtualBox.desktop: VirtualBox.desktop $(VBOX_VERSION_STAMP)
@@ -280,6 +284,7 @@ endif
 
 # Note: The -m <mode> feature of kmk_builtin_install does not work together with fakeroot!
 # Note: $(INSTALL) -s is currently not reliable when used in parallel builds. Fixed in 0.1.1.
+# Update: Both these issues has been resolved.
 $(foreach f,$(LINUXSTRIPBIN),$(PATH_TARGET)/archive/$(f)): \
 		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% \
 		$(if $(VBOX_NO_LINUX_RUN_INSTALLER),,\

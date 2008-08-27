@@ -84,15 +84,8 @@ ifeq ($(KBUILD_TARGET),win)
  VBOX_MAIN_PREREQS = $(PATH_VBoxCOM)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
 else # xpcom
- ifndef VBOX_ONLY_SDK
-  INSTALLS       += xpcom-components
- endif #!VBOX_ONLY_SDK
  IDLFILE         = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
- ifeq ($(KBUILD_TARGET),linux)
-  IDLTYPELIB     = $(PATH_BIN)/VirtualBox_XPCOM.xpt
- else
-  IDLTYPELIB     = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
- endif
+ IDLTYPELIB      = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
  IDLHEADER       = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
  OTHERS         += $(IDLTYPELIB)
  OTHER_CLEAN    += \
@@ -304,15 +297,11 @@ $(PATH_TARGET)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | 
 	$(APPEND) $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 
+ifdef VBOX_WITH_XPCOM
 #
 # VBoxSVC wrapper module
 #
-ifdef VBOX_WITH_XPCOM
-
-VBoxSVCM_TEMPLATE       = VBOXMAINDLL
-ifneq ($(KBUILD_TARGET),linux)
-VBoxSVCM_INST           = $(INST_BIN)components/
-endif
+VBoxSVCM_TEMPLATE       = VBOXMAINCOMP
 VBoxSVCM_DEFS           = IN_RING3 $(VBOX_MAIN_DEFS)
 VBoxSVCM_INCS           = \
 	include \
@@ -321,11 +310,8 @@ VBoxSVCM_INCS           = \
 VBoxSVCM_INTERMEDIATES  = $(VBOX_MAIN_PREREQS)
 VBoxSVCM_SOURCES        = \
 	xpcom/server_module.cpp
-ifdef VBOX_WITH_ORIGIN
-VBoxSVCM_LDFLAGS        = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
-endif
 VBoxSVCM_LDFLAGS.darwin = \
-	-install_name @executable_path/components/VBoxSVCM.dylib \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxSVCM.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxSVCM.def
 ifeq ($(KBUILD_TARGET),darwin)
 VBoxSVCM_ORDERDEPS     += $(PATH_TARGET)/VBoxSVCM.def
@@ -342,11 +328,7 @@ endif # VBOX_WITH_XPCOM
 #
 # VBoxC module
 #
-VBoxC_TEMPLATE = VBOXMAINDLL
-ifneq ($(filter-out linux win,$(KBUILD_TARGET)),)
-VBoxC_INST = $(INST_BIN)components/
-endif
-
+VBoxC_TEMPLATE = VBOXMAINCOMP
 VBoxC_DEFS = IN_RING3 $(VBOX_MAIN_DEFS)
 VBoxC_DEFS += VBOX_COM_INPROC
 
@@ -391,11 +373,8 @@ VBoxC_INCS.win      = \
 	$(PATH_VBoxCOM) \
 	.
 
-ifdef VBOX_WITH_ORIGIN
-VBoxC_LDFLAGS        = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
-endif
 VBoxC_LDFLAGS.darwin = \
-	-install_name @executable_path/components/VBoxSVCM.dylib \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxC.dylib \
 	-exported_symbols_list $(PATH_TARGET)/VBoxC.def
 ifdef VBOX_USE_VCC80
  VBoxC_LDFLAGS.win = /MANIFEST
@@ -483,7 +462,7 @@ VBoxSettings_INCS       = \
 	$(PATH_TARGET)
 VBoxSettings_SOURCES    = \
 	xml/Settings.cpp
-VBoxSettings_LDFLAGS.darwin = -install_name @executable_path/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
+VBoxSettings_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
 
 
 #
@@ -570,22 +549,6 @@ $(VBOX_XML_SCHEMADEFS_H): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUILD_
 $(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUILD_TARGET)) $(VBOX_XML_SCHEMA_COMMON)
 	$(call MSG_TOOL,xsltproc,SchemaDefs,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC)  --stringparam mode define -o $@ $(filter-out $(VBOX_XML_SCHEMA_COMMON),$^)
-
-
-#
-# Creates the symlinks necessary for making XPCOM work.
-#
-## @todo Figure out why Linux really needs this, darwin doesn't...
-
-xpcom-components_INST = $(INST_BIN)components/
-ifeq ($(KBUILD_TARGET),linux)
-xpcom-components_SYMLINKS = \
-	VirtualBox_XPCOM.xpt=>../VirtualBox_XPCOM.xpt \
-	VBoxXPCOMBase.xpt=>../VBoxXPCOMBase.xpt \
-	VBoxC$(SUFF_DLL)=>../VBoxC$(SUFF_DLL) \
-	VBoxSVCM$(SUFF_DLL)=>../VBoxSVCM$(SUFF_DLL) \
-	VBoxXPCOMIPCC$(SUFF_DLL)=>../VBoxXPCOMIPCC$(SUFF_DLL)
-endif
 
 
 #

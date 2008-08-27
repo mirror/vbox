@@ -113,22 +113,8 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
-int main (int argc, char **argv)
+extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 {
-    /* Initialize VBox Runtime. Initialize the Suplib+GC as well only if we
-     * are really about to start a VM. Don't do this if we are only starting
-     * the selector window. */
-    bool fInitGC = false;
-    for (int i = 0; i < argc; i++)
-    {
-        if (!::strcmp(argv[i], "-startvm" ))
-        {
-            fInitGC = true;
-            break;
-        }
-    }
-    RTR3Init (fInitGC, ~(size_t)0);
-
     LogFlowFuncEnter();
 
 #ifdef Q_WS_WIN
@@ -280,3 +266,26 @@ int main (int argc, char **argv)
 
     return rc;
 }
+
+
+#ifndef VBOX_WITH_HARDENING
+int main (int argc, char **argv, char **envp)
+{
+    /* Initialize VBox Runtime. Initialize the Suplib+GC as well only if we
+     * are really about to start a VM. Don't do this if we are only starting
+     * the selector window. */
+    bool fInitGC = false;
+    for (int i = 0; i < argc; i++)
+    {
+        if (!::strcmp (argv[i], "-startvm" ))
+        {
+            fInitGC = true;
+            break;
+        }
+    }
+    RTR3Init (fInitGC, ~(size_t)0);
+
+    return TrustedMain (argc, argv, envp);
+}
+#endif /* !VBOX_WITH_HARDENING */
+

@@ -47,5 +47,8 @@ VBoxGuestPropSvc_LIBS = \
 	$(LIB_RUNTIME) \
 	$(LIB_REM)
 
+VBoxGuestPropSvc_LDFLAGS.darwin = \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxGuestPropSvc.dylib
+
 include $(KBUILD_PATH)/subfooter.kmk
 

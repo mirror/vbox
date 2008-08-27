@@ -69,7 +69,8 @@ if1of ($(KBUILD_TARGET),linux solaris)
  endif
 endif
 
-VBoxSharedClipboard_LDFLAGS.darwin =  -framework ApplicationServices
+VBoxSharedClipboard_LDFLAGS.darwin = \
+	-framework ApplicationServices -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedClipboard.dylib
 
 include $(KBUILD_PATH)/subfooter.kmk
 

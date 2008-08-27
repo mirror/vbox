@@ -307,6 +307,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/fileio-win.cpp \
 	r3/win/fs-win.cpp \
 	r3/win/ldrNative-win.cpp \
+	r3/win/localipc-win.cpp \
 	r3/win/mp-win.cpp \
 	r3/win/path-win.cpp \
 	r3/win/process-win.cpp \
@@ -682,7 +683,7 @@ RuntimeLnxHostR3_INCS          = \
 #
 VBoxRT_TEMPLATE                = VBOXR3
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
-ifeq ($(KBUILD_TARGET),darwin)
+ifeq ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING),darwin)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                    = $(RuntimeR3_DEFS) IN_SUP_R3 IN_SUP_R3
@@ -713,7 +714,7 @@ VBoxRT_LIBS.solaris            = \
 	kstat
 VBoxRT_LIBPATH.freebsd         = \
 	/usr/local/lib
-VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name @executable_path/VBoxRT.dylib
+VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
 endif

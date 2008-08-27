@@ -46,12 +46,15 @@ if test -n "$old_id"; then
     sync
     sync
     $SUDO /usr/sbin/modunload -i $old_id
-else
-    echo "* If it fails below, run: $SUDO add_drv -m'* 0666 root sys' vboxdrv"
+#else
+#    echo "* If it fails below, run: $SUDO add_drv -m'* 0666 root sys' vboxdrv"
 fi
+$SUDO /usr/sbin/rem_drv vboxdrv || echo "* ignored rem_drv failure..."
+$SUDO /usr/sbin/add_drv vboxdrv
+
 if /usr/xpg4/bin/grep  -q vboxdrv /etc/devlink.tab; then
     echo "* vboxdrv already present in /etc/devlink.tab"
-else 
+else
     echo "* Adding vboxdrv to /etc/devlink.tab"
     $SUDO rm -f /tmp/devlink.tab.vboxdrv
     echo "" > /tmp/devlink.tab.vboxdrv
@@ -68,6 +71,6 @@ $SUDO /usr/sbin/modload $VBOXDRV_DIR/vboxdrv
 echo "* dmesg:"
 dmesg | tail -20
 if test ! -h /dev/vboxdrv; then
-    $SUDO /usr/sbin/devfsadm -i vboxdrv 
+    $SUDO /usr/sbin/devfsadm -i vboxdrv
 fi
-
+ls -laL /dev/vboxdrv

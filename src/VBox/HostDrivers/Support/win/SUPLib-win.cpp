@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * VirtualBox Support Library - Windows NT specific parts.
  */
@@ -28,11 +28,19 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP
+#ifdef IN_SUP_HARDENED_R3
+# undef DEBUG /* Warning: disables RT_STRICT */
+# define LOG_DISABLED
+  /** @todo RTLOGREL_DISABLED */
+# include <iprt/log.h>
+# undef LogRelIt
+# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) do { } while (0)
+#endif
+
 #include <Windows.h>
 
 #include <VBox/sup.h>
@@ -60,72 +68,52 @@
 #define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxDrv"
 
 
-
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/** Handle to the open device. */
-static HANDLE   g_hDevice = INVALID_HANDLE_VALUE;
-/** Flags whether or not we started the service. */
-static bool     g_fStartedService = false;
-/** Pointer to the area of memory we reserve for SUPPageAlloc(). */
-static void    *g_pvReserved = NULL;
-/** The number of bytes we reserved for SUPPageAlloc(). */
-static size_t   g_cbReserved = 0;
-
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int suplibOsCreateService(void);
-static int suplibOsUpdateService(void);
+//unused: static int suplibOsUpdateService(void);
 static int suplibOsDeleteService(void);
 static int suplibOsStartService(void);
 static int suplibOsStopService(void);
 static int suplibConvertWin32Err(int);
 
 
-/**
- * Initialize the OS specific part of the library.
- * On Win32 this involves:
- *      - registering the device driver
- *      - start device driver.
- *      - open driver.
- *
- * @returns 0 on success.
- * @returns current -1 on failure but this must be changed to proper error codes.
- * @param   cbReserve       The number of bytes to reserver for contiguous virtual allocations.
- */
-int     suplibOsInit(size_t cbReserve)
+
+
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
 {
     /*
-     * Check if already initialized.
+     * Nothing to do if pre-inited.
      */
-    if (g_hDevice != INVALID_HANDLE_VALUE)
-        return 0;
+    if (fPreInited)
+        return VINF_SUCCESS;
 
     /*
      * Try open the device.
      */
-    g_hDevice = CreateFile(DEVICE_NAME,
-                           GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                           NULL,
-                           OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                           NULL);
-    if (g_hDevice == INVALID_HANDLE_VALUE)
+    HANDLE hDevice = CreateFile(DEVICE_NAME,
+                                GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                NULL,
+                                OPEN_EXISTING,
+                                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                                NULL);
+    if (hDevice == INVALID_HANDLE_VALUE)
     {
+#ifndef IN_SUP_HARDENED_R3
         /*
          * Try start the service and retry opening it.
          */
         suplibOsStartService();
-        g_hDevice = CreateFile(DEVICE_NAME,
-                               GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                               NULL,
-                               OPEN_EXISTING,
-                               FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                               NULL);
-        if (g_hDevice == INVALID_HANDLE_VALUE)
+
+        hDevice = CreateFile(DEVICE_NAME,
+                             GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                             NULL,
+                             OPEN_EXISTING,
+                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                             NULL);
+        if (hDevice == INVALID_HANDLE_VALUE)
+#endif /* !IN_SUP_HARDENED_R3 */
         {
             int rc = GetLastError();
             switch (rc)
@@ -152,122 +140,21 @@ int     suplibOsInit(size_t cbReserve)
     }
 
     /*
-     * Check driver version.
-     */
-    /** @todo implement driver version checking. */
-
-#if 0 /* obsolete code and restricts our virtual address space for the new allocation method */
-    /*
-     * Reserve memory.
-     */
-    if (cbReserve != 0)
-    {
-/** 1 1/2 GB - (a bit more than) current VBox max. */
-#define SUPLIB_MAX_RESERVE (_1G + _1M*512)
-        /*
-         * Find the right size to reserve.
-         */
-        if (    cbReserve == ~(size_t)0
-            ||  cbReserve > SUPLIB_MAX_RESERVE)
-            cbReserve = SUPLIB_MAX_RESERVE;
-        char szVar[64] = {0};
-        if (GetEnvironmentVariable("VBOX_RESERVE_MEM_LIMIT", szVar, sizeof(szVar) - 1))
-        {
-            uint64_t cb;
-            char    *pszNext;
-            int rc = RTStrToUInt64Ex(szVar, &pszNext, 0, &cb);
-            if (VBOX_SUCCESS(rc))
-            {
-                switch (*pszNext)
-                {
-                    case 'K':
-                    case 'k':
-                        cb *= _1K;
-                        pszNext++;
-                        break;
-                    case 'M':
-                    case 'm':
-                        cb *= _1M;
-                        pszNext++;
-                        break;
-                    case 'G':
-                    case 'g':
-                        cb *= _1G;
-                        pszNext++;
-                        break;
-                    case '\0':
-                        break;
-                }
-                if (*pszNext == 'b' || *pszNext == 'B')
-                    pszNext++;
-                if (!pszNext)
-                    cbReserve = RT_MIN(SUPLIB_MAX_RESERVE, cb);
-            }
-        }
-
-        /*
-         * Try reserve virtual address space, lowering the requirements in by _1M chunks.
-         * Make sure it's possible to get at least 3 chunks of 16MBs extra after the reservation.
-         */
-        for (cbReserve = RT_ALIGN_Z(cbReserve, _1M); cbReserve >= _1M * 64; cbReserve -= _1M)
-        {
-            void *pv = VirtualAlloc(NULL, cbReserve, MEM_RESERVE, PAGE_NOACCESS);
-            if (pv)
-            {
-                void *pv1 = VirtualAlloc(NULL, _1M * 16, MEM_RESERVE, PAGE_NOACCESS);
-                void *pv2 = VirtualAlloc(NULL, _1M * 16, MEM_RESERVE, PAGE_NOACCESS);
-                void *pv3 = VirtualAlloc(NULL, _1M * 16, MEM_RESERVE, PAGE_NOACCESS);
-                if (pv1)
-                    VirtualFree(pv1, 0, MEM_RELEASE);
-                if (pv2)
-                    VirtualFree(pv2, 0, MEM_RELEASE);
-                if (pv3)
-                    VirtualFree(pv3, 0, MEM_RELEASE);
-                const int cFailures = !pv1 + !pv2 + !pv3;
-                if (!cFailures)
-                {
-                    g_pvReserved = pv;
-                    g_cbReserved = cbReserve;
-#if 0 /* too early, no logging. */
-                    Log(("suplibOsInit: Reserved %zu bytes at %p\n", cbReserve, g_pvReserved));
-#endif
-                    break;
-                }
-
-                cbReserve -= cFailures > 2 ? _1M * 16 : _1M;
-            }
-            else
-                cbReserve -= _1M;
-        }
-        /* ignore errors */
-    }
-#endif /* end of obsolete memory reservation hack */
-
-    /*
      * We're done.
      */
+    pThis->hDevice = (RTFILE)hDevice;
     return VINF_SUCCESS;
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
+#ifndef IN_SUP_HARDENED_R3
+
 int suplibOsInstall(void)
 {
     return suplibOsCreateService();
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
 int suplibOsUninstall(void)
 {
     int rc = suplibOsStopService();
@@ -283,7 +170,7 @@ int suplibOsUninstall(void)
  * @returns 0 on success.
  * @returns -1 on failure.
  */
-int suplibOsCreateService(void)
+static int suplibOsCreateService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.
@@ -319,13 +206,14 @@ int suplibOsCreateService(void)
     return -1;
 }
 
+
 /**
  * Stops a possibly running service.
  *
  * @returns 0 on success.
  * @returns -1 on failure.
  */
-int suplibOsStopService(void)
+static int suplibOsStopService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.
@@ -430,7 +318,7 @@ int suplibOsDeleteService(void)
  * @returns 0 on success.
  * @returns -1 on failure.
  */
-int suplibOsUpdateService(void)
+static int suplibOsUpdateService(void)
 {
     /*
      * Assume it didn't exist, so we'll create the service.
@@ -483,6 +371,7 @@ int suplibOsUpdateService(void)
 }
 #endif
 
+
 /**
  * Attempts to start the service, creating it if necessary.
  *
@@ -490,7 +379,7 @@ int suplibOsUpdateService(void)
  * @returns -1 on failure.
  * @param   fRetry  Indicates retry call.
  */
-int suplibOsStartService(void)
+static int suplibOsStartService(void)
 {
     /*
      * Check if the driver service is there.
@@ -584,93 +473,51 @@ int suplibOsStartService(void)
 }
 
 
-int     suplibOsTerm(void)
+int suplibOsTerm(PSUPLIBDATA pThis)
 {
     /*
      * Check if we're initited at all.
      */
-    if (g_hDevice != INVALID_HANDLE_VALUE)
+    if (pThis->hDevice != NIL_RTFILE)
     {
-        if (!CloseHandle(g_hDevice))
+        if (!CloseHandle((HANDLE)pThis->hDevice))
             AssertFailed();
-        g_hDevice = INVALID_HANDLE_VALUE;
+        pThis->hDevice = NIL_RTFILE;
     }
 
-    /*
-     * If we started the service we might consider stopping it too.
-     *
-     * Since this won't work unless the the process starting it is the
-     * last user we might wanna skip this...
-     */
-    if (g_fStartedService)
-    {
-        suplibOsStopService();
-        g_fStartedService = false;
-    }
-
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
-/**
- * Send a I/O Control request to the device.
- *
- * @returns 0 on success.
- * @returns VBOX error code on failure.
- * @param   uFunction   IO Control function.
- * @param   pvIn        The request buffer.
- * @param   cbReq       The size of the request buffer.
- */
-int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
+int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
-    AssertMsg(g_hDevice != INVALID_HANDLE_VALUE, ("SUPLIB not initiated successfully!\n"));
-
     /*
      * Issue the device I/O control.
      */
     PSUPREQHDR pHdr = (PSUPREQHDR)pvReq;
     Assert(cbReq == RT_MAX(pHdr->cbIn, pHdr->cbOut));
     DWORD cbReturned = (ULONG)pHdr->cbOut;
-    if (DeviceIoControl(g_hDevice, uFunction, pvReq, pHdr->cbIn, pvReq, cbReturned, &cbReturned, NULL))
+    if (DeviceIoControl((HANDLE)pThis->hDevice, uFunction, pvReq, pHdr->cbIn, pvReq, cbReturned, &cbReturned, NULL))
         return 0;
-
     return suplibConvertWin32Err(GetLastError());
 }
 
 
-int suplibOsIOCtlFast(uintptr_t uFunction)
+int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction)
 {
     /*
      * Issue device I/O control.
      */
     DWORD cbReturned = 0;
-    if (DeviceIoControl(g_hDevice, uFunction, NULL, 0, NULL, 0, &cbReturned, NULL))
+    if (DeviceIoControl((HANDLE)pThis->hDevice, uFunction, NULL, 0, NULL, 0, &cbReturned, NULL))
         return VINF_SUCCESS;
     return suplibConvertWin32Err(GetLastError());
 }
 
 
-/**
- * Allocate a number of zero-filled pages in user space.
- *
- * @returns VBox status code.
- * @param   cPages      Number of pages to allocate.
- * @param   ppvPages    Where to return the base pointer.
- */
-int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
+int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 {
-    if (g_pvReserved)
-    {
-        if (VirtualFree(g_pvReserved, 0, MEM_RELEASE))
-            Log(("suplibOsPageAlloc: Freed %zu bytes of reserved memory at %p.\n", g_cbReserved, g_pvReserved));
-        else
-        {
-            DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsgFailed(("LastError=%Rwa g_pvReserved=%p\n", LastError, g_pvReserved));
-        }
-        g_pvReserved = NULL;
-    }
-
+    NOREF(pThis);
     *ppvPages = VirtualAlloc(NULL, (size_t)cPages << PAGE_SHIFT, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     if (*ppvPages)
         return VINF_SUCCESS;
@@ -678,14 +525,9 @@ int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
 }
 
 
-/**
- * Frees pages allocated by suplibOsPageAlloc().
- *
- * @returns VBox status code.
- * @param   pvPages     Pointer to pages.
- */
-int     suplibOsPageFree(void *pvPages, size_t /* cPages */)
+int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
 {
+    NOREF(pThis);
     if (VirtualFree(pvPages, 0, MEM_RELEASE))
         return VINF_SUCCESS;
     return suplibConvertWin32Err(GetLastError());
@@ -698,7 +540,7 @@ int     suplibOsPageFree(void *pvPages, size_t /* cPages */)
  * @returns corresponding SUPDRV_ERR_*.
  * @param   rc  Win32 error code.
  */
-static int     suplibConvertWin32Err(int rc)
+static int suplibConvertWin32Err(int rc)
 {
     /* Conversion program (link with ntdll.lib from ddk):
         #define _WIN32_WINNT 0x0501
@@ -753,5 +595,5 @@ static int     suplibConvertWin32Err(int rc)
     return RTErrConvertFromWin32(rc);
 }
 
-
+#endif /* !IN_SUP_HARDENED_R3 */
 

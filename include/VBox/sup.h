@@ -311,6 +311,34 @@ SUPR3DECL(int) SUPInstall(void);
 SUPR3DECL(int) SUPUninstall(void);
 
 /**
+ * Secure main.
+ *
+ * This is used for the set-user-ID-on-execute binaries on unixy systems
+ * and when using the open-vboxdrv-via-root-service setup on Windows.
+ *
+ * This function will perform the integrity checks of the VirtualBox
+ * installation, open the support driver, open the root service (later),
+ * and load the DLL corresponding to \a pszProgName and execute its main
+ * function.
+ *
+ * @returns Return code appropriate for main().
+ *
+ * @param   pszProgName     The program name. This will be used to figure out which
+ *                          DLL/SO/DYLIB to load and execute.
+ * @param   fFlags          Flags.
+ * @param   argc            The argument count.
+ * @param   argv            The argument vector.
+ * @param   envp            The environment vector.
+ */
+DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp);
+
+/** @name SUPR3SecureMain flags.
+ * @{ */
+/** Don't open the device. (Intended for VirtualBox without -startvm.) */
+#define SUPSECMAIN_FLAGS_DONT_OPEN_DEV      RT_BIT_32(0)
+/** @} */
+
+/**
  * Initializes the support library.
  * Each succesful call to SUPInit() must be countered by a
  * call to SUPTerm(false).

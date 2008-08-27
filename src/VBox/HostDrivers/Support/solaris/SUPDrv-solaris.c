@@ -45,6 +45,7 @@
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 #include <sys/file.h>
+#include <sys/priv_names.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include "../SUPDrvInternal.h"
@@ -278,7 +279,14 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                         /*
                          * Register ourselves as a character device, pseudo-driver
                          */
-                        if (ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0) == DDI_SUCCESS)
+#ifdef VBOX_WITH_HARDENING
+                        rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
+                                                        0, "all", "all", 0600);
+#else
+                        rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
+                                                        0, "none", "none", 0666);
+#endif
+                        if (rc == DDI_SUCCESS)
                         {
 #ifdef USE_SESSION_HASH
                             pState->pDip = pDip;
@@ -289,7 +297,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 
                         /* Is this really necessary? */
                         ddi_remove_minor_node(pDip, NULL);
-                        LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: ddi_create_minor_node failed.\n"));
+                        LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: ddi_create_priv_minor_node failed.\n"));
 
                         RTSpinlockDestroy(g_Spinlock);
                         g_Spinlock = NIL_RTSPINLOCK;
@@ -420,8 +428,8 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     rc = supdrvCreateSession(&g_DevExt, true /* fUser */, &pSession);
     if (RT_SUCCESS(rc))
     {
-        pSession->Uid = crgetuid(pCred);
-        pSession->Gid = crgetgid(pCred);
+        pSession->Uid = crgetruid(pCred);
+        pSession->Gid = crgetrgid(pCred);
 
         pState->pSession = pSession;
         *pDev = makedevice(getmajor(*pDev), iOpenInstance);
@@ -445,8 +453,8 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
         unsigned        iHash;
 
-        pSession->Uid = crgetuid(pCred);
-        pSession->Gid = crgetgid(pCred);
+        pSession->Uid = crgetruid(pCred);
+        pSession->Gid = crgetrgid(pCred);
 
         /*
          * Insert it into the hash table.

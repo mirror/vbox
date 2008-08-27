@@ -71,7 +71,11 @@ start_module()
     if module_loaded; then
         info "VirtualBox kernel module already loaded."
     else
-        /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME
+    	if test -n "_HARDENED_"; then
+            /usr/sbin/add_drv -m'* 0600 root sys' $MODNAME
+        else
+            /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME
+        fi
         if test ! module_loaded; then
             abort "## Failed to load VirtualBox kernel module."
         elif test -c "/devices/pseudo/$MODNAME@0:$MODNAME"; then

@@ -1,6 +1,9 @@
 #!/bin/sh
+## @file
 # Sun xVM VirtualBox
 # VirtualBox postinstall script for Solaris.
+#
+
 #
 # Copyright (C) 2007-2008 Sun Microsystems, Inc.
 #
@@ -65,7 +68,7 @@ if test "$currentzone" = "global"; then
     # create /dev link for vboxdrv (only possible from global zone)
     /usr/sbin/devfsadm -i vboxdrv
 fi
-
+    
 echo "Done."
 
 # return 20 = requires reboot, 2 = partial failure, 0  = success

@@ -38,10 +38,10 @@ if [ -d /etc/udev/rules.d ]; then
   udev_out=`udevinfo -V 2> /dev/null`
   udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
   if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
-    echo 'KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"' \
+    echo 'KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="root", MODE="0600"' \
       > /etc/udev/rules.d/60-vboxdrv.rules
   else
-    echo 'KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"' \
+    echo 'KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="root", MODE="0600"' \
       > /etc/udev/rules.d/60-vboxdrv.rules
   fi
 fi
@@ -87,6 +87,18 @@ fi
 # There might be an old module active (e.g. manually loaded)
 if lsmod | grep -q "vboxdrv[^_-]"; then
   /etc/init.d/vboxdrv stop || true
+fi
+
+# The starters need to be Suid root. They drop the privileges before starting
+# the real frontend.
+if ! dpkg-statoverride --list /usr/lib/virtualbox-ose/VirtualBox > /dev/nnull 2>&1; then
+  chmod 4711 /usr/lib/virtualbox-ose/VirtualBox
+fi
+if ! dpkg-statoverride --list /usr/lib/virtualbox-ose/VBoxHeadless > /dev/nnull 2>&1; then
+  chmod 4711 /usr/lib/virtualbox-ose/VBoxHeadless
+fi
+if ! dpkg-statoverride --list /usr/lib/virtualbox-ose/VBoxSDL > /dev/nnull 2>&1; then
+  chmod 4711 /usr/lib/virtualbox-ose/VBoxSDL
 fi
 
 #DEBHELPER#

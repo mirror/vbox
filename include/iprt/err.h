@@ -448,7 +448,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_TIMER_ACTIVE                   (-68)
 /** The timer can't be stopped because i's already suspended. */
 #define VERR_TIMER_SUSPENDED                (-69)
-/** The operation was cancelled by the user. */
+/** The operation was cancelled by the user (copy) or another thread (local ipc). */
 #define VERR_CANCELLED                      (-70)
 /** Failed to initialize a memory object.
  * Exactly what this means is OS specific. */

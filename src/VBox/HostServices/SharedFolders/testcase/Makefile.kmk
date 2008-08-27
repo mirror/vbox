@@ -60,6 +60,6 @@ include $(KBUILD_PATH)/subfooter.kmk
 
 $(PATH_TARGET)/tstShflSizes.run: $$(INSTARGET_tstShflSizes)
 	$(QUIET)$(RM) -f $@
-	$(INSTARGET_tstShflSizes) quiet
+	$(if $(eq $(KBUILD_TARGET),darwin),$(REDIRECT) -E 'DYLD_LIBRARY_PATH=$(dir $^)' --) $(INSTARGET_tstShflSizes) quiet
 	$(QUIET)$(APPEND) "$@" "done"
 

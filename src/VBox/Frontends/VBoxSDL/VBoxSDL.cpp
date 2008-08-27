@@ -945,18 +945,9 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
 }
 
 /** entry point */
-int main(int argc, char *argv[])
+extern "C"
+DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
-    /*
-     * Before we do *anything*, we initialize the runtime.
-     */
-    int rcRT = RTR3Init(true, ~(size_t)0);
-    if (VBOX_FAILURE(rcRT))
-    {
-        RTPrintf("Error: RTR3Init failed rcRC=%d\n", rcRT);
-        return 1;
-    }
-
 #ifdef VBOXSDL_WITH_X11
     /*
      * Lock keys on SDL behave different from normal keys: A KeyPress event is generated
@@ -2925,6 +2916,27 @@ leave:
     RTLogFlush(NULL);
     return FAILED (rc) ? 1 : 0;
 }
+
+
+#ifndef VBOX_WITH_HARDENING
+/**
+ * Main entry point
+ */
+int main(int argc, char **argv)
+{
+    /*
+     * Before we do *anything*, we initialize the runtime.
+     */
+    int rcRT = RTR3Init(true, ~(size_t)0);
+    if (VBOX_FAILURE(rcRT))
+    {
+        RTPrintf("Error: RTR3Init failed rcRC=%d\n", rcRT);
+        return 1;
+    }
+    return TrustedMain(argc, argv, NULL);
+}
+#endif /* !VBOX_WITH_HARDENING */
+
 
 /**
  * Returns whether the absolute mouse is in use, i.e. both host

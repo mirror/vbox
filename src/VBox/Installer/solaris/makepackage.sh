@@ -1,6 +1,9 @@
 #!/bin/sh
+## @file
 # Sun xVM VirtualBox
 # VirtualBox Solaris package creation script.
+#
+
 #
 # Copyright (C) 2007-2008 Sun Microsystems, Inc.
 #
@@ -19,7 +22,23 @@
 
 #
 # Usage:
-#       makespackage.sh $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH) [VBIPackageName]
+#       makespackage.sh [--hardened] $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH) [VBIPackageName]
+
+
+# Parse options.
+HARDENED=""
+while test $# -ge 1;
+do
+    case "$1" in 
+        --hardened)
+            HARDENED=1
+            ;;
+    *)
+        break
+        ;;
+    esac
+    shift
+done
 
 if [ -z "$3" ]; then
     echo "Usage: $0 installdir packagename x86|amd64"
@@ -83,6 +102,19 @@ fi
 
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf"'
 
+# hardening requires some executables to be marked setuid.
+if test -n "$HARDENED"; then
+    $VBOX_AWK 'NF == 6 \
+        && (    $3 == "opt/VirtualBox/VirtualBox=VirtualBox" \
+            ||  $3 == "opt/VirtualBox/VirtualBox3=VirtualBox3" \
+            ||  $3 == "opt/VirtualBox/VBoxHeadless=VBoxHeadless" \
+            ||  $3 == "opt/VirtualBox/VBoxSDL=VBoxSDL" \
+            ||  $3 == "opt/VirtualBox/VBoxBFE=VBoxBFE" \
+            ) \
+       { $4 = "4755" } { print }' prototype > prototype2
+    mv -f prototype2 prototype    
+fi
+
 # desktop links and icons
 filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox.desktop=virtualbox.desktop"'                 '$3 = "usr/share/applications/virtualbox.desktop=virtualbox.desktop"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/VBox.png=VBox.png"'                                     '$3 = "usr/share/pixmaps/VBox.png=VBox.png"'
@@ -92,6 +124,9 @@ filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox-webservice.xml=virtua
 
 # webservice SMF start/stop script
 filelist_fixup prototype '$3 == "opt/VirtualBox/smf-vboxwebsrv.sh=smf-vboxwebsrv.sh"'                   '$3 = "opt/VirtualBox/smf-vboxwebsrv=smf-vboxwebsrv.sh"'
+echo " --- start of prototype  ---" 
+cat prototype
+echo " --- end of prototype --- "
 
 # explicitly set timestamp to shutup warning
 VBOXPKG_TIMESTAMP=vbox`date '+%Y%m%d%H%M%S'`

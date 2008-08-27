@@ -101,7 +101,7 @@ ifeq ($(KBUILD_TARGET),l4)
  VBoxDDU_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
-VBoxDDU_LDFLAGS.darwin   = -install_name @executable_path/VBoxDDU.dylib
+VBoxDDU_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDDU.dylib
 ifdef VBOX_WITH_USB
  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
  VBoxDDU_LDFLAGS.darwin += -framework IOKit
@@ -189,7 +189,7 @@ ifeq ($(KBUILD_TARGET),solaris)
 endif
 VBoxDD_LIBS.darwin     += \
 	$(LIB_REM)
-VBoxDD_LDFLAGS.darwin   = -install_name @executable_path/VBoxDD.dylib \
+VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dylib \
 	-framework CoreAudio \
 	-framework IOKit \
 	-framework Carbon \
@@ -229,7 +229,7 @@ VBoxDD2_LIBS           += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
 VBoxDD2_LIBS.darwin    += $(LIB_REM)
-VBoxDD2_LDFLAGS.darwin  = -install_name @executable_path/VBoxDD2.dylib
+VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
 VBoxDD2_LDFLAGS.linux   = -Wl,--no-undefined
 VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 
