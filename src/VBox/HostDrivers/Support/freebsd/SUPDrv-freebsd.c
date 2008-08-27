@@ -237,12 +237,11 @@ static void VBoxDrvFreeBSDClone(void *pvArg, struct ucred *pCred, char *pszName,
     dprintf(("VBoxDrvFreeBSDClone: clone_create -> %d; iUnit=%d\n", rc, iUnit));
     if (rc)
     {
-        *ppDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW,
-                          unit2minor(iUnit),
-                          UID_ROOT,
-                          GID_WHEEL,
-                          0666,
-                          "vboxdrv%d", iUnit);
+#ifdef VBOX_WITH_HARDENING
+        *ppDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW, unit2minor(iUnit), UID_ROOT, GID_WHEEL, 0600, "vboxdrv%d", iUnit);
+#else
+        *ppDev = make_dev(&g_VBoxDrvFreeBSDChrDevSW, unit2minor(iUnit), UID_ROOT, GID_WHEEL, 0666, "vboxdrv%d", iUnit);
+#endif
         if (*ppDev)
         {
             dev_ref(*ppDev);
@@ -303,7 +302,7 @@ static int VBoxDrvFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd, 
     rc = supdrvCreateSession(&g_VBoxDrvFreeBSDDevExt, true /* fUser */, &pSession);
     if (RT_SUCCESS(rc))
     {
-        /** @todo get (e)uid and (e)gid.
+        /** @todo get (r)uid and (r)gid.
         pSession->Uid = stuff;
         pSession->Gid = stuff; */
         if (ASMAtomicCmpXchgPtr(&pDev->si_drv1, pSession, (void *)0x42))

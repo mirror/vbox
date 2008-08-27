@@ -168,7 +168,8 @@ ifdef REM_USE_NOCRT
   endif
   $(REM_MOD)_LIBS.darwin    = \
   	$(TARGET_VBoxREMImp)
-  $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -multiply_defined warning  #-install_name @executable_path/$(REM_MOD).dylib#
+  $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -multiply_defined warning # -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(REM_MOD).dylib
+  $(REM_MOD)_POST_CMDS.darwin = install_name_tool -id $(VBOX_DYLD_EXECUTABLE_PATH)/$(REM_MOD).dylib $(out)
   $(REM_MOD)_CFLAGS.darwin   = -fno-common -mdynamic-no-pic
  else
   $(REM_MOD)_LIBS           = \
@@ -202,7 +203,7 @@ else # !REM_USE_NOCRT
  # these defines are probably all irrelevant now:
  $(REM_MOD)_DEFS           += _GNU_SOURCE _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _REENTRANT
 
- $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -install_name @executable_path/$(REM_MOD).dylib -multiple_defined warning
+ $(REM_MOD)_LDFLAGS.darwin  = -read_only_relocs suppress -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(REM_MOD).dylib -multiple_defined warning
  $(REM_MOD)_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib -Wl,--no-undefined
  $(REM_MOD)_LDFLAGS.linux   = $(VBOX_LD_as_needed)
  $(REM_MOD)_LDFLAGS.os2     = -Zomf
@@ -292,7 +293,7 @@ VBoxREM_DEFS           = IN_REM_R3
 VBoxREM_SOURCES        = \
 	VBoxREMWrapper.cpp \
 	VBoxREMWrapperA.asm
-VBoxREM_LDFLAGS.darwin = -install_name @executable_path/VBoxREM.dylib
+VBoxREM_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
 VBoxREM_LIBS           = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
@@ -315,8 +316,7 @@ endif
 ifneq ($(filter-out darwin os2 win,$(KBUILD_TARGET)),)
 VBoxREMImp_SONAME           = VBoxREM$(SUFF_DLL)
 endif
-VBoxREMImp_LDFLAGS.darwin   = -install_name @executable_path/VBoxREM.dylib
-#VBoxREMImp_LDFLAGS.darwin   = -install_name VBoxREM.dylib
+VBoxREMImp_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
 $(PATH_TARGET)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $(call DIRDEP,$(PATH_TARGET))

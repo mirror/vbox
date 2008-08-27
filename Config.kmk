@@ -326,11 +326,6 @@ VBOX_X11_SEAMLESS_GUEST = 1
 VBOX_WITH_AHCI = 1
 # Enable the new async completion manager
 VBOX_WITH_PDM_ASYNC_COMPLETION = 1
-# Enable use of the $ORIGIN rpath feature. This is the default on
-# Solaris, but not else where for various reasons (ld.so, dist builds).
-ifeq ($(KBUILD_TARGET),solaris)
- VBOX_WITH_ORIGIN = 1
-endif
 # Temporary switch for enabling / disabling the new USB code on Darwin.
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 # Use the new VBI module on Solaris.
@@ -353,6 +348,67 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 #VBOX_WITH_PYTHON = 1
 if1of ($(KBUILD_TARGET), solaris)
  VBOX_WITH_PYTHON = 1
+endif
+# Enables hardening.
+# Most developers will want to disable this in their LocalConfig.kmk.
+VBOX_WITH_HARDENING = 1
+# Where the application files are (going to be) installed.
+#VBOX_PATH_APP_PRIVATE       = /usr/lib/virtualbox
+ifdef VBOX_WITH_HARDENING
+ if1of ($(KBUILD_TARGET), solaris)
+  VBOX_PATH_APP_PRIVATE      = /opt/VirtualBox
+ else ifeq ($(KBUILD_TARGET),darwin)
+  VBOX_PATH_APP_PRIVATE      = /Applications/VirtualBox.app/Contents/MacOS
+ endif
+endif
+# Where the architecture specific application files are (going to be) installed.
+#VBOX_PATH_APP_PRIVATE_ARCH  = /usr/lib/virtualbox
+ifdef VBOX_WITH_HARDENING
+ if1of ($(KBUILD_TARGET), darwin solaris)
+  VBOX_PATH_APP_PRIVATE_ARCH = $(VBOX_PATH_APP_PRIVATE)
+ endif
+endif
+# Where the shared libraries are (going to be) installed.
+#VBOX_PATH_SHARED_LIBS       = /usr/lib
+ifdef VBOX_WITH_HARDENING
+ if1of ($(KBUILD_TARGET), darwin solaris)
+  VBOX_PATH_SHARED_LIBS      = $(VBOX_PATH_APP_PRIVATE)
+ endif
+endif
+# Where the documentation is (going to be) installed.
+#VBOX_PATH_APP_DOCS         = /usr/share/doc/virtualbox
+ifdef VBOX_WITH_HARDENING
+ if1of ($(KBUILD_TARGET), darwin solaris)
+  VBOX_PATH_APP_DOCS         = $(VBOX_PATH_APP_PRIVATE)
+ endif
+endif
+# The DT_RPATH/DT_RUNPATH to embed into the binaries (ELF).
+# (This one is used for all binaries, there is no need to adjust this
+# depending on the location of the object.)
+#VBOX_WITH_RUNPATH = /usr/lib/virtualbox
+ifdef VBOX_WITH_HARDENING
+ if1of ($(KBUILD_TARGET), solaris)
+  VBOX_WITH_RUNPATH = $(VBOX_PATH_APP_PRIVATE)
+ endif
+endif
+# Enable use of the $ORIGIN DT_RPATH/DT_RUNPATH feature (ELF).
+# Because of the setuid usage on all ELF platforms when hardening the build
+# things gets a bit complicated since the $ORIGIN+setuid policy differs.
+#VBOX_WITH_ORIGIN=1
+ifdef VBOX_WITH_HARDENING
+ if1of ($(KBUILD_TARGET), linux)
+  VBOX_WITH_ORIGIN = 1
+ endif
+else if1of ($(KBUILD_TARGET), solaris) ## @todo add all the ELF dudes here!
+ VBOX_WITH_ORIGIN = 1
+endif
+# Enable the system wide support service/daemon.
+# Work in progress, but required for hardening on Windows.
+#VBOX_WITH_SUPSVC = 1
+ifdef VBOX_WITH_HARDENING
+ if1of ($(KBUILD_TARGET), win)
+  VBOX_WITH_SUPSVC = 1
+ endif
 endif
 
 
@@ -411,6 +467,7 @@ ifeq ($(KBUILD_TARGET),l4)
  VBOX_WITH_INTERNAL_NETWORKING=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  VBOX_WITH_KCHMVIEWER=
+ VBOX_WITH_HARDENING=
 endif
 
 ifeq ($(KBUILD_TARGET),os2)
@@ -425,6 +482,7 @@ ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_DOCS=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  VBOX_WITH_KCHMVIEWER=
+ VBOX_WITH_HARDENING=
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
@@ -498,6 +556,10 @@ ifdef VBOX_OSE
  endif
  VBOX_WITH_AHCI=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
+ if1of ($(KBUILD_TARGET), darwin)
+  # Disable hardening cause it'll cause unnecessary trouble.
+  VBOX_WITH_HARDENING=
+ endif
 endif
 
 #
@@ -568,6 +630,15 @@ endif
 
 ifndef VBOX_WITH_QT4GUI
  VBOX_WITH_KCHMVIEWER=
+endif
+
+#
+# Check for incompatible combinations.
+#
+ifdef VBOX_WITH_RUNPATH
+ ifdef VBOX_WITH_ORIGIN
+  $(error VBOX_WITH_RUNPATH and VBOX_WITH_ORIGIN are mutually exclusive (lazy bird))
+ endif
 endif
 
 #
@@ -854,6 +925,21 @@ endif
 ifdef VBOX_WITH_64_BITS_GUESTS
  DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
+ifdef VBOX_WITH_HARDENING
+ DEFS += VBOX_WITH_HARDENING
+endif
+ifdef VBOX_PATH_APP_PRIVATE
+ DEFS += RTPATH_APP_PRIVATE=\"$(VBOX_PATH_APP_PRIVATE)\"
+endif
+ifdef VBOX_PATH_APP_PRIVATE_ARCH
+ DEFS += RTPATH_APP_PRIVATE_ARCH=\"$(VBOX_PATH_APP_PRIVATE_ARCH)\"
+endif
+ifdef VBOX_PATH_SHARED_LIBS
+ DEFS += RTPATH_SHARED_LIBS=\"$(VBOX_PATH_SHARED_LIBS)\"
+endif
+ifdef VBOX_PATH_APP_DOCS
+ DEFS += RTPATH_APP_DOCS=\"$(VBOX_PATH_APP_DOCS)\"
+endif
 ## @todo eliminate these guys.
 ifdef VBOX_WITH_INTERNAL_NETWORKING
 DEFS += VBOX_WITH_INTERNAL_NETWORKING
@@ -986,6 +1072,7 @@ ifeq ($(KBUILD_TARGET),win)
  LIB_DDU         = $(PATH_LIB)/VBoxDDU.lib
  LIB_SETTINGS    = $(PATH_LIB)/VBoxSettings.lib
 endif
+VBOX_LIB_SUPHARDENED = $(PATH_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
 
 # The kprofile build automagically links with kProfile.
 ifeq ($(KBUILD_TYPE),kprofile)
@@ -1130,6 +1217,18 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_DARWIN_DEF_SDK_OBJCFLAGS := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
  VBOX_DARWIN_DEF_SDK_LDFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK) $(VBOX_DARWIN_CLASSIC_LINKER)
 endif # target=darwin
+
+#
+# Macro switching between @executable_path and /Applications/VirtualBox.app
+# depending on whether the build is hardened or not (dylib install_name)
+#
+ifndef VBOX_DYLD_EXECUTABLE_PATH
+ ifdef VBOX_WITH_HARDENING
+  VBOX_DYLD_EXECUTABLE_PATH = $(VBOX_PATH_APP_PRIVATE_ARCH)
+ else
+  VBOX_DYLD_EXECUTABLE_PATH = @executable_path
+ endif
+endif
 
 #
 # The X11 headers.
@@ -2108,8 +2207,11 @@ $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially support
 TEMPLATE_VBOXR3EXE_CXXFLAGS.profile    = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.release)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.krelease)
  endif
- ifdef VBOX_WITH_ORIGIN
+ ifdef VBOX_WITH_RUNPATH
+  TEMPLATE_VBOXR3EXE_LDFLAGS          += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+ else ifdef VBOX_WITH_ORIGIN
   TEMPLATE_VBOXR3EXE_LDFLAGS          += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
+  TEMPLATE_VBOXR3EXE_LDFLAGS.linux    += -Wl,-z,origin
  endif
 endif
 
@@ -2156,6 +2258,21 @@ else # the gcc guys (untested!)
 endif
 
 #
+# Template for building hardened Ring-3 executables.
+#
+TEMPLATE_VBOXR3HARDENEDEXE = Hardened VBox Ring-3 EXE
+TEMPLATE_VBOXR3HARDENEDEXE_EXTENDS = VBOXR3EXE
+TEMPLATE_VBOXR3HARDENEDEXE_LIBS = $(VBOX_LIB_SUPHARDENED) $(TEMPLATE_VBOXR3EXE_LIBS)
+TEMPLATE_VBOXR3HARDENEDEXE_LDFLAGS.darwin = $(TEMPLATE_VBOXR3EXE_LDFLAGS.darwin) -framework IOKit
+
+#
+# Template for building hardened Ring-3 libraries.
+#
+TEMPLATE_VBOXR3HARDENEDLIB = Hardened VBox Ring-3 LIB
+TEMPLATE_VBOXR3HARDENEDLIB_EXTENDS = VBOXR3HARDENEDEXE
+TEMPLATE_VBOXR3HARDENEDLIB_LIBS = $(NO_SUCH_VARIABLE)
+
+#
 # Ring-3 testcase.
 # This is the VBOXR3EXE template only with a different install dir.
 #
@@ -2163,8 +2280,10 @@ TEMPLATE_VBOXR3TSTEXE  = VBox Ring 3 Testcase Exe
 TEMPLATE_VBOXR3TSTEXE_EXTENDS = VBOXR3EXE
 TEMPLATE_VBOXR3TSTEXE_INST    = $(INST_TESTCASE)
 TEMPLATE_VBOXR3TSTEXE_LIBS    = $(LIB_RUNTIME) $(TEMPLATE_VBOXR3EXE_LIBS)
-ifdef VBOX_WITH_ORIGIN
- TEMPLATE_VBOXR3TSTEXE_LDFLAGS= '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..' $(TEMPLATE_VBOXR3EXE_LDFLAGS)
+ifdef VBOX_WITH_RUNPATH
+ TEMPLATE_VBOXR3TSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' $(TEMPLATE_VBOXR3EXE_LDFLAGS)
+else ifdef VBOX_WITH_ORIGIN
+ TEMPLATE_VBOXR3TSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..' $(TEMPLATE_VBOXR3EXE_LDFLAGS)
 endif
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_SIGNING_MODE
@@ -2372,7 +2491,8 @@ TEMPLATE_VBOXMAINEXE_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBOXMAINEXE_CFLAGS             += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS           += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
 TEMPLATE_VBOXMAINEXE_OBJCFLAGS          += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
-TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -bind_at_load -framework Carbon
+TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin     += -bind_at_load
+TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
  else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3
@@ -2385,8 +2505,11 @@ TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
 $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
  endif
- ifdef VBOX_WITH_ORIGIN
+ ifdef VBOX_WITH_RUNPATH
+TEMPLATE_VBOXMAINEXE_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+ else ifdef VBOX_WITH_ORIGIN
 TEMPLATE_VBOXMAINEXE_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
+TEMPLATE_VBOXMAINEXE_LDFLAGS.linux      += -Wl,-z,origin
  endif
 
 endif # !win
@@ -2420,7 +2543,6 @@ endif # COM
 #
 # This differs from VBOXMAINEXE only in PIC handling and similar DLL stuff.
 #
-
 TEMPLATE_VBOXMAINDLL  = VBox Main Component (shared library)
 TEMPLATE_VBOXMAINDLL_EXTENDS = VBOXMAINEXE
 ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
@@ -2431,10 +2553,48 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
   TEMPLATE_VBOXMAINDLL_LDFLAGS  = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
  endif
 endif
-ifeq ($(KBUILD_TARGET),darwin)
- TEMPLATE_VBOXMAINDLL_LDFLAGS   = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS)) \
+TEMPLATE_VBOXMAINDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin)) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+
+#
+# Template identical to VBOXMAINDLL except for where the stuff is
+# installed when using XPCOM (components/).
+#
+# Note! In the hardened build this gets a bit ugly since $ORIGIN/..
+#       doesn't work. So, we use $ORIGIN there and let the installers
+#       handle the symlinking.
+#
+# (No difference when building against COM on Windows.)
+#
+TEMPLATE_VBOXMAINCOMP  = VBox Main COM/XPCOM Component (shared library)
+TEMPLATE_VBOXMAINCOMP_EXTENDS = VBOXMAINEXE
+ifn1of ($(KBUILD_TARGET), win) ## WARNING! Linux used to be excluded too, so this may cause trouble.
+ TEMPLATE_VBOXMAINCOMP_INST = $(INST_BIN)components/
 endif
+ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
+ ifneq ($(KBUILD_TARGET),win)
+  TEMPLATE_VBOXMAINCOMP_DEFS     = PIC $(TEMPLATE_VBOXMAINEXE_DEFS)
+  TEMPLATE_VBOXMAINCOMP_CFLAGS   = -fPIC $(TEMPLATE_VBOXMAINEXE_CFLAGS)
+  TEMPLATE_VBOXMAINCOMP_CXXFLAGS = -fPIC $(TEMPLATE_VBOXMAINEXE_CXXFLAGS)
+  ifdef VBOX_WITH_ORIGIN
+   ifndef VBOX_WITH_HARDENING
+    TEMPLATE_VBOXMAINCOMP_LDFLAGS  = -fPIC $(filter-out '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)',$(TEMPLATE_VBOXMAINEXE_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
+   endif
+  endif
+  ifndef TEMPLATE_VBOXMAINCOMP_LDFLAGS
+   TEMPLATE_VBOXMAINCOMP_LDFLAGS   = -fPIC $(TEMPLATE_VBOXMAINEXE_LDFLAGS)
+  endif
+ endif
+endif
+ifdef VBOX_WITH_ORIGIN
+ ifndef TEMPLATE_VBOXMAINCOMP_LDFLAGS
+  ifndef VBOX_WITH_HARDENING
+   TEMPLATE_VBOXMAINCOMP_LDFLAGS   = $(filter-out '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)',$(TEMPLATE_VBOXMAINEXE_LDFLAGS)) '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/..'
+  endif
+ endif
+endif
+TEMPLATE_VBOXMAINCOMP_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin)) \
+	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 
 #
 # Template for building the Main static libraries.
@@ -2463,9 +2623,6 @@ else
 	NDEBUG TRIMMED
  TEMPLATE_VBOXMAINCLIENTEXE_CXXFLAGS.linux = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.linux) \
 	-pthread
- ifeq ($(KBUILD_TARGET),darwin)
-  TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS = $(TEMPLATE_VBOXMAINEXE_LDFLAGS) -bind_at_load -framework Carbon
- endif
 endif
 
 #
@@ -2483,9 +2640,7 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
   TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS    = -fPIC $(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS)
  endif
 endif
-ifeq ($(KBUILD_TARGET),darwin)
- TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS     = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS))
-endif
+TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin))
 
 
 #
@@ -2571,7 +2726,7 @@ else # the gcc guys:
   TEMPLATE_VBOXQTGUIEXE_CFLAGS += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
-  TEMPLATE_VBOXQTGUIEXE_LDFLAGS += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon -framework QuickTime -bind_at_load
+  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin += -bind_at_load
   TEMPLATE_VBOXQTGUIEXE_LIBS +=
   TEMPLATE_VBOXQTGUIEXE_LIBPATH +=
  else ifeq ($(KBUILD_TARGET),os2)
@@ -2604,7 +2759,13 @@ else # the gcc guys:
 	rt socket nsl
   endif
  endif
- ifdef VBOX_WITH_ORIGIN
+ ifdef VBOX_WITH_RUNPATH
+  ifeq ($(KBUILD_TARGET),solaris)
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH):$(VBOX_WITH_RUNPATH)/qtgcc/lib'
+  else
+   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+  endif
+ else ifdef VBOX_WITH_ORIGIN
   ifeq ($(KBUILD_TARGET),solaris)
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN):$$(VBOX_ORIGIN)/qtgcc/lib'
   else
@@ -2643,7 +2804,7 @@ TEMPLATE_VBOXQTGUI = VBox Qt GUI Components
 TEMPLATE_VBOXQTGUI_EXTENDS = VBOXQTGUIEXE
 TEMPLATE_VBOXQTGUI_LIBS = $(filter-out $(QTMAIN),$(TEMPLATE_VBOXQTGUIEXE_LIBS))
 ifeq ($(KBUILD_TARGET),darwin)
- TEMPLATE_VBOXQTGUI_LDFLAGS = $(filter-out -framework Carbon -framework QuickTime -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS)) \
+ TEMPLATE_VBOXQTGUI_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXQTGUIEXE_LDFLAGS.darwin)) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 endif
 ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)

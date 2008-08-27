@@ -414,34 +414,8 @@ static void show_usage()
 
 
 /** entry point */
-int main(int argc, char **argv)
+extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 {
-#ifdef RT_OS_L4
-#ifndef L4API_l4v2onv4
-    /* clear Fiasco kernel trace buffer */
-    fiasco_tbuf_clear();
-#endif
-    /* set the environment.  Must be done before the runtime is
-       initialised.  Yes, it really must. */
-    for (int i = 0; i < argc; i++)
-        if (strcmp(argv[i], "-env") == 0)
-        {
-            if (++i >= argc)
-                return SyntaxError("missing argument to -env (format: var=value)!\n");
-            /* add it to the environment */
-            if (putenv(argv[i]) != 0)
-                return SyntaxError("Error setting environment string %s.\n", argv[i]);
-        }
-#endif /* RT_OS_L4 */
-
-    /*
-     * Before we do *anything*, we initialize the runtime.
-     */
-    int rc = RTR3Init();
-    if (VBOX_FAILURE(rc))
-        return FatalError("RTR3Init failed rc=%Vrc\n", rc);
-
-
     bool fFullscreen = false;
 #ifdef VBOX_VRDP
     int32_t portVRDP = -1;
@@ -454,6 +428,7 @@ int main(int argc, char **argv)
 #ifdef RT_OS_L4
     uint32_t u32MaxVRAM;
 #endif
+    int rc = VINF_SUCCESS;
 
     RTPrintf("VirtualBox Simple SDL GUI built %s %s\n", __DATE__, __TIME__);
 
@@ -1009,6 +984,41 @@ leave:
     return VBOX_FAILURE (rc) ? 1 : 0;
 }
 
+
+#ifndef VBOX_WITH_HARDENING
+/**
+ * Main entry point.
+ */
+int main(int argc, char **argv)
+{
+# ifdef RT_OS_L4
+# ifndef L4API_l4v2onv4
+    /* clear Fiasco kernel trace buffer */
+    fiasco_tbuf_clear();
+# endif
+    /* set the environment.  Must be done before the runtime is
+       initialised.  Yes, it really must. */
+    for (int i = 0; i < argc; i++)
+        if (strcmp(argv[i], "-env") == 0)
+        {
+            if (++i >= argc)
+                return SyntaxError("missing argument to -env (format: var=value)!\n");
+            /* add it to the environment */
+            if (putenv(argv[i]) != 0)
+                return SyntaxError("Error setting environment string %s.\n", argv[i]);
+        }
+# endif /* RT_OS_L4 */
+
+    /*
+     * Before we do *anything*, we initialize the runtime.
+     */
+    int rc = RTR3Init();
+    if (VBOX_FAILURE(rc))
+        return FatalError("RTR3Init failed rc=%Vrc\n", rc);
+
+    return TrustedMain(argc, argv, NULL);
+}
+#endif /* !VBOX_WITH_HARDENING */
 
 
 /**

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * SUPLib - Support Library, OS/2 backend.
+ * VirtualBox Support Library - OS/2 specific parts.
  */
 
 /*
@@ -28,7 +28,6 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -36,6 +35,15 @@
 #define INCL_ERRORS
 #include <os2.h>
 #undef RT_MAX
+
+#ifdef IN_SUP_HARDENED_R3
+# undef DEBUG /* Warning: disables RT_STRICT */
+# define LOG_DISABLED
+  /** @todo RTLOGREL_DISABLED */
+# include <iprt/log.h>
+# undef LogRelIt
+# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) do { } while (0)
+#endif
 
 #include <VBox/types.h>
 #include <VBox/sup.h>
@@ -61,35 +69,13 @@
 
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/** Handle to the open device. */
-static HFILE    g_hDevice = (HFILE)-1;
-
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-
-
-/**
- * Initialize the OS specific part of the library.
- * On Linux this involves:
- *      - loading the module.
- *      - open driver.
- *
- * @returns 0 on success.
- * @returns current -1 on failure but this must be changed to proper error codes.
- * @param   cbReserve   Ignored on OS/2.
- */
-int     suplibOsInit(size_t cbReserve)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
 {
     /*
-     * Check if already initialized.
+     * Nothing to do if pre-inited.
      */
-    if (g_hDevice != (HFILE)-1)
-        return 0;
+    if (fPreInited)
+        return VINF_SUCCESS;
 
     /*
      * Try open the device.
@@ -116,23 +102,24 @@ int     suplibOsInit(size_t cbReserve)
         LogRel(("Failed to open \"%s\", rc=%d, vrc=%Vrc\n", DEVICE_NAME, rc, vrc));
         return vrc;
     }
-    g_hDevice = hDevice;
 
-    NOREF(cbReserve);
+    pThis->hDevice = (RTFILE)hDevice;
     return VINF_SUCCESS;
 }
 
 
-int     suplibOsTerm(void)
+#ifndef IN_SUP_HARDENED_R3
+
+int suplibOsTerm(PSUPLIBDATA pThis)
 {
     /*
      * Check if we're initited at all.
      */
-    if (g_hDevice != (HFILE)-1)
+    if (pThis->hDevice != NIL_RTFILE)
     {
-        APIRET rc = DosClose(g_hDevice);
+        APIRET rc = DosClose((HFILE)pThis->hDevice);
         AssertMsg(rc == NO_ERROR, ("%d\n", rc)); NOREF(rc);
-        g_hDevice = (HFILE)-1;
+        pThis->hDevice = NIL_RTFILE;
     }
 
     return 0;
@@ -153,12 +140,10 @@ int suplibOsUninstall(void)
 }
 
 
-int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
+int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
-    AssertMsg(g_hDevice != (HFILE)-1, ("SUPLIB not initiated successfully!\n"));
-
     ULONG cbReturned = sizeof(SUPREQHDR);
-    int rc = DosDevIOCtl(g_hDevice, SUP_CTL_CATEGORY, uFunction,
+    int rc = DosDevIOCtl((HFILE)pThis->hDevice, SUP_CTL_CATEGORY, uFunction,
                          pvReq, cbReturned, &cbReturned,
                          NULL, 0, NULL);
     if (RT_LIKELY(rc == NO_ERROR))
@@ -167,10 +152,10 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 }
 
 
-int suplibOsIOCtlFast(uintptr_t uFunction)
+int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction)
 {
     int32_t rcRet = VERR_INTERNAL_ERROR;
-    int rc = DosDevIOCtl(g_hDevice, SUP_CTL_CATEGORY_FAST, uFunction,
+    int rc = DosDevIOCtl((HFILE)pThis->hDevice, SUP_CTL_CATEGORY_FAST, uFunction,
                          NULL, 0, NULL,
                          NULL, 0, NULL);
     if (RT_LIKELY(rc == NO_ERROR))
@@ -181,8 +166,9 @@ int suplibOsIOCtlFast(uintptr_t uFunction)
 }
 
 
-int suplibOsPageAlloc(size_t cPages, void **ppvPages)
+int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 {
+    NOREF(pThis);
     *ppvPages = NULL;
     int rc = DosAllocMem(ppvPages, cPages << PAGE_SHIFT, PAG_READ | PAG_WRITE | PAG_EXECUTE | PAG_COMMIT | OBJ_ANY);
     if (rc == ERROR_INVALID_PARAMETER)
@@ -195,8 +181,9 @@ int suplibOsPageAlloc(size_t cPages, void **ppvPages)
 }
 
 
-int suplibOsPageFree(void *pvPages, size_t /* cPages */)
+int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
 {
+    NOREF(pThis);
     if (pvPages)
     {
         int rc = DosFreeMem(pvPages);
@@ -204,4 +191,6 @@ int suplibOsPageFree(void *pvPages, size_t /* cPages */)
     }
     return VINF_SUCCESS;
 }
+
+#endif /* !IN_SUP_HARDENED_R3 */
 

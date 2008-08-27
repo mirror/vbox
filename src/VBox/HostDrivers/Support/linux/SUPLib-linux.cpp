@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Linux host:
- * Linux implementations for driver support library
+ * VirtualBox Support Library - GNU/Linux specific parts.
  */
 
 /*
@@ -29,10 +28,19 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_SUP
+#ifdef IN_SUP_HARDENED_R3
+# undef DEBUG /* Warning: disables RT_STRICT */
+# define LOG_DISABLED
+  /** @todo RTLOGREL_DISABLED */
+# include <iprt/log.h>
+# undef LogRelIt
+# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) do { } while (0)
+#endif
+
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -40,13 +48,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include <string.h>
 
-#include <VBox/sup.h>
-#include <VBox/types.h>
 #include <VBox/log.h>
+#include <VBox/sup.h>
 #include <iprt/path.h>
 #include <iprt/assert.h>
+#include <VBox/types.h>
+#include <iprt/string.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include "../SUPLibInternal.h"
@@ -65,52 +73,35 @@
 #endif
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/** Handle to the open device. */
-static int      g_hDevice = -1;
-/** Flags whether or not we've loaded the kernel module. */
-static bool     g_fLoadedModule = false;
-/** Indicates whether madvise(,,MADV_DONTFORK) works.  */
-static bool     g_fSysMadviseWorks = false;
 
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-
-
-/**
- * Initialize the OS specific part of the library.
- * On Linux this involves:
- *      - loading the module.
- *      - open driver.
- *
- * @returns 0 on success.
- * @returns current -1 on failure but this must be changed to proper error codes.
- * @param   cbReserved  Ignored on linux.
- */
-int     suplibOsInit(size_t cbReserve)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
 {
     /*
-     * Check if already initialized.
+     * Nothing to do if pre-inited.
      */
-    if (g_hDevice >= 0)
-        return 0;
+    if (fPreInited)
+        return VINF_SUCCESS;
+
+    /*
+     * Check if madvise works.
+     */
+    void *pv = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (pv == MAP_FAILED)
+        return VERR_NO_MEMORY;
+    pThis->fSysMadviseWorks = (0 == madvise(pv, PAGE_SIZE, MADV_DONTFORK));
+    munmap(pv, PAGE_SIZE);
 
     /*
      * Try open the device.
      */
-    g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
-    if (g_hDevice < 0)
+    pThis->hDevice = open(DEVICE_NAME, O_RDWR, 0);
+    if (pThis->hDevice < 0)
     {
         /*
          * Try load the device.
          */
-        //todo suplibOsLoadKernelModule();
-        g_hDevice = open(DEVICE_NAME, O_RDWR, 0);
-        if (g_hDevice < 0)
+        pThis->hDevice = open(DEVICE_NAME, O_RDWR, 0);
+        if (pThis->hDevice < 0)
         {
             int rc;
             switch (errno)
@@ -130,65 +121,42 @@ int     suplibOsInit(size_t cbReserve)
     /*
      * Mark the file handle close on exec.
      */
-    if (fcntl(g_hDevice, F_SETFD, FD_CLOEXEC) == -1)
+    if (fcntl(pThis->hDevice, F_SETFD, FD_CLOEXEC) == -1)
     {
-        close(g_hDevice);
-        g_hDevice = -1;
+        close(pThis->hDevice);
+        pThis->hDevice = -1;
+#ifdef IN_SUP_HARDENED_R3
+        return VERR_INTERNAL_ERROR;
+#else
         return RTErrConvertFromErrno(errno);
+#endif
     }
-
-    /*
-     * Check if madvise works.
-     */
-    void *pv = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (pv == MAP_FAILED)
-        return VERR_NO_MEMORY;
-    g_fSysMadviseWorks = (0 == madvise(pv, PAGE_SIZE, MADV_DONTFORK));
-    munmap(pv, PAGE_SIZE);
 
     /*
      * We're done.
      */
-    NOREF(cbReserve);
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
-int     suplibOsTerm(void)
+#ifndef IN_SUP_HARDENED_R3
+
+int     suplibOsTerm(PSUPLIBDATA pThis)
 {
     /*
      * Check if we're initited at all.
      */
-    if (g_hDevice >= 0)
+    if (pThis->hDevice >= 0)
     {
-        if (close(g_hDevice))
+        if (close(pThis->hDevice))
             AssertFailed();
-        g_hDevice = -1;
-    }
-
-    /*
-     * If we started the service we might consider stopping it too.
-     *
-     * Since this won't work unless the the process starting it is the
-     * last user we might wanna skip this...
-     */
-    if (g_fLoadedModule)
-    {
-        //todo kernel module unloading.
-        //suplibOsStopService();
-        //g_fStartedService = false;
+        pThis->hDevice = -1;
     }
 
     return 0;
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
 int suplibOsInstall(void)
 {
     // nothing to do on Linux
@@ -196,12 +164,6 @@ int suplibOsInstall(void)
 }
 
 
-/**
- * Installs anything required by the support library.
- *
- * @returns 0 on success.
- * @returns error code on failure.
- */
 int suplibOsUninstall(void)
 {
     // nothing to do on Linux
@@ -209,23 +171,14 @@ int suplibOsUninstall(void)
 }
 
 
-/**
- * Send a I/O Control request to the device.
- *
- * @returns 0 on success.
- * @returns VBOX error code on failure.
- * @param   uFunction   IO Control function.
- * @param   pvReq       The request buffer.
- * @param   cbReq       The size of the request buffer.
- */
-int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
+int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
-    AssertMsg(g_hDevice != -1, ("SUPLIB not initiated successfully!\n"));
+    AssertMsg(pThis->hDevice != NIL_RTFILE, ("SUPLIB not initiated successfully!\n"));
 
     /*
      * Issue device iocontrol.
      */
-    if (RT_LIKELY(ioctl(g_hDevice, uFunction, pvReq) >= 0))
+    if (RT_LIKELY(ioctl(pThis->hDevice, uFunction, pvReq) >= 0))
 	return VINF_SUCCESS;
 
     /* This is the reverse operation of the one found in SUPDrv-linux.c */
@@ -247,36 +200,23 @@ int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
 }
 
 
-/**
- * Fast I/O Control path, no buffers.
- *
- * @returns VBox status code.
- * @param   uFunction   The operation.
- */
-int suplibOsIOCtlFast(uintptr_t uFunction)
+int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction)
 {
-    int rc = ioctl(g_hDevice, uFunction, NULL);
+    int rc = ioctl(pThis->hDevice, uFunction, NULL);
     if (rc == -1)
         rc = -errno;
     return rc;
 }
 
 
-/**
- * Allocate a number of zero-filled pages in user space.
- *
- * @returns VBox status code.
- * @param   cPages      Number of pages to allocate.
- * @param   ppvPages    Where to return the base pointer.
- */
-int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
+int     suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 {
-    size_t cbMmap = (g_fSysMadviseWorks ? cPages : cPages + 2) << PAGE_SHIFT;
+    size_t cbMmap = (pThis->fSysMadviseWorks ? cPages : cPages + 2) << PAGE_SHIFT;
     char *pvPages = (char *)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (pvPages == MAP_FAILED)
 	return VERR_NO_MEMORY;
 
-    if (g_fSysMadviseWorks)
+    if (pThis->fSysMadviseWorks)
     {
 	/*
 	 * It is not fatal if we fail here but a forked child (e.g. the ALSA sound server)
@@ -304,14 +244,11 @@ int     suplibOsPageAlloc(size_t cPages, void **ppvPages)
 }
 
 
-/**
- * Frees pages allocated by suplibOsPageAlloc().
- *
- * @returns VBox status code.
- * @param   pvPages     Pointer to pages.
- */
-int     suplibOsPageFree(void *pvPages, size_t cPages)
+int     suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages)
 {
     munmap(pvPages, cPages << PAGE_SHIFT);
     return VINF_SUCCESS;
 }
+
+#endif /* !IN_SUP_HARDENED_R3 */
+

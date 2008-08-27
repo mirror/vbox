@@ -33,14 +33,19 @@ VBOX_WITH_REGISTRATION_REQUEST := 1
 #
 # The targets.
 #
-PROGRAMS = VirtualBox
+ifdef VBOX_WITH_HARDENING
+ PROGRAMS += VirtualBox3Hardened
+ DLLS += VirtualBox
+else
+ PROGRAMS += VirtualBox
+endif
 ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
- DLLS = VBoxKeyboard3
- OTHERS = $(PATH_BIN)/vboxkeyboard3.tar.gz
+ DLLS += VBoxKeyboard3
+ OTHERS += $(PATH_BIN)/vboxkeyboard3.tar.gz
 endif
 DLLS.os2 += VBoxHlp
 ifndef USE_KBUILD_QT3_UNIT
- INSTALLS = VirtualBox.nls
+ INSTALLS += VirtualBox.nls
 endif
 
 
@@ -106,6 +111,18 @@ $(PATH_BIN)/vboxkeyboard3.tar.gz: $(VBoxKeyboard3_TARSOURCES) $(PATH_TARGET)/$(S
 
 
 #
+# Hardened VirtualBox4.
+#
+VirtualBox3Hardened_TEMPLATE = VBOXR3HARDENEDEXE
+VirtualBox3Hardened_SOURCES = src/hardenedmain.cpp
+VirtualBox3Hardened_NAME = VirtualBox3
+ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
+ #VirtualBox3Hardened_INST.darwin = $(INST_BIN)VirtualBox3 $(INST_BIN)VirtualBoxVM3
+ VirtualBox3Hardened_INST = $(INST_BIN)VirtualBox3 $(INST_BIN)VirtualBoxVM3
+endif
+
+
+#
 # Note: I'm doing this right here because the GUI will _not_ run
 #       without that file which might be annoying for developers!
 #
@@ -162,8 +179,14 @@ endif
 #
 # VirtualBox - The GUI program.
 #
-VirtualBox_TEMPLATE = VBOXQTGUIEXE
+VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE)
 VirtualBox_NAME     = VirtualBox3
+ifndef VBOX_WITH_HARDENING # For the launch trick we need different inode numbers.
+ ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
+  #VirtualBox_INST.darwin = $(INST_BIN)VirtualBox3 $(INST_BIN)VirtualBoxVM3
+  VirtualBox_INST = $(INST_BIN)VirtualBox3 $(INST_BIN)VirtualBoxVM3
+ endif
+endif
 ifdef USE_KBUILD_QT3_UNIT
  USES += qt3
  VirtualBox_USES    = qt3
@@ -176,14 +199,10 @@ ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(KBUILD_TARGET)),) # X11 + 
  VirtualBox_SDKS += LIBSDL
 endif
 
-ifeq ($(KBUILD_TARGET),darwin)
- # For the launch trick we need different inode numbers.
- VirtualBox_INST = $(INST_BIN)VirtualBox3 $(INST_BIN)VirtualBoxVM3
- # For testing iChat Theater stuff change the sdk path (HACK ALERT)
- ifdef VBOX_WITH_ICHAT_THEATER
-  VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
- endif
-endif # darwin
+# For testing iChat Theater stuff change the sdk path (HACK ALERT)
+ifdef VBOX_WITH_ICHAT_THEATER
+ VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
+endif
 
 # Import translation sources
 ifdef USE_KBUILD_QT3_UNIT
@@ -404,7 +423,9 @@ else
  endif
 endif
 VirtualBox_LDFLAGS.os2    = -Zlinker /PM:PM -Zno-fork
-VirtualBox_LDFLAGS.darwin = -framework IOKit
+VirtualBox_LDFLAGS.darwin = \
+	-framework IOKit -framework Carbon -framework QuickTime \
+	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox3.dylib)
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework Foundation -framework AppKit -framework InstantMessage -framework QuartzCore
 endif

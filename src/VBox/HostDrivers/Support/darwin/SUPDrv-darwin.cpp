@@ -252,8 +252,13 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                 if (g_iMajorDeviceNo >= 0)
                 {
                     /** @todo the UID, GID and mode mask should be configurable! This isn't very secure... */
+#ifdef VBOX_WITH_HARDENING
+                    g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
+                                                     UID_ROOT, GID_WHEEL, 0600, DEVICE_NAME);
+#else
                     g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
                                                      UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME);
+#endif
                     if (g_hDevFsDevice)
                     {
                         LogRel(("VBoxDrv: version " VBOX_VERSION_STRING " r%d; IOCtl version %#x; IDC version %#x; dev major=%d\n",
@@ -348,8 +353,8 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
     struct ucred   *pCred = proc_ucred(pProcess);
     if (pCred)
     {
-        RTUID           Uid = pCred->cr_uid;
-        RTGID           Gid = pCred->cr_gid;
+        RTUID           Uid = pCred->cr_ruid;
+        RTGID           Gid = pCred->cr_rgid;
         RTPROCESS       Process = RTProcSelf();
         unsigned        iHash = SESSION_HASH(Process);
         RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;

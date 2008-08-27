@@ -1,5 +1,6 @@
+/* $Id: $ */
 /** @file
- * SUPLib - FreeBSD Hosts,
+ * VirtualBox Support Library - FreeBSD specific parts.
  */
 
 /*
@@ -27,11 +28,19 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP
+#ifdef IN_SUP_HARDENED_R3
+# undef DEBUG /* Warning: disables RT_STRICT */
+# define LOG_DISABLED
+  /** @todo RTLOGREL_DISABLED */
+# include <iprt/log.h>
+# undef LogRelIt
+# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) do { } while (0)
+#endif
+
 #include <VBox/types.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
@@ -59,34 +68,29 @@
 #define DEVICE_NAME     "/dev/vboxdrv"
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/** Handle to the open device. */
-static int              g_hDevice = -1;
 
-
-int suplibOsInit(size_t cbReserve)
+int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
 {
     /*
-     * Check if already initialized.
+     * Nothing to do if pre-inited.
      */
-    if (g_hDevice >= 0)
+    if (fPreInited)
         return VINF_SUCCESS;
 
     /*
      * Try open the BSD device.
      */
+    int hDevice = -1;
     char szDevice[sizeof(DEVICE_NAME) + 16];
     for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
     {
         errno = 0;
         RTStrPrintf(szDevice, sizeof(szDevice), DEVICE_NAME "%d", iUnit);
-        g_hDevice = open(szDevice, O_RDWR, 0);
-        if (g_hDevice >= 0 || errno != EBUSY)
+        hDevice = open(szDevice, O_RDWR, 0);
+        if (hDevice >= 0 || errno != EBUSY)
             break;
     }
-    if (g_hDevice < 0)
+    if (hDevice < 0)
     {
         int rc;
         switch (errno)
@@ -104,33 +108,39 @@ int suplibOsInit(size_t cbReserve)
     /*
      * Mark the file handle close on exec.
      */
-    if (fcntl(g_hDevice, F_SETFD, FD_CLOEXEC) != 0)
+    if (fcntl(hDevice, F_SETFD, FD_CLOEXEC) != 0)
     {
-        int rc = errno;
-        LogRel(("suplibOSInit: setting FD_CLOEXEC failed, errno=%d\n", rc));
-        close(g_hDevice);
-        g_hDevice = -1;
-        return RTErrConvertFromErrno(rc);
+#ifdef IN_SUP_HARDENED_R3
+        int rc = VERR_INTERNAL_ERROR;
+#else
+        int err = errno;
+        int rc = RTErrConvertFromErrno(err);
+        LogRel(("suplibOSInit: setting FD_CLOEXEC failed, errno=%d (%Rrc)\n", err, rc));
+#endif
+        close(hDevice);
+        return rc;
     }
 
     /*
      * We're done.
      */
-    NOREF(cbReserve);
+    pThis->hDevice = hDevice;
     return VINF_SUCCESS;
 }
 
 
-int suplibOsTerm(void)
+#ifndef IN_SUP_HARDENED_R3
+
+int suplibOsTerm(PSUPLIBDATA pThis)
 {
     /*
      * Check if we're initited at all.
      */
-    if (g_hDevice >= 0)
+    if (pThis->hDevice != NIL_RTFILE)
     {
-        if (close(g_hDevice))
+        if (close(pThis->hDevice))
             AssertFailed();
-        g_hDevice = -1;
+        pThis->hDevice = NIL_RTFILE;
     }
     return VINF_SUCCESS;
 }
@@ -148,27 +158,26 @@ int suplibOsUninstall(void)
 }
 
 
-int suplibOsIOCtl(uintptr_t uFunction, void *pvReq, size_t cbReq)
+int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
-    AssertMsg(g_hDevice != -1, ("SUPLIB not initiated successfully!\n"));
-
-    if (RT_LIKELY(ioctl(g_hDevice, uFunction, pvReq) >= 0))
+    if (RT_LIKELY(ioctl(pThis->hDevice, uFunction, pvReq) >= 0))
 	return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
 }
 
 
-int suplibOsIOCtlFast(uintptr_t uFunction)
+int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction)
 {
-    int rc = ioctl(g_hDevice, uFunction, NULL);
+    int rc = ioctl(pThis->hDevice, uFunction, NULL);
     if (rc == -1)
         rc = errno;
     return rc;
 }
 
 
-int suplibOsPageAlloc(size_t cPages, void **ppvPages)
+int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 {
+    NOREF(pThis);
     *ppvPages = RTMemPageAllocZ(cPages << PAGE_SHIFT);
     if (*ppvPages)
         return VINF_SUCCESS;
@@ -176,9 +185,12 @@ int suplibOsPageAlloc(size_t cPages, void **ppvPages)
 }
 
 
-int suplibOsPageFree(void *pvPages, size_t /* cPages */)
+int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
 {
+    NOREF(pThis);
     RTMemPageFree(pvPages);
     return VINF_SUCCESS;
 }
+
+#endif /* !IN_SUP_HARDENED_R3 */
 

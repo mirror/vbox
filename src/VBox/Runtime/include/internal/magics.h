@@ -46,6 +46,10 @@
 #define RTHEAPSIMPLE_MAGIC          0x19590105
 /** The magic value for RTLDRMODINTERNAL::u32Magic. (Alan Moore) */
 #define RTLDRMOD_MAGIC              0x19531118
+/** The magic value for RTLOCALIPCSERVER::u32Magic. (Naoki Yamamoto) */
+#define RTLOCALIPCSERVER_MAGIC      0x19600201
+/** The magic value for RTLOCALIPCSERVER::u32Magic. (Katsuhiro Otomo) */
+#define RTLOCALIPCSESSION_MAGIC     0x19530414
 /** Magic number for RTMEMCACHEINT::u32Magic. (Joseph Weizenbaum) */
 #define RTMEMCACHE_MAGIC            0x19230108
 /** Dead magic number for RTMEMCACHEINT::u32Magic. */
@@ -86,3 +90,4 @@
 /** @} */
 
 #endif
+

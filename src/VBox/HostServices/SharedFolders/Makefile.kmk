@@ -43,7 +43,8 @@ VBoxSharedFolders_INCS.win  = \
 
 
 VBoxSharedFolders_LDFLAGS.darwin = \
-	-framework Carbon
+	-framework Carbon \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedFolders.dylib
 
 VBoxSharedFolders_SOURCES = \
 	service.cpp \

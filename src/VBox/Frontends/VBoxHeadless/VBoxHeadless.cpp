@@ -405,7 +405,7 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
 /**
  *  Entry point.
  */
-int main (int argc, char **argv)
+extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 {
 #ifdef VBOX_WITH_VRDP
     ULONG vrdpPort = ~0U;
@@ -429,8 +429,6 @@ int main (int argc, char **argv)
      * on X11-using OSes. */
     /** @todo this should really be taken care of in Main. */
     RTEnvUnset("DISPLAY");
-    // initialize VBox Runtime
-    RTR3Init(true, ~(size_t)0);
 
     LogFlow (("VBoxHeadless STARTED.\n"));
     RTPrintf ("VirtualBox Headless Interface %s\n"
@@ -936,4 +934,17 @@ int main (int argc, char **argv)
 
     return rc;
 }
+
+
+#ifndef VBOX_WITH_HARDENING
+/**
+ * Main entry point.
+ */
+int main (int argc, char **argv, char **envp)
+{
+    // initialize VBox Runtime
+    RTR3Init (true, ~(size_t)0);
+    return TrustedMain (argc, argv, envp);
+}
+#endif /* !VBOX_WITH_HARDENING */
 

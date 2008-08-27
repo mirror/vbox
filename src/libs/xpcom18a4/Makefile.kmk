@@ -92,7 +92,9 @@ TEMPLATE_XPCOM_DEFS.l4             = OSTYPE=\"L4ENV\"       OSARCH=\"L4\"     XP
 TEMPLATE_XPCOM_DEFS.os2            = OSTYPE=\"OS/2_4.5\"    OSARCH=\"OS/2\"   XP_OS2 XP_PC OS2=4
 TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" XP_UNIX=1 XP_SOLARIS=1 HAVE_LIBDL=1 HAVE_SENDFILEV=1 SOLARIS=1 _REENTRANT
 ## @todo The LDFLAGS inheriting is being hidden here and below where -fPIC is added.
-ifdef VBOX_WITH_ORIGIN
+ifdef VBOX_WITH_RUNPATH
+TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+else ifdef VBOX_WITH_ORIGIN
 TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/'
 endif
 TEMPLATE_XPCOM_LDFLAGS.x86         = -m32
@@ -306,11 +308,7 @@ PATH_VBox-xpcom-string=$(PATH_BIN)
 
 endif # !VBOX_ONLY_SDK
 
-ifeq ($(KBUILD_TARGET),linux)
- XPCOM_TYPELIB = $(PATH_BIN)/VBoxXPCOMBase.xpt
-else
- XPCOM_TYPELIB = $(PATH_BIN)/components/VBoxXPCOMBase.xpt
-endif
+XPCOM_TYPELIB = $(PATH_BIN)/components/VBoxXPCOMBase.xpt
 OTHERS += $(XPCOM_TYPELIB)
 OTHER_CLEAN += \
 	$(PATH_TARGET)/VBox-xpcom-nspr/_pr_bld.h \
@@ -1177,7 +1175,7 @@ VBoxXPCOM_LDFLAGS.solaris = -Wl,-z,allextract \
 # EF heap
 #VBoxXPCOM_LIBS += $(LIB_RUNTIME_EF)
 #VBoxXPCOM_LDFLAGS = -Wl,--whole-archive $(VBoxXPCOM_LIBS) -Wl,--no-whole-archive $(LIB_RUNTIME)
-VBoxXPCOM_LDFLAGS.darwin = -install_name @executable_path/VBoxXPCOM.dylib
+VBoxXPCOM_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxXPCOM.dylib
 
 ifdef VBOX_IPC_RELEASE_LOG
 IPC_LOGGING = 1
@@ -1244,9 +1242,7 @@ VBox-xpcom-ipctmgrcom_SOURCES = \
 #
 VBoxXPCOMIPCC_TEMPLATE = XPCOMIPC
 VBoxXPCOMIPCC_NAME.os2 = VBoxIPCC
-ifneq ($(KBUILD_TARGET),linux)
 VBoxXPCOMIPCC_INST = $(INST_BIN)components/
-endif
 VBoxXPCOMIPCC_DEFS = HAVE_DEPENDENT_LIBS
 VBoxXPCOMIPCC_SOURCES = \
 	ipc/ipcd/client/src/ipcdclient.cpp \
@@ -1260,7 +1256,7 @@ else
 VBoxXPCOMIPCC_SOURCES += \
 	ipc/ipcd/client/src/ipcConnectionUnix.cpp
 endif
-VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name @executable_path/components/VBoxXPCOMIPCC.dylib
+VBoxXPCOMIPCC_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxXPCOMIPCC.dylib
 VBoxXPCOMIPCC_LIBS = \
 	$(TARGET_VBox-xpcom-ipcutils) \
 	$(TARGET_VBox-xpcom-ipcshared) \

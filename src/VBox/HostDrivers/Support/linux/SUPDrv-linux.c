@@ -72,13 +72,19 @@
 
 /* devfs defines */
 #if defined(CONFIG_DEVFS_FS) && !defined(CONFIG_VBOXDRV_AS_MISC)
+# ifdef VBOX_WITH_HARDENING
+#  define VBOX_DEV_FMASK     (S_IWUSR | S_IRUSR)
+# else
+#  define VBOX_DEV_FMASK     (S_IRUGO | S_IWUGO)
+# endif
+
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 
 #  define VBOX_REGISTER_DEVFS()                         \
 ({                                                      \
     void *rc = NULL;                                    \
     if (devfs_mk_cdev(MKDEV(DEVICE_MAJOR, 0),           \
-                  S_IFCHR | S_IRUGO | S_IWUGO,          \
+                  S_IFCHR | VBOX_DEV_FMASK,             \
                   DEVICE_NAME) == 0)                    \
         rc = (void *)' '; /* return not NULL */         \
     rc;                                                 \
@@ -92,7 +98,7 @@
 #  define VBOX_REGISTER_DEVFS()                         \
     devfs_register(NULL, DEVICE_NAME, DEVFS_FL_DEFAULT, \
                    DEVICE_MAJOR, 0,                     \
-                   S_IFCHR | S_IRUGO | S_IWUGO,         \
+                   S_IFCHR | VBOX_DEV_FMASK,            \
                    &gFileOpsVBoxDrv, NULL)
 
 #  define VBOX_UNREGISTER_DEVFS(handle)                 \
@@ -682,8 +688,8 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     rc = supdrvCreateSession(&g_DevExt, true /* fUser */, (PSUPDRVSESSION *)&pSession);
     if (!rc)
     {
-        pSession->Uid = current->euid;
-        pSession->Gid = current->egid;
+        pSession->Uid = current->uid;
+        pSession->Gid = current->gid;
     }
 
     pFilp->private_data = pSession;

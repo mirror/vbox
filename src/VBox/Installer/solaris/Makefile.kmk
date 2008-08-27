@@ -68,7 +68,7 @@ solaris-doc_SOURCES = \
 # Strip these binaries
 SOLARIS_STRIP_BINS = \
 	vboxdrv \
-	VBoxBFE \
+	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE) \
 	VBoxDD.so \
 	VBoxDD2.so \
 	VBoxManage \
@@ -93,6 +93,12 @@ SOLARIS_STRIP_BINS = \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so \
 	xpidl
+ifdef VBOX_WITH_HARDENING
+SOLARIS_STRIP_BINS += \
+	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE.so) \
+	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
+	$(if $(VBOX_WITH_QTGUI),VirtualBox3.so,)
+endif
 
 # Do not remove relocation information of these binaries
 SOLARIS_STRIP_OBJS = \
@@ -165,9 +171,11 @@ ifdef VBOX_WITH_VRDP
  endif
 endif
 
+## @todo Why are these done in this manner instead of $(if $(blah),) like the rest? grr!
 ifdef VBOX_WITH_HEADLESS
  SOLARIS_STRIP_BINS += \
-	VBoxHeadless
+	VBoxHeadless \
+	$(if $(VBOX_WITH_HARDENING),VBoxHeadless.so,)
 endif
 ifdef VBOX_WITH_WEBSERVICES
  SOLARIS_STRIP_BINS += \
@@ -231,7 +239,10 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/VBoxGuestAdditions.iso)
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/vboxdrv                                                          $(SOLARIS_INST_DIR)/vboxdrv
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                                          $(SOLARIS_INST_DIR)/VBoxBFE
+	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                $(SOLARIS_INST_DIR)/VBoxBFE)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE.so                             $(SOLARIS_INST_DIR)/VBoxBFE.so)
+endif
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD.so                                                        $(SOLARIS_INST_DIR)/VBoxDD.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD2.so                                                       $(SOLARIS_INST_DIR)/VBoxDD2.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDDU.so                                                       $(SOLARIS_INST_DIR)/VBoxDDU.so
@@ -246,9 +257,15 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_SHARED_CLIPBOARD),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedClipboard.so        $(SOLARIS_INST_DIR)/VBoxSharedClipboard.so,)
 	$(QUIET)$(if $(VBOX_WITH_GUEST_PROPS),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxGuestPropSvc.so                $(SOLARIS_INST_DIR)/VBoxGuestPropSvc.so,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxSDL                                $(SOLARIS_INST_DIR)/VBoxSDL,)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSDL.so                             $(SOLARIS_INST_DIR)/VBoxSDL.so,)
+endif
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxRT.so                                                        $(SOLARIS_INST_DIR)/VBoxRT.so
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxKeyboard.so                         $(SOLARIS_INST_DIR)/VBoxKeyboard.so,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox                              $(SOLARIS_INST_DIR)/VirtualBox,)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox.so                           $(SOLARIS_INST_DIR)/VirtualBox.so,)
+endif
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_BIN)/libVBoxQtCore.so.4                      $(SOLARIS_INST_DIR)/libVBoxQtCore.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_BIN)/libVBoxQtGui.so.4                       $(SOLARIS_INST_DIR)/libVBoxQtGui.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3/lib/libVBoxQtNetwork.so.4        $(SOLARIS_INST_DIR)/libVBoxQtNetwork.so.4,)
@@ -264,11 +281,17 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/xpidl                                                            $(SOLARIS_INST_DIR)/xpidl
 	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVRDP.so                               $(SOLARIS_INST_DIR)/VBoxVRDP.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxHeadless                          $(SOLARIS_INST_DIR)/VBoxHeadless,)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxHeadless.so                       $(SOLARIS_INST_DIR)/VBoxHeadless.so,)
+endif
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 0755 $(PATH_BIN)/rdesktop-vrdp                    $(SOLARIS_INST_DIR)/rdesktop-vrdp,)
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 644 $(wildcard $(PATH_BIN)/rdesktop-vrdp-keymaps/*) $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps/,)
 	$(call MSG_L1,Stripping binaries $(SOLARIS_INST_DIR))
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/vboxdrv,)
-	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxBFE,)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXBFE),strip $(SOLARIS_INST_DIR)/VBoxBFE,))
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXBFE),strip $(SOLARIS_INST_DIR)/VBoxBFE.so,))
+endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxDD2.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxDD2.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxDDU.so,)
@@ -280,9 +303,15 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxXPCOMIPCD,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxSVC,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXSDL),strip $(SOLARIS_INST_DIR)/VBoxSDL,),)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXSDL),strip $(SOLARIS_INST_DIR)/VBoxSDL.so,),)
+endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxRT.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VBoxKeyboard.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VirtualBox,),)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VirtualBox.so,),)
+endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtCore.so.4,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtGui.so.4,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtNetwork.so.4,),)
@@ -298,6 +327,9 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/xpidl,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VRDP),strip $(SOLARIS_INST_DIR)/VBoxVRDP.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_HEADLESS),strip $(SOLARIS_INST_DIR)/VBoxHeadless,),)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_HEADLESS),strip $(SOLARIS_INST_DIR)/VBoxHeadless.so,),)
+endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VRDP_RDESKTOP),strip $(SOLARIS_INST_DIR)/rdesktop-vrdp,),)
 	$(QUIET)$(call MSG_L1,Installing and stripping relocatable objects $(SOLARIS_INST_DIR))
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(SOL_OBJCOPY) $(PATH_BIN)/VBoxDD2GC.gc $(SOLARIS_INST_DIR)/VBoxDD2GC.gc, $(INSTALL) -m 0755 $(PATH_BIN)/VBoxDD2GC.gc $(SOLARIS_INST_DIR)/VBoxDD2GC.gc)
@@ -327,7 +359,12 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(PATH_CURRENT)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/vboxdrv.sh                                                   $(SOLARIS_INST_DIR)/vboxdrv.sh
+	$(QUIET)$(SED) \
+		-e "s/_HARDENED_/$(if $(VBOX_WITH_HARDENED),hardened,))/" \
+		--output $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp \
+		 $(PATH_CURRENT)/vboxdrv.sh
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp                                           $(SOLARIS_INST_DIR)/vboxdrv.sh
+	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/VBox.sh                                                      $(SOLARIS_INST_DIR)/VBox.sh
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(PATH_CURRENT)/virtualbox.desktop                   $(SOLARIS_INST_DIR)/virtualbox.desktop,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBox.png                                                         $(SOLARIS_INST_DIR)/VBox.png
@@ -345,7 +382,11 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt
 	$(QUIET)$(if $(VBOX_WITH_SOLARIS_VBI),$(INSTALL) -m 0644 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg      $(SOLARIS_INST_DIR)/$(VBIPKG_FILENAME).pkg,)
 	$(call MSG_L1,Creating install package: $(PKG_FILENAME).tar.gz)
-	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(SOLARIS_INST_DIR) $(PKG_FILENAME) $(KBUILD_TARGET_ARCH) $(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,)
+	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(if $(VBOX_WITH_HARDENING),--hardened) \
+		$(SOLARIS_INST_DIR) \
+		$(PKG_FILENAME) \
+		$(KBUILD_TARGET_ARCH) \
+		$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz $(PATH_BIN)
 	@# Clean up files emitted as side-effect or result of packing
 	$(QUIET)$(RM) -Rf $(SOLARIS_INST_DIR)
@@ -381,16 +422,22 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 		$(VBOX_VERSION_STAMP) \
 		Makefile.kmk
 	$(call MSG_L1,Installing debug binaries $(SOLARIS_DBG_DIR))
-	$(QUIET)$(RM) -Rf $(SOLARIS_DBG_DIR)
-	$(QUIET)$(MKDIR) -p $(SOLARIS_DBG_DIR)/components
+	$(QUIET)$(RM) -Rf -- $(SOLARIS_DBG_DIR)
+	$(QUIET)$(MKDIR) -p -- $(SOLARIS_DBG_DIR)/components
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxdrv                                                            $(SOLARIS_DBG_DIR)/vboxdrv
-	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxBFE                                                            $(SOLARIS_DBG_DIR)/VBoxBFE
+	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxBFE                                  $(SOLARIS_DBG_DIR)/VBoxBFE)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxBFE.so                               $(SOLARIS_DBG_DIR)/VBoxBFE.so)
+endif
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxDD.so                                                          $(SOLARIS_DBG_DIR)/VBoxDD.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxDD2.so                                                         $(SOLARIS_DBG_DIR)/VBoxDD2.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxManage                                                         $(SOLARIS_DBG_DIR)/VBoxManage
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxREM.so                                                         $(SOLARIS_DBG_DIR)/VBoxREM.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxRT.so                                                          $(SOLARIS_DBG_DIR)/VBoxRT.so
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSDL                                  $(SOLARIS_DBG_DIR)/VBoxSDL,)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSDL.so                               $(SOLARIS_DBG_DIR)/VBoxSDL.so,)
+endif
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSVC                                                            $(SOLARIS_DBG_DIR)/VBoxSVC
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxDDU.so                                                         $(SOLARIS_DBG_DIR)/VBoxDDU.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxVMM.so                                                         $(SOLARIS_DBG_DIR)/VBoxVMM.so
@@ -403,6 +450,9 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox                                $(SOLARIS_DBG_DIR)/VirtualBox,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/libVBoxQtCore.so.4                        $(SOLARIS_DBG_DIR)/libVBoxQtCore.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/libVBoxQtGui.so.4                         $(SOLARIS_DBG_DIR)/libVBoxQtGui.so.4,)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox3.so                             $(SOLARIS_DBG_DIR)/VirtualBox3.so,)
+endif
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSettings.so                                                    $(SOLARIS_DBG_DIR)/VBoxSettings.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxC.so                                                $(SOLARIS_DBG_DIR)/components/VBoxC.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxSVCM.so                                             $(SOLARIS_DBG_DIR)/components/VBoxSVCM.so
@@ -410,6 +460,9 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/xpidl                                                              $(SOLARIS_DBG_DIR)/xpidl
 	$(QUIET)$(if $(VBOX_WITH_VRDP),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxVRDP.so                                 $(SOLARIS_DBG_DIR)/VBoxVRDP.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxHeadless                            $(SOLARIS_DBG_DIR)/VBoxHeadless,)
+ifdef VBOX_WITH_HARDENING
+	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxHeadless.so                         $(SOLARIS_DBG_DIR)/VBoxHeadless.so,)
+endif
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/rdesktop-vrdp                      $(SOLARIS_DBG_DIR)/rdesktop-vrdp,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxDbg.so                          $(SOLARIS_DBG_DIR)/VBoxDbg.so,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxwebsrv                           $(SOLARIS_DBG_DIR)/vboxwebsrv,)

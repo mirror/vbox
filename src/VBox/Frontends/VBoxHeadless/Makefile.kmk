@@ -27,18 +27,42 @@ SUB_DEPTH = ..
 endif
 include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += VBoxHeadless
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 ifdef VBOX_WITH_FFMPEG
  include $(PATH_SUB_CURRENT)/VideoCapture/Makefile.kmk
 endif
 
-VBoxHeadless_TEMPLATE   = VBOXMAINCLIENTEXE
+#
+# Targets.
+#
+ifdef VBOX_WITH_HARDENING
+ PROGRAMS += VBoxHeadlessHardened
+ DLLS += VBoxHeadless
+else
+ PROGRAMS += VBoxHeadless
+endif
+
+
+#
+# Hardened VBoxHeadless.
+#
+VBoxHeadlessHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxHeadlessHardened_SOURCES = VBoxHeadlessHardened.cpp
+VBoxHeadlessHardened_NAME = VBoxHeadless
+
+
+#
+# VBoxHeadless
+#
+VBoxHeadless_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBOXMAINCLIENTEXE)
 VBoxHeadless_DEFS       = VBOX_FFMPEG
 VBoxHeadless_SOURCES    = VBoxHeadless.cpp
 ifdef VBOX_WITH_VRDP
  VBoxHeadless_DEFS     += VBOX_WITH_VRDP
  VBoxHeadless_SOURCES  += Framebuffer.cpp
+endif
+ifdef VBOX_WITH_HARDENING
+ VBoxHeadless_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxHeadless.dylib
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk

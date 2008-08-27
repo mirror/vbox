@@ -39,24 +39,26 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Targets
 #
-LIBRARIES += SUPR3
+LIBRARIES += SUPR3 SUPR3HardenedStatic
 ifndef VBOX_ONLY_DOCS
  ifeq ($(filter-out pe lx,$(VBOX_LDR_FMT)),)
- LIBRARIES += SUPR0
+  LIBRARIES += SUPR0
+ endif
+ ifdef VBOX_WITH_SUPSVC
+  PROGRAMS += VBoxSupSvc
  endif
  ifdef VBOX_WITH_VBOXDRV
- LIBRARIES       += SUPR0IdcClient
- SYSMODS.darwin  += VBoxDrv
- SYSMODS.freebsd += vboxdrv
- SYSMODS.linux   += vboxdrv
- SYSMODS.win     += VBoxDrv
- SYSMODS.os2     += VBoxDrv
- SYSMODS.solaris += vboxdrv
- OTHERS.linux    += \
-         $(PATH_BIN)/src/build_in_tmp \
-         $(if $(VBOX_OSE),,$(PATH_BIN)/src/dkms.conf)
+  LIBRARIES       += SUPR0IdcClient
+  SYSMODS.darwin  += VBoxDrv
+  SYSMODS.freebsd += vboxdrv
+  SYSMODS.linux   += vboxdrv
+  SYSMODS.win     += VBoxDrv
+  SYSMODS.os2     += VBoxDrv
+  SYSMODS.solaris += vboxdrv
+  OTHERS.linux    += \
+  	$(PATH_BIN)/src/build_in_tmp \
+  	$(if $(VBOX_OSE),,$(PATH_BIN)/src/dkms.conf)
  endif
-
  INSTALLS.linux  += vboxmod-bin vboxmod-sh
 
  #
@@ -98,20 +100,60 @@ $(PATH_BIN)/src/dkms.conf: \
 # The Ring-3 Support Library (this is linked into the IPRT dll, VBoxRT).
 #
 ifneq ($(filter l4%,$(KBUILD_TARGET) $(BUILD_TARGET_SUB)),)
-# L4 has trouble with -pedantic. It also make trouble when inlining is not enabled.
-SUPR3_TEMPLATE      = VBOXR3NP
+ # L4 has trouble with -pedantic. It also make trouble when inlining is not enabled.
+ SUPR3_TEMPLATE     = VBOXR3NP
 else
-SUPR3_TEMPLATE      = VBOXR3
+ SUPR3_TEMPLATE     = VBOXR3
 endif
 SUPR3_DEFS          = IN_SUP_R3 IN_RT_R3
 ifdef VBOX_WITH_IDT_PATCHING
-SUPR3_DEFS         += VBOX_WITH_IDT_PATCHING
+ SUPR3_DEFS        += VBOX_WITH_IDT_PATCHING
+endif
+ifdef VBOX_WITH_SUPSVC
+ SUPR3_DEFS        += VBOX_WITH_SUPSVC
 endif
 SUPR3_INCS         := $(PATH_SUB_CURRENT)
 SUPR3_INCS.l4       = $(L4_INCDIR)
 SUPR3_SOURCES       = \
 	SUPLib.cpp \
+	SUPR3HardenedIPRT.cpp \
+	SUPR3HardenedVerify.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp
+
+
+#
+# The static part of the hardened support library (ring-3).
+#
+SUPR3HardenedStatic_TEMPLATE = VBOXR3HARDENEDLIB
+SUPR3HardenedStatic_DEFS     = IN_SUP_HARDENED_R3
+ifdef VBOX_WITH_SUPSVC
+ SUPR3HardenedStatic_DEFS   += VBOX_WITH_SUPSVC
+endif
+SUPR3HardenedStatic_INCS     = .
+SUPR3HardenedStatic_SOURCES  = \
+	SUPR3HardenedMain.cpp \
+	SUPR3HardenedVerify.cpp \
+	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp
+
+
+#
+# VBoxSupSvc - The system wide service/daemon.
+#
+VBoxSupSvc_TEMPLATE = VBOXR3EXE
+VBoxSupSvc_SOURCES = \
+	SUPSvc.cpp \
+	SUPSvcGlobal.cpp \
+	$(KBUILD_TARGET)/SUPSvc-$(KBUILD_TARGET).cpp
+if1of ($(KBUILD_TARGET), win)
+ VBoxSupSvc_SOURCES += \
+	SUPSvcGrant.cpp
+endif
+ifn1of ($(KBUILD_TARGET), win)
+ VBoxSupSvc_SOURCES += \
+ 	SUPSvcMain-posix.cpp
+endif
+VBoxSupSvc_LIBS = \
+	$(LIB_RUNTIME)
 
 
 #
@@ -119,10 +161,10 @@ SUPR3_SOURCES       = \
 #
 SUPR0_TEMPLATE      = VBOXR0
 ifeq ($(VBOX_LDR_FMT),pe)
-SUPR0_SOURCES       += SUPR0.def
+ SUPR0_SOURCES     += SUPR0.def
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
-SUPR0_SOURCES       += $(PATH_TARGET)/SUPR0.def
+SUPR0_SOURCES      += $(PATH_TARGET)/SUPR0.def
 $(PATH_TARGET)/SUPR0.def: $(PATH_SUB_CURRENT)/SUPR0.def | $(call DIRDEP,$(PATH_TARGET))
 	$(SED) -e 's/^[ \t][ \t]*\([gA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
 	$(MV) -f $@.tmp $@
@@ -146,6 +188,7 @@ SUPR0IdcClient_SOURCES = \
 #
 # VBoxDrv.sys - The Windows driver.
 #
+## @todo consoliate all the targets into a single mess.
 ifeq ($(KBUILD_TARGET),win)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE
@@ -153,7 +196,7 @@ ifdef VBOX_SIGNING_MODE
 endif
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
 ifdef VBOX_WITH_IDT_PATCHING
-VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
+ VBoxDrv_DEFS        += VBOX_WITH_IDT_PATCHING
 endif
 VBoxDrv_SDKS          = W2K3DDK WINPSDKINCS
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
