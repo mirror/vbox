@@ -494,7 +494,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 if (pVM->pgm.s.pHCShwAmd64CR3)
                 {
                     /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
-                    if (pgmPoolGetPage(pPool, pVM->pgm.s.pHCShwAmd64CR3->GCPhys))
+                    if (pVM->pgm.s.pHCShwAmd64CR3->enmKind != PGMPOOLKIND_FREE)
                         pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
                     pVM->pgm.s.pHCShwAmd64CR3 = 0;
                     pVM->pgm.s.pHCPaePML4     = 0;
