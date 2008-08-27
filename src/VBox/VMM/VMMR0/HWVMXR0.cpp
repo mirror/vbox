@@ -200,6 +200,7 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVM->hwaccm.s.vmx.pMSRBitmapPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjMSRBitmap, 0);
         memset(pVM->hwaccm.s.vmx.pMSRBitmap, 0xff, PAGE_SIZE);
     }
+
 #ifdef LOG_ENABLED
     SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x) RealModeTSS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys, pVM->hwaccm.s.vmx.pRealModeTSS, (uint32_t)pVM->hwaccm.s.vmx.pRealModeTSSPhys);
 #endif
@@ -310,11 +311,13 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
         val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
 #endif
 
+#ifdef VBOX_WITH_VTX_MSR_BITMAPS
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
     {
         Assert(pVM->hwaccm.s.vmx.pMSRBitmapPhys);
         val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS;
     }
+#endif
 
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
