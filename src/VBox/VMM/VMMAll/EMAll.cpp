@@ -2076,6 +2076,7 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
                         return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
                     }
 
+                    CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAT);
                     msrEFER |= MSR_K6_EFER_LMA;
                 }
                 else
