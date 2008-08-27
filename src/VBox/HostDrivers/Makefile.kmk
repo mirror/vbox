@@ -28,17 +28,19 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/Support/Makefile.kmk
-ifeq ($(KBUILD_TARGET),win)
- include $(PATH_SUB_CURRENT)/VBoxTAP/Makefile.kmk
-endif
-ifdef VBOX_WITH_USB
- include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
-endif
-if1of ($(KBUILD_TARGET), darwin solaris)
- ifndef VBOX_OSE
-  include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+ifndef VBOX_ONLY_DOCS
+ ifeq ($(KBUILD_TARGET),win)
+  include $(PATH_SUB_CURRENT)/VBoxTAP/Makefile.kmk
  endif
-endif
+ ifdef VBOX_WITH_USB
+  include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
+ endif
+ if1of ($(KBUILD_TARGET), darwin solaris)
+  ifndef VBOX_OSE
+   include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+  endif
+ endif
+endif # !VBOX_ONLY_DOCS
 
 # Let kBuild generate the rules.
 include $(KBUILD_PATH)/subfooter.kmk

@@ -23,8 +23,10 @@
 #define ___H_VBOXMANAGE
 
 #include <iprt/types.h>
+#ifndef VBOX_ONLY_DOCS
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
+#endif /* !VBOX_ONLY_DOCS */
 
 /** @name Syntax diagram category.
  * @{ */
@@ -99,11 +101,15 @@ int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...);
 int errorArgument(const char *pszFormat, ...);
 
 void printUsageInternal(USAGECATEGORY u64Cmd);
+#ifndef VBOX_ONLY_DOCS
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+#endif /* !VBOX_ONLY_DOCS */
 extern void usageGuestProperty(void);
+#ifndef VBOX_ONLY_DOCS
 extern int handleGuestProperty(int argc, char *argv[],
                                ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+#endif /* !VBOX_ONLY_DOCS */
 unsigned long VBoxSVNRev();
 
 #endif /* !___H_VBOXMANAGE */
