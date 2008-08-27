@@ -31,6 +31,8 @@
 # define QIApplication QApplication
 #endif
 
+#include <QCleanlooksStyle>
+#include <QPlastiqueStyle>
 #include <qmessagebox.h>
 #include <qlocale.h>
 #include <qtranslator.h>
@@ -170,6 +172,13 @@ int main (int argc, char **argv)
     /* scope the QIApplication variable */
     {
         QIApplication a (argc, argv);
+
+        /* Qt4.3 version has the QProcess bug which freezing the application
+         * for 30 seconds. This bug is internally used at initialization of
+         * Cleanlooks style. So we have to change this style to another one. */
+        if (QString (qVersion()).startsWith ("4.3") &&
+            qobject_cast <QCleanlooksStyle*> (QApplication::style()))
+            QApplication::setStyle (new QPlastiqueStyle);
 
 #ifdef Q_WS_X11
         /* Cause Qt4 has the conflict with fontconfig application as a result
