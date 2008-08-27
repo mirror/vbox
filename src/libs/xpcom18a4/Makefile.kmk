@@ -242,6 +242,8 @@ BLDPROGS += \
 # We build several libraries so that any linker command line
 # length restrictions limit will be avoided. (Solaris, Mac?)
 #
+
+ifndef VBOX_ONLY_SDK
 LIBRARIES += \
 	VBox-xpcom-nspr \
 	VBox-xpcom-typelib \
@@ -265,13 +267,6 @@ LIBRARIES += \
 DLLS += \
 	VBoxXPCOM \
 	VBoxXPCOMIPCC
-
-# we put it here, as template it uses depends on VBoxRT,
-# which may not be built yet
-# r=bird: This doesn't work, it won't be built this way. The way to fix it is to make the order change in src/Makefile.kmk (or was it src/lib/Makefile.kmk) that puts src/VBox/Runtime before src/lib/xpcom18a4 standard for all builds.
-OTHERS += \
-        $(TARGET_VBoxHlp)
-
 
 ifdef VBOX_WITH_TESTCASES
 PROGRAMS += \
@@ -303,6 +298,13 @@ PROGRAMS += \
 #   tstTestPermanentAtoms
 endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
+
+
+else
+
+PATH_VBox-xpcom-string=$(PATH_BIN)
+
+endif # !VBOX_ONLY_SDK
 
 ifeq ($(KBUILD_TARGET),linux)
  XPCOM_TYPELIB = $(PATH_BIN)/VBoxXPCOMBase.xpt
@@ -1317,7 +1319,9 @@ ifdef VBOX_WITH_PYTHON
    $(warning Unable to determine the python library (VBOX_LIB_PYTHON).)
   endif
  endif
+ifndef VBOX_ONLY_SDK
  DLLS += VBoxPython
+endif
  INSTALLS += VBoxPython-inst-py-xpcom
  INSTALLS += VBoxPython-inst-sample
 endif

@@ -700,6 +700,10 @@ additions-packing:
 		-C src/VBox/Additions \
 		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
 
+sdk:
+	+ $(KMK) VBOX_ONLY_SDK=1 VBOX_WITH_PYTHON=1 VBOX_WITHOUT_ADDITIONS=1 \
+              pass_bldprogs pass_others pass_installs pass_packing
+
 
 #
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution

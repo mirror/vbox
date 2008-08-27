@@ -48,12 +48,13 @@ tstShflCase_CLEAN    = $(PATH_TARGET)/tstShflSizes.run
 
 endif # VBOX_WITH_TESTCASES
 
-ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
- if1of ($(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH), x86.x86 amd64.amd64 x86.amd64)
-   OTHERS += $(PATH_TARGET)/tstShflSizes.run
+ifndef VBOX_ONLY_SDK
+ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
+  if1of ($(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH), x86.x86 amd64.amd64 x86.amd64)
+    OTHERS += $(PATH_TARGET)/tstShflSizes.run
+  endif
  endif
 endif
-
 
 include $(KBUILD_PATH)/subfooter.kmk
 

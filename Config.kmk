@@ -193,6 +193,12 @@ VBOX_WITH_OS2_ADDITIONS_BIN = 1
 ifdef VBOX_ADDITIONS_ONLY # typical mistake.
  $(error It is VBOX_ONLY_ADDITIONS=1 not VBOX_ADDITIONS_ONLY!)
 endif
+
+# When build SDK-only, no need for additions
+ifdef VBOX_ONLY_SDK
+ VBOX_WITHOUT_ADDITIONS=1
+endif
+
 # Don't create the additions ISO.
 # (Used by the additions build server, don't invert it.)
 #VBOX_WITHOUT_ADDITIONS_ISO = 1

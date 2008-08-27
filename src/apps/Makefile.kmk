@@ -13,17 +13,19 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_WITH_KCHMVIEWER
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-4.3),)
-  # subdirectory currently not possible because of _QT_MOCHDRS
-  SUBDIRS_AFTER += kchmviewer-4.3
+ifndef VBOX_ONLY_SDK
+ ifdef VBOX_WITH_KCHMVIEWER
+  ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-4.3),)
+   # subdirectory currently not possible because of _QT_MOCHDRS
+   SUBDIRS_AFTER += kchmviewer-4.3
+  endif
  endif
-endif
-ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
- ifeq ($(KBUILD_TARGET),linux)
-  include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
+ ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
+  ifeq ($(KBUILD_TARGET),linux)
+   include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
+  endif
  endif
-endif
+endif # !VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk
 

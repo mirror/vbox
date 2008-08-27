@@ -30,7 +30,6 @@ endif
 SOLARIS_INST_DIR := $(PATH_TARGET)/install
 SOLARIS_DBG_DIR  := $(PATH_TARGET)/installdbg
 SOLARIS_VBI_DIR  := $(PATH_TARGET)/installvbi
-SOLARIS_SDK_DIR  := $(PATH_TARGET)/installsdk
 SOL_DBG_OBJCOPY  := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
 SOL_OBJCOPY      := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
 
@@ -51,11 +50,6 @@ PACKING          = $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
 OTHER_CLEAN      = $(addprefix $(SOLARIS_INST_DIR)/,\
 	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
         makepackage.sh prototype postinstall.sh preremove.sh etc/devlink.tab )
-
-ifdef VBOX_WITH_SEPARATE_SDK
-PACKING       += $(PATH_BIN)/VirtualBox-SDK.zip
-endif
-
 
 #
 # Solaris installs.
@@ -148,9 +142,6 @@ SOLARIS_NLS = \
 	  $(shell $(CAT_EXT) \
 		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
 	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
-
-SOLARIS_SDK = \
-	$(foreach f, $(shell $(CAT_EXT) $(if $(VBOX_OSE),sdkfiles.ose,sdkfiles)), $(f))
 
 ifdef VBOX_WITH_DOCS
  ifndef $(VBOX_OSE)
@@ -359,13 +350,6 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	@# Clean up files emitted as side-effect or result of packing
 	$(QUIET)$(RM) -Rf $(SOLARIS_INST_DIR)
 
-$(PATH_BIN)/VirtualBox-SDK.zip: \
-		$(VBOX_VERSION_STAMP) \
-		$(addprefix $(SOLARIS_SDK_DIR)/,$(SOLARIS_SDK))
-	$(call MSG_L1,Making separate SDK delivery $@)
-	$(QUIET)$(REDIRECT) -C $(SOLARIS_SDK_DIR) -- zip -r9y $@ $(SOLARIS_SDK)
-	$(QUIET)$(RM) -Rf $(SOLARIS_SDK_DIR)
-    
 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(VBOX_VERSION_STAMP) \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
@@ -433,13 +417,3 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_BIN)/$(DBG_ARCHIVE) -C $(SOLARIS_DBG_DIR) $(SOLARIS_STRIP_BINS)
 	$(QUIET)chmod 0644 $(PATH_BIN)/$(DBG_ARCHIVE)
-
-$(addprefix $(SOLARIS_SDK_DIR)/,$(SOLARIS_SDK)): $$(subst $$(SOLARIS_SDK_DIR)/,$(PATH_BIN)/,$$@)
-	$(call MSG_L1,Copying $@)
-	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(CP) -pf $< $@
-
-# Enable this for forceful incremental re-packaging. Disabled as it's not needed.
-#.PHONY: $(addprefix $(SOLARIS_INST_DIR)/,$(SOLARIS_SDK))
-#	$(RM) -Rf $(SOLARISINSTDIR)
-

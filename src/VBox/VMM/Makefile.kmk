@@ -26,6 +26,8 @@ DEPTH     = ../../..
 endif
 include	$(KBUILD_PATH)/subheader.kmk
 
+ifndef VBOX_ONLY_SDK
+
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
@@ -174,6 +176,7 @@ endif
 # The VMM DLL.
 #
 DLLS += VBoxVMM
+
 VBoxVMM_TEMPLATE = VBOXR3
 VBoxVMM_DEFS = $(VMMR3_DEFS)
 VBoxVMM_SOURCES = VBoxVMMDeps.cpp
@@ -431,6 +434,7 @@ endif
 #
 VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
+endif #!VBOX_ONLY_SDK
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

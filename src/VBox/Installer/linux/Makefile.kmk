@@ -33,13 +33,9 @@ PACKING        = $(if $(VBOX_NO_LINUX_RUN_INSTALLER),,\
 		 $(PATH_BIN)/$(PACKAGE_NAME) $(PATH_BIN)/VirtualBox-dbg.tar.bz2)
 PACKING       += $(PATH_BIN)/VirtualBox.tar.bz2
 
-ifdef VBOX_WITH_SEPARATE_SDK
-PACKING       += $(PATH_BIN)/VirtualBox-SDK.zip
-SDK_IN_SEPARATE=sdk
-SDK_IN_NORMAL=
-else
-SDK_IN_SEPARATE=
-SDK_IN_NORMAL=sdk
+ifdef VBOX_ONLY_SDK
+SDK_ZIP        = $(PATH_BIN)/VirtualBox-$(VBOX_VERSION_STRING)-SDK.zip
+PACKING        = $(SDK_ZIP)
 endif
 
 OTHER_CLEAN    = $(addprefix $(PATH_TARGET)/install/,\
@@ -110,8 +106,7 @@ LINUXNOSTRIP = \
 	VBox.png \
 	VBoxAddIF.sh \
 	$(if $(VBOX_WITH_QT4GUI),VirtualBox.desktop,) \
-	src \
-	$(SDK_IN_NORMAL)
+	src 
 
 # Qt4 GUI
 ifdef VBOX_WITH_QT4GUI
@@ -232,7 +227,7 @@ $(PATH_TARGET)/vboxnet.sh: vboxnet.sh.in
 
 # .tar.bz2 for converting into .run
 $(PATH_TARGET)/install/VirtualBox.tar.bz2: \
-		$(if $(VBOX_WITH_SEPARATE_SDK), $(PATH_BIN)/VirtualBox-SDK.zip) \
+		$(SDK_ZIP) \
 		$(addprefix $(PATH_TARGET)/archive/, $(LINUXARCHFILES)) \
 		Makefile.kmk \
 		$(VBOX_VERSION_STAMP) \
@@ -255,14 +250,14 @@ $(PATH_BIN)/VirtualBox.tar.bz2: \
 
 
 
+ifneq ($(SDK_ZIP),)
 # make separate VirtualBox SDK delivery
-$(PATH_BIN)/VirtualBox-SDK.zip:            \
-		$(PATH_TARGET)/archive/sdk \
-		$(VBOX_VERSION_STAMP)      \
-		$(PATH_TARGET)/VirtualBox-$(VBOX_VERSION_STRING)
-	$(call MSG_L1,Making separate SDK delivery $@)
-	$(QUIET)$(REDIRECT) -C $(PATH_TARGET)/archive -- zip -r9 $@ sdk
-	$(QUIET)$(RM) -Rf -- $(PATH_TARGET)/archive/sdk
+$(SDK_ZIP):    \
+		$(PATH_BIN)/sdk \
+		$(VBOX_VERSION_STAMP)
+	$(call MSG_L1,Making SDK delivery $@)
+	$(QUIET)$(REDIRECT) -C $(PATH_BIN) -- zip -r9 $@ sdk
+endif
 
 $(PATH_TARGET)/VirtualBox-$(VBOX_VERSION_STRING): $(PATH_TARGET)/archive
 	$(call MSG_INST_SYM,$<,$@)
@@ -299,7 +294,7 @@ $(foreach f,$(LINUXSTRIPOBJ),$(PATH_TARGET)/archive/$(f)): \
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(if $(VBOX_DO_STRIP),objcopy --strip-unneeded -R .comment $< $@,cp $< $@)
 
-$(foreach f,$(LINUXNOSTRIP) $(SDK_IN_SEPARATE),$(PATH_TARGET)/archive/$(f)): \
+$(foreach f,$(LINUXNOSTRIP),$(PATH_TARGET)/archive/$(f)): \
 		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
 	$(call MSG_INST_SYM,$<,$@)
 	$(QUIET)$(RM) -f $@

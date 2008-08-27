@@ -33,16 +33,21 @@ endif
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 # targets++
-LIBRARIES       += VBoxCOM
-DLLS            += VBoxSettings VBoxC
-PROGRAMS        += VBoxSVC
+ifndef VBOX_ONLY_SDK
+ LIBRARIES       += VBoxCOM
+ DLLS            += VBoxSettings VBoxC
+ PROGRAMS        += VBoxSVC
+endif #!VBOX_ONLY_SDK
+
 OTHERS           += $(VBOX_PATH_SDK)/bindings/VirtualBox.xidl
 VBOX_MAIN_DEFS   =
 ifneq ($(KBUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
- DLLS           += VBoxSVCM
+ ifndef VBOX_ONLY_SDK
+  DLLS           += VBoxSVCM
+ endif
  ifneq ($(KBUILD_TARGET),os2)
   VBOX_MAIN_DEFS+= VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
  endif
@@ -79,7 +84,9 @@ ifeq ($(KBUILD_TARGET),win)
  VBOX_MAIN_PREREQS = $(PATH_VBoxCOM)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
 else # xpcom
- INSTALLS       += xpcom-components
+ ifndef VBOX_ONLY_SDK
+  INSTALLS       += xpcom-components
+ endif #!VBOX_ONLY_SDK
  IDLFILE         = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
  ifeq ($(KBUILD_TARGET),linux)
   IDLTYPELIB     = $(PATH_BIN)/VirtualBox_XPCOM.xpt

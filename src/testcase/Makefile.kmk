@@ -22,7 +22,9 @@
 SUB_DEPTH = ../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += tstRunTestcases
+ifndef VBOX_ONLY_SDK
+ PROGRAMS += tstRunTestcases
+endif
 
 tstRunTestcases_TEMPLATE = VBOXR3TSTEXE
 tstRunTestcases_LIBS = $(LIB_RUNTIME)

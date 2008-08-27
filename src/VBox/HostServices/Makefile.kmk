@@ -27,6 +27,8 @@ SUB_DEPTH = .
 endif
 include	$(KBUILD_PATH)/subheader.kmk
 
+ifndef VBOX_ONLY_SDK
+
 # Include sub-makefiles.
 ifdef VBOX_WITH_SHARED_FOLDERS
  include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
@@ -44,6 +46,8 @@ endif
 ifdef VBOX_WITH_GUEST_PROPS
  include $(PATH_SUB_CURRENT)/GuestProperties/Makefile.kmk
 endif
+
+endif #!VBOX_ONLY_SDK
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
