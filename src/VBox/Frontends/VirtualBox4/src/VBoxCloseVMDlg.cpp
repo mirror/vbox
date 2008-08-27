@@ -32,6 +32,12 @@ VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
     /* Apply UI decorations */
     Ui::VBoxCloseVMDlg::setupUi (this);
 
+#ifdef Q_WS_MAC
+    /* Make some more space around the content */
+    hboxLayout->setContentsMargins (40, 0, 40, 0);
+    /* and more space between the radio buttons */
+    gridLayout->setSpacing (15);
+#endif /* Q_WS_MAC */
     /* Set fixed size */
     setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 

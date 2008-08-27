@@ -59,7 +59,11 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mButton2 = aButton2;
 
     QVBoxLayout *layout = new QVBoxLayout (this);
+#ifdef Q_WS_MAC
+    layout->setContentsMargins (40, 11, 40, 11);
+#else /* !Q_WS_MAC */
     VBoxGlobal::setLayoutMargin (layout, 11);
+#endif /* !Q_WS_MAC */
     layout->setSpacing (10);
     layout->setSizeConstraint (QLayout::SetMinimumSize);
 
