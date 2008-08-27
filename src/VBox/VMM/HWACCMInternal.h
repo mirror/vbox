@@ -218,6 +218,34 @@ typedef struct HWACCM
         /** Virtual address of the virtual APIC mmio cache. */
         R0PTRTYPE(uint8_t *)        pAPIC;
 
+        /** R0 memory object for the MSR bitmap (1 page). */
+        RTR0MEMOBJ                  pMemObjMSRBitmap;
+        /** Physical address of the MSR bitmap (1 page). */
+        RTHCPHYS                    pMSRBitmapPhys;
+        /** Virtual address of the MSR bitmap (1 page). */
+        R0PTRTYPE(uint8_t *)        pMSRBitmap;
+
+        /** R0 memory object for the MSR entry load page (guest MSRs). */
+        RTR0MEMOBJ                  pMemObjMSREntryLoad;
+        /** Physical address of the MSR entry load page (guest MSRs). */
+        RTHCPHYS                    pMSREntryLoadPhys;
+        /** Virtual address of the MSR entry load page (guest MSRs). */
+        R0PTRTYPE(uint8_t *)        pMSREntryLoad;
+
+        /** R0 memory object for the MSR exit store page (guest MSRs). */
+        RTR0MEMOBJ                  pMemObjMSRExitStore;
+        /** Physical address of the MSR exit store page (guest MSRs). */
+        RTHCPHYS                    pMSRExitStorePhys;
+        /** Virtual address of the MSR exit store page (guest MSRs). */
+        R0PTRTYPE(uint8_t *)        pMSRExitStore;
+
+        /** R0 memory object for the MSR exit load page (host MSRs). */
+        RTR0MEMOBJ                  pMemObjMSRExitLoad;
+        /** Physical address of the MSR exit load page (host MSRs). */
+        RTHCPHYS                    pMSRExitLoadPhys;
+        /** Virtual address of the MSR exit load page (host MSRs). */
+        R0PTRTYPE(uint8_t *)        pMSRExitLoad;
+
         /** Ring 0 handlers for VT-x. */
         DECLR0CALLBACKMEMBER(int, pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
 
