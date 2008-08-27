@@ -2023,6 +2023,8 @@ static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
     /*
      * Lazy approach.
      */
+    /* @todo incompatible with long mode paging (cr3 root will be flushed) */
+    Assert(!CPUMIsGuestInLongMode(pVM));
     pgmPoolFlushAllInt(pPool);
     return VERR_PGM_POOL_FLUSHED;
 #endif
@@ -3730,6 +3732,8 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, uint16_t iUser)
      * If we have tracking enabled, it should be possible to come up with
      * a cheap replacement strategy...
      */
+    /* @todo incompatible with long mode paging (cr3 root will be flushed) */
+    Assert(!CPUMIsGuestInLongMode(pVM));
     pgmPoolFlushAllInt(pPool);
     return VERR_PGM_POOL_FLUSHED;
 #endif
