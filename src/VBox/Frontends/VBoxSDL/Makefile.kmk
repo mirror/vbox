@@ -120,7 +120,7 @@ VBoxSDL_LDFLAGS.darwin = \
 	-framework Foundation -framework AppKit
 
 VBoxSDL_CLEAN = $(PATH_VBoxSDL)/Ico64x01.h
-Framebuffer.cpp_DEPS = $(PATH_VBoxSDL)/Ico64x01.h
+VBoxSDL_INTERMEDIATES = $(PATH_VBoxSDL)/Ico64x01.h
 
 
 #
