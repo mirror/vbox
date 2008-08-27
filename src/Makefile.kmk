@@ -25,7 +25,11 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
-else  # !VBOX_ONLY_ADDITIONS
+else ifdef VBOX_ONLY_DOCS
+ include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
@@ -39,7 +43,7 @@ else  # !VBOX_ONLY_ADDITIONS
  ifdef VBOX_WITH_TESTCASES
   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  endif
-endif # !VBOX_ONLY_ADDITIONS
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
 include $(KBUILD_PATH)/subfooter.kmk
 
@@ -62,6 +66,9 @@ else  # !VBOX_ONLY_ADDITIONS
  endif
  ifdef VBOX_WITH_TESTCASES
   SUBDIRS +=  testcase
+ endif
+ ifdef VBOX_ONLY_DOCS
+  SUBDIRS := $(filter VBox/Runtime bldprogs libs VBox, $(SUBDIRS))
  endif
 endif # !VBOX_ONLY_ADDITIONS
 

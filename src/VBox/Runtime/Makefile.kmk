@@ -49,7 +49,14 @@ ifdef VBOX_ONLY_ADDITIONS
   endif
  endif
 
-else
+else ifdef VBOX_ONLY_DOCS
+ #
+ # Build docs only - need just regular R3 runtime.
+ #
+ LIBRARIES += RuntimeR3
+ DLLS += VBoxRT
+
+else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
  #
  # Normal build.

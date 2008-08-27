@@ -37,6 +37,7 @@ else
  SUBDIRS += src
 endif
 
+ifndef VBOX_ONLY_DOCS
 ifndef VBOX_ONLY_ADDITIONS
 #
 # Install external binaries (mostly redistributable parts of tools we use).
@@ -229,6 +230,7 @@ ifn1of ($(KBUILD_TARGET), l4 linux win)
 endif
 
 endif # !VBOX_ONLY_ADDITIONS
+endif # !VBOX_ONLY_DOCS
 
 
 include $(KBUILD_PATH)/subfooter.kmk
@@ -238,11 +240,17 @@ include $(KBUILD_PATH)/subfooter.kmk
 # Generate documentation.
 # (This should be converted into a separate pass or merged with an existing one later.)
 #
+ifdef VBOX_ONLY_DOCS
+# It may sound a bit odd, but for preparing the documentation package the
+# doxygen documentation isn't needed and increases the build time a lot.
+docs:
+else # !VBOX_ONLY_DOCS
 docs: $(if $(VBOX_WITH_ALL_DOXYGEN_TARGETS),docs.Core)
 	$(KMK) -C src/VBox/Main docs
 ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
 	$(KMK) -C src/VBox/Runtime docs
 endif
+endif # !VBOX_ONLY_DOCS
 
 docs.Core: $(PATH_TARGET)/docs.Core
 

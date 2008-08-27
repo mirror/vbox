@@ -26,6 +26,10 @@ include $(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
+else ifdef VBOX_ONLY_DOCS
+ include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
 else
  ifdef VBOX_WITH_MAIN
   include $(PATH_SUB_CURRENT)/Main/Makefile.kmk 			# Do this one first because of soap.
@@ -47,7 +51,7 @@ else
  ifdef VBOX_WITH_INSTALLER
   ##@todo include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		# Keep this last.
  endif
-endif
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
 include $(KBUILD_PATH)/subfooter.kmk
 
@@ -60,7 +64,13 @@ ifdef VBOX_ONLY_ADDITIONS
 	Runtime \
 	Additions
 
-else  # !VBOX_ONLY_ADDITIONS
+else ifdef VBOX_ONLY_DOCS
+ SUBDIRS = \
+	Runtime \
+	Frontends \
+	HostDrivers
+
+else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  SUBDIRS_BLDPROGS = Devices Main
 
  SUBDIRS = \
@@ -90,7 +100,7 @@ else  # !VBOX_ONLY_ADDITIONS
  ifdef VBOX_WITH_INSTALLER
   SUBDIRS += Installer
  endif
-endif # !VBOX_ONLY_ADDITIONS
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
 include $(KBUILD_PATH)/footer.kmk
 endif # !VBOX_KBUILD_HACKING

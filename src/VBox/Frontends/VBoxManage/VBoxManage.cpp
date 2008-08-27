@@ -27,6 +27,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 
+#ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
@@ -41,6 +42,7 @@
 
 #include <vector>
 #include <list>
+#endif /* VBOX_ONLY_DOCS */
 
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
@@ -60,6 +62,7 @@
 
 #include "VBoxManage.h"
 
+#ifndef VBOX_ONLY_DOCS
 using namespace com;
 
 /* missing XPCOM <-> COM wrappers */
@@ -208,6 +211,7 @@ struct USBFilterCmd
     ComPtr<IMachine> mMachine;
     USBFilter mFilter;
 };
+#endif /* !VBOX_ONLY_DOCS */
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -670,10 +674,12 @@ int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
 {
     va_list args;
     showLogo(); // show logo even if suppressed
+#ifndef VBOX_ONLY_DOCS
     if (g_fInternalMode)
         printUsageInternal(u64Cmd);
     else
         printUsage(u64Cmd);
+#endif /* !VBOX_ONLY_DOCS */
     va_start(args, pszFormat);
     RTPrintf("\n"
              "Syntax error: %N\n", pszFormat, &args);
@@ -693,6 +699,7 @@ int errorArgument(const char *pszFormat, ...)
     return 1;
 }
 
+#ifndef VBOX_ONLY_DOCS
 /**
  * Print out progress on the console
  */
@@ -7807,6 +7814,7 @@ static int handleMetrics(int argc, char *argv[],
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
+#endif /* !VBOX_ONLY_DOCS */
 
 enum ConvertSettings
 {
@@ -7816,6 +7824,7 @@ enum ConvertSettings
     ConvertSettings_Ignore  = 3,
 };
 
+#ifndef VBOX_ONLY_DOCS
 /**
  * Checks if any of the settings files were auto-converted and informs the
  * user if so.
@@ -7967,6 +7976,7 @@ static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
 
     return SUCCEEDED (rc);
 }
+#endif /* !VBOX_ONLY_DOCS */
 
 // main
 ///////////////////////////////////////////////////////////////////////////////
@@ -8047,7 +8057,11 @@ int main(int argc, char *argv[])
     if (fShowLogo)
         showLogo();
 
-    HRESULT rc;
+
+#ifdef VBOX_ONLY_DOCS
+    int rc = 0;
+#else /* !VBOX_ONLY_DOCS */
+    HRESULT rc = 0;
 
     CHECK_RC_RET (com::Initialize());
 
@@ -8176,6 +8190,7 @@ int main(int argc, char *argv[])
     while (0);
 
     com::Shutdown();
+#endif /* !VBOX_ONLY_DOCS */
 
     /*
      * Free converted argument vector
@@ -8183,5 +8198,5 @@ int main(int argc, char *argv[])
     for (int i = iCmdArg; i < argc; i++)
         RTStrFree(argv[i]);
 
-    return rc;
+    return rc != 0;
 }

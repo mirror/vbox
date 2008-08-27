@@ -29,19 +29,28 @@ endif
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxManage
-VBoxManage_TEMPLATE    = VBOXMAINCLIENTEXE
-VBoxManage_DEFS       += $(if $(VBOX_WITH_VRDP),VBOX_VRDP,) \
+ifdef VBOX_ONLY_DOCS
+ VBoxManage_TEMPLATE   = VBOXR3NPEXE
+ VBoxManage_DEFS      += VBOX_ONLY_DOCS
+ VBoxManage_SOURCES     = \
+	VBoxManage.cpp \
+	VBoxManageSVN.cpp
+ VBoxManage_LIBS      += $(LIB_RUNTIME)
+else # !VBOX_ONLY_DOCS
+ VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
+ VBoxManage_DEFS      += $(if $(VBOX_WITH_VRDP),VBOX_VRDP,) \
                          $(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA,) \
                          $(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE,) \
                          $(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
                          $(if $(VBOX_WITH_AHCI),VBOX_WITH_AHCI,) \
                          $(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
-VBoxManage_DEFS.win    = _WIN32_WINNT=0x0500
-VBoxManage_SOURCES     = \
+ VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
+ VBoxManage_SOURCES     = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
 	VBoxManageSVN.cpp
+endif # !VBOX_ONLY_DOCS
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see
  #
@@ -52,7 +61,9 @@ ifneq ($(KBUILD_TARGET),win)
  VBoxManage_CXXFLAGS.release += \
 	$(if $(int-lt $(VBOX_GCC_VERSION_CXX),40300)$(int-gt $(VBOX_GCC_VERSION_CXX),40301),,--param max-fields-for-field-sensitive=0)
 endif
-VBoxManage_LIBS       += $(LIB_DDU)
+ifndef VBOX_ONLY_DOCS
+ VBoxManage_LIBS      += $(LIB_DDU)
+endif # !VBOX_ONLY_DOCS
 
 # VBoxManageSVN.cpp uses VBOX_SVN_REV.
 VBoxManageSVN.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
