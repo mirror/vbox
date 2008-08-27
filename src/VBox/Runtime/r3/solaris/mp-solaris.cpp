@@ -82,7 +82,7 @@ static DECLCALLBACK(int) rtMpSolarisOnce(void *pvUser1, void *pvUser2)
     if (g_pKsCtl)
     {
         g_capCpuInfo = RTMpGetCount();
-        g_papCpuInfo = (kstat_t **)RTMemAlloc(g_capCpuInfo * sizeof(kstat_t *));
+        g_papCpuInfo = (kstat_t **)RTMemAllocZ(g_capCpuInfo * sizeof(kstat_t *));
         if (g_papCpuInfo)
         {
             rc = RTCritSectInit(&g_MpSolarisCritSect);
