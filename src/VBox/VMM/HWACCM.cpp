@@ -523,6 +523,9 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->hwaccm.s.vmx.fEnabled = true;
                 hwaccmr3DisableRawMode(pVM);
 
+                /* Clear the PAT feature; see #3026. */
+                CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAT);
+
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
