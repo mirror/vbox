@@ -449,7 +449,11 @@ PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
 #ifdef PGMPOOL_WITH_MONITORING
     pgmPoolFlushAll(pVM);
 #endif
-    int rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
+    /* Remap CR3 as we have just flushed the CR3 shadow PML4 in case we're in long mode. */
+    int rc = PGM_GST_PFN(MapCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
+    AssertRC(rc);
+
+    rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     AssertRC(rc);
 
     return VINF_SUCCESS;
