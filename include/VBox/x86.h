@@ -728,6 +728,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Time Stamp Counter. */
 #define MSR_IA32_TSC                        0x10
 
+#define MSR_IA32_PLATFORM_ID                0x17
+
 #ifndef MSR_IA32_APICBASE /* qemu cpu.h klugde */
 #define MSR_IA32_APICBASE                   0x1b
 #endif
@@ -736,6 +738,12 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_FEATURE_CONTROL            0x3A
 #define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
 #define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
+
+/** BIOS update trigger (microcode update). */
+#define MSR_IA32_BIOS_UPDT_TRIG             0x79
+
+/** BIOS update signature (microcode). */
+#define MSR_IA32_BIOS_SIGN_ID               0x8B
 
 /** MTRR Capabilities. */
 #define MSR_IA32_MTRR_CAP                   0xFE
@@ -766,6 +774,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 
 /** MTRR Default Range. */
 #define MSR_IA32_MTRR_DEF_TYPE              0x2FF
+
+#define MSR_IA32_MC0_CTL                    0x400
+#define MSR_IA32_MC0_STATUS                 0x401
 
 /** Basic VMX information. */
 #define MSR_IA32_VMX_BASIC_INFO             0x480
