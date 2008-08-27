@@ -2557,8 +2557,13 @@ EMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 
 #ifdef IN_RING0
     case MSR_IA32_BIOS_SIGN_ID:
-        val = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);
-        break;
+        if (CPUMGetCPUVendor(pVM) == CPUMCPUVENDOR_INTEL)
+        {
+            /* Available since the P6 family. VT-x implies that this feature is present. */
+            val = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);
+            break;
+        }
+        /* no break */
 #endif
     default:
         /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
