@@ -345,6 +345,9 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # (Current not enabled by default because all the build servers has
 # different Python versions installed and would start burning.)
 #VBOX_WITH_PYTHON = 1
+if1of ($(KBUILD_TARGET), solaris)
+ VBOX_WITH_PYTHON = 1
+endif
 
 
 #
