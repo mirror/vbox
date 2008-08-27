@@ -123,7 +123,6 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
-#include <QWindowsStyle>
 int main (int argc, char **argv)
 {
     /* Initialize VBox Runtime. Initialize the Suplib+GC as well only if we
