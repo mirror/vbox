@@ -1304,19 +1304,14 @@ ifdef VBOX_WITH_PYTHON
  endif
  VBOX_PYTHON_VER := 2$(lastword $(subst ., .,$(VBOX_PATH_PYTHON_INC)))
  ifndef VBOX_LIB_PYTHON
-  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.amd64)
-   LIBMOD=64/
-  else
-   LIBMOD=
-  endif
-
+  VBOX_TMP := $(if $(eq $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.amd64),64/,)
   VBOX_LIB_PYTHON := $(firstword $(wildcard \
-  	/usr/lib/$(LIBMOD)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
-  	/usr/local/lib/$(LIBMOD)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
-  	/usr/lib/$(LIBMOD)libpython2$(SUFF_DLL) \
-  	/usr/local/lib/$(LIBMOD)libpython2$(SUFF_DLL) \
-  	/usr/lib/$(LIBMOD)libpython$(SUFF_DLL) \
-  	/usr/local/lib/$(LIBMOD)libpython$(SUFF_DLL) \
+  	/usr/lib/$(VBOX_TMP)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
+  	/usr/local/lib/$(VBOX_TMP)libpython$(VBOX_PYTHON_VER)$(SUFF_DLL) \
+  	/usr/lib/$(VBOX_TMP)libpython2$(SUFF_DLL) \
+  	/usr/local/lib/$(VBOX_TMP)libpython2$(SUFF_DLL) \
+  	/usr/lib/$(VBOX_TMP)libpython$(SUFF_DLL) \
+  	/usr/local/lib/$(VBOX_TMP)libpython$(SUFF_DLL) \
   	))
   ifeq ($(VBOX_LIB_PYTHON),)
    $(warning Unable to determine the python library (VBOX_LIB_PYTHON).)
