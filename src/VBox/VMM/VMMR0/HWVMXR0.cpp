@@ -188,6 +188,18 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVM->hwaccm.s.vmx.pAPICPhys   = 0;
     }
 
+    /* Allocate the MSR bitmap if this feature is supported. */
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+    {
+        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjMSRBitmap, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pVM->hwaccm.s.vmx.pMSRBitmap     = (uint8_t *)RTR0MemObjAddress(pVM->hwaccm.s.vmx.pMemObjMSRBitmap);
+        pVM->hwaccm.s.vmx.pMSRBitmapPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjMSRBitmap, 0);
+        memset(pVM->hwaccm.s.vmx.pMSRBitmap, 0xff, PAGE_SIZE);
+    }
 #ifdef LOG_ENABLED
     SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x) RealModeTSS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys, pVM->hwaccm.s.vmx.pRealModeTSS, (uint32_t)pVM->hwaccm.s.vmx.pRealModeTSSPhys);
 #endif
@@ -222,6 +234,13 @@ HWACCMR0DECL(int) VMXR0TermVM(PVM pVM)
         pVM->hwaccm.s.vmx.pMemObjAPIC = NIL_RTR0MEMOBJ;
         pVM->hwaccm.s.vmx.pAPIC       = 0;
         pVM->hwaccm.s.vmx.pAPICPhys   = 0;
+    }
+    if (pVM->hwaccm.s.vmx.pMemObjMSRBitmap != NIL_RTR0MEMOBJ)
+    {
+        RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjMSRBitmap, false);
+        pVM->hwaccm.s.vmx.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
+        pVM->hwaccm.s.vmx.pMSRBitmap       = 0;
+        pVM->hwaccm.s.vmx.pMSRBitmapPhys   = 0;
     }
     return VINF_SUCCESS;
 }
@@ -290,6 +309,13 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
         /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
         val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
 #endif
+
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+    {
+        Assert(pVM->hwaccm.s.vmx.pMSRBitmapPhys);
+        val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS;
+    }
+
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
     val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
@@ -362,9 +388,9 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
     {
         /* Optional */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_FULL, 0);
+        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_FULL, pVM->hwaccm.s.vmx.pMSRBitmapPhys);
 #if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_HIGH, 0);
+        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_HIGH, pVM->hwaccm.s.vmx.pMSRBitmapPhys >> 32);
 #endif
         AssertRC(rc);
     }
