@@ -114,12 +114,12 @@ tstDeviceStructSize.cpp_DEPS = $(PATH_TARGET)/tstDeviceStructSizeGC.h
 # 1&2. Manually dump selected structures and members.
 $(PATH_TARGET)/tstDeviceStructSizeGC.h: $$(INSTARGET_tstDeviceStructSizeGC)
 	$(call MSG_GENERATE,,$@)
-	$(QUIET)$(REDIRECT) -wo $@ $(if $(eq $(KBUILD_TARGET),darwin),-E 'DYLD_LIBRARY_PATH=$(dir $^)') -- $^
+	$(QUIET)$(REDIRECT) -wo $@ $(if $(eq $(KBUILD_TARGET),darwin),-E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $^)') -- $^
 
 # 3. run it.
 $(PATH_TARGET)/tstDeviceStructSize.run: $$(INSTARGET_tstDeviceStructSize)
 	$(QUIET)$(RM) -f $@
-	$(if $(eq $(KBUILD_TARGET),darwin),$(REDIRECT) -E 'DYLD_LIBRARY_PATH=$(dir $^)' --) $^
+	$(if $(eq $(KBUILD_TARGET),darwin),$(REDIRECT) -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $^)' --) $^
 	$(QUIET)$(APPEND) "$@" "done"
 
 # alias for the struct test.
