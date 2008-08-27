@@ -48,7 +48,6 @@ VBoxGuest_SOURCES     = \
 VBoxGuest_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
 	$(VBOX_LIB_VBGL_R0BASE) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
