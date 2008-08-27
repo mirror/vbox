@@ -123,6 +123,7 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
+#include <QWindowsStyle>
 int main (int argc, char **argv)
 {
     /* Initialize VBox Runtime. Initialize the Suplib+GC as well only if we
@@ -175,7 +176,9 @@ int main (int argc, char **argv)
 
         /* Qt4.3 version has the QProcess bug which freezing the application
          * for 30 seconds. This bug is internally used at initialization of
-         * Cleanlooks style. So we have to change this style to another one. */
+         * Cleanlooks style. So we have to change this style to another one.
+         * See http://trolltech.com/developer/task-tracker/index_html?id=179200&method=entry
+         * for details. */
         if (QString (qVersion()).startsWith ("4.3") &&
             qobject_cast <QCleanlooksStyle*> (QApplication::style()))
             QApplication::setStyle (new QPlastiqueStyle);
