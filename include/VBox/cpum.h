@@ -397,7 +397,11 @@ typedef enum CPUMCPUIDFEATURE
     /** The LAHF/SAHF feature bit (64 bits mode only). (Ext) */
     CPUMCPUIDFEATURE_LAHF,
     /** The LONG MODE feature bit. (Ext) */
-    CPUMCPUIDFEATURE_LONG_MODE
+    CPUMCPUIDFEATURE_LONG_MODE,
+    /** The PAT feature bit. (Std+Ext) */
+    CPUMCPUIDFEATURE_PAT,
+    /** 32bit hackishness. */
+    CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;
 
 /*
