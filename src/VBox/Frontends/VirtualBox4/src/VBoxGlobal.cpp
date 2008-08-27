@@ -3524,6 +3524,23 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
 
     return loopObject.result();
 
+#elif defined Q_WS_X11
+
+    /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
+     * gets initial path as hidden directory if no hidden files are shown. */
+    QFileDialog dlg (aParent);
+    dlg.setWindowTitle (aCaption);
+    dlg.setDirectory (aDir);
+    dlg.setResolveSymlinks (aResolveSymlinks);
+    dlg.setFileMode (aDirOnly ? QFileDialog::DirectoryOnly : QFileDialog::Directory);
+    QAction *hidden = dlg.findChild <QAction*> ("qt_show_hidden_action");
+    if (hidden)
+    {
+        hidden->trigger();
+        hidden->setVisible (false);
+    }
+    return dlg.exec() ? dlg.selectedFiles() [0] : QString::null;
+
 #else
 
     QFileDialog::Options o;
@@ -3682,6 +3699,25 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
         aParent->setWindowModality (Qt::NonModal);
 
     return loopObject.result();
+
+#elif defined Q_WS_X11
+
+    /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
+     * gets initial path as hidden directory if no hidden files are shown. */
+    QFileDialog dlg (aParent);
+    dlg.setWindowTitle (aCaption);
+    dlg.setDirectory (aStartWith);
+    dlg.setFilter (aFilters);
+    if (aSelectedFilter)
+        dlg.selectFilter (*aSelectedFilter);
+    dlg.setResolveSymlinks (aResolveSymlinks);
+    QAction *hidden = dlg.findChild <QAction*> ("qt_show_hidden_action");
+    if (hidden)
+    {
+        hidden->trigger();
+        hidden->setVisible (false);
+    }
+    return dlg.exec() ? dlg.selectedFiles() [0] : QString::null;
 
 #else
 
