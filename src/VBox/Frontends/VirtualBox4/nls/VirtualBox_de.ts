@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="de">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -36,22 +37,18 @@
 <context>
     <name>BootItemsList</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">Aufwärts (Strg+Auf)</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">Abwärts (Strg+Ab)</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">Bewegt das ausgewählte Gerät weiter nach oben und erhöht damit dessen Priorität in der Bootreihenfolge.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">Bewegt das ausgewählte Gerät weiter nach unten und vermindert damit dessen Priorität in der Bootreihenfolge.</translation>
     </message>
@@ -59,7 +56,6 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Legt die Bootreihenfolge fest. Mittels der Checkboxen auf der linken Seite können Geräte aktiviert bzw. deaktiviert werden. Durch Auf- bzw. Abwärtsbewegen der Einträge wird die Bootreihenfolge geändert.</translation>
     </message>
@@ -69,17 +65,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">Doppelklick für neuen Anschluss</translation>
+        <translation>Doppelklick für neuen Anschluss</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Platte</translation>
+        <translation>Platte</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Slot</source>
-        <translation type="unfinished">Slot</translation>
+        <translation>Slot</translation>
     </message>
 </context>
 <context>
@@ -100,7 +96,7 @@
     <message>
         <location filename="../src/QIHelpButton.cpp" line="120"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Hilfe</translation>
+        <translation>&amp;Hilfe</translation>
     </message>
 </context>
 <context>
@@ -331,7 +327,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopieren</translation>
     </message>
 </context>
 <context>
@@ -365,7 +361,6 @@
 <context>
     <name>QIRichLabel</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Copy to clipboard</source>
         <translation type="obsolete">In die Zwischenablage kopieren</translation>
     </message>
@@ -403,7 +398,6 @@
         <translation>VirtualBox - Über</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VirtualBox graphische Oberfläche Version %1&lt;br&gt;
@@ -412,7 +406,7 @@
     <message>
         <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;VirtualBox graphische Oberfläche Version %1&lt;br&gt;%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -461,67 +455,54 @@ Version %1</translation>
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add Share</source>
         <translation type="obsolete">Ordner hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Edit Share</source>
         <translation type="obsolete">Ordner ändern</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select a folder to share</source>
         <translation type="obsolete">Ordner zur gemeinsamen Nutzung mit dem Gast auswählen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Folder Path</source>
         <translation type="obsolete">Pfad des Ordners</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Folder Name</source>
         <translation type="obsolete">Name des Ordners</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the path to an existing folder on the host PC.</source>
         <translation type="obsolete">Zeigt den Pfad zu einem vorhandenen Ordner auf dem Hostrechner.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Zeigt den Namen des gemeinsamen Ordners (wie er vom Gastsystem gesehen wird).</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Opens the dialog to select a folder.</source>
         <translation type="obsolete">Öffnet ein Dialogfenster zur Auswahl des Ordners.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">&amp;Permanent erzeugen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Read-only</source>
         <translation type="obsolete">Nur &amp;lesbar</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">Der Gast erhält nur lesenden Zugriff auf das Verzeichnis.</translation>
     </message>
@@ -559,27 +540,22 @@ Version %1</translation>
         <translation>Überführt den Maschinenzustand in den Zustand des aktuellen Sicherungspunktes</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -593,7 +569,6 @@ Version %1</translation>
         <translation>S&amp;ende Signal zum Herunterfahren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -602,7 +577,6 @@ Version %1</translation>
 &lt;p&gt;Falls der Gast nicht auf dieses Ereignis reagiert, ist er entweder falsch konfiguriert oder versteht dieses Ereignis generell nicht. In diesem Fall sollten Sie &lt;b&gt;die virtuelle Maschine ausschalten&lt;/b&gt; wählen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Schaltet die virtuelle Maschine aus.&lt;/p&gt;
@@ -616,17 +590,17 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sichert den aktuellen Ausführungszustand der virtuellen Maschine auf die physische Festplatte des Host-PCs.&lt;/p&gt;&lt;p&gt;Beim nächsten Start wird sie aus diesem Zustand wieder hergestellt und an der selben Stelle fortgesetzt, an der Sie den Zustand gesichert haben.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass das Sichern des Zustandes eine längere Zeit in Anspruch nehmen kann. Die benötigte Zeit ist abhängig vom Gastsystem und von der Größe dem Gastsystem zugewiesenen Speichers.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sendet das ACPI-Ereignis &apos;Netztaste gedrückt&apos; an die virtuelle Maschine.&lt;/p&gt;&lt;p&gt;Übliche Gastsysteme werden dieses Ereignis empfangen und die Maschine in Folge dessen sauber herunterfahren. Dies ist das empfohlene Vorgehen, um die Maschine auszuschalten, weil alle Anwendungen innerhalb der Maschine Gelegenheit zum Sichern Ihrer Daten bekommen.&lt;/p&gt;&lt;p&gt;Falls der Gast nicht auf dieses Ereignis reagiert, ist dieser entweder falsch konfiguriert oder versteht dieses Ereignis generell nicht. In diesem Fall sollten Sie &lt;b&gt;die virtuelle Maschine ausschalten&lt;/b&gt; wählen.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Schaltet die virtuelle Maschine aus.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass dadurch die Ausführung der Maschine sofort unterbrochen wird und das Gastsystem somit keine Gelegenheit hat, sich sauber zu beenden. Dadurch kann es zu &lt;i&gt;Datenverlust&lt;/i&gt; innerhalb der virtuellen Maschine kommen. Diese Aktion sollte nur dann durchgeführt werden, wenn die virtuelle Maschine nicht auf &lt;b&gt;Sende Signal zum Herunterfahren&lt;/b&gt; reagiert.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -774,7 +748,6 @@ Version %1</translation>
         <translation>Momentan zugewiesenes CD/DVD-ROM-Medium trennen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
         <translation type="obsolete">RDP-Server (Fernsteuerung)</translation>
@@ -870,12 +843,10 @@ Version %1</translation>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Zeigt, ob die automatische Größenanpassung des Fenster aktiviert ist (&lt;img src=auto_resize_on_16px.png/&gt;) oder nicht (&lt;img src=auto_resize_off_16px.png/&gt;). Beachten Sie, dass für diese Funktion Gasterweiterungen im Gast-BS installiert sein müssen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Zeigt, ob der Mauszeiger im Gast-BS gefangen ist:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;Zeiger ist nicht gefangen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;Zeiger ist gefangen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Mauszeiger-Integration (MI) ist an&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI ist aus, Zeiger ist gefangen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI ist aus, Zeiger ist nicht gefangen&lt;/nobr&gt;&lt;br&gt;Beachten Sie, dass für die Mauszeiger-Integration die Gasterweiterungen im Gast installiert sein müssen.</translation>
     </message>
@@ -993,7 +964,6 @@ Version %1</translation>
         <translation>Schaltet in den nahtlosen Fenstermodus</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
         <translation type="obsolete">Zeigt, ob die Tastatur vom Gast gefangen ist (&lt;img src=hostkey_captured_16px.png/&gt;) oder nicht (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
@@ -1106,7 +1076,6 @@ Version %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB-Controller ist deaktiviert&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
         <translation type="obsolete">Zeigt an, ob die Fernsteuerung (VRDP-Server) aktiviert ist ((&lt;img src=vrdp_16px.png/&gt;) oder nicht (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
@@ -1170,7 +1139,6 @@ Version %1</translation>
         <translation>&amp;Kommandozeile...</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
         <translation type="obsolete">&amp;Logging...</translation>
@@ -1178,32 +1146,32 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
         <source>C&amp;heck for a new version...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Überprüfe auf neue Version</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished"></translation>
+        <translation>Überprüft, ob eine neue Version von VirtualBox verfügbar ist</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1635"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt, ob die automatische Größenanpassung des Fenster aktiviert ist (&lt;img src=:/auto_resize_on_16px.png/&gt;) oder nicht (&lt;img src=:/auto_resize_off_16px.png/&gt;). Beachten Sie, dass für diese Funktion Gasterweiterungen im Gast-BS installiert sein müssen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1644"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt, ob der Mauszeiger im Gast-BS gefangen ist:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;Zeiger ist nicht gefangen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;Zeiger ist gefangen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Mauszeiger-Integration (MI) ist an&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI ist aus, Zeiger ist gefangen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI ist aus, Zeiger ist nicht gefangen&lt;/nobr&gt;&lt;br&gt;Beachten Sie, dass für die Mauszeiger-Integration die Gasterweiterungen im Gast installiert sein müssen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1647"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt, ob die Tastatur vom Gast gefangen ist (&lt;img src=:/hostkey_captured_16px.png/&gt;) oder nicht (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1892"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt an, ob die Fernsteuerung (VRDP-Server) aktiviert ist (&lt;img src=:/vrdp_16px.png/&gt;) oder nicht (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
 </context>
 <context>
@@ -1234,7 +1202,6 @@ Version %1</translation>
         <translation>Manager für virtuelle Medien</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">&amp;Festplatten</translation>
     </message>
@@ -1249,37 +1216,30 @@ Version %1</translation>
         <translation>&amp;Floppy-Abbilder</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Invoke dialog&apos;s help</source>
         <translation type="obsolete">Dialoghilfe aufrufen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Accept dialog</source>
         <translation type="obsolete">Änderungen übernehmen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel dialog</source>
         <translation type="obsolete">Dialog beenden ohne die Änderungen zu übernehmen</translation>
     </message>
@@ -1290,12 +1250,10 @@ Version %1</translation>
         <translation></translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;New...</source>
         <translation type="obsolete">&amp;Neu...</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Add...</source>
         <translation type="obsolete">&amp;Hinzufügen...</translation>
     </message>
@@ -1315,27 +1273,22 @@ Version %1</translation>
         <translation>&amp;Aktualisieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>New</source>
         <translation type="obsolete">Neu</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add</source>
         <translation type="obsolete">Hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Remove</source>
         <translation type="obsolete">Entfernen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Release</source>
         <translation type="obsolete">Freigeben</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Refresh</source>
         <translation type="obsolete">Aktualisieren</translation>
     </message>
@@ -1370,27 +1323,22 @@ Version %1</translation>
         <translation>&amp;Aktionen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Location</source>
         <translation type="obsolete">Speicherort</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Disk Type</source>
         <translation type="obsolete">Plattentyp</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Storage Type</source>
         <translation type="obsolete">Speichertyp</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Attached to</source>
         <translation type="obsolete">Gebunden an</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Snapshot</source>
         <translation type="obsolete">Sicherungspunkt</translation>
     </message>
@@ -1475,7 +1423,6 @@ Version %1</translation>
         <translation>&amp;Auswählen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
         <translation type="obsolete">Alle Festplattenabbilder (*.vdi; *.vmdk);;virtuelle Plattenabbilder (*.vdi);;VMDK Abbilder (*.vmdk);;Alle Dateien (*)</translation>
     </message>
@@ -1532,47 +1479,47 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Neu</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hinzufügen</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle Plattenabbilder (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Festplatten</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Ort:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;norbr&gt;Plattentyp:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Speichermedium:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Gebunden an:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Sicherungspunkt:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1623,67 +1570,67 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="178"/>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Voreinstellung&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="180"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Standardpfad wird nach Bestätigen der Änderungen und erneutes Öffnen dieses Dialogs angezeigt.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="184"/>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nicht ausgewählt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="186"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzen Sie &lt;b&gt;Ändern...&lt;/b&gt; zur Auswahl des gewünschten Pfades.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="198"/>
         <source>Other...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändern...</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="202"/>
         <source>Reset</source>
-        <translation type="unfinished">Zurücksetzen</translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="209"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet einen Dialog zur Auswahl eines anderen Verzeichnisses.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Setzt den Verzeichnispfad auf die Voreinstellung zurück.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="217"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet einen Dialog um eine andere Datei auszuwählen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="220"/>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Setzt den Pfad auf die Voreinstelung zurück.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="228"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopieren</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="361"/>
         <source>Please type the desired folder path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte geben Sie hier das gewünschte Verzeichnis ein.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="362"/>
         <source>Please type the desired file path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte geben Sie hier den gewünschten Pfad ein.</translation>
     </message>
 </context>
 <context>
@@ -1691,32 +1638,32 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="156"/>
         <source>General</source>
-        <translation type="unfinished">Allgemein</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="159"/>
         <source>Input</source>
-        <translation type="unfinished"></translation>
+        <translation>Eingabe</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Update</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
         <source>Language</source>
-        <translation type="unfinished">Sprache</translation>
+        <translation>Sprache</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="169"/>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="183"/>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -1724,32 +1671,32 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="76"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished">Zeigt den Pfad für voreingestellte VDI Ordner. Sofern nicht anders festgelegt, wird dieser Ordner benutzt, wenn vorhandene benutzt oder neue virtuelle Medien hinzugefügt werden.</translation>
+        <translation>Zeigt den Pfad für voreingestellte VDI Ordner. Neue virtuelle Medien werden standardmäßig in diesem Ordner erzeugt und vorhandene werden hier zuerst gesucht.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="80"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen benutzt.</translation>
+        <translation>Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen benutzt.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP) erlaubt.</translation>
+        <translation>Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP) erlaubt.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Voreingestellter Pfad für Festplatten:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Voreingestellter Pfad für VMs:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;RDP-Authentisierungsbibliothek</translation>
     </message>
 </context>
 <context>
@@ -1757,22 +1704,22 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Host-Taste</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished">Zeigt die Taste, die als Host-Taste in für VM-Fenster verwendet wird. Aktivieren Sie dieses Feld und betätigen Sie eine neue Host-Taste. Als Host-Taste eignen sich üblicherweise nur Strg, Umsch, Alt usw.</translation>
+        <translation>Zeigt die Taste, die als Host-Taste in für VM-Fenster verwendet wird. Aktivieren Sie dieses Feld und betätigen Sie eine neue Host-Taste. Als Host-Taste eignen sich üblicherweise nur Strg, Umsch, Alt usw.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
+        <translation>Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Auto-Fangmodus für Tastatur</translation>
     </message>
 </context>
 <context>
@@ -1781,65 +1728,65 @@ Version %1</translation>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"> (eingebaut)</translation>
+        <translation> (eingebaut)</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="115"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;nicht verfügbar&gt;</translation>
+        <translation>&lt;nicht verfügbar&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="116"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;unbekannt&gt;</translation>
+        <translation>&lt;unbekannt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="129"/>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">Voreingestellt</translation>
+        <translation>Voreingestellt</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
-        <translation type="unfinished">Sprache:</translation>
+        <translation>Sprache:</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author:</source>
-        <translation type="unfinished"></translation>
+        <translation>Autor:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sprache der Nutzeroberfläche</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache einzustellen.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
         <source>Name</source>
-        <translation type="unfinished">Name</translation>
+        <translation>Name</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="99"/>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="104"/>
         <source>Language</source>
-        <translation type="unfinished">Sprache</translation>
+        <translation>Sprache</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="109"/>
         <source>Author</source>
-        <translation type="unfinished"></translation>
+        <translation>Autor</translation>
     </message>
 </context>
 <context>
@@ -1847,27 +1794,27 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox verison is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Durch Aktivierung erlauben Sie eine periodische Abfrage der VirtualBox-Webseite nach einer neuen Version von VirtualBox.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
         <source>&amp;Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Nach Updates suchen</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Einmal pro:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gibt an, wie oft die Versionsüberprüfung ausgeführt werden soll. Um den Test zu deaktivieren brauchen Sie nur die obige Checkbox deaktivieren.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nächste Überprüfung:</translation>
     </message>
 </context>
 <context>
@@ -2719,67 +2666,67 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1413"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Hersteller-ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1418"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Produkt-ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1423"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1428"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Produkt: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1433"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Hersteller: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1438"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Seriennr: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1443"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1450"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Zustand: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1789"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hostinterface, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1792"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Internes Netzwerk, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="180"/>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Adapter %1</translation>
+        <translation>Adapter %1</translation>
     </message>
 </context>
 <context>
@@ -2803,196 +2750,158 @@ Version %1</translation>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Category</source>
         <translation type="obsolete">Kategorie</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Wählen Sie eine Kategorie aus der Liste auf der linken Seite und fahren Sie mit der Maus über eine Einstellung um mehr Informationen zu erhalten&lt;/i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> General </source>
         <translation type="obsolete">Allgemein</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Input </source>
         <translation type="obsolete">Eingabe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> USB </source>
         <translation type="obsolete">USB</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Default &amp;Folders</source>
         <translation type="obsolete">Voreingestellte &amp;Ordner</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Machines</source>
         <translation type="obsolete">Maschinen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>VDI files</source>
         <translation type="obsolete">VDI-Dateien</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select</source>
         <translation type="obsolete">Auswählen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Keyboard</source>
         <translation type="obsolete">&amp;Tastatur</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Host Key</source>
         <translation type="obsolete">&amp;Host-Taste</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Auto capture keyboard</source>
         <translation type="obsolete">&amp;Auto-Fangmodus für Tastatur</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;USB Device Filters</source>
         <translation type="obsolete">Filter für &amp;USB-Geräte</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Zeigt die Dialog-Hilfe.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Ungültige Einstellung entdeckt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Änderungen sichern und Dialog schließen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Alle Änderungen verwerfen und Dialog schließen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>VirtualBox Preferences</source>
         <translation type="obsolete">VirtualBox Globale Einstellungen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
         <translation type="obsolete">Zeigt die Taste, die als Host-Taste in für VM-Fenster verwendet wird. Aktivieren Sie dieses Feld und betätigen Sie eine neue Host-Taste. Als Host-Taste eignen sich üblicherweise nur Strg, Umsch, Alt usw.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Neuer Filter %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Language</source>
         <translation type="obsolete">Sprache</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Language </source>
         <translation type="obsolete">Sprache</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Interface Language</source>
         <translation type="obsolete">&amp;Sprache der Nutzeroberfläche</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Author(s):</source>
         <translation type="obsolete">Autor(en):</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Language:</source>
         <translation type="obsolete">Sprache:</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> (built-in)</source>
         <comment>Language</comment>
         <translation type="obsolete"> (eingebaut)</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation type="obsolete">&lt;nicht verfügbar&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
         <translation type="obsolete">&lt;unbekannt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
 &lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
@@ -3001,83 +2910,67 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache einzustellen.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Default</source>
         <comment>Language</comment>
         <translation type="obsolete">Voreingestellt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Zeigt den Pfad für voreingestellte VDI Ordner. Sofern nicht anders festgelegt, wird dieser Ordner benutzt, wenn vorhandene benutzt oder neue virtuelle Medien hinzugefügt werden.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restauriert die Standardeinstellung des Ordners für virtuelle Maschinen. Der tatsächliche Pfad wird angezeigt, nachdem die Änderungen übernommen wurden und dieser Dialog erneut geöffnet wurde.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restauriert die Standardeinstellung des Ordners für virtuelle Medien (VDI). Der tatsächliche Pfad wird angezeigt, nachdem die Änderungen übernommen wurden und dieser Dialog erneut geöffnet wurde.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen benutzt.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Opens a dialog to select the default VDI folder.</source>
         <translation type="obsolete">Öffnet einen Dialog zum Auswählen des voreingestellten VDI-Ordners.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Opens a dialog to select the default virtual machine folder.</source>
         <translation type="obsolete">Öffnet einen Dialog zum Auswählen des voreingestellten Ordners für virtuelle Maschinen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">Ist diese Funktion eingeschaltet, wird die Tastatur jedes Mal automatisch gefangen, wenn das VM-Fenster aktiviert wird. In diesem Fall werden alle Tastendrücke (einschließlich Alt-Tab) in die VM umgeleitet.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>V&amp;RDP Authentication Library</source>
         <translation type="obsolete">V&amp;RDP-Authentisierungsbibliothek</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP) erlaubt.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
         <translation type="obsolete">Öffnet einen Dialog, um die VRDP-Authentisierungsbibliothek auszuwählen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Setzt die Authentisierungsbibliothek auf den voreingestellten Wert. Die voreingestellte Bibliothek will wird angezeigt, nachdem die Änderungen übernommen wurden und der Dialog erneut geöffnet wurde.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Extended Features</source>
         <translation type="obsolete">&amp;Erweitert</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">&amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation type="obsolete">Zeigt, ob virtuelle Maschinen einen speziellen Modus der CPU für die Virtualisierung (Intel VT-x bzw. AMD-V) per Voreinstellung nutzen sollen oder nicht.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
                                               &lt;qt&gt;Lists all global USB
                                               filters. The checkbox to the left
@@ -3090,17 +2983,14 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um USB-Filter hinzuzufügen oder zu löschen.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">Leeren Filter hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">&amp;Leeren Filter hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -3109,17 +2999,14 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;Fügt einen neuen USB-Filter hinzu, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf angeschlossene USB-Geräte passt.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">Filter von einem Gerät hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">Filter von einem Gerät &amp;hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -3127,51 +3014,42 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;Fügt einen neuen USB-Filter hinzu und initialisiert alle Felder mit den Werten des ausgewählten Gerätes, das an den PC angeschlossen ist.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Filter entfernen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">Filter &amp;entfernen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Entfernt den ausgewählten USB-Filter.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Bewege Filter nach oben</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">Bewege Filter nach &amp;oben</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">Bewegt den ausgewählten USB-Filter nach oben.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Bewege Filter nach unten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">Bewege Filter nach &amp;unten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
@@ -3181,27 +3059,22 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Slot</source>
         <translation type="obsolete">Slot</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Hard Disk</source>
         <translation type="obsolete">Platte</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">&amp;Festplatten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">&amp;SATA-Controller aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
                           &lt;qt&gt;When checked, enables the virtual SATA
                           controller of this machine. Note that you cannot
@@ -3211,32 +3084,26 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;Aktiviert den virtuellen SATA-Controller dieser Maschine. Festplatten können nur an SATA-Ports angeschlossen werden, wenn der virtuelle SATA-Controller aktiviert ist.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Hard Disks &amp;Attachments</source>
         <translation type="obsolete">Festplatten&amp;anschlüsse</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; benutzt die Festplatte, die bereits an &lt;i&gt;%2&lt;/i&gt; angeschlossen ist</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Delete</source>
         <translation type="obsolete">Löschen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
                                   &lt;qt&gt;Lists all hard disks attached to
                                   this machine. Use a mouse double-click or the
@@ -3250,51 +3117,42 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;Zeigt alle an diese Maschine angeschlossenen Festplatten. Mittels Doppelklick oder Betätigen von &lt;tt&gt;F2&lt;/tt&gt; bzw. &lt;tt&gt;Leertaste&lt;/tt&gt; auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um Festplatten hinzuzufügen oder zu entfernen.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add Attachment</source>
         <translation type="obsolete">Anschluss hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Add Attachment</source>
         <translation type="obsolete">Anschluss &amp;hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;/qt&gt;Fügt einen neuen Festplattenanschluss hinzu.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Remove Attachment</source>
         <translation type="obsolete">Anschluss entfernen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Remove Attachment</source>
         <translation type="obsolete">Anschluss &amp;entfernen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Entfernt den ausgewählten Festplattenanschluss.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select Hard Disk</source>
         <translation type="obsolete">Festplatte auswählen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Select Hard Disk</source>
         <translation type="obsolete">Festplatte &amp;auswählen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
@@ -3302,12 +3160,10 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;Ruft den Manager für virtuelle Medien auf, um eine Festplatte an den ausgewählten Slot anzuschließen.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Double-click to add a new attachment</source>
         <translation type="obsolete">Doppelklick für neuen Anschluss</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt</translation>
     </message>
@@ -3315,12 +3171,10 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>I &amp;Agree</source>
         <translation type="obsolete">Ich &amp;akzeptiere</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>I &amp;Disagree</source>
         <translation type="obsolete">Ich &amp;lehne ab</translation>
     </message>
@@ -3396,42 +3250,42 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="562"/>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">VirtualBox Hostinterface %1</translation>
+        <translation>VirtualBox Hostinterface %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="623"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Möchten Sie das ausgewählte Hostinterface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;löschen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie:&lt;/b&gt; Dieses Interface wird möglicherweise von virtuellen Netzwerkadaptern anderer VMs benutzt. Nachdem es gelöscht wurde, funktionieren diese Adapter nichts mehr, bis deren Einstellungen entsprechend angepasst wurden.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie das ausgewählte Hostinterface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;löschen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie:&lt;/b&gt; Dieses Interface wird möglicherweise von virtuellen Netzwerkadaptern anderer VMs benutzt. Nachdem es gelöscht wurde, funktionieren diese Adapter nichts mehr, bis deren Einstellungen entsprechend angepasst wurden.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="655"/>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished">Hostinterfaces</translation>
+        <translation>Hostinterfaces</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="657"/>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">Zeigt alle verfügbaren Hostinterfaces.</translation>
+        <translation>Zeigt alle verfügbaren Hostinterfaces.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="660"/>
         <source>A&amp;dd New Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Fügt ein neues Hostinterface hinzu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>&amp;Remove Selected Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Entfernt das ausgewählte Hostinterface.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">Fügt ein neues Hostinterface hinzu.</translation>
+        <translation>Fügt ein neues Hostinterface hinzu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="663"/>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">Entfernt das ausgewählte Hostinterface.</translation>
+        <translation>Entfernt das ausgewählte Hostinterface.</translation>
     </message>
 </context>
 <context>
@@ -3442,7 +3296,6 @@ to the system default language.&lt;/qt&gt;
         <translation>Neue virtuelle Festplatte erstellen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -3476,7 +3329,6 @@ bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.
         <translation>Typ der virtuellen Festplatte</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Drücken Sie &lt;b&gt;Auswählen&lt;/b&gt; um die Lage und den Namen der Datei festzulegen. Alternativ können Sie auch einen Namen in das Eingabefeld tippen.&lt;/p&gt;</translation>
@@ -3487,12 +3339,10 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
         <translation>&amp;Dateiname</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select</source>
         <translation type="obsolete">Auswählen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Wählen Sie die Größe der virtuellen Festplatte in Megabyte. Diese Größe wird dem Gastsystem als Größe der virtuellen Festplatte übermittelt.&lt;/p&gt;</translation>
@@ -3513,7 +3363,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>Sie möchten eine neue virtuelle Festplatte mit den folgenden Parametern erstellen:</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
@@ -3530,7 +3379,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>&lt;nobr&gt;%1 Byte&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Speicherort:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Größe:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Byte)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -3545,7 +3393,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>Wählen Sie eine Datei für ein neues Festplatten-Abbild aus</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -3616,7 +3463,6 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <translation>Neue virtuelle Maschine erstellen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
@@ -3630,7 +3476,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation type="unfinished">Erstellen einer Virtuellen Maschine</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
@@ -3674,7 +3519,6 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
         <translation>Speicher</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -3706,7 +3550,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Virtuelle Festplatte</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
@@ -3716,7 +3559,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">&lt;p&gt;Sie sind dabei, eine neue virtuelle Maschine mit den folgenden Parametern zu erzeugen:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -3742,12 +3584,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;BS Typ:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Hauptspeicher:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Bootplatte:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
@@ -4066,17 +3906,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Der gemeinsame Ordner &lt;b&gt;%1&lt;/b&gt; (Verweis auf &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) konnte nicht aus der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; entfernt werden.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sie haben in das VM-Fenster &lt;b&gt;geklickt&lt;/b&gt; oder die &lt;b&gt;Host-Taste&lt;/b&gt; betätigt. Maus sowie Tastatur werden daher &lt;b&gt;gefangen&lt;/b&gt; (die Maus nur, falls Mauszeiger-Integration vom aktuellen Gast-System nicht unterstützt wird). Dadurch sind diese für andere Anwendungen neben VirtualBox nicht verfügbar.&lt;/p&gt;&lt;p&gt;Durch Betätigen der Host-Taste kann dieser Modus jederzeit beendet werden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Rand des VM-Fensters gezeigt (Symbol&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;). Zusammen mit dem daneben liegenden Maus-Icon zeigen diese den aktuellen Tastatur- und Maus-Fangmodus.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sie haben den Modus &lt;b&gt;Tastatur fangen&lt;/b&gt; eingeschaltet. Wird das VM-Fenster aktiviert, wird die Tastatur automatisch &lt;b&gt;gefangen&lt;/b&gt; und damit für andere Anwendungen temporär nicht mehr verfügbar: Alle Tasteneingaben (inklusive Alt-Tab) werden in die VM umgeleitet.&lt;/p&gt;&lt;/p&gt;Sie können die &lt;b&gt;Host-Taste&lt;/b&gt; jederzeit betätigen, um diesen Modus für Tastatur (und Maus, falls ebenfalls gefangen) zu beenden. Die momentan zugeordnete Host-Taste wird in der Statusleiste am unteren Ende des VM-Fensters neben dem&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;Icongezeigt. Zusammen mit dem Icon für die Maus daneben zeigt es den aktuellen Status für Maus und Tastatur.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Die virtuelle Maschine meldet Unterstützung der &lt;b&gt;Mauszeiger-Integration&lt;/b&gt; durch das Gastsystem. Dies bedeutet, dass die Maus nicht gefangen werden muss, um es im Gastsystem zu benutzen, sondern alle Mausaktionen über der VM-Anzeigebereich werden direkt an den Gast weitergeleitet. Der Fangmodus wird automatisch aufgehoben, falls die Maus momentan gefangen ist.&lt;/p&gt;&lt;p&gt;Das Mausicon in der Statuszeile wird so &amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;aussehen, um anzuzeigen, dass die Mauszeiger-Integration durch den Gast unterstützt und momentan aktiv ist.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Einige Anwendungen verhalten sich möglicherweise inkorrekt, wenn die Mauszeiger-Integration aktiv ist. Sie können diesen Modus durch Auswahl des entsprechenden Eintrages in der Menüzeile jederzeit deaktivieren.&lt;/p&gt;</translation>
     </message>
@@ -4144,7 +3981,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxProblemReporter.cpp" line="2096"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="unfinished">Fehlercode:</translation>
+        <translation>Fehlercode:</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2102"/>
@@ -4226,12 +4063,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;Das CD-Abbild mit den VirtualBox Gasterweiterungen wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;&lt;p&gt;Möchten Sie das CD-Abbild registrieren und als virtuelle CD/DVD einbinden?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;Vollbildmodus&lt;/b&gt; geschaltet. Sie können jederzeit durch Betätigen von &lt;b&gt;%1&lt;/b&gt; zum normalen Fenstermodus zurückkehren. Als &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im Vollbildmodus nicht angezeigt. Auf dieses kann durch Betätigen von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;nahtlosen&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Die &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan als &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Auf dieses kann durch Betätigung von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt;</translation>
     </message>
@@ -4463,7 +4298,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="493"/>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation>Datei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; konnte nicht nach &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; kopiert werden (%3).</translation>
+        <translation>Die Datei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; konnte nicht nach &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; kopiert werden (%3).</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1085"/>
@@ -4495,7 +4330,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1532"/>
         <source>&lt;p&gt;There is a new version of VirtualBox found on the VirtualBox web-site: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you want to download and install this version please proceed with the following link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eine neue Version von VirtualBox wurde auf der VirtualBox-Webseite gefunden: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Wenn Sie diese Version herunterladen und installieren wollen, dann klicken Sie auf diesen Link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1541"/>
@@ -4525,12 +4360,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1766"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;Vollbildmodus&lt;/b&gt; geschaltet. Sie können jederzeit durch Betätigen von &lt;b&gt;%1&lt;/b&gt; zum normalen Fenstermodus zurückkehren. Als &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im Vollbildmodus nicht angezeigt. Auf dieses kann durch Betätigen von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;Vollbildmodus&lt;/b&gt; geschaltet. Sie können jederzeit durch Betätigen von &lt;b&gt;%1&lt;/b&gt; zum normalen Fenstermodus zurückkehren. Als &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im Vollbildmodus nicht angezeigt. Auf dieses kann durch Betätigen von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1788"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;nahtlosen&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Die &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan als &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Auf dieses kann durch Betätigung von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine wird nun in den &lt;b&gt;nahtlosen&lt;/b&gt; Anzeigemodus geschaltet. Durch Betätigen von &lt;b&gt;%1&lt;/b&gt; können Sie jederzeit in den normalen Fenstermodus zurückkehren. Die &lt;i&gt;Host-Taste&lt;/i&gt; ist momentan als &lt;b&gt;%2&lt;/b&gt; eingestellt.&lt;/p&gt;&lt;p&gt;Das Hauptmenü wird im nahtlosen Modus nicht angezeigt. Auf dieses kann durch Betätigung von &lt;b&gt;Host+Home&lt;/b&gt; zugegriffen werden.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4568,10 +4403,9 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="66"/>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished">VirtualBox registrieren</translation>
+        <translation>VirtualBox registrieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Confirm</source>
         <translation type="obsolete">&amp;Bestätigen</translation>
     </message>
@@ -4603,12 +4437,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
         <source>C&amp;onfirm</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestätigen</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>&amp;Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -4619,17 +4453,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Gemeinsame Ordner</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
@@ -4698,7 +4529,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Neu...</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>New</source>
         <translation type="obsolete">Neu</translation>
     </message>
@@ -4718,7 +4548,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Änd&amp;ern...</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Settings</source>
         <translation type="obsolete">Ändern</translation>
     </message>
@@ -4738,7 +4567,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Löschen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Delete</source>
         <translation type="obsolete">Löschen</translation>
     </message>
@@ -4753,7 +4581,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Verwerfen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Discard</source>
         <translation type="obsolete">Verwerfen</translation>
     </message>
@@ -4768,7 +4595,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Aktualisieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Refresh</source>
         <translation type="obsolete">Aktualisieren</translation>
     </message>
@@ -4788,7 +4614,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Inhalt...</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -4858,7 +4683,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Zeigen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Show</source>
         <translation type="obsolete">Zeigen</translation>
     </message>
@@ -4873,7 +4697,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Starten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Start</source>
         <translation type="obsolete">Starten</translation>
     </message>
@@ -4883,7 +4706,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Starten der virtuellen Maschine</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters zeigt eine Liste aller virtuellen Maschinen auf Ihrem Computer. Diese Liste ist momentan leer, da Sie noch keine virtuelle Maschine erstellt haben.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Um eine virtuelle Maschine anzulegen, drücken Sie &lt;b&gt;Neu&lt;/b&gt; in der Symbolleiste am oberen Rand des Fensters.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;F1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
@@ -4898,7 +4720,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Zeige &amp;Log...</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Show Log...</source>
         <translation type="obsolete">Zeige Log...</translation>
     </message>
@@ -4933,7 +4754,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Fortfahren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Resume</source>
         <translation type="obsolete">Fortfahren</translation>
     </message>
@@ -4953,7 +4773,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Pause</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Pause</source>
         <translation type="obsolete">Pause</translation>
     </message>
@@ -4983,38 +4802,34 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Wählen Sie eine Kategorie aus der Liste auf der linken Seite und fahren Sie mit der Maus über eine Einstellung um mehr Informationen zu erhalten&lt;/i&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="132"/>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungültige Einstellungen erkannt</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="204"/>
         <source>Settings</source>
-        <translation type="unfinished">Ändern</translation>
+        <translation>Ändern</translation>
     </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Name</source>
         <translation type="obsolete">Name</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Path</source>
         <translation type="obsolete">Pfad</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Shared &amp;Folders</source>
         <translation type="obsolete">Gemeinsame &amp;Ordner</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
@@ -5028,72 +4843,58 @@ um auf einen gemeinsamen Ordner namens &lt;i&gt;share&lt;/i&gt; von einem DOS-ar
 um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Adds a new shared folder definition.</source>
         <translation type="obsolete">Fügt einen neuen gemeinsamen Ordner hinzu.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Removes the selected shared folder definition.</source>
         <translation type="obsolete">Entfernt den ausgewählten gemeinsamen Ordner.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Machine Folders</source>
         <translation type="obsolete">Ordner der virtuellen Maschine</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Transient Folders</source>
         <translation type="obsolete">Transiente Ordner</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Edits the selected shared folder definition.</source>
         <translation type="obsolete">Ändert den ausgewählten gemeinsamen Ordner.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add a new shared folder (Ins)</source>
         <translation type="obsolete">Fügt einen neuen gemeinsamen Ordner hinzu (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Remove the selected shared folder (Del)</source>
         <translation type="obsolete">Entfernt den ausgewählten gemeinsamen Ordner (Entf)</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Access</source>
         <translation type="obsolete">Zugriff</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
         <translation type="obsolete">Ausgewählten Ordner editieren (Strg+Leertaste)</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Full</source>
         <translation type="obsolete">Voll</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Read-only</source>
         <translation type="obsolete">Nur lesbar</translation>
     </message>
@@ -5106,7 +4907,6 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation></translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Snapshot Details </source>
         <translation type="obsolete">Sicherungspunktdetails</translation>
     </message>
@@ -5126,22 +4926,18 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>&amp;Einzelheiten der Maschine</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
@@ -5153,7 +4949,7 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="39"/>
         <source>Snapshot Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Sicherungspunktdetails</translation>
     </message>
 </context>
 <context>
@@ -5169,47 +4965,38 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation></translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Discard Snapshot</source>
         <translation type="obsolete">Sicherungspunkt verwerfen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Discard Snapshot</source>
         <translation type="obsolete">Sicherungspunkt &amp;verwerfen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Shift+D</source>
         <translation type="obsolete">Ctrl+Shift+V</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Take Snapshot</source>
         <translation type="obsolete">Sicherungspunkt erstellen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Take &amp;Snapshot</source>
         <translation type="obsolete">Sicherungspunkt &amp;erstellen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Discard Current Snapshot and State</source>
         <translation type="obsolete">Aktuellen Sicherungspunkt und Zustand verwerfen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>D&amp;iscard Current Snapshot and State</source>
         <translation type="obsolete">Aktuellen Sicherungspunkt und Zustand &amp;verwerfen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Show Details</source>
         <translation type="obsolete">Einzelheiten zeigen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>S&amp;how Details</source>
         <translation type="obsolete">Einzelheiten &amp;zeigen</translation>
     </message>
@@ -5277,57 +5064,46 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>Sicherungspunkt %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Discard the selected snapshot of the virtual machine</source>
         <translation type="obsolete">Verwirft den ausgewählten Sicherungspunkt der virtuellen Maschine</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Shift+S</source>
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Take a snapshot of the current virtual machine state</source>
         <translation type="obsolete">Erzeugt einen Sicherungspunkt der aktuellen virtuellen Maschine</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Revert to Current Snapshot</source>
         <translation type="obsolete">Zum aktuellen Sicherungspunkt zurückkehren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Revert to Current Snapshot</source>
         <translation type="obsolete">Zum aktuellen Sicherungspunkt zu&amp;rückkehren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Shift+R</source>
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
         <translation type="obsolete">Die virtuelle Maschine aus dem Zustand im aktuellen Sicherungspunkt wieder herstellen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Shift+B</source>
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
         <translation type="obsolete">Verwirft den ausgewählten Sicherungspunkt und stellt den Zustand der virtuellen Maschine vor dem Sicherungspunkt wieder her</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Show details of the selected snapshot</source>
         <translation type="obsolete">Zeigt Einzelheiten des ausgewählten Sicherungspunktes</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
@@ -5363,22 +5139,18 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
         <translation>&amp;Beschreibung des Sicherungspunktes</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
@@ -5386,101 +5158,83 @@ um von Linux darauf zuzugreifen. Dieses Feature benötigt Gastwerweiterungen.&lt
 <context>
     <name>VBoxUSBFilterSettings</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Name</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the filter name.</source>
         <translation type="obsolete">Zeigt den Namen des Filters.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Manufacturer</source>
         <translation type="obsolete">&amp;Hersteller</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Pro&amp;duct</source>
         <translation type="obsolete">&amp;Produkt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Serial No.</source>
         <translation type="obsolete">&amp;Seriennr.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>R&amp;emote</source>
         <translation type="obsolete">&amp;Entfernt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Action</source>
         <translation type="obsolete">&amp;Aktion</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Vendor ID</source>
         <translation type="obsolete">&amp;Hersteller ID</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Product ID</source>
         <translation type="obsolete">&amp;Produkt ID</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Revision</source>
         <translation type="obsolete">&amp;Revisions-Nr</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Por&amp;t</source>
         <translation type="obsolete">&amp;Port</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Any</source>
         <comment>remote</comment>
         <translation type="obsolete">Beides</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Yes</source>
         <comment>remote</comment>
         <translation type="obsolete">Ja</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>No</source>
         <comment>remote</comment>
         <translation type="obsolete">Nein</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Verwendet den Hersteller als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Hersteller.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Verwendet den Produktnamen als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf beliebige Produktnamen.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Verwendet die Seriennummer als &lt;i&gt;exakte&lt;/i&gt; Zeichenfolge. Eine leere Zeichenfolge passt auf alle Seriennummern.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
@@ -5488,7 +5242,6 @@ or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Legt fest, ob dieser Filter auf USB-Geräte angewendet wird, die nur lokal an den Hostcomputer angeschlossen sind (&lt;i&gt;Nein&lt;/i&gt;), nur an einen entfernten Computer über VRDP (&lt;i&gt;Ja&lt;/i&gt;) oder beides (&lt;i&gt;alle&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
@@ -5496,7 +5249,6 @@ computer when a matching device is attached: give it up to the host OS
         <translation type="obsolete">&lt;qt&gt;Legt fest, was der Host machen soll, wenn ein passendes Gerät angeschlossen wurde: Zur Verwendung durch das Host-BS freigeben (&lt;i&gt;Ignorieren&lt;/i&gt;) oder für spätere Verwendung durch das Gast-BS ergreifen (&lt;i&gt;Halten&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -5504,7 +5256,6 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Legt die Hersteller-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -5512,7 +5263,6 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Legt die Produkt-ID für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
@@ -5521,7 +5271,6 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Legt die Revisions-Nr für den Filter fest. Das Format für den &lt;i&gt;genauen&lt;/i&gt; Vergleich ist &lt;tt&gt;XXXX&lt;/tt&gt;, wobei &lt;tt&gt;X&lt;/tt&gt; eine hexadezimale Zahl darstellt. Eine leere Zeichenfolge passt auf beliebige IDs.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -5548,82 +5297,82 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
         <source>1 day</source>
-        <translation type="unfinished"></translation>
+        <translation>1 Tag</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
         <source>2 days</source>
-        <translation type="unfinished"></translation>
+        <translation>2 Tage</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="86"/>
         <source>3 days</source>
-        <translation type="unfinished"></translation>
+        <translation>3 Tage</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="87"/>
         <source>4 days</source>
-        <translation type="unfinished"></translation>
+        <translation>4 Tage</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
         <source>5 days</source>
-        <translation type="unfinished"></translation>
+        <translation>5 Tage</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
         <source>6 days</source>
-        <translation type="unfinished"></translation>
+        <translation>6 Tage</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="92"/>
         <source>1 week</source>
-        <translation type="unfinished"></translation>
+        <translation>1 Woche</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
         <source>2 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>2 Wochen</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="94"/>
         <source>3 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>3 Wochen</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="97"/>
         <source>1 month</source>
-        <translation type="unfinished"></translation>
+        <translation>1 Monat</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="144"/>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
         <source>Connection timed out.</source>
-        <translation type="unfinished">Zeitüberschreitung der Verbindung.</translation>
+        <translation>Zeitüberschreitung der Verbindung.</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="334"/>
         <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Die aktuellste Version konnte nicht ermittelt werden (Antwort: %1).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
         <source>VirtualBox New Version Notifier</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Versionsüberprüfung</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
         <source>Check for a new version</source>
-        <translation type="unfinished"></translation>
+        <translation>Überprüfe auf neue Version</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
         <source>&lt;p&gt;VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p&gt;&lt;p&gt;You can make VirtualBox look for the newer version now by pressing &lt;b&gt;Check&lt;/b&gt; button or postpone it for then next time by pressing &lt;b&gt;Cancel&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b&gt;&apos;Check for a new version...&apos;&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox kann überprüfen, ob eine neue Version verfügbar ist. Soll diese Abfrage nun ausgeführt werden?&lt;/p&gt;&lt;p&gt;Durch Auswählen von &lt;b&gt;Überprüfe&lt;/b&gt; wird auf eine neue Version geprüft. Mittels &lt;b&gt;Abbrechen&lt;/b&gt; kann dieser Test auch später ausgeführt werden.&lt;/p&gt;&lt;p&gt;Die Versionsüberprüfung kann jederzeit durch Auswählen von &lt;b&gt;&apos;Überprüfe auf eine neue Version&apos;&lt;/b&gt; aus dem Anwendungsmenü erzwungen werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="189"/>
@@ -5750,7 +5499,6 @@ value.&lt;/qt&gt;</source>
         <translation>&amp;Abbild</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>VDM</source>
         <translation type="obsolete">VDM</translation>
     </message>
@@ -5765,7 +5513,6 @@ value.&lt;/qt&gt;</source>
         <translation>&lt;p&gt;Sie haben die folgenden Medien zum Booten ausgewählt:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Betätigen Sie &lt;b&gt;Abschließen&lt;/b&gt;, wenn diese Angaben korrekt sind. Nachdem Sie dies getan haben, wird das ausgewählte Medium temporär der virtuellen Maschine zugewiesen und diese startet.&lt;/p&gt;&lt;p&gt;Bitte beachten Sie, dass die Zuweisung des Mediums automatisch nach dem Ausschalten der virtuellen Maschine aufgehoben und die Bootreihenfolge auf die erste Festplatte zurückgesetzt wird.&lt;/p&gt;&lt;p&gt;Abhängig von der Art des Installationsprogrammes kann es möglich sein, dass Sie das Medium manuell auswerfen müssen, wenn nach der Installation die virtuelle Maschine neu bootet, anderenfalls würde das Installationsprogramm erneut starten. Die Zuweisung kann durch den Punkt &lt;b&gt;... trennen&lt;/b&gt; im Menü &lt;b&gt;Geräte&lt;/b&gt; aufgehoben werden.&lt;/p&gt;</translation>
     </message>
@@ -5790,7 +5537,6 @@ value.&lt;/qt&gt;</source>
         <translation>Host-Laufwerk %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Quelle:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -5858,12 +5604,10 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Session-Informationen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Close</source>
         <translation type="obsolete">&amp;Schließen</translation>
     </message>
@@ -5979,91 +5723,88 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="439"/>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
         <source>Enabled</source>
-        <translation type="unfinished">aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
         <source>Disabled</source>
-        <translation type="unfinished">deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="646"/>
         <source>Hardware Virtualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Hardware-Virtualisierung</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="651"/>
         <source>Hard Disks Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenstatistiken</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="653"/>
         <source>Primary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>Primärer Master</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="653"/>
         <source>Primary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>Primärer Slave</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="658"/>
         <source>Secondary Master</source>
-        <translation type="unfinished"></translation>
+        <translation>Sekundärer Master</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="658"/>
         <source>Secondary Slave</source>
-        <translation type="unfinished"></translation>
+        <translation>Sekundärer Slave</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="665"/>
         <source>Adapter 1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="665"/>
         <source>Adapter 2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
         <source>VBoxVMInformationDlg</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMListBox</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="obsolete">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Inaccessible</source>
         <translation type="obsolete">Nicht zugreifbar</translation>
     </message>
@@ -6073,32 +5814,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="151"/>
         <source>Inaccessible</source>
-        <translation type="unfinished">Nicht zugreifbar</translation>
+        <translation>Nicht zugreifbar</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="171"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="182"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nicht zugreifbar seit %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="533"/>
         <source>%1 (%2)
  %3</source>
         <comment>Accessible string of the list view item</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="583"/>
         <source>VM</source>
         <comment>Horizontal header description</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -6134,12 +5875,10 @@ p, li { white-space: pre-wrap; }
         <translation>VirtualBox Log-Datei sichern als</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -6157,142 +5896,114 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Attached to</source>
         <translation type="obsolete">&amp;Angeschlossen an</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;MAC Address</source>
         <translation type="obsolete">&amp;MAC-Adresse</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">&amp;Generieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">Netzwerk&amp;kabel angeschlossen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">Einstellungen für Hostinterface</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Interface Name</source>
         <translation type="obsolete">Name des &amp;Interfaces</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;File Descriptor</source>
         <translation type="obsolete">&amp;Dateideskriptor</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Setup Application</source>
         <translation type="obsolete">Programm zum &amp;Einrichten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select</source>
         <translation type="obsolete">Auswählen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Terminate Application</source>
         <translation type="obsolete">Programm zum &amp;Entfernen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Enable Network Adapter</source>
         <translation type="obsolete">Netzwerkadapter &amp;aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">Erzeugt eine neue zufällige MAC-Adresse.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Wählen Sie eine Anwendung zum Einrichten des TAP-Interfaces aus</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select TAP terminate application</source>
         <translation type="obsolete">Wählen Sie eine Anwendung zum Entfernen des TAP-Interfaces aus</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation type="obsolete">Aktiviert den virtuellen Netzwerkadapter für die virtuelle Maschine.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Legt fest, wie dieser virtuelle Netzwerkadapter an das physische Netzwerk des Host-BS angeschlossen ist.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">Zeigt an, ob das virtuelle Netzwerkkabel an die virtuelle Maschine angeschlossen ist oder nicht.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">Zeigt den Namen des Hostinterfaces für diesen Adapter.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">Zeigt den Namen des TAP-Interfaces.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Zeigt das Kommando, das für die Einrichtung des TAP-Interfaces ausgeführt wird.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">Wählt die Anwendung zum Einrichten des Interfaces aus.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Zeigt das Kommando, das für die Beendigung des TAP-Interfaces ausgeführt wird.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">Wählt die Anwendung zum Beenden des Interfaces aus.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Zeigt die MAC-Adresse dieses Adapters. Sie besteht aus genau 12 Zeichen aus dem Zeichenvorrat {0-9,A-F}. Das zweite Zeichen muss eine gerate Zahl sein.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Network Name</source>
         <translation type="obsolete">&amp;Netzwerkname</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Zeigt den Namen des internen Netzwerks für den ausgewählten Adapter.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Adapter &amp;Type</source>
         <translation type="obsolete">Adapter-&amp;Typ</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
         <translation type="obsolete">Wählt den Typ des virtuellen Netzwerkadapters. Ausgehend von dieser Einstellung emuliert VirtualBox verschiedene Netzwerkkarten.</translation>
     </message>
@@ -6300,22 +6011,18 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">Port&amp;nummer</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O-Po&amp;rt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">Port&amp;pfad</translation>
     </message>
@@ -6323,72 +6030,58 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSerialPortSettings</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Enable Serial Port</source>
         <translation type="obsolete">&amp;Serielle Schnittstelle aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
         <translation type="obsolete">Aktiviert die ausgewählte serielle Schnittstelle für diese virtuelle Maschine.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">Port&amp;nummer</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Zeigt die Portnummer der seriellen Schnittstelle. Sie können einen der Standardports auswählen, oder Sie wählen &lt;b&gt;benutzerdefiniert&lt;/b&gt; und können die Portparameter frei einstellen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Zeigt die IRQ-Nummer dieser seriellen Schnittstelle. Gültige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;255&lt;/tt&gt;. Zahlen größer als &lt;tt&gt;15&lt;/tt&gt; können nur verwendet werden, wenn der &lt;b&gt;I/O-APIC&lt;/b&gt; für diese virtuelle Maschine aktiviert ist.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O-Po&amp;rt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Zeigt den Basis-Portadresse dieser seriellen Schnittstelle. Zulässige Werte sind ganze Zahlen im Bereich von &lt;tt&gt;0&lt;/tt&gt; bis &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port &amp;Mode</source>
         <translation type="obsolete">Port&amp;modus</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
         <translation type="obsolete">Stellt den Modus für diese serielle Schnittstelle ein. Falls &lt;b&gt;nicht verbunden&lt;/b&gt; gewählt wurde, wird ein serieller Port virtualisiert, der jedoch nicht mit dem Host verbunden ist.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Create Pipe</source>
         <translation type="obsolete">Erzeuge &amp;Pipe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
         <translation type="obsolete">Wenn diese Box ausgewählt wurde, dann wird die Pipe im &lt;b&gt;Portpfad&lt;/b&gt; von der virtuellen Maschine erzeugt, wenn diese startet. Anderenfalls versucht die virtuelle Maschine, sich an eine vorhandene Pipe zu anzuschließen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">Port&amp;pfad</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Zeigt den Pfad zur seriellen Port-Pipe des Hostes wenn der Port im Modus &lt;b&gt;Host-Pipe&lt;/b&gt; arbeitet oder den Namen der seriellen Schnittstelle des Hostes im Modus &lt;b&gt;Host-Schnittstelle&lt;/b&gt;.</translation>
     </message>
@@ -6398,32 +6091,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished">Aktiviert den virtuellen PCI Audioadapter der den angegebenen Treiber verwendet, um mit dem Audioadapter des Hosts zu kommunizieren.</translation>
+        <translation>Der virtuelle PCI Audioadapter verwendet den angegebenen Treiber, um mit dem Audioadapter des Hosts zu kommunizieren.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Audio &amp;aktivieren</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Audio-&amp;Treiber des Hosts</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Richtet den Treiber für Audioausgabe ein. Wird der &lt;b&gt;Null-Audiotreiber&lt;/b&gt; ausgewählt, erkennt der Gast eine Audio-Karte, Ein- und Ausgabe werden aber ignoriert.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>Audio-&amp;Controller</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished">Wählt den Typ der virtuellen Soundkarte. Ausgehend von dieser Einstellung emuliert VirtualBox unterschiedliche Audiokarten.</translation>
+        <translation>Wählt den Typ der virtuellen Soundkarte. Ausgehend von dieser Einstellung emuliert VirtualBox unterschiedliche Audiokarten.</translation>
     </message>
 </context>
 <context>
@@ -6431,636 +6124,524 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="174"/>
         <source>Host CD/DVD drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-Laufwerk des Hosts ist nicht ausgewählt</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="176"/>
         <source>CD/DVD image file is not selected</source>
-        <translation type="unfinished">CD/DVD-Abbild ist nicht ausgewählt</translation>
+        <translation>CD/DVD-Abbild ist nicht ausgewählt</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="unfinished">Bindet das angegebene Medium an das CD/DVD-Laufwerk der virtuellen Maschine. Beachten Sie, dass das CD/DVD-Laufwerk immer an den zweiten Master-Slot des IDE-Controllers angeschlossen wird.</translation>
+        <translation>Bindet das angegebene Medium an das CD/DVD-Laufwerk der virtuellen Maschine. Beachten Sie, dass das CD/DVD-Laufwerk immer an den zweiten Master-Slot des IDE-Controllers angeschlossen wird.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="unfinished">CD/DVD-Laufwerk einbinden</translation>
+        <translation>CD/DVD-Laufwerk einbinden</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="83"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">Verbindet das eingestellte CD/DVD-Laufwerk mit der virtuellen Maschine.</translation>
+        <translation>Verbindet das eingestellte CD/DVD-Laufwerk mit der virtuellen Maschine.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="86"/>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation type="unfinished">&amp;CD/DVD-Laufwerk des Hosts</translation>
+        <translation>&amp;CD/DVD-Laufwerk des Hosts</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="112"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">Zeigt die CD/DVD-Geräte am Host, die für die Einbindung in die virtuelle Maschine verfügbar sind.</translation>
+        <translation>Zeigt die CD/DVD-Geräte am Host, die für die Einbindung in die virtuelle Maschine verfügbar sind.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished">Ist diese Box aktiviert, dann darf der Gast ATAPI-Kommandos direkt an das Hostlaufwerk senden. Dies ermöglicht die Nutzung von CD/DVD-Schreibgeräten des Hosts innerhalb der VM. Bitte beachten Sie, dass das Schreiben von Audio-CDs innerhalb der VM noch nicht unterstützt wird.</translation>
+        <translation>Ist diese Box aktiviert, dann darf der Gast ATAPI-Kommandos direkt an das Hostlaufwerk senden. Dies ermöglicht die Nutzung von CD/DVD-Schreibgeräten des Hosts innerhalb der VM. Bitte beachten Sie, dass das Schreiben von Audio-CDs innerhalb der VM noch nicht unterstützt wird.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
         <source>Enable &amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Passthrough aktivieren</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">Bindet das angegebene CD/DVD-Abbild als virtuelles CD/DVD-Laufwerk ein.</translation>
+        <translation>Bindet das angegebene CD/DVD-Abbild als virtuelles CD/DVD-Laufwerk ein.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="138"/>
         <source>&amp;ISO Image File</source>
-        <translation type="unfinished">&amp;ISO-Abbild</translation>
+        <translation>&amp;ISO-Abbild</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="148"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">Zeigt die Datei, die als Abbild für virtuelle CD/DVD-Laufwerke verwendet werden soll und erlaubt die Auswahl eines anderen Abbilds.</translation>
+        <translation>Zeigt die Datei, die als Abbild für virtuelle CD/DVD-Laufwerke verwendet werden soll und erlaubt die Auswahl eines anderen Abbilds.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished">Ruft den Manager für virtuelle Medien auf, um ein CD/DVD-Abbild für die Einbindung auszuwählen.</translation>
+        <translation>Ruft den Manager für virtuelle Medien auf, um ein CD/DVD-Abbild für die Einbindung auszuwählen.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="792477282"/>
         <source>Category</source>
         <translation type="obsolete">Kategorie</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Wählen Sie eine Kategorie aus der Liste auf der linken Seite und bewegen Sie die Maus über eine Eintrag um mehr Informationen zu erhalten&lt;/i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> General </source>
         <translation type="obsolete">Allgemein</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Hard Disks </source>
         <translation type="obsolete">Festplatten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Floppy </source>
         <translation type="obsolete">Diskette</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> CD/DVD-ROM </source>
         <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Audio </source>
         <translation type="obsolete">Audio</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Network </source>
         <translation type="obsolete">Netzwerk</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> USB </source>
         <translation type="obsolete">USB</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Remote Display </source>
         <translation type="obsolete">Fernsteuerung</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Shared Folders </source>
         <translation type="obsolete">Gemeinsame Ordner</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Identification</source>
         <translation type="obsolete">&amp;Identifikation</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Name</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the name of the virtual machine.</source>
         <translation type="obsolete">Zeigt den Namen der virtuellen Maschine.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>OS &amp;Type</source>
         <translation type="obsolete">BS &amp;Typ</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">Größe &amp;Hauptspeicher</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">Legt die Größe des Speichers für die virtuelle Maschine fest. Wenn Sie zu viel angeben, kann die virtuelle Maschine nicht starten.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">Größe &amp;Grafikspeicher</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">Legt die Größe des Grafikspeichers für die virtuelle Maschine fest.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Basic</source>
         <translation type="obsolete">&amp;Basis</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Select</source>
         <translation type="obsolete">Auswahl</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Selects the snapshot folder path.</source>
         <translation type="obsolete">Pfad für Sicherungspunkte.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Reset</source>
         <translation type="obsolete">Zurücksetzen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Extended Features</source>
         <translation type="obsolete">Erweiterte Einstellungen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">&amp;ACPI aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">&amp;IO-APIC aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Boo&amp;t Order</source>
         <translation type="obsolete">Boo&amp;t-Reihenfolge</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Advanced</source>
         <translation type="obsolete">&amp;Erweitert</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Description</source>
         <translation type="obsolete">&amp;Beschreibung</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Mount Floppy Drive</source>
         <translation type="obsolete">&amp;Diskettenlaufwerk einbinden</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Host Floppy &amp;Drive</source>
         <translation type="obsolete">&amp;Diskettenlaufwerk des Hosts</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="obsolete">Bindet das angegebene Hostlaufwerk als virtuelles Floppylaufwerk ein.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">&amp;Abbild</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
         <translation type="obsolete">Verbindet das eingestellte Diskettenlaufwerk mit der virtuellen Maschine.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">CD/DVD-Laufwerk einbinden</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">&amp;CD/DVD-Laufwerk des Hosts</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Verbindet das eingestellte CD/DVD-Laufwerk mit der virtuellen Maschine.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">&amp;ISO-Abbild</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Bindet das angegebene CD/DVD-Abbild als virtuelles CD/DVD-Laufwerk ein.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Enable Audio</source>
         <translation type="obsolete">Audio &amp;aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Host Audio &amp;Driver</source>
         <translation type="obsolete">Audio-&amp;Treiber des Hosts</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="obsolete">&amp;USB-Controller aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>USB Device &amp;Filters</source>
         <translation type="obsolete">&amp;Filter für USB-Geräte</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">VRDP-Server &amp;aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">Festlegen der VRDP Authentisierungsmethode.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">Legt die maximale Zeit für die Anmeldung des Gastes in Millisekunden fest.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Help</source>
         <translation type="obsolete">Hilfe</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Öffnet das Hilfe-Fenster.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Ungültige Einstellungen erkannt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Änderungen speichern und Dialog schließen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancel</source>
         <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Alle Änderungen verwerfen und Dialog schließen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
         <translation type="obsolete">Bindet das angegebene Medium an das CD/DVD-Laufwerk der virtuellen Maschine. Beachten Sie, dass das CD/DVD-Laufwerk immer an den zweiten Master-Slot des IDE-Controllers angeschlossen wird.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Zeigt die Datei, die als Abbild für virtuelle CD/DVD-Laufwerke verwendet werden soll und erlaubt die Auswahl eines anderen Abbilds.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="obsolete">Bindet das angegebene Abbild als virtuelle Diskette ein.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Zeigt die Datei, die als Abbild für eine virtuelle Diskette verwendet werden soll und erlaubt die Auswahl eines anderen Abbildes.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
         <translation type="obsolete">Aktiviert den virtuellen PCI Audioadapter der den angegebenen Treiber verwendet, um mit dem Audioadapter des Hosts zu kommunizieren.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol) über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;nicht angeschlossen&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> - Settings</source>
         <translation type="obsolete">- Einstellungen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Neuer Filter %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Shared Clipboard</source>
         <translation type="obsolete">&amp;Gemeinsame Zwischenablage</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>S&amp;napshot Folder</source>
         <translation type="obsolete">Ordner &amp;Sicherungspunkte</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Zeigt den Typ des Betriebssystems, das Sie in der virtuellen Maschine installieren wollen (auch als Gast bezeichnet).</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Aktiviert die Unterstützung für ACPI (Advanced Configuration and Power Management (ACPI) im Gast. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die ACPI-Unterstützung nicht, nachdem Sie Windows installiert haben!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Aktiviert die Unterstützung für den Input/Output APIC (IO-APIC). Dies kann die Performance des Gastes leicht herabsetzen. &lt;b&gt;Beachten Sie:&lt;/b&gt; Deaktivieren Sie die Unterstützung nicht, nachdem Sie Windows installiert haben!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Legt den Modus der gemeinsamen Zwischenablage zwischen Host und Gast fest. Dieses Feature benötigt installierte Gasterweiterungen im Gast-Betriebssystem.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Setzt den Pfad für Sicherungspunkte zurück auf den voreingestellten Wert. Der momentane Pfad wird erst angezeigt, wenn dieser Dialog verlassen und erneut geöffnet wird.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
         <translation type="obsolete">Zeigt die Beschreibung für diese virtuelle Maschine. Das Beschreibungsfeld kann für Kommentare über die Konfiguration des installierten Gastsystems verwendet werden.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
         <translation type="obsolete">Zeigt die Diskettenabbilder, die an die virtuelle Maschine gebunden werden können.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">Ruft den Manager für virtuelle Medien auf, um ein Diskettenabbild für die Einbindung auszuwählen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="obsolete">Zeigt die CD/DVD-Geräte am Host, die für die Einbindung in die virtuelle Maschine verfügbar sind.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">Ruft den Manager für virtuelle Medien auf, um ein CD/DVD-Abbild für die Einbindung auszuwählen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Richtet den Treiber für Audioausgabe ein. Wird der &lt;b&gt;Null-Audiotreiber&lt;/b&gt; ausgewählt, erkennt der Gast eine Audio-Karte, Ein- und Ausgabe werden aber ignoriert.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="obsolete">Aktiviert den virtuellen USB-Controller für diese Maschine.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="obsolete">Adapter %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">Hostinterfaces</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">Zeigt alle verfügbaren Hostinterfaces.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">Fügt ein neues Hostinterface hinzu.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">Entfernt das ausgewählte Hostinterface.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;keine passenden Interfaces&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add</source>
         <translation type="obsolete">Hinzufügen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Remove</source>
         <translation type="obsolete">Entfernen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">VirtualBox Hostinterface %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Möchten Sie das ausgewählte Hostinterface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;löschen?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie:&lt;/b&gt; Dieses Interface wird möglicherweise von virtuellen Netzwerkadaptern anderer VMs benutzt. Nachdem es gelöscht wurde, funktionieren diese Adapter nichts mehr, bis deren Einstellungen entsprechend angepasst wurden.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Serial Ports </source>
         <translation type="obsolete">Serielle Schnittstellen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">&amp;VT-x/AMD-V aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation type="obsolete">Falls ausgewählt versucht die virtuelle Maschine einen speziellen Virtualisierungsmodus der CPU (Intel VT-x bzw. AMD-V) zu verwenden. Eine graue Checkbox bedeutet die Übernahme dieser Einstellung aus den globalen Einstellungen.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Other &amp;Settings</source>
         <translation type="obsolete">&amp;Anderes</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Remember Media Mounted at Runtime</source>
         <translation type="obsolete">Zur Laufzeit zugewiesene Medien &amp;merken</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation type="obsolete">Falls ausgewählt, werden zur Laufzeit zugewiesene CD/DVD- oder Diskettenmedien in den Einstellungen gespeichert um die Zuweisung über die Laufzeit der VM hinaus beizubehalten.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>O&amp;ther</source>
         <translation type="obsolete">Sonstiges</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Enable Passthrough</source>
         <translation type="obsolete">&amp;Passthrough aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation type="obsolete">Ist diese Box aktiviert, dann darf der Gast ATAPI-Kommandos direkt an das Hostlaufwerk senden. Dies ermöglicht die Nutzung von CD/DVD-Schreibgeräten des Hosts innerhalb der VM. Bitte beachten Sie, dass das Schreiben von Audio-CDs innerhalb der VM noch nicht unterstützt wird.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Server Port </source>
         <translation type="obsolete">&amp;Serverport</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Authentication &amp;Method </source>
         <translation type="obsolete">Authentisierungs&amp;methode</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Authentication &amp;Timeout </source>
         <translation type="obsolete">&amp;Zeitüberschreitung für Authentisierung</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Zeigt die VRDP-Server-Portnummer. Sie können &lt;tt&gt;0&lt;/tt&gt; (Null) einstellen, um den voreingestellen Port zu verwenden.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">CD/DVD-Abbild ist nicht ausgewählt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Floppy image file is not selected</source>
         <translation type="obsolete">Diskettenabbild ist nicht ausgewählt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Incorrect host network interface is selected</source>
         <translation type="obsolete">Unzulässiges Host-Netzinterface ausgewählt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Duplicate port number is selected </source>
         <translation type="obsolete">Doppelte Portnummer ist ausgewählt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Duplicate port path is entered </source>
         <translation type="obsolete">Doppelter Portpfad ist ausgewählt</translation>
     </message>
@@ -7070,59 +6651,48 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>%1 auf der Seite &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation type="obsolete">Port %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source> Parallel Ports </source>
         <translation type="obsolete">Parallele Schnittstellen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;IDE Controller Type</source>
         <translation type="obsolete">&amp;IDE-Controller im Gast</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">Wählt den Typ des virtuellen IDE-Controllers. Abhängig von dieser Einstellung emuliert VirtualBox unterschiedliche IDE-Hardware für den Gast.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Audio &amp;Controller</source>
         <translation type="obsolete">Audio-&amp;Controller</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="obsolete">Aktiviert den virtuellen USB-EHCI-Controller für diese Maschine und damit USB-2.0-Unterstützung.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">Der Name des internen Netzwerkes ist nicht gesetzt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port path is not specified </source>
         <translation type="obsolete">Der Pfad für den Port fehlt</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation type="obsolete">Port %1</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">PA&amp;E/NX aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;When
                                                           checked, the Physical
                                                           Address Extension
@@ -7134,17 +6704,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Aktiviert den CPU-Modus Physical Address Extension (PAE) für den Gast, falls der Host diesen Modus ebenfalls beherrscht.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation type="obsolete">Wählt den Typ der virtuellen Soundkarte. Ausgehend von dieser Einstellung emuliert VirtualBox unterschiedliche Audiokarten.</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Enable USB &amp;2.0 Controller</source>
         <translation type="obsolete">USB-&amp;2.0-Controller aktivieren</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
                                               &lt;qt&gt;Lists all USB filters of
                                               this machine. The checkbox to the
@@ -7157,17 +6724,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Zeigt alle globalen USB-Filter. Die Checkbox auf der linken Seite steuert, ob der jeweilige Filter aktiv ist oder nicht. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um USB-Filter hinzuzufügen oder zu löschen.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">Leerer Filter</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">&amp;Leerer Filter</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -7176,17 +6740,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Fügt einen neuen USB-Filter hinzu, bei dem alle Felder leer sind. Beachten Sie, dass solch ein Filter auf angeschlossene USB-Geräte passt.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">Filter vom Gerät</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">Filter vom &amp;Gerät</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -7194,51 +6755,42 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Fügt einen neuen USB-Filter hinzu und initialisiert alle Felder mit den Werten des ausgewählten Gerätes, das an den PC angeschlossen ist.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Filter löschen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">Filter &amp;löschen</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Löscht den ausgewählten USB-Filter.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Bewege Filter nach oben</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">Bewege Filter nach &amp;oben</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Bewegt den ausgewählten USB-Filter nach oben.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Bewege Filter nach unten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">Bewege Filter nach &amp;unten</translation>
     </message>
     <message>
-        <location filename="" line="792477282"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
@@ -7247,72 +6799,72 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="411"/>
         <source>General</source>
-        <translation type="unfinished">Allgemein</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="414"/>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Plattenspeicher</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="417"/>
         <source>Hard Disks</source>
-        <translation type="unfinished">Festplatten</translation>
+        <translation>Festplatten</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="420"/>
         <source>CD/DVD-ROM</source>
-        <translation type="unfinished">CD/DVD-ROM</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="423"/>
         <source>Floppy</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskette</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="426"/>
         <source>Audio</source>
-        <translation type="unfinished">Audio</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="429"/>
         <source>Network</source>
-        <translation type="unfinished">Netzwerk</translation>
+        <translation>Netzwerk</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="434"/>
         <source>Ports</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="437"/>
         <source>Serial Ports</source>
-        <translation type="unfinished">Serielle Schnittstellen</translation>
+        <translation>Serielle Schnittstellen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="442"/>
         <source>Parallel Ports</source>
-        <translation type="unfinished">Parallel-Ports</translation>
+        <translation>Parallele Schnittstellen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="447"/>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="450"/>
         <source>Shared Folders</source>
-        <translation type="unfinished">Gemeinsame Ordner</translation>
+        <translation>Gemeinsame Ordner</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="453"/>
         <source>Remote Display</source>
-        <translation type="unfinished">Fernsteuerung</translation>
+        <translation>Fernsteuerung</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="474"/>
         <source>%1 - %2</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -7320,57 +6872,57 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="172"/>
         <source>Host floppy drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskettenlaufwerk des Hosts ist nicht ausgewählt</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="174"/>
         <source>Floppy image file is not selected</source>
-        <translation type="unfinished">Diskettenabbild ist nicht ausgewählt</translation>
+        <translation>Diskettenabbild ist nicht ausgewählt</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished">Bindet das angegebene Abbild als virtuelle Diskette ein.</translation>
+        <translation>Bindet das angegebene Abbild als virtuelle Diskette ein.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
         <source>&amp;Mount Floppy Drive</source>
-        <translation type="unfinished">&amp;Diskettenlaufwerk einbinden</translation>
+        <translation>&amp;Diskettenlaufwerk einbinden</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="83"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="unfinished">Bindet das angegebene Hostlaufwerk als virtuelles Floppylaufwerk ein.</translation>
+        <translation>Bindet das angegebene Hostlaufwerk als virtuelles Floppylaufwerk ein.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="86"/>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="unfinished">&amp;Diskettenlaufwerk des Hosts</translation>
+        <translation>&amp;Diskettenlaufwerk des Hosts</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="112"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">Zeigt die Diskettenabbilder, die an die virtuelle Maschine gebunden werden können.</translation>
+        <translation>Zeigt die Diskettenabbilder, die an die virtuelle Maschine gebunden werden können.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="119"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation type="unfinished">Verbindet das eingestellte Diskettenlaufwerk mit der virtuellen Maschine.</translation>
+        <translation>Verbindet das eingestellte Diskettenlaufwerk mit der virtuellen Maschine.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="122"/>
         <source>&amp;Image File</source>
-        <translation type="unfinished">&amp;Abbild</translation>
+        <translation>&amp;Abbild</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="132"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">Zeigt die Datei, die als Abbild für eine virtuelle Diskette verwendet werden soll und erlaubt die Auswahl eines anderen Abbildes.</translation>
+        <translation>Zeigt die Datei, die als Abbild für eine virtuelle Diskette verwendet werden soll und erlaubt die Auswahl eines anderen Abbildes.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished">Ruft den Manager für virtuelle Medien auf, um ein Diskettenabbild für die Einbindung auszuwählen.</translation>
+        <translation>Ruft den Manager für virtuelle Medien auf, um ein Diskettenabbild für die Einbindung auszuwählen.</translation>
     </message>
 </context>
 <context>
@@ -7378,17 +6930,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="351"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="379"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished">Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
+        <translation>Zeigt den Pfad an, wo Sicherungspunkte für diese virtuelle Maschine gespeichert werden. Beachten Sie, dass Sicherungspunkte viel Platz beanspruchen können.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="37"/>
         <source>&amp;Basic</source>
-        <translation type="unfinished">&amp;Basis</translation>
+        <translation>&amp;Basis</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="49"/>
@@ -7403,7 +6955,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="87"/>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished">Zeigt den Namen der virtuellen Maschine.</translation>
+        <translation>Zeigt den Namen der virtuellen Maschine.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
@@ -7413,17 +6965,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Zeigt den Typ des Betriebssystems, das Sie in der virtuellen Maschine installieren wollen (auch als Gast bezeichnet).</translation>
+        <translation>Zeigt den Typ des Betriebssystems, das Sie in der virtuellen Maschine installieren wollen (auch als Gast bezeichnet).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="125"/>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">Größe &amp;Hauptspeicher</translation>
+        <translation>Größe &amp;Hauptspeicher</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="251"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">Legt die Größe des Speichers für die virtuelle Maschine fest. Wenn Sie zu viel angeben, kann die virtuelle Maschine nicht starten.</translation>
+        <translation>Legt die Größe des Speichers für die virtuelle Maschine fest. Wenn Sie zu viel angeben, kann die virtuelle Maschine nicht starten.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="370"/>
@@ -7443,7 +6995,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="300"/>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished">Größe &amp;Grafikspeicher</translation>
+        <translation>Größe &amp;Grafikspeicher</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="426"/>
@@ -7596,37 +7148,37 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="577"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished">Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt</translation>
+        <translation>Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="589"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;%1&lt;/i&gt; benutzt die Festplatte, die bereits an &lt;i&gt;%2&lt;/i&gt; angeschlossen ist</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; benutzt die Festplatte, die bereits an &lt;i&gt;%2&lt;/i&gt; angeschlossen ist</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="609"/>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished">Anschluss &amp;hinzufügen</translation>
+        <translation>Anschluss &amp;hinzufügen</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="610"/>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished">Anschluss &amp;entfernen</translation>
+        <translation>Anschluss &amp;entfernen</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="611"/>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished">Festplatte &amp;auswählen</translation>
+        <translation>Festplatte &amp;auswählen</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="620"/>
         <source>Adds a new hard disk attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fügt eine virtuelle Festplatte zur VM hinzu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="621"/>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entfernt die ausgewählte virtuelle Platte von der VM.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="624"/>
@@ -7641,7 +7193,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="36"/>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished">&amp;SATA-Controller aktivieren</translation>
+        <translation>&amp;SATA-Controller aktivieren</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
@@ -7882,7 +7434,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="183"/>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Fügt einen neuen gemeinsamen Ordner hinzu</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="184"/>
@@ -7897,37 +7449,37 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="198"/>
         <source>Adds a new shared folder definition.</source>
-        <translation type="unfinished">Fügt einen neuen gemeinsamen Ordner hinzu.</translation>
+        <translation>Fügt einen neuen gemeinsamen Ordner hinzu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="199"/>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished">Ändert den ausgewählten gemeinsamen Ordner.</translation>
+        <translation>Ändert den ausgewählten gemeinsamen Ordner.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="200"/>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="unfinished">Entfernt den ausgewählten gemeinsamen Ordner.</translation>
+        <translation>Entfernt den ausgewählten gemeinsamen Ordner.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="254"/>
         <source> Machine Folders</source>
-        <translation type="unfinished">Ordner der virtuellen Maschine</translation>
+        <translation>Ordner der virtuellen Maschine</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="261"/>
         <source> Transient Folders</source>
-        <translation type="unfinished">Transiente Ordner</translation>
+        <translation>Transiente Ordner</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="361"/>
         <source>Full</source>
-        <translation type="unfinished">Voll</translation>
+        <translation>Voll</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="362"/>
         <source>Read-only</source>
-        <translation type="unfinished">Nur lesbar</translation>
+        <translation>Nur lesbar</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
@@ -7937,17 +7489,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
         <source>Name</source>
-        <translation type="unfinished">Name</translation>
+        <translation>Name</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="78"/>
         <source>Path</source>
-        <translation type="unfinished">Pfad</translation>
+        <translation>Pfad</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="83"/>
         <source>Access</source>
-        <translation type="unfinished">Zugriff</translation>
+        <translation>Zugriff</translation>
     </message>
 </context>
 <context>
@@ -7955,47 +7507,47 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="120"/>
         <source>Add Share</source>
-        <translation type="unfinished">Ordner hinzufügen</translation>
+        <translation>Ordner hinzufügen</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="123"/>
         <source>Edit Share</source>
-        <translation type="unfinished">Ordner ändern</translation>
+        <translation>Ordner ändern</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="30"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordner-Pfad:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordner-Name:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished">Zeigt den Namen des gemeinsamen Ordners (wie er vom Gastsystem gesehen wird).</translation>
+        <translation>Zeigt den Namen des gemeinsamen Ordners (wie er vom Gastsystem gesehen wird).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="66"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished">Der Gast erhält nur lesenden Zugriff auf das Verzeichnis.</translation>
+        <translation>Der Gast erhält nur lesenden Zugriff auf das Verzeichnis.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="69"/>
         <source>&amp;Read-only</source>
-        <translation type="unfinished">Nur &amp;lesbar</translation>
+        <translation>Nur &amp;lesbar</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="76"/>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">&amp;Permanent erzeugen</translation>
+        <translation>&amp;Permanent erzeugen</translation>
     </message>
 </context>
 <context>
@@ -8205,19 +7757,19 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="62"/>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished">Beides</translation>
+        <translation>Beides</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="63"/>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">Ja</translation>
+        <translation>Ja</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="64"/>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">Nein</translation>
+        <translation>Nein</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
@@ -8232,7 +7784,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
         <source>Displays the filter name.</source>
-        <translation type="unfinished">Zeigt den Namen des Filters.</translation>
+        <translation>Zeigt den Namen des Filters.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
@@ -8330,42 +7882,42 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="33"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol) über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
+        <translation>Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol) über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="36"/>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="unfinished">VRDP-Server &amp;aktivieren</translation>
+        <translation>VRDP-Server &amp;aktivieren</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Serverport</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die VRDP-Server-Portnummer. Sie können &lt;tt&gt;0&lt;/tt&gt; (Null) einstellen, um den voreingestellen Port zu verwenden.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished"></translation>
+        <translation>Authentisierungs&amp;methode</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">Festlegen der VRDP Authentisierungsmethode.</translation>
+        <translation>Festlegen der VRDP Authentisierungsmethode.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zeitüberschreitung für Authentisierung</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">Legt die maximale Zeit für die Anmeldung des Gastes in Millisekunden fest.</translation>
+        <translation>Legt die maximale Zeit für die Anmeldung des Gastes in Millisekunden fest.</translation>
     </message>
 </context>
 </TS>
