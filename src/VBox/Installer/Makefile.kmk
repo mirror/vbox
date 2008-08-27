@@ -19,8 +19,13 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../..
-include $(KBUILD_PATH)/header.kmk
+ifdef VBOX_KBUILD_HACKING
+SUB_DEPTH = ../..
+else
+SUB_DEPTH = ../..
+DEPTH    ?= ../../..
+endif
+include $(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_HOST),win) # guard when cross-compiling.
  SUBDIRS.win = win
@@ -35,5 +40,8 @@ ifeq ($(KBUILD_HOST),solaris)
  SUBDIRS.solaris = solaris
 endif
 
-include $(KBUILD_PATH)/footer.kmk
+# Include Sub-Makefiles.
+include $(PATH_SUB_CURRENT)/common/Makefile.kmk
+
+include $(KBUILD_PATH)/subfooter.kmk
 
