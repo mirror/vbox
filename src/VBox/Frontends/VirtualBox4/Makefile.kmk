@@ -279,11 +279,13 @@ endif
 # The targets.
 #
 PROGRAMS += VirtualBox4
-ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
- DLLS += VBoxKeyboard
- ## @todo convert to install target.
- OTHERS += $(PATH_BIN)/vboxkeyboard.tar.gz
- CLEAN += $(PATH_BIN)/vboxkeyboard.tar.gz
+ifndef VBOX_ONLY_SDK
+ ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
+  DLLS += VBoxKeyboard
+  ## @todo convert to install target.
+  OTHERS += $(PATH_BIN)/vboxkeyboard.tar.gz
+  CLEAN += $(PATH_BIN)/vboxkeyboard.tar.gz
+ endif
 endif
 INSTALLS += VirtualBox4.nls
 

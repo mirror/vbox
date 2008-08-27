@@ -36,6 +36,7 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifndef VBOX_ONLY_SDK
 
 BLDPROGS             += dyngen
 ifneq ($(or $(eq $(KBUILD_TARGET_ARCH),amd64) , $(VBOX_TARGET_MAC_OS_X_VERSION_10_5)),)
@@ -338,7 +339,7 @@ $(VBoxREMImp_SOURCES.os2): $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CU
 		$< > $@.tmp
 	$(MV) -f $@.tmp $@
 
-
+endif # !VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk
 

@@ -26,6 +26,8 @@ DEPTH     = ../../..
 endif
 include $(KBUILD_PATH)/subheader.kmk
 
+ifndef VBOX_ONLY_SDK
+
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
 ifndef VBOX_OSE # not yet
@@ -857,5 +859,7 @@ ifdef VBOX_WITH_E1000
  tstDevPhy_DEFS        = PHY_UNIT_TEST
 endif
 endif
+
+endif # !VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk
