@@ -170,7 +170,7 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
     size_t cb = sizeof(CpuFrequencyMax);
     int rc = sysctlbyname("hw.cpufrequency_max", &CpuFrequencyMax, &cb, NULL, 0);
     if (!rc)
-        return CpuFrequencyMax + 999999 / 1000000;
+        return (CpuFrequencyMax + 999999) / 1000000;
 
     /*
      * Use the depricated one.
