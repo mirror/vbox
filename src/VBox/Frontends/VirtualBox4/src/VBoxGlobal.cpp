@@ -3527,7 +3527,9 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
 #elif defined Q_WS_X11
 
     /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
-     * gets initial path as hidden directory if no hidden files are shown. */
+     * gets initial path as hidden directory if no hidden files are shown.
+     * See http://trolltech.com/developer/task-tracker/index_html?method=entry&id=193483
+     * for details */
     QFileDialog dlg (aParent);
     dlg.setWindowTitle (aCaption);
     dlg.setDirectory (aDir);
@@ -3703,7 +3705,9 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
 #elif (defined Q_WS_X11 && QT_VERSION < 0x040400)
 
     /* Here is workaround for Qt4.3 bug with QFileDialog which crushes when
-     * gets initial path as hidden directory if no hidden files are shown. */
+     * gets initial path as hidden directory if no hidden files are shown. 
+     * See http://trolltech.com/developer/task-tracker/index_html?method=entry&id=193483
+     * for details */
     QFileDialog dlg (aParent);
     dlg.setWindowTitle (aCaption);
     dlg.setDirectory (aStartWith);
