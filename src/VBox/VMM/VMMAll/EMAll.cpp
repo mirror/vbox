@@ -2555,6 +2555,11 @@ EMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         val = pCtx->msrKERNELGSBASE;
         break;
 
+#ifdef IN_RING0
+    case MSR_IA32_BIOS_SIGN_ID:
+        val = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);
+        break;
+#endif
     default:
         /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
         val = 0;
