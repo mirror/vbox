@@ -95,7 +95,7 @@ endif
 tstVMStructGC_SOURCES   = tstVMStructGC.cpp
 tstVMStructGC_INCS      = $(VBOX_PATH_VMM_SRC) $(VBOX_PATH_VMM_SRC)/PATM
 
-tstVMStructSize_TEMPLATE= VBOXR3TSTEXE
+tstVMStructSize_TEMPLATE= VBOXR3AUTOTST
 tstVMStructSize_DEFS    = IN_VMM_R3 IN_PDM_R3 IN_CFGM_R3 IN_IOM_R3 IN_VM_R3 IN_CPUM_R3 IN_SELM_R3 IN_PGM_R3 IN_TRPM_R3 IN_MM_R3 IN_PDM_R3 IN_DBGF_R3 IN_PATM_R3 IN_DIS_R3 IN_STAM_R3 IN_VGADEVICE_R3 IN_CSAM_R3 IN_SSM_R3 IN_REM_R3
 ifdef VBOX_WITH_IDT_PATCHING
 tstVMStructSize_DEFS   += VBOX_WITH_IDT_PATCHING
@@ -296,8 +296,8 @@ $(PATH_TARGET)/tstAsmStructsGC.h: $(PATH_TARGET)/tstAsmStructsHC.h
 # 4. run it.
 $(PATH_TARGET)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(INSTARGET_tstAsmStructsGC)
 	$(QUIET)$(RM) -f $@
-	$(if $(eq $(KBUILD_TARGET),darwin),$(REDIRECT) -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))'   --) $(INSTARGET_tstAsmStructs)
-	$(if $(eq $(KBUILD_TARGET),darwin),$(REDIRECT) -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))' --) $(INSTARGET_tstAsmStructsGC)
+	$(INSTARGET_tstAsmStructs)
+	$(INSTARGET_tstAsmStructsGC)
 	$(QUIET)$(APPEND) "$@" "done"
 
 
@@ -309,14 +309,12 @@ $(PATH_TARGET)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(INSTARGET_tstAs
 # 1. Manually dump selected structures and members.
 $(PATH_TARGET)/tstVMStructGC.h: $$(INSTARGET_tstVMStructGC)
 	$(call MSG_GENERATE,tstVMStructSize,$@)
-	$(QUIET)$(REDIRECT) -wo $@ \
-		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
-		-- $^
+	$(QUIET)$(REDIRECT) -wo $@ -- $^
 
 # 2. run it.
 $(PATH_TARGET)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize)
 	$(QUIET)$(RM) -f $@
-	$(if $(eq $(KBUILD_TARGET),darwin),$(REDIRECT) -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))' --) $^
+	$^
 	$(QUIET)$(APPEND) "$@" "done"
 
 # alias for the two struct tests.
