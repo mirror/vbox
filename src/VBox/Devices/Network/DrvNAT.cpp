@@ -610,13 +610,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #else
         pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
         pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;
-        mbuf_init(NULL);
         struct nat_output_callbacks cb;
         cb.noc_guest_out = drvNATOutput;
-#if 0
-        cb.noc_host_udp_out = host_udp_out;
-        cb.noc_host_udp_in = host_udp_in;
-#endif
         nat_init(&cb);
         ipfw_nat_init();
 #endif
