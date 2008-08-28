@@ -28,7 +28,8 @@ endif
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstShflSizes
-tstShflSizes_TEMPLATE = VBOXR3TSTEXE
+TESTING  += $(PATH_TARGET)/tstShflSizes.run
+tstShflSizes_TEMPLATE = VBOXR3AUTOTST
 tstShflSizes_DEFS     = VBOX_HGCM
 tstShflSizes_SOURCES  = tstShflSizes.cpp
 
@@ -37,7 +38,6 @@ ifdef VBOX_WITH_TESTCASES
 # Structure size testcase.
 #
 PROGRAMS += tstShflCase
-TESTING  += $(PATH_TARGET)/tstShflSizes.run
 
 tstShflCase_TEMPLATE = VBOXR3TSTEXE
 tstShflCase_DEFS     = VBOX_HGCM
