@@ -109,7 +109,7 @@ static RTTHREAD         g_ThreadSelect;
 /*
  * Sends data to guest called from NAT glue code
  */
-static DECLCALLBACK(void) drvNATOutput(const void * data, const uint8_t *msg, size_t size)
+static DECLCALLBACK(void) drvNATOutput(const void * data, const uint8_t *msg, int size)
 {
         PDRVNAT pThis = (PDRVNAT)(void *)data;
         LogFlow(("output: pvBuf=%p cb=%#x\n", msg, size));
