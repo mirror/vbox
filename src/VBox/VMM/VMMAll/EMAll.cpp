@@ -1377,6 +1377,9 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         case CPUMODE_64BIT:
             pRegFrame->rdi += offIncrement;
             break;
+        default:
+            AssertFailed();
+            return VERR_EM_INTERPRETER;
         }
 
     }
@@ -1426,6 +1429,9 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             pRegFrame->rdi = GCOffset;
             pRegFrame->rcx = cTransfers;
             break;
+        default:
+            AssertFailed();
+            return VERR_EM_INTERPRETER;
         }
     }
 
