@@ -3150,17 +3150,18 @@ void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */
  *  Searches for a menu item with a given hot key (shortcut). If the item
  *  is found, activates it and returns true. Otherwise returns false.
  */
-bool VBoxConsoleView::processHotKey (const QKeySequence &key, const QList<QAction*>& data)
+bool VBoxConsoleView::processHotKey (const QKeySequence &aKey,
+                                     const QList <QAction*> &aData)
 {
-    foreach (QAction *pAction, data)
+    foreach (QAction *pAction, aData)
     {
         if (QMenu *menu = pAction->menu())
-            return processHotKey (key, menu->actions());
+            return processHotKey (aKey, menu->actions());
 
         QString hotkey = VBoxGlobal::extractKeyFromActionText (pAction->text());
-        if (!hotkey.isEmpty())
+        if (pAction->isEnabled() && !hotkey.isEmpty())
         {
-            if (key.matches (QKeySequence (hotkey)) == QKeySequence::ExactMatch)
+            if (aKey.matches (QKeySequence (hotkey)) == QKeySequence::ExactMatch)
             {
                 /*
                  *  we asynchronously post a special event instead of calling
