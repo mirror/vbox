@@ -44,23 +44,6 @@ WARNING: The character device /dev/vboxdrv does not exist. Try
 
 	 You will not be able to start VMs until this problem is fixed.
 EOF
-elif [ ! -w /dev/vboxdrv ]; then
-    if [ "`id | grep vboxusers`" = "" ]; then
-        cat << EOF
-WARNING: You are not a member of the "vboxusers" group.  Please add yourself
-         to this group before starting VirtualBox.
-
-	 You will not be able to start VMs until this problem is fixed.
-EOF
-    else
-        cat << EOF
-WARNING: /dev/vboxdrv not writable for some reason. If you recently added the
-         current user to the vboxusers group then you have to logout and
-	 re-login to take the change effect.
-
-	 You will not be able to start VMs until this problem is fixed.
-EOF
-    fi
 fi
 
 if [ -f /etc/vbox/module_not_compiled ]; then
