@@ -160,7 +160,11 @@ _MD_AtomicAdd:
 / Atomically push ElementP onto linked list ListP.
 /
 	.text
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+	.globl	VBoxNsprPR_StackPush
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	.globl	PR_StackPush
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	.align	4
 PR_StackPush:
 	movl	4(%esp), %ecx
@@ -193,7 +197,11 @@ pulock:
 / Atomically pop ElementP off linked list ListP
 /
 	.text
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+	.globl	VBoxNsprPR_StackPop
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	.globl	PR_StackPop
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	.align	4
 PR_StackPop:
 	movl	4(%esp), %ecx
