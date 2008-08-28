@@ -107,7 +107,7 @@ LINUXNOSTRIP = \
 	VBox.png \
 	VBoxAddIF.sh \
 	$(if $(VBOX_WITH_QT4GUI),VirtualBox.desktop,) \
-	src 
+	src
 
 # Qt4 GUI
 ifdef VBOX_WITH_QT4GUI
@@ -283,34 +283,39 @@ else
 	$(QUIET)$(SED) -e "s+\$$VBOX_DOC_PATH+/opt/VirtualBox-$(VBOX_VERSION_STRING)+" $< > $@
 endif
 
-# Note: The -m <mode> feature of kmk_builtin_install does not work together with fakeroot!
-# Note: $(INSTALL) -s is currently not reliable when used in parallel builds. Fixed in 0.1.1.
-# Update: Both these issues has been resolved.
-$(foreach f,$(LINUXSTRIPBIN),$(PATH_TARGET)/archive/$(f)): \
+$(addprefix $(PATH_TARGET)/archive/,$(LINUXSTRIPBIN)): \
 		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% \
 		$(if $(VBOX_NO_LINUX_RUN_INSTALLER),,\
 		    $(PATH_TARGET)/archive-dbg/$(DBGPATH)/%) \
-		| $(call DIRDEP,$(PATH_TARGET)/archive)
+		| $$(call DIRDEP,$$(dir $$@))
 	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)install -D -m $(if $(filter %.so,$<),0644,0755) $(if $(VBOX_DO_STRIP),-s,) $< $@
+	$(QUIET)$(INSTALL) -m $(if $(filter %.so,$<),0644,0755) $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)$(if $(VBOX_NO_LINUX_RUN_INSTALLER),,objcopy --add-gnu-debuglink=$(subst $(PATH_TARGET)/archive,$(PATH_TARGET)/archive-dbg/$(DBGPATH),$@) $@)
 
-$(foreach f,$(LINUXSTRIPOBJ),$(PATH_TARGET)/archive/$(f)): \
-		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
+$(addprefix $(PATH_TARGET)/archive/,$(LINUXSTRIPOBJ)): \
+		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% \
+		| $$(call DIRDEP,$$(dir $$@))
 	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)$(if $(VBOX_DO_STRIP),objcopy --strip-unneeded -R .comment $< $@,cp $< $@)
+ifeq ($(VBOX_DO_STRIP),)
+	$(QUIET)$(INSTALL) -m 0644 $< $@
+else # strip to temp file because of umask.
+	$(QUIET)objcopy --strip-unneeded -R .comment $< $@.tmp
+	$(QUIET)$(INSTALL) -m 0644 $@.tmp $@
+	$(QUIET)$(RM) -f -- $@.tmp
+endif
 
-$(foreach f,$(LINUXNOSTRIP),$(PATH_TARGET)/archive/$(f)): \
-		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% | $(call DIRDEP,$(PATH_TARGET)/archive)
+$(addprefix  $(PATH_TARGET)/archive/,$(LINUXNOSTRIP)): \
+		$(PATH_TARGET)/archive/% : $(PATH_BIN)/% \
+		| $$(call DIRDEP,$$(dir $$@))
 	$(call MSG_INST_SYM,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(LN_SYMLINK) $< $@
 
-$(foreach d,archive archive-dbg/$(DBGPATH) archive-dbg/$(DBGPATH)/components install,$(PATH_TARGET)/$(d)/):
+$(foreach d,archive archive/components archive/nls archive/additions archive-dbg/$(DBGPATH) archive-dbg/$(DBGPATH)/components install,$(PATH_TARGET)/$(d)/):
 	$(QUIET)$(MKDIR) -p $@
 
-$(foreach f,$(LINUXSTRIPBIN),$(PATH_TARGET)/archive-dbg/$(DBGPATH)/$(f)): \
+$(addprefix $(PATH_TARGET)/archive-dbg/$(DBGPATH)/,$(LINUXSTRIPBIN)): \
 		$(PATH_TARGET)/archive-dbg/$(DBGPATH)/% : $(PATH_BIN)/% \
 		| $(call DIRDEP,$(PATH_TARGET)/archive-dbg/$(DBGPATH)/components)
 	$(call MSG_TOOL,copydbg,$<,$@)
