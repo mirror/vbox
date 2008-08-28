@@ -39,7 +39,6 @@ PATH_INS            := $(PATH_OUT)
 ifeq ($(KBUILD_TARGET),darwin)
  INST_DIST            = dist/
  INST_SDK             = $(INST_DIST)sdk/
- INST_SDK_SAMPLES     = $(INST_SDK)samples
 
  # the bundles
  INST_VIRTUALBOX      = $(INST_DIST)VirtualBox.app/
@@ -66,7 +65,6 @@ else
  INST_DIST            = $(INST_BIN)
  INST_DLL             = $(INST_BIN)
  INST_SDK             = $(INST_BIN)sdk/
- INST_SDK_SAMPLES     = $(INST_SDK)samples
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
  INST_TESTCASE        = $(INST_BIN)testcase/
