@@ -40,8 +40,10 @@ ifeq ($(KBUILD_HOST),solaris)
  SUBDIRS.solaris = solaris
 endif
 
+ifndef VBOX_OSE
 # Include Sub-Makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
+endif
 
 include $(KBUILD_PATH)/subfooter.kmk
 
