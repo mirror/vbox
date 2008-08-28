@@ -682,6 +682,17 @@ void VBoxSnapshotsWgt::retranslateUi()
     mRevertToCurSnapAction->setStatusTip (tr ("Restore the virtual machine state from the state stored in the current snapshot"));
     mDiscardCurSnapAndStateAction->setStatusTip (tr ("Discard the current snapshot and revert the machine to the state it had before the snapshot was taken"));
     mShowSnapshotDetailsAction->setStatusTip (tr ("Show details of the selected snapshot"));
+
+    mDiscardSnapshotAction->setToolTip (mDiscardSnapshotAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (mDiscardSnapshotAction->shortcut().toString()));
+    mTakeSnapshotAction->setToolTip (mTakeSnapshotAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (mTakeSnapshotAction->shortcut().toString()));
+    mRevertToCurSnapAction->setToolTip (mRevertToCurSnapAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (mRevertToCurSnapAction->shortcut().toString()));
+    mDiscardCurSnapAndStateAction->setToolTip (mDiscardCurSnapAndStateAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (mDiscardCurSnapAndStateAction->shortcut().toString()));
+    mShowSnapshotDetailsAction->setToolTip (mShowSnapshotDetailsAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (mShowSnapshotDetailsAction->shortcut().toString()));
 }
 
 void VBoxSnapshotsWgt::refreshAll (bool aKeepSelected /* = true */)
