@@ -28,9 +28,14 @@
 #
 
 if [ -z "$1" ]; then
-    echo "Usage: $0 <filename.tar.gz>"
+    echo "Usage: $0 <filename.tar.gz> [--without-hardening]"
     echo "  Export VirtualBox kernel modules to <filename.tar.gz>"
     exit 1
+fi
+
+VBOX_WITH_HARDENING=1
+if [ "$2" = "--without-hardening" ]; then
+    VBOX_WITH_HARDENING=
 fi
 
 PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
@@ -71,6 +76,11 @@ done
 sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_VBOXDRV/linux/build_in_tmp > $PATH_TMP/vboxdrv/build_in_tmp
 chmod 0755 $PATH_TMP/vboxdrv/build_in_tmp
 sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_VBOXDRV/linux/dkms.conf > $PATH_TMP/vboxdrv/dkms.conf
+if [ -n "$VBOX_WITH_HARDENING" ]; then
+    cat                                   $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
+else
+    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
+fi
 
 # Only temporary, omit from archive
 rm $PATH_TMP/version-generated.h
