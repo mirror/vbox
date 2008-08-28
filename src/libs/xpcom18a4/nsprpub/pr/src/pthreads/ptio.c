@@ -4606,7 +4606,11 @@ PR_IMPLEMENT(PRStatus) PR_UnlockFile(PRFileDesc *fd)
  * defined here for historical (or hysterical) reasons.
  */
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+static PRInt32 PR_GetSysfdTableMax(void)
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 PRInt32 PR_GetSysfdTableMax(void)
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 {
 #if defined(XP_UNIX) && !defined(AIX) && !defined(VMS)
     struct rlimit rlim;
@@ -4620,7 +4624,11 @@ PRInt32 PR_GetSysfdTableMax(void)
 #endif
 }
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+static PRInt32 PR_SetSysfdTableSize(PRIntn table_size)
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 PRInt32 PR_SetSysfdTableSize(PRIntn table_size)
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 {
 #if defined(XP_UNIX) && !defined(AIX) && !defined(VMS)
     struct rlimit rlim;

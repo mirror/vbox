@@ -84,6 +84,12 @@
 #define PR_Mac_PostAsyncNotify VBoxNsprPR_Mac_PostAsyncNotify
 #define PR_OS2_SetFloatExcpHandler VBoxNsprPR_OS2_SetFloatExcpHandler
 #define PR_OS2_UnsetFloatExcpHandler VBoxNsprPR_OS2_UnsetFloatExcpHandler
+#define PR_XLock VBoxNsprPR_XLock
+#define PR_XUnlock VBoxNsprPR_XUnlock
+#define PR_XIsLocked VBoxNsprPR_XIsLocked
+#define PR_XWait VBoxNsprPR_XWait
+#define PR_XNotify VBoxNsprPR_XNotify
+#define PR_XNotifyAll VBoxNsprPR_XNotifyAll
 #endif /* VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
 PR_BEGIN_EXTERN_C
