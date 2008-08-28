@@ -1145,6 +1145,14 @@ bool VBoxConsoleWnd::event (QEvent *e)
                     QTimer::singleShot (0, this, SLOT (onExitFullscreen()));
                 }
             }
+            /* restoreOverrideCursor is broken in Qt 4.4.0 if WA_PaintOnScreen
+             * widgets are present. This is the case on linux with SDL. As
+             * workaround we set the arrow cursor manually.
+             * See http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry
+             * for details. */
+#if defined (Q_WS_X11) && (QT_VERSION >= 0x040309) && (QT_VERSION < 0x040401) 
+            qApp->setOverrideCursor(Qt::ArrowCursor);
+#endif
             break;
         }
         case QEvent::Move:
