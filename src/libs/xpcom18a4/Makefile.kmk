@@ -308,12 +308,10 @@ PATH_VBox-xpcom-string=$(PATH_BIN)
 
 endif # !VBOX_ONLY_SDK
 
-XPCOM_TYPELIB = $(PATH_BIN)/components/VBoxXPCOMBase.xpt
-OTHERS += $(XPCOM_TYPELIB)
+
 OTHER_CLEAN += \
 	$(PATH_TARGET)/VBox-xpcom-nspr/_pr_bld.h \
-	$(PATH_TARGET)/VBox-xpcom-nspr/_pl_bld.h \
-	$(XPCOM_TYPELIB)
+	$(PATH_TARGET)/VBox-xpcom-nspr/_pl_bld.h
 
 
 
@@ -1550,12 +1548,11 @@ OTHER_CLEAN += \
 	$(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES))))
 
 
-# generate rules
-include $(KBUILD_PATH)/subfooter.kmk
-
-
-
-XPTFILES = $(addprefix $(PATH_TARGET)/, \
+#
+# Create and install VBoxXPCOMBase.xpt
+#
+INSTALLS += VBoxXPCOMBase-xpt-inst
+VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/, \
 	nsIConsoleListener.xpt \
 	nsIConsoleMessage.xpt \
 	nsIConsoleService.xpt \
@@ -1637,14 +1634,26 @@ XPTFILES = $(addprefix $(PATH_TARGET)/, \
 	nsIInterfaceInfoManager.xpt \
 	nsIXPTLoader.xpt)
 
-OTHER_CLEAN += \
-	$(XPTFILES)
+VBoxXPCOMBase-xpt-inst_INST = $(INST_BIN)components/
+VBoxXPCOMBase-xpt-inst_MODE = 0644
+VBoxXPCOMBase-xpt-inst_SOURCES = \
+	$(PATH_TARGET)/VBoxXPCOMBase.xpt
+VBoxXPCOMBase-xpt-inst_CLEAN = \
+	$(VBOX_XPTFILES) \
+	$(PATH_TARGET)/VBoxXPCOMBase.xpt
 
 # combined typelib library
-$(XPCOM_TYPELIB): $(XPTFILES) | $$(TARGET_xpt_link)
+$(PATH_TARGET)/VBoxXPCOMBase.xpt: $(VBOX_XPTFILES) | $$(TARGET_xpt_link)
 	$(call MSG_LINK,XPCOM_TYPELIB,$@)
 	$(QUIET)$(MKDIR) -p -- $(PATH_BIN)/components
 	$(QUIET)$(TARGET_xpt_link) $@ $^
+
+
+
+# generate rules
+include $(KBUILD_PATH)/subfooter.kmk
+
+
 
 # generate build stamps
 $(PATH_VBox-xpcom-nspr)/_pr_bld.h:
