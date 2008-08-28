@@ -34,7 +34,7 @@ PACKING        = $(if $(VBOX_NO_LINUX_RUN_INSTALLER),,\
 PACKING       += $(PATH_BIN)/VirtualBox.tar.bz2
 
 ifdef VBOX_ONLY_SDK
-SDK_ZIP        = $(PATH_BIN)/VirtualBox-$(VBOX_VERSION_STRING)-SDK.zip
+SDK_ZIP        = $(PATH_BIN)/VirtualBoxSDK-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).zip
 PACKING        = $(SDK_ZIP)
 endif
 
