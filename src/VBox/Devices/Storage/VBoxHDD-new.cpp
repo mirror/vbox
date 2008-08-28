@@ -181,18 +181,23 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
      * pszBackend as filename. */
     if (!pBackend)
     {
+        char szSharedLibPath[RTPATH_MAX];
         char *pszPluginName;
 
+        rc = RTPathSharedLibs(szSharedLibPath, sizeof(szSharedLibPath));
+        if (RT_FAILURE(rc))
+            return rc;
+
         /* HDD Format Plugins have VBoxHDD as prefix, prepend it. */
-        RTStrAPrintf(&pszPluginName, "%s%s",
-                     VBOX_HDDFORMAT_PLUGIN_PREFIX, pszBackend);
+        RTStrAPrintf(&pszPluginName, "%s/%s%s",
+                     szSharedLibPath, VBOX_HDDFORMAT_PLUGIN_PREFIX, pszBackend);
         if (!pszPluginName)
         {
             rc = VERR_NO_MEMORY;
             goto out;
         }
 
-        /* Try to load the plugin (RTldrLoad takes care of the suffix). */
+        /* Try to load the plugin (RTLdrLoad takes care of the suffix). */
         rc = RTLdrLoad(pszPluginName, &hPlugin);
         if (RT_SUCCESS(rc))
         {
@@ -698,6 +703,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
             RTLDRMOD hPlugin = NIL_RTLDRMOD;
             PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
             PVBOXHDDBACKEND pBackend = NULL;
+            char *pszPluginPath = NULL;
 
             if (rc == VERR_BUFFER_OVERFLOW)
             {
@@ -716,7 +722,15 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
             if (pPluginDirEntry->enmType != RTDIRENTRYTYPE_FILE)
                 continue;
 
-            rc = RTLdrLoad(pPluginDirEntry->szName, &hPlugin);
+            /* Prepend the path to the libraries. */
+            rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
+            if (RT_FAILURE(rc))
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+
+            rc = RTLdrLoad(pszPluginPath, &hPlugin);
             if (RT_SUCCESS(rc))
             {
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
@@ -756,6 +770,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
 
                 RTLdrClose(hPlugin);
             }
+            RTStrFree(pszPluginPath);
         }
         if (rc == VERR_NO_MORE_FILES)
             rc = VINF_SUCCESS;
@@ -946,6 +961,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             RTLDRMOD hPlugin = NIL_RTLDRMOD;
             PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
             PVBOXHDDBACKEND pBackend = NULL;
+            char *pszPluginPath = NULL;
 
             if (rc == VERR_BUFFER_OVERFLOW)
             {
@@ -964,7 +980,15 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             if (pPluginDirEntry->enmType != RTDIRENTRYTYPE_FILE)
                 continue;
 
-            rc = RTLdrLoad(pPluginDirEntry->szName, &hPlugin);
+            /* Prepend the path to the libraries. */
+            rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
+            if (RT_FAILURE(rc))
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+
+            rc = RTLdrLoad(pszPluginPath, &hPlugin);
             if (RT_SUCCESS(rc))
             {
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
@@ -1008,6 +1032,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
 
                 RTLdrClose(hPlugin);
             }
+            RTStrFree(pszPluginPath);
 
             /*
              * We take the first plugin which can handle this file.
