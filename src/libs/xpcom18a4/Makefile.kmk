@@ -1643,6 +1643,7 @@ OTHER_CLEAN += \
 # combined typelib library
 $(XPCOM_TYPELIB): $(XPTFILES) | $$(TARGET_xpt_link)
 	$(call MSG_LINK,XPCOM_TYPELIB,$@)
+	$(QUIET)$(MKDIR) -p -- $(PATH_BIN)/components
 	$(QUIET)$(TARGET_xpt_link) $@ $^
 
 # generate build stamps
