@@ -1200,10 +1200,14 @@ void VBoxSelectorWnd::retranslateUi()
     vmNewAction->setText (tr ("&New..."));
     vmNewAction->setShortcut (tr ("Ctrl+N"));
     vmNewAction->setStatusTip (tr ("Create a new virtual machine"));
+    vmNewAction->setToolTip (vmNewAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (vmNewAction->shortcut().toString()));
 
     vmConfigAction->setText (tr ("&Settings..."));
     vmConfigAction->setShortcut (tr ("Ctrl+S"));
     vmConfigAction->setStatusTip (tr ("Configure the selected virtual machine"));
+    vmConfigAction->setToolTip (vmConfigAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (vmConfigAction->shortcut().toString()));
 
     vmDeleteAction->setText (tr ("&Delete"));
     vmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
