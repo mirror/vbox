@@ -671,17 +671,17 @@ void VBoxSnapshotsWgt::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxSnapshotsWgt::retranslateUi (this);
 
-    mDiscardSnapshotAction->setText ("&Discard Snapshot");
-    mTakeSnapshotAction->setText ("Take &Snapshot");
-    mRevertToCurSnapAction->setText ("&Revert to Current Snapshot");
-    mDiscardCurSnapAndStateAction->setText ("D&iscard Current Snapshot and State");
-    mShowSnapshotDetailsAction->setText ("S&how Details");
+    mDiscardSnapshotAction->setText (tr ("&Discard Snapshot"));
+    mTakeSnapshotAction->setText (tr ("Take &Snapshot"));
+    mRevertToCurSnapAction->setText (tr ("&Revert to Current Snapshot"));
+    mDiscardCurSnapAndStateAction->setText (tr ("D&iscard Current Snapshot and State"));
+    mShowSnapshotDetailsAction->setText (tr ("S&how Details"));
 
-    mDiscardSnapshotAction->setStatusTip ("Discard the selected snapshot of the virtual machine");
-    mTakeSnapshotAction->setStatusTip ("Take a snapshot of the current virtual machine state");
-    mRevertToCurSnapAction->setStatusTip ("Restore the virtual machine state from the state stored in the current snapshot");
-    mDiscardCurSnapAndStateAction->setStatusTip ("Discard the current snapshot and revert the machine to the state it had before the snapshot was taken");
-    mShowSnapshotDetailsAction->setStatusTip ("Show details of the selected snapshot");
+    mDiscardSnapshotAction->setStatusTip (tr ("Discard the selected snapshot of the virtual machine"));
+    mTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the current virtual machine state"));
+    mRevertToCurSnapAction->setStatusTip (tr ("Restore the virtual machine state from the state stored in the current snapshot"));
+    mDiscardCurSnapAndStateAction->setStatusTip (tr ("Discard the current snapshot and revert the machine to the state it had before the snapshot was taken"));
+    mShowSnapshotDetailsAction->setStatusTip (tr ("Show details of the selected snapshot"));
 }
 
 void VBoxSnapshotsWgt::refreshAll (bool aKeepSelected /* = true */)
