@@ -97,7 +97,6 @@ tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
 	$(PATH_TARGET)
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp
-tstDeviceStructSize_LIBS.l4  = $(LIB_RUNTIME)
 tstDeviceStructSize_CLEAN    = \
 	$(PATH_TARGET)/tstDeviceStructSizeGC.h \
 	$(PATH_TARGET)/tstDeviceStructSizeGC.run
