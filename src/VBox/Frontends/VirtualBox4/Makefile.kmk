@@ -182,7 +182,7 @@ else # the gcc guys:
  TEMPLATE_VBOXQT4GUIEXE_INCS += \
 	$(LIB_SDL_INC)
  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
-	-pipe -Wall -W -frtti -fno-exceptions -Wno-non-virtual-dtor \
+	-g -pipe -Wall -W -frtti -fno-exceptions -Wno-non-virtual-dtor \
 	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
  TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.x86 = -m32
