@@ -76,6 +76,7 @@ LINUXSTRIPBIN = \
 	VBoxVMM.so \
 	VBoxXPCOM.so \
 	VBoxXPCOMIPCD \
+	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	VBoxTunctl \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
