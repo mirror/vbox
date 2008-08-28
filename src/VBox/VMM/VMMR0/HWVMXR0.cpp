@@ -887,8 +887,9 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
               | X86_CR0_WP  /* Must monitor this bit (it must always be enabled). */
               | X86_CR0_PG  /* Must monitor this bit (assumptions are made for real mode & protected mode without paging emulation) */
               | X86_CR0_TS
-              | X86_CR0_ET
-              | X86_CR0_CD  /* Cache disable must not be changed! */
+              | X86_CR0_ET  /* Bit not restored during VM-exit! */
+              | X86_CR0_CD  /* Bit not restored during VM-exit! */
+              | X86_CR0_NW  /* Bit not restored during VM-exit! */
               | X86_CR0_NE
               | X86_CR0_MP;
         pVM->hwaccm.s.vmx.cr0_mask = val;
