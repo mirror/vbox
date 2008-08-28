@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="de">
-<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -4079,6 +4078,56 @@ Version %1</translation>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="491"/>
         <source>Snapshot %1</source>
         <translation>Sicherungspunkt %1</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
+        <source>&amp;Discard Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
+        <source>Take &amp;Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
+        <source>&amp;Revert to Current Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
+        <source>D&amp;iscard Current Snapshot and State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
+        <source>S&amp;how Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
+        <source>Show details of the selected snapshot</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

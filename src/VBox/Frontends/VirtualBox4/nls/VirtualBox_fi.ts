@@ -57,9 +57,6 @@
     </message>
 </context>
 <context>
-    <name>BootItemsTable</name>
-</context>
-<context>
     <name>HDItemsModel</name>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
@@ -80,12 +77,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Sovellus &lt;b&gt;%1&lt;/b&gt; vaatii Qt %2.x, löydettiin Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Qt-kirjastovirhe</translation>
     </message>
@@ -3239,14 +3236,19 @@ Version %1</source>
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7471205"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">&amp;Hyväksy</translation>
+        <translation type="unfinished">&amp;Hyväksy</translation>
     </message>
     <message>
-        <location filename="" line="7471205"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">H&amp;ylkää</translation>
+        <translation type="unfinished">H&amp;ylkää</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5089,9 +5091,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Hylkää palautuspiste</translation>
     </message>
     <message>
-        <location filename="" line="7471205"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Hylkää palautuspiste</translation>
+        <translation type="unfinished">&amp;Hylkää palautuspiste</translation>
     </message>
     <message>
         <location filename="" line="7471205"/>
@@ -5104,9 +5106,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Luo palautuspiste</translation>
     </message>
     <message>
-        <location filename="" line="7471205"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Luo &amp;palautuspiste</translation>
+        <translation type="unfinished">Luo &amp;palautuspiste</translation>
     </message>
     <message>
         <location filename="" line="7471205"/>
@@ -5119,9 +5121,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Näytä yksityiskohdat</translation>
     </message>
     <message>
-        <location filename="" line="7471205"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">Näy&amp;tä yksityiskohdat</translation>
+        <translation type="unfinished">Näy&amp;tä yksityiskohdat</translation>
     </message>
     <message>
         <location filename="" line="7471205"/>
@@ -5197,19 +5199,44 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Palauta nykyiseen palautuspisteeseen</translation>
     </message>
     <message>
-        <location filename="" line="7471205"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Palauta nykyiseen palautuspisteeseen</translation>
+        <translation type="unfinished">&amp;Palauta nykyiseen palautuspisteeseen</translation>
     </message>
     <message>
-        <location filename="" line="7471205"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Näytä yksityiskohdat valitusta palautuspisteestä</translation>
+        <translation type="unfinished">Näytä yksityiskohdat valitusta palautuspisteestä</translation>
     </message>
     <message>
         <location filename="" line="7471205"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+välilyönti</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
+        <source>D&amp;iscard Current Snapshot and State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6051,12 +6078,6 @@ p, li { white-space: pre-wrap; }
         <source>Adapter &amp;Type</source>
         <translation type="obsolete">Sovitin&amp;tyyppi</translation>
     </message>
-</context>
-<context>
-    <name>VBoxVMParallelPortSettings</name>
-</context>
-<context>
-    <name>VBoxVMSerialPortSettings</name>
 </context>
 <context>
     <name>VBoxVMSettingsAudio</name>

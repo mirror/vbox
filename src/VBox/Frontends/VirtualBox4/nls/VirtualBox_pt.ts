@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>O executável &lt;b&gt;%1&lt;/b&gt; requer o Qt %2.x, encontrado o Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Erro de incompatibiliade da biblioteca Qt</translation>
     </message>
@@ -3664,14 +3664,19 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">&amp;Concordo</translation>
+        <translation type="unfinished">&amp;Concordo</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">&amp;Discordo</translation>
+        <translation type="unfinished">&amp;Discordo</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5723,9 +5728,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Descartar Captura</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Descartar Captura</translation>
+        <translation type="unfinished">&amp;Descartar Captura</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5743,9 +5748,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Criar Captura</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">&amp;Criar Captura</translation>
+        <translation type="unfinished">&amp;Criar Captura</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5773,9 +5778,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Descarta a Captura e Estado Actual</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">&amp;Descarta a Captura e Estado Actual</translation>
+        <translation type="unfinished">&amp;Descarta a Captura e Estado Actual</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5788,9 +5793,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Mostrar Detalhes</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">Mostrar Detalhe&amp;s</translation>
+        <translation type="unfinished">Mostrar Detalhe&amp;s</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5861,9 +5866,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation>Captura %1</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Descarta a captura seleccionada da máquina virtual</translation>
+        <translation type="unfinished">Descarta a captura seleccionada da máquina virtual</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5871,9 +5876,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Cria uma captura do estado actual da máquina virtual actual</translation>
+        <translation type="unfinished">Cria uma captura do estado actual da máquina virtual actual</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5881,9 +5886,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Reverte para a Captura Acutal</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Reverter para a Captura Actual</translation>
+        <translation type="unfinished">&amp;Reverter para a Captura Actual</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5891,9 +5896,9 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Restaura o estado da máquina virtual para o estado armazenado na captura actual</translation>
+        <translation type="unfinished">Restaura o estado da máquina virtual para o estado armazenado na captura actual</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>
@@ -5901,14 +5906,14 @@ para a aceder de um SO Linux. Este recurso requer a instalação das Adições d
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Descarta a captura actual e reverte a máquina para o estado em que se encontrava antes da criação da captura</translation>
+        <translation type="unfinished">Descarta a captura actual e reverte a máquina para o estado em que se encontrava antes da criação da captura</translation>
     </message>
     <message>
-        <location filename="" line="7274615"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Mostra detalhes sobre o snapshot seleccionado</translation>
+        <translation type="unfinished">Mostra detalhes sobre o snapshot seleccionado</translation>
     </message>
     <message>
         <location filename="" line="7274615"/>

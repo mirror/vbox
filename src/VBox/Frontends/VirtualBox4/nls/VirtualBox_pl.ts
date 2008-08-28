@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Plik wykonywalny &lt;b&gt;%1&lt;/b&gt; wymaga Qt %2.x, wykryto natomiast Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Błąd - niekompatybilna biblioteka Qt</translation>
     </message>
@@ -3587,14 +3587,19 @@ powrócić do języka ustawionego jako domyślny w Twoim systemie.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">&amp;Zgadzam się</translation>
+        <translation type="unfinished">&amp;Zgadzam się</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">&amp;Nie zgadzam się</translation>
+        <translation type="unfinished">&amp;Nie zgadzam się</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5616,9 +5621,9 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation type="obsolete">Odrzuć zrzut</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">O&amp;drzuć zrzut</translation>
+        <translation type="unfinished">O&amp;drzuć zrzut</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5626,9 +5631,9 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation type="obsolete">Zrób zrzut</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Zrób &amp;zrzut</translation>
+        <translation type="unfinished">Zrób &amp;zrzut</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5646,9 +5651,9 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation type="obsolete">Odrzuć aktualny zrzut oraz stan</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Odrzuć a&amp;ktualny zrzut oraz stan</translation>
+        <translation type="unfinished">Odrzuć a&amp;ktualny zrzut oraz stan</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5656,9 +5661,9 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation type="obsolete">Pokaż szczegóły</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">&amp;Pokaż szczegóły</translation>
+        <translation type="unfinished">&amp;Pokaż szczegóły</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5729,14 +5734,14 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation>Zrzut %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Odrzuć wybrany zrzut maszyny wirtualnej</translation>
+        <translation type="unfinished">Odrzuć wybrany zrzut maszyny wirtualnej</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Zrób zrzut aktualnego stanu maszyny wirtualnej</translation>
+        <translation type="unfinished">Zrób zrzut aktualnego stanu maszyny wirtualnej</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5744,24 +5749,24 @@ aby uzyskać dostęp do niego z poziomu Linuksa. Uwaga: funkcja ta wymaga zainst
         <translation type="obsolete">Powróć do aktualnego zrzutu</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Powróć do aktualnego zrzutu</translation>
+        <translation type="unfinished">&amp;Powróć do aktualnego zrzutu</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Przywróć stan maszyny wirtualnej do stanu zapisanego w bieżącym zrzucie</translation>
+        <translation type="unfinished">Przywróć stan maszyny wirtualnej do stanu zapisanego w bieżącym zrzucie</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Odrzuć aktualny zrzut i przywróć stan maszyny do stanu sprzed zrzutu</translation>
+        <translation type="unfinished">Odrzuć aktualny zrzut i przywróć stan maszyny do stanu sprzed zrzutu</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Pokaż szczegóły wybranego zrzutu</translation>
+        <translation type="unfinished">Pokaż szczegóły wybranego zrzutu</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>

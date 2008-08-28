@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>O executável &lt;b&gt;%1&lt;/b&gt; requer o Qt %2.x, encontrado Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Erro de biblioteca Qt incompatível</translation>
     </message>
@@ -3705,14 +3705,19 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">Eu concordo (&amp;A)</translation>
+        <translation type="unfinished">Eu concordo (&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">Eu &amp;Discordo </translation>
+        <translation type="unfinished">Eu &amp;Discordo </translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5785,9 +5790,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Descartar Snapshot</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Descartar Snapshot</translation>
+        <translation type="unfinished">&amp;Descartar Snapshot</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5805,9 +5810,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Criar Snapshot</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Criar &amp;Snapshot</translation>
+        <translation type="unfinished">Criar &amp;Snapshot</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5835,9 +5840,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Descarta o Snapshot e o Estado Atual</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Descarta o Snapshot e o Estado Atual (&amp;I)</translation>
+        <translation type="unfinished">Descarta o Snapshot e o Estado Atual (&amp;I)</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5850,9 +5855,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Mostrar Detalhes</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">Mostrar Detalhe&amp;s</translation>
+        <translation type="unfinished">Mostrar Detalhe&amp;s</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5923,9 +5928,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation>Snapshot %1</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Descarta o snapshot selecionado para a máquina virtual</translation>
+        <translation type="unfinished">Descarta o snapshot selecionado para a máquina virtual</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5933,9 +5938,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Cria um snapshot do estado atual da máquina virtual atual</translation>
+        <translation type="unfinished">Cria um snapshot do estado atual da máquina virtual atual</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5943,9 +5948,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Reverte o estado para o Snapshot Atual</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Reverte o estado para o Snapshot Atual</translation>
+        <translation type="unfinished">&amp;Reverte o estado para o Snapshot Atual</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5953,9 +5958,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Restaura o estado da máquina virtual para o estado armazenado no snapshot atual</translation>
+        <translation type="unfinished">Restaura o estado da máquina virtual para o estado armazenado no snapshot atual</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -5963,14 +5968,14 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Descarta o snapshot atual e reverte a máquina para o estado em que se encontrava antes do snapshot ser criado</translation>
+        <translation type="unfinished">Descarta o snapshot atual e reverte a máquina para o estado em que se encontrava antes do snapshot ser criado</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Mostra detalhes sobre o snapshot selecionado</translation>
+        <translation type="unfinished">Mostra detalhes sobre o snapshot selecionado</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>

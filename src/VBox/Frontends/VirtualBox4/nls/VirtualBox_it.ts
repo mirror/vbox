@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>L&apos;eseguibile &lt;b&gt;%1&lt;/b&gt; richiede Qt %2.x, rilevate Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Errore di libreria Qt incompatibile</translation>
     </message>
@@ -3694,14 +3694,19 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">&amp;Accetto</translation>
+        <translation type="unfinished">&amp;Accetto</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">&amp;Rifiuto</translation>
+        <translation type="unfinished">&amp;Rifiuto</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5780,9 +5785,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Scarta snapshot</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Scarta snapshot</translation>
+        <translation type="unfinished">&amp;Scarta snapshot</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5800,9 +5805,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Snapshot</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">&amp;Snapshot</translation>
+        <translation type="unfinished">&amp;Snapshot</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5830,9 +5835,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Scarta lo stato e lo snapshot attuali</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Scarta lo stato e lo snapshot attual&amp;i</translation>
+        <translation type="unfinished">Scarta lo stato e lo snapshot attual&amp;i</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5845,9 +5850,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Mostra dettagli</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">&amp;Mostra dettagli</translation>
+        <translation type="unfinished">&amp;Mostra dettagli</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5918,9 +5923,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation>Snapshot %1</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Scarta lo snapshot selezionato della macchina virtuale</translation>
+        <translation type="unfinished">Scarta lo snapshot selezionato della macchina virtuale</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5928,9 +5933,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Cattura uno snapshot dello stato corrente della macchina virtuale</translation>
+        <translation type="unfinished">Cattura uno snapshot dello stato corrente della macchina virtuale</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5938,9 +5943,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Ripristina lo snapshot attuale</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Ripristina lo snapshot attuale</translation>
+        <translation type="unfinished">&amp;Ripristina lo snapshot attuale</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5948,9 +5953,9 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Ripristina lo stato della macchina a quello memorizzato nello snapshot attuale</translation>
+        <translation type="unfinished">Ripristina lo stato della macchina a quello memorizzato nello snapshot attuale</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>
@@ -5958,14 +5963,14 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Scarta lo snapshot corrente e ripristina la macchina allo stato precedente la cattura dello snapshot</translation>
+        <translation type="unfinished">Scarta lo snapshot corrente e ripristina la macchina allo stato precedente la cattura dello snapshot</translation>
     </message>
     <message>
-        <location filename="" line="6553632"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Visualizza i dettagli dello snapshot selezionato</translation>
+        <translation type="unfinished">Visualizza i dettagli dello snapshot selezionato</translation>
     </message>
     <message>
         <location filename="" line="6553632"/>

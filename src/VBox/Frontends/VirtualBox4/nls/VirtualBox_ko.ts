@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>실행 파일 &lt;b&gt;%1&lt;/b&gt;은(는) Qt %2.x을(를) 필요로 하지만, Qt %3이 발견되었습니다.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Qt 라이브러리 호환성 오류</translation>
     </message>
@@ -3647,14 +3647,19 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">동의합니다(&amp;A)</translation>
+        <translation type="unfinished">동의합니다(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">동의하지 않습니다(&amp;D)</translation>
+        <translation type="unfinished">동의하지 않습니다(&amp;D)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5706,9 +5711,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">스냅샷 삭제</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">스냅샷 삭제(&amp;D)</translation>
+        <translation type="unfinished">스냅샷 삭제(&amp;D)</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5726,9 +5731,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">스냅샷 찍기</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">스냅샷 찍기(&amp;S)</translation>
+        <translation type="unfinished">스냅샷 찍기(&amp;S)</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5756,9 +5761,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">현재 스냅샷과 상태 삭제</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">현재 스냅샷과 상태 삭제(&amp;I)</translation>
+        <translation type="unfinished">현재 스냅샷과 상태 삭제(&amp;I)</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5771,9 +5776,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">자세히 보기</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">자세히 보기(&amp;H)</translation>
+        <translation type="unfinished">자세히 보기(&amp;H)</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5844,9 +5849,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>스냅샷 %1</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">선택한 가상 머신의 스냅샷을 삭제합니다</translation>
+        <translation type="unfinished">선택한 가상 머신의 스냅샷을 삭제합니다</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5854,9 +5859,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">현재 가상 머신 상태의 스냅샷을 찍습니다</translation>
+        <translation type="unfinished">현재 가상 머신 상태의 스냅샷을 찍습니다</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5864,9 +5869,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">현재 스냅샷으로 되돌리기</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">현재 스냅샷으로 되돌리기(&amp;R)</translation>
+        <translation type="unfinished">현재 스냅샷으로 되돌리기(&amp;R)</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5874,9 +5879,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">가상 머신의 상태를 현재 스냅샷에 저장되어 있는 상태로 되돌립니다</translation>
+        <translation type="unfinished">가상 머신의 상태를 현재 스냅샷에 저장되어 있는 상태로 되돌립니다</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>
@@ -5884,14 +5889,14 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">현재 스냅샷을 삭제하고 가상 머신을 스냅샷이 찍히기 전의 상태로 되돌립니다</translation>
+        <translation type="unfinished">현재 스냅샷을 삭제하고 가상 머신을 스냅샷이 찍히기 전의 상태로 되돌립니다</translation>
     </message>
     <message>
-        <location filename="" line="4063330"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">선택한 스냅샷의 자세한 정보를 봅니다</translation>
+        <translation type="unfinished">선택한 스냅샷의 자세한 정보를 봅니다</translation>
     </message>
     <message>
         <location filename="" line="4063330"/>

@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Приложение &lt;b&gt;%1&lt;/b&gt; требует Qt %2.x, найден Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Ошибка - несовместимая библиотека Qt</translation>
     </message>
@@ -3322,14 +3322,19 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">Я &amp;согласен</translation>
+        <translation type="unfinished">Я &amp;согласен</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">Я &amp;не согласен</translation>
+        <translation type="unfinished">Я &amp;не согласен</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5224,9 +5229,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Отменить снимок</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">От&amp;менить снимок</translation>
+        <translation type="unfinished">От&amp;менить снимок</translation>
     </message>
     <message>
         <location filename="" line="792473150"/>
@@ -5234,9 +5239,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Сделать снимок</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">&amp;Сделать снимок</translation>
+        <translation type="unfinished">&amp;Сделать снимок</translation>
     </message>
     <message>
         <location filename="" line="792473150"/>
@@ -5244,9 +5249,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Отменить текущий снимок и состояние</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">О&amp;тменить текущий снимок и состояние</translation>
+        <translation type="unfinished">О&amp;тменить текущий снимок и состояние</translation>
     </message>
     <message>
         <location filename="" line="792473150"/>
@@ -5254,9 +5259,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Показать детали</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">&amp;Показать детали</translation>
+        <translation type="unfinished">&amp;Показать детали</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="125"/>
@@ -5322,14 +5327,14 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Снимок %1</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Отменить (удалить) выбранный снимок виртуальной машины</translation>
+        <translation type="unfinished">Отменить (удалить) выбранный снимок виртуальной машины</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Сделать снимок текущего состояния виртуальной машины</translation>
+        <translation type="unfinished">Сделать снимок текущего состояния виртуальной машины</translation>
     </message>
     <message>
         <location filename="" line="792473150"/>
@@ -5337,24 +5342,24 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Вернуться к текущему снимку</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Вернуться к текущему снимку</translation>
+        <translation type="unfinished">&amp;Вернуться к текущему снимку</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Восстановить состояние виртуальной машины из состояния, сохраненного в текущем снимке</translation>
+        <translation type="unfinished">Восстановить состояние виртуальной машины из состояния, сохраненного в текущем снимке</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Отменить (удалить) текущий снимок и вернуть машину к состоянию, в котором она была перед его созданием</translation>
+        <translation type="unfinished">Отменить (удалить) текущий снимок и вернуть машину к состоянию, в котором она была перед его созданием</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Показать подробности о выбранном снимке</translation>
+        <translation type="unfinished">Показать подробности о выбранном снимке</translation>
     </message>
 </context>
 <context>
@@ -7537,12 +7542,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="370"/>
         <source>&lt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="396"/>
         <source>&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="439"/>
