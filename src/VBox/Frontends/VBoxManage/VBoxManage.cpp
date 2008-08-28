@@ -26,7 +26,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-
 #ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
@@ -42,7 +41,7 @@
 
 #include <vector>
 #include <list>
-#endif /* VBOX_ONLY_DOCS */
+#endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
