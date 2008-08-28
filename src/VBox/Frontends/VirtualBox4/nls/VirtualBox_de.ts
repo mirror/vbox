@@ -598,7 +598,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1551"/>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>&amp;CD/DVD-ROM-Abbild</translation>
+        <translation>&amp;CD/DVD-ROM-Abbild...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1553"/>
@@ -738,7 +738,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1968"/>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Mauszeiger-Integration deaktivieren</translation>
+        <translation>&amp;Mauszeiger-Integration deaktivieren</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1971"/>
@@ -988,7 +988,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
         <source>C&amp;heck for a new version...</source>
-        <translation>&amp;Überprüfe auf neue Version</translation>
+        <translation>&amp;Überprüfe auf neue Version...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
@@ -1142,7 +1142,7 @@ Version %1</translation>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="620"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
-        <translation></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="726"/>
@@ -1154,7 +1154,7 @@ Version %1</translation>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="732"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="737"/>
@@ -1171,7 +1171,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="754"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <translation></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="756"/>
@@ -1444,7 +1444,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Voreingestellter Pfad für Festplatten:</translation>
+        <translation>Voreingestellter Pfad für &amp;Festplatten:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
@@ -1454,7 +1454,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation>V&amp;RDP-Authentisierungsbibliothek</translation>
+        <translation>V&amp;RDP-Authentisierungsbibliothek:</translation>
     </message>
 </context>
 <context>
@@ -1462,7 +1462,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation>&amp;Host-Taste</translation>
+        <translation>&amp;Host-Taste:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
@@ -1519,7 +1519,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation>&amp;Sprache der Nutzeroberfläche</translation>
+        <translation>&amp;Sprache der Nutzeroberfläche:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
@@ -2460,7 +2460,7 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1443"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation></translation>
+        <translation>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1450"/>
@@ -4753,7 +4753,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation>Audio-&amp;Treiber des Hosts</translation>
+        <translation>Audio-&amp;Treiber des Hosts:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
@@ -4763,7 +4763,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation>Audio-&amp;Controller</translation>
+        <translation>Audio-&amp;Controller:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
@@ -5010,7 +5010,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
         <source>OS &amp;Type:</source>
-        <translation>BS-&amp;Typ</translation>
+        <translation>BS-&amp;Typ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
@@ -5060,7 +5060,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="489"/>
         <source>Boo&amp;t Order:</source>
-        <translation>Boo&amp;t-Reihenfolge</translation>
+        <translation>Boo&amp;t-Reihenfolge:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="543"/>
@@ -5095,7 +5095,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>Extended Features:</source>
-        <translation>Erweiterte Einstellungen</translation>
+        <translation>Erweiterte Einstellungen:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="666"/>
@@ -5140,7 +5140,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation>&amp;Gemeinsame Zwischenablage</translation>
+        <translation>&amp;Gemeinsame Zwischenablage:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="749"/>
@@ -5155,12 +5155,12 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="789"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation>&amp;IDE-Controller im Gast</translation>
+        <translation>&amp;IDE-Controller im Gast:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="802"/>
         <source>S&amp;napshot Folder:</source>
-        <translation>Ordner &amp;Sicherungspunkte</translation>
+        <translation>Ordner &amp;Sicherungspunkte:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="839"/>
@@ -5180,7 +5180,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>R&amp;untime:</source>
-        <translation>&amp;Laufzeit</translation>
+        <translation>&amp;Laufzeit:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
@@ -5281,7 +5281,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation>Adapter-&amp;Typ</translation>
+        <translation>Adapter-&amp;Typ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
@@ -5291,7 +5291,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation>&amp;Angeschlossen an</translation>
+        <translation>&amp;Angeschlossen an:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
@@ -5301,7 +5301,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>&amp;Network Name:</source>
-        <translation>&amp;Netzwerkname</translation>
+        <translation>&amp;Netzwerkname:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
@@ -5311,7 +5311,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation>&amp;MAC-Adresse</translation>
+        <translation>&amp;MAC-Adresse:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
@@ -5351,7 +5351,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="199"/>
         <source>&amp;Interface Name:</source>
-        <translation>Name des &amp;Interfaces</translation>
+        <translation>Name des &amp;Interfaces:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="218"/>
@@ -5361,7 +5361,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="225"/>
         <source>&amp;Setup Application:</source>
-        <translation>Programm zum &amp;Einrichten</translation>
+        <translation>Programm zum &amp;Einrichten:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="244"/>
@@ -5376,7 +5376,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="261"/>
         <source>&amp;Terminate Application:</source>
-        <translation>Programm zum &amp;Entfernen</translation>
+        <translation>Programm zum &amp;Entfernen:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="280"/>
@@ -5423,7 +5423,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation>Port&amp;nummer</translation>
+        <translation>Port&amp;nummer:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
@@ -5433,7 +5433,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ</translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
@@ -5443,7 +5443,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation>I/O-Po&amp;rt</translation>
+        <translation>I/O-Po&amp;rt:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
@@ -5453,7 +5453,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation>Port&amp;pfad</translation>
+        <translation>Port&amp;pfad:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
@@ -5621,7 +5621,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation>Port&amp;nummer</translation>
+        <translation>Port&amp;nummer:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
@@ -5631,7 +5631,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
@@ -5641,7 +5641,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation></translation>
+        <translation>I/O-Po&amp;rt:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
@@ -5651,7 +5651,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation>Port&amp;modus</translation>
+        <translation>Port&amp;modus:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
@@ -5671,7 +5671,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation>Port&amp;pfad</translation>
+        <translation>Port&amp;pfad:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
@@ -5942,7 +5942,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation>&amp;Serverport</translation>
+        <translation>&amp;Serverport:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
@@ -5952,7 +5952,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation>Authentisierungs&amp;methode</translation>
+        <translation>Authentisierungs&amp;methode:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
@@ -5962,7 +5962,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation>&amp;Zeitüberschreitung für Authentisierung</translation>
+        <translation>&amp;Zeitüberschreitung für Authentisierung:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
