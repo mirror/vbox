@@ -32,6 +32,7 @@ SETUP_WINE=
 TARGET_MACHINE=""
 TARGET_CPU=""
 WITH_XPCOM=1
+WITH_PYTHON=1
 WITH_LIBIDL=1
 WITH_QT3=1
 WITH_QT4=1
@@ -66,7 +67,9 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
-QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3 /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
+PYTHONDIR="/usr /usr/local"
+QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3"
+QT3DIR="$QT3DIR /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr"
 QT4DIR_PKGCONFIG=1
 QT4UIC3DIR="/usr/bin"
@@ -180,6 +183,7 @@ which_wrapper()
   fi
 }
 
+
 check_avail()
 {
    if [ -z "$1" ]; then
@@ -195,12 +199,14 @@ check_avail()
    fi
 }
 
+
 # Prepare a test
 test_header()
 {
   echo "***** Checking $1 *****" >> $LOG
   $ECHO_N "Checking for $1: "
 }
+
 
 # Compile a test
 test_compile()
@@ -226,6 +232,7 @@ test_compile()
   return 0
 }
 
+
 # Execute a compiled test binary
 test_execute()
 {
@@ -242,6 +249,7 @@ test_execute()
   return 0
 }
 
+
 # Execute a compiled test binary
 test_execute_path()
 {
@@ -257,6 +265,7 @@ test_execute_path()
   echo >> $LOG
   return 0
 }
+
 
 #
 # Check for OS, MACHINE, CPU
@@ -454,6 +463,7 @@ check_gcc()
   fi
 }
 
+
 #
 # Check for the bcc compiler, needed for compiling the BIOS
 #
@@ -493,6 +503,7 @@ EOF
   fi
 }
 
+
 #
 # Check for the as86 assembler, needed for compiling the BIOS
 #
@@ -510,6 +521,7 @@ check_as86()
     fi
   fi
 }
+
 
 #
 # Check for yasm, needed to compile assembler files
@@ -537,6 +549,7 @@ check_yasm()
   fi
 }
 
+
 #
 # Check for the iasl ACPI compiler, needed to compile vbox.dsl
 #
@@ -555,6 +568,7 @@ check_iasl()
   fi
 }
 
+
 #
 # Check for xsltproc, needed by Main
 #
@@ -572,6 +586,7 @@ check_xsltproc()
     fi
   fi
 }
+
 
 #
 # Check for mkisofs, needed to build the CDROM image containing the additions
@@ -599,6 +614,7 @@ check_mkisofs()
     fi
   fi
 }
+
 
 #
 # Check for libxml2, needed by VBoxSettings
@@ -679,6 +695,7 @@ EOF
     fi
   fi
 }
+
 
 #
 # Check for libxslt, needed by VBoxSettings. For now we depend on 1.1.17.
@@ -761,6 +778,7 @@ EOF
   fi
 }
 
+
 #
 # Check for libIDL, needed by xpcom
 #
@@ -790,6 +808,7 @@ check_libidl()
   fi
 }
 
+
 #
 # Check for openssl, needed for RDP
 #
@@ -818,6 +837,7 @@ EOF
     fi
   fi
 }
+
 
 #
 # Check for pthread, needed by VBoxSVC, frontends, ...
@@ -853,6 +873,7 @@ EOF
   fi
 }
 
+
 #
 # Check for zlib, needed by VBoxSVC, Runtime, ...
 #
@@ -882,6 +903,7 @@ EOF
     fi
   fi
 }
+
 
 #
 # Check for libpng, needed by kchmviewer
@@ -914,6 +936,7 @@ EOF
     fi
   fi
 }
+
 
 #
 # Check for pam, needed by VRDPAuth
@@ -1039,6 +1062,7 @@ EOF
   fi
 }
 
+
 #
 # Check for the SDL_ttf library, needed by VBoxSDL (secure label)
 #
@@ -1075,6 +1099,7 @@ EOF
   fi
 }
 
+
 #
 # Check for libasound, needed by the ALSA audio backend
 #
@@ -1102,6 +1127,7 @@ EOF
   fi
 }
 
+
 #
 # Check for PulseAudio
 #
@@ -1128,6 +1154,7 @@ EOF
   fi
 }
 
+
 #
 # Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
 #
@@ -1151,6 +1178,7 @@ EOF
     cnf_append "VBOX_XCURSOR_LIBS" "`strip_l "$LIBXCURSOR"`"
   fi
 }
+
 
 #
 # Check for the X libraries (Xext, X11)
@@ -1181,6 +1209,7 @@ EOF
     log_success "found"
   fi
 }
+
 
 #
 # Check for the Qt3 library, needed by VirtualBox
@@ -1246,6 +1275,7 @@ EOF
   fi
 }
 
+
 #
 # Check for the Qt4 library, needed by VirtualBox4
 #
@@ -1253,6 +1283,7 @@ EOF
 #
 check_qt4()
 {
+  foundqt4=
   test_header Qt4
   if [ "$OS" = "darwin" ]; then
     if [ -f "/System/Library/Frameworks/QtCore.framework/QtCore" ]; then
@@ -1410,6 +1441,7 @@ EOF
   fi
 }
 
+
 #
 # Check for Linux sources
 #
@@ -1450,8 +1482,10 @@ EOF
   fi
 }
 
+
 #
 # Check for kchmviewer, needed to display the online help
+# (unused as we ship kchmviewer)
 #
 check_kchmviewer()
 {
@@ -1466,6 +1500,7 @@ check_kchmviewer()
     fi
   fi
 }
+
 
 #
 # Check for the kBuild tools, we don't support GNU make
@@ -1549,6 +1584,63 @@ EOF
   fi
   log_success ""
 }
+
+
+#
+# Check for Python
+#
+check_python()
+{
+  test_header "python support"
+  cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <Python.h>
+extern "C" int main(void)
+{
+  Py_Initialize();
+  printf("found version %s", PY_VERSION);
+#if PY_VERSION_HEX >= 0x02030000
+  printf(", OK.\n");
+  return 0;
+#else
+  printf(", expected version 2.3 or higher\n");
+  return 1;
+#endif
+}
+EOF
+  found=
+  for p in $PYTHONDIR; do
+    for d in python2.5 python2.4 python2.3; do
+      for b in lib64 lib; do
+        echo "compiling the following source file:" >> $LOG
+        cat .tmp_src.cc >> $LOG
+        echo "using the following command line:" >> $LOG
+        echo "$CXX -O -Wall -o .tmp_out .tmp_src.cc -I$p/include/$d $p/$b/lib$d.so" >> $LOG
+        $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$p/include/$d $p/$b/lib$d.so >> $LOG 2>&1
+        if [ $? -eq 0 ]; then
+          found=1
+          break
+        fi
+      done
+      if [ -n "$found" ]; then break; fi
+    done
+    if [ -n "$found" ]; then break; fi
+  done
+  if [ -n "$found" ]; then
+    if test_execute; then
+      cnf_append "VBOX_WITH_PYTHON"     "1"
+      cnf_append "VBOX_PATH_PYTHON_INC" "$p/include/$d"
+      cnf_append "VBOX_LIB_PYTHON"      "$p/$b/lib$d.so"
+    else
+      log_failure "not found"
+      fail
+    fi
+  else
+    log_failure "not found"
+    fail
+  fi
+}
+
 
 #
 # Setup wine
@@ -1654,6 +1746,7 @@ Configuration:
   -h, --help               display this help and exit
   --nofatal                don't abort on errors
   --disable-xpcom          disable XPCOM and related stuff
+  --disable-python         disable python bindings
   --disable-sdl-ttf        disable SDL_ttf detection
   --disable-alsa           disable the ALSA sound backend
   --disable-pulse          disable the PulseAudio backend
@@ -1732,6 +1825,9 @@ for option in $*; do
       ;;
     --disable-xpcom)
       WITH_XPCOM=0
+      ;;
+    --disable-python)
+      WITH_PYTHON=0
       ;;
     --disable-sdl-ttf)
       WITH_SDL_TTF=0
@@ -1913,10 +2009,11 @@ check_gcc
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
-[ $WITH_X11 -eq 1    ] && check_x
-[ $WITH_X11 -eq 1    ] && check_xcursor
-[ $WITH_QT3 -eq 1    ] && check_qt3
-[ $WITH_QT4 -eq 1    ] && check_qt4
+[ $WITH_X11    -eq 1 ] && check_x
+[ $WITH_X11    -eq 1 ] && check_xcursor
+[ $WITH_QT3    -eq 1 ] && check_qt3
+[ $WITH_QT4    -eq 1 ] && check_qt4
+[ $WITH_PYTHON -eq 1 ] && check_python
 
 # Linux-specific
 if [ "$OS" = "linux" ]; then
