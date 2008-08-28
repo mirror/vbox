@@ -285,7 +285,7 @@ VBOX_WITH_TESTCASES = 1
 # caused by our XPCOM library polluting the symbol namespace for system libs.
 # @todo disabled this for now, as it causes problem with old external xpcom components.
 #if1of ($(KBUILD_TARGET), linux)
-#VBOX_WITH_XPCOM_NAMESPACE_CLEANUP=1
+ VBOX_WITH_XPCOM_NAMESPACE_CLEANUP=1
 #endif
 # Set this to skip installing the redistributable compiler runtime.
 #VBOX_WITHOUT_COMPILER_REDIST = 1
