@@ -878,6 +878,9 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         /* Note: We must also set this as we rely on protecting various pages for which supervisor writes must be caught. */
         val |= X86_CR0_WP;
 
+        /* Always enable caching. */
+        val &= ~(X86_CR0_CD|X86_CR0_NW);
+
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_CR0,              val);
         Log2(("Guest CR0 %08x\n", val));
         /* CR0 flags owned by the host; if the guests attempts to change them, then
