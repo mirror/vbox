@@ -23,8 +23,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
-
 /*
  * Private interfaces for VirtualBox access to Solaris kernel internal
  * facilities.
@@ -80,7 +78,7 @@ static void (*p_xc_call)() = (void (*)())xc_call;
 #pragma weak cpuset_only
 
 static struct modlmisc vbi_modlmisc = {
-	&mod_miscops, "Vbox Interfaces Ver 1"
+	&mod_miscops, "Vbox Interfaces Ver 2"
 };
 
 static struct modlinkage vbi_modlinkage = {
@@ -349,7 +347,7 @@ vbi_thread_create(void *func, void *arg, size_t len, int priority)
 	kthread_t *t;
 
 	t = thread_create(NULL, NULL, (void (*)())func, arg, len,
-	    curproc, LMS_USER, priority);
+	    curproc, TS_RUN, priority);
 	return (t);
 }
 
