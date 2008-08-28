@@ -147,9 +147,9 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 #ifndef VBOX_NAT_SOURCES
         slirp_input(pThis->pNATState, (uint8_t *)pvBuf, cb);
 #else
-		ether_chk(pThis, pvBuf, cb);
+        ether_chk(pThis, pvBuf, cb);
 #endif
-	}
+    }
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
@@ -234,7 +234,7 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
 #ifndef VBOX_NAT_SOURCES
     slirp_select_fill(pThis->pNATState, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 #else
-	nat_select_fill(NULL, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+    nat_select_fill(NULL, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 #endif
 
     struct timeval tv = {0, 0}; /* no wait */
@@ -244,8 +244,8 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
         slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
 #else
     if (cReadFDs >= 0) {
-		nat_select_poll(pThis, &ReadFDs, &WriteFDs, &XcptFDs);
-	}
+        nat_select_poll(pThis, &ReadFDs, &WriteFDs, &XcptFDs);
+    }
 #endif
 
     RTCritSectLeave(&pThis->CritSect);
