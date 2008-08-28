@@ -26,8 +26,6 @@
 #include <mach/mach_host.h>
 #include <mach/mach_init.h>
 #include <mach/mach_time.h>
-#include <mach/task.h>
-#include <mach/task_info.h>
 #include <mach/vm_statistics.h>
 #include <sys/sysctl.h>
 #include <sys/errno.h>
@@ -35,6 +33,31 @@
 #include <iprt/log.h>
 #include <iprt/param.h>
 #include "Performance.h"
+
+/* The following declarations are missing in 10.4.x SDK */
+/* @todo Replace them with libproc.h and sys/proc_info.h when 10.4 is no longer supported */
+extern "C" int proc_pidinfo(int pid, int flavor, uint64_t arg,  void *buffer, int buffersize);
+struct proc_taskinfo {
+	uint64_t		pti_virtual_size;   /* virtual memory size (bytes) */
+	uint64_t		pti_resident_size;  /* resident memory size (bytes) */
+	uint64_t		pti_total_user;		/* total time */
+	uint64_t		pti_total_system;
+	uint64_t		pti_threads_user;	/* existing threads only */
+	uint64_t		pti_threads_system;
+	int32_t			pti_policy;		/* default policy for new threads */
+	int32_t			pti_faults;		/* number of page faults */
+	int32_t			pti_pageins;	/* number of actual pageins */
+	int32_t			pti_cow_faults;	/* number of copy-on-write faults */
+	int32_t			pti_messages_sent;	/* number of messages sent */
+	int32_t			pti_messages_received; /* number of messages received */
+	int32_t			pti_syscalls_mach;  /* number of mach system calls */
+	int32_t			pti_syscalls_unix;  /* number of unix system calls */
+	int32_t			pti_csw;            /* number of context switches */
+	int32_t			pti_threadnum;		/* number of threads in the task */
+	int32_t			pti_numrunning;		/* number of running threads */
+	int32_t			pti_priority;		/* task priority*/
+};
+#define PROC_PIDTASKINFO 4
 
 namespace pm {
 
@@ -109,55 +132,47 @@ int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availa
     return VINF_SUCCESS;
 }
 
+static int getProcessInfo(RTPROCESS process, struct proc_taskinfo *tinfo)
+{
+    int nb = proc_pidinfo(process, PROC_PIDTASKINFO, 0,  tinfo, sizeof(*tinfo));
+    if (nb <= 0)
+    {
+        int rc = errno;
+        Log(("proc_pidinfo() -> %s", strerror(rc)));
+        return RTErrConvertFromDarwin(rc);
+    }
+    else if (nb < sizeof(*tinfo))
+    {
+        Log(("proc_pidinfo() -> too few bytes %d", nb));
+        return VERR_INTERNAL_ERROR;
+    }
+    return VINF_SUCCESS;
+}
+
 int CollectorDarwin::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
-    kern_return_t krc;
-    task_absolutetime_info_data_t tinfo;
-    mach_port_name_t vmTask;
-    mach_msg_type_number_t count;
+    struct proc_taskinfo tinfo;
 
-    krc = task_for_pid(task_self_trap(), process, &vmTask);
-    if (krc != KERN_SUCCESS)
+    int rc = getProcessInfo(process, &tinfo);
+    if (RT_SUCCESS(rc))
     {
-        Log(("task_for_pid() -> %s", mach_error_string(krc)));
-        return RTErrConvertFromDarwinKern(krc);
+        *user = tinfo.pti_total_user;
+        *kernel = tinfo.pti_total_system;
+        *total = mach_absolute_time();
     }
-
-    count = TASK_ABSOLUTETIME_INFO_COUNT;
-    krc = task_info(vmTask, TASK_ABSOLUTETIME_INFO, (task_info_t)&tinfo, &count);
-    if (krc != KERN_SUCCESS) {
-        Log(("task_info() -> %s", mach_error_string(krc)));
-        return RTErrConvertFromDarwinKern(krc);
-    }
-
-    *user = tinfo.total_user;
-    *kernel = tinfo.total_system;
-    *total = mach_absolute_time();
-    return VINF_SUCCESS;
+    return rc;
 }
 
 int CollectorDarwin::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
-    kern_return_t krc;
-    task_basic_info_64_data_t tinfo;
-    mach_port_name_t vmTask;
-    mach_msg_type_number_t count;
+    struct proc_taskinfo tinfo;
 
-    krc = task_for_pid(task_self_trap(), process, &vmTask);
-    if (krc != KERN_SUCCESS)
+    int rc = getProcessInfo(process, &tinfo);
+    if (RT_SUCCESS(rc))
     {
-        Log(("task_for_pid() -> %s", mach_error_string(krc)));
-        return RTErrConvertFromDarwinKern(krc);
+        *used = tinfo.pti_resident_size / 1024;
     }
-    count = TASK_BASIC_INFO_64_COUNT;
-    krc = task_info(task_self_trap(), TASK_BASIC_INFO_64, (task_info_t)&tinfo, &count);
-    if (krc != KERN_SUCCESS) {
-        Log(("host_statistics() -> %s", mach_error_string(krc)));
-        return RTErrConvertFromDarwinKern(krc);
-    }
-
-    *used = tinfo.resident_size / 1024;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 }
