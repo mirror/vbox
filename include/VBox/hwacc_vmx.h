@@ -234,6 +234,8 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_EXIT_ERR_MACHINE_CHECK  41
 /** 43 TPR below threshold. Guest software executed MOV to CR8. */
 #define VMX_EXIT_TPR                43
+/** 54 WBINVD. Guest software attempted to execute WBINVD. */
+#define VMX_EXIT_WBINVD             54
 
 /** @} */
 
