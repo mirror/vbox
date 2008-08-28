@@ -399,7 +399,7 @@ ifdef VBOX_WITH_HARDENING
  if1of ($(KBUILD_TARGET), linux)
   VBOX_WITH_ORIGIN = 1
  endif
-else if1of ($(KBUILD_TARGET), solaris) ## @todo add all the ELF dudes here!
+else if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_ORIGIN = 1
 endif
 # Enable the system wide support service/daemon.
@@ -559,6 +559,21 @@ ifdef VBOX_OSE
  if1of ($(KBUILD_TARGET), darwin)
   # Disable hardening cause it'll cause unnecessary trouble.
   VBOX_WITH_HARDENING=
+ endif
+endif
+
+#
+# VBOX_WITHOUT_HARDENING is for developers (put in LocalConfig.kmk).
+#
+ifdef VBOX_WITHOUT_HARDENING
+ VBOX_WITH_HARDENING=
+ VBOX_PATH_APP_PRIVATE=
+ VBOX_PATH_APP_PRIVATE_ARCH=
+ VBOX_PATH_SHARED_LIBS=
+ VBOX_PATH_APP_DOCS=
+ VBOX_WITH_RUNPATH=
+ if1of ($(KBUILD_TARGET), linux solaris)
+  VBOX_WITH_ORIGIN=1
  endif
 endif
 
