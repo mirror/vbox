@@ -1729,10 +1729,8 @@ if1of ($(KBUILD_TARGET), linux)
    else
     kernelpath := $(VBOX_LINUX_SRC)
    endif
-   ifeq ($(KBUILD_TARGET_ARCH),x86)
-     VBOX_LINUX_INCS                += $(kernelpath)/include/asm-i386/mach-default \
+   VBOX_LINUX_INCS                  += $(kernelpath)/include/asm-i386/mach-default \
                                        $(kernelpath)/include/asm-x86/mach-default
-   endif
   endif
  endif
 endif
