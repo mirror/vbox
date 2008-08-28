@@ -113,7 +113,7 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
-extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
+extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 {
     LogFlowFuncEnter();
 
