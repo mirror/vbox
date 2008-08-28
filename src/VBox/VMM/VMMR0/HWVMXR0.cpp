@@ -341,7 +341,6 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
         /* Mask away the bits that the CPU doesn't support */
         /** @todo make sure they don't conflict with the above requirements. */
         val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
-        pVM->hwaccm.s.vmx.proc_ctls2 = val;
 
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, val);
         AssertRC(rc);
