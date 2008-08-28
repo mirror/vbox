@@ -102,7 +102,7 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     int rc;
     kthread_t* pKernThread = thread_create(NULL, NULL, rtThreadNativeMain, pThreadInt, 0,
-                                           curproc, LMS_USER, minclsyspri);
+                                           curproc, TS_RUN, minclsyspri);
     if (pKernThread)
     {
         *pNativeThread = (RTNATIVETHREAD)pKernThread;
