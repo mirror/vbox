@@ -168,7 +168,6 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
 	mv $(archdir)/*.so $(prefix)/usr/lib/$(package)
 	mv $(archdir)/*.so.4 $(prefix)/usr/lib/$(package) || true
-	mv $(archdir)/sdk  $(prefix)/usr/share/$(package)
 	$(if $(HEADLESS),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)
 	rm $(archdir)/VBox.sh
