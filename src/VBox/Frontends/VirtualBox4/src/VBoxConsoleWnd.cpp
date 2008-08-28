@@ -1930,26 +1930,23 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             sfs.insert (sf.GetName(), sf.GetHostPath());
         }
 
-        for (QMap<QString, QString>::const_iterator it = sfs.constBegin();
-             it != sfs.constEnd(); ++it)
+        for (QMap <QString, QString>::const_iterator it = sfs.constBegin();
+             it != sfs.constEnd(); ++ it)
         {
-            /* select slashes depending on the OS type */
+            /* Select slashes depending on the OS type */
             if (VBoxGlobal::isDOSType (cconsole.GetGuest().GetOSTypeId()))
-                data += QString ("<tr><td><nobr><b>\\\\vboxsvr\\%1</b></nobr></td>"
-                                 "<td><nobr>%2</nobr></td>")
+                data += QString ("<br><nobr><b>\\\\vboxsvr\\%1&nbsp;</b></nobr>"
+                                 "<nobr>%2</nobr>")
                     .arg (it.key(), it.value());
             else
-                data += QString ("<tr><td><nobr><b>%1</b></nobr></td>"
-                                 "<td><nobr>%2</nobr></td></tr>")
+                data += QString ("<br><nobr><b>%1&nbsp;</b></nobr>"
+                                 "<nobr>%2</nobr>")
                     .arg (it.key(), it.value());
         }
 
         if (sfs.count() == 0)
             data = tr ("<br><nobr><b>No shared folders</b></nobr>",
                        "Shared folders tooltip");
-        else
-            data = QString ("<br><table border=0 cellspacing=0 cellpadding=0 "
-                            "width=100%>%1</table>").arg (data);
 
         sf_light->setToolTip (tip.arg (data));
     }
