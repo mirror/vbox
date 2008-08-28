@@ -95,12 +95,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>可执行的 &lt;b&gt;%1&lt;/b&gt; 程序要求 Qt %2.x, 发现 Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>不兼容的 Qt 库错误</translation>
     </message>
@@ -3735,14 +3735,19 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">我同意(&amp;A)</translation>
+        <translation type="unfinished">我同意(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">我不同意(&amp;D)</translation>
+        <translation type="unfinished">我不同意(&amp;D)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5785,9 +5790,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">删除备份</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">删除备份(&amp;D)</translation>
+        <translation type="unfinished">删除备份(&amp;D)</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5805,9 +5810,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">生成备份</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">生成备份(&amp;S)</translation>
+        <translation type="unfinished">生成备份(&amp;S)</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5825,9 +5830,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">删除最近备份和状态</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">删除最近备份和状态(&amp;i)</translation>
+        <translation type="unfinished">删除最近备份和状态(&amp;i)</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5835,9 +5840,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">显示明细</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">显示明细(&amp;h)</translation>
+        <translation type="unfinished">显示明细(&amp;h)</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5908,9 +5913,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>备份 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">删除所选备份</translation>
+        <translation type="unfinished">删除所选备份</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5918,9 +5923,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">为虚拟电脑的当前状态生成一个备份</translation>
+        <translation type="unfinished">为虚拟电脑的当前状态生成一个备份</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5928,9 +5933,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">恢复最近备份</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">恢复最近备份(&amp;R)</translation>
+        <translation type="unfinished">恢复最近备份(&amp;R)</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5938,9 +5943,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">将虚拟电脑恢复到最近备份中保存的状态</translation>
+        <translation type="unfinished">将虚拟电脑恢复到最近备份中保存的状态</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>
@@ -5948,14 +5953,14 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">删除最近备份并让虚拟电脑回到生成最近备份前的状态</translation>
+        <translation type="unfinished">删除最近备份并让虚拟电脑回到生成最近备份前的状态</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">显示所选备份明细</translation>
+        <translation type="unfinished">显示所选备份明细</translation>
     </message>
     <message>
         <location filename="" line="1702129257"/>

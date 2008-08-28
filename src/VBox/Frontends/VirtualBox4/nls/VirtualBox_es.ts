@@ -95,12 +95,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Ejecutable &lt;b&gt;%1&lt;/b&gt; requiere Qt %2.x, se encontró Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Error de Biblioteca (&quot;libreria&quot;) Qt incompatible.</translation>
     </message>
@@ -3755,14 +3755,19 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">Estoy de &amp;Acuerdo</translation>
+        <translation type="unfinished">Estoy de &amp;Acuerdo</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">&amp;No estoy de Acuerdo</translation>
+        <translation type="unfinished">&amp;No estoy de Acuerdo</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5835,9 +5840,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Descartar Instantánea</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Descartar Instantánea</translation>
+        <translation type="unfinished">&amp;Descartar Instantánea</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -5855,9 +5860,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Tomar Instantánea</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Tomar &amp;Instantánea</translation>
+        <translation type="unfinished">Tomar &amp;Instantánea</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -5885,9 +5890,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Descartar Estado e Instantánea Actual</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">D&amp;escartar Estado e Instantánea Actual</translation>
+        <translation type="unfinished">D&amp;escartar Estado e Instantánea Actual</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -5900,9 +5905,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Mostrar Detalles</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">&amp;Mostrar Detalles</translation>
+        <translation type="unfinished">&amp;Mostrar Detalles</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -5973,9 +5978,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation>Instantánea %1</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Descartar la instantánea de máquina virtual seleccionada</translation>
+        <translation type="unfinished">Descartar la instantánea de máquina virtual seleccionada</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -5983,9 +5988,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Tomar una instantánea del estado actual de la máquina virtual</translation>
+        <translation type="unfinished">Tomar una instantánea del estado actual de la máquina virtual</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -5993,9 +5998,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Revertir a la Instantánea Actual</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Revertir a la Instantánea Actual</translation>
+        <translation type="unfinished">&amp;Revertir a la Instantánea Actual</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -6003,9 +6008,9 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Restaurar al estado almacenado en la instantánea actual</translation>
+        <translation type="unfinished">Restaurar al estado almacenado en la instantánea actual</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>
@@ -6013,14 +6018,14 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Descartar la instantánea actual y revertir al estado en que la máquina estaba antes de que la instantánea sea tomada</translation>
+        <translation type="unfinished">Descartar la instantánea actual y revertir al estado en que la máquina estaba antes de que la instantánea sea tomada</translation>
     </message>
     <message>
-        <location filename="" line="7209065"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Mostrar los detalles de la instantánea seleccionada</translation>
+        <translation type="unfinished">Mostrar los detalles de la instantánea seleccionada</translation>
     </message>
     <message>
         <location filename="" line="7209065"/>

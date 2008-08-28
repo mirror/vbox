@@ -248,12 +248,12 @@
         <translation type="obsolete">可執行檔案「%1」需要 Qt %2.x，找到了 Qt %3。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>不相容的 Qt 函式庫錯誤</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>可執行檔案 &lt;b&gt;%1&lt;/b&gt; 需要 Qt %2.x，但找到了 Qt %3。</translation>
     </message>
@@ -3895,14 +3895,19 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">我同意(&amp;A)</translation>
+        <translation type="unfinished">我同意(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">我不同意(&amp;D)</translation>
+        <translation type="unfinished">我不同意(&amp;D)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6245,9 +6250,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">捨棄快照</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">捨棄快照(&amp;D)</translation>
+        <translation type="unfinished">捨棄快照(&amp;D)</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6265,9 +6270,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">拍下快照</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">拍下快照(&amp;S)</translation>
+        <translation type="unfinished">拍下快照(&amp;S)</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6295,9 +6300,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">捨棄目前快照與狀態</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">捨棄目前快照與狀態(&amp;I)</translation>
+        <translation type="unfinished">捨棄目前快照與狀態(&amp;I)</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6310,9 +6315,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">顯示細節</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">顯示細節(&amp;H)</translation>
+        <translation type="unfinished">顯示細節(&amp;H)</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6383,9 +6388,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>快照 %1</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">捨棄所選的虛擬機器快照</translation>
+        <translation type="unfinished">捨棄所選的虛擬機器快照</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6393,9 +6398,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">拍下目前虛擬機器狀態的快照</translation>
+        <translation type="unfinished">拍下目前虛擬機器狀態的快照</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6403,9 +6408,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">還原目前的快照</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">還原目前的快照(&amp;R)</translation>
+        <translation type="unfinished">還原目前的快照(&amp;R)</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6413,9 +6418,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">從儲存於目前快照中的狀態來回存虛擬機器狀態</translation>
+        <translation type="unfinished">從儲存於目前快照中的狀態來回存虛擬機器狀態</translation>
     </message>
     <message>
         <location filename="" line="2097253"/>
@@ -6423,14 +6428,14 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">捨棄目前快照並且將機器還原到拍下快照前所具有的狀態</translation>
+        <translation type="unfinished">捨棄目前快照並且將機器還原到拍下快照前所具有的狀態</translation>
     </message>
     <message>
-        <location filename="" line="2097253"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">顯示所選快照的細節</translation>
+        <translation type="unfinished">顯示所選快照的細節</translation>
     </message>
 </context>
 <context>

@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>実行ファイル &lt;b&gt;%1&lt;/b&gt; はQt %2.x が必要です。Qt %3 が見つかりました。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>互換性のないQtライブラリエラー</translation>
     </message>
@@ -3362,14 +3362,19 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">同意します(&amp;A)</translation>
+        <translation type="unfinished">同意します(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">同意しません(&amp;D)</translation>
+        <translation type="unfinished">同意しません(&amp;D)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5267,9 +5272,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">スナップショットを破棄</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">スナップショットを破棄(&amp;D)</translation>
+        <translation type="unfinished">スナップショットを破棄(&amp;D)</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>
@@ -5287,9 +5292,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">スナップショット作成</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">スナップショット作成(&amp;S)</translation>
+        <translation type="unfinished">スナップショット作成(&amp;S)</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>
@@ -5297,9 +5302,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">最新のスナップショットと状態を破棄</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">最新のスナップショットと状態を破棄(&amp;I)</translation>
+        <translation type="unfinished">最新のスナップショットと状態を破棄(&amp;I)</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>
@@ -5307,9 +5312,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">詳細を表示</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">詳細を表示(&amp;H)</translation>
+        <translation type="unfinished">詳細を表示(&amp;H)</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="125"/>
@@ -5375,9 +5380,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>スナップショット %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">選択した仮想マシンのスナップショットを破棄</translation>
+        <translation type="unfinished">選択した仮想マシンのスナップショットを破棄</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>
@@ -5385,9 +5390,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">現在の仮想マシンの状態のスナップショットを作成</translation>
+        <translation type="unfinished">現在の仮想マシンの状態のスナップショットを作成</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>
@@ -5395,9 +5400,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">最新のスナップショットの状態に戻す</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">最新のスナップショットの状態に戻す(&amp;R)</translation>
+        <translation type="unfinished">最新のスナップショットの状態に戻す(&amp;R)</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>
@@ -5405,9 +5410,9 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
+        <translation type="unfinished">仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>
@@ -5415,14 +5420,14 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
+        <translation type="unfinished">最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">選択したスナップショットの詳細を表示</translation>
+        <translation type="unfinished">選択したスナップショットの詳細を表示</translation>
     </message>
     <message>
         <location filename="" line="7667817"/>

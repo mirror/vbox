@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Executable &lt;b&gt;%1&lt;/b&gt; memerlukan Qt %2.x, menemukan Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Kesalahan inkompatibilitas Qt Library</translation>
     </message>
@@ -3530,14 +3530,19 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">S&amp;aya Setuju</translation>
+        <translation type="unfinished">S&amp;aya Setuju</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">Saya Ti&amp;dak Setuju</translation>
+        <translation type="unfinished">Saya Ti&amp;dak Setuju</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5536,9 +5541,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Abaikan Snapshot</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Abaikan Snapshot</translation>
+        <translation type="unfinished">&amp;Abaikan Snapshot</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5556,9 +5561,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Ambil Snapshot</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Ambil &amp;Snapshot</translation>
+        <translation type="unfinished">Ambil &amp;Snapshot</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5566,9 +5571,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Abaikan Snapshot dan Keadaan Saat ini</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Aba&amp;ikan Snapshot dan Keadaan Saat ini</translation>
+        <translation type="unfinished">Aba&amp;ikan Snapshot dan Keadaan Saat ini</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5576,9 +5581,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Tampilkan Detail</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">Ta&amp;mpilkan Detail</translation>
+        <translation type="unfinished">Ta&amp;mpilkan Detail</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5649,9 +5654,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation>Snapshot %1</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Abaikan snapshot terpilih pada mesin virtual</translation>
+        <translation type="unfinished">Abaikan snapshot terpilih pada mesin virtual</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5659,9 +5664,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Ambil snapshot keadaan mesin virtual saat ini</translation>
+        <translation type="unfinished">Ambil snapshot keadaan mesin virtual saat ini</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5669,9 +5674,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Kembali pada Snapshot saat ini</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Kembali pada Snapshot saat ini</translation>
+        <translation type="unfinished">&amp;Kembali pada Snapshot saat ini</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5679,9 +5684,9 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Kembalikan keadaan mesin pada keadaan snapshot saat ini</translation>
+        <translation type="unfinished">Kembalikan keadaan mesin pada keadaan snapshot saat ini</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>
@@ -5689,14 +5694,14 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Abaikan snapshot saat ini dan kembalikan mesin pada keadaan sebelum snapshot diambil</translation>
+        <translation type="unfinished">Abaikan snapshot saat ini dan kembalikan mesin pada keadaan sebelum snapshot diambil</translation>
     </message>
     <message>
-        <location filename="" line="1009853758"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Tunjukkan detail pada snapshot terpilih</translation>
+        <translation type="unfinished">Tunjukkan detail pada snapshot terpilih</translation>
     </message>
     <message>
         <location filename="" line="1009853758"/>

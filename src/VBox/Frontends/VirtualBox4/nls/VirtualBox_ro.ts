@@ -95,12 +95,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Executabilul &lt;b&gt;%1&lt;/b&gt; necesită Qt %2.x, găsit instalat Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Eroare de incompatibilitate a bibliotecii Qt</translation>
     </message>
@@ -3844,14 +3844,19 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">Sunt de &amp;acord</translation>
+        <translation type="unfinished">Sunt de &amp;acord</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">Nu sunt de acor&amp;d</translation>
+        <translation type="unfinished">Nu sunt de acor&amp;d</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5936,9 +5941,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Renunță la instantaneu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Renunță la instantaneu</translation>
+        <translation type="unfinished">&amp;Renunță la instantaneu</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -5956,9 +5961,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Salvează instantaneu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">&amp;Salvează instantaneu</translation>
+        <translation type="unfinished">&amp;Salvează instantaneu</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -5986,9 +5991,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Renunță la instantaneu și stare curente</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Renunță la &amp;instantaneu și stare curente</translation>
+        <translation type="unfinished">Renunță la &amp;instantaneu și stare curente</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6001,9 +6006,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Afișează detalii</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">A&amp;fișează detalii</translation>
+        <translation type="unfinished">A&amp;fișează detalii</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6074,9 +6079,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Instantaneu %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Renunță la instantaneuul selectat al mașinii virtuale</translation>
+        <translation type="unfinished">Renunță la instantaneuul selectat al mașinii virtuale</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6084,9 +6089,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Salvează un instantaneu al stării curente a mașinii virtuale</translation>
+        <translation type="unfinished">Salvează un instantaneu al stării curente a mașinii virtuale</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6094,9 +6099,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Restaureză la instantaneul curent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Restaureză la instantaneul curent</translation>
+        <translation type="unfinished">&amp;Restaureză la instantaneul curent</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6104,9 +6109,9 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Restaurează starea mașinii virtuale din starea salvată în instantaneul curent</translation>
+        <translation type="unfinished">Restaurează starea mașinii virtuale din starea salvată în instantaneul curent</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6114,14 +6119,14 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Elimină instantaneul curent și întoarce mașina în starea dinaintea luării instantaneului</translation>
+        <translation type="unfinished">Elimină instantaneul curent și întoarce mașina în starea dinaintea luării instantaneului</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Arată detalii despre instantaneul selectat</translation>
+        <translation type="unfinished">Arată detalii despre instantaneul selectat</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>

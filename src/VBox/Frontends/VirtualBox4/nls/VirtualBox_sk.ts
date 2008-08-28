@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Spustiteľný súbor &lt;b&gt;%1&lt;/b&gt; vyžaduje Qt %2.x, našlo sa Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Chyba - nekompatibilná knižnica Qt</translation>
     </message>
@@ -3378,14 +3378,19 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">&amp;Súhlasím</translation>
+        <translation type="unfinished">&amp;Súhlasím</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">&amp;Nesúhlasím</translation>
+        <translation type="unfinished">&amp;Nesúhlasím</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5302,9 +5307,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Zahodiť snímok</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Zahodiť snímok</translation>
+        <translation type="unfinished">&amp;Zahodiť snímok</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5322,9 +5327,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Urobiť snímok</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">&amp;Urobiť snímok</translation>
+        <translation type="unfinished">&amp;Urobiť snímok</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5332,9 +5337,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Zahodiť aktuálny snímok a stav</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">&amp;Zahodiť aktuálny snímok a stav</translation>
+        <translation type="unfinished">&amp;Zahodiť aktuálny snímok a stav</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5342,9 +5347,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Zobraziť podrobnosti</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">&amp;Zobraziť podrobnosti</translation>
+        <translation type="unfinished">&amp;Zobraziť podrobnosti</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="125"/>
@@ -5410,9 +5415,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>Snímka %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Zahodiť vybranú snímku virtuálneho stroja</translation>
+        <translation type="unfinished">Zahodiť vybranú snímku virtuálneho stroja</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5420,9 +5425,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Vytvorí snímku aktuálneho stavu virtuálneho stroja</translation>
+        <translation type="unfinished">Vytvorí snímku aktuálneho stavu virtuálneho stroja</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5430,9 +5435,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Vrátiť sa k aktuálnej snímke</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Vrátiť sa k aktuálnej snímke</translation>
+        <translation type="unfinished">&amp;Vrátiť sa k aktuálnej snímke</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5440,9 +5445,9 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Obnoviť stav virtuálneho stroja zo stavu uloženého v aktuálnej snímke</translation>
+        <translation type="unfinished">Obnoviť stav virtuálneho stroja zo stavu uloženého v aktuálnej snímke</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5450,14 +5455,14 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Zahodiť aktuálnu snímku a vrátiť stroj do stavu pred vyhotovením snímky</translation>
+        <translation type="unfinished">Zahodiť aktuálnu snímku a vrátiť stroj do stavu pred vyhotovením snímky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Zobraziť podrobnosti o vybranej snímke</translation>
+        <translation type="unfinished">Zobraziť podrobnosti o vybranej snímke</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>

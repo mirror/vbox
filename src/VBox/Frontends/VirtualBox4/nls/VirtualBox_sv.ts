@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Körbara filen &lt;b&gt;%1&lt;/b&gt; kräver Qt %2.x, hittade Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Inkompatibelt Qt-biblioteksfel</translation>
     </message>
@@ -3421,14 +3421,19 @@ till systemets standardspråk.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">Jag &amp;godkänner</translation>
+        <translation type="unfinished">Jag &amp;godkänner</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">Jag godkänner &amp;inte</translation>
+        <translation type="unfinished">Jag godkänner &amp;inte</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5339,9 +5344,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Förkasta ögonblicksbild</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Förkasta ögonblicksbild</translation>
+        <translation type="unfinished">&amp;Förkasta ögonblicksbild</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5359,9 +5364,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Spara ögonblicksbild</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Spara ö&amp;gonblicksbild</translation>
+        <translation type="unfinished">Spara ö&amp;gonblicksbild</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5369,9 +5374,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Förkasta aktuell ögonblicksbild och tillstånd</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Förkasta aktuell ögonblicksbild &amp;och tillstånd</translation>
+        <translation type="unfinished">Förkasta aktuell ögonblicksbild &amp;och tillstånd</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5379,9 +5384,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Visa detaljer</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">V&amp;isa detaljer</translation>
+        <translation type="unfinished">V&amp;isa detaljer</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="125"/>
@@ -5447,9 +5452,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation>Ögonblicksbild %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Förkasta den markerade ögonblicksbilden av den virtuella maskinen</translation>
+        <translation type="unfinished">Förkasta den markerade ögonblicksbilden av den virtuella maskinen</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5457,9 +5462,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Ctrl+Skift+S</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Ta en ögonblicksbild av det aktuella tillståndet för den virtuella maskinen</translation>
+        <translation type="unfinished">Ta en ögonblicksbild av det aktuella tillståndet för den virtuella maskinen</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5467,9 +5472,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Återgå till aktuell ögonblicksbild</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">Åte&amp;rgå till aktuell ögonblicksbild</translation>
+        <translation type="unfinished">Åte&amp;rgå till aktuell ögonblicksbild</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5477,9 +5482,9 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Ctrl+Skift+R</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Återställ tillståndet för den virtuella maskinen från tillståndet lagrat i den aktuella ögonblicksbilden</translation>
+        <translation type="unfinished">Återställ tillståndet för den virtuella maskinen från tillståndet lagrat i den aktuella ögonblicksbilden</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>
@@ -5487,14 +5492,14 @@ Guest Additions.&lt;/qt&gt;</translation>
         <translation type="obsolete">Ctrl+Skift+B</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Förkasta den aktuella ögonblicksbilden och återställ maskinen till det tillstånd den hade innan ögonblicksbilden sparades</translation>
+        <translation type="unfinished">Förkasta den aktuella ögonblicksbilden och återställ maskinen till det tillstånd den hade innan ögonblicksbilden sparades</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Visa detaljer för den markerade ögonblicksbilden</translation>
+        <translation type="unfinished">Visa detaljer för den markerade ögonblicksbilden</translation>
     </message>
     <message>
         <location filename="" line="792473893"/>

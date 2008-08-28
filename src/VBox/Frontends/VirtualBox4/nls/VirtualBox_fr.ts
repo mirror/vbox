@@ -95,12 +95,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Le programme &lt;b&gt;%1&lt;/b&gt; nécessite QT% 2.x, QT %3 à été trouvé.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Erreur : librairies QT incompatibles</translation>
     </message>
@@ -3752,14 +3752,19 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">J&apos;&amp;accepte</translation>
+        <translation type="unfinished">J&apos;&amp;accepte</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">Je &amp;n&apos;accepte pas</translation>
+        <translation type="unfinished">Je &amp;n&apos;accepte pas</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5804,9 +5809,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Rejeter un instantané</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">&amp;Rejeter un instantané</translation>
+        <translation type="unfinished">&amp;Rejeter un instantané</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5819,9 +5824,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Saisir un instantané</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">&amp;Saisir un instantané</translation>
+        <translation type="unfinished">&amp;Saisir un instantané</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5839,9 +5844,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Eliminé l&apos;instantané actuel et l&apos;état</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Él&amp;iminé l&apos;instantané actuel et l&apos;état</translation>
+        <translation type="unfinished">Él&amp;iminé l&apos;instantané actuel et l&apos;état</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5849,9 +5854,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Afficher les détails</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">Afficher les &amp;détails</translation>
+        <translation type="unfinished">Afficher les &amp;détails</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5922,9 +5927,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation>Instantané %1</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Rejeter l&apos;instantané choisis de la machine virtuelle</translation>
+        <translation type="unfinished">Rejeter l&apos;instantané choisis de la machine virtuelle</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5932,9 +5937,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Saisir un instantané de l&apos;état actuel de la machine</translation>
+        <translation type="unfinished">Saisir un instantané de l&apos;état actuel de la machine</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5942,9 +5947,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Retour sur l&apos;instantané actuel</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">&amp;Retour sur l&apos;instantané actuel</translation>
+        <translation type="unfinished">&amp;Retour sur l&apos;instantané actuel</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5952,9 +5957,9 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Remplacer l&apos;état de la machine virtuelle avec l&apos;état sauvegardé dans l&apos;instantané actuel</translation>
+        <translation type="unfinished">Remplacer l&apos;état de la machine virtuelle avec l&apos;état sauvegardé dans l&apos;instantané actuel</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5962,14 +5967,14 @@ pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci né
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Rejeter l&apos;instantané actuel et remettre l&apos;état de la machine sur celui qu&apos;elle avait avant ls saisie de l&apos;instantané</translation>
+        <translation type="unfinished">Rejeter l&apos;instantané actuel et remettre l&apos;état de la machine sur celui qu&apos;elle avait avant ls saisie de l&apos;instantané</translation>
     </message>
     <message>
-        <location filename="" line="7209057"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Voir les détails de l&apos;instantané sélectionné</translation>
+        <translation type="unfinished">Voir les détails de l&apos;instantané sélectionné</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>

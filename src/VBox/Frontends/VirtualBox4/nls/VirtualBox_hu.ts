@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>A(z) &lt;b&gt;%1&lt;/b&gt; programnak  a Qt  %2.x kell, de Qt %3 van.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Inkompatibilis Qt könyvtár</translation>
     </message>
@@ -1459,7 +1459,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="785"/>
         <source>Ctrl+N</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+N</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="786"/>
@@ -1474,12 +1474,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="789"/>
         <source>Ctrl+L</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+L</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="790"/>
         <source>Ctrl+R</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ctrl+R</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="776"/>
@@ -3396,14 +3396,19 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">Elfog&amp;adom</translation>
+        <translation type="unfinished">Elfog&amp;adom</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">El&amp;utasítom</translation>
+        <translation type="unfinished">El&amp;utasítom</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5339,9 +5344,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">Pillanatkép eldobása</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">Pillanatkép el&amp;dobása</translation>
+        <translation type="unfinished">Pillanatkép el&amp;dobása</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5359,9 +5364,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">Pillanatfelvétel készítése</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">&amp;Pillanatfelvétel készítése</translation>
+        <translation type="unfinished">&amp;Pillanatfelvétel készítése</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5389,9 +5394,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">A pillanatnyi állapot és a pillanatkép eldobása</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">A pilla&amp;natnyi állapot és a pillanatkép eldobása</translation>
+        <translation type="unfinished">A pilla&amp;natnyi állapot és a pillanatkép eldobása</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5404,9 +5409,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">Részletek</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">&amp;Részletek</translation>
+        <translation type="unfinished">&amp;Részletek</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5477,9 +5482,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation>Pillanatkép %1</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Eldobja a kiválasztott állapotát a gépnek</translation>
+        <translation type="unfinished">Eldobja a kiválasztott állapotát a gépnek</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5487,9 +5492,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Pillanatfelvétel a virtuális gép aktuális állapotáról</translation>
+        <translation type="unfinished">Pillanatfelvétel a virtuális gép aktuális állapotáról</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5497,9 +5502,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">Vissza a mostani pillanatfelvételhez</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">Vissza a mos&amp;tani pillanatfelvételhez</translation>
+        <translation type="unfinished">Vissza a mos&amp;tani pillanatfelvételhez</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5507,9 +5512,9 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">A gép állapotának visszaállítása az aktuális pillanatképre</translation>
+        <translation type="unfinished">A gép állapotának visszaállítása az aktuális pillanatképre</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5517,14 +5522,14 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Eldobja az aktuális pillanatképet, és a gépet visszaállítja a pillanatkép felvétele előtti állapotra</translation>
+        <translation type="unfinished">Eldobja az aktuális pillanatképet, és a gépet visszaállítja a pillanatkép felvétele előtti állapotra</translation>
     </message>
     <message>
-        <location filename="" line="543516788"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">A kiválasztott pillanatkép részletei</translation>
+        <translation type="unfinished">A kiválasztott pillanatkép részletei</translation>
     </message>
 </context>
 <context>

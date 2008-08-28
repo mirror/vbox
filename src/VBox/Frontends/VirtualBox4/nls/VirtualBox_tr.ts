@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; uygulamasının çalıştırılabilmesi için Qt %2.x gereklidir, sisteminizde Qt %3 bulundu.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Uyumsuz Qt Kütüphanesi Hatası</translation>
     </message>
@@ -3464,14 +3464,19 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">&amp;Kabul Ediyorum</translation>
+        <translation type="unfinished">&amp;Kabul Ediyorum</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">Kabul Et&amp;miyorum</translation>
+        <translation type="unfinished">Kabul Et&amp;miyorum</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5428,9 +5433,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Anlık Görüntüsüyü Sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">A&amp;nlık Görüntüyü Sil</translation>
+        <translation type="unfinished">A&amp;nlık Görüntüyü Sil</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5448,9 +5453,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Anlık Görüntü Kaydet</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Anlık Gö&amp;rüntü Kaydet</translation>
+        <translation type="unfinished">Anlık Gö&amp;rüntü Kaydet</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5458,9 +5463,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Geçerli Anlık Görüntüyü ve Durumu Sil</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Geçerl&amp;i Anlık Görüntüyü ve Durumu Sil</translation>
+        <translation type="unfinished">Geçerl&amp;i Anlık Görüntüyü ve Durumu Sil</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5468,9 +5473,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Ayrıntıları Göster</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">&amp;Ayrıntıları Göster</translation>
+        <translation type="unfinished">&amp;Ayrıntıları Göster</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5541,9 +5546,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation>Anlık görüntü %1</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Sanal makine için seçilen anlık görüntüyü sil</translation>
+        <translation type="unfinished">Sanal makine için seçilen anlık görüntüyü sil</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5551,9 +5556,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Geçerli sanal makinenin bir anlık görüntüsünü al</translation>
+        <translation type="unfinished">Geçerli sanal makinenin bir anlık görüntüsünü al</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5561,9 +5566,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Geçeli Anlık Görüntüye Döndür</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">Geçe&amp;li Anlık Görüntüye Döndür</translation>
+        <translation type="unfinished">Geçe&amp;li Anlık Görüntüye Döndür</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5571,9 +5576,9 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Sanal makinenin geçerli durumunu kaydedilen geçerli anlık görüntüdeki durumdan geri yükle</translation>
+        <translation type="unfinished">Sanal makinenin geçerli durumunu kaydedilen geçerli anlık görüntüdeki durumdan geri yükle</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -5581,14 +5586,14 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Geçerli anlık görüntüyü sil ve makineyi anlık görüntü alınmdan önceki duruma döndür</translation>
+        <translation type="unfinished">Geçerli anlık görüntüyü sil ve makineyi anlık görüntü alınmdan önceki duruma döndür</translation>
     </message>
     <message>
-        <location filename="" line="7012467"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Seçilen anlık görüntünün ayrıntılarını göster</translation>
+        <translation type="unfinished">Seçilen anlık görüntünün ayrıntılarını göster</translation>
     </message>
     <message>
         <location filename="" line="7012467"/>
@@ -8567,12 +8572,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="235"/>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Boş Filtre &amp;Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="236"/>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Aygıttan Filtre Ekle</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="237"/>

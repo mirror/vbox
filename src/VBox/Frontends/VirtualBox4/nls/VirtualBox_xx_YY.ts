@@ -34,12 +34,6 @@
     </message>
 </context>
 <context>
-    <name>BootItemsList</name>
-</context>
-<context>
-    <name>BootItemsTable</name>
-</context>
-<context>
     <name>HDItemsModel</name>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
@@ -60,12 +54,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -338,9 +332,6 @@
     </message>
 </context>
 <context>
-    <name>QIRichLabel</name>
-</context>
-<context>
     <name>QIWidgetValidator</name>
     <message>
         <location filename="../src/QIWidgetValidator.cpp" line="313"/>
@@ -419,9 +410,6 @@ Version %1</source>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>VBoxAddSFDialog</name>
 </context>
 <context>
     <name>VBoxCloseVMDlg</name>
@@ -2516,13 +2504,22 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxGlobalSettingsDlg</name>
-</context>
-<context>
-    <name>VBoxHardDiskSettings</name>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
+        <source>I &amp;Agree</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
+        <source>I &amp;Disagree</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxLogSearchPanel</name>
@@ -3974,9 +3971,6 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxSharedFoldersSettings</name>
-</context>
-<context>
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="30"/>
@@ -4084,6 +4078,56 @@ Version %1</source>
         <source>Snapshot %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
+        <source>&amp;Discard Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
+        <source>Take &amp;Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
+        <source>&amp;Revert to Current Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
+        <source>D&amp;iscard Current Snapshot and State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
+        <source>S&amp;how Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
+        <source>Discard the selected snapshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
+        <source>Restore the virtual machine state from the state stored in the current snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
+        <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
+        <source>Show details of the selected snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxSwitchMenu</name>
@@ -4115,9 +4159,6 @@ Version %1</source>
         <source>Snapshot &amp;Description</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>VBoxUSBFilterSettings</name>
 </context>
 <context>
     <name>VBoxUSBMenu</name>
@@ -4615,9 +4656,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMListBox</name>
-</context>
-<context>
     <name>VBoxVMListView</name>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="151"/>
@@ -4692,15 +4730,6 @@ p, li { white-space: pre-wrap; }
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>VBoxVMNetworkSettings</name>
-</context>
-<context>
-    <name>VBoxVMParallelPortSettings</name>
-</context>
-<context>
-    <name>VBoxVMSerialPortSettings</name>
 </context>
 <context>
     <name>VBoxVMSettingsAudio</name>

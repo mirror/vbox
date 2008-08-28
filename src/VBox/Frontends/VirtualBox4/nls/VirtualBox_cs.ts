@@ -85,12 +85,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="223"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Aplikace &lt;b&gt;%1&lt;/b&gt; požaduje Qt %2.x, nalezeno Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="227"/>
+        <location filename="../src/main.cpp" line="213"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Chyba nekompatibilní knihovny Qt</translation>
     </message>
@@ -3253,14 +3253,19 @@ na výchozí jazyk systému.&lt;/qt&gt;
 <context>
     <name>VBoxLicenseViewer</name>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="obsolete">Souhl&amp;asím</translation>
+        <translation type="unfinished">Souhl&amp;asím</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="obsolete">N&amp;esouhlasím</translation>
+        <translation type="unfinished">N&amp;esouhlasím</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
+        <source>VirtualBox License</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5187,9 +5192,9 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation type="obsolete">Zahodit snímek</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="obsolete">Zaho&amp;dit snímek</translation>
+        <translation type="unfinished">Zaho&amp;dit snímek</translation>
     </message>
     <message>
         <location filename="" line="7143521"/>
@@ -5197,9 +5202,9 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation type="obsolete">Sejmout snímek</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="obsolete">Sejmout &amp;snímek</translation>
+        <translation type="unfinished">Sejmout &amp;snímek</translation>
     </message>
     <message>
         <location filename="" line="7143521"/>
@@ -5217,9 +5222,9 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation type="obsolete">Zahodit aktuální snímek a stav</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="obsolete">Zahod&amp;it aktuální snímek a stav</translation>
+        <translation type="unfinished">Zahod&amp;it aktuální snímek a stav</translation>
     </message>
     <message>
         <location filename="" line="7143521"/>
@@ -5227,9 +5232,9 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation type="obsolete">Zobrazit detaily</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="obsolete">Z&amp;obrazit detaily</translation>
+        <translation type="unfinished">Z&amp;obrazit detaily</translation>
     </message>
     <message>
         <location filename="" line="7143521"/>
@@ -5300,14 +5305,14 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation>Snímek %1</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="obsolete">Zahodit vybraný snímek virtuálního počítače</translation>
+        <translation type="unfinished">Zahodit vybraný snímek virtuálního počítače</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="obsolete">Sejmout snímek aktuálního stavu virtuálního počítače</translation>
+        <translation type="unfinished">Sejmout snímek aktuálního stavu virtuálního počítače</translation>
     </message>
     <message>
         <location filename="" line="7143521"/>
@@ -5315,24 +5320,24 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation type="obsolete">Vrátit k aktuálnímu snímku</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="obsolete">V&amp;rátit k aktuálnímu snímku</translation>
+        <translation type="unfinished">V&amp;rátit k aktuálnímu snímku</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="obsolete">Obnoví stav virtuálního počítače ze stavu uloženého v aktuálním snímku</translation>
+        <translation type="unfinished">Obnoví stav virtuálního počítače ze stavu uloženého v aktuálním snímku</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="obsolete">Zahodí aktuální snímek a vrátí počítač do stavu před sejmutím snímku</translation>
+        <translation type="unfinished">Zahodí aktuální snímek a vrátí počítač do stavu před sejmutím snímku</translation>
     </message>
     <message>
-        <location filename="" line="7143521"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="obsolete">Zobrazí detaily vybraného snímku</translation>
+        <translation type="unfinished">Zobrazí detaily vybraného snímku</translation>
     </message>
 </context>
 <context>
