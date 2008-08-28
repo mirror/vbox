@@ -1153,7 +1153,7 @@ VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
 	-Wl,--no-whole-archive
 endif
 
-VBoxXPCOM_LDFLAGS.solaris = -Wl,-z,allextract \
+VBoxXPCOM_LDFLAGS.solaris += -Wl,-z,allextract \
 	$(TARGET_VBox-xpcom-typelib) \
 	$(TARGET_VBox-xpcom-string) \
 	$(TARGET_VBox-xpcom-base) \
