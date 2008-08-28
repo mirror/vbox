@@ -591,6 +591,8 @@ $(IDLFILE): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(di
 $(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLTYPELIB))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
+	chmod 0644 $@
+## @todo ^^^^^^^^^^^^ fix horrible hack
 
 $(IDLHEADER): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLHEADER))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
