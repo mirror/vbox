@@ -2041,6 +2041,7 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 
     if (VBOX_SUCCESS(rc))
     {
+        LogFlow(("EMInterpretCRxWrite at %VGv CR%d <- %VX64\n", pRegFrame->rip, DestRegCrx, val));
         switch (DestRegCrx)
         {
         case USE_REG_CR0:
