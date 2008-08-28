@@ -234,8 +234,6 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
              this, SLOT (processDoubleClick (QTreeWidgetItem*, int)));
     connect (mTreeView, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
-    connect (mTreeView->header(), SIGNAL (sectionResized (int, int, int)),
-             this, SLOT (adjustFields()));
 
     /* Set mTreeView as the focus proxy for the mGbSharedFolders */
     new QIFocusProxy (mGbSharedFolders, mTreeView);
@@ -536,6 +534,11 @@ void VBoxVMSettingsSF::adjustFields()
 void VBoxVMSettingsSF::showEvent (QShowEvent *aEvent)
 {
     QWidget::showEvent (aEvent);
+
+    /* Connect header-resize signal just before widget is shown
+     * after all the items properly loaded and initialized. */
+    connect (mTreeView->header(), SIGNAL (sectionResized (int, int, int)),
+             this, SLOT (adjustFields()));
 
     /* Adjusting size after all pending show events are processed. */
     QTimer::singleShot (0, this, SLOT (adjustList()));
