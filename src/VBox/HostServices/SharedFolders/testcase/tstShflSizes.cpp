@@ -1,6 +1,5 @@
 /** @file
- *
- * Testcase for shared folder structure sizes.
+ * tstShflSize - Testcase for shared folder structure sizes.
  * Run this on Linux and Windows, then compare.
  */
 
@@ -24,20 +23,20 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/shflsvc.h>
-#include <iprt/stream.h>
 #include <iprt/string.h>
+#include <stdio.h>
 
 #define STRUCT(t, size)   \
     do { \
         if (fPrintChecks) \
-            RTPrintf("    STRUCT(" #t ", %d);\n", (int)sizeof(t)); \
+            printf("    STRUCT(" #t ", %d);\n", (int)sizeof(t)); \
         else if ((size) != sizeof(t)) \
         { \
-            RTPrintf("%30s: %d expected %d!\n", #t, (int)sizeof(t), (size)); \
+            printf("%30s: %d expected %d!\n", #t, (int)sizeof(t), (size)); \
             cErrors++; \
         } \
         else if (!fQuiet)\
-            RTPrintf("%30s: %d\n", #t, (int)sizeof(t)); \
+            printf("%30s: %d\n", #t, (int)sizeof(t)); \
     } while (0)
 
 
@@ -51,7 +50,7 @@ int main(int argc, char **argv)
     bool fQuiet = argc == 2 && !strcmp(argv[1], "quiet");
     bool fPrintChecks = !fQuiet && argc != 1;
 
-    RTPrintf("tstShflSizes: TESTING\n");
+    printf("tstShflSizes: TESTING\n");
 
     /*
      * The checks.
@@ -128,9 +127,9 @@ int main(int argc, char **argv)
      * The summary.
      */
     if (!cErrors)
-        RTPrintf("tstShflSizes: SUCCESS\n");
+        printf("tstShflSizes: SUCCESS\n");
     else
-        RTPrintf("tstShflSizes: FAILURE - %d errors\n", cErrors);
+        printf("tstShflSizes: FAILURE - %d errors\n", cErrors);
     return !!cErrors;
 }
 

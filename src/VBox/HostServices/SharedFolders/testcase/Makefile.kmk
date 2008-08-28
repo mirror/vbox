@@ -31,7 +31,6 @@ PROGRAMS += tstShflSizes
 tstShflSizes_TEMPLATE = VBOXR3TSTEXE
 tstShflSizes_DEFS     = VBOX_HGCM
 tstShflSizes_SOURCES  = tstShflSizes.cpp
-tstShflSizes_LIBS     = $(LIB_RUNTIME)
 
 ifdef VBOX_WITH_TESTCASES
 #
@@ -60,6 +59,6 @@ include $(KBUILD_PATH)/subfooter.kmk
 
 $(PATH_TARGET)/tstShflSizes.run: $$(INSTARGET_tstShflSizes)
 	$(QUIET)$(RM) -f $@
-	$(if $(eq $(KBUILD_TARGET),darwin),$(REDIRECT) -E 'DYLD_LIBRARY_PATH=$(dir $^)' --) $(INSTARGET_tstShflSizes) quiet
+	$(INSTARGET_tstShflSizes) quiet
 	$(QUIET)$(APPEND) "$@" "done"
 
