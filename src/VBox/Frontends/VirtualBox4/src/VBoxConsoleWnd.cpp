@@ -1150,7 +1150,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
              * workaround we set the arrow cursor manually.
              * See http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry
              * for details. */
-#if defined (Q_WS_X11) && (QT_VERSION >= 0x040309) && (QT_VERSION < 0x040401) 
+#if defined (Q_WS_X11) && (QT_VERSION >= 0x040309) && (QT_VERSION < 0x040401)
             qApp->setOverrideCursor(Qt::ArrowCursor);
 #endif
             break;
@@ -2045,9 +2045,12 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
     if (aOn)
     {
-        /* Take the toggle hot key from the menu item. */
-        QString hotKey = VBoxGlobal::extractKeyFromActionText (aSeamless ? vmSeamlessAction->text() :
-                                                                           vmFullscreenAction->text());
+        /* Take the toggle hot key from the menu item. Since
+         * VBoxGlobal::extractKeyFromActionText gets exactly the
+         * linked key without the 'Host+' part we are adding it here. */
+        QString hotKey = QString ("Host+%1")
+            .arg (VBoxGlobal::extractKeyFromActionText (aSeamless ?
+                  vmSeamlessAction->text() : vmFullscreenAction->text()));
 
         Assert (!hotKey.isEmpty());
 
