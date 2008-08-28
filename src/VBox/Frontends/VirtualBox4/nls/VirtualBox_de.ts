@@ -1262,7 +1262,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation>&lt;norbr&gt;Plattentyp:&lt;/nobr&gt;</translation>
+        <translation type="unfinished">&lt;nobr&gt;Plattentyp:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
@@ -1272,12 +1272,12 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Gebunden an:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation type="unfinished">&lt;nobr&gt;Gebunden an:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Sicherungspunkt:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Sicherungspunkt:&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1434,12 +1434,12 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="80"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Zeigt den voreingestellten Pfad für virtuelle Maschinen. Wenn nicht anders angegeben wird dieser Pfad beim Erstellen neuer virtueller Maschinen benutzt.</translation>
+        <translation>Zeigt den voreingestellten Pfad für virtuelle Maschinen. Neue virtuelle Maschinen werden standardmäßig in diesem Ordner erzeugt und vorhandene werden hier zuerst gesucht.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP) erlaubt.</translation>
+        <translation>Zeigt den Pfad der Authentisierungsbibliothek für ferngesteuerte Clients (VRDP).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
@@ -1524,7 +1524,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache einzustellen.</translation>
+        <translation type="unfinished">Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache Ihres Systems einzustellen.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
@@ -2563,7 +2563,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="433"/>
         <source>C&amp;ase Sensitive</source>
-        <translation>Berücksichtigt die &amp;Groß- und Kleinschreibung</translation>
+        <translation type="unfinished">Unterscheidet &amp;Groß- und Kleinschreibung</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="435"/>
@@ -2717,12 +2717,12 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Rückw</translation>
+        <translation>&lt; &amp;Zurück</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;Vorwärts &gt;</translation>
+        <translation>&amp;Weiter &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
@@ -2737,7 +2737,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Drücken Sie &lt;b&gt;Auswählen&lt;/b&gt; um die Lage und den Namen der Datei festzulegen. Alternativ können Sie auch einen Namen in das Eingabefeld tippen.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Drücken auf das kleine Icon neben dem Auswahlfeld um die Lage und den Namen der Datei festzulegen. Alternativ können Sie auch einen Namen in das Eingabefeld tippen.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
@@ -2747,7 +2747,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation>Drücken Sie &lt;b&gt;Abschließen&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
+        <translation type="unfinished">Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
@@ -2860,12 +2860,12 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1169"/>
         <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Rückw</translation>
+        <translation>&lt; &amp;Zurück</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;Vorwärts &gt;</translation>
+        <translation>&amp;Weiter &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
@@ -3551,7 +3551,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1532"/>
         <source>&lt;p&gt;There is a new version of VirtualBox found on the VirtualBox web-site: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you want to download and install this version please proceed with the following link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eine neue Version von VirtualBox wurde auf der VirtualBox-Webseite gefunden: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Wenn Sie diese Version herunterladen und installieren wollen, dann klicken Sie auf diesen Link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Eine neue Version von VirtualBox wurde auf der VirtualBox-Webseite gefunden: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Wenn Sie diese Version herunterladen und installieren wollen, dann klicken Sie auf den folgenden Link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1541"/>
@@ -4401,7 +4401,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
-        <translation>&amp;Vorwärts &gt;</translation>
+        <translation>&amp;Weiter &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
