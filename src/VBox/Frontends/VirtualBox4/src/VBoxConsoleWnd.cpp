@@ -1658,6 +1658,7 @@ void VBoxConsoleWnd::retranslateUi()
             "This key, when pressed alone, toggles the the keyboard and mouse "
             "capture state. It can also be used in combination with other keys "
             "to quickly perform actions from the main menu."));
+    hostkey_name->setText (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()));
 
     updateAppearanceOf (AllStuff);
 }
