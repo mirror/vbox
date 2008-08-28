@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="de">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -1251,7 +1252,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
         <source>Hard &amp;Disks</source>
-        <translation>Festplatten</translation>
+        <translation>&amp;Festplatten</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
@@ -1261,7 +1262,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;Plattentyp:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Plattentyp:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
@@ -1271,7 +1272,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;Gebunden an:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Gebunden an:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
@@ -1523,7 +1524,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation type="unfinished">Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache Ihres Systems einzustellen.</translation>
+        <translation>Zeigt alle verfügbaren Sprachen für die Nutzeroberfläche. Die aktuelle Sprache wird &lt;b&gt;fett&lt;/b&gt; hervorgehoben. Wählen Sie &lt;i&gt;Voreingestellt&lt;/i&gt; um die voreingestellte Sprache Ihres Systems einzustellen.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
@@ -2562,7 +2563,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="433"/>
         <source>C&amp;ase Sensitive</source>
-        <translation type="unfinished">Unterscheidet &amp;Groß- und Kleinschreibung</translation>
+        <translation>Unterscheidet &amp;Groß- und Kleinschreibung</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="435"/>
@@ -2736,7 +2737,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Drücken auf das kleine Icon neben dem Auswahlfeld um die Lage und den Namen der Datei festzulegen. Alternativ können Sie auch einen Namen in das Eingabefeld tippen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Drücken auf das kleine Icon neben dem Auswahlfeld um die Lage und den Namen der Datei festzulegen. Alternativ können Sie auch einen Namen in das Eingabefeld tippen.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
@@ -2746,7 +2747,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="unfinished">Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
+        <translation>Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
@@ -3550,7 +3551,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1532"/>
         <source>&lt;p&gt;There is a new version of VirtualBox found on the VirtualBox web-site: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you want to download and install this version please proceed with the following link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Eine neue Version von VirtualBox wurde auf der VirtualBox-Webseite gefunden: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Wenn Sie diese Version herunterladen und installieren wollen, dann klicken Sie auf den folgenden Link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Eine neue Version von VirtualBox wurde auf der VirtualBox-Webseite gefunden: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Wenn Sie diese Version herunterladen und installieren wollen, dann klicken Sie auf den folgenden Link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1541"/>
@@ -4082,52 +4083,52 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Sicherungspunkt &amp;verwerfen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Sicherungspunkt &amp;erstellen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Zurückkehren zum letzten Sicherungspunkt</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuellen Sicherungspunkt und Zustand verwerfen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Einzelheiten zeigen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwirft den ausgewählten Sicherungspunkt der virtuellen Maschine</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeugt einen Sicherungspunkt der aktuellen virtuellen Maschine</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Zustand der virtuellen Maschine wird aus dem Zustand im aktuellen Sicherungspunkt wieder hergestellt</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwirft den ausgewählten Sicherungspunkt und stellt den Zustand der virtuellen Maschine vor dem Sicherungspunkt wieder her</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt Einzelheiten des ausgewählten Sicherungspunktes</translation>
     </message>
 </context>
 <context>
