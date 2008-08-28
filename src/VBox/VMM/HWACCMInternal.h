@@ -255,6 +255,9 @@ typedef struct HWACCM
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
         uint64_t                    proc_ctls;
 
+        /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2. */
+        uint64_t                    proc_ctls2;
+
         /** Current CR0 mask. */
         uint64_t                    cr0_mask;
         /** Current CR4 mask. */

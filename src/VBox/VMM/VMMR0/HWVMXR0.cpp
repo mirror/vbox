@@ -319,6 +319,9 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
     }
 #endif
 
+    /* We will use the secondary control if it's present. */
+    val |= VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL;
+
     /* Mask away the bits that the CPU doesn't support */
     /** @todo make sure they don't conflict with the above requirements. */
     val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
@@ -326,6 +329,23 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, val);
     AssertRC(rc);
+
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+    {
+        /* VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
+         * Set required bits to one and zero according to the MSR capabilities.
+         */
+        val  = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
+        val |= VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT;
+
+        /* Mask away the bits that the CPU doesn't support */
+        /** @todo make sure they don't conflict with the above requirements. */
+        val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
+        pVM->hwaccm.s.vmx.proc_ctls2 = val;
+
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2, val);
+        AssertRC(rc);
+    }
 
     /* VMX_VMCS_CTRL_CR3_TARGET_COUNT
      * Set required bits to one and zero according to the MSR capabilities.
@@ -1751,7 +1771,8 @@ ResumeExecution:
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIrqWindow);
         goto ResumeExecution;   /* we check for pending guest interrupts there */
 
-    case VMX_EXIT_INVD:                 /* 13 Guest software attempted to execute INVD. */
+    case VMX_EXIT_WBINVD:               /* 54 Guest software attempted to execute WBINVD. (conditional) */
+    case VMX_EXIT_INVD:                 /* 13 Guest software attempted to execute INVD. (unconditional) */
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvd);
         /* Skip instruction and continue directly. */
         pCtx->rip += cbInstr;
