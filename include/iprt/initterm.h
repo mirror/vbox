@@ -49,14 +49,9 @@ __BEGIN_DECLS
  *
  * @returns iprt status code.
  *
- * @param   fInitSUPLib     Set if SUPInit() shall be called during init (default).
+ * @param   fInitSUPLib     Set if SUPR3Init() shall be called during init (default).
  *                          Clear if not to call it.
- * @param   cbReserve       The number of bytes of contiguous memory that should be reserved by
- *                          the runtime / support library.
- *                          Set this to 0 if no reservation is required. (default)
- *                          Set this to ~(size_t)0 if the maximum amount supported by the VM is to be
- *                          attempted reserved, or the maximum available.
- *                          This argument only applies if fInitSUPLib is true and we're in ring-3 HC.
+ * @param   cbReserve       Ignored.
  */
 RTR3DECL(int) RTR3Init(
 #ifdef __cplusplus

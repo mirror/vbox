@@ -90,7 +90,7 @@ SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint
      * The clients will pass defaults (0), and only in the case that some
      * special API feature was just added will they set an actual version.
      * So, this is the place where can easily enforce a minimum IDC version
-     * on bugs and similar. It corresponds a bit to what SUPInit is
+     * on bugs and similar. It corresponds a bit to what SUPR3Init is
      * responsible for.
      */
     uDefaultMinVersion = SUPDRV_IDC_VERSION & UINT32_C(0xffff0000);

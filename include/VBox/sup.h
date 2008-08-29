@@ -340,22 +340,13 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 
 /**
  * Initializes the support library.
- * Each succesful call to SUPInit() must be countered by a
+ * Each succesful call to SUPR3Init() must be countered by a
  * call to SUPTerm(false).
  *
  * @returns VBox status code.
  * @param   ppSession       Where to store the session handle. Defaults to NULL.
- * @param   cbReserve       The number of bytes of contiguous memory that should be reserved by
- *                          the runtime / support library.
- *                          Set this to 0 if no reservation is required. (default)
- *                          Set this to ~0 if the maximum amount supported by the VM is to be
- *                          attempted reserved, or the maximum available.
  */
-#ifdef __cplusplus
-SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession = NULL, size_t cbReserve = 0);
-#else
-SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession, size_t cbReserve);
-#endif
+SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession);
 
 /**
  * Terminates the support library.

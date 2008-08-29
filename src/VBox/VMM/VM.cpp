@@ -196,7 +196,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
         /*
          * Initialize the support library creating the session for this v
          */
-        rc = SUPInit(&pUVM->vm.s.pSession, 0);
+        rc = SUPR3Init(&pUVM->vm.s.pSession);
         if (RT_SUCCESS(rc))
         {
             /*

@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 {
     int rc;
     RTR3Init(false);
-    rc = SUPInit();
+    rc = SUPR3Init(NULL);
     if (VBOX_SUCCESS(rc))
     {
         SUPPAGINGMODE enmMode = SUPGetPagingMode();
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
         RTPrintf("SUPTerm -> rc=%Vrc\n", rc2);
     }
     else
-        RTPrintf("SUPInit -> rc=%Vrc\n", rc);
+        RTPrintf("SUPR3Init -> rc=%Vrc\n", rc);
 
     return !VBOX_SUCCESS(rc);
 }

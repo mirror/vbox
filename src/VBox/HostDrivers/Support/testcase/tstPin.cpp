@@ -48,8 +48,8 @@ int main(int argc, char **argv)
     RTHCPHYS    HCPhys;
 
     RTR3Init(true, ~0);
-    rc = SUPInit(NULL, ~0);
-    RTPrintf("SUPInit -> rc=%d\n", rc);
+    rc = SUPR3Init(NULL);
+    RTPrintf("SUPR3Init -> rc=%d\n", rc);
     rcRet += rc != 0;
     if (!rc)
     {

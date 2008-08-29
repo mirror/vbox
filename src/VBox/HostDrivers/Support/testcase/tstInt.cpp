@@ -80,9 +80,9 @@ int main(int argc, char **argv)
      */
     RTR3Init();
     PSUPDRVSESSION pSession;
-    rc = SUPInit(&pSession);
+    rc = SUPR3Init(&pSession);
     rcRet += rc != 0;
-    RTPrintf("tstInt: SUPInit -> rc=%Vrc\n", rc);
+    RTPrintf("tstInt: SUPR3Init -> rc=%Vrc\n", rc);
     if (!rc)
     {
         /*

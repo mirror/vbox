@@ -620,7 +620,7 @@ int main(int argc, char **argv)
     /*
      * Create an fake VM structure and init SSM.
      */
-    int rc = SUPInit(NULL);
+    int rc = SUPR3Init(NULL);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("Fatal error: SUP Failure! rc=%Vrc\n", rc);

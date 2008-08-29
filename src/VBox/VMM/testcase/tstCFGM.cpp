@@ -48,7 +48,7 @@ int main()
      * Create empty VM structure and init SSM.
      */
     PVM         pVM;
-    int rc = SUPInit(NULL);
+    int rc = SUPR3Init(NULL);
     if (VBOX_SUCCESS(rc))
         rc = SUPPageAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT, (void **)&pVM);
     if (VBOX_FAILURE(rc))

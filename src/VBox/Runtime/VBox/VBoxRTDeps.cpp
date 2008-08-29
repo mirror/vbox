@@ -40,6 +40,6 @@
 *******************************************************************************/
 PFNRT g_VBoxRTDeps[] =
 {
-    (PFNRT)SUPInit,
+    (PFNRT)SUPR3Init,
     (PFNRT)SUPPageLock
 };
