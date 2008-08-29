@@ -333,7 +333,7 @@ $(PATH_TARGET)/VBoxSVCM.def:
 	$(RM) -f $@
 	$(APPEND) $@ _NSGetModule
 endif
-VBoxSVCM_INTERMEDIATES = $(IDLHEADER)
+VBoxSVCM_INTERMEDIATES += $(IDLHEADER.XPCOM)
 
 endif # VBOX_WITH_XPCOM
 
@@ -569,20 +569,19 @@ include $(KBUILD_PATH)/subfooter.kmk
 XIDLFILE = $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
 
 ## @todo this hack ain't cutting it any longer. (the file name is abspath'ed since ages now.)
-xpcom/helpers.cpp: $(IDLTYPELIB)
+xpcom/helpers.cpp: $(IDLTYPELIB.XPCOM)
 
-$(IDLFILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
+$(IDLFILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE.XPCOM)))
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/xpcom/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-$(IDLTYPELIB.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLTYPELIB))) $(VBOX_XPIDL)
+$(IDLTYPELIB.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLTYPELIB.XPCOM))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 	chmod 0644 $@
 ## @todo ^^^^^^^^^^^^ fix horrible hack
 
-$(IDLHEADER.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLHEADER))) $(VBOX_XPIDL)
+$(IDLHEADER.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLHEADER.XPCOM))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
@@ -655,12 +654,12 @@ updatenls:
 
 ifdef VBOX_WITH_XPCOM
 
-testidl: $(IDLFILE) $(IDLTYPELIB)
-testidlhdr: $(IDLHEADER)
+testidl: $(IDLFILE.XPCOM) $(IDLTYPELIB.XPCOM)
+testidlhdr: $(IDLHEADER.XPCOM)
 
 else
 
-testidl: $(IDLFILE) $(PATH_VBoxCOM)/VirtualBox_i.c
+testidl: $(IDLFILE) $(IDLFILE.MSCOM) $(PATH_VBoxCOM)/VirtualBox_i.c
 
 endif
 
