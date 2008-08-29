@@ -289,7 +289,7 @@ $(addprefix $(PATH_TARGET)/archive/,$(LINUXSTRIPBIN)): \
 		    $(PATH_TARGET)/archive-dbg/$(DBGPATH)/%) \
 		| $$(call DIRDEP,$$(dir $$@))
 	$(call MSG_INST_FILE,$<,$@)
-	$(QUIET)$(INSTALL) -m $(if $(filter %.so,$<),0644,0755) $(if $(VBOX_DO_STRIP),-s,) $< $@
+	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)$(if $(VBOX_NO_LINUX_RUN_INSTALLER),,objcopy --add-gnu-debuglink=$(subst $(PATH_TARGET)/archive,$(PATH_TARGET)/archive-dbg/$(DBGPATH),$@) $@)
 
 $(addprefix $(PATH_TARGET)/archive/,$(LINUXSTRIPOBJ)): \
