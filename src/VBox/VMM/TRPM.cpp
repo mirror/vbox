@@ -778,7 +778,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
      */
     if (u32Version != TRPM_SAVED_STATE_VERSION)
     {
-        Log(("trpmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("trpmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
