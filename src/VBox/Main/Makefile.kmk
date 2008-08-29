@@ -61,7 +61,7 @@ ifneq ($(KBUILD_TARGET),win)
  ifneq ($(KBUILD_TARGET),os2)
   VBOX_MAIN_DEFS+= VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
  endif
- ifn1of ($(KBUILD_TARGET), darwin solaris)
+ ifn1of ($(KBUILD_TARGET), darwin)
   ifndef VBOX_WITH_NETFLT
    VBOX_MAIN_DEFS += VBOX_WITH_UNIXY_TAP_NETWORKING
   endif
