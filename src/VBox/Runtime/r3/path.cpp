@@ -155,7 +155,7 @@ RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffNa
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
                 pszName = psz + 1;
-                cchRoot = pszName - psz;
+                offRoot = pszName - psz;
                 break;
 
             case '\\':
