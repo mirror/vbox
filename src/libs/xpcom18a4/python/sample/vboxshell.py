@@ -1,15 +1,15 @@
 #!/usr/bin/python
 #
-####################################################################################
-# This program is a simple interactive shell for VirtualBox. You can query         #
-# information and issue commands from a simple command line.                       #
-#                                                                                  #
-# It also provides you with examples on how to use VirtualBox' Python API.         #
-# This shell is even somewhat documented and supports TAB-completion and history   #
-# if you have Python readline installed.                                           #
-#                                                                                  #
-#                                                Enjoy.                            #
-####################################################################################
+#################################################################################
+# This program is a simple interactive shell for VirtualBox. You can query      #
+# information and issue commands from a simple command line.                    #
+#                                                                               #
+# It also provides you with examples on how to use VirtualBox' Python API.      #
+# This shell is even somewhat documented and supports TAB-completion and        #
+# history if you have Python readline installed.                                #
+#                                                                               #
+#                                                Enjoy.                         #
+#################################################################################
 #
 # To make it work, the following variables have to be set.
 # Please note the trailing slash in VBOX_PROGRAM_PATH - it's a must.
@@ -20,8 +20,9 @@
 #  export PYTHONPATH=$VBOX_PROGRAM_PATH/sdk/bindings/xpcom/python:$VBOX_PROGRAM_PATH
 # To allow library resolution
 #  export LD_LIBRARY_PATH=$VBOX_PROGRAM_PATH
-# Additionally, on 64-bit Solaris, you need to use 64-bit Python from /usr/bin/amd64/python
-# and due to quirks in native modules loading of Python do the following:
+# Additionally, on 64-bit Solaris, you need to use 64-bit Python from 
+# /usr/bin/amd64/python and due to quirks in native modules loading of 
+# Python do the following:
 #   mkdir $VBOX_PROGRAM_PATH/64
 #   ln -s $VBOX_PROGRAM_PATH/VBoxPython.so $VBOX_PROGRAM_PATH/64/VBoxPython.so 
 #
@@ -80,6 +81,9 @@ if g_hasreadline:
             word = m.name
             if word[:n] == text:
                 matches.append(word)
+            word = str(m.id)[1:-1]
+            if word[:n] == text:
+                    matches.append(word)
 
         return matches
 
@@ -164,7 +168,7 @@ def cmdExistingVm(ctx,mach,cmd):
 def machById(ctx,id):
     mach = None
     for m in getMachines(ctx):
-        if m.id == id or m.name == id:
+        if str(m.id) == '{'+id+'}' or m.name == id:
             mach = m
             break
     return mach
@@ -174,7 +178,10 @@ def argsToMach(ctx,args):
         print "usage: %s [vmname|uuid]" %(args[0])
         return None
     id = args[1]
-    return machById(ctx, id)
+    m = machById(ctx, id)
+    if m == None:
+        print "Machine '%s' is unknown, use list command to find available machines" %(id)
+    return m
 
 def helpCmd(ctx, args):
     if len(args) == 1:
@@ -226,7 +233,7 @@ def startCmd(ctx, args):
     if len(args) > 2:
         type = args[2]
     else:
-        type = "gui"
+        type = "GUI/Qt4"
     startVm(ctx['mgr'], ctx['vb'], mach, type)
     return 0
 
