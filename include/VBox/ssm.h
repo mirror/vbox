@@ -431,6 +431,7 @@ SSMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
 SSMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM);
 SSMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
 SSMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM);
+SSMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
 
 
 /** Save operations.
