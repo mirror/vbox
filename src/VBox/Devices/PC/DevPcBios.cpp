@@ -1508,9 +1508,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
-#if 0
-    /* VMI not yet */
-#ifndef VBOX_OSE
+#ifdef VBOX_WITH_VMI
     /*
      * Map the VMI BIOS into memory.
      */
@@ -1518,8 +1516,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_VMI_BIOS_BASE, g_cbVmiBiosBinary, g_abVmiBiosBinary, false, "VMI BIOS");
     if (RT_FAILURE(rc))
         return rc;
-#endif
-#endif
+#endif /* VBOX_WITH_VMI */
 
     /*
      * Call reset to set values and stuff.

@@ -28,7 +28,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
-ifndef VBOX_OSE # not yet
+ifdef VBOX_WITH_VMI
  include $(PATH_SUB_CURRENT)/PC/VMI/Makefile.kmk
 endif
 include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
@@ -219,7 +219,7 @@ VBoxDD2_LIBS            = \
 	$(PATH_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/NetBiosBin$(VBOX_SUFF_LIB) \
-	$(if $(VBOX_OSE),,$(PATH_LIB)/VmiBiosBin$(VBOX_SUFF_LIB)) \
+	$(if $(VBOX_WITH_VMI),$(PATH_LIB)/VmiBiosBin$(VBOX_SUFF_LIB)) \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
 ifeq ($(KBUILD_TARGET),l4)
@@ -237,7 +237,8 @@ VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 #
 DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
-DevicesR3_DEFS         += VBOX_HGCM_HOST_CODE
+DevicesR3_DEFS         += VBOX_HGCM_HOST_CODE \
+			  $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
 DevicesR3_INCS         := \
 	$(PATH_SUB_CURRENT)
 DevicesR3_SOURCES       = \
