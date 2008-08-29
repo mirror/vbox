@@ -527,7 +527,7 @@ static bool IsTAPDevice(const char *guid)
  */
 STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection **networkInterfaces)
 {
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || (defined(RT_OS_SOLARIS) && defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || (defined(RT_OS_SOLARIS) && defined(VBOX_WITH_NETFLT)) /*|| defined(RT_OS_OS2)*/
     if (!networkInterfaces)
         return E_POINTER;
     AutoWriteLock alock (this);
