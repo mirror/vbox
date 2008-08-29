@@ -1352,8 +1352,8 @@ VBoxPython_SOURCES = \
 	python/src/TypeObject.cpp \
 	python/src/VariantUtils.cpp
 VBoxPython_LIBS = \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(VBOX_LIB_PYTHON)
 
 ## @todo we'll have to use the 10.5 SDK if we wish to build this. :-/
