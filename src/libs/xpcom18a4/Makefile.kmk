@@ -1110,8 +1110,9 @@ VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  VBoxXPCOM_LDFLAGS.linux    = -Wl,--version-script=$(XPCOM_C_NAMESPACE_MAP)
  VBoxXPCOM_DEPS.linux      += $(XPCOM_C_NAMESPACE_MAP)
- VBoxXPCOM_LDFLAGS.solaris  = -Wl,-M,$(XPCOM_C_NAMESPACE_MAP)
- VBoxXPCOM_DEPS.solaris    += $(XPCOM_C_NAMESPACE_MAP)
+# Disable temporarily, as Solaris doesn't support map files with non-trivial wildcards.
+# VBoxXPCOM_LDFLAGS.solaris  = -Wl,-M,$(XPCOM_C_NAMESPACE_MAP)
+# VBoxXPCOM_DEPS.solaris    += $(XPCOM_C_NAMESPACE_MAP)
 endif
 VBoxXPCOM_SOURCES = \
 	xpcom/build/nsXPComInit.cpp \
