@@ -408,8 +408,24 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
 #ifdef IN_RING3
             if (pLogger->fDestFlags & RTLOGDEST_FILE)
             {
-                rc = RTFileOpen(&pLogger->File, pLogger->pszFilename,
-                                RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
+                if (!(pLogger->fFlags & RTLOGFLAGS_APPEND))
+                    rc = RTFileOpen(&pLogger->File, pLogger->pszFilename,
+                                    RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
+                else
+                {
+                    /** @todo RTFILE_O_APPEND. */
+                    rc = RTFileOpen(&pLogger->File, pLogger->pszFilename,
+                                    RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTFileSeek(pLogger->File, 0, RTFILE_SEEK_END, NULL);
+                        if (RT_FAILURE(rc))
+                        {
+                            RTFileClose(pLogger->File);
+                            pLogger->File = NIL_RTFILE;
+                        }
+                    }
+                }
                 if (RT_FAILURE(rc) && pszErrorMsg)
                     RTStrPrintf(pszErrorMsg, cchErrorMsg, "could not open file '%s'", pLogger->pszFilename);
             }
@@ -1231,6 +1247,8 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
             { "unbuffered",   sizeof("unbuffered"  ) - 1,   RTLOGFLAGS_BUFFERED,            true  },
             { "usecrlf",      sizeof("usecrlf"     ) - 1,   RTLOGFLAGS_USECRLF,             true },
             { "uself",        sizeof("uself"       ) - 1,   RTLOGFLAGS_USECRLF,             false  },
+            { "append",       sizeof("append"      ) - 1,   RTLOGFLAGS_APPEND,              false  },
+            { "overwrite",    sizeof("overwrite"   ) - 1,   RTLOGFLAGS_APPEND,              true  },
             { "rel",          sizeof("rel"         ) - 1,   RTLOGFLAGS_REL_TS,              false },
             { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
             { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false },

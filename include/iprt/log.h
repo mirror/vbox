@@ -296,10 +296,12 @@ typedef enum RTLOGFLAGS
     RTLOGFLAGS_BUFFERED             = 0x00000002,
     /** The logger instance expands LF to CR/LF. */
     RTLOGFLAGS_USECRLF              = 0x00000010,
+    /** Append to the log destination where applicable. */ 
+    RTLOGFLAGS_APPEND               = 0x00000020,
     /** Show relative timestamps with PREFIX_TSC and PREFIX_TS */
-    RTLOGFLAGS_REL_TS               = 0x00000020,
+    RTLOGFLAGS_REL_TS               = 0x00000040,
     /** Show decimal timestamps with PREFIX_TSC and PREFIX_TS */
-    RTLOGFLAGS_DECIMAL_TS           = 0x00000040,
+    RTLOGFLAGS_DECIMAL_TS           = 0x00000080,
     /** New lines should be prefixed with the write and read lock counts. */
     RTLOGFLAGS_PREFIX_LOCK_COUNTS   = 0x00008000,
     /** New lines should be prefixed with the CPU id (ApicID on intel/amd). */
