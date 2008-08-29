@@ -131,7 +131,7 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq);
 DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
 /** @} */
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 
 #ifdef VBGL_VBOXGUEST
 
@@ -244,7 +244,7 @@ DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData,
 
 #endif /* !VBGL_VBOXGUEST */
 
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
 
 /**

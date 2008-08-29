@@ -671,7 +671,7 @@ static void show_usage()
              "  -tapfd<1-N> <fd>         Use existing TAP device, don't allocate\n"
              "  -evdevkeymap             Use evdev keycode map\n"
 #endif
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
              "  -vrdp <port>             Listen for VRDP connections on port (default if not specified)\n"
 #endif
              "  -discardstate            Discard saved state (if present) and revert to last snapshot (if present)\n"
@@ -1035,7 +1035,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     char *hdaFile   = NULL;
     char *cdromFile = NULL;
     char *fdaFile   = NULL;
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     int portVRDP = ~0;
 #endif
     bool fDiscardState = false;
@@ -1449,7 +1449,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             curArg++;
         }
 #endif /* RT_OS_LINUX || RT_OS_DARWIN */
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         else if (strcmp(argv[curArg], "-vrdp") == 0)
         {
             // start with the standard VRDP port
@@ -1468,7 +1468,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
         }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
         else if (strcmp(argv[curArg], "-discardstate") == 0)
         {
             fDiscardState = true;
@@ -2054,7 +2054,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 #endif /* RT_OS_LINUX || RT_OS_DARWIN */
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (portVRDP != ~0)
     {
         rc = gMachine->COMGETTER(VRDPServer)(gVrdpServer.asOutParam());
@@ -2790,7 +2790,7 @@ leave:
     terminateXPCOMQueueThread();
 #endif /* VBOX_WITH_XPCOM */
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (gVrdpServer)
         rc = gVrdpServer->COMSETTER(Enabled)(FALSE);
 #endif

@@ -52,7 +52,7 @@ endif
 # VBoxGuestR0Lib
 #
 VBoxGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
-VBoxGuestR0Lib_DEFS         = VBOX_HGCM
+VBoxGuestR0Lib_DEFS         = VBOX_WITH_HGCM
 VBoxGuestR0Lib_INCS         = \
 	$(PATH_VBoxGuestR0Lib)
 VBoxGuestR0Lib_SOURCES      = \
@@ -68,7 +68,7 @@ VBoxGuestR0Lib_SOURCES      = \
 # VBoxGuestR0LibBase
 #
 VBoxGuestR0LibBase_TEMPLATE = VBOXGUESTR0LIB
-VBoxGuestR0LibBase_DEFS     = VBOX_HGCM VBGL_VBOXGUEST
+VBoxGuestR0LibBase_DEFS     = VBOX_WITH_HGCM VBGL_VBOXGUEST
 VBoxGuestR0LibBase_INCS     = $(VBoxGuestR0Lib_INCS)
 VBoxGuestR0LibBase_INCS.win = $(VBoxGuestR0Lib_INCS.win)
 VBoxGuestR0LibBase_SOURCES  = \
@@ -84,7 +84,7 @@ VBoxGuestR0LibBase_SOURCES  = \
 #
 VBoxGuestR3Lib_TEMPLATE    = VBOXGUESTR3LIB
 VBoxGuestR3Lib_DEFS        = \
-	VBOX_HGCM \
+	VBOX_WITH_HGCM \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
 VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3Lib.cpp \
@@ -122,7 +122,7 @@ VBoxGuestR3LibShared_INST    := $(INST_ADDITIONS_LIB)
 #
 VBoxGuestR3LibXFree86_TEMPLATE = VBOXGUESTR3LIB
 VBoxGuestR3LibXFree86_DEFS     = \
-	VBOX_HGCM VBOX_VBGLR3_XFREE86 \
+	VBOX_WITH_HGCM VBOX_VBGLR3_XFREE86 \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \

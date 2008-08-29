@@ -44,7 +44,7 @@
 #endif
 
 #include "VMMDevState.h"
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 # include "VMMDevHGCM.h"
 #endif
 
@@ -1013,7 +1013,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
         /*
          * Process HGCM request
          */
@@ -1096,7 +1096,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             break;
         }
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
         case VMMDevReq_HGCMCancel:
         {
@@ -1683,7 +1683,7 @@ static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, PDMIN
             return &pThis->Base;
         case PDMINTERFACE_VMMDEV_PORT:
             return &pThis->Port;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
         case PDMINTERFACE_HGCM_PORT:
             return &pThis->HGCMPort;
 #endif
@@ -2010,9 +2010,9 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 
     SSMR3PutU32(pSSMHandle, pThis->guestCaps);
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     vmmdevHGCMSaveState (pThis, pSSMHandle);
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
     return VINF_SUCCESS;
 }
@@ -2061,9 +2061,9 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
         SSMR3GetU32(pSSMHandle, &temp);
     }
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     vmmdevHGCMLoadState (pThis, pSSMHandle);
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
     /*
      * On a resume, we send the capabilities changed message so
@@ -2105,9 +2105,9 @@ static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     vmmdevHGCMLoadStateDone (pThis, pSSMHandle);
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
     VMMDevNotifyGuest (pThis, VMMDEV_EVENT_RESTORED);
 
@@ -2211,7 +2211,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->SharedFolders.Led.u32Magic     = PDMLED_MAGIC;
     pThis->SharedFolders.ILeds.pfnQueryStatusLed = vmmdevQueryStatusLed;
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /* HGCM port */
     pThis->HGCMPort.pfnCompleted          = hgcmCompleted;
 #endif
@@ -2266,7 +2266,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pThis->pDrv = (PPDMIVMMDEVCONNECTOR)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_VMMDEV_CONNECTOR);
         if (!pThis->pDrv)
             AssertMsgFailedReturn(("LUN #0 doesn't have a VMMDev connector interface!\n"), VERR_PDM_MISSING_INTERFACE);
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
         pThis->pHGCMDrv = (PPDMIHGCMCONNECTOR)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_HGCM_CONNECTOR);
         if (!pThis->pHGCMDrv)
         {
@@ -2305,12 +2305,12 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               NULL, vmmdevLoadState, vmmdevLoadStateDone);
     AssertRCReturn(rc, rc);
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     pThis->pHGCMCmdList = NULL;
     rc = RTCritSectInit(&pThis->critsectHGCMCmdList);
     AssertRCReturn(rc, rc);
     pThis->u32HGCMEnabled = 0;
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
     return rc;
 }

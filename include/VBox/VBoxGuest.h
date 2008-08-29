@@ -170,7 +170,7 @@ typedef enum
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
 #ifdef VBOX_WITH_64_BITS_GUESTS
@@ -618,7 +618,7 @@ typedef struct
 
 #pragma pack()
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 
 /** HGCM flags.
  *  @{
@@ -813,7 +813,7 @@ typedef struct
     VMMDevHGCMRequestHeader header;
 } VMMDevHGCMCancel;
 
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
 
 #define VBVA_F_STATUS_ACCEPTED (0x01)
@@ -1219,7 +1219,7 @@ typedef struct _VBoxGuestFilterMaskInfo
 #define VBOXGUEST_IOCTL_LOG(Size)                   VBOXGUEST_IOCTL_CODE(6, (Size))
 
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 /* These structures are shared between the driver and other binaries,
  * therefore packing must be defined explicitely.
  */
@@ -1254,7 +1254,7 @@ typedef struct _VBoxGuestHGCMCallInfo
 
 # define VBOXGUEST_HGCM_CALL_PARMS(a)       ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))
 
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
 /*
  * Credentials request flags and structure
@@ -1338,7 +1338,7 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReqGuestCapabilities);
         case VMMDevReq_SetGuestCapabilities:
             return sizeof(VMMDevReqGuestCapabilities2);
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
         case VMMDevReq_HGCMConnect:
             return sizeof(VMMDevHGCMConnect);
         case VMMDevReq_HGCMDisconnect:
@@ -1354,7 +1354,7 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
 #endif /* VBOX_WITH_64_BITS_GUESTS */
         case VMMDevReq_HGCMCancel:
             return sizeof(VMMDevHGCMCancel);
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
         case VMMDevReq_VideoAccelEnable:
             return sizeof(VMMDevVideoAccelEnable);
         case VMMDevReq_VideoAccelFlush:

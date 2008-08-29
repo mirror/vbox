@@ -34,7 +34,7 @@ if1of ($(KBUILD_TARGET), os2)
   LIBRARIES += VBoxGuestLibOs2Hack
  endif
  VBoxGuest_TEMPLATE      = VBOXGUESTR0
- VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
+ VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  VBoxGuest_INCS         := $(PATH_SUB_CURRENT)
  ifneq ($(KBUILD_TARGET),os2)
   VBoxGuest_SOURCES    = \
@@ -78,7 +78,7 @@ else if1of ($(KBUILD_TARGET), freebsd solaris)
  SYSMODS.solaris += vboxguest
  SYSMODS.freebsd += vboxguest
  vboxguest_TEMPLATE      = VBOXGUESTR0
- vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_HGCM
+ vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  vboxguest_INCS         := \
 	$(PATH_SUB_CURRENT)
  vboxguest_INCS.freebsd  = \

@@ -33,7 +33,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 PROGRAMS += VBoxClient
 
 VBoxClient_TEMPLATE = VBOXGUESTR3CPPEXE
-VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_HGCM
+VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
 VBoxClient_DEFS.linux += _GNU_SOURCE
 VBoxClient_SOURCES = \
 	main.cpp

@@ -2402,7 +2402,7 @@ typedef struct PDMILEDCONNECTORS
 #define PDM_STATUS_LUN      999
 
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 
 /** Abstract HGCM command structure. Used only to define a typed pointer. */
 struct VBOXHGCMCMD;

@@ -109,9 +109,9 @@ public:
 
     bool VideoAccelAllowed (void);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     void VideoAccelVRDP (bool fEnable);
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     // IConsoleCallback methods
     STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,

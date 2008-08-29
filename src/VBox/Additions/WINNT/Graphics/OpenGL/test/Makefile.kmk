@@ -35,7 +35,7 @@ ifdef VBOX_WITH_TESTCASES
 PROGRAMS += tstShOpenGL tstOGLSample tstOGLSphere
 
 tstShOpenGL_TEMPLATE = VBOXGUESTR3EXE
-tstShOpenGL_DEFS     = VBOX_HGCM
+tstShOpenGL_DEFS     = VBOX_WITH_HGCM
 tstShOpenGL_SOURCES  = tstShOpenGL.cpp
 tstShOpenGL_LIBS     = $(PATH_SDK_WINPSDK_LIB)/OpenGL32.Lib
 

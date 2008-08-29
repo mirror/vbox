@@ -1274,7 +1274,7 @@ STDMETHODIMP Machine::COMGETTER(HardDiskAttachments) (IHardDiskAttachmentCollect
 
 STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (!vrdpServer)
         return E_POINTER;
 
@@ -3623,47 +3623,64 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     }
 
     Bstr type (aType);
+
+    /* Qt4 is default */
+#ifdef VBOX_WITH_QT4GUI
+    if (type == "gui" || type == "GUI/Qt4")
+    {
+# ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
+        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
+# else
+        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+# endif
+        Assert (sz >= sizeof (VirtualBox_exe));
+        strcpy (cmd, VirtualBox_exe);
+
+        Utf8Str idStr = mData->mUuid.toString();
+# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
+        const char * args[] = {path, "-startvm", idStr, 0 };
+# else
+        Utf8Str name = mUserData->mName;
+        const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
+# endif
+        vrc = RTProcCreate (path, args, env, 0, &pid);
+    }
+#else /* !VBOX_WITH_QT4GUI */
+    if (0)
+        ;
+#endif /* VBOX_WITH_QT4GUI */
+
+    else
+
+    /* Qt3 is used sometimes as well, OS/2 does not have Qt4 at all */
+#ifdef VBOX_WITH_QTGUI
     if (type == "gui" || type == "GUI/Qt3")
     {
-#ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
+# ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
         const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM3";
-#else
+# else
         const char VirtualBox_exe[] = "VirtualBox3" HOSTSUFF_EXE;
-#endif
+# endif
         Assert (sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-#ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
+# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
         const char * args[] = {path, "-startvm", idStr, 0 };
-#else
+# else
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
-#endif
+# endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
-    else
-    if (type == "GUI/Qt4")
-    {
-#ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
-        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
-#else
-        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-#endif
-        Assert (sz >= sizeof (VirtualBox_exe));
-        strcpy (cmd, VirtualBox_exe);
+#else /* !VBOX_WITH_QTGUI */
+    if (0)
+        ;
+#endif /* !VBOX_WITH_QTGUI */
 
-        Utf8Str idStr = mData->mUuid.toString();
-#ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
-        const char * args[] = {path, "-startvm", idStr, 0 };
-#else
-        Utf8Str name = mUserData->mName;
-        const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
-#endif
-        vrc = RTProcCreate (path, args, env, 0, &pid);
-    }
     else
-#ifdef VBOX_VRDP
+
+#ifdef VBOX_WITH_VRDP
     if (type == "vrdp")
     {
         const char VBoxVRDP_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
@@ -3671,16 +3688,22 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         strcpy (cmd, VBoxVRDP_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
         const char * args[] = {path, "-startvm", idStr, 0 };
-#else
+# else
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, 0 };
-#endif
+# endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
+#else /* !VBOX_WITH_VRDP */
+    if (0)
+        ;
+#endif /* !VBOX_WITH_VRDP */
+
     else
-#endif /* VBOX_VRDP */
+
+#ifdef VBOX_WITH_HEADLESS
     if (type == "capture")
     {
         const char VBoxVRDP_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
@@ -3688,14 +3711,18 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         strcpy (cmd, VBoxVRDP_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
         const char * args[] = {path, "-startvm", idStr, "-capture", 0 };
-#else
+# else
         Utf8Str name = mUserData->mName;
         const char * args[] = {path, "-comment", name, "-startvm", idStr, "-capture", 0 };
-#endif
+# endif
         vrc = RTProcCreate (path, args, env, 0, &pid);
     }
+#else /* !VBOX_WITH_HEADLESS */
+    if (0)
+        ;
+#endif /* !VBOX_WITH_HEADLESS */
     else
     {
         RTEnvDestroy (env);
@@ -4122,7 +4149,7 @@ HRESULT Machine::initDataAndChildObjects()
     unconst (mBIOSSettings).createObject();
     mBIOSSettings->init (this);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     /* create an associated VRDPServer object (default is disabled) */
     unconst (mVRDPServer).createObject();
     mVRDPServer->init (this);
@@ -4251,7 +4278,7 @@ void Machine::uninitDataAndChildObjects()
         unconst (mDVDDrive).setNull();
     }
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mVRDPServer)
     {
         mVRDPServer->uninit();
@@ -4807,7 +4834,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
         mHWData->mMonitorCount = displayNode.value <ULONG> ("MonitorCount");
     }
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     /* RemoteDisplay */
     rc = mVRDPServer->loadSettings (aNode);
     CheckComRCReturnRC (rc);
@@ -6192,7 +6219,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         displayNode.setValue <ULONG> ("MonitorCount", mHWData->mMonitorCount);
     }
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     /* VRDP settings (optional) */
     rc = mVRDPServer->saveSettings (aNode);
     CheckComRCReturnRC (rc);
@@ -7274,7 +7301,7 @@ bool Machine::isModified()
         mUserData.isBackedUp() ||
         mHWData.isBackedUp() ||
         mHDData.isBackedUp() ||
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         (mVRDPServer && mVRDPServer->isModified()) ||
 #endif
         (mDVDDrive && mDVDDrive->isModified()) ||
@@ -7317,7 +7344,7 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
         mHWData.hasActualChanges() ||
         /* ignore mHDData */
         //mHDData.hasActualChanges() ||
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         (mVRDPServer && mVRDPServer->isReallyModified()) ||
 #endif
         (mDVDDrive && mDVDDrive->isReallyModified()) ||
@@ -7393,7 +7420,7 @@ void Machine::rollback (bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->rollback();
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mVRDPServer)
         vrdpChanged = mVRDPServer->rollback();
 #endif
@@ -7494,7 +7521,7 @@ HRESULT Machine::commit()
         rc = fixupHardDisks (true /* aCommit */);
 
     mBIOSSettings->commit();
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     mVRDPServer->commit();
 #endif
     mDVDDrive->commit();
@@ -7560,7 +7587,7 @@ void Machine::copyFrom (Machine *aThat)
     }
 
     mBIOSSettings->copyFrom (aThat->mBIOSSettings);
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     mVRDPServer->copyFrom (aThat->mVRDPServer);
 #endif
     mDVDDrive->copyFrom (aThat->mDVDDrive);
@@ -7807,7 +7834,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
 
     unconst (mBIOSSettings).createObject();
     mBIOSSettings->init (this, aMachine->mBIOSSettings);
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     /* create another VRDPServer object that will be mutable */
     unconst (mVRDPServer).createObject();
     mVRDPServer->init (this, aMachine->mVRDPServer);
@@ -10565,7 +10592,7 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
     unconst (mBIOSSettings).createObject();
     mBIOSSettings->initCopy (this, mPeer->mBIOSSettings);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     unconst (mVRDPServer).createObject();
     mVRDPServer->initCopy (this, mPeer->mVRDPServer);
 #endif
@@ -10667,7 +10694,7 @@ HRESULT SnapshotMachine::init (Machine *aMachine,
     unconst (mBIOSSettings).createObject();
     mBIOSSettings->init (this);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     unconst (mVRDPServer).createObject();
     mVRDPServer->init (this);
 #endif

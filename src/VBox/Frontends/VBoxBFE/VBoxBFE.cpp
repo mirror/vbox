@@ -45,7 +45,7 @@ using namespace com;
 #ifdef VBOXBFE_WITH_USB
 # include <VBox/vusb.h>
 #endif
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 # include <VBox/shflsvc.h>
 #endif
 #include <iprt/alloca.h>
@@ -391,7 +391,7 @@ static void show_usage()
 #ifdef RT_OS_LINUX
              "  -tapfd<1-N> <fd>   Use existing TAP device, don't allocate\n"
 #endif
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
              "  -vrdp [port]       Listen for VRDP connections on port (default if not specified)\n"
 #endif
 #ifdef VBOX_SECURELABEL
@@ -417,7 +417,7 @@ static void show_usage()
 extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 {
     bool fFullscreen = false;
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     int32_t portVRDP = -1;
 #endif
 #ifdef VBOX_SECURELABEL
@@ -712,7 +712,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             g_aNetDevs[i].fHaveFd = true;
         }
 #endif /* RT_OS_LINUX */
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         else if (strcmp(pszArg, "-vrdp") == 0)
         {
             // -vrdp might take a port number (positive).
@@ -726,7 +726,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
                     return SyntaxError("vrdp port number is out of range: %RI32\n", portVRDP);
             }
         }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 #ifdef VBOX_SECURELABEL
         else if (strcmp(pszArg, "-securelabel") == 0)
         {
@@ -1184,7 +1184,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         goto failure;
     }
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /*
      * Add shared folders to the VM
      */

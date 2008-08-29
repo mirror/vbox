@@ -50,7 +50,7 @@ typedef struct VBOXGUESTWAIT
     uint32_t                    fReqEvents;
     /** The events we received. */
     uint32_t volatile           fResEvents;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /** The HGCM request we're waiting for to complete. */
     VMMDevHGCMRequestHeader volatile *pHGCMReq;
 #endif
@@ -86,7 +86,7 @@ typedef struct VBOXGUESTDEVEXT
     RTSPINLOCK                  WaitSpinlock;
     /** Wait-for-event list for threads waiting for multiple events. */
     VBOXGUESTWAITLIST           WaitList;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /** Wait-for-event list for threads waiting on HGCM async completion.
      * The entire list is evaluated upon the arrival of an HGCM event, unlike
      * the other lists which are only evaluated till the first thread has been woken up. */
@@ -138,7 +138,7 @@ typedef struct VBOXGUESTSESSION
     /** Pointer to the device extension. */
     PVBOXGUESTDEVEXT            pDevExt;
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /** Array containing HGCM client IDs associated with this session.
      * This will be automatically disconnected when the session is closed. */
     uint32_t volatile           aHGCMClientIds[8];

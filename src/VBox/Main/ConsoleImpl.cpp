@@ -284,7 +284,7 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     rc = mMachine->COMGETTER(State) (&mMachineState);
     AssertComRCReturnRC (rc);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     rc = mMachine->COMGETTER(VRDPServer) (unconst (mVRDPServer).asOutParam());
     AssertComRCReturnRC (rc);
 #endif
@@ -446,7 +446,7 @@ void Console::uninit()
 
     unconst (mFloppyDrive).setNull();
     unconst (mDVDDrive).setNull();
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     unconst (mVRDPServer).setNull();
 #endif
 
@@ -644,7 +644,7 @@ void Console::VRDPClientConnect (uint32_t u32ClientId)
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     uint32_t u32Clients = ASMAtomicIncU32(&mcVRDPClients);
 
     if (u32Clients == 1)
@@ -656,7 +656,7 @@ void Console::VRDPClientConnect (uint32_t u32ClientId)
 
     NOREF(u32ClientId);
     mDisplay->VideoAccelVRDP (true);
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     LogFlowFuncLeave();
     return;
@@ -672,7 +672,7 @@ void Console::VRDPClientDisconnect (uint32_t u32ClientId,
 
     AssertReturnVoid (mConsoleVRDPServer);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     uint32_t u32Clients = ASMAtomicDecU32(&mcVRDPClients);
 
     if (u32Clients == 0)
@@ -683,14 +683,14 @@ void Console::VRDPClientDisconnect (uint32_t u32ClientId,
     }
 
     mDisplay->VideoAccelVRDP (false);
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_USB)
     {
         mConsoleVRDPServer->USBBackendDelete (u32ClientId);
     }
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_CLIPBOARD)
     {
         mConsoleVRDPServer->ClipboardDelete (u32ClientId);
@@ -712,7 +712,7 @@ void Console::VRDPClientDisconnect (uint32_t u32ClientId,
             }
         }
     }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     Guid uuid;
     HRESULT hrc = mMachine->COMGETTER (Id) (uuid.asOutParam());
@@ -740,7 +740,7 @@ void Console::VRDPInterceptAudio (uint32_t u32ClientId)
                   mAudioSniffer, u32ClientId));
     NOREF(u32ClientId);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     mcAudioRefs++;
 
     if (mcAudioRefs == 1)
@@ -784,9 +784,9 @@ void Console::VRDPInterceptClipboard (uint32_t u32ClientId)
 
     AssertReturnVoid (mConsoleVRDPServer);
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     mConsoleVRDPServer->ClipboardCreate (u32ClientId);
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     LogFlowFuncLeave();
     return;
@@ -4339,7 +4339,7 @@ HRESULT Console::powerDown()
     }
 
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /*
      *  Shutdown HGCM services before stopping the guest, because they might need a cleanup.
      */
@@ -4404,7 +4404,7 @@ HRESULT Console::powerDown()
                                       ComSafeArrayAsInParam (timestamps),
                                       ComSafeArrayAsInParam (flags));
 # endif /* VBOX_WITH_GUEST_PROPS defined */
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
     /* First, wait for all mpVM callers to finish their work if necessary */
     if (mVMCallers > 0)
@@ -6207,7 +6207,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
     do
     {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         /* Create the VRDP server. In case of headless operation, this will
          * also create the framebuffer, required at VM creation.
          */
@@ -6246,7 +6246,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             hrc = setError (E_FAIL, errMsg);
             break;
         }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
         /*
          * Create the VM
@@ -6264,10 +6264,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
         alock.enter();
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         /* Enable client connections to the server. */
         console->consoleVRDPServer()->EnableConnections ();
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
         if (VBOX_SUCCESS (vrc))
         {

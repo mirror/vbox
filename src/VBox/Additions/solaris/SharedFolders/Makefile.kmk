@@ -27,7 +27,7 @@ endif
 #
 SYSMODS.solaris      += vboxvfs
 vboxvfs_TEMPLATE      = VBOXGUESTR0
-vboxvfs_DEFS          = VBOX_HGCM
+vboxvfs_DEFS          = VBOX_WITH_HGCM
 vboxvfs_INCS         := \
        $(PATH_SUB_CURRENT) \
        $(PATH_TARGET)

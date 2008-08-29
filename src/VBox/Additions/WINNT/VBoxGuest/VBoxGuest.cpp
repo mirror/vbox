@@ -339,7 +339,7 @@ NTSTATUS VBoxGuestClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     return STATUS_SUCCESS;
 }
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
@@ -398,7 +398,7 @@ NTSTATUS vboxHGCMVerifyIOBuffers (PIO_STACK_LOCATION pStack, unsigned cb)
     return STATUS_SUCCESS;
 }
 
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
 static bool IsPowerOfTwo (uint32_t val)
 {
@@ -882,7 +882,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             break;
         }
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
         /* HGCM offers blocking IOCTLSs just like waitevent and actually
          * uses the same waiting code.
          */
@@ -1000,7 +1000,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
 
         } break;
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
         case VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION:

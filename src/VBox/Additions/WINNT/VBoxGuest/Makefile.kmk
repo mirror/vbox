@@ -35,7 +35,7 @@ VBoxGuest_TEMPLATE    = VBOXGUESTR0
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxGuest_NOINST     = true
 endif
-VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_HGCM VBOX_REBOOT_ON_UNINSTALL
+VBoxGuest_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_WITH_HGCM VBOX_REBOOT_ON_UNINSTALL
 #VBoxGuest_DEFS       += LOG_ENABLED
 VBoxGuest_INCS        = ../include
 VBoxGuest_LDFLAGS.x86   = -Entry:DriverEntry@8
