@@ -45,6 +45,7 @@
 #endif /* RT_OS_LINUX */
 
 #ifdef RT_OS_SOLARIS
+# include <kstat.h>
 # include <fcntl.h>
 # include <unistd.h>
 # include <stropts.h>
@@ -526,7 +527,7 @@ static bool IsTAPDevice(const char *guid)
  */
 STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection **networkInterfaces)
 {
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) /*|| defined(RT_OS_SOLARIS)*/ /*|| defined(RT_OS_OS2)*/
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) /*|| defined(RT_OS_OS2)*/
     if (!networkInterfaces)
         return E_POINTER;
     AutoWriteLock alock (this);
@@ -547,6 +548,43 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         void *pvFree = pEtherNICs;
         pEtherNICs = pEtherNICs->pNext;
         RTMemFree(pvFree);
+    }
+
+# elif defined(RT_OS_SOLARIS) && defined(VBOX_WITH_NETFLT)
+
+    kstat_ctl_t *pStatCtl = kstat_open();
+    if (pStatCtl)
+    {
+        kstat_t *pStat;
+        for (pStat = pStatCtl->kc_chain; pStat; pStat = pStat->ks_next)
+        {
+            if (!strcmp(pStat->ks_class, "net"))
+            {
+                if (!strcmp(pStat->ks_module, "lo"))    /** Skip loopback interfaces */
+                    continue;
+
+                char szIface[8];
+                RTStrPrintf(szIface, sizeof(szIface), "%s%d", pStat->ks_module, pStat->ks_instance);
+                if (!strcmp(szIface, pStat->ks_name))
+                {
+                    /*
+                     * Figuring out the MAC address from the interface on Solaris isn't trivial.
+                     * Requires root privileges; usage of dlpi and/or getting a MAC address from
+                     * ARP using ioctl SIOCGARP. So we just use the BSD name for now...
+                     */
+                    RTUUID Uuid;
+                    RTUuidClear(&Uuid);
+                    memcpy(&Uuid, szIface, RT_MIN(sizeof(szIface), sizeof(Uuid)));
+                    Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+                    Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+
+                    ComObjPtr<HostNetworkInterface> IfObj;
+                    IfObj.createObject();
+                    if (SUCCEEDED(IfObj->init(Bstr(szIface), Guid(Uuid))))
+                        list.push_back(IfObj);
+                }
+            }
+        }
     }
 
 # elif defined RT_OS_WINDOWS
