@@ -38,9 +38,7 @@ ifndef VBOX_ONLY_DOCS
  endif
  if1of ($(KBUILD_TARGET), darwin solaris win)
   ifndef VBOX_OSE
-   ifneq ($(KBUILD_TARGET),win)
-    include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
-   else ifdef VBOX_WITH_NETFLT_WINDOWS
+   ifdef VBOX_WITH_NETFLT
     include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
    endif
   endif

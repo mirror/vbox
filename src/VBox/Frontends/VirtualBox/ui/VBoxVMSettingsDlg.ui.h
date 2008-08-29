@@ -662,10 +662,10 @@ void VBoxVMSettingsDlg::init()
 
     /* Network Page */
 
-#if !defined(Q_WS_WIN) && !defined Q_OS_MAC
+#if !defined(Q_WS_WIN) && !defined(VBOX_WITH_NETFLT)
     gbInterfaceList->setHidden (true);
 #endif
-#ifdef Q_OS_MAC
+#ifdef VBOX_WITH_NETFLT
     pbHostAdd->setHidden (true);
     pbHostRemove->setHidden (true);
 #endif
@@ -977,7 +977,7 @@ void VBoxVMSettingsDlg::updateShortcuts()
 
 void VBoxVMSettingsDlg::loadInterfacesList()
 {
-#if defined Q_WS_WIN || defined Q_OS_MAC
+#if defined Q_WS_WIN || defined VBOX_WITH_NETFLT
     /* clear inner list */
     mInterfaceList.clear();
     /* load current inner list */
@@ -1034,7 +1034,7 @@ void VBoxVMSettingsDlg::loadNetworksList()
 
 void VBoxVMSettingsDlg::hostInterfaceAdd()
 {
-#if defined Q_WS_WIN
+#if defined Q_WS_WIN && !defined VBOX_WITH_NETFLT
 
     /* allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
@@ -1092,7 +1092,7 @@ void VBoxVMSettingsDlg::hostInterfaceAdd()
 
 void VBoxVMSettingsDlg::hostInterfaceRemove()
 {
-#if defined Q_WS_WIN
+#if defined Q_WS_WIN && !defined VBOX_WITH_NETFLT
 
     /* allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
@@ -1153,7 +1153,7 @@ void VBoxVMSettingsDlg::hostInterfaceRemove()
 void VBoxVMSettingsDlg::networkPageUpdate (QWidget *aWidget)
 {
     if (!aWidget) return;
-#if defined Q_WS_WIN || defined Q_OS_MAC
+#if defined Q_WS_WIN || defined VBOX_WITH_NETFLT
     VBoxVMNetworkSettings *set = static_cast<VBoxVMNetworkSettings*> (aWidget);
     set->loadInterfaceList (mInterfaceList, mNoInterfaces);
     set->revalidate();
@@ -2179,7 +2179,7 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     page->setValidator (wval);
     page->revalidate();
 
-#if defined Q_WS_WIN || defined Q_OS_MAC
+#if defined Q_WS_WIN || defined VBOX_WITH_NETFLT
 
     /* fix focus order (make sure the Host Interface list UI goes after the
      * last network adapter UI item) */

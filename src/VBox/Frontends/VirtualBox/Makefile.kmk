@@ -402,6 +402,9 @@ endif
 ifdef VBOX_WITH_DEBUGGER_GUI
  VirtualBox_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
 endif
+ifdef VBOX_WITH_NETFLT
+ VirtualBox_DEFS         += VBOX_WITH_NETFLT
+endif
 
 VirtualBox_INCS           = \
 	./include \
