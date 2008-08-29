@@ -29,7 +29,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
 ifndef VBOX_OSE # not yet
-# include $(PATH_SUB_CURRENT)/PC/VMI/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/PC/VMI/Makefile.kmk
 endif
 include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
