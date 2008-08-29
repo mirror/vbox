@@ -32,7 +32,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/path.h>
-#include <iprt/runtime.h>
+#include <iprt/process.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
@@ -44,7 +45,7 @@
         if (RT_FAILURE(rc)) \
         { \
             cErrors++; \
-            RTPrintf("\ntstPath: FAILED calling " #method " at line %d: rc=%Vrc\n", __LINE__, rc); \
+            RTPrintf("\ntstPath: FAILED calling " #method " at line %d: rc=%Rrc\n", __LINE__, rc); \
         } \
     } while (0)
 
@@ -60,7 +61,7 @@ int main()
         return 1;
 
     /*
-     * RTPathProgram, RTPathUserHome
+     * RTPathProgram, RTPathUserHome and RTProcGetExecutableName.
      */
     char szPath[RTPATH_MAX];
     CHECK_RC(RTPathProgram(szPath, sizeof(szPath)));
@@ -69,6 +70,14 @@ int main()
     CHECK_RC(RTPathUserHome(szPath, sizeof(szPath)));
     if (RT_SUCCESS(rc))
         RTPrintf("UserHome={%s}\n", szPath);
+    if (RTProcGetExecutableName(szPath, sizeof(szPath)) == szPath)
+        RTPrintf("ExecutableName={%s}\n", szPath);
+    else
+    {
+        RTPrintf("tstPath: FAILED - RTProcGetExecutableName\n");
+        cErrors++;
+    }
+    
 
     /*
      * RTPathAbsEx

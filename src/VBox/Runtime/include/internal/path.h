@@ -35,7 +35,6 @@
 #include <iprt/param.h>
 
 __BEGIN_DECLS
-extern char g_szrtProgramPath[RTPATH_MAX];
 
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # define HAVE_UNC 1

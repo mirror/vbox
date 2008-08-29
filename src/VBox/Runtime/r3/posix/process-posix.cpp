@@ -234,48 +234,6 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask()
 }
 
 
-RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
-{
-    /*
-     * I don't think there is a posix API for this, but
-     * because I'm lazy I'm not creating OS specific code
-     * files and code for this.
-     */
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
-# ifdef RT_OS_LINUX
-    int cchLink = readlink("/proc/self/exe", pszExecName, cchExecName - 1);
-# elif defined(RT_OS_SOLARIS)
-    char szFileBuf[80];
-    RTStrPrintf(szFileBuf, sizeof(szFileBuf), "/proc/%ld/path/a.out", (long)getpid());
-    int cchLink = readlink(szFileBuf, pszExecName, cchExecName - 1);
-# else
-    int cchLink = readlink("/proc/curproc/file", pszExecName, cchExecName - 1);
-# endif
-    if (cchLink > 0 && (size_t)cchLink <= cchExecName - 1)
-    {
-        pszExecName[cchLink] = '\0';
-        return pszExecName;
-    }
-
-#elif defined(RT_OS_OS2) || defined(RT_OS_L4)
-    if (!_execname(pszExecName, cchExecName))
-        return pszExecName;
-
-#elif defined(RT_OS_DARWIN)
-    const char *pszImageName = _dyld_get_image_name(0);
-    if (pszImageName)
-    {
-        size_t cchImageName = strlen(pszImageName);
-        if (cchImageName < cchExecName)
-            return (char *)memcpy(pszExecName, pszImageName, cchImageName + 1);
-    }
-
-#else
-#   error "Port me!"
-#endif
-    return NULL;
-}
-
 /**
  * Daemonize the current process, making it a background process. The current
  * process will exit if daemonizing is successful.

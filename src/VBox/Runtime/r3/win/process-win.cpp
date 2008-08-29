@@ -243,12 +243,3 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void)
     return dwProcessAffinityMask;
 }
 
-
-RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
-{
-    HMODULE hExe = GetModuleHandle(NULL);
-    if (GetModuleFileName(hExe, pszExecName, cchExecName))
-        return pszExecName;
-    return NULL;
-}
-
