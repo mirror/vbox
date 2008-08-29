@@ -340,7 +340,7 @@ int main(int argc, char **argv)
 {
     int     rcRet = 0;                  /* error count. */
 
-    RTR3Init();
+    RTR3InitAndSUPLib();
 
     /*
      * Create empty VM.

@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     /*
      * Initialize the runtime.
      */
-    RTR3Init();
+    RTR3InitAndSUPLib();
 
 #ifndef AUTO_TEST_ARGS
     if (argc < 2)
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         ppszArgs[1] = (char *)"3";
         ppszArgs[2] = NULL;
 #endif
-        
+
         RTPrintf(TESTCASE ": forking current process...\n");
         pid_t pid = fork();
         if (pid < 0)
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
         }
         else if (pid == 0)
         {
-            /* 
+            /*
              * The child process.
              * Write to some local variables to trigger copy-on-write if it's used.
              */
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            /* 
+            /*
              * The parent process.
              * Wait for child & run VMM test to ensure things are fine.
              */
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
                 RTPrintf(TESTCASE ": error: failed to run child process. errno=%d\n", errno);
                 rcErrors++;
             }
-            
+
             if (rcErrors == 0)
             {
                 RTPrintf(TESTCASE ": fork() returned fine.\n");
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
             RTPrintf(TESTCASE ": error: %d error(s) during fork(). Cannot proceed to test the VM.\n");
         else
             RTPrintf(TESTCASE ": fork() and VM test, SUCCESS.\n");
-        
+
         /*
          * Cleanup.
          */
@@ -164,6 +164,6 @@ int main(int argc, char* argv[])
         RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
         rcErrors++;
     }
-    
+
     return rcErrors;
 }

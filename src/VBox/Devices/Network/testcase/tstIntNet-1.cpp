@@ -667,7 +667,7 @@ int main(int argc, char **argv)
     /*
      * Init the runtime and parse the arguments.
      */
-    RTR3Init(false, 0);
+    RTR3Init();
 
     static RTOPTIONDEF const s_aOptions[] =
     {

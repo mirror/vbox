@@ -96,7 +96,7 @@ int main()
     /*
      * Init.
      */
-    RTR3Init(false);
+    RTR3Init();
     RTPrintf("tstVMMR0CallHost-1: Testing...\n");
     g_Jmp.pvSavedStack = (RTR0PTR)&g_Stack[0];
 

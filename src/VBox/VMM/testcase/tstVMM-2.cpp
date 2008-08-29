@@ -287,7 +287,7 @@ int main(int argc, char **argv)
     int         rcRet = 0;              /* error count. */
     int         fPowerOn = 0;
 
-    RTR3Init();
+    RTR3InitAndSUPLib();
 
 
     /*

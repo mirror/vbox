@@ -1630,7 +1630,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
  */
 int main(int argc, char **argv)
 {
-    RTR3Init(false);
+    RTR3Init();
 
     if (1)
     {
@@ -1645,7 +1645,7 @@ int main(int argc, char **argv)
             darwinDumpDict(NetworkServiceRef, 4);
             CFRelease(PrefsRef);
         }
-    }   
+    }
 
     if (1)
     {
@@ -1675,7 +1675,7 @@ int main(int argc, char **argv)
                     if (SCNetworkInterfaceGetLocalizedDisplayName(IfRef))
                         CFStringGetCString(SCNetworkInterfaceGetLocalizedDisplayName(IfRef), szDisplayName, sizeof(szDisplayName), kCFStringEncodingUTF8);
 
-                    RTPrintf(" #%u ServiceName=\"%s\" IfBSDName=\"%s\" IfDisplayName=\"%s\"\n", 
+                    RTPrintf(" #%u ServiceName=\"%s\" IfBSDName=\"%s\" IfDisplayName=\"%s\"\n",
                              i, szServiceName, szBSDName, szDisplayName);
                 }
 
@@ -1684,7 +1684,7 @@ int main(int argc, char **argv)
 
             CFRelease(PrefsRef);
         }
-    }   
+    }
 
     if (1)
     {
@@ -1705,13 +1705,13 @@ int main(int argc, char **argv)
                 char szDisplayName[128] = {0};
                 if (SCNetworkInterfaceGetLocalizedDisplayName(IfRef))
                     CFStringGetCString(SCNetworkInterfaceGetLocalizedDisplayName(IfRef), szDisplayName, sizeof(szDisplayName), kCFStringEncodingUTF8);
-                RTPrintf(" #%u BSDName=\"%s\" DisplayName=\"%s\"\n", 
+                RTPrintf(" #%u BSDName=\"%s\" DisplayName=\"%s\"\n",
                          i, szBSDName, szDisplayName);
             }
 
             CFRelease(IfsRef);
         }
-    }   
+    }
 
     if (1)
     {

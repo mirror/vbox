@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
         pszFileName = "VBoxClient";
 
     /* Initialise our runtime before all else. */
-    RTR3Init(false);
+    RTR3Init();
 
     /* Parse our option(s) */
     /** @todo Use RTGetOpt() if the arguments become more complex. */

@@ -271,19 +271,23 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 #ifndef VBOX_WITH_HARDENING
 int main (int argc, char **argv, char **envp)
 {
-    /* Initialize VBox Runtime. Initialize the Suplib+GC as well only if we
+    /* Initialize VBox Runtime. Initialize the SUPLib as well only if we
      * are really about to start a VM. Don't do this if we are only starting
      * the selector window. */
-    bool fInitGC = false;
+    bool fInitSUPLib = false;
     for (int i = 0; i < argc; i++)
     {
         if (!::strcmp (argv[i], "-startvm" ))
         {
-            fInitGC = true;
+            fInitSUPLib = true;
             break;
         }
     }
-    RTR3Init (fInitGC, ~(size_t)0);
+
+    if (!fInitSUPLib)
+        RTR3Init();
+    else
+        RTR3InitAndSUPLib();
 
     return TrustedMain (argc, argv, envp);
 }

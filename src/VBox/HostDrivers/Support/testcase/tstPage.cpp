@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 {
     int cErrors = 0;
     int rc = 0;
-    RTR3Init(true, _1M*168);
+    RTR3InitAndSUPLib();
     rc = SUPR3Init(NULL);
     cErrors += rc != 0;
     if (!rc)

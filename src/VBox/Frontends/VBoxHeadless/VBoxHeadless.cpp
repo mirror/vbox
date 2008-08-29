@@ -943,7 +943,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 int main (int argc, char **argv, char **envp)
 {
     // initialize VBox Runtime
-    RTR3Init (true, ~(size_t)0);
+    RTR3InitAndSUPLib();
     return TrustedMain (argc, argv, envp);
 }
 #endif /* !VBOX_WITH_HARDENING */

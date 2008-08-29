@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 {
     int     cErrors = 0;                  /* error count. */
 
-    RTR3Init();
+    RTR3InitAndSUPLib();
     RTPrintf(TESTCASE ": TESTING...\n");
 
     /*

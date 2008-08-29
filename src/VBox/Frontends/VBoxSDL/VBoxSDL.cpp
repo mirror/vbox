@@ -2927,7 +2927,7 @@ int main(int argc, char **argv)
     /*
      * Before we do *anything*, we initialize the runtime.
      */
-    int rcRT = RTR3Init(true, ~(size_t)0);
+    int rcRT = RTR3InitAndSUPLib();
     if (VBOX_FAILURE(rcRT))
     {
         RTPrintf("Error: RTR3Init failed rcRC=%d\n", rcRT);
@@ -4755,7 +4755,7 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
         {
             // /* send Ctrl-Alt-Fx to guest */
             com::SafeArray<LONG> keys(6);
-            
+
             keys[0] = 0x1d; // Ctrl down
             keys[1] = 0x38; // Alt down
             keys[2] = Keyevent2Keycode(pEv); // Fx down

@@ -218,7 +218,7 @@ static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
 
 int main(int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitAndSUPLib();
     RTPrintf(TESTCASE ": TESTING...\n");
 
     /*

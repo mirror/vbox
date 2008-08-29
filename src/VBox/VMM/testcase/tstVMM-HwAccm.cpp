@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 {
     int     rcRet = 0;                  /* error count. */
 
-    RTR3Init();
+    RTR3InitAndSUPLib();
 
     /*
      * Doesn't work and I'm sick of rebooting the machine to try figure out

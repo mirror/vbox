@@ -53,7 +53,7 @@ static DECLCALLBACK(int) tstThread1ReturnImmediately(RTTHREAD Thread, void *pvUs
 
 int main(int argc, const char * const *argv)
 {
-    RTR3Init(false, 0);
+    RTR3Init();
 
     /*
      * A simple testcase for the termination race we used to have.

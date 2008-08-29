@@ -42,7 +42,7 @@ int main()
     /*
      * Init runtime.
      */
-    RTR3Init();
+    RTR3InitAndSUPLib();
 
     /*
      * Create empty VM structure and init SSM.

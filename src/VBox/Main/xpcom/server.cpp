@@ -998,7 +998,7 @@ int main (int argc, char **argv)
      * Initialize the VBox runtime without loading
      * the support driver
      */
-    RTR3Init(false);
+    RTR3Init();
 
     nsresult rc;
 

@@ -44,7 +44,7 @@ static int Usage(void)
 
 int main(int argc, char **argv)
 {
-    RTR3Init(false, 0);
+    RTR3Init();
 
     /*
      * Parse args, building the request as we do so.

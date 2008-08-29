@@ -229,7 +229,7 @@ int main(int argc, char **argv)
     /*
      * Init globals and such.
      */
-    RTR3Init(false, 0);
+    RTR3Init();
     g_pszProgName = RTPathFilename(argv[0]);
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {

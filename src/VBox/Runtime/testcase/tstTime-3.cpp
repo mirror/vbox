@@ -72,7 +72,7 @@ DECLINLINE(uint64_t) OSNanoTS(void)
 
 int main(int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitAndSUPLib();
 
     if (argc <= 1)
     {

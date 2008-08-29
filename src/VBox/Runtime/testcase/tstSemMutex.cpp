@@ -207,7 +207,7 @@ static int Test1(unsigned cThreads, unsigned cSeconds, bool fYield, bool fQuiet)
 
 int main(int argc, char **argv)
 {
-    int rc = RTR3Init(false, 0);
+    int rc = RTR3Init();
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstSemMutex: RTR3Init failed (rc=%Rrc)\n", rc);
