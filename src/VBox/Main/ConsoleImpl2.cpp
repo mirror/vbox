@@ -1190,7 +1190,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 # endif
                     }
 
-#elif defined(RT_OS_SOLARIS) && defined(VBOX_WITH_NETFLT)
+#elif defined(VBOX_WITH_NETFLT) && !defined(RT_OS_WINDOWS) /** @todo merge in the windows stuff too */
                     if (fSniffer)
                     {
                         rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
@@ -1200,31 +1200,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);             RC_CHECK();
                     }
 
-                    /* The name is on the form BSD format 'ifX'; use as-is. */
                     Bstr HifName;
                     hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam()); H();
                     Utf8Str HifNameUtf8(HifName);
                     const char *pszHifName = HifNameUtf8.raw();
-
-                    rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
-                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);             RC_CHECK();
-                    rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
-                    char szNetwork[80];
-                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", pszHifName);
-                    rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
-                    /** @todo wireless (yeah right) */
-
-#elif defined(RT_OS_DARWIN)
-                    if (fSniffer)
-                    {
-                        rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
-                    }
-                    else
-                    {
-                        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);             RC_CHECK();
-                    }
-                    /* The name is on the form 'ifX: long name', chop it off at the colon. */
+# if defined(RT_OS_DARWIN)
+                    /* The nae is on the form 'ifX: long name', chop it off at the colon. */
                     Bstr HifName;
                     hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam()); H();
                     Utf8Str HifNameUtf8(HifName);
@@ -1240,20 +1221,32 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                           HifName.raw());
                     }
                     *pszColon = '\0';
+                    const char *pszTrunk = szTrunk;
+# elif defined(RT_OS_SOLARIS) 
+                    /* The name is on the form BSD format 'ifX'; use as-is. */
+                    const char *pszTrunk = szTrunk;
+# else 
+#  error "PORTME (VBOX_WITH_NETFLT)"
+# endif
 
                     rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
                     rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "Trunk", szTrunk);                RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);               RC_CHECK();
                     rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
                     char szNetwork[80];
-                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", szTrunk);
+                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", pszHifName);
                     rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
+
+# if defined(RT_OS_DARWIN)
                     /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
                     if (    strstr(pszHifName, "Wireless")
                         ||  strstr(pszHifName, "AirPort" ))
                     {
                         rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);    RC_CHECK();
                     }
+# else 
+                    /** @todo PORTME: wireless detection */
+# endif
 
 #elif defined(RT_OS_WINDOWS)
                     if (fSniffer)
@@ -1277,16 +1270,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     else
                     {
-#ifndef VBOX_WITH_NETFLT_WINDOWS
+# ifndef VBOX_WITH_NETFLT
                         rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");     RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
                         rc = CFGMR3InsertString(pCfg, "HostInterfaceName", Utf8Str(hostInterfaceName)); RC_CHECK();
-#else
+# else
                         rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
                         rc = CFGMR3InsertString(pCfg, "Trunk", Utf8Str(hostInterfaceName));                RC_CHECK();
                         rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
-#endif
+# endif
                         Guid hostIFGuid;
                         hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());    H();
                         char szDriverGUID[256] = {0};

@@ -24,7 +24,7 @@
 #include "VBoxVMSettingsNetwork.h"
 #include "QIWidgetValidator.h"
 #include "VBoxGlobal.h"
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
 #include "VBoxToolBar.h"
 #include "VBoxSettingsUtils.h"
 #include "VBoxProblemReporter.h"
@@ -34,12 +34,12 @@
 #ifdef Q_WS_X11
 #include <QFileDialog>
 #endif
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
 #include <QTreeWidget>
 #endif
 
 /* Common Stuff */
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
 static QTreeWidgetItem* findItem (QTreeWidget *aList,
                                   const QString &aMatch)
 {
@@ -110,7 +110,7 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
     int inPos = mCbNetwork->findText (aAdapter.GetInternalNetwork());
     mCbNetwork->setCurrentIndex (inPos == -1 ? 0 : inPos);
 
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
     mInterfaceName = aAdapter.GetHostInterface().isEmpty() ?
                      QString::null : aAdapter.GetHostInterface();
 #endif
@@ -155,7 +155,7 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
 
     if (type == KNetworkAttachmentType_HostInterface)
     {
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
         mAdapter.SetHostInterface (mInterfaceName);
 #endif
 #ifdef Q_WS_X11
@@ -229,7 +229,7 @@ void VBoxVMSettingsNetwork::setNetworksList (const QStringList &aList)
         mValidator->revalidate();
 }
 
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
 void VBoxVMSettingsNetwork::setInterfaceName (const QString &aName)
 {
     mInterfaceName = aName;
@@ -385,7 +385,7 @@ void VBoxVMSettingsNetwork::setTapVisible (bool aVisible)
 }
 
 /* VBoxNIList Stuff */
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
 class VBoxNIListItem : public QTreeWidgetItem
 {
 public:
@@ -445,7 +445,7 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
     layout->addWidget (mList);
 
     /* Prepare actions */
-# if defined (Q_WS_WIN)
+# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
     mAddAction = new QAction (mList);
     mDelAction = new QAction (mList);
     mList->addAction (mAddAction);
@@ -456,9 +456,9 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
                                               ":/add_host_iface_disabled_16px.png"));
     mDelAction->setIcon (VBoxGlobal::iconSet (":/remove_host_iface_16px.png",
                                               ":/remove_host_iface_disabled_16px.png"));
-# endif /* Q_WS_WIN */
+# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
 
-# if defined (Q_WS_WIN)
+# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
     /* Prepare toolbar */
     VBoxToolBar *toolBar = new VBoxToolBar (this);
     toolBar->setUsesTextLabel (false);
@@ -467,17 +467,17 @@ VBoxNIList::VBoxNIList (QWidget *aParent)
     toolBar->addAction (mAddAction);
     toolBar->addAction (mDelAction);
     layout->addWidget (toolBar);
-# endif /* Q_WS_WIN */
+# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
 
     /* Setup connections */
     connect (mList, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
              this, SLOT (onCurrentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)));
-# if defined (Q_WS_WIN)
+# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
     connect (mAddAction, SIGNAL (triggered (bool)),
              this, SLOT (addHostInterface()));
     connect (mDelAction, SIGNAL (triggered (bool)),
              this, SLOT (delHostInterface()));
-# endif /* Q_WS_WIN */
+# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
 
     /* Populating interface list */
     populateInterfacesList();
@@ -506,7 +506,7 @@ void VBoxNIList::setCurrentInterface (const QString &aName)
 
     if (aName.isEmpty())
     {
-#ifdef Q_WS_MAC
+#ifdef VBOX_WITH_NETFLT
         /* Always select the first item to have an initial value. */
         QTreeWidgetItem *item = mList->topLevelItem (0);
         if (item)
@@ -538,7 +538,7 @@ void VBoxNIList::setCurrentInterface (const QString &aName)
 void VBoxNIList::onCurrentItemChanged (QTreeWidgetItem *aCurrent,
                                        QTreeWidgetItem *)
 {
-# if defined (Q_WS_WIN)
+# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
     VBoxNIListItem *item = aCurrent &&
         aCurrent->type() == VBoxNIListItem::typeId ?
         static_cast<VBoxNIListItem*> (aCurrent) : 0;
@@ -553,7 +553,7 @@ void VBoxNIList::onCurrentItemChanged (QTreeWidgetItem *aCurrent,
 
 void VBoxNIList::addHostInterface()
 {
-# if defined (Q_WS_WIN)
+# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
 
@@ -596,14 +596,14 @@ void VBoxNIList::addHostInterface()
 
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
-# endif /* Q_WS_WIN */
+# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
 }
 
 void VBoxNIList::delHostInterface()
 {
     Assert (mList->currentItem());
 
-# if defined (Q_WS_WIN)
+# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
     /* Allow the started helper process to make itself the foreground window */
     AllowSetForegroundWindow (ASFW_ANY);
 
@@ -647,7 +647,7 @@ void VBoxNIList::delHostInterface()
         vboxProblem().cannotRemoveHostInterface (host, iFace, this);
 
     emit listChanged();
-# endif /* Q_WS_WIN */
+# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
 }
 
 void VBoxNIList::retranslateUi()
@@ -656,7 +656,7 @@ void VBoxNIList::retranslateUi()
 
     mList->setWhatsThis (tr ("Lists all available host interfaces."));
 
-# if defined (Q_WS_WIN)
+# if defined (Q_WS_WIN) && !defined (VBOX_WITH_NETFLT)
     mAddAction->setText (tr ("A&dd New Host Interface"));
     mDelAction->setText (tr ("&Remove Selected Host Interface"));
     mAddAction->setWhatsThis (tr ("Adds a new host interface."));
@@ -665,7 +665,7 @@ void VBoxNIList::retranslateUi()
         QString (" (%1)").arg (mAddAction->shortcut().toString()));
     mDelAction->setToolTip (mDelAction->text().remove ('&') +
         QString (" (%1)").arg (mDelAction->shortcut().toString()));
-# endif /* Q_WS_WIN */
+# endif /* Q_WS_WIN && !VBOX_WITH_NETFLT */
 }
 
 void VBoxNIList::populateInterfacesList()
@@ -693,7 +693,7 @@ void VBoxNIList::populateInterfacesList()
     /* Update item's state */
     onCurrentItemChanged (mList->currentItem());
 }
-#endif /* Q_WS_WIN || Q_OS_MAC */
+#endif /* Q_WS_WIN || VBOX_WITH_NETFLT */
 
 
 /* VBoxVMSettingsNetworkPage Stuff */
@@ -710,7 +710,7 @@ VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage()
     /* Prepare Networks Lists */
     populateNetworksList();
 
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
     /* Creating Interfaces List */
     mNIList = new VBoxNIList (this);
     layout->addWidget (mNIList);
@@ -755,7 +755,7 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
                  this, SLOT (updateNetworksList()));
     }
 
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
     setTabOrder (lastFocusWidget, mNIList->focusProxy());
     connect (mTwAdapters, SIGNAL (currentChanged (int)),
              this, SLOT (onCurrentPageChanged (int)));
@@ -782,7 +782,7 @@ void VBoxVMSettingsNetworkPage::putBackTo()
 void VBoxVMSettingsNetworkPage::setValidator (QIWidgetValidator *aVal)
 {
     mValidator = aVal;
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
     connect (mNIList, SIGNAL (listChanged()), mValidator, SLOT (revalidate()));
 #endif
 }
@@ -801,7 +801,7 @@ bool VBoxVMSettingsNetworkPage::revalidate (QString &aWarning,
         KNetworkAttachmentType type =
             vboxGlobal().toNetworkAttachmentType (page->mCbNAType->currentText());
 
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
         if (type == KNetworkAttachmentType_HostInterface &&
             page->interfaceName().isNull())
         {
@@ -870,7 +870,7 @@ void VBoxVMSettingsNetworkPage::updateNetworksList()
     mLockNetworkListUpdate = false;
 }
 
-#if defined (Q_WS_WIN) || defined (Q_OS_MAC)
+#if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
 void VBoxVMSettingsNetworkPage::onCurrentPageChanged (int aIndex)
 {
     VBoxVMSettingsNetwork *page =

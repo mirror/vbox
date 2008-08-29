@@ -19,7 +19,6 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -37,11 +36,9 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
-#if defined(RT_OS_DARWIN) || (defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT_WINDOWS))
-# include <iprt/ctype.h>
-#endif
+#include <iprt/ctype.h>
 
-#include "Builtins.h"
+#include "../Builtins.h"
 
 
 /*******************************************************************************
@@ -913,7 +910,8 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         OpenReq.fFlags |= INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE;
         strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("wif=") - 1]);
     }
-#elif defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT_WINDOWS)
+
+#elif defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
     /* Temporary hack: attach to a network with the name 'if=en0' and you're hitting the wire. */
     if (    !OpenReq.szTrunk[0]
         &&   OpenReq.enmTrunkType == kIntNetTrunkType_None
@@ -937,12 +935,11 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     }
 
     //TODO: temporary hack, remove this
-    if(OpenReq.enmTrunkType == kIntNetTrunkType_None)
+    if (OpenReq.enmTrunkType == kIntNetTrunkType_None)
     {
         OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
         strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("if=") - 1]);
     }
-
 
 #endif
 
