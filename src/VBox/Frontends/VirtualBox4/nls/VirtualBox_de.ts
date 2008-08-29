@@ -5914,7 +5914,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>Legt fest, ob dieser Filter auf USB-Geräte angewendet wird, die nur lokal an den Hostcomputer angeschlossen sind (&lt;i&gt;Nein&lt;/i&gt;), nur an einen entfernten Computer über VRDP (&lt;i&gt;Ja&lt;/i&gt;) oder beides (&lt;i&gt;alle&lt;/i&gt;).</translation>
+        <translation>Legt fest, ob dieser Filter auf USB-Geräte angewendet wird, die nur lokal an den Hostcomputer angeschlossen sind (&lt;i&gt;Nein&lt;/i&gt;), nur an einen entfernten Computer über VRDP (&lt;i&gt;Ja&lt;/i&gt;) oder beides (&lt;i&gt;Beides&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
