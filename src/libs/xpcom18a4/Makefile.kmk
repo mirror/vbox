@@ -1352,7 +1352,7 @@ VBoxPython_SOURCES = \
 	python/src/TypeObject.cpp \
 	python/src/VariantUtils.cpp
 VBoxPython_LIBS = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(VBOX_LIB_PYTHON)
 
