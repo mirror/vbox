@@ -37,9 +37,17 @@ ifndef VBOX_ONLY_SDK
  LIBRARIES       += VBoxCOM
  DLLS            += VBoxSettings VBoxC
  PROGRAMS        += VBoxSVC
+ MAKE_WIN_PATH   = $(subst /,\\,$(1))
 else
- PATH_VBoxCOM    = $(PATH_BIN)/sdk/mscom/
- BLDDIRS        += $(PATH_BIN)/sdk/mscom $(PATH_BIN)/components
+ # somewhat hackish, better have real directory
+ PATH_VBoxCOM    = $(PATH_TARGET)/VBoxCOM
+ BLDDIRS        +=  $(PATH_VBoxCOM) $(PATH_BIN)/components
+ VBOX_VCC_TOOL := VCC80X86
+ # I'm Evil! Dr. Evil.
+ include $(KBUILD_PATH)/tools/VCC80X86.kmk
+ include $(KBUILD_PATH)/sdks/WINPSDK.kmk
+ # on Wine Z: is always FS root
+ MAKE_WIN_PATH   = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
 endif #!VBOX_ONLY_SDK
 
 OTHERS           += $(VBOX_PATH_SDK)/bindings/VirtualBox.xidl
@@ -78,30 +86,49 @@ endif
 
 #PROGRAMS        += tstCFGLdr
 
+IDLFILE.MSCOM         = $(VBOX_PATH_SDK)/bindings/mscom/idl/VirtualBox.idl
+IDLFILE.XPCOM         = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
+
+IDLTYPELIB.XPCOM      = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
+IDLHEADER.XPCOM       = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+
+ifdef VBOX_ONLY_SDK
+  NEED_MSCOM = 1
+endif
+
 ifeq ($(KBUILD_TARGET),win)
  INSTALLS       += VBoxMain-com-inst
- IDLFILE         = $(VBOX_PATH_SDK)/bindings/mscom/idl/VirtualBox.idl
- OTHER_CLEAN    += \
- 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
- 	$(IDLFILE) \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.h \
- 	$(PATH_VBoxCOM)/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.tlb
- VBOX_MAIN_PREREQS = $(PATH_VBoxCOM)/VirtualBox_i.c
- BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
-else # xpcom
- IDLFILE         = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
- IDLTYPELIB      = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
- IDLHEADER       = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
- OTHERS         += $(IDLTYPELIB)
- OTHER_CLEAN    += \
-    $(IDLFILE) \
-    $(IDLHEADER) \
-    $(IDLTYPELIB)
+ NEED_MSCOM = 1
+else
+ NEED_XPCOM = 1
+endif
 
- VBOX_MAIN_PREREQS = $(IDLTYPELIB) $(IDLHEADER)
+ifdef NEED_MSCOM
+ OTHERS         += \
+        $(IDLFILE.MSCOM) \
+        $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
+        $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
+        $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
+ OTHER_CLEAN    += \
+	$(IDLFILE.MSCOM) \
+	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
+	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
+	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
+	$(PATH_VBoxCOM)/VirtualBox.h \
+	$(PATH_VBoxCOM)/VirtualBox_i.c \
+	$(PATH_VBoxCOM)/VirtualBox.tlb
+ VBOX_MAIN_PREREQS += $(PATH_VBoxCOM)/VirtualBox_i.c
+ BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
+endif
+
+ifdef NEED_XPCOM
+ OTHERS         += $(IDLFILE.XPCOM) $(IDLTYPELIB.XPCOM) $(IDLHEADER.XPCOM)
+ OTHER_CLEAN    += \
+    $(IDLFILE.XPCOM) \
+    $(IDLHEADER.XPCOM) \
+    $(IDLTYPELIB.XPCOM)
+
+ VBOX_MAIN_PREREQS += $(IDLTYPELIB.XPCOM) $(IDLHEADER.XPCOM)
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/xpcom/idl
 endif # xpcom
 
@@ -535,49 +562,42 @@ VBoxMain-com-inst_SOURCES = \
 # generate rules
 include $(KBUILD_PATH)/subfooter.kmk
 
-
-
-
-
 #
 # Additions rules.
 #
 
 XIDLFILE = $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
 
-ifneq ($(KBUILD_TARGET),win)
-
 ## @todo this hack ain't cutting it any longer. (the file name is abspath'ed since ages now.)
 xpcom/helpers.cpp: $(IDLTYPELIB)
 
-$(IDLFILE): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
+$(IDLFILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
-$(IDLTYPELIB): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLTYPELIB))) $(VBOX_XPIDL)
+$(IDLTYPELIB.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLTYPELIB))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 	chmod 0644 $@
 ## @todo ^^^^^^^^^^^^ fix horrible hack
 
-$(IDLHEADER): $(IDLFILE) | $(call DIRDEP,$(dir $(IDLHEADER))) $(VBOX_XPIDL)
+$(IDLHEADER.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLHEADER))) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
-else
 
-MAIN_IDL ?= $(EXEC_X86_WIN32) $(firstword $(wildcard \
+MAIN_IDL ?= $(EXEC_X86_WIN32) $(call MAKE_WIN_PATH,$(firstword $(wildcard \
 	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
 	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
-	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK)
+	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 IDL_DEFS = /nologo
 ifdef VBOX_WITH_VRDP
  IDL_DEFS += /D VBOX_WITH_VRDP
 endif
 
-$(IDLFILE): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(XIDLFILE)
+$(IDLFILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(XIDLFILE)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
@@ -598,21 +618,18 @@ $(PATH_VBoxCOM)/VirtualBox_i.c \
 + $(PATH_VBoxCOM)/VirtualBox.h \
 + $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
 + $(PATH_VBoxCOM)/VirtualBox.tlb \
-+ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb: $(IDLFILE) | $(call DIRDEP,$(PATH_VBoxCOM))
++ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb: $(IDLFILE.MSCOM) | $(call DIRDEP,$(PATH_VBoxCOM))
 	$(MAIN_IDL) $(IDL_DEFS) \
-		/out $(subst /,\\,$(PATH_VBoxCOM)) \
-		/cpp_cmd $(subst /,\\,$(TOOL_$(VBOX_VCC_TOOL)_CC)) \
-		/I $(subst /,\\,$(PATH_SDK_WINPSDK_INC)) \
+		/out $(call MAKE_WIN_PATH,$(PATH_VBoxCOM)) \
+		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		/I $(call MAKE_WIN_PATH,$(PATH_SDK_WINPSDK_INC)) \
 		/I idl \
-		$(subst /,\\,$<)
+		$(call MAKE_WIN_PATH,$<)
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/include
 	$(CP) $(PATH_VBoxCOM)/VirtualBox.h $(VBOX_PATH_SDK)/bindings/mscom/include
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/lib
 	$(CP) $(PATH_VBoxCOM)/VirtualBox.tlb $(VBOX_PATH_SDK)/bindings/mscom/lib
 	$(CP) $(PATH_VBoxCOM)/VirtualBox_i.c $(VBOX_PATH_SDK)/bindings/mscom/lib
-
-endif
-
 
 #
 # Translation stuff
