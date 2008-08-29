@@ -4399,10 +4399,15 @@ HRESULT Console::powerDown()
         }
     }
     if (RT_SUCCESS(vrc) || (VERR_TOO_MUCH_DATA == vrc))
+    {
+        /* PushGuestProperties() calls DiscardSettings(), which calls us back */
+        alock.leave();
         mControl->PushGuestProperties(ComSafeArrayAsInParam (names),
                                       ComSafeArrayAsInParam (values),
                                       ComSafeArrayAsInParam (timestamps),
                                       ComSafeArrayAsInParam (flags));
+        alock.enter();
+    }
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 #endif /* VBOX_WITH_HGCM */
 

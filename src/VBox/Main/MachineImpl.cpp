@@ -8990,6 +8990,7 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
     com::SafeArray <INPTR BSTR> values(ComSafeArrayInArg(aValues));
     com::SafeArray <ULONG64> timestamps(ComSafeArrayInArg(aTimestamps));
     com::SafeArray <INPTR BSTR> flags(ComSafeArrayInArg(aFlags));
+    DiscardSettings();
     mHWData.backup();
     mHWData->mGuestProperties.erase(mHWData->mGuestProperties.begin(),
                                     mHWData->mGuestProperties.end());
