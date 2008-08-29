@@ -43,8 +43,8 @@ int main(int argc, char **argv)
 {
     int rc;
     RTR3Init(false);
-    rc = SUPInit();
-    RTPrintf("tstInit: SUPInit -> rc=%d\n", rc);
+    rc = SUPR3Init(NULL);
+    RTPrintf("tstInit: SUPR3Init -> rc=%d\n", rc);
     if (!rc)
     {
         rc = SUPTerm();

@@ -46,8 +46,8 @@ int main(int argc, char **argv)
     int rcRet = 0;
 
     RTR3Init(false);
-    rc = SUPInit();
-    RTPrintf("tstContiguous: SUPInit -> rc=%Vrc\n", rc);
+    rc = SUPR3Init(NULL);
+    RTPrintf("tstContiguous: SUPR3Init -> rc=%Vrc\n", rc);
     rcRet += rc != 0;
     if (!rc)
     {

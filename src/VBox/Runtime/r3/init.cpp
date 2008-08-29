@@ -106,14 +106,9 @@ RTPROCPRIORITY g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
  *
  * @returns iprt status code.
  *
- * @param   fInitSUPLib     Set if SUPInit() shall be called during init (default).
+ * @param   fInitSUPLib     Set if SUPR3Init() shall be called during init (default).
  *                          Clear if not to call it.
- * @param   cbReserve       The number of bytes of contiguous memory that should be reserved by
- *                          the runtime / support library.
- *                          Set this to 0 if no reservation is required. (default)
- *                          Set this to ~0 if the maximum amount supported by the VM is to be
- *                          attempted reserved, or the maximum available.
- *                          This argument only applies if fInitSUPLib is true and we're in ring-3 HC.
+ * @param   cbReserve       Ignored.
  */
 RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
 {
@@ -121,8 +116,8 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
 
     /*
      * Do reference counting, only initialize the first time around.
-     * 
-     * We are ASSUMING that nobody will be able to race RTR3Init calls when the 
+     *
+     * We are ASSUMING that nobody will be able to race RTR3Init calls when the
      * first one, the real init, is running (second assertion).
      */
     int32_t cUsers = ASMAtomicIncS32(&g_cUsers);
@@ -132,8 +127,8 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
         Assert(!g_fInitializing);
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
         if (fInitSUPLib)
-            SUPInit(NULL, cbReserve);
-#endif 
+            SUPR3Init(NULL);
+#endif
     }
     ASMAtomicWriteBool(&g_fInitializing, true);
 
@@ -176,7 +171,7 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
          * Init GIP first.
          * (The more time for updates before real use, the better.)
          */
-        SUPInit(NULL, cbReserve);
+        SUPR3Init(NULL);
     }
 #endif
 

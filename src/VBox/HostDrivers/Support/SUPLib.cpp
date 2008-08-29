@@ -210,7 +210,7 @@ DECLEXPORT(int) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_t fFlags)
 }
 
 
-SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /* 0 */)
+SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
 {
     /*
      * Perform some sanity checks.
@@ -367,7 +367,7 @@ SUPR3DECL(int) SUPInit(PSUPDRVSESSION *ppSession /* NULL */, size_t cbReserve /*
 
         suplibOsTerm(&g_supLibData);
     }
-    AssertMsgFailed(("SUPInit() failed rc=%Vrc\n", rc));
+    AssertMsgFailed(("SUPR3Init() failed rc=%Vrc\n", rc));
     g_cInits--;
 
     return rc;
@@ -484,7 +484,7 @@ SUPR3DECL(int) SUPTerm(bool fForced)
     /*
      * Verify state.
      */
-    AssertMsg(g_cInits > 0, ("SUPTerm() is called before SUPInit()!\n"));
+    AssertMsg(g_cInits > 0, ("SUPTerm() is called before SUPR3Init()!\n"));
     if (g_cInits == 0)
         return VERR_WRONG_ORDER;
     if (g_cInits == 1 || fForced)

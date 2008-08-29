@@ -829,10 +829,10 @@ int main(int argc, char **argv)
      * Open the session, load ring-0 and issue the request.
      */
     PSUPDRVSESSION pSession;
-    rc = SUPInit(&pSession, 0);
+    rc = SUPR3Init(&pSession);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstIntNet-1: SUPInit -> %Rrc\n", rc);
+        RTPrintf("tstIntNet-1: SUPR3Init -> %Rrc\n", rc);
         return 1;
     }
 
@@ -936,8 +936,8 @@ int main(int argc, char **argv)
                         doXmitTest(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw, pFileText);
 
                     if (fPingTest)
-                        doPingTest(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw, pFileText);                    
-                    
+                        doPingTest(OpenReq.hIf, pSession, pBuf, &SrcMac, pFileRaw, pFileText);
+
                     /*
                      * Either enter sniffing mode or do a timeout thing.
                      */
@@ -950,7 +950,7 @@ int main(int argc, char **argv)
                             RTPrintf("tstIntNet-1: Error! The DHCP server didn't reply... (Perhaps you don't have one?)\n", rc);
                             g_cErrors++;
                         }
-                        
+
                         if (   fPingTest
                             && !g_fPingReply)
                         {

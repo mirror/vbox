@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     RTR3Init(false);
     RTPrintf("tstLow: TESTING...\n");
 
-    rc = SUPInit();
+    rc = SUPR3Init(NULL);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        RTPrintf("SUPInit -> rc=%Vrc\n", rc);
+        RTPrintf("SUPR3Init -> rc=%Vrc\n", rc);
         rcRet++;
     }
 

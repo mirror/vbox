@@ -104,7 +104,7 @@ int main(int argc, char **argv)
      * Init
      */
     PSUPDRVSESSION pSession = NIL_RTR0PTR;
-    int rc = SUPInit(&pSession);
+    int rc = SUPR3Init(&pSession);
     if (VBOX_SUCCESS(rc))
     {
         if (g_pSUPGlobalInfoPage)
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
                 for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_pSUPGlobalInfoPage->aCPUs); iCpu++)
                     if (    g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz > 0
                         &&  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz != _4G + 1)
-                    {   
+                    {
                         PSUPGIPCPU pPrevCpu = &s_aaCPUs[!(i & 1)][iCpu];
                         PSUPGIPCPU pCpu = &s_aaCPUs[i & 1][iCpu];
                         RTPrintf(fHex
@@ -180,6 +180,6 @@ int main(int argc, char **argv)
         SUPTerm();
     }
     else
-        RTPrintf("tstGIP-2: SUPInit failed: %Vrc\n", rc);
+        RTPrintf("tstGIP-2: SUPR3Init failed: %Vrc\n", rc);
     return !!rc;
 }

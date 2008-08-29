@@ -95,10 +95,10 @@ int main(int argc, char **argv)
      * Open the session, load ring-0 and issue the request.
      */
     PSUPDRVSESSION pSession;
-    int rc = SUPInit(&pSession, 0);
+    int rc = SUPR3Init(&pSession);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstGlobalConfig: SUPInit -> %Rrc\n", rc);
+        RTPrintf("tstGlobalConfig: SUPR3Init -> %Rrc\n", rc);
         return 1;
     }
 
