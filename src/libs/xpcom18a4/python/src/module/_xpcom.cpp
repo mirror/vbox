@@ -593,7 +593,7 @@ initVBoxPython() {
   if (!vboxInited) {
     int rc = 0;
 
-    rc = RTR3Init(false, 0);
+    rc = RTR3Init();
     rc = com::Initialize();
 
     init_xpcom();
