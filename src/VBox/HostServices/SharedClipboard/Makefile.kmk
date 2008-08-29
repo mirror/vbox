@@ -32,7 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 DLLS += VBoxSharedClipboard
 VBoxSharedClipboard_TEMPLATE  = VBOXR3
-VBoxSharedClipboard_DEFS      = VBOX_HGCM
+VBoxSharedClipboard_DEFS      = VBOX_WITH_HGCM
 VBoxSharedClipboard_INCS.win  = \
 	$(VBOX_PATH_SDK)
 

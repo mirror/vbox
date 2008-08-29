@@ -36,7 +36,7 @@
 #include <iprt/process.h>
 #include <iprt/assert.h>
 #include <iprt/param.h>
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 # include <iprt/thread.h>
 #endif
 
@@ -44,7 +44,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
 #endif
 
@@ -155,7 +155,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->pIrqAckEvents = NULL;
     pDevExt->WaitList.pHead = NULL;
     pDevExt->WaitList.pTail = NULL;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     pDevExt->HGCMWaitList.pHead = NULL;
     pDevExt->HGCMWaitList.pTail = NULL;
 #endif
@@ -212,7 +212,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             rc = vboxGuestInitReportGuestInfo(pDevExt, enmOSType);
             if (RT_SUCCESS(rc))
             {
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
                 rc = vboxGuestInitFilterMask(pDevExt, VMMDEV_EVENT_HGCM);
 #else
                 rc = vboxGuestInitFilterMask(pDevExt, 0);
@@ -292,7 +292,7 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
     rc2 = RTSpinlockDestroy(pDevExt->WaitSpinlock); AssertRC(rc2);
 
     VBoxGuestDeleteWaitList(&pDevExt->WaitList);
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     VBoxGuestDeleteWaitList(&pDevExt->HGCMWaitList);
 #endif
     VBoxGuestDeleteWaitList(&pDevExt->FreeList);
@@ -378,7 +378,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     Log(("VBoxGuestCloseSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
          pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     for (unsigned i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
         if (pSession->aHGCMClientIds[i])
         {
@@ -490,7 +490,7 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt)
     pWait->pPrev = NULL;
     pWait->fReqEvents = 0;
     pWait->fResEvents = 0;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     pWait->pHGCMReq = NULL;
 #endif
     RTSemEventMultiReset(pWait->Event);
@@ -509,7 +509,7 @@ static void VBoxGuestWaitFreeLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTWAIT pWa
 {
     pWait->fReqEvents = 0;
     pWait->fResEvents = 0;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     pWait->pHGCMReq = NULL;
 #endif
     VBoxGuestWaitAppend(&pDevExt->FreeList, pWait);
@@ -837,7 +837,7 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt, VBoxGues
 }
 
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 
 /**
  * This is a callback for dealing with async waits.
@@ -1140,7 +1140,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
     return VINF_SUCCESS;
 }
 
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
 
 /**
@@ -1219,7 +1219,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
         CHECKRET_MIN_SIZE("VMMREQUEST", sizeof(VMMDevRequestHeader));
         rc = VBoxGuestCommonIOCtl_VMMRequest(pDevExt, (VMMDevRequestHeader *)pvData, cbData, pcbDataReturned);
     }
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /*
      * This one is tricky and can be done later.
      */
@@ -1228,7 +1228,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
         CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, cbData, pcbDataReturned);
     }
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0)))
     {
         CHECKRET_MIN_SIZE("LOG", 1);
@@ -1255,7 +1255,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
                 rc = VBoxGuestCommonIOCtl_CtlFilterMask(pDevExt, (VBoxGuestFilterMaskInfo *)pvData);
                 break;
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
             case VBOXGUEST_IOCTL_HGCM_CONNECT:
                 CHECKRET_MIN_SIZE("HGCM_CONNECT", sizeof(VBoxGuestHGCMConnectInfo));
                 rc = VBoxGuestCommonIOCtl_HGCMConnect(pDevExt, pSession, (VBoxGuestHGCMConnectInfo *)pvData, pcbDataReturned);
@@ -1270,7 +1270,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
                 CHECKRET_MIN_SIZE("CLIPBOARD_CONNECT", sizeof(uint32_t));
                 rc = VBoxGuestCommonIOCtl_HGCMClipboardReConnect(pDevExt, (uint32_t *)pvData, pcbDataReturned);
                 break;
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
             default:
             {
@@ -1321,7 +1321,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
             RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
             RTSpinlockAcquireNoInts(pDevExt->WaitSpinlock, &Tmp);
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
             /* The HGCM event/list is kind of different in that we evaluate all entries. */
             if (fEvents & VMMDEV_EVENT_HGCM)
                 for (pWait = pDevExt->HGCMWaitList.pHead; pWait; pWait = pWait->pNext)

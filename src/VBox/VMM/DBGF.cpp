@@ -240,7 +240,7 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
 
     RTStrmPrintf(g_pStdErr, "DBGF: No debugger attached, waiting 15 seconds for one to attach (event=%d)\n", enmEvent);
     RTStrmFlush(g_pStdErr);
-# ifdef DEBUG_sandervl
+# if defined (DEBUG_sandervl) || defined (DEBUG_frank)
     int cWait = 10;
 # else
     int cWait = 150;

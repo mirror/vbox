@@ -107,7 +107,7 @@ extern VBGLDATA g_vbgldata;
  */
 int VbglEnter (void);
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 #ifndef VBGL_VBOXGUEST
 /* Initialize HGCM subsystem. */
 int vbglHGCMInit (void);

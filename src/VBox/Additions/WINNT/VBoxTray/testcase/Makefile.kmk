@@ -29,7 +29,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += tstSessionHack
 tstSessionHack_TEMPLATE = VBOXW32GUESTR3
-tstSessionHack_DEFS     = VBOX_HGCM
+tstSessionHack_DEFS     = VBOX_WITH_HGCM
 tstSessionHack_INCS     = ../../include
 tstSessionHack_SOURCES  = \
 	tstSessionHack.cpp

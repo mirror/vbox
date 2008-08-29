@@ -11,7 +11,7 @@ SYSMODS += VBoxSF
 VBoxSF_TEMPLATE      = VBOXOS2GUESTR0
 VBoxSF_SYSSUFF       = .ifs
 VBoxSF_DLLSUFF       = .ifs
-VBoxSF_DEFS          = VBOX_HGCM
+VBoxSF_DEFS          = VBOX_WITH_HGCM
 VBoxSF_INCS         := \
 	$(PATH_SUB_CURRENT) \
 	$(PATH_ROOT)/src/VBox/Runtime/include

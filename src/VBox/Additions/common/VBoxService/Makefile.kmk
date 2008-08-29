@@ -40,7 +40,7 @@ endif
 #
 VBoxService_TEMPLATE      = VBOXGUESTR3EXE
 VBoxService_DEFS          = VBOXSERVICE_TIMESYNC
-VBoxService_DEFS.os2      = VBOX_HGCM VBOXSERVICE_CLIPBOARD
+VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOXSERVICE_CLIPBOARD
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp

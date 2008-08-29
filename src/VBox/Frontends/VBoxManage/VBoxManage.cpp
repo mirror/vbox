@@ -252,7 +252,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 #else
     bool fDarwin = false;
 #endif
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     bool fVRDP = true;
 #else
     bool fVRDP = false;
@@ -3778,7 +3778,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *audio = NULL;
     char *audiocontroller = NULL;
     char *clipboard = NULL;
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     char *vrdp = NULL;
     uint16_t vrdpport = UINT16_MAX;
     char *vrdpaddress = NULL;
@@ -4198,7 +4198,7 @@ static int handleModifyVM(int argc, char *argv[],
             macs[n - 1] = argv[i + 1];
             i++;
         }
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         else if (strcmp(argv[i], "-vrdp") == 0)
         {
             if (argc <= i + 1)
@@ -4237,7 +4237,7 @@ static int handleModifyVM(int argc, char *argv[],
             i++;
             vrdpmulticon = argv[i];
         }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
         else if (strcmp(argv[i], "-usb") == 0)
         {
             if (argc <= i + 1)
@@ -5323,7 +5323,7 @@ static int handleModifyVM(int argc, char *argv[],
         if (FAILED(rc))
             break;
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
         if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype || vrdpmulticon)
         {
             ComPtr<IVRDPServer> vrdpServer;
@@ -5396,7 +5396,7 @@ static int handleModifyVM(int argc, char *argv[],
                 }
             }
         }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
         /*
          * USB enable/disable

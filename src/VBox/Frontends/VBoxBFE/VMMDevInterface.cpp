@@ -41,7 +41,7 @@
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
 #include "ConsoleImpl.h"
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 #include "HGCM.h"
 #endif
 
@@ -68,7 +68,7 @@ typedef struct DRVMAINVMMDEV
     /** Our VMM device connector interface. */
     PDMIVMMDEVCONNECTOR         Connector;
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /** Pointer to the HGCM port interface of the driver/device above us. */
     PPDMIHGCMPORT               pHGCMPort;
     /** Our HGCM connector interface. */
@@ -79,14 +79,14 @@ typedef struct DRVMAINVMMDEV
 /** Converts PDMIVMMDEVCONNECTOR pointer to a DRVMAINVMMDEV pointer. */
 #define PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface) ( (PDRVMAINVMMDEV) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINVMMDEV, Connector)) )
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 /** Converts PDMIHGCMCONNECTOR pointer to a DRVMAINVMMDEV pointer. */
 #define PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface) ( (PDRVMAINVMMDEV) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINVMMDEV, HGCMConnector)) )
 #endif
 
 VMMDev::VMMDev() : mpDrv(NULL)
 {
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     int rc = VINF_SUCCESS;
     if (fActivateHGCM())
         rc = HGCMHostInit();
@@ -96,10 +96,10 @@ VMMDev::VMMDev() : mpDrv(NULL)
 
 VMMDev::~VMMDev()
 {
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     if (fActivateHGCM())
         HGCMHostShutdown ();
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 }
 
 
@@ -258,7 +258,7 @@ DECLCALLBACK(int) VMMDev::GetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, ui
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
 
 /* HGCM connector interface */
 
@@ -359,7 +359,7 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
             return &pDrvIns->IBase;
         case PDMINTERFACE_VMMDEV_CONNECTOR:
             return &pDrv->Connector;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
         case PDMINTERFACE_HGCM_CONNECTOR:
             if (fActivateHGCM())
                 return &pDrv->HGCMConnector;
@@ -429,7 +429,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->Connector.pfnSetVisibleRegion        = iface_SetVisibleRegion;
     pData->Connector.pfnQueryVisibleRegion      = iface_QueryVisibleRegion;
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     if (fActivateHGCM())
     {
         pData->HGCMConnector.pfnConnect         = iface_hgcmConnect;
@@ -448,7 +448,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     if (fActivateHGCM())
     {
         pData->pHGCMPort = (PPDMIHGCMPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HGCM_PORT);
@@ -474,7 +474,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     pData->pVMMDev = (VMMDev*)pv;        /** @todo Check this cast! */
     pData->pVMMDev->mpDrv = pData;
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     if (fActivateHGCM())
     {
         rc = pData->pVMMDev->hgcmLoadService (VBOXSHAREDFOLDERS_DLL, "VBoxSharedFolders");
@@ -486,7 +486,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
         pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
     }
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
     return VINF_SUCCESS;
 }

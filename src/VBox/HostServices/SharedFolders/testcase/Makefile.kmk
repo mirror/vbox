@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 PROGRAMS += tstShflSizes
 TESTING  += $(PATH_TARGET)/tstShflSizes.run
 tstShflSizes_TEMPLATE = VBOXR3AUTOTST
-tstShflSizes_DEFS     = VBOX_HGCM
+tstShflSizes_DEFS     = VBOX_WITH_HGCM
 tstShflSizes_SOURCES  = tstShflSizes.cpp
 
 ifdef VBOX_WITH_TESTCASES
@@ -40,7 +40,7 @@ ifdef VBOX_WITH_TESTCASES
 PROGRAMS += tstShflCase
 
 tstShflCase_TEMPLATE = VBOXR3TSTEXE
-tstShflCase_DEFS     = VBOX_HGCM
+tstShflCase_DEFS     = VBOX_WITH_HGCM
 tstShflCase_SOURCES  = tstShflCase.cpp
 tstShflCase_LIBS     = $(LIB_RUNTIME)
 tstShflCase_CLEAN    = $(PATH_TARGET)/tstShflSizes.run

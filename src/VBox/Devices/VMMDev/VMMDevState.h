@@ -52,7 +52,7 @@ typedef struct VMMDevState
     PDMIBASE Base;
     /** VMMDev port interface. */
     PDMIVMMDEVPORT Port;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /** HGCM port interface. */
     PDMIHGCMPORT HGCMPort;
 #endif
@@ -60,7 +60,7 @@ typedef struct VMMDevState
     R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** VMMDev connector interface */
     R3PTRTYPE(PPDMIVMMDEVCONNECTOR) pDrv;
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /** HGCM connector interface */
     R3PTRTYPE(PPDMIHGCMCONNECTOR) pHGCMDrv;
 #endif
@@ -164,14 +164,14 @@ typedef struct VMMDevState
     /** Don't clear credentials */
     bool fKeepCredentials;
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     /** List of pending HGCM requests, used for saving the HGCM state. */
     R3PTRTYPE(PVBOXHGCMCMD) pHGCMCmdList;
     /** Critical section to protect the list. */
     RTCRITSECT critsectHGCMCmdList;
     /** Whether the HGCM events are already automatically enabled. */
     uint32_t u32HGCMEnabled;
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
     /* Shared folders LED */
     struct

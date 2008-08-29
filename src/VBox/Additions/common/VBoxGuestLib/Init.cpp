@@ -177,9 +177,9 @@ DECLVBGL(int) VbglInit (void)
         /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
         vbglQueryVMMDevPort ();
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
         rc = vbglHGCMInit ();
-#endif /* VBOX_HGCM */
+#endif /* VBOX_WITH_HGCM */
 
         if (VBOX_FAILURE(rc))
         {
@@ -194,7 +194,7 @@ DECLVBGL(void) VbglTerminate (void)
 {
     vbglTerminateCommon ();
 
-#ifdef VBOX_HGCM
+#ifdef VBOX_WITH_HGCM
     vbglHGCMTerminate ();
 #endif
 

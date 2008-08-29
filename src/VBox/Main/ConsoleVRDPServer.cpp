@@ -34,9 +34,9 @@
 #include <iprt/alloca.h>
 
 #include <VBox/err.h>
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
 #include <VBox/VRDPOrders.h>
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
 class VRDPConsoleCallback : public IConsoleCallback
 {
@@ -578,7 +578,7 @@ STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL 
 // ConsoleVRDPServer
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
 RTLDRMOD ConsoleVRDPServer::mVRDPLibrary;
 
 PFNVRDPCREATESERVER ConsoleVRDPServer::mpfnVRDPCreateServer = NULL;
@@ -1006,7 +1006,7 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint (void *pvCallbac
 
     server->mConsole->getDisplay ()->SetVideoModeHint(cWidth, cHeight, cBitsPerPixel, uScreenId);
 }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
 ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
 {
@@ -1027,7 +1027,7 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     mUSBBackends.event = 0;
 #endif
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     mhServer = 0;
 
     m_fGuestWantsAbsolute = false;
@@ -1050,7 +1050,7 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     mConsoleCallback = new VRDPConsoleCallback(this);
     mConsoleCallback->AddRef();
     console->RegisterCallback(mConsoleCallback);
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     mAuthLibrary = 0;
 }
@@ -1059,7 +1059,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
 {
     Stop ();
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mConsoleCallback)
     {
         mConsole->UnregisterCallback(mConsoleCallback);
@@ -1076,7 +1076,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
             maFramebuffers[i] = NULL;
         }
     }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     if (RTCritSectIsInitialized (&mCritSect))
     {
@@ -1088,7 +1088,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
 int ConsoleVRDPServer::Launch (void)
 {
     LogFlowMember(("ConsoleVRDPServer::Launch\n"));
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     int rc = VINF_SUCCESS;
     IVRDPServer *vrdpserver = mConsole->getVRDPServer ();
     Assert(vrdpserver);
@@ -1121,45 +1121,45 @@ int ConsoleVRDPServer::Launch (void)
 #else
     int rc = VERR_NOT_SUPPORTED;
     LogRel(("VRDP: this version does not include the VRDP server.\n"));
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
     return rc;
 }
 
 void ConsoleVRDPServer::EnableConnections (void)
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPEnableConnections (mhServer, true);
     }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 }
 
 void ConsoleVRDPServer::MousePointerUpdate (const VRDPCOLORPOINTER *pPointer)
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPColorPointer (mhServer, pPointer);
     }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 }
 
 void ConsoleVRDPServer::MousePointerHide (void)
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPHidePointer (mhServer);
     }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 }
 
 void ConsoleVRDPServer::Stop (void)
 {
     Assert(VALID_PTR(this)); /** @todo r=bird: there are(/was) some odd cases where this buster was invalid on
                               * linux. Just remove this when it's 100% sure that problem has been fixed. */
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mhServer)
     {
         HVRDPSERVER hServer = mhServer;
@@ -1172,7 +1172,7 @@ void ConsoleVRDPServer::Stop (void)
             mpEntryPoints->VRDPDestroy (hServer);
         }
     }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
 #ifdef VBOX_WITH_USB
     remoteUSBThreadStop ();
@@ -1498,7 +1498,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
 
     int rc = VINF_SUCCESS;
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvExtension);
 
     VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
@@ -1557,7 +1557,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
         default:
             rc = VERR_NOT_SUPPORTED;
     }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
     return rc;
 }
@@ -1857,7 +1857,7 @@ void ConsoleVRDPServer::usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBa
 
 void ConsoleVRDPServer::SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPUpdate (mhServer, uScreenId, pvUpdate, cbUpdate);
@@ -1867,7 +1867,7 @@ void ConsoleVRDPServer::SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t
 
 void ConsoleVRDPServer::SendResize (void) const
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPResize (mhServer);
@@ -1877,7 +1877,7 @@ void ConsoleVRDPServer::SendResize (void) const
 
 void ConsoleVRDPServer::SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     VRDPORDERHDR update;
     update.x = x;
     update.y = y;
@@ -1892,7 +1892,7 @@ void ConsoleVRDPServer::SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32
 
 void ConsoleVRDPServer::SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format) const
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPAudioSamples (mhServer, pvSamples, cSamples, format);
@@ -1902,7 +1902,7 @@ void ConsoleVRDPServer::SendAudioSamples (void *pvSamples, uint32_t cSamples, VR
 
 void ConsoleVRDPServer::SendAudioVolume (uint16_t left, uint16_t right) const
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPAudioVolume (mhServer, left, right);
@@ -1912,7 +1912,7 @@ void ConsoleVRDPServer::SendAudioVolume (uint16_t left, uint16_t right) const
 
 void ConsoleVRDPServer::SendUSBRequest (uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPUSBRequest (mhServer, u32ClientId, pvParms, cbParms);
@@ -1922,7 +1922,7 @@ void ConsoleVRDPServer::SendUSBRequest (uint32_t u32ClientId, void *pvParms, uin
 
 void ConsoleVRDPServer::QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const
 {
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPQueryInfo (mhServer, index, pvBuffer, cbBuffer, pcbOut);
@@ -1930,7 +1930,7 @@ void ConsoleVRDPServer::QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBu
 #endif
 }
 
-#ifdef VBOX_VRDP
+#ifdef VBOX_WITH_VRDP
 /* note: static function now! */
 bool ConsoleVRDPServer::loadVRDPLibrary (void)
 {
@@ -1990,7 +1990,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 
     return (mVRDPLibrary != NULL);
 }
-#endif /* VBOX_VRDP */
+#endif /* VBOX_WITH_VRDP */
 
 /*
  * IRemoteDisplayInfo implementation.

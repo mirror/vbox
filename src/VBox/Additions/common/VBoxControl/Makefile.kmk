@@ -38,7 +38,7 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 endif
 VBoxControl_DEFS     += \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS VBOX_HGCM,)
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS VBOX_WITH_HGCM,)
 VBoxControl_SOURCES = \
 	VBoxControl.cpp \
 	VBoxControlSVN.cpp

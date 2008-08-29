@@ -67,7 +67,7 @@ vboxvfs_TEMPLATE        = VBOXGUESTR0
 vboxvfs_NOINST          = 1
 vboxvfs_CFLAGS          = -fshort-wchar
 vboxvfs_DEFS            = \
-	MODULE IN_RT_R0 VBOXGUEST VBOX_HGCM \
+	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
 	KBUILD_MODNAME=KBUILD_STR\(vboxadd\) \
         KBUILD_BASENAME=KBUILD_STR\(vboxadd\)
 vboxvfs_INCS            = \

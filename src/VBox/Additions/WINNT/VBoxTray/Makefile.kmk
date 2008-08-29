@@ -32,7 +32,7 @@ VBoxTray_TEMPLATE = VBOXGUESTR3EXE
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxTray_NOINST  = true
 endif
-VBoxTray_DEFS     = VBOX_HGCM LOG_TO_BACKDOOR
+VBoxTray_DEFS     = VBOX_WITH_HGCM LOG_TO_BACKDOOR
 VBoxTray_INCS     = ../include
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
