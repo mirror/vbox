@@ -376,11 +376,12 @@ X11DRV_InitKeyboardByType(Display *display)
     unsigned i = 0, found = 0;
     
     for (; (main_keyboard_type_list[i].comment != NULL) && (0 == found); ++i)
-        if (   (   (XKeysymToKeycode(display, XK_Control_L) == main_keyboard_type_list[i].lctrl)
-                && (XKeysymToKeycode(display, XK_Caps_Lock) == main_keyboard_type_list[i].capslock)
-               )
-            || (   (XKeysymToKeycode(display, XK_Caps_Lock) == main_keyboard_type_list[i].lctrl)
-                && (XKeysymToKeycode(display, XK_Control_L) == main_keyboard_type_list[i].capslock)
+        if (   (   (   (XKeysymToKeycode(display, XK_Control_L) == main_keyboard_type_list[i].lctrl)
+                    && (XKeysymToKeycode(display, XK_Caps_Lock) == main_keyboard_type_list[i].capslock)
+                   )
+                || (   (XKeysymToKeycode(display, XK_Caps_Lock) == main_keyboard_type_list[i].lctrl)
+                    && (XKeysymToKeycode(display, XK_Control_L) == main_keyboard_type_list[i].capslock)
+                   )
                ) /* Some people like to switch Capslock and left Ctrl */
             && (XKeysymToKeycode(display, XK_Shift_L)   == main_keyboard_type_list[i].lshift)
             && (XKeysymToKeycode(display, XK_Tab)       == main_keyboard_type_list[i].tab)
