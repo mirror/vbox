@@ -1432,6 +1432,25 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
     CFIndex cIfs = IfsRef ? CFArrayGetCount(IfsRef) : 0;
 
     /*
+     * Get the current preferences and make a copy of the network services so we
+     * can look up the right interface names. The IfsRef is just for fallback.
+     */
+    CFArrayRef ServicesRef = NULL;
+    CFIndex cServices = 0;
+    SCPreferencesRef PrefsRef = SCPreferencesCreate(kCFAllocatorDefault, CFSTR("org.virtualbox.VBoxSVC"), NULL);
+    if (PrefsRef)
+    {
+        SCNetworkSetRef SetRef = SCNetworkSetCopyCurrent(PrefsRef);
+        CFRelease(PrefsRef);
+        if (SetRef)
+        {
+            ServicesRef = SCNetworkSetCopyServices(SetRef);
+            CFRelease(SetRef);
+            cServices = ServicesRef ? CFArrayGetCount(ServicesRef) : 0;
+        }
+    }
+
+    /*
      * Enumerate the ethernet controller services.
      */
     PDARWINETHERNIC pHead = NULL;
@@ -1514,32 +1533,61 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
                         *psz++ = ':';
                         *psz++ = ' ';
                         size_t cchLeft = sizeof(szTmp) - (psz - &szTmp[0]) - (sizeof(" (Wireless)") - 1);
+                        bool fFound = false;
                         CFIndex i;
-                        for (i = 0; i < cIfs; i++)
+
+                        /* look it up among the current services */
+                        for (CFIndex i = 0; i < cServices; i++)
                         {
-                            SCNetworkInterfaceRef IfRef = (SCNetworkInterfaceRef)CFArrayGetValueAtIndex(IfsRef, i);
-                            CFStringRef BSDNameRef = SCNetworkInterfaceGetBSDName(IfRef);
-                            if (     BSDNameRef
-                                &&   CFStringGetCString(BSDNameRef, psz, cchLeft, kCFStringEncodingUTF8)
-                                &&  !strcmp(psz, szBSDName))
+                            SCNetworkServiceRef ServiceRef = (SCNetworkServiceRef)CFArrayGetValueAtIndex(ServicesRef, i);
+                            SCNetworkInterfaceRef IfRef = SCNetworkServiceGetInterface(ServiceRef);
+                            if (IfRef)
                             {
-                                CFStringRef DisplayNameRef = SCNetworkInterfaceGetLocalizedDisplayName(IfRef);
-                                if (    DisplayNameRef
-                                    &&  CFStringGetCString(DisplayNameRef, psz, cchLeft, kCFStringEncodingUTF8))
-                                    break;
+                                CFStringRef BSDNameRef = SCNetworkInterfaceGetBSDName(IfRef);
+                                if (     BSDNameRef
+                                    &&   CFStringGetCString(BSDNameRef, psz, cchLeft, kCFStringEncodingUTF8)
+                                    &&  !strcmp(psz, szBSDName))
+                                {
+                                    CFStringRef ServiceNameRef = SCNetworkServiceGetName(ServiceRef);
+                                    if (    ServiceNameRef
+                                        &&  CFStringGetCString(ServiceNameRef, psz, cchLeft, kCFStringEncodingUTF8))
+                                    {
+                                        fFound = true;
+                                        break;
+                                    }
+                                }
                             }
                         }
+                        /* Look it up in the interface list. */
+                        if (!fFound)
+                            for (i = 0; i < cIfs; i++)
+                            {
+                                SCNetworkInterfaceRef IfRef = (SCNetworkInterfaceRef)CFArrayGetValueAtIndex(IfsRef, i);
+                                CFStringRef BSDNameRef = SCNetworkInterfaceGetBSDName(IfRef);
+                                if (     BSDNameRef
+                                    &&   CFStringGetCString(BSDNameRef, psz, cchLeft, kCFStringEncodingUTF8)
+                                    &&  !strcmp(psz, szBSDName))
+                                {
+                                    CFStringRef DisplayNameRef = SCNetworkInterfaceGetLocalizedDisplayName(IfRef);
+                                    if (    DisplayNameRef
+                                        &&  CFStringGetCString(DisplayNameRef, psz, cchLeft, kCFStringEncodingUTF8))
+                                    {
+                                        fFound = true;
+                                        break;
+                                    }
+                                }
+                            }
                         /* Generate a half plausible name if we for some silly reason didn't find the interface. */
-                        if (i >= cIfs)
+                        if (!fFound)
                             RTStrPrintf(szTmp, sizeof(szTmp), "%s: %s%s(?)",
                                         szBSDName,
                                         fUSB ? "USB " : "",
                                         fWireless ? fAirPort ? "AirPort " : "Wireless" : "Ethernet");
                         /* If we did find it and it's wireless but without "AirPort" or "Wireless", fix it */
                         else if (   fWireless
-                                 && !strstr(szTmp, "AirPort")
-                                 && !strstr(szTmp, "Wireless"))
-                            strcat(szTmp, " (Wireless)");
+                                 && !strstr(psz, "AirPort")
+                                 && !strstr(psz, "Wireless"))
+                            strcat(szTmp, fAirPort ? " (AirPort)" : " (Wireless)");
 
                         /*
                          * Create the list entry.
@@ -1623,7 +1671,10 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
     }
 
     IOObjectRelease(EtherIfServices);
-    CFRelease(IfsRef);
+    if (ServicesRef)
+        CFRelease(ServicesRef);
+    if (IfsRef)
+        CFRelease(IfsRef);
     return pHead;
 }
 
@@ -1684,6 +1735,7 @@ int main(int argc, char **argv)
                              i, szServiceName, szBSDName, szDisplayName);
                 }
 
+                CFRelease(ServicesRef);
                 CFRelease(SetRef);
             }
 
