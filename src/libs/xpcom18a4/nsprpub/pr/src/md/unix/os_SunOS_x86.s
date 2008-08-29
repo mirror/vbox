@@ -166,7 +166,11 @@ _MD_AtomicAdd:
 	.globl	PR_StackPush
 #endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	.align	4
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+VBoxNsprPR_StackPush:
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 PR_StackPush:
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	movl	4(%esp), %ecx
 	movl	$-1,%eax
 pulock:
@@ -203,7 +207,11 @@ pulock:
 	.globl	PR_StackPop
 #endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	.align	4
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+VBoxNsprPR_StackPop:
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 PR_StackPop:
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 	movl	4(%esp), %ecx
 	movl	$-1, %eax
 polock:
