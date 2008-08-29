@@ -94,44 +94,31 @@ int CollectorHAL::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64
 
 int CollectorHAL::getHostCpuMHz(ULONG *mhz)
 {
-#if 1 /** @todo r=bird: this isn't taking offline cpus and gaps into account. The result may be way too low. Suggestion in the disabled #else case. */
-    RTCPUID nProcessors = RTMpGetCount();
-
-    if (nProcessors == 0)
-        return VERR_NOT_IMPLEMENTED;
-
-    uint64_t uTotalMHz  = 0;
-
-    for (RTCPUID i = 0; i < nProcessors; ++i)
-        uTotalMHz += RTMpGetCurFrequency(RTMpCpuIdFromSetIndex(i));
-
-    *mhz = (ULONG)(uTotalMHz / nProcessors);
-
-#else
     unsigned cCpus = 0;
     uint64_t u64TotalMHz = 0;
     RTCPUSET OnlineSet;
     RTMpGetOnlineSet(&OnlineSet);
     for (RTCPUID iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
-        Log4(("{%p} " LOG_FN_FMT ": Checking if CPU %d is member of online set...\n",
+    {
+        LogAleksey(("{%p} " LOG_FN_FMT ": Checking if CPU %d is member of online set...\n",
                     this, __PRETTY_FUNCTION__, (int)iCpu));
         if (RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
         {
-            Log4(("{%p} " LOG_FN_FMT ": Getting frequency for CPU %d...\n",
+            LogAleksey(("{%p} " LOG_FN_FMT ": Getting frequency for CPU %d...\n",
                         this, __PRETTY_FUNCTION__, (int)iCpu));
             uint32_t uMHz = RTMpGetCurFrequency(RTMpCpuIdFromSetIndex(iCpu));
             if (uMHz != 0)
             {
-                Log4(("{%p} " LOG_FN_FMT ": CPU %d %u MHz\n",
+                LogAleksey(("{%p} " LOG_FN_FMT ": CPU %d %u MHz\n",
                             this, __PRETTY_FUNCTION__, (int)iCpu, uMHz));
                 u64TotalMHz += uMHz;
                 cCpus++;
             }
         }
+    }
 
      AssertReturn(cCpus, VERR_NOT_IMPLEMENTED);
      *mhz = (ULONG)(u64TotalMHz / cCpus);
-#endif
 
     return VINF_SUCCESS;
 }

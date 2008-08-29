@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <errno.h>
+#include <mach/mach.h>
 
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
@@ -90,10 +91,19 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
-#if 1
+#if 0
     return RTMpIsCpuPossible(idCpu);
 #else
     /** @todo proper ring-3 support on darwin, see #3014. */
+    natural_t nCpus;
+    processor_basic_info_t pinfo;
+    mach_msg_type_number_t count;
+    kern_return_t krc = host_processor_info(mach_host_self(),
+        PROCESSOR_BASIC_INFO, &nCpus, (processor_info_array_t*)&pinfo, &count);
+    AssertReturn (krc == KERN_SUCCESS, true);
+    bool isOnline = idCpu < nCpus ? pinfo[idCpu].running : true;
+    vm_deallocate(mach_task_self(), (vm_address_t)pinfo, count * sizeof(*pinfo));
+    return isOnline;
 #endif
 }
 
@@ -130,7 +140,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
-#if 1
+#if 0
     return RTMpGetSet(pSet);
 #else
     RTCpuSetEmpty(pSet);
