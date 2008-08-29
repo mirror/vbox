@@ -7986,7 +7986,7 @@ int main(int argc, char *argv[])
      * Before we do anything, init the runtime without loading
      * the support driver.
      */
-    RTR3Init(false);
+    RTR3Init();
 
     bool fShowLogo = true;
     int  iCmd      = 1;

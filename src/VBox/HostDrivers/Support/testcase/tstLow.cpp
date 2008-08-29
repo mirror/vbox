@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     int rc;
     int rcRet = 0;
 
-    RTR3Init(false);
+    RTR3Init();
     RTPrintf("tstLow: TESTING...\n");
 
     rc = SUPR3Init(NULL);

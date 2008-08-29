@@ -42,7 +42,7 @@
 int main(int argc, char **argv)
 {
     int rc;
-    RTR3Init(false);
+    RTR3Init();
     rc = SUPR3Init(NULL);
     if (VBOX_SUCCESS(rc))
     {

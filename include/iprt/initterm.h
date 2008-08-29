@@ -45,29 +45,47 @@ __BEGIN_DECLS
 
 #ifdef IN_RING3
 /**
- * Initalizes the runtime library.
+ * Initializes the runtime library.
  *
  * @returns iprt status code.
- *
- * @param   fInitSUPLib     Set if SUPR3Init() shall be called during init (default).
- *                          Clear if not to call it.
- * @param   cbReserve       Ignored.
  */
-RTR3DECL(int) RTR3Init(
-#ifdef __cplusplus
-    bool fInitSUPLib = true,
-    size_t cbReserve = 0
-#else
-    bool fInitSUPLib,
-    size_t cbReserve
-#endif
-    );
+RTR3DECL(int) RTR3Init(void);
+
+/**
+ * Initializes the runtime library and try initialize SUPLib too.
+ *
+ * @returns IPRT status code.
+ * @param   pszProgramPath      The path to the program file.
+ *
+ * @remarks Failure to initialize SUPLib is ignored.
+ */
+RTR3DECL(int) RTR3InitAndSUPLib(void);
+
+/**
+ * Initializes the runtime library passing it the program path.
+ *
+ * @returns IPRT status code.
+ * @param   pszProgramPath      The path to the program file.
+ */
+RTR3DECL(int) RTR3InitWithProgramPath(const char *pszProgramPath);
+
+/**
+ * Initializes the runtime library passing it the program path,
+ * and try initialize SUPLib too (failures ignored).
+ *
+ * @returns IPRT status code.
+ * @param   pszProgramPath      The path to the program file.
+ *
+ * @remarks Failure to initialize SUPLib is ignored.
+ */
+RTR3DECL(int) RTR3InitAndSUPLibWithProgramPath(const char *pszProgramPath);
 
 /**
  * Terminates the runtime library.
  */
 RTR3DECL(void) RTR3Term(void);
-#endif
+
+#endif /* IN_RING3 */
 
 
 #ifdef IN_RING0

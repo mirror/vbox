@@ -109,7 +109,7 @@ int main( int argc, char **argv)
     int rc = VINF_SUCCESS;
     std::string sTmp;
 
-    RTR3Init(false);
+    RTR3Init();
     std::cout << "VirtualBox guest additions X11 seamless mode testcase" << std::endl;
     if (0 == XInitThreads())
     {

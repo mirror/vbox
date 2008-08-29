@@ -255,7 +255,7 @@ static void Process(const char *pszFilter, const char *pszDir)
 
 int main(int argc, char **argv)
 {
-    RTR3Init(false, 0);
+    RTR3Init();
 
     if (argc == 1)
     {

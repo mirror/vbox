@@ -357,7 +357,7 @@ static int tstRandAdv(RTRAND hRand)
 
 int main()
 {
-    RTR3Init(false);
+    RTR3Init();
     RTPrintf("tstRand: TESTING...\n");
 
     /*

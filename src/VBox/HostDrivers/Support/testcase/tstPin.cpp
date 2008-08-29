@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     int         rcRet = 0;
     RTHCPHYS    HCPhys;
 
-    RTR3Init(true, ~0);
+    RTR3InitAndSUPLib();
     rc = SUPR3Init(NULL);
     RTPrintf("SUPR3Init -> rc=%d\n", rc);
     rcRet += rc != 0;

@@ -102,15 +102,13 @@ RTPROCPRIORITY g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
 
 
 /**
- * Initalizes the runtime library.
+ * Internal initialization worker.
  *
- * @returns iprt status code.
- *
- * @param   fInitSUPLib     Set if SUPR3Init() shall be called during init (default).
- *                          Clear if not to call it.
- * @param   cbReserve       Ignored.
+ * @returns IPRT status code.
+ * @param   fInitSUPLib     Whether to call SUPR3Init.
+ * @param   pszProgramPath  The program path, NULL if not specified.
  */
-RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
+static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
 {
     /* no entry log flow, because prefixes and thread may freak out. */
 
@@ -228,4 +226,35 @@ RTR3DECL(int) RTR3Init(bool fInitSUPLib, size_t cbReserve)
     ASMAtomicWriteBool(&g_fInitializing, false);
     return VINF_SUCCESS;
 }
+
+
+RTR3DECL(int) RTR3Init(void)
+{
+    return rtR3Init(false /* fInitSUPLib */, NULL);
+}
+
+
+RTR3DECL(int) RTR3InitWithProgramPath(const char *pszProgramPath)
+{
+    return rtR3Init(false /* fInitSUPLib */, pszProgramPath);
+}
+
+
+RTR3DECL(int) RTR3InitAndSUPLib(void)
+{
+    return rtR3Init(true /* fInitSUPLib */, NULL /* pszProgramPath */);
+}
+
+
+RTR3DECL(int) RTR3InitAndSUPLibWithProgramPath(const char *pszProgramPath)
+{
+    return rtR3Init(true /* fInitSUPLib */, pszProgramPath);
+}
+
+
+#if 0 /** @todo implement RTR3Term. */
+RTR3DECL(void) RTR3Term(void)
+{
+}
+#endif
 

@@ -162,7 +162,7 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
      * Initialize the VBox runtime without loading
      * the support driver.
      */
-    RTR3Init(false);
+    RTR3Init();
 
     lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
 

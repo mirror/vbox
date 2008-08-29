@@ -40,7 +40,7 @@
 
 int main(int argc, char **argv)
 {
-    RTR3Init(false);
+    RTR3Init();
     int rc = SUPUninstall();
     if (VBOX_SUCCESS(rc))
     {

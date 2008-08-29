@@ -43,7 +43,7 @@ int main()
 {
     unsigned cErrors = 0;
     int i;
-    RTR3Init();
+    RTR3InitAndSUPLib();
     RTPrintf("tstTime-2: TESTING...\n");
 
     /*

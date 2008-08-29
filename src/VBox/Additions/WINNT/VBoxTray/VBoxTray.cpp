@@ -408,7 +408,7 @@ void WINAPI VBoxServiceStart(void)
     HANDLE hWaitEvent[2] = {gStopSem, ghSeamlessNotifyEvent};
 
     if (0 == ghSeamlessNotifyEvent)         /* If seamless mode is not active / supported, reduce event array count */
-        dwEventCount = 1;                       
+        dwEventCount = 1;
 
     Log(("VBoxTray: Number of events to wait in main loop: %ld\n", dwEventCount));
 
@@ -490,7 +490,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 {
     /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
     HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, "VBoxTray");
-    if (   (hMutexAppRunning != NULL) 
+    if (   (hMutexAppRunning != NULL)
         && (GetLastError() == ERROR_ALREADY_EXISTS))
     {
       /* Close the mutex for this application instance. */
@@ -499,7 +499,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
       return 0;
     }
 
-    int rc = RTR3Init(false);
+    int rc = RTR3Init();
     if (RT_FAILURE(rc))
         return rc;
 

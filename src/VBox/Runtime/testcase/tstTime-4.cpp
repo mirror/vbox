@@ -43,11 +43,11 @@ int main()
 {
     unsigned cErrors = 0;
 
-    RTR3Init();
+    RTR3InitAndSUPLib();
     RTPrintf("tstTime-4: TESTING...\n");
 
     /*
-     * Check that RTTimeSystemNanoTS doesn't go backwards and 
+     * Check that RTTimeSystemNanoTS doesn't go backwards and
      * isn't too far from RTTimeNanoTS().
      */
     RTTimeSystemNanoTS(); RTTimeNanoTS(); RTThreadYield(); /* warmup */

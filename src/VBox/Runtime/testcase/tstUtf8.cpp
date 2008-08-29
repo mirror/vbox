@@ -905,7 +905,7 @@ void Benchmarks(void)
 
 int main()
 {
-    RTR3Init(false);
+    RTR3Init();
 
     InitStrings();
     test1();
