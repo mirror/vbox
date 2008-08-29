@@ -48,7 +48,7 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
     /*
      * Read the /proc/<pid>/path/a.out link, convert to native and return it.
      */
-    char szProcFile[80]
+    char szProcFile[80];
     RTStrPrintf(szProcFile, sizeof(szProcFile), "/proc/%ld/path/a.out", (long)getpid());
     int cchLink = readlink(szProcFile, pszPath, cchPath - 1);
     if (cchLink > 0 && (size_t)cchLink <= cchPath - 1)
