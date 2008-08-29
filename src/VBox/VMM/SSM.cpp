@@ -1432,19 +1432,28 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                     {
                                         case SSMUNITTYPE_DEV:
                                             if (pUnit->u.Dev.pfnLoadExec)
+                                            {
                                                 rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, &Handle, UnitHdr.u32Version);
+                                                AssertRC(rc);
+                                            }
                                             else
                                                 rc = VERR_SSM_NO_LOAD_EXEC;
                                             break;
                                         case SSMUNITTYPE_DRV:
                                             if (pUnit->u.Drv.pfnLoadExec)
+                                            {
                                                 rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, &Handle, UnitHdr.u32Version);
+                                                AssertRC(rc);
+                                            }
                                             else
                                                 rc = VERR_SSM_NO_LOAD_EXEC;
                                             break;
                                         case SSMUNITTYPE_INTERNAL:
                                             if (pUnit->u.Internal.pfnLoadExec)
+                                            {
                                                 rc = pUnit->u.Internal.pfnLoadExec(pVM, &Handle, UnitHdr.u32Version);
+                                                AssertRC(rc);
+                                            }
                                             else
                                                 rc = VERR_SSM_NO_LOAD_EXEC;
                                             break;
