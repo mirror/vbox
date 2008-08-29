@@ -26,10 +26,17 @@ include $(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
+
 else ifdef VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
+
+else ifdef VBOX_ONLY_SDK
+ include $(PATH_SUB_CURRENT)/Main/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
+
 else
  ifdef VBOX_WITH_MAIN
   include $(PATH_SUB_CURRENT)/Main/Makefile.kmk 			# Do this one first because of soap.
