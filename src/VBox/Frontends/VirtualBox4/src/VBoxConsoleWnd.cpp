@@ -1291,6 +1291,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                 /* The stuck VM can only be powered off; disable anything
                  * else and choose PowerOff */
                 dlg.mRbSave->setEnabled (false);
+                dlg.mRbShutdown->setEnabled (false);
                 dlg.mRbPowerOff->setChecked (true);
             }
 
