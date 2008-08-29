@@ -25,10 +25,17 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+
 else ifdef VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+
+else ifdef VBOX_ONLY_SDK
+ include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+
 else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
@@ -43,7 +50,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  ifdef VBOX_WITH_TESTCASES
   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  endif
-endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk
 
@@ -55,26 +62,23 @@ include $(KBUILD_PATH)/header.kmk
 ifdef VBOX_ONLY_ADDITIONS
  SUBDIRS = VBox
 
+else ifdef VBOX_ONLY_DOCS
+ SUBDIRS = VBox/Runtime bldprogs libs VBox
+
+else ifdef VBOX_ONLY_SDK
+ SUBDIRS = bldprogs libs VBox
+
 else  # !VBOX_ONLY_ADDITIONS
  # Build IPRT first because xpcom (IPC, nspr, python) depends on it.
- ifndef VBOX_ONLY_SDK
-  SUBDIRS = VBox/Runtime
+ SUBDIRS = VBox/Runtime	bldprogs libs VBox recompiler
+ ifneq ($(wildcard apps),)
+  SUBDIRS += apps
  endif
- SUBDIRS += bldprogs libs VBox
- ifndef VBOX_ONLY_SDK
-  SUBDIRS += recompiler
-  ifneq ($(wildcard apps),)
-   SUBDIRS += apps
-  endif
-  ifdef VBOX_WITH_TESTSUITE
-   SUBDIRS +=  tests
-  endif
-  ifdef VBOX_WITH_TESTCASES
-   SUBDIRS +=  testcase
-  endif
- endif #!VBOX_ONLY_SDK
- ifdef VBOX_ONLY_DOCS
-  SUBDIRS := $(filter VBox/Runtime bldprogs libs VBox, $(SUBDIRS))
+ ifdef VBOX_WITH_TESTSUITE
+  SUBDIRS += tests
+ endif
+ ifdef VBOX_WITH_TESTCASES
+  SUBDIRS += testcase
  endif
 endif # !VBOX_ONLY_ADDITIONS
 
