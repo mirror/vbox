@@ -456,20 +456,10 @@ static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM)
     PREM pRem = &pVM->rem.s;
     Assert(!pRem->fInREM);
     SSMR3PutU32(pSSM,   pRem->Env.hflags);
-    SSMR3PutMem(pSSM,   &pRem->Env, RT_OFFSETOF(CPUState, jmp_env));
     SSMR3PutU32(pSSM,   ~0);            /* separator */
 
     /* Remember if we've entered raw mode (vital for ring 1 checks in e.g. iret emulation). */
     SSMR3PutU32(pSSM, !!(pRem->Env.state & CPU_RAW_RING0));
-
-    /*
-     * Save the REM stuff. (is this really necessary? when the recompiler is restored, it has an empty TLB)
-     */
-    SSMR3PutUInt(pSSM,  pRem->cInvalidatedPages);
-    unsigned i;
-    for (i = 0; i < pRem->cInvalidatedPages; i++)
-        SSMR3PutGCPtr(pSSM, pRem->aGCPtrInvalidatedPages[i]);
-
     SSMR3PutUInt(pSSM, pVM->rem.s.u32PendingInterrupt);
 
     return SSMR3PutU32(pSSM, ~0);       /* terminator */
@@ -493,7 +483,8 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Validate version.
      */
-    if (u32Version != REM_SAVED_STATE_VERSION)
+    if (    u32Version != REM_SAVED_STATE_VERSION
+        &&  u32Version != REM_SAVED_STATE_VERSION_VER1_6)
     {
         AssertMsgFailed(("remR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -517,7 +508,13 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     PREM pRem = &pVM->rem.s;
     Assert(!pRem->fInREM);
     SSMR3GetU32(pSSM,   &pRem->Env.hflags);
-    SSMR3GetMem(pSSM,   &pRem->Env, RT_OFFSETOF(CPUState, jmp_env));
+    if (u32Version == REM_SAVED_STATE_VERSION_VER1_6)
+    {
+        /* Redundant REM CPU state has to be loaded, but can be ignored. */
+        CPUX86State_Ver16 temp;
+        SSMR3GetMem(pSSM,   &temp, RT_OFFSETOF(CPUX86State_Ver16, jmp_env));
+    }
+
     uint32_t u32Sep;
     int rc = SSMR3GetU32(pSSM, &u32Sep);            /* separator */
     if (VBOX_FAILURE(rc))
@@ -533,20 +530,23 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     if (fRawRing0)
         pRem->Env.state |= CPU_RAW_RING0;
 
-    /*
-     * Load the REM stuff.
-     */
-    rc = SSMR3GetUInt(pSSM, &pRem->cInvalidatedPages);
-    if (VBOX_FAILURE(rc))
-        return rc;
-    if (pRem->cInvalidatedPages > ELEMENTS(pRem->aGCPtrInvalidatedPages))
+    if (u32Version == REM_SAVED_STATE_VERSION_VER1_6)
     {
-        AssertMsgFailed(("cInvalidatedPages=%#x\n", pRem->cInvalidatedPages));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        /*
+         * Load the REM stuff.
+         */
+        rc = SSMR3GetUInt(pSSM, &pRem->cInvalidatedPages);
+        if (VBOX_FAILURE(rc))
+            return rc;
+        if (pRem->cInvalidatedPages > ELEMENTS(pRem->aGCPtrInvalidatedPages))
+        {
+            AssertMsgFailed(("cInvalidatedPages=%#x\n", pRem->cInvalidatedPages));
+            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        }
+        unsigned i;
+        for (i = 0; i < pRem->cInvalidatedPages; i++)
+            SSMR3GetGCPtr(pSSM, &pRem->aGCPtrInvalidatedPages[i]);
     }
-    unsigned i;
-    for (i = 0; i < pRem->cInvalidatedPages; i++)
-        SSMR3GetGCPtr(pSSM, &pRem->aGCPtrInvalidatedPages[i]);
 
     rc = SSMR3GetUInt(pSSM, &pVM->rem.s.u32PendingInterrupt);
     if (VBOX_FAILURE(rc))
@@ -572,13 +572,6 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      * Sync the Load Flush the TLB
      */
     tlb_flush(&pRem->Env, 1);
-
-#if 0 /** @todo r=bird: this doesn't make sense. WHY? */
-    /*
-     * Clear all lazy flags (only FPU sync for now).
-     */
-    CPUMGetAndClearFPUUsedREM(pVM);
-#endif
 
     /*
      * Stop ignoring ignornable notifications.
