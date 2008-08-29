@@ -233,7 +233,7 @@ def startCmd(ctx, args):
     if len(args) > 2:
         type = args[2]
     else:
-        type = "GUI/Qt4"
+        type = "gui"
     startVm(ctx['mgr'], ctx['vb'], mach, type)
     return 0
 
