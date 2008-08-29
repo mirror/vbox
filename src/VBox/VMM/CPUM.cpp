@@ -63,7 +63,8 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION    8
+#define CPUM_SAVED_STATE_VERSION_VER1_6     6
+#define CPUM_SAVED_STATE_VERSION            8
 
 
 /*******************************************************************************
@@ -751,6 +752,94 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
     return SSMR3PutMem(pSSM, &au32CpuId[0], sizeof(au32CpuId));
 }
 
+/**
+ * Load a version 1.6 CPUMCTX structure.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pCpumctx16      Version 1.6 CPUMCTX
+ */
+static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
+{
+#define CPUMCTX16_LOADREG(regname)      pVM->cpum.s.Guest.regname = pCpumctx16->regname;
+
+#define CPUMCTX16_LOADHIDREG(regname)                                                   \
+    pVM->cpum.s.Guest.regname##Hid.u64Base      = pCpumctx16->regname##Hid.u32Base;     \
+    pVM->cpum.s.Guest.regname##Hid.u32Limit     = pCpumctx16->regname##Hid.u32Limit;    \
+    pVM->cpum.s.Guest.regname##Hid.Attr         = pCpumctx16->regname##Hid.Attr;
+
+#define CPUMCTX16_LOADSEGREG(regname)                                                   \
+    pVM->cpum.s.Guest.regname                   = pCpumctx16->regname;                  \
+    CPUMCTX16_LOADHIDREG(regname);
+
+    pVM->cpum.s.Guest.fpu               = pCpumctx16->fpu;
+
+    CPUMCTX16_LOADREG(rax);
+    CPUMCTX16_LOADREG(rbx);
+    CPUMCTX16_LOADREG(rcx);
+    CPUMCTX16_LOADREG(rdx);
+    CPUMCTX16_LOADREG(rdi);
+    CPUMCTX16_LOADREG(rsi);
+    CPUMCTX16_LOADREG(rbp);
+    CPUMCTX16_LOADREG(rsp);
+    CPUMCTX16_LOADREG(rip);
+    CPUMCTX16_LOADREG(rflags);
+
+    CPUMCTX16_LOADSEGREG(cs);
+    CPUMCTX16_LOADSEGREG(ds);
+    CPUMCTX16_LOADSEGREG(es);
+    CPUMCTX16_LOADSEGREG(fs);
+    CPUMCTX16_LOADSEGREG(gs);
+    CPUMCTX16_LOADSEGREG(ss);
+
+    CPUMCTX16_LOADREG(r8);
+    CPUMCTX16_LOADREG(r9);
+    CPUMCTX16_LOADREG(r10);
+    CPUMCTX16_LOADREG(r11);
+    CPUMCTX16_LOADREG(r12);
+    CPUMCTX16_LOADREG(r13);
+    CPUMCTX16_LOADREG(r14);
+    CPUMCTX16_LOADREG(r15);
+
+    CPUMCTX16_LOADREG(cr0);
+    CPUMCTX16_LOADREG(cr2);
+    CPUMCTX16_LOADREG(cr3);
+    CPUMCTX16_LOADREG(cr4);
+
+    CPUMCTX16_LOADREG(dr0);
+    CPUMCTX16_LOADREG(dr1);
+    CPUMCTX16_LOADREG(dr2);
+    CPUMCTX16_LOADREG(dr3);
+    CPUMCTX16_LOADREG(dr4);
+    CPUMCTX16_LOADREG(dr5);
+    CPUMCTX16_LOADREG(dr6);
+    CPUMCTX16_LOADREG(dr7);
+
+    pVM->cpum.s.Guest.gdtr.cbGdt   = pCpumctx16->gdtr.cbGdt;
+    pVM->cpum.s.Guest.gdtr.pGdt    = pCpumctx16->gdtr.pGdt;
+    pVM->cpum.s.Guest.idtr.cbIdt   = pCpumctx16->idtr.cbIdt;
+    pVM->cpum.s.Guest.idtr.pIdt    = pCpumctx16->idtr.pIdt;
+
+    CPUMCTX16_LOADREG(ldtr);
+    CPUMCTX16_LOADREG(tr);
+
+    pVM->cpum.s.Guest.SysEnter     = pCpumctx16->SysEnter;
+
+    CPUMCTX16_LOADREG(msrEFER);
+    CPUMCTX16_LOADREG(msrSTAR);
+    CPUMCTX16_LOADREG(msrPAT);
+    CPUMCTX16_LOADREG(msrLSTAR);
+    CPUMCTX16_LOADREG(msrCSTAR);
+    CPUMCTX16_LOADREG(msrSFMASK);
+    CPUMCTX16_LOADREG(msrKERNELGSBASE);
+
+    CPUMCTX16_LOADHIDREG(ldtr);
+    CPUMCTX16_LOADHIDREG(tr);
+
+#undef CPUMCTX16_LOADHIDREG
+#undef CPUMCTX16_LOADSEGREG
+#undef CPUMCTX16_LOADREG
+}
 
 /**
  * Execute state load operation.
@@ -765,7 +854,8 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     /*
      * Validate version.
      */
-    if (u32Version != CPUM_SAVED_STATE_VERSION)
+    if (    u32Version != CPUM_SAVED_STATE_VERSION
+        &&  u32Version != CPUM_SAVED_STATE_VERSION_VER1_6)
     {
         AssertMsgFailed(("cpuR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -779,7 +869,18 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     SSMR3GetMem(pSSM, &pVM->cpum.s.Hyper, sizeof(pVM->cpum.s.Hyper));
     pVM->cpum.s.Hyper.cr3 = uCR3;
     pVM->cpum.s.Hyper.esp = uESP;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.Guest, sizeof(pVM->cpum.s.Guest));
+    if (u32Version == CPUM_SAVED_STATE_VERSION_VER1_6)
+    {
+        CPUMCTX_VER1_6 cpumctx16;
+        memset(&pVM->cpum.s.Guest, 0, sizeof(pVM->cpum.s.Guest));
+        SSMR3GetMem(pSSM, &cpumctx16, sizeof(cpumctx16));
+        
+        /* Save the old cpumctx state into the new one. */
+        cpumR3LoadCPUM1_6(pVM, &cpumctx16);
+    }
+    else
+        SSMR3GetMem(pSSM, &pVM->cpum.s.Guest, sizeof(pVM->cpum.s.Guest));
+
     SSMR3GetU32(pSSM, &pVM->cpum.s.fUseFlags);
     SSMR3GetU32(pSSM, &pVM->cpum.s.fChanged);
 
