@@ -2195,7 +2195,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      */
     if (u32Version != PGM_SAVED_STATE_VERSION)
     {
-        Log(("pgmR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, PGM_SAVED_STATE_VERSION));
+        AssertMsgFailed(("pgmR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, PGM_SAVED_STATE_VERSION));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 

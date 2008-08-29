@@ -874,7 +874,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
      */
     if (u32Version != HWACCM_SSM_VERSION)
     {
-        Log(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
     rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.Event.fPending);

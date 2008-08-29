@@ -471,7 +471,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     if (    SSM_VERSION_MAJOR_CHANGED(u32Version, MM_SAVED_STATE_VERSION)
         ||  !u32Version)
     {
-        Log(("mmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("mmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 

@@ -287,7 +287,10 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 #else
        )
 #endif
+    {
+        AssertMsgFailed(("patmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    }
 
     pVM->patm.s.savedstate.pSSM = pSSM;
 
