@@ -51,6 +51,7 @@ __BEGIN_DECLS
  */
 RTR3DECL(int) RTR3Init(void);
 
+
 /**
  * Initializes the runtime library and try initialize SUPLib too.
  *
@@ -79,6 +80,18 @@ RTR3DECL(int) RTR3InitWithProgramPath(const char *pszProgramPath);
  * @remarks Failure to initialize SUPLib is ignored.
  */
 RTR3DECL(int) RTR3InitAndSUPLibWithProgramPath(const char *pszProgramPath);
+
+/** 
+ * Initializes the runtime library and possibly also SUPLib too.
+ * 
+ * Avoid this interface, it's not considered stable.
+ * 
+ * @returns IPRT status code.
+ * @param   iVersion        The interface version. Must be 0 atm.
+ * @param   pszProgramPath  The program path. Pass NULL if we're to figure it out ourselves.
+ * @param   fInitSUPLib     Whether to initialize the support library or not.
+ */
+RTR3DECL(int) RTR3InitEx(uint32_t iVersion, const char *pszProgramPath, bool fInitSUPLib);
 
 /**
  * Terminates the runtime library.
