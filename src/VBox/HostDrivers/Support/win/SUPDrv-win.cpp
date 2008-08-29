@@ -136,9 +136,9 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     pDrvObj->MajorFunction[IRP_MJ_CREATE]                   = VBoxDrvNtCreate;
                     pDrvObj->MajorFunction[IRP_MJ_CLOSE]                    = VBoxDrvNtClose;
                     pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]           = VBoxDrvNtDeviceControl;
-#if 0 /** @todo test IDC on windows. */
+//#if 0 /** @todo test IDC on windows. */
                     pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL]  = VBoxDrvNtInternalDeviceControl;
-#endif
+//#endif
                     pDrvObj->MajorFunction[IRP_MJ_READ]                     = VBoxDrvNtNotSupportedStub;
                     pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
                     /* more? */
@@ -231,11 +231,11 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
      */
     pFileObj->FsContext = NULL;
     PSUPDRVSESSION pSession;
-#if 0 /** @todo check if this works, consider OBJ_KERNEL_HANDLE too. */
+//#if 0 /** @todo check if this works, consider OBJ_KERNEL_HANDLE too. */
     bool fUser = pIrp->RequestorMode != KernelMode;
-#else
-    bool fUser = true;
-#endif
+//#else
+ //   bool fUser = true;
+//#endif
     int rc = supdrvCreateSession(pDevExt, fUser, &pSession);
     if (!rc)
         pFileObj->FsContext = pSession;

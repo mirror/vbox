@@ -1252,9 +1252,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     else
                     {
+#ifndef VBOX_WITH_NETFLT_WINDOWS
                         rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");     RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
                         rc = CFGMR3InsertString(pCfg, "HostInterfaceName", Utf8Str(hostInterfaceName)); RC_CHECK();
+#else
+                        rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
+                        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+                        rc = CFGMR3InsertString(pCfg, "Trunk", Utf8Str(hostInterfaceName));                RC_CHECK();
+                        rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
+#endif
                         Guid hostIFGuid;
                         hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());    H();
                         char szDriverGUID[256] = {0};
