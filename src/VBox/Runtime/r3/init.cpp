@@ -273,6 +273,13 @@ RTR3DECL(int) RTR3Init(void)
 }
 
 
+RTR3DECL(int) RTR3InitEx(uint32_t iVersion, const char *pszProgramPath, bool fInitSUPLib)
+{
+    AssertReturn(iVersion == 0, VERR_NOT_SUPPORTED);
+    return rtR3Init(pszProgramPath, fInitSUPLib);
+}
+
+
 RTR3DECL(int) RTR3InitWithProgramPath(const char *pszProgramPath)
 {
     return rtR3Init(false /* fInitSUPLib */, pszProgramPath);
