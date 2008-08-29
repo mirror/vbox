@@ -980,6 +980,18 @@ NS_GetFrozenFunctions(XPCOMFunctions *functions, const char* libraryPath)
 
     nsresult rv = NS_ERROR_FAILURE;
 
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+    GET_FUNC(init,                  InitFunc,                       "VBoxNsxpNS_InitXPCOM2");
+    GET_FUNC(shutdown,              ShutdownFunc,                   "VBoxNsxpNS_ShutdownXPCOM");
+    GET_FUNC(getServiceManager,     GetServiceManagerFunc,          "VBoxNsxpNS_GetServiceManager");
+    GET_FUNC(getComponentManager,   GetComponentManagerFunc,        "VBoxNsxpNS_GetComponentManager");
+    GET_FUNC(getComponentRegistrar, GetComponentRegistrarFunc,      "VBoxNsxpNS_GetComponentRegistrar");
+    GET_FUNC(getMemoryManager,      GetMemoryManagerFunc,           "VBoxNsxpNS_GetMemoryManager");
+    GET_FUNC(newLocalFile,          NewLocalFileFunc,               "VBoxNsxpNS_NewLocalFile");
+    GET_FUNC(newNativeLocalFile,    NewNativeLocalFileFunc,         "VBoxNsxpNS_NewNativeLocalFile");
+    GET_FUNC(registerExitRoutine,   RegisterXPCOMExitRoutineFunc,   "VBoxNsxpNS_RegisterXPCOMExitRoutine");
+    GET_FUNC(unregisterExitRoutine, UnregisterXPCOMExitRoutineFunc, "VBoxNsxpNS_UnregisterXPCOMExitRoutine");
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
     GET_FUNC(init,                  InitFunc,                       "NS_InitXPCOM2");
     GET_FUNC(shutdown,              ShutdownFunc,                   "NS_ShutdownXPCOM");
     GET_FUNC(getServiceManager,     GetServiceManagerFunc,          "NS_GetServiceManager");
@@ -990,15 +1002,39 @@ NS_GetFrozenFunctions(XPCOMFunctions *functions, const char* libraryPath)
     GET_FUNC(newNativeLocalFile,    NewNativeLocalFileFunc,         "NS_NewNativeLocalFile");
     GET_FUNC(registerExitRoutine,   RegisterXPCOMExitRoutineFunc,   "NS_RegisterXPCOMExitRoutine");
     GET_FUNC(unregisterExitRoutine, UnregisterXPCOMExitRoutineFunc, "NS_UnregisterXPCOMExitRoutine");
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 
     // these functions were added post 1.4 (need to check size of |functions|)
     if (functions->size > offsetof(XPCOMFunctions, getTraceRefcnt)) {
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+        GET_FUNC(getDebug,          GetDebugFunc,                   "VBoxNsxpNS_GetDebug");
+        GET_FUNC(getTraceRefcnt,    GetTraceRefcntFunc,             "VBoxNsxpNS_GetTraceRefcnt");
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
         GET_FUNC(getDebug,          GetDebugFunc,                   "NS_GetDebug");
         GET_FUNC(getTraceRefcnt,    GetTraceRefcntFunc,             "NS_GetTraceRefcnt");
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
     }
 
     // these functions were added post 1.6 (need to check size of |functions|)
     if (functions->size > offsetof(XPCOMFunctions, cstringCloneData)) {
+#ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+        GET_FUNC(stringContainerInit,    StringContainerInitFunc,        "VBoxNsxpNS_StringContainerInit");
+        GET_FUNC(stringContainerFinish,  StringContainerFinishFunc,      "VBoxNsxpNS_StringContainerFinish");
+        GET_FUNC(stringGetData,          StringGetDataFunc,              "VBoxNsxpNS_StringGetData");
+        GET_FUNC(stringSetData,          StringSetDataFunc,              "VBoxNsxpNS_StringSetData");
+        GET_FUNC(stringSetDataRange,     StringSetDataRangeFunc,         "VBoxNsxpNS_StringSetDataRange");
+        GET_FUNC(stringCopy,             StringCopyFunc,                 "VBoxNsxpNS_StringCopy");
+        GET_FUNC(cstringContainerInit,   CStringContainerInitFunc,       "VBoxNsxpNS_CStringContainerInit");
+        GET_FUNC(cstringContainerFinish, CStringContainerFinishFunc,     "VBoxNsxpNS_CStringContainerFinish");
+        GET_FUNC(cstringGetData,         CStringGetDataFunc,             "VBoxNsxpNS_CStringGetData");
+        GET_FUNC(cstringSetData,         CStringSetDataFunc,             "VBoxNsxpNS_CStringSetData");
+        GET_FUNC(cstringSetDataRange,    CStringSetDataRangeFunc,        "VBoxNsxpNS_CStringSetDataRange");
+        GET_FUNC(cstringCopy,            CStringCopyFunc,                "VBoxNsxpNS_CStringCopy");
+        GET_FUNC(cstringToUTF16,         CStringToUTF16,                 "VBoxNsxpNS_CStringToUTF16");
+        GET_FUNC(utf16ToCString,         UTF16ToCString,                 "VBoxNsxpNS_UTF16ToCString");
+        GET_FUNC(stringCloneData,        StringCloneDataFunc,            "VBoxNsxpNS_StringCloneData");
+        GET_FUNC(cstringCloneData,       CStringCloneDataFunc,           "VBoxNsxpNS_CStringCloneData");
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
         GET_FUNC(stringContainerInit,    StringContainerInitFunc,        "NS_StringContainerInit");
         GET_FUNC(stringContainerFinish,  StringContainerFinishFunc,      "NS_StringContainerFinish");
         GET_FUNC(stringGetData,          StringGetDataFunc,              "NS_StringGetData");
@@ -1015,6 +1051,7 @@ NS_GetFrozenFunctions(XPCOMFunctions *functions, const char* libraryPath)
         GET_FUNC(utf16ToCString,         UTF16ToCString,                 "NS_UTF16ToCString");
         GET_FUNC(stringCloneData,        StringCloneDataFunc,            "NS_StringCloneData");
         GET_FUNC(cstringCloneData,       CStringCloneDataFunc,           "NS_CStringCloneData");
+#endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
     }
 
     rv = NS_OK;
