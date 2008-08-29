@@ -56,6 +56,7 @@ ifndef VBOX_ONLY_DOCS
  endif #  VBOX_WITH_VRDP
 endif # !VBOX_ONLY_DOCS
 
+
 # Main related things - XML and XSLT, XPCOM.
 ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_MAIN
@@ -87,8 +88,8 @@ else # !VBOX_SINGLE_MAKEFILE
 DEPTH = ../..
 include $(KBUILD_PATH)/header.kmk
 
-
 subdirs := liblzf-1.51 $(subdirs.$(KBUILD_TARGET))
+
 ifdef IPRT_WITH_KSTUFF
  subdirs += kStuff
 endif
@@ -96,7 +97,7 @@ endif
 # values by the configure script
 #ifndef VBOX_OSE
  ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
-  subdirs += zlib-1.2.1
+   subdirs += zlib-1.2.1
  endif
  ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
   subdirs += libpng-1.2.8
@@ -137,6 +138,10 @@ endif
 
 ifdef VBOX_ONLY_DOCS
  subdirs := $(filter liblzf-1.51 zlib-1.2.1 kStuff, $(subdirs))
+endif
+
+ifdef VBOX_ONLY_SDK
+ subdirs := $(filter-out liblzf-1.51 zlib-1.2.1 libpng-1.2.8 openssl-0.9.7e openssl-0.9.8h ffmpeg-20060710, $(subdirs))
 endif
 
 # optimized walking

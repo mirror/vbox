@@ -152,7 +152,7 @@ ifdef VBOX_WITH_DOCS
   LINUXNOSTRIP += \
 	VirtualBox.chm
  endif
- ifneq ($(wildcard $(PATH_BIN)/VirtualBoxAPI.chm),)
+ ifneq ($(wildcard $(VBOX_PATH_SDK)/docs/VirtualBoxAPI.chm),)
  # same applies to VirtualBoxAPI.chm
  LINUXNOSTRIP += \
 	VirtualBoxAPI.chm
@@ -261,7 +261,7 @@ $(SDK_ZIP):    \
 		$(PATH_BIN)/sdk \
 		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Making SDK delivery $@)
-	$(QUIET)$(REDIRECT) -C $(PATH_BIN) -- zip -r9 $@ sdk
+	$(QUIET)$(REDIRECT) -C $(PATH_BIN) -- zip -r9 $@ sdk > /dev/null
 endif
 
 $(PATH_TARGET)/VirtualBox-$(VBOX_VERSION_STRING): $(PATH_TARGET)/archive
