@@ -44,7 +44,7 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Hard Disk</source>
-        <translation>Platte</translation>
+        <translation>Festplatte</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
@@ -1051,7 +1051,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="308"/>
         <source>&amp;Floppy Images</source>
-        <translation>&amp;Floppy-Abbilder</translation>
+        <translation>&amp;Diskettenabbilder</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="123"/>
@@ -1290,7 +1290,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Lade das CD-Abbild mit den VirtualBox-Gasterweiterungen von &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Lade das CDROM-Abbild mit den VirtualBox-Gasterweiterungen von &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="185"/>
@@ -2697,12 +2697,12 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="265"/>
         <source>Hard disk images (*.vdi)</source>
-        <translation>Festplatten-Abbilder (*.vdi)</translation>
+        <translation>Plattenabbilder (*.vdi)</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="263"/>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Wählen Sie eine Datei für ein neues Festplatten-Abbild aus</translation>
+        <translation>Wählen Sie eine Datei für ein neues Plattenabbild aus</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
@@ -3089,7 +3089,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1159"/>
         <source>floppy image</source>
-        <translation>Disketten-Abbild</translation>
+        <translation>Diskettenabbild</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1148"/>
@@ -3274,22 +3274,22 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1403"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ein CD-Abbild mit den VirtualBox-Gasterweiterungen konnte weder unter &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; noch unter &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; gefunden werden.&lt;/p&gt;&lt;p&gt;Möchten Sie diese Datei nun aus dem Internet herunterladen?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ein CDROM-Abbild mit den VirtualBox-Gasterweiterungen konnte weder unter &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; noch unter &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; gefunden werden.&lt;/p&gt;&lt;p&gt;Möchten Sie diese Datei nun aus dem Internet herunterladen?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1415"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Das CD-Abbild mit den VirtualBox Gasterweiterungen konnte nicht von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen werden.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das CDROM-Abbild mit den VirtualBox Gasterweiterungen konnte nicht von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen werden.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1425"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sind Sie sicher, dass Sie ein CD-Abbild mit den VirtualBox Gasterweiterungen von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (Größe %3 Byte) herunterladen wollen?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sind Sie sicher, dass Sie ein CDROM-Abbild mit den VirtualBox Gasterweiterungen von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (Größe %3 Byte) herunterladen wollen?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1440"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Das CD-Abbild mit den VirtualBox Gasterweiterungen wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;&lt;p&gt;Möchten Sie das CD-Abbild registrieren und als virtuelle CD/DVD einbinden?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das CDROM-Abbild mit den VirtualBox Gasterweiterungen wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;&lt;p&gt;Möchten Sie das CDROM-Abbild registrieren und als virtuelle CD/DVD einbinden?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1820"/>
@@ -5341,7 +5341,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="182"/>
         <source>Ca&amp;ble Connected</source>
-        <translation>Netzwerk&amp;kabel angeschlossen</translation>
+        <translation>Netzwerk&amp;kabel verbunden</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="189"/>
@@ -5909,7 +5909,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation>&amp;Entfernt:</translation>
+        <translation>&amp;Fernzugriff:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
