@@ -4,7 +4,7 @@
 # This program is a simple interactive shell for VirtualBox. You can query      #
 # information and issue commands from a simple command line.                    #
 #                                                                               #
-# It also provides you with examples on how to use VirtualBox' Python API.      #
+# It also provides you with examples on how to use VirtualBox's Python API.     #
 # This shell is even somewhat documented and supports TAB-completion and        #
 # history if you have Python readline installed.                                #
 #                                                                               #

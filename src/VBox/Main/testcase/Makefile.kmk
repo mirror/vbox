@@ -58,9 +58,6 @@ ifeq ($(KBUILD_TARGET),win)
 else
  samples_INST = $(INST_SDK)bindings/xpcom/samples/
  samples_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux=>Makefile
- ifdef VBOX_WITH_TESTCASES
- samples_SYMLINKS = tstVBoxAPILinux=>../../../tstVBoxAPILinux
- endif
 endif
 
 #

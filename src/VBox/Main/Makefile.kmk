@@ -139,20 +139,22 @@ VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 #
 docs: $(PATH_TARGET)/docs.Main
 
+DOCDIR = $(VBOX_PATH_SDK)/docs/
+
 $(PATH_TARGET)/docs.Main: \
 		$(VBOX_PATH_MAIN_SRC)/Doxyfile.Main \
 		$(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl \
 		$(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl \
 		| $(call DIRDEP, $(PATH_TARGET)) \
-		  $(call DIRDEP, $(PATH_OUT)/docs/Main)
-	$(RM) -f $(wildcard $(PATH_OUT)/docs/Main/html/*)
+		  $(call DIRDEP, $(DOCDIR))
+	$(RM) -f $(wildcard $(DOCDIR)/html/*)
 	$(VBOX_XSLTPROC) -o $(PATH_TARGET)/VirtualBox.idl $(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
-	$(REDIRECT) -E 'PATH_OUT=$(PATH_OUT)' -E 'PATH_TARGET=$(PATH_TARGET)' -E 'PATH_CHM=$(subst /,\,$(PATH_BIN)/VirtualBoxAPI.chm)' \
+	$(REDIRECT) -E 'DOCDIR=$(DOCDIR)' -E 'PATH_TARGET=$(PATH_TARGET)' -E 'PATH_CHM=$(subst /,\,$(DOCDIR)/VirtualBoxAPI.chm)' \
 		-- doxygen $(VBOX_PATH_MAIN_SRC)/Doxyfile.Main
-	-$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe $(subst /,\\,$(PATH_OUT)/docs/Main/html/index.hhp)
+	-$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe $(subst /,\\,$(DOCDIR)/html/index.hhp)
 	$(APPEND) $(PATH_TARGET)/docs.Main
 
-$(call DIRDEP, $(PATH_OUT)/docs/Main):
+$(call DIRDEP, $(DOCDIR)):
 	$(MKDIR) -p $@
 
 $(VBOX_PATH_SDK)/bindings/VirtualBox.xidl: $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
@@ -658,7 +660,7 @@ testidlhdr: $(IDLHEADER.XPCOM)
 
 else
 
-testidl: $(IDLFILE) $(IDLFILE.MSCOM) $(PATH_VBoxCOM)/VirtualBox_i.c
+testidl: $(IDLFILE.MSCOM) $(PATH_VBoxCOM)/VirtualBox_i.c
 
 endif
 
