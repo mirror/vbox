@@ -1314,9 +1314,9 @@ ifdef VBOX_WITH_PYTHON
    $(warning Unable to determine the python library (VBOX_LIB_PYTHON).)
   endif
  endif
-ifndef VBOX_ONLY_SDK
- DLLS += VBoxPython
-endif
+ ifndef VBOX_ONLY_SDK
+  DLLS += VBoxPython
+ endif
  INSTALLS += VBoxPython-inst-py-xpcom
  INSTALLS += VBoxPython-inst-sample
 endif
