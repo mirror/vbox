@@ -1191,6 +1191,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
 
 #elif defined(VBOX_WITH_NETFLT) && !defined(RT_OS_WINDOWS) /** @todo merge in the windows stuff too */
+                    /* 
+                     * This is the new VBoxNetFlt+IntNet stuff. 
+                     */
                     if (fSniffer)
                     {
                         rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);   RC_CHECK();
@@ -1204,12 +1207,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam()); H();
                     Utf8Str HifNameUtf8(HifName);
                     const char *pszHifName = HifNameUtf8.raw();
+
 # if defined(RT_OS_DARWIN)
-                    /* The nae is on the form 'ifX: long name', chop it off at the colon. */
-                    Bstr HifName;
-                    hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam()); H();
-                    Utf8Str HifNameUtf8(HifName);
-                    const char *pszHifName = HifNameUtf8.raw();
+                    /* The name is on the form 'ifX: long name', chop it off at the colon. */
                     char szTrunk[8];
                     strncpy(szTrunk, pszHifName, sizeof(szTrunk));
                     char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
@@ -1222,6 +1222,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     *pszColon = '\0';
                     const char *pszTrunk = szTrunk;
+
 # elif defined(RT_OS_SOLARIS) 
                     /* The name is on the form BSD format 'ifX'; use as-is. */
                     const char *pszTrunk = szTrunk;
