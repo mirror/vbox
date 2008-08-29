@@ -3284,6 +3284,7 @@ void VBoxConsoleWnd::updateMachineState (KMachineState state)
         if (vboxProblem().remindAboutGuruMeditation (
                 cconsole, QDir::convertSeparators (logFolder)))
         {
+            qApp->processEvents();
             cconsole.PowerDown();
             if (!cconsole.isOk())
                 vboxProblem().cannotStopMachine (cconsole);
