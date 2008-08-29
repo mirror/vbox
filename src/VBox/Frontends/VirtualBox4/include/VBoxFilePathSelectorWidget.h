@@ -67,12 +67,14 @@ protected:
     void resizeEvent (QResizeEvent *aEvent);
     void focusInEvent (QFocusEvent *aEvent);
     void focusOutEvent (QFocusEvent *aEvent);
+    bool eventFilter (QObject *aObj, QEvent *aEv);
     void retranslateUi();
 
 private slots:
 
     void onActivated (int aIndex);
     void copyToClipboard();
+    void refreshText();
 
 private:
 
@@ -80,7 +82,6 @@ private:
     QIcon defaultIcon() const;
     QString fullPath (bool aAbsolute = true) const;
     QString shrinkText (int aWidth) const;
-    void refreshText();
 
     /* Private member vars */
     QFileIconProvider *mIconProvider;
@@ -91,6 +92,7 @@ private:
     QString mNoneStr;
     QString mNoneTip;
     bool mIsEditableMode;
+    bool mIsMouseAwaited;
 };
 
 #endif /* __VBoxFilePathSelectorWidget_h__ */

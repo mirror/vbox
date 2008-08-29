@@ -30,6 +30,7 @@
 #include <QDir>
 #include <QFileIconProvider>
 #include <QLineEdit>
+#include <QTimer>
 
 enum
 {
@@ -38,6 +39,22 @@ enum
     ResetId
 };
 
+/**
+ * Returns first position of difference between passed strings.
+ */
+static int differFrom (const QString &aS1, const QString &aS2)
+{
+    if (aS1 == aS2)
+        return -1;
+
+    int minLength = qMin (aS1.size(), aS2.size());
+    int index = 0;
+    for (index = 0; index < minLength ; ++ index)
+        if (aS1 [index] != aS2 [index])
+            break;
+    return index;
+}
+
 VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     : QIWithRetranslateUI<QComboBox> (aParent)
     , mIconProvider (new QFileIconProvider())
@@ -45,6 +62,7 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     , mMode (Mode_Folder)
     , mHomeDir (QDir::current().absolutePath())
     , mIsEditableMode (false)
+    , mIsMouseAwaited (false)
 {
     /* Populate items */
     insertItem (PathId, "");
@@ -75,6 +93,9 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
 
     /* Applying language settings */
     retranslateUi();
+
+    /* Installing necessary event filters */
+    lineEdit()->installEventFilter (this);
 }
 
 VBoxFilePathSelectorWidget::~VBoxFilePathSelectorWidget()
@@ -155,7 +176,10 @@ void VBoxFilePathSelectorWidget::focusInEvent (QFocusEvent *aEvent)
     if (isPathSelected())
     {
         mIsEditableMode = true;
-        refreshText();
+        if (aEvent->reason() == Qt::MouseFocusReason)
+            mIsMouseAwaited = true;
+        else
+            refreshText();
     }
     QIWithRetranslateUI<QComboBox>::focusInEvent (aEvent);
 }
@@ -168,6 +192,14 @@ void VBoxFilePathSelectorWidget::focusOutEvent (QFocusEvent *aEvent)
         refreshText();
     }
     QIWithRetranslateUI<QComboBox>::focusOutEvent (aEvent);
+}
+
+bool VBoxFilePathSelectorWidget::eventFilter (QObject *aObj, QEvent *aEv)
+{
+    if (mIsMouseAwaited && (aEv->type() == QEvent::MouseButtonPress))
+        QTimer::singleShot (0, this, SLOT (refreshText()));
+
+    return QIWithRetranslateUI<QComboBox>::eventFilter (aObj, aEv);
 }
 
 void VBoxFilePathSelectorWidget::retranslateUi()
@@ -352,6 +384,19 @@ void VBoxFilePathSelectorWidget::refreshText()
 {
     if (mIsEditableMode)
     {
+        /* Cursor positioning variables */
+        int curPos = -1;
+        int diffPos = -1;
+        int fromRight = -1;
+
+        if (mIsMouseAwaited)
+        {
+            /* Store the cursor position */
+            curPos = lineEdit()->cursorPosition();
+            diffPos = differFrom (lineEdit()->text(), mPath);
+            fromRight = lineEdit()->text().size() - curPos;
+        }
+
         /* In editable mode there should be no any icon
          * and text have be corresponding real stored path
          * which can be absolute or relative. */
@@ -360,6 +405,22 @@ void VBoxFilePathSelectorWidget::refreshText()
         setToolTip (mMode == Mode_Folder ?
             tr ("Please type the desired folder path here.") :
             tr ("Please type the desired file path here."));
+
+        if (mIsMouseAwaited)
+        {
+            mIsMouseAwaited = false;
+
+            /* Restore the position to the right of dots */
+            if (diffPos != -1 && curPos >= diffPos + 3)
+                lineEdit()->setCursorPosition (lineEdit()->text().size() -
+                                               fromRight);
+            /* Restore the position to the center of text */
+            else if (diffPos != -1 && curPos > diffPos)
+                lineEdit()->setCursorPosition (lineEdit()->text().size() / 2);
+            /* Restore the position to the left of dots */
+            else
+                lineEdit()->setCursorPosition (curPos);
+        }
     }
     else if (mPath.isNull())
     {
