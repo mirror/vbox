@@ -57,16 +57,22 @@ ifdef VBOX_ONLY_ADDITIONS
 
 else  # !VBOX_ONLY_ADDITIONS
  # Build IPRT first because xpcom (IPC, nspr, python) depends on it.
- SUBDIRS = VBox/Runtime	bldprogs libs VBox recompiler
- ifneq ($(wildcard apps),)
-  SUBDIRS += apps
+ ifndef VBOX_ONLY_SDK
+  SUBDIRS = VBox/Runtime
  endif
- ifdef VBOX_WITH_TESTSUITE
-  SUBDIRS +=  tests
- endif
- ifdef VBOX_WITH_TESTCASES
-  SUBDIRS +=  testcase
- endif
+ SUBDIRS += bldprogs libs VBox
+ ifndef VBOX_ONLY_SDK
+  SUBDIRS += recompiler
+  ifneq ($(wildcard apps),)
+   SUBDIRS += apps
+  endif
+  ifdef VBOX_WITH_TESTSUITE
+   SUBDIRS +=  tests
+  endif
+  ifdef VBOX_WITH_TESTCASES
+   SUBDIRS +=  testcase
+  endif
+ endif #!VBOX_ONLY_SDK
  ifdef VBOX_ONLY_DOCS
   SUBDIRS := $(filter VBox/Runtime bldprogs libs VBox, $(SUBDIRS))
  endif
