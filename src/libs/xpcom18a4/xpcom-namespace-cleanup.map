@@ -1,4 +1,4 @@
-# GNU ld version script, also used by Solaris ld.
+# GNU ld version script, for linux
 # Gets rid of all non-prefixed non-C++ global symbols. They cause problem if
 # VirtualBox drags in the system-provided nspr library or some other code from
 # the Mozilla project. VirtualBox shouldn't pollute the namespace.
@@ -17,8 +17,7 @@
 
 {
     global:
-        _Z*; VBoxNspr*; VBoxNspl*; VBoxNsxp*; VBoxNsll*;
-        NSGetModule;
+        _Z*; VBoxNs*;
         __bss_start; _edata; _end; _fini; _init;
     local:
         *;
