@@ -374,6 +374,18 @@ typedef struct VBOXIDTR
     uint64_t     pIdt;
 } VBOXIDTR, *PVBOXIDTR;
 #pragma pack()
+
+#pragma pack(1)
+/** IDTR from version 1.6 */
+typedef struct VBOXIDTR_VER1_6
+{
+    /** Size of the IDT. */
+    uint16_t    cbIdt;
+    /** Address of the IDT. */
+    uint32_t     pIdt;
+} VBOXIDTR_VER1_6, *PVBOXIDTR_VER1_6;
+#pragma pack()
+
 /** @} */
 
 
@@ -396,6 +408,17 @@ typedef struct VBOXGDTR
 #pragma pack()
 /** Pointer to GDTR. */
 typedef VBOXGDTR *PVBOXGDTR;
+
+#pragma pack(1)
+/** GDTR from version 1.6 */
+typedef struct VBOXGDTR_VER1_6
+{
+    /** Size of the GDT. */
+    uint16_t    cbGdt;
+    /** Address of the GDT. */
+    uint32_t    pGdt;
+} VBOXGDTR_VER1_6;
+#pragma pack()
 
 /** @} */
 
