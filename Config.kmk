@@ -960,6 +960,11 @@ ifdef VBOX_WITH_INTERNAL_NETWORKING
 DEFS += VBOX_WITH_INTERNAL_NETWORKING
 endif
 
+ifdef VBOX_WITH_NETFLT_WINDOWS
+DEFS.win += VBOX_WITH_NETFLT_WINDOWS
+endif
+
+
 #
 # Compiler optimization flags.
 #

@@ -36,9 +36,13 @@ ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_USB
   include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
  endif
- if1of ($(KBUILD_TARGET), darwin solaris)
+ if1of ($(KBUILD_TARGET), darwin solaris win)
   ifndef VBOX_OSE
-   include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+   ifneq ($(KBUILD_TARGET),win)
+    include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+   else ifdef VBOX_WITH_NETFLT_WINDOWS
+    include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+   endif
   endif
  endif
 endif # !VBOX_ONLY_DOCS

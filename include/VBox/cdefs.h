@@ -323,9 +323,17 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_SUP_R0
-# define SUPR0DECL(type)    DECLEXPORT(type) VBOXCALL
+# ifdef IN_SUP_STATIC
+#  define SUPR0DECL(type)    DECLHIDDEN(type) VBOXCALL
+# else
+#  define SUPR0DECL(type)    DECLEXPORT(type) VBOXCALL
+# endif
 #else
-# define SUPR0DECL(type)    DECLIMPORT(type) VBOXCALL
+# ifdef IN_SUP_STATIC
+#  define SUPR0DECL(type)    DECLHIDDEN(type) VBOXCALL
+# else
+#  define SUPR0DECL(type)    DECLIMPORT(type) VBOXCALL
+# endif
 #endif
 
 /** @def IN_SUP_GC

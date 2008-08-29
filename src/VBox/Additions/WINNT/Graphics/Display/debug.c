@@ -70,18 +70,20 @@ DebugPrint(
 
 }
 
+#endif
+
 ULONG __cdecl DbgPrint(PCH pszFormat, ...)
 {
+#ifdef LOG_ENABLED
     va_list args;
     va_start(args, pszFormat);
-#ifdef VBOX
+# ifdef VBOX
     RTLogBackdoorPrintfV(pszFormat, args);
-#else
+# else
     EngDebugPrint(STANDARD_DEBUG_PREFIX, pszFormat, args);
-#endif 
+# endif
     va_end(args);
+#endif
     return 0;
 }
-
-#endif
 
