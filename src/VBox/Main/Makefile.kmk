@@ -39,12 +39,12 @@ ifndef VBOX_ONLY_SDK
  PROGRAMS        += VBoxSVC
  MAKE_WIN_PATH   = $(subst /,\\,$(1))
 else
- # somewhat hackish, better have real directory
+ # used by some rules
  PATH_VBoxCOM    = $(PATH_TARGET)/VBoxCOM
  BLDDIRS        +=  $(PATH_VBoxCOM) $(PATH_BIN)/components
- VBOX_VCC_TOOL := VCC80X86
+ # VBOX_VCC_TOOL := VCC80X86
  # I'm Evil! Dr. Evil.
- include $(KBUILD_PATH)/tools/VCC80X86.kmk
+ include $(KBUILD_PATH)/tools/VCC70.kmk
  include $(KBUILD_PATH)/sdks/WINPSDK.kmk
  # on Wine Z: is always FS root
  MAKE_WIN_PATH   = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
