@@ -39,10 +39,7 @@ ifndef VBOX_ONLY_SDK
  PROGRAMS        += VBoxSVC
 else
  PATH_VBoxCOM    = $(PATH_BIN)/sdk/mscom/
-$(PATH_VBoxCOM):
-	$(QUIET)$(MKDIR) -p $@
-$(PATH_BIN)/components/:
-	$(MKDIR) -p $@
+ BLDDIRS        += $(PATH_BIN)/sdk/mscom $(PATH_BIN)/components
 endif #!VBOX_ONLY_SDK
 
 OTHERS           += $(VBOX_PATH_SDK)/bindings/VirtualBox.xidl
