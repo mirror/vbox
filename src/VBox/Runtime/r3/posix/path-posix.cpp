@@ -42,9 +42,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <pwd.h>
-#ifdef RT_OS_DARWIN
-# include <mach-o/dyld.h>
-#endif
 
 #include <iprt/path.h>
 #include <iprt/assert.h>
@@ -52,6 +49,7 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include "internal/path.h"
+#include "internal/process.h"
 #include "internal/fs.h"
 
 #ifdef RT_OS_L4
@@ -401,100 +399,6 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
              cchAbsPath, rc));
     return rc;
 }
-
-
-#ifndef RT_MINI
-RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
-{
-    /*
-     * First time only.
-     */
-    if (!g_szrtProgramPath[0])
-    {      
-        char* envPath = getenv("VBOX_PROGRAM_PATH");
-        if (envPath) 
-        {
-          strncpy(g_szrtProgramPath, envPath, sizeof(g_szrtProgramPath));
-        } else {
-        /*
-         * Linux have no API for obtaining the executable path, but provides a symbolic link
-         * in the proc file system. Note that readlink is one of the weirdest Unix apis around.
-         *
-         * OS/2 have an api for getting the program file name.
-         */
-/** @todo use RTProcGetExecutableName() */
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
-# ifdef RT_OS_LINUX
-        int cchLink = readlink("/proc/self/exe", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
-# elif defined(RT_OS_SOLARIS)
-        char szFileBuf[PATH_MAX + 1];
-        sprintf(szFileBuf, "/proc/%ld/path/a.out", (long)getpid());
-        int cchLink = readlink(szFileBuf, &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
-# else /* RT_OS_FREEBSD: */
-        int cchLink = readlink("/proc/curproc/file", &g_szrtProgramPath[0], sizeof(g_szrtProgramPath) - 1);
-# endif
-        if (cchLink < 0 || cchLink == sizeof(g_szrtProgramPath) - 1)
-        {
-            int rc = RTErrConvertFromErrno(errno);
-            AssertMsgFailed(("couldn't read /proc/self/exe. errno=%d cchLink=%d\n", errno, cchLink));
-            LogFlow(("RTPathProgram(%p, %u): returns %Rrc\n", pszPath, cchPath, rc));
-            return rc;
-        }
-        g_szrtProgramPath[cchLink] = '\0';
-
-#elif defined(RT_OS_OS2) || defined(RT_OS_L4)
-        _execname(g_szrtProgramPath, sizeof(g_szrtProgramPath));
-
-#elif defined(RT_OS_DARWIN)
-        const char *pszImageName = _dyld_get_image_name(0);
-        AssertReturn(pszImageName, VERR_INTERNAL_ERROR);
-        size_t cchImageName = strlen(pszImageName);
-        if (cchImageName >= sizeof(g_szrtProgramPath))
-            AssertReturn(pszImageName, VERR_INTERNAL_ERROR);
-        memcpy(g_szrtProgramPath, pszImageName, cchImageName + 1);
-
-#else
-# error needs porting.
-#endif
-        }
-        /*
-         * Convert to UTF-8 and strip of the filename.
-         */
-        char *pszTmp = NULL;
-        int rc = rtPathFromNative(&pszTmp, &g_szrtProgramPath[0]);
-        if (RT_FAILURE(rc))
-        {
-            LogFlow(("RTPathProgram(%p, %u): returns %Rrc\n", pszPath, cchPath, rc));
-            return rc;
-        }
-        size_t cch = strlen(pszTmp);
-        if (cch >= sizeof(g_szrtProgramPath))
-        {
-            RTStrFree(pszTmp);
-            LogFlow(("RTPathProgram(%p, %u): returns %Rrc\n", pszPath, cchPath, VERR_BUFFER_OVERFLOW));
-            return VERR_BUFFER_OVERFLOW;
-        }
-        memcpy(g_szrtProgramPath, pszTmp, cch + 1);
-        RTPathStripFilename(g_szrtProgramPath);
-        RTStrFree(pszTmp);
-    }
-
-    /*
-     * Calc the length and check if there is space before copying.
-     */
-    unsigned cch = strlen(g_szrtProgramPath) + 1;
-    if (cch <= cchPath)
-    {
-        memcpy(pszPath, g_szrtProgramPath, cch + 1);
-        LogFlow(("RTPathProgram(%p:{%s}, %u): returns %Rrc\n", pszPath, pszPath, cchPath, VINF_SUCCESS));
-        return VINF_SUCCESS;
-    }
-
-    AssertMsgFailed(("Buffer too small (%d < %d)\n", cchPath, cch));
-    LogFlow(("RTPathProgram(%p, %u): returns %Rrc\n", pszPath, cchPath, VERR_BUFFER_OVERFLOW));
-    return VERR_BUFFER_OVERFLOW;
-}
-#endif /* !RT_MINI */
 
 
 #ifndef RT_OS_L4

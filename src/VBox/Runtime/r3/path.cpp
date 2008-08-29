@@ -43,6 +43,7 @@
 #include <iprt/uni.h>
 #include "internal/fs.h"
 #include "internal/path.h"
+#include "internal/process.h"
 
 
 /**
@@ -120,6 +121,93 @@ RTDECL(void) RTPathStripExt(char *pszPath)
 
 
 /**
+ * Parses a path.
+ * 
+ * It figures the length of the directory component, the offset of 
+ * the file name and the location of the suffix dot.
+ *
+ * @returns The path length.
+ * 
+ * @param   pszPath     Path to find filename in.
+ * @param   pcbDir      Where to put the length of the directory component.
+ *                      If no directory, this will be 0. Optional.
+ * @param   poffName    Where to store the filename offset.
+ *                      If empty string or if it's ending with a slash this
+ *                      will be set to -1. Optional.
+ * @param   poffSuff    Where to store the suffix offset (the last dot).
+ *                      If empty string or if it's ending with a slash this
+ *                      will be set to -1. Optional.
+ * @param   pfFlags     Where to set flags returning more information about 
+ *                      the path. For the future. Optional.
+ */
+RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff)
+{
+    const char *psz = pszPath;
+    ssize_t     offRoot = 0;
+    const char *pszName = pszPath;
+    const char *pszLastDot = NULL;
+
+    for (;; psz++)
+    {
+        switch (*psz)
+        {
+            /* handle separators. */
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+            case ':':
+                pszName = psz + 1;
+                cchRoot = pszName - psz;
+                break;
+
+            case '\\':
+#endif
+            case '/':
+                pszName = psz + 1;
+                break;
+
+            case '.':
+                pszLastDot = psz;
+                break;
+
+            /* 
+             * The end. Complete the results.
+             */
+            case '\0':
+            {
+                ssize_t offName = *pszName != '\0' ? pszName - pszPath : -1;
+                if (poffName)
+                    *poffName = offName;
+
+                if (poffSuff)
+                {
+                    ssize_t offSuff = -1;
+                    if (pszLastDot)
+                    {
+                        offSuff = pszLastDot - pszPath;
+                        if (offSuff <= offName)
+                            offSuff = -1;
+                    }
+                    *poffSuff = offSuff;
+                }
+
+                if (pcchDir)
+                {
+                    ssize_t off = offName - 1;
+                    while (off >= offRoot && RTPATH_IS_SLASH(pszPath[off]))
+                        off--;
+                    *pcchDir = RT_MAX(off, offRoot) + 1;
+                }
+
+                return psz - pszPath;
+            }
+        }
+    }
+
+    /* will never get here */
+    return 0;
+}
+
+
+/**
  * Finds the filename in a path.
  *
  * @returns Pointer to filename within pszPath.
@@ -129,7 +217,7 @@ RTDECL(void) RTPathStripExt(char *pszPath)
 RTDECL(char *) RTPathFilename(const char *pszPath)
 {
     const char *psz = pszPath;
-    const char *pszLastComp = pszPath;
+    const char *pszName = pszPath;
 
     for (;; psz++)
     {
@@ -138,19 +226,19 @@ RTDECL(char *) RTPathFilename(const char *pszPath)
             /* handle separators. */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
-                pszLastComp = psz + 1;
+                pszName = psz + 1;
                 break;
 
             case '\\':
 #endif
             case '/':
-                pszLastComp = psz + 1;
+                pszName = psz + 1;
                 break;
 
             /* the end */
             case '\0':
-                if (*pszLastComp)
-                    return (char *)(void *)pszLastComp;
+                if (*pszName)
+                    return (char *)(void *)pszName;
                 return NULL;
         }
     }
@@ -558,6 +646,26 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
 
 
 #ifndef RT_MINI
+
+RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
+{
+    AssertReturn(g_szrtProcExePath[0], VERR_WRONG_ORDER);
+
+    /*
+     * Calc the length and check if there is space before copying.
+     */
+    size_t cch = g_cchrtProcDir;
+    if (cch <= cchPath)
+    {
+        memcpy(pszPath, g_szrtProcExePath, cch);
+        pszPath[cch] = '\0';
+        return VINF_SUCCESS;
+    }
+
+    AssertMsgFailed(("Buffer too small (%zu <= %zu)\n", cchPath, cch));
+    return VERR_BUFFER_OVERFLOW;
+}
+
 
 /**
  * Gets the directory for architecture-independent application data, for

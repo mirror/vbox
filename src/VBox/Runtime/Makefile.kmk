@@ -309,6 +309,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/path-win.cpp \
 	r3/win/process-win.cpp \
 	r3/win/RTLogWriteDebugger-win.cpp \
+	r3/win/rtProcInitExePath-win.cpp \
 	r3/win/sched-win.cpp \
 	r3/win/sems-win.cpp \
 	r3/win/thread-win.cpp \
@@ -337,6 +338,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	r3/linux/mp-linux.cpp \
+	r3/linux/rtProcInitExePath-linux.cpp \
 	r3/linux/sched-linux.cpp \
 	r3/linux/time-linux.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
@@ -393,6 +395,7 @@ RuntimeR3_SOURCES.os2   = \
 	os2/RTErrConvertFromOS2.cpp \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
+	r3/os2/rtProcInitExePath-os2.cpp \
 	r3/os2/sched-os2.cpp \
 	r3/os2/sems-os2.cpp \
 	r3/os2/thread-os2.cpp \
@@ -430,6 +433,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/alloc-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
 	r3/darwin/mp-darwin.cpp \
+	r3/darwin/rtProcInitExePath-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/dir-posix.cpp \
@@ -465,6 +469,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTMpGetCurFrequency-generic.cpp \
 	generic/RTMpGetMaxFrequency-generic.cpp \
 	r3/freebsd/alloc-freebsd.cpp \
+	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -522,7 +527,8 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
 	r3/solaris/alloc-solaris.cpp \
-	r3/solaris/mp-solaris.cpp
+	r3/solaris/mp-solaris.cpp \
+	r3/solaris/rtProcInitExePath-solaris.cpp
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
@@ -555,6 +561,7 @@ RuntimeR3L4_SOURCES = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	l4/l4-errno.cpp \
+	l4/rtProcInitExePath-l4.cpp \
 	l4/process-l4env.cpp \
 	l4/sems-l4env.cpp \
 	l4/thread-l4env.cpp \

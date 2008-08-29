@@ -32,11 +32,16 @@
 #define ___internal_process_h
 
 #include <iprt/process.h>
+#include <iprt/param.h>
 
 __BEGIN_DECLS
 
 extern RTPROCESS        g_ProcessSelf;
 extern RTPROCPRIORITY   g_enmProcessPriority;
+extern char             g_szrtProcExePath[RTPATH_MAX];
+extern size_t           g_cchrtProcExePath;
+extern size_t           g_cchrtProcDir;
+extern size_t           g_offrtProcName;
 
 /**
  * Validates and sets the process priority.
@@ -48,6 +53,18 @@ extern RTPROCPRIORITY   g_enmProcessPriority;
  * @remark  Located in sched.
  */
 int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority);
+
+/**
+ * Determins the full path to the executable image.
+ * 
+ * This is called by rtR3Init.
+ * 
+ * @returns IPRT status code.
+ * 
+ * @param   pszPath     Pointer to the g_szrtProcExePath buffer.
+ * @param   cchPath     The size of the buffer.
+ */
+DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath);
 
 __END_DECLS
 
