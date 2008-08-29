@@ -97,8 +97,9 @@
 typedef DECLCALLBACK(int) FNTRUSTEDMAIN(int argc, char **argv, char **envp);
 typedef FNTRUSTEDMAIN *PFNTRUSTEDMAIN;
 
-typedef DECLCALLBACK(int) FNRTR3INIT(bool fInitSUPLib, size_t cbReserve);
-typedef FNRTR3INIT *PFNRTR3INIT;
+/** @see RTR3InitEx */
+typedef DECLCALLBACK(int) FNRTR3INITEX(uint32_t iVersion, const char *pszProgramPath, bool fInitSUPLib);
+typedef FNRTR3INITEX *PFNRTR3INITEX;
 
 
 /*******************************************************************************
@@ -106,11 +107,13 @@ typedef FNRTR3INIT *PFNRTR3INIT;
 *******************************************************************************/
 /** The pre-init data we pass on to SUPR3 (residing in VBoxRT). */
 static SUPPREINITDATA g_SupPreInitData;
-/** The program path. */
-static char g_szSupLibHardenedProgramPath[RTPATH_MAX];
+/** The progam executable path. */
+static char g_szSupLibHardenedExePath[RTPATH_MAX];
+/** The program directory path. */
+static char g_szSupLibHardenedDirPath[RTPATH_MAX];
 
 /** The program name. */
-static const char *g_szSupLibHardenedProgName;
+static const char *g_pszSupLibHardenedProgName;
 
 
 /**
@@ -267,72 +270,103 @@ DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 
 
 /**
+ * Returns the full path to the executable.
+ * 
+ * @returns IPRT status code.
+ * @param   pszPath     Where to store it.
+ * @param   cchPath     How big that buffer is.
+ */
+static void supR3HardenedGetFullExePath(void)
+{
+    /*
+     * Get the program filename.
+     *
+     * Most UNIXes have no API for obtaining the executable path, but provides a symbolic
+     * link in the proc file system that tells who was exec'ed. The bad thing about this
+     * is that we have to use readlink, one of the weirder UNIX APIs.
+     *
+     * Darwin, OS/2 and Windows all have proper APIs for getting the program file name.
+     */
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
+# ifdef RT_OS_LINUX
+    int cchLink = readlink("/proc/self/exe", &g_szSupLibHardenedExePath[0], sizeof(g_szSupLibHardenedExePath) - 1);
+# elif defined(RT_OS_SOLARIS)
+    char szFileBuf[PATH_MAX + 1];
+    sprintf(szFileBuf, "/proc/%ld/path/a.out", (long)getpid());
+    int cchLink = readlink(szFileBuf, &g_szSupLibHardenedExePath[0], sizeof(g_szSupLibHardenedExePath) - 1);
+# else /* RT_OS_FREEBSD: */
+    int cchLink = readlink("/proc/curproc/file", &g_szSupLibHardenedExePath[0], sizeof(g_szSupLibHardenedExePath) - 1);
+# endif
+    if (cchLink < 0 || cchLink == sizeof(g_szSupLibHardenedExePath) - 1)
+        supR3HardenedFatal("supR3HardenedPathProgram: couldn't read \"%s\", errno=%d cchLink=%d\n",
+                            g_szSupLibHardenedExePath, errno, cchLink);
+    g_szSupLibHardenedExePath[cchLink] = '\0';
+
+#elif defined(RT_OS_OS2) || defined(RT_OS_L4)
+    _execname(g_szSupLibHardenedExePath, sizeof(g_szSupLibHardenedExePath));
+
+#elif defined(RT_OS_DARWIN)
+    const char *pszImageName = _dyld_get_image_name(0);
+    if (!pszImageName)
+        supR3HardenedFatal("supR3HardenedPathProgram: _dyld_get_image_name(0) failed\n");
+    size_t cchImageName = strlen(pszImageName);
+    if (!cchImageName || cchImageName >= sizeof(g_szSupLibHardenedExePath))
+        supR3HardenedFatal("supR3HardenedPathProgram: _dyld_get_image_name(0) failed, cchImageName=%d\n", cchImageName);
+    memcpy(g_szSupLibHardenedExePath, pszImageName, cchImageName + 1);
+
+#elif defined(RT_OS_WINDOWS)
+    HMODULE hExe = GetModuleHandle(NULL);
+    if (!GetModuleFileName(hExe, &g_szSupLibHardenedExePath[0], sizeof(g_szSupLibHardenedExePath)))
+        supR3HardenedFatal("supR3HardenedPathProgram: GetModuleFileName failed, rc=%d\n", GetLastError());
+#else
+# error needs porting.
+#endif
+    
+    /*
+     * Strip off the filename part (RTPathStripFilename()).
+     */
+    strcpy(g_szSupLibHardenedDirPath, g_szSupLibHardenedExePath);
+    suplibHardenedPathStripFilename(g_szSupLibHardenedDirPath);
+}
+
+
+#ifdef RT_OS_LINUX
+/**
+ * Checks if we can read /proc/self/exe.
+ * 
+ * This is used on linux to see if we have to call init 
+ * with program path or not.
+ * 
+ * @returns true / false.
+ */
+static bool supR3HardenedMainIsProcSelfExeAccssible(void)
+{
+    char szPath[RTPATH_MAX];
+    int cchLink = readlink("/proc/self/exe", szPath, sizeof(szPath));
+    return cchLink != -1;
+}
+#endif /* RT_OS_LINUX */
+
+
+
+/**
  * @copydoc RTPathProgram
  */
 DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
 {
     /*
-     * First time only.
+     * Lazy init (probably not required).
      */
-    if (!g_szSupLibHardenedProgramPath[0])
-    {
-        /*
-         * Get the program filename.
-         *
-         * Most UNIXes have no API for obtaining the executable path, but provides a symbolic
-         * link in the proc file system that tells who was exec'ed. The bad thing about this
-         * is that we have to use readlink, one of the weirder UNIX APIs.
-         *
-         * Darwin, OS/2 and Windows all have proper APIs for getting the program file name.
-         */
-#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
-# ifdef RT_OS_LINUX
-        int cchLink = readlink("/proc/self/exe", &g_szSupLibHardenedProgramPath[0], sizeof(g_szSupLibHardenedProgramPath) - 1);
-# elif defined(RT_OS_SOLARIS)
-        char szFileBuf[PATH_MAX + 1];
-        sprintf(szFileBuf, "/proc/%ld/path/a.out", (long)getpid());
-        int cchLink = readlink(szFileBuf, &g_szSupLibHardenedProgramPath[0], sizeof(g_szSupLibHardenedProgramPath) - 1);
-# else /* RT_OS_FREEBSD: */
-        int cchLink = readlink("/proc/curproc/file", &g_szSupLibHardenedProgramPath[0], sizeof(g_szSupLibHardenedProgramPath) - 1);
-# endif
-        if (cchLink < 0 || cchLink == sizeof(g_szSupLibHardenedProgramPath) - 1)
-            supR3HardenedFatal("supR3HardenedPathProgram: couldn't read \"%s\", errno=%d cchLink=%d\n",
-                                g_szSupLibHardenedProgramPath, errno, cchLink);
-        g_szSupLibHardenedProgramPath[cchLink] = '\0';
-
-#elif defined(RT_OS_OS2) || defined(RT_OS_L4)
-        _execname(g_szSupLibHardenedProgramPath, sizeof(g_szSupLibHardenedProgramPath));
-
-#elif defined(RT_OS_DARWIN)
-        const char *pszImageName = _dyld_get_image_name(0);
-        if (!pszImageName)
-            supR3HardenedFatal("supR3HardenedPathProgram: _dyld_get_image_name(0) failed\n");
-        size_t cchImageName = strlen(pszImageName);
-        if (!cchImageName || cchImageName >= sizeof(g_szSupLibHardenedProgramPath))
-            supR3HardenedFatal("supR3HardenedPathProgram: _dyld_get_image_name(0) failed, cchImageName=%d\n", cchImageName);
-        memcpy(g_szSupLibHardenedProgramPath, pszImageName, cchImageName + 1);
-
-#elif defined(RT_OS_WINDOWS)
-        HMODULE hExe = GetModuleHandle(NULL);
-        if (!GetModuleFileName(hExe, &g_szSupLibHardenedProgramPath[0], sizeof(g_szSupLibHardenedProgramPath)))
-            supR3HardenedFatal("supR3HardenedPathProgram: GetModuleFileName failed, rc=%d\n", GetLastError());
-#else
-# error needs porting.
-#endif
-
-        /*
-         * Strip off the filename part (RTPathStripFilename()).
-         */
-        suplibHardenedPathStripFilename(g_szSupLibHardenedProgramPath);
-    }
+    if (!g_szSupLibHardenedDirPath[0])
+        supR3HardenedGetFullExePath();
 
     /*
      * Calc the length and check if there is space before copying.
      */
-    unsigned cch = strlen(g_szSupLibHardenedProgramPath) + 1;
+    unsigned cch = strlen(g_szSupLibHardenedDirPath) + 1;
     if (cch <= cchPath)
     {
-        memcpy(pszPath, g_szSupLibHardenedProgramPath, cch + 1);
+        memcpy(pszPath, g_szSupLibHardenedDirPath, cch + 1);
         return VINF_SUCCESS;
     }
 
@@ -344,7 +378,7 @@ DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
 
 DECLHIDDEN(void) supR3HardenedFatalV(const char *pszFormat, va_list va)
 {
-    fprintf(stderr, "%s: ", g_szSupLibHardenedProgName);
+    fprintf(stderr, "%s: ", g_pszSupLibHardenedProgName);
     vfprintf(stderr, pszFormat, va);
     for (;;)
 #ifdef _MSC_VER
@@ -369,7 +403,7 @@ DECLHIDDEN(int) supR3HardenedErrorV(int rc, bool fFatal, const char *pszFormat, 
     if (fFatal)
         supR3HardenedFatalV(pszFormat, va);
 
-    fprintf(stderr, "%s: ", g_szSupLibHardenedProgName);
+    fprintf(stderr, "%s: ", g_pszSupLibHardenedProgName);
     vfprintf(stderr, pszFormat, va);
     return rc;
 }
@@ -468,9 +502,9 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     if (!hMod)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: LoadLibraryEx(\"%s\",,) failed, rc=%d\n",
                             szPath, GetLastError());
-    PFNRTR3INIT pfnRTInit = (PFNRTR3INIT)GetProcAddress(hMod, SUP_HARDENED_SYM("RTR3Init"));
-    if (!pfnRTInit)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"RTR3Init\" not found in \"%s\" (rc=%d)\n",
+    PFNRTR3INITEX pfnRTInitEx = (PFNRTR3INITEX)GetProcAddress(hMod, SUP_HARDENED_SYM("RTR3InitEx"));
+    if (!pfnRTInitEx)
+        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"RTR3InitEx\" not found in \"%s\" (rc=%d)\n",
                             szPath, GetLastError());
 
     PFNSUPR3PREINIT pfnSUPPreInit = (PFNSUPR3PREINIT)GetProcAddress(hMod, SUP_HARDENED_SYM("supR3PreInit"));
@@ -484,9 +518,9 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     if (!pvMod)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: dlopen(\"%s\",) failed: %s\n",
                             szPath, dlerror());
-    PFNRTR3INIT pfnRTInit = (PFNRTR3INIT)(uintptr_t)dlsym(pvMod, SUP_HARDENED_SYM("RTR3Init"));
-    if (!pfnRTInit)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"RTR3Init\" not found in \"%s\"!\ndlerror: %s\n",
+    PFNRTR3INITEX pfnRTInitEx = (PFNRTR3INITEX)(uintptr_t)dlsym(pvMod, SUP_HARDENED_SYM("RTR3InitEx"));
+    if (!pfnRTInitEx)
+        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"RTR3InitEx\" not found in \"%s\"!\ndlerror: %s\n",
                             szPath, dlerror());
     PFNSUPR3PREINIT pfnSUPPreInit = (PFNSUPR3PREINIT)(uintptr_t)dlsym(pvMod, SUP_HARDENED_SYM("supR3PreInit"));
     if (!pfnSUPPreInit)
@@ -501,7 +535,12 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     int rc = pfnSUPPreInit(&g_SupPreInitData, fFlags);
     if (RT_FAILURE(rc))
         supR3HardenedFatal("supR3PreInit: Failed with rc=%d\n", rc);
-    rc = pfnRTInit(!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV), 0);
+    const char *pszExePath = NULL;
+#ifdef RT_OS_LINUX
+    if (!supR3HardenedMainIsProcSelfExeAccssible())
+        pszExePath = g_szSupLibHardenedExePath;
+#endif 
+    rc = pfnRTInitEx(0, pszExePath, !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV));
     if (RT_FAILURE(rc))
         supR3HardenedFatal("RTR3Init: Failed with rc=%d\n", rc);
 }
@@ -581,7 +620,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * Note! At this point there is no IPRT, so we will have to stick
      * to basic CRT functions that everyone agree upon.
      */
-    g_szSupLibHardenedProgName = pszProgName;
+    g_pszSupLibHardenedProgName = pszProgName;
     g_SupPreInitData.u32Magic = SUPPREINITDATA_MAGIC;
     g_SupPreInitData.Data.hDevice = NIL_RTFILE;
     g_SupPreInitData.u32EndMagic = SUPPREINITDATA_MAGIC;
@@ -595,6 +634,14 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     if (geteuid() != 0 /* root */)
         supR3HardenedFatal("SUPR3HardenedMain: effective uid is not root (euid=%d egid=%d uid=%d gid=%d)\n",
                            geteuid(), getegid(), uid, gid);
+
+# ifdef RT_OS_LINUX 
+    /* 
+     * On linux we have to make sure the path is initialized because we
+     * *might* not be able to access /proc/self/exe after the seteuid call.
+     */
+    supR3HardenedGetFullExePath();
+# endif
 #endif
 
     /*
