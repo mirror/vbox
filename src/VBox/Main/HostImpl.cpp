@@ -45,13 +45,16 @@
 #endif /* RT_OS_LINUX */
 
 #ifdef RT_OS_SOLARIS
-# include <kstat.h>
 # include <fcntl.h>
 # include <unistd.h>
 # include <stropts.h>
 # include <errno.h>
 # include <limits.h>
 # include <stdio.h>
+# include <sys/socket.h>
+# include <sys/sockio.h>
+# include <net/if_arp.h>
+# include <net/if.h>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sys/cdio.h>
@@ -154,7 +157,7 @@ HRESULT Host::init (VirtualBox *aParent)
     mUSBProxyService = new USBProxyServiceLinux (this);
 # elif defined (RT_OS_OS2)
     mUSBProxyService = new USBProxyServiceOs2 (this);
-# elif defined (RT_OS_SOLARIS) && 0
+# elif defined (RT_OS_SOLARIS)
     mUSBProxyService = new USBProxyServiceSolaris (this);
 # elif defined (RT_OS_WINDOWS)
     mUSBProxyService = new USBProxyServiceWindows (this);
@@ -552,39 +555,64 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
 # elif defined(RT_OS_SOLARIS)
 
-    kstat_ctl_t *pStatCtl = kstat_open();
-    if (pStatCtl)
+    int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (Sock > 0)
     {
-        kstat_t *pStat;
-        for (pStat = pStatCtl->kc_chain; pStat; pStat = pStat->ks_next)
+        struct lifnum IfNum;
+        memset(&IfNum, 0, sizeof(IfNum));
+        IfNum.lifn_family = AF_INET;
+        int rc = ioctl(Sock, SIOCGLIFNUM, &IfNum);
+        if (!rc)
         {
-            if (!strcmp(pStat->ks_class, "net"))
+            struct lifreq Ifaces[24];
+            struct lifconf IfConfig;
+            memset(&IfConfig, 0, sizeof(IfConfig));
+            IfConfig.lifc_family = AF_INET;
+            IfConfig.lifc_len = sizeof(Ifaces);
+            IfConfig.lifc_buf = (caddr_t)&(Ifaces[0]);
+            rc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
+            if (!rc)
             {
-                if (!strcmp(pStat->ks_module, "lo"))    /** Skip loopback interfaces */
-                    continue;
-
-                char szIface[8];
-                RTStrPrintf(szIface, sizeof(szIface), "%s%d", pStat->ks_module, pStat->ks_instance);
-                if (!strcmp(szIface, pStat->ks_name))
+                /*
+                 * Ok now we go the interfaces, get the info we need (i.e MAC address).
+                 */
+                for (int i = 0; i < IfNum.lifn_count; i++)
                 {
-                    /*
-                     * Figuring out the MAC address from the interface on Solaris isn't trivial.
-                     * Requires root privileges; usage of dlpi and/or getting a MAC address from
-                     * ARP using ioctl SIOCGARP. So we just use the BSD name for now...
-                     */
-                    RTUUID Uuid;
-                    RTUuidClear(&Uuid);
-                    memcpy(&Uuid, szIface, RT_MIN(sizeof(szIface), sizeof(Uuid)));
-                    Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
-                    Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+                    rc = ioctl(Sock, SIOCGLIFADDR, &(Ifaces[i]));
+                    if (!rc)
+                    {
+                        struct arpreq ArpReq;
+                        memcpy(&ArpReq.arp_pa, &Ifaces[i].lifr_addr, sizeof(struct sockaddr_in));
+                        rc = ioctl(Sock, SIOCGARP, &ArpReq);
+                        if (!rc)
+                        {
+                            RTMAC Mac;
+                            memcpy(&Mac, ArpReq.arp_ha.sa_data, sizeof(RTMAC));
 
-                    ComObjPtr<HostNetworkInterface> IfObj;
-                    IfObj.createObject();
-                    if (SUCCEEDED(IfObj->init(Bstr(szIface), Guid(Uuid))))
-                        list.push_back(IfObj);
+                            char *pszIface = Ifaces[i].lifr_name;
+
+                            RTUUID Uuid;
+                            RTUuidClear(&Uuid);
+                            memcpy(&Uuid, pszIface, RT_MIN(strlen(pszIface), sizeof(Uuid)));
+                            Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+                            Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+                            Uuid.Gen.au8Node[0] = Mac.au8[0];
+                            Uuid.Gen.au8Node[1] = Mac.au8[1];
+                            Uuid.Gen.au8Node[2] = Mac.au8[2];
+                            Uuid.Gen.au8Node[3] = Mac.au8[3];
+                            Uuid.Gen.au8Node[4] = Mac.au8[4];
+                            Uuid.Gen.au8Node[5] = Mac.au8[5];
+
+                            ComObjPtr<HostNetworkInterface> IfObj;
+                            IfObj.createObject();
+                            if (SUCCEEDED(IfObj->init(Bstr(pszIface), Guid(Uuid))))
+                                list.push_back(IfObj);
+                        }
+                    }
                 }
             }
         }
+        close(Sock);
     }
 
 # elif defined RT_OS_WINDOWS
