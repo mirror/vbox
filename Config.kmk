@@ -412,6 +412,8 @@ ifdef VBOX_WITH_HARDENING
   VBOX_WITH_SUPSVC = 1
  endif
 endif
+# Use VBoxNetFlt for host interface networking.
+#VBOX_WITH_NETFLT = 1
 
 
 #
@@ -3116,6 +3118,9 @@ TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
 ifeq ($(KBUILD_TARGET),solaris) # No VBI for the guest additions yet.
  TEMPLATE_VBOXGUESTR0_LDFLAGS    = -r -dy
+# ifdef VBOX_WITH_SOLARIS_VBI
+#  TEMPLATE_VBOXGUESTR0DRV_LDFLAGS += -N misc/vbi
+# endif
 endif
 
 #

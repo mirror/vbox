@@ -5688,14 +5688,15 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
  */
 HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
 {
-#if !defined(RT_OS_LINUX) && !defined(RT_OS_SOLARIS)
+#if !defined(RT_OS_LINUX)
+
     /*
      * Nothing to do here.
      */
     NOREF(networkAdapter);
     return S_OK;
 
-#else /* RT_LINUX || RT_OS_SOLARIS */
+#else /* RT_OS_LINUX */
 
     /* sanity check */
     LogFlowThisFunc(("\n"));
@@ -5708,8 +5709,6 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
     networkAdapter->COMGETTER(AttachmentType)(&attachment);
     Assert(attachment == NetworkAttachmentType_HostInterface);
 # endif /* VBOX_STRICT */
-
-/** @todo # ifdef VBOX_WITH_UNIXY_TAP_NETWORKING: why wasn't this !defined(RT_OS_SOLARIS)? */
 
     ULONG slot = 0;
     rc = networkAdapter->COMGETTER(Slot)(&slot);
@@ -5784,7 +5783,8 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
     }
     LogFlowThisFunc(("returning %d\n", rc));
     return rc;
-#endif /* RT_OS_LINUX || RT_OS_SOLARIS */
+#endif /* RT_OS_LINUX */
+
 }
 
 
