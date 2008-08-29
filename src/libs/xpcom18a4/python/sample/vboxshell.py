@@ -20,11 +20,18 @@
 #  export PYTHONPATH=$VBOX_PROGRAM_PATH/sdk/bindings/xpcom/python:$VBOX_PROGRAM_PATH
 # To allow library resolution
 #  export LD_LIBRARY_PATH=$VBOX_PROGRAM_PATH
+#
 # Additionally, on 64-bit Solaris, you need to use 64-bit Python from 
 # /usr/bin/amd64/python and due to quirks in native modules loading of 
 # Python do the following:
 #   mkdir $VBOX_PROGRAM_PATH/64
 #   ln -s $VBOX_PROGRAM_PATH/VBoxPython.so $VBOX_PROGRAM_PATH/64/VBoxPython.so 
+#
+# Mac OS X users can get away with just this:
+#   export PYTHONPATH=$VBOX_SDK/bindings/xpcom/python:$PYTHONPATH
+# , where $VBOX_SDK is is replaced with the place you unzipped the SDK
+# or <trunk>/out/darwin.x86/release/dist/sdk.
+#  
 #
 import traceback
 import sys

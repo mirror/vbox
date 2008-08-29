@@ -16,11 +16,20 @@
 
 import xpcom
 import sys
+import platform
 
 # this code overcomes somewhat unlucky feature of Python, where it searches
 # for binaries in the same place as platfom independent modules, while
 # rest of Python bindings expect _xpcom to be inside xpcom module
 # XXX: maybe implement per Python version module search
-cglue = __import__('VBoxPython')
+#cglue = __import__('VBoxPython')
+if platform.system() == 'Darwin':
+    # TODO: This needs to be changed if it is supposed to work with OSE as well.
+    saved_sys_path = sys.path;
+    sys.path = [ '/Applications/VirtualBox.app/Contents/MacOS', ] + saved_sys_path
+    cglue = __import__('VBoxPython')
+    sys.path = saved_sys_path    
+else:
+    cglue = __import__('VBoxPython')  
 sys.modules['xpcom._xpcom'] = cglue
 xpcom._xpcom = cglue
