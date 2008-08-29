@@ -573,7 +573,7 @@ xpcom/helpers.cpp: $(IDLTYPELIB)
 
 $(IDLFILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(XIDLFILE) | $(call DIRDEP,$(dir $(IDLFILE)))
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/xpcom/idl
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
 $(IDLTYPELIB.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLTYPELIB))) $(VBOX_XPIDL)
