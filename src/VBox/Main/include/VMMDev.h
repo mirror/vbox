@@ -56,6 +56,8 @@ public:
     int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
     void hgcmShutdown (void);
 
+    bool hgcmIsActive (void) { return ASMAtomicReadBool(&m_fHGCMActive); }
+
 private:
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);

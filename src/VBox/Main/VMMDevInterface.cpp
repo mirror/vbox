@@ -519,6 +519,11 @@ static DECLCALLBACK(int) iface_hgcmConnect (PPDMIHGCMCONNECTOR pInterface, PVBOX
         return VERR_INVALID_PARAMETER;
     }
 
+    if (!pDrv->pVMMDev->hgcmIsActive ())
+    {
+        return VERR_INVALID_STATE;
+    }
+
     return HGCMGuestConnect (pDrv->pHGCMPort, pCmd, pServiceLocation->u.host.achName, pu32ClientID);
 }
 
@@ -527,6 +532,11 @@ static DECLCALLBACK(int) iface_hgcmDisconnect (PPDMIHGCMCONNECTOR pInterface, PV
     LogSunlover(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    if (!pDrv->pVMMDev->hgcmIsActive ())
+    {
+        return VERR_INVALID_STATE;
+    }
 
     return HGCMGuestDisconnect (pDrv->pHGCMPort, pCmd, u32ClientID);
 }
@@ -537,6 +547,11 @@ static DECLCALLBACK(int) iface_hgcmCall (PPDMIHGCMCONNECTOR pInterface, PVBOXHGC
     LogSunlover(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = PDMIHGCMCONNECTOR_2_MAINVMMDEV(pInterface);
+
+    if (!pDrv->pVMMDev->hgcmIsActive ())
+    {
+        return VERR_INVALID_STATE;
+    }
 
     return HGCMGuestCall (pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms);
 }
@@ -575,7 +590,7 @@ static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uin
 
 int VMMDev::hgcmLoadService (const char *pszServiceLibrary, const char *pszServiceName)
 {
-    if (ASMAtomicReadBool(&m_fHGCMActive) == false)
+    if (!hgcmIsActive ())
     {
         return VERR_INVALID_STATE;
     }
@@ -585,7 +600,7 @@ int VMMDev::hgcmLoadService (const char *pszServiceLibrary, const char *pszServi
 int VMMDev::hgcmHostCall (const char *pszServiceName, uint32_t u32Function,
                           uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
-    if (ASMAtomicReadBool(&m_fHGCMActive) == false)
+    if (!hgcmIsActive ())
     {
         return VERR_INVALID_STATE;
     }
