@@ -51,13 +51,11 @@ endif
 # We setup two 'other' targets for executing the two structure & alignment
 # validation testcases. Perhaps a bit hackish, but extremely useful.
 #
-ifndef VBOX_ONLY_SDK
- ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
-  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
-   OTHERS += \
+ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
+ ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
+  OTHERS += \
 	$(PATH_TARGET)/tstAsmStructs.run \
 	$(PATH_TARGET)/tstVMStructSize.run
-  endif
  endif
 endif
 

@@ -56,9 +56,6 @@ else ifdef VBOX_ONLY_DOCS
  LIBRARIES += RuntimeR3
  DLLS += VBoxRT
 
-else ifdef VBOX_ONLY_SDK
- # Nothing really
-
 else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
  #

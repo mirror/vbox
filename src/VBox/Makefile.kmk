@@ -70,6 +70,12 @@ else ifdef VBOX_ONLY_DOCS
 	Frontends \
 	HostDrivers
 
+else ifdef VBOX_ONLY_SDK
+  SUBDIRS =        \
+        Main       \
+        RDP        \
+        Installer
+
 else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  SUBDIRS_BLDPROGS = Devices Main
 

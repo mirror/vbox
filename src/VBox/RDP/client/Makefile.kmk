@@ -25,9 +25,7 @@ VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.6.0-vrdp
 #
 # The rdesktop-vrdp program.
 #
-ifndef VBOX_ONLY_SDK
- PROGRAMS += rdesktop-vrdp
-endif
+PROGRAMS += rdesktop-vrdp
 rdesktop-vrdp_TEMPLATE = VBOXR3NPEXE
 rdesktop-vrdp_SDKS = VBOX_OPENSSL
 rdesktop-vrdp_DEFS = \
