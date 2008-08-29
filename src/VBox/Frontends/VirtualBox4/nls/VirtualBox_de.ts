@@ -3826,7 +3826,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1246"/>
         <source>&amp;Reset All Warnings</source>
-        <translation>Alle Warnungen &amp;zurücksetzen.</translation>
+        <translation>Alle Warnungen &amp;zurücksetzen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1248"/>
