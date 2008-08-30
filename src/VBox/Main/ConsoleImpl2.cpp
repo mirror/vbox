@@ -1225,7 +1225,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
 # elif defined(RT_OS_SOLARIS) 
                     /* The name is on the form BSD format 'ifX'; use as-is. */
-                    const char *pszTrunk = szTrunk;
+                    const char *pszTrunk = pszHifName;
 # else 
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
