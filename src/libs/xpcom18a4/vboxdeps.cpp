@@ -7,7 +7,7 @@
 #include <nsHashSets.h>
 #include <nsIPipe.h>
 #include <xptcall.h>
-#include <nsProxyEvent.h>
+#include "xpcom/proxy/src/nsProxyEventPrivate.h"
 
 uintptr_t deps[] =
 {
@@ -26,7 +26,8 @@ void foodep(void)
     a->Init(123);
     nsDeque *b = new nsDeque((nsDequeFunctor*)0);
 
-    nsProxyObject *c = new nsProxyObject(NULL, 1234, NULL);
-    delete c;
+    //nsXPTCStubBase
+    nsProxyEventObject *c = new nsProxyEventObject();
+    c->Release();
 }
 
