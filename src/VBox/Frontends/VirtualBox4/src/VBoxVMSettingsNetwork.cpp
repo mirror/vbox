@@ -31,7 +31,7 @@
 #endif
 
 /* Qt Includes */
-#ifdef Q_WS_X11
+#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
 #include <QFileDialog>
 #endif
 #if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
@@ -63,10 +63,9 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork()
         (QRegExp ("[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
 
     /* Setup dialog for current platform */
-#ifndef Q_WS_X11
+#if !defined (Q_WS_X11) || defined (VBOX_WITH_NETFLT)
     setTapVisible (false);
-#endif
-#ifdef Q_WS_X11
+#else
     /* Setup iconsets */
     mTbSetup_x11->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
                                                 ":/select_file_dis_16px.png"));
@@ -114,7 +113,7 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
     mInterfaceName = aAdapter.GetHostInterface().isEmpty() ?
                      QString::null : aAdapter.GetHostInterface();
 #endif
-#ifdef Q_WS_X11
+#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
     mLeInterface_x11->setText (aAdapter.GetHostInterface());
     mLeSetup_x11->setText (aAdapter.GetTAPSetupApplication());
     mLeTerminate_x11->setText (aAdapter.GetTAPTerminateApplication());
@@ -158,7 +157,7 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
 #if defined (Q_WS_WIN) || defined (VBOX_WITH_NETFLT)
         mAdapter.SetHostInterface (mInterfaceName);
 #endif
-#ifdef Q_WS_X11
+#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
         QString iface = mLeInterface_x11->text();
         mAdapter.SetHostInterface (iface.isEmpty() ? QString::null : iface);
         QString setup = mLeSetup_x11->text();
@@ -193,7 +192,7 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
     connect (mCbNetwork, SIGNAL (activated (const QString&)),
              mValidator, SLOT (revalidate()));
     connect (mPbMAC, SIGNAL (clicked()), this, SLOT (genMACClicked()));
-#ifdef Q_WS_X11
+#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
     connect (mTbSetup_x11, SIGNAL (clicked()), this, SLOT (tapSetupClicked()));
     connect (mTbTerminate_x11, SIGNAL (clicked()), this, SLOT (tapTerminateClicked()));
 #endif
@@ -268,7 +267,7 @@ void VBoxVMSettingsNetwork::naTypeChanged (const QString &aString)
                         KNetworkAttachmentType_Internal;
     mLbNetwork->setEnabled (enableIntNet);
     mCbNetwork->setEnabled (enableIntNet);
-#ifdef Q_WS_X11
+#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
     bool enableHostIf = vboxGlobal().toNetworkAttachmentType (aString) ==
                         KNetworkAttachmentType_HostInterface;
     setTapEnabled (enableHostIf);
@@ -283,7 +282,7 @@ void VBoxVMSettingsNetwork::genMACClicked()
     mLeMAC->setText (mAdapter.GetMACAddress());
 }
 
-#ifdef Q_WS_X11
+#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
 void VBoxVMSettingsNetwork::tapSetupClicked()
 {
     QString selected = QFileDialog::getOpenFileName (

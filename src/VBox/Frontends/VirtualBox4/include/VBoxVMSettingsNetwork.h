@@ -70,7 +70,7 @@ private slots:
     void adapterToggled (bool aOn);
     void naTypeChanged (const QString &aString);
     void genMACClicked();
-#ifdef Q_WS_X11
+#if defined (Q_WS_X11) && !defined (VBOX_WITH_NETFLT)
     void tapSetupClicked();
     void tapTerminateClicked();
 #endif
