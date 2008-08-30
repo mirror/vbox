@@ -46,7 +46,6 @@
 
 #ifdef RT_OS_SOLARIS
 # include <fcntl.h>
-# include <syslog.h>
 # include <unistd.h>
 # include <stropts.h>
 # include <errno.h>
