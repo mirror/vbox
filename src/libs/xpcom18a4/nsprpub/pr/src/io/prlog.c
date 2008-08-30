@@ -50,7 +50,6 @@
  */
 
 #if defined(VBOX) && defined(DEBUG)
-#define IN_RING3
 #include <iprt/initterm.h> /* for RTR3Init */
 #include <iprt/log.h>
 #endif
