@@ -152,11 +152,12 @@ ifdef VBOX_WITH_DOCS
   LINUXNOSTRIP += \
 	VirtualBox.chm
  endif
- ifneq ($(wildcard $(VBOX_PATH_SDK)/docs/VirtualBoxAPI.chm),)
- # same applies to VirtualBoxAPI.chm
- LINUXNOSTRIP += \
-	VirtualBoxAPI.chm
- endif
+## @todo This does not work working.
+# ifneq ($(wildcard $(VBOX_PATH_SDK)/docs/VirtualBoxAPI.chm),)
+#  # same applies to VirtualBoxAPI.chm
+#  LINUXNOSTRIP += \
+#	VirtualBoxAPI.chm
+# endif
 endif
 ifdef VBOX_WITH_VRDP
  LINUXSTRIPBIN += \
