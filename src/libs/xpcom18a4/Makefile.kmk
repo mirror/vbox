@@ -1118,7 +1118,7 @@ VBoxXPCOM_SOURCES = \
 	xpcom/build/nsXPComInit.cpp \
 	xpcom/build/nsStringAPI.cpp
 VBoxXPCOM_SOURCES.darwin = \
-	darwindeps.cpp
+	vboxdeps.cpp
 VBoxXPCOM_SOURCES.os2 = \
 	vboxdeps.cpp
 VBoxXPCOM_SOURCES.solaris = \
