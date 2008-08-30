@@ -6,6 +6,8 @@
 #include <nsDeque.h>
 #include <nsHashSets.h>
 #include <nsIPipe.h>
+#include <xptcall.h>
+#include <nsProxyEvent.h>
 
 uintptr_t deps[] =
 {
@@ -23,5 +25,8 @@ void foodep(void)
     nsVoidHashSetSuper *a = new nsVoidHashSetSuper();
     a->Init(123);
     nsDeque *b = new nsDeque((nsDequeFunctor*)0);
+
+    nsProxyObject *c = new nsProxyObject(NULL, 1234, NULL);
+    delete c;
 }
 
