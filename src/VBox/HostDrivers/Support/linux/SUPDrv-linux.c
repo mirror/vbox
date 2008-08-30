@@ -682,6 +682,17 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     PSUPDRVSESSION      pSession;
     Log(("VBoxDrvLinuxCreate: pFilp=%p pid=%d/%d %s\n", pFilp, RTProcSelf(), current->pid, current->comm));
 
+#ifdef VBOX_WITH_HARDENING
+    /*
+     * Only root is allowed to access the device, enforce it!
+     */
+    if (current->euid != 0 /* root */ )
+    {
+        Log(("VBoxDrvLinuxCreate: euid=%d, expected 0 (root)\n", current->euid));
+        return EPERM;
+    }
+#endif /* VBOX_WITH_HARDENING */
+
     /*
      * Call common code for the rest.
      */
