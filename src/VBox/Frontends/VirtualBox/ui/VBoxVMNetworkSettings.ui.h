@@ -46,7 +46,7 @@ void VBoxVMNetworkSettings::init()
     cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_HostInterface));
     cbNetworkAttachment->insertItem (vboxGlobal().toString (KNetworkAttachmentType_Internal));
 
-#if defined Q_WS_X11
+#if defined Q_WS_X11 && !defined VBOX_WITH_NETFLT
     leTAPDescriptor->setValidator (new QIntValidator (-1, std::numeric_limits <LONG>::max(), this));
 #else
     /* hide unavailable settings (TAP setup and terminate apps) */
@@ -168,7 +168,7 @@ void VBoxVMNetworkSettings::getFromAdapter (const CNetworkAdapter &adapter)
 #endif
     cbInternalNetworkName->setCurrentText (adapter.GetInternalNetwork());
 
-#if defined Q_WS_X11
+#if defined Q_WS_X11 && !defined VBOX_WITH_NETFLT
     leTAPDescriptor->setText (QString::number (adapter.GetTAPFileDescriptor()));
     leTAPSetup->setText (adapter.GetTAPSetupApplication());
     leTAPTerminate->setText (adapter.GetTAPTerminateApplication());
@@ -216,7 +216,7 @@ void VBoxVMNetworkSettings::putBackToAdapter()
         QString iface = leHostInterface->text();
         cadapter.SetHostInterface (iface.isEmpty() ? QString::null : iface);
 #endif
-#if defined Q_WS_X11
+#if defined Q_WS_X11 && !defined VBOX_WITH_NETFLT
         cadapter.SetTAPFileDescriptor (leTAPDescriptor->text().toLong());
         QString setup = leTAPSetup->text();
         cadapter.SetTAPSetupApplication (setup.isEmpty() ? QString::null : setup);
