@@ -46,6 +46,7 @@
 
 #ifdef RT_OS_SOLARIS
 # include <fcntl.h>
+# include <syslog.h>
 # include <unistd.h>
 # include <stropts.h>
 # include <errno.h>
@@ -578,36 +579,49 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                  */
                 for (int i = 0; i < IfNum.lifn_count; i++)
                 {
+                    /*
+                     * Skip loopback interfaces.
+                     */
+                    if (!strncmp(Ifaces[i].lifr_name, "lo", 2))
+                        continue;
+
                     rc = ioctl(Sock, SIOCGLIFADDR, &(Ifaces[i]));
                     if (!rc)
                     {
+                        RTMAC Mac;
                         struct arpreq ArpReq;
                         memcpy(&ArpReq.arp_pa, &Ifaces[i].lifr_addr, sizeof(struct sockaddr_in));
+
+                        /*
+                         * We might fail if the interface has not been assigned an IP address.
+                         * That doesn't matter; as long as it's plumbed we can pick it up.
+                         * But, if it has not acquired an IP address we cannot obtain it's MAC
+                         * address this way, so we just use all zeros there.
+                         */
                         rc = ioctl(Sock, SIOCGARP, &ArpReq);
                         if (!rc)
-                        {
-                            RTMAC Mac;
                             memcpy(&Mac, ArpReq.arp_ha.sa_data, sizeof(RTMAC));
+                        else
+                            memset(&Mac, 0, sizeof(Mac));
 
-                            char *pszIface = Ifaces[i].lifr_name;
+                        char *pszIface = Ifaces[i].lifr_name;
 
-                            RTUUID Uuid;
-                            RTUuidClear(&Uuid);
-                            memcpy(&Uuid, pszIface, RT_MIN(strlen(pszIface), sizeof(Uuid)));
-                            Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
-                            Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
-                            Uuid.Gen.au8Node[0] = Mac.au8[0];
-                            Uuid.Gen.au8Node[1] = Mac.au8[1];
-                            Uuid.Gen.au8Node[2] = Mac.au8[2];
-                            Uuid.Gen.au8Node[3] = Mac.au8[3];
-                            Uuid.Gen.au8Node[4] = Mac.au8[4];
-                            Uuid.Gen.au8Node[5] = Mac.au8[5];
+                        RTUUID Uuid;
+                        RTUuidClear(&Uuid);
+                        memcpy(&Uuid, pszIface, RT_MIN(strlen(pszIface), sizeof(Uuid)));
+                        Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+                        Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+                        Uuid.Gen.au8Node[0] = Mac.au8[0];
+                        Uuid.Gen.au8Node[1] = Mac.au8[1];
+                        Uuid.Gen.au8Node[2] = Mac.au8[2];
+                        Uuid.Gen.au8Node[3] = Mac.au8[3];
+                        Uuid.Gen.au8Node[4] = Mac.au8[4];
+                        Uuid.Gen.au8Node[5] = Mac.au8[5];
 
-                            ComObjPtr<HostNetworkInterface> IfObj;
-                            IfObj.createObject();
-                            if (SUCCEEDED(IfObj->init(Bstr(pszIface), Guid(Uuid))))
-                                list.push_back(IfObj);
-                        }
+                        ComObjPtr<HostNetworkInterface> IfObj;
+                        IfObj.createObject();
+                        if (SUCCEEDED(IfObj->init(Bstr(pszIface), Guid(Uuid))))
+                            list.push_back(IfObj);
                     }
                 }
             }
