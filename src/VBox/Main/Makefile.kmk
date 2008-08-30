@@ -212,7 +212,7 @@ VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
 VBoxSVC_LIBS.solaris = \
-	adm kstat
+	adm socket
 ifdef VBOX_WITH_USB
  VBoxSVC_LIBS.solaris += \
 	devinfo
