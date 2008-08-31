@@ -1140,23 +1140,58 @@ SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages)
 }
 
 
-SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase)
+SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszMsg, PRTFILE phFile)
 {
     /*
-     * Load the module.
-     * If it's VMMR0.r0 we need to install the IDTE.
+     * Quick input validation.
      */
-    int rc = supLoadModule(pszFilename, pszModule, ppvImageBase);
-#ifdef VBOX_WITH_IDT_PATCHING
-    if (    RT_SUCCESS(rc)
-        &&  !strcmp(pszModule, "VMMR0.r0"))
-    {
-        rc = supInstallIDTE();
-        if (RT_FAILURE(rc))
-            SUPFreeModule(*ppvImageBase);
-    }
-#endif /* VBOX_WITH_IDT_PATCHING */
+    AssertPtr(pszFilename);
+    AssertPtr(pszMsg);
+    AssertReturn(!phFile, VERR_NOT_IMPLEMENTED); /** @todo Implement this. The deal is that we make sure the 
+                                                     file is the same we verified after opening it. */
 
+    /*
+     * Only do the actual check in hardened builds.
+     */
+#ifdef VBOX_WITH_HARDENING
+    int rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+    if (RT_FAILURE(rc))
+        LogRel(("SUPR3HardenedVerifyFile: %s: Verification of \"%s\" failed, rc=%Rrc\n", pszMsg, rc));
+    return rc;
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
+
+SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase)
+{
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_HARDENING
+    /*
+     * Check that the module can be trusted.
+     */
+    rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+#endif
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Load the module.
+         * If it's VMMR0.r0 we need to install the IDTE.
+         */
+        rc = supLoadModule(pszFilename, pszModule, ppvImageBase);
+#ifdef VBOX_WITH_IDT_PATCHING
+        if (    RT_SUCCESS(rc)
+            &&  !strcmp(pszModule, "VMMR0.r0"))
+        {
+            rc = supInstallIDTE();
+            if (RT_FAILURE(rc))
+                SUPFreeModule(*ppvImageBase);
+        }
+#endif /* VBOX_WITH_IDT_PATCHING */
+    }
+    else
+        LogRel(("SUPLoadModule: Verification of \"%s\" failed, rc=%Rrc\n", rc)); 
     return rc;
 }
 
