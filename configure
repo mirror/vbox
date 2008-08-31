@@ -1297,7 +1297,7 @@ check_qt4()
       LIBQT4=
       FLGQT4="-framework QtCore"
     else
-      log_failure "Qt4 framework not found"
+      log_failure "Qt4 framework not found (can be disable using --disable-qt4)"
       fail
     fi
   else
@@ -1975,8 +1975,6 @@ if [ "$OS" = "darwin" ]; then
   # (Qt3 builds for Intel Macs are usually not threaded or for X11. And they
   #  don't contain our patches, which means the result isn't really usable.)
   WITH_QT3=0
-  # No Qt4 for OSE yet.
-  [ $OSE -ge 1 ] && WITH_QT4=0
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
 fi
