@@ -214,3 +214,25 @@ RTDECL(int) RTLdrLoadAppSharedLib(const char *pszFilename, PRTLDRMOD phLdrMod)
     LogFlow(("RTLdrLoadAppSharedLib: returns %Rrc\n", rc));
     return rc;
 }
+
+
+/**
+ * Gets the default file suffix for DLL/SO/DYLIB/whatever.
+ *
+ * @returns The stuff (readonly).
+ */
+RTDECL(const char *) RTLdrGetSuff(void)
+{
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+    static const char s_szSuff[] = ".DLL";
+#elif defined(RT_OS_L4)
+    static const char s_szSuff[] = ".s.so";
+#elif defined(RT_OS_DARWIN)
+    static const char s_szSuff[] = ".dylib";
+#else
+    static const char s_szSuff[] = ".so";
+#endif
+
+    return s_szSuff;
+}
+

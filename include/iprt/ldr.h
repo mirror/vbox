@@ -43,6 +43,13 @@ __BEGIN_DECLS
 
 
 /**
+ * Gets the default file suffix for DLL/SO/DYLIB/whatever.
+ *
+ * @returns The stuff (readonly).
+ */
+RTDECL(const char *) RTLdrGetSuff(void);
+
+/**
  * Loads a dynamic load library (/shared object) image file using native
  * OS facilities.
  *
