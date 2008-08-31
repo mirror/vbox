@@ -586,6 +586,7 @@ using namespace com;
 
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
+
 extern "C" NS_EXPORT
 void 
 initVBoxPython() {
