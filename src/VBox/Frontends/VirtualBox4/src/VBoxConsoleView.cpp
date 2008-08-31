@@ -2813,7 +2813,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
     }
     else /* !mMouseCaptured */
     {
-#ifdef Q_WS_MAC
+#ifdef Q_WS_MAC /** @todo Christian, can you look at this. It causes flickering and IIRC is really a Qt3 workaround which probably isn't needed. If it is needed it needs to be redone. */
         /* Update the mouse cursor; this is a bit excessive really... */
         if (!DarwinCursorIsNull (&mDarwinCursor))
             DarwinCursorSet (&mDarwinCursor);
