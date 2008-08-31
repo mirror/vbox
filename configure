@@ -2013,7 +2013,7 @@ check_gcc
 [ $WITH_X11    -eq 1 ] && check_xcursor
 [ $WITH_QT3    -eq 1 ] && check_qt3
 [ $WITH_QT4    -eq 1 ] && check_qt4
-[ $WITH_PYTHON -eq 1 ] && check_python
+[ $WITH_PYTHON -eq 1 -a "$OS" != "darwin" ] && check_python
 
 # Linux-specific
 if [ "$OS" = "linux" ]; then
