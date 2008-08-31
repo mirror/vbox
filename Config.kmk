@@ -556,20 +556,18 @@ ifdef VBOX_OSE
   # Qt/Mac v3.3.x requires patching to work for us.
   VBOX_WITH_QTGUI=
  endif
- ifn1of ($(KBUILD_TARGET),linux solaris)
+ ifn1of ($(KBUILD_TARGET), linux solaris)
   # Only the Linux, Solaris installers are public
   VBOX_WITH_INSTALLER=
  endif
  VBOX_WITH_AHCI=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
- if1of ($(KBUILD_TARGET), darwin)
-  # Disable hardening cause it'll cause unnecessary trouble.
-  VBOX_WITH_HARDENING=
- endif
 endif
 
 #
 # VBOX_WITHOUT_HARDENING is for developers (put in LocalConfig.kmk).
+# Note that this is a bit rough since hardening governs more than one
+# variable...
 #
 ifdef VBOX_WITHOUT_HARDENING
  VBOX_WITH_HARDENING=
