@@ -593,7 +593,17 @@ initVBoxPython() {
   if (!vboxInited) {
     int rc = 0;
 
+#if defined(VBOX_PATH_APP_PRIVATE_ARCH) && defined(VBOX_PATH_SHARED_LIBS)
     rc = RTR3Init();
+#else
+    const char *home = getenv("VBOX_PROGRAM_PATH");
+    if (home) {
+	rc = RTR3InitWithProgramPath(home);
+    } else {
+	rc = RTR3Init();
+    }
+#endif 
+
     rc = com::Initialize();
 
     init_xpcom();
