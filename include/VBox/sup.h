@@ -565,7 +565,27 @@ SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, 
 SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages);
 
 /**
- * Load a module into R0 HC.
+ * Verifies the integrity of a file, and optionally opens it. 
+ *  
+ * The integrity check is for whether the file is suitable for loading into 
+ * the hypervisor or VM process. The integrity check may include verifying 
+ * the authenticode/elfsign/whatever signature of the file, which can take 
+ * a little while. 
+ * 
+ * @returns VBox status code. On failure it will have printed a LogRel message.
+ * 
+ * @param   pszFilename     The file.
+ * @param   pszWhat         For the LogRel on failure. 
+ * @param   phFile          Where to store the handle to the opened file. This is optional, pass NULL 
+ *                          if the file should not be opened. 
+ */
+SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszWhat, PRTFILE phFile);
+
+/**
+ * Load a module into R0 HC. 
+ *  
+ * This will verify the file integrity in a similar manner as 
+ * SUPR3HardenedVerifyFile before loading it.
  *
  * @returns VBox status code.
  * @param   pszFilename     The path to the image file.

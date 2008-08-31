@@ -270,18 +270,23 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
     /*
      * Allocate the module list node and initialize it.
      */
-    PPDMMOD     pModule = (PPDMMOD)RTMemAllocZ(sizeof(*pModule) + cchFilename);
+    const char *pszSuff = RTLdrGetSuff();
+    size_t      cchSuff = strlen(pszSuff);
+    PPDMMOD     pModule = (PPDMMOD)RTMemAllocZ(sizeof(*pModule) + cchFilename + cchSuff);
     if (!pModule)
         return VERR_NO_MEMORY;
 
     pModule->eType = PDMMOD_TYPE_R3;
     memcpy(pModule->szName, pszName, cchName); /* memory is zero'ed, no need to copy terminator :-) */
     memcpy(pModule->szFilename, pszFilename, cchFilename);
+    memcpy(&pModule->szFilename[cchFilename], pszSuff, cchSuff);
 
     /*
      * Load the loader item.
      */
-    int rc = RTLdrLoad(pszFilename, &pModule->hLdrMod);
+    int rc = SUPR3HardenedVerifyFile(pModule->szFilename, "pdmR3LoadR3U", NULL);
+    if (RT_SUCCESS(rc))
+        rc = RTLdrLoad(pModule->szFilename, &pModule->hLdrMod);
     if (VBOX_SUCCESS(rc))
     {
         pModule->pNext = pUVM->pdm.s.pModules;
@@ -447,7 +452,9 @@ PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName
     /*
      * Open the loader item.
      */
-    int rc = RTLdrOpen(pszFilename, &pModule->hLdrMod);
+    int rc = SUPR3HardenedVerifyFile(pszFilename, "PDMR3LoadGC", NULL);
+    if (RT_SUCCESS(rc))
+        rc = RTLdrOpen(pszFilename, &pModule->hLdrMod);
     if (VBOX_SUCCESS(rc))
     {
         /*
