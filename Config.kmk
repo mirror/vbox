@@ -35,7 +35,7 @@ DEFAULT_PASSES       := BLDPROGS LIBRARIES DLLS BINARIES INSTALLS OTHERS
 KBUILD_BLD_TYPES = release profile debug kprofile
 
 # Install paths.
-PATH_INS            := $(PATH_OUT)
+PATH_INS              = $(PATH_OUT)
 ifeq ($(KBUILD_TARGET),darwin)
  INST_DIST            = dist/
  INST_SDK             = $(INST_DIST)sdk/
