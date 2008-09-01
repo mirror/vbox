@@ -693,7 +693,7 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
         CPUMPushHyper(pVM, VMMGetSvnRev());             /* Param 2: Version argument. */
         CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
         CPUMPushHyper(pVM, pVM->pVMGC);                 /* Param 0: pVM */
-        CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR));        /* trampoline param: stacksize.  */
+        CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));      /* trampoline param: stacksize.  */
         CPUMPushHyper(pVM, GCPtrEP);                    /* Call EIP. */
         CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
 
@@ -2032,7 +2032,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
  * @param   cArgs       The number of arguments in the ....
  * @param   ...         Arguments to the function.
  */
-VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, ...)
+VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, ...)
 {
     va_list args;
     va_start(args, cArgs);
@@ -2050,22 +2050,22 @@ VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, ...)
  * @param   cArgs       The number of arguments in the ....
  * @param   args        Arguments to the function.
  */
-VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list args)
+VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list args)
 {
-    Log2(("VMMR3CallGCV: GCPtrEntry=%VGv cArgs=%d\n", GCPtrEntry, cArgs));
+    Log2(("VMMR3CallGCV: GCPtrEntry=%VRv cArgs=%d\n", GCPtrEntry, cArgs));
 
     /*
      * Setup the call frame using the trampoline.
      */
     CPUMHyperSetCtxCore(pVM, NULL);
     memset(pVM->vmm.s.pbHCStack, 0xaa, VMM_STACK_SIZE); /* Clear the stack. */
-    CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom - cArgs * sizeof(RTGCUINTPTR));
-    PRTGCUINTPTR pFrame = (PRTGCUINTPTR)(pVM->vmm.s.pbHCStack + VMM_STACK_SIZE) - cArgs;
+    CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom - cArgs * sizeof(RTGCUINTPTR32));
+    PRTGCUINTPTR32 pFrame = (PRTGCUINTPTR32)(pVM->vmm.s.pbHCStack + VMM_STACK_SIZE) - cArgs;
     int i = cArgs;
     while (i-- > 0)
-        *pFrame++ = va_arg(args, RTGCUINTPTR);
+        *pFrame++ = va_arg(args, RTGCUINTPTR32);
 
-    CPUMPushHyper(pVM, cArgs * sizeof(RTGCUINTPTR));                          /* stack frame size */
+    CPUMPushHyper(pVM, cArgs * sizeof(RTGCUINTPTR32));                          /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEntry);                                             /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
 
