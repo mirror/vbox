@@ -151,7 +151,7 @@ def machById(ctx,id):
             break
         mid = str(m.id)
         if mid[0] == '{':
-            mid = mid[1,-1]
+            mid = mid[1:-1]
         if mid == id:
             mach = m
             break
