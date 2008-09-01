@@ -35,37 +35,6 @@
     </message>
 </context>
 <context>
-    <name>BootItemsList</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Move Up (Ctrl-Up)</source>
-        <translation type="obsolete">Вверх (Ctrl-Up)</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Move Down (Ctrl-Down)</source>
-        <translation type="obsolete">Вниз (Ctrl-Down)</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Moves the selected boot device up.</source>
-        <translation type="obsolete">Перемещает выбранное загрузочное устройство вверх.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Moves the selected boot device down.</source>
-        <translation type="obsolete">Перемещает выбранное загрузочное устройство вниз.</translation>
-    </message>
-</context>
-<context>
-    <name>BootItemsTable</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="obsolete">Определяет порядок загрузочных устройств. Используйте галочки слева, чтобы разрешить или запретить загрузку с отдельных устройств. Порядок устройств изменяется перемещением их вверх и вниз.</translation>
-    </message>
-</context>
-<context>
     <name>HDItemsModel</name>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
@@ -364,14 +333,6 @@
     </message>
 </context>
 <context>
-    <name>QIRichLabel</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Copy to clipboard</source>
-        <translation type="obsolete">Скопировать в буфер обмена</translation>
-    </message>
-</context>
-<context>
     <name>QIWidgetValidator</name>
     <message>
         <location filename="../src/QIWidgetValidator.cpp" line="313"/>
@@ -402,13 +363,6 @@
         <location filename="../ui/VBoxAboutDlg.ui" line="30"/>
         <source>VirtualBox - About</source>
         <translation>VirtualBox - О программе</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
-%2&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Графический интерфейс VirtualBox версии %1&lt;br&gt;
-%2&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
@@ -460,74 +414,6 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxAddSFDialog</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add Share</source>
-        <translation type="obsolete">Добавить общую папку</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Edit Share</source>
-        <translation type="obsolete">Изменить общую папку</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select a folder to share</source>
-        <translation type="obsolete">Выберите папку для общего доступа</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Folder Path</source>
-        <translation type="obsolete">Путь к папке</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Folder Name</source>
-        <translation type="obsolete">Имя папки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the path to an existing folder on the host PC.</source>
-        <translation type="obsolete">Показывает путь к существующей папке на основном ПК.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="obsolete">Показывает имя общей папки (под этим именем папка будет видна в гостевой ОС).</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Opens the dialog to select a folder.</source>
-        <translation type="obsolete">Открывает диалог для выбора папки.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Make Permanent</source>
-        <translation type="obsolete">&amp;Создать постоянную папку</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Read-only</source>
-        <translation type="obsolete">&amp;Только для чтения</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="obsolete">Когда стоит галочка, гостевая ОС будет лишена права записи в указанную общую папку.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxCloseVMDlg</name>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="30"/>
@@ -560,54 +446,9 @@ Version %1</source>
         <translation>Вернуть состояние машины к состоянию, сохраненному в текущем снимке</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
-&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
-&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Сохраняет текущее состояние виртуальной машины на жестком диске основного ПК.&lt;/p&gt;
-&lt;p&gt;При следующем запуске машина будет восстановлена из этого сохраненного состояния и продолжит выполнение с того места, на котором она была сохранена, позволяя быстро продолжить прерванную работу.&lt;/p&gt;
-&lt;p&gt;Имейте ввиду, что операция сохранения состояния машины может занять продолжительное время, в зависимости от типа гостевой ОС и размера оперативной памяти, заданного для этой машины.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="133"/>
         <source>S&amp;end the shutdown signal</source>
         <translation>&amp;Послать сигнал завершения</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
-&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
-&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Посылает ACPI-сигнал нажатия кнопки питания в виртуальную машину.&lt;/p&gt;
-&lt;p&gt;Как правило, гостевая операционная система, работающая внутри виртуальной машины, определит этот сигнал и выполнит процедуру нормального завершения работы. Этот вариант является рекомендованным способом выключения виртуальной машины, поскольку в таком случае все работающие приложения гостевой ОC получат возможность сохранить свои данные и состояние.&lt;/p&gt;
-&lt;p&gt;Если машина никак не реагирует на данное действие, то это значит, что гостевая ОС настроена неправильно, либо она вообще не распознает ACPI-сигнал выключения питания. В таком случае, Вы должны выбрать действие &lt;b&gt;Выключить машину&lt;/b&gt; для остановки виртуальной машины.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
-&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Выключает виртуальную машину.&lt;/p&gt;
-&lt;p&gt;Имейте ввиду, что это действие приведет к немедленной остановке виртуальной машины. При этом, гостевая операционная система, работающая внутри нее, не получит возможности выполнить процедуру нормального завершения работы, что может привести к &lt;i&gt;потере данных&lt;/i&gt; в работающих внутри машины приложениях. Имеет смысл выбирать этот вариант только в том случае, если виртуальная машина не реагирует на действие &lt;b&gt;Послать сигнал завершения&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
@@ -780,12 +621,6 @@ Version %1</source>
         <translation>Отключить подключенное устройство CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Remote Desktop (RDP) Server</source>
-        <comment>enable/disable...</comment>
-        <translation type="obsolete">Удаленный дисплей  (RDP-сервер)</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1561"/>
         <source>Remote Dis&amp;play</source>
         <translation>Уд&amp;аленный дисплей</translation>
@@ -874,16 +709,6 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1626"/>
         <source>&amp;Help</source>
         <translation>Справк&amp;а</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Показывает, что функция авто-изменения размера экрана гостевой ОС включена (&lt;img src=auto_resize_on_16px.png/&gt;) или выключена (&lt;img src=auto_resize_off_16px.png/&gt;). Обратите внимание, что для этой функции требуется установка Дополнений гостевой ОС.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Показывает, захвачен ли указатель мыши основного ПК в гостевой ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель не захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграция мыши (ИМ) включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель не захвачен&lt;/nobr&gt;&lt;br&gt;Обратите внимание, что для интеграции мыши требуется установка Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1652"/>
@@ -994,11 +819,6 @@ Version %1</source>
         <translation>Переключиться в режим интеграции дисплея с рабочим столом</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Показывает, захвачена клавиатура в гостевой ОС (&lt;img src=hostkey_captured_16px.png/&gt;) или нет (&lt;img src=hostkey_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1697"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
@@ -1107,11 +927,6 @@ Version %1</source>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Контроллер USB выключен&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Показывает, включен удаленный дисплей (VRDP-сервер) (&lt;img src=vrdp_16px.png/&gt;) или нет (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1903"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
@@ -1169,12 +984,6 @@ Version %1</source>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation>&amp;Командная строка...</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Logging...</source>
-        <comment>debug action</comment>
-        <translation type="obsolete">&amp;Логи...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
@@ -1235,11 +1044,6 @@ Version %1</source>
         <translation>Менеджер виртуальных дисков</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Hard Disks</source>
-        <translation type="obsolete">&amp;Жесткие диски</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="211"/>
         <source>&amp;CD/DVD Images</source>
         <translation>О&amp;бразы CD/DVD</translation>
@@ -1250,55 +1054,10 @@ Version %1</source>
         <translation>Об&amp;разы дискет</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Invoke dialog&apos;s help</source>
-        <translation type="obsolete">Вызвать справку для диалогового окна</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Accept dialog</source>
-        <translation type="obsolete">Принять сделанные изменения</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel dialog</source>
-        <translation type="obsolete">Отменить сделанные изменения</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="123"/>
         <source>--</source>
         <comment>no info</comment>
         <translation>--</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Создать...</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Добавить...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
@@ -1314,31 +1073,6 @@ Version %1</source>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="783"/>
         <source>Re&amp;fresh</source>
         <translation>Об&amp;новить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>New</source>
-        <translation type="obsolete">Создать</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add</source>
-        <translation type="obsolete">Добавить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Remove</source>
-        <translation type="obsolete">Удалить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Release</source>
-        <translation type="obsolete">Освободить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Refresh</source>
-        <translation type="obsolete">Обновить</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="785"/>
@@ -1369,31 +1103,6 @@ Version %1</source>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="776"/>
         <source>&amp;Actions</source>
         <translation>&amp;Действия</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Location</source>
-        <translation type="obsolete">Расположение</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Disk Type</source>
-        <translation type="obsolete">Тип диска</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Storage Type</source>
-        <translation type="obsolete">Формат</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Attached to</source>
-        <translation type="obsolete">Подсоединен к</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Snapshot</source>
-        <translation type="obsolete">Снимок</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="812"/>
@@ -1474,11 +1183,6 @@ Version %1</source>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="822"/>
         <source>&amp;Select</source>
         <translation>&amp;Выбрать</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
-        <translation type="obsolete">Все образы жестких дисков (*.vdi; *.vmdk);;Образы VDI (*.vdi);;Образы VMDK (*.vmdk);;Все файлы (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1095"/>
@@ -1773,7 +1477,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished">А&amp;втозахват клавиатуры</translation>
+        <translation>А&amp;втозахват клавиатуры</translation>
     </message>
 </context>
 <context>
@@ -2802,525 +2506,6 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxGlobalSettingsDlg</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Category</source>
-        <translation type="obsolete">Раздел</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>[id]</source>
-        <translation type="obsolete">[id]</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>[link]</source>
-        <translation type="obsolete">[link]</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>[name]</source>
-        <translation type="obsolete">[name]</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;Выберите раздел настроек из списка слева, после чего поместите курсор мыши над нужным элементом настроек для получения подробной информации&lt;i&gt;.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> General </source>
-        <translation type="obsolete"> Общие</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Input </source>
-        <translation type="obsolete"> Ввод </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> USB </source>
-        <translation type="obsolete"> USB </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Default &amp;Folders</source>
-        <translation type="obsolete">&amp;Папки по умолчанию</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Machines</source>
-        <translation type="obsolete">Машины</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>VDI files</source>
-        <translation type="obsolete">Файлы VDI</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select</source>
-        <translation type="obsolete">Выбрать</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Keyboard</source>
-        <translation type="obsolete">&amp;Клавиатура</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Host Key</source>
-        <translation type="obsolete">&amp;Хост-клавиша</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Auto capture keyboard</source>
-        <translation type="obsolete">&amp;Автозахват клавиатуры</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;USB Device Filters</source>
-        <translation type="obsolete">Фильтры &amp;устройств USB</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ins</source>
-        <translation type="obsolete">Ins</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Alt+Ins</source>
-        <translation type="obsolete">Alt+Ins</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Del</source>
-        <translation type="obsolete">Del</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ctrl+Up</source>
-        <translation type="obsolete">Ctrl+Up</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ctrl+Down</source>
-        <translation type="obsolete">Ctrl+Down</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the dialog help.</source>
-        <translation type="obsolete">Показывает диалоговую справку.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Invalid settings detected</source>
-        <translation type="obsolete">Обнаружены неправильные настройки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="obsolete">Сохраняет изменения и закрывает диалог.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancels changes and closes the dialog.</source>
-        <translation type="obsolete">Отменяет изменения и закрывает диалог.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>VirtualBox Preferences</source>
-        <translation type="obsolete">Настройки VirtualBox</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="obsolete">Показывает клавишу, используемую в качестве хост-клавиши в окне ВМ. Активируйте поле ввода и нажмите новую хост-клавишу. Обратите внимание, что в качестве хост-клавиши нельзя использовать буквенные, цифровые клавиши, клавиши управления курсором и редактирования.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation type="obsolete">Новый фильтр %1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Language</source>
-        <translation type="obsolete">Язык</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Language </source>
-        <translation type="obsolete"> Язык</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Показывает путь к папке по умолчанию для файлов VDI. Эта папка используется (если другая папка не указана явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Задает значение по умолчанию для папки виртуальных машин. Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Задает значение по умолчанию для папки файлов VDI. Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="obsolete">Показывает путь к папке по умолчанию для виртуальных машин. Эта папка используется (если другая папка не указана явным образом) при создании новых виртуальных машин.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Opens a dialog to select the default VDI folder.</source>
-        <translation type="obsolete">Открывает диалог выбора папки по умолчанию для файлов VDI.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
-        <translation type="obsolete">Открывает диалог выбора папки по умолчанию для виртуальных машин.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">Когда стоит галочка, происходит автоматический захват клавиатуры при каждом переключении в окно виртуальной машины. Когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab), направляются в ВМ.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Interface Language</source>
-        <translation type="obsolete">&amp;Язык интерфейса</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-&lt;qt&gt;Lists all available user interface languages. The effective language is
-written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
-to the system default language.&lt;/qt&gt;
-                                    </source>
-        <translation type="obsolete">&lt;qt&gt;Перечисляет все доступные языки интерфейса. Активный в настоящий момент язык
-выделен &lt;b&gt;жирным&lt;/b&gt;. Выберите &lt;i&gt;По умолчанию&lt;/i&gt; для активации
-языка, используемого в системе по умолчанию.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Author(s):</source>
-        <translation type="obsolete">Автор(ы):</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Language:</source>
-        <translation type="obsolete">Язык:</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation type="obsolete"> (встроенный)</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;unavailable&gt;</source>
-        <comment>Language</comment>
-        <translation type="obsolete">&lt;недоступен&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation type="obsolete">&lt;неизвестно&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation type="obsolete">По умолчанию</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>V&amp;RDP Authentication Library</source>
-        <translation type="obsolete">&amp;Библиотека аутентификации VRDP</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="obsolete">Показывает путь к библиотеке, обеспечивающей аутентификацию клиентов удаленного дисплея (VRDP).</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
-        <translation type="obsolete">Открывает диалог выбора файла библиотеки аутентификации VRDP.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Задает значение по умолчанию для файла библиотеки аутентификации. Фактическая библиотека по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Extended Features</source>
-        <translation type="obsolete">&amp;Дополнительные возможности</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="obsolete">&amp;Включить VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
-        <translation type="obsolete">Определяет, будут ли виртуальные машины пытаться задействовать расширенные функции аппаратной виртуализации процессора основного ПК (такие как Intel VT-x или AMD-V) по умолчанию или нет.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-                                              &lt;qt&gt;Lists all global USB
-                                              filters. The checkbox to the left
-                                              defines whether the particular
-                                              filter is enabled or not. Use the
-                                              context menu or buttons to the
-                                              right to add or remove USB
-                                              filters.&lt;/qt&gt;
-                                            </source>
-        <translation type="obsolete">&lt;qt&gt;Показывает список всех глобальных фильтров USB устройств. Галочка слева указывает, включен данный фильтр или нет. Используйте контекстное меню или кнопки справа для добавления или удаления фильтров.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add Empty Filter</source>
-        <translation type="obsolete">Добавить пустой фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Add Empty Filter</source>
-        <translation type="obsolete">&amp;Добавить пустой фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Adds a new USB filter with all fields initially set to
-              empty strings. Note that such a filter will match any attached USB
-              device.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Добавляет новый USB-фильтр, в котором все поля первоначально пустые. Имейте ввиду, что пустой фильтр будет соответствовать любому подсоединенному USB-устройству.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add Filter From Device</source>
-        <translation type="obsolete">Добавить из устройства</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>A&amp;dd Filter From Device</source>
-        <translation type="obsolete">Д&amp;обавить из устройства</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
-              values of the selected USB device attached to the host
-              PC.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Добавляет новый USB-фильтр, в котором все поля заполнены значениями одного из USB-устройств, подключенных к основному ПК.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Remove Filter</source>
-        <translation type="obsolete">Удалить фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Remove Filter</source>
-        <translation type="obsolete">&amp;Удалить фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Удаляет выбранный USB-фильтр.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Move Filter Up</source>
-        <translation type="obsolete">Переместить вверх</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Move Filter Up</source>
-        <translation type="obsolete">&amp;Переместить вверх</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Перемещает выбранный USB-фильтр вверх.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Move Filter Down</source>
-        <translation type="obsolete">Переместить вниз</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>M&amp;ove Filter Down</source>
-        <translation type="obsolete">П&amp;ереместить вниз</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Перемещает выбранный USB-фильтр вниз.&lt;/qt&gt;</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxHardDiskSettings</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Slot</source>
-        <translation type="obsolete">Разъем</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Hard Disk</source>
-        <translation type="obsolete">Жесткий диск</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Hard Disks</source>
-        <translation type="obsolete">&amp;Жесткие диски</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Enable SATA Controller</source>
-        <translation type="obsolete">&amp;Включить контроллер SATA</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-                          &lt;qt&gt;When checked, enables the virtual SATA
-                          controller of this machine. Note that you cannot
-                          attach hard disks to SATA ports when the virtual SATA
-                          controller is disabled.&lt;/qt&gt;
-                        </source>
-        <translation type="obsolete">&lt;qt&gt;Когда стоит галочка, включается виртуальный SATA-контроллер этой машины. Имейте в виду, что вы не сможете подсоединить жесткие диски к портам SATA, если виртуальный SATA-контроллер выключен.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Hard Disks &amp;Attachments</source>
-        <translation type="obsolete">&amp;Подключенные жесткие диски</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-                                  &lt;qt&gt;Lists all hard disks attached to
-                                  this machine. Use a mouse double-click or the
-                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
-                                  key on the highlighted item to activate the
-                                  drop-down list and choose the desired value.
-                                  Use the context menu or buttons to the right
-                                  to add or remove hard disk
-                                  attachments.&lt;/qt&gt;
-                                </source>
-        <translation type="obsolete">&lt;qt&gt;Перечисляет все жесткие диски, подсоединенные к этой машине. Дважды щелкние мышью или нажмите клавишу &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt; на выбранном элементе для выбора нужного значения из выпадающего списка. Используйте контекстное меню или кнопки справа для добавления или удаления подключений.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add Attachment</source>
-        <translation type="obsolete">Добавить подключение</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Add Attachment</source>
-        <translation type="obsolete">&amp;Добавить подключение</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ins</source>
-        <translation type="obsolete">Ins</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Создает новое подключение жесткого диска.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Remove Attachment</source>
-        <translation type="obsolete">Удалить подключение</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Remove Attachment</source>
-        <translation type="obsolete">&amp;Удалить подключение</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Отсоединяет выбранный жесткий диск.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select Hard Disk</source>
-        <translation type="obsolete">Выбрать жесткий диск</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Select Hard Disk</source>
-        <translation type="obsolete">&amp;Выбрать жесткий диск</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
-              to attach to the currently highlighted slot.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Вызывает Менеджер виртуальных дисков для выбора жесткого диска, подключаемого к указанному разъему.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; использует жесткий диск, который уже подключен к &lt;i&gt;%2&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Double-click to add a new attachment</source>
-        <translation type="obsolete">Дважды щелкните мышью для создания нового подключения</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="obsolete">Не выбран жесткий диск для подключения к &lt;i&gt;%1&lt;/i&gt;</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
@@ -3455,15 +2640,6 @@ to the system default language.&lt;/qt&gt;
         <translation>Создать новый виртуальный диск</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Этот мастер поможет создать образ нового виртуального диска для Вашей виртуальной машины.&lt;/p&gt;
-&lt;p&gt;Нажмите кнопку &lt;b&gt;Далее&lt;/b&gt;, чтобы перейти к следующей странице мастера,
-или кнопку &lt;b&gt;Назад&lt;/b&gt; для возврата на предыдущую страницу.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="63"/>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
         <translation>Мастер создания нового виртуального диска</translation>
@@ -3489,28 +2665,9 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>Тип образа виртуального диска</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
-to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Нажмите кнопку &lt;b&gt;Выбрать&lt;/b&gt; для выбора местоположения и имени файла
-образа виртуального жесткого диска или введите имя файла в поле ввода.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Image File Name</source>
         <translation>&amp;Имя файла образа</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select</source>
-        <translation type="obsolete">Выбрать</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
-as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Выберите размер виртуального жесткого диска в мегабайтах. Указанный размер будет фигурировать
-в гостевой ОС в качестве размера данного жесткого диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
@@ -3528,15 +2685,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>Вы собираетесь создать образ виртуального жесткого диска со следующими параметрами:</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new hard disk image will be created.
-                            </source>
-        <translation type="obsolete">Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;.
-                            После этого будет создан образ нового жесткого диска.
-                            </translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="741"/>
         <source>Summary</source>
         <translation>Итог</translation>
@@ -3547,11 +2695,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>&lt;nobr&gt;%1 байт&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Тип:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Местоположение:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Размер:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;байт)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="265"/>
         <source>Hard disk images (*.vdi)</source>
         <translation>Образы жестких дисков (*.vdi)</translation>
@@ -3560,24 +2703,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <location filename="../src/VBoxNewHDWzd.cpp" line="263"/>
         <source>Select a file for the new hard disk image file</source>
         <translation>Выберите файл для образа нового жесткого диска</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
-of space on your physical hard disk. It will grow dynamically (up to
-the size specified) as the Guest OS claims disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
-the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
-time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Выберите тип образа виртуального жесткого диска, который Вы хотите создать.&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;Динамически расширяющийся образ&lt;/b&gt; первоначально занимает очень мало
-места на физическом жестком диске. Он будет динамически расти (до заданного
-размера) по мере того, как гостевая ОС использует дисковое пространство.&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;Образ фиксированного размера&lt;/b&gt; не увеличивается. Он хранится в файле примерно
-того же размера, что и размер виртуального жесткого диска. Создание жесткого диска
-фиксированного размера может занять длительное время, в зависимости от размера образа
-и производительности физического диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
@@ -3638,31 +2763,9 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <translation>Создать новую виртуальную машину</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
-a new virtual machine for VirtualBox.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Этот мастер поможет Вам выполнить шаги, необходимые для создания
-новой виртуальной машины для VirtualBox.&lt;/p&gt;
-&lt;p&gt;Нажмите кнопку &lt;b&gt;Далее&lt;/b&gt;, чтобы перейти к следующей странице мастера,
-или кнопку &lt;b&gt;Назад&lt;/b&gt; для возврата на предыдущую страницу.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="63"/>
         <source>Welcome to the New Virtual Machine Wizard!</source>
         <translation>Мастер создания новой виртуальной машины</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
-system you plan to install onto the virtual machine.&lt;/p&gt;
-&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Введите имя для новой виртуальной машины и выберите тип гостевой операционной
-системы, которую Вы планируете установить на эту машину.&lt;/p&gt;
-&lt;p&gt;Имя виртуальной машины обычно отражает ее программную и аппаратную конфигурацию.
-Это имя будет использоваться всеми приложениями VirtualBox для обозначения созданной виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="298"/>
@@ -3690,21 +2793,6 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
         <translation>&amp;Размер основной памяти</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;</source>
-        <translation type="obsolete">&lt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>=</source>
-        <translation type="obsolete">=</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&gt;</source>
-        <translation type="obsolete">&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="632"/>
         <source>MB</source>
         <translation>МБ</translation>
@@ -3713,23 +2801,6 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
         <location filename="../ui/VBoxNewVMWzd.ui" line="489"/>
         <source>Memory</source>
         <translation>Память</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Select a hard disk image to be used
-as the boot hard disk of the virtual machine. You can either create a new hard
-disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
-image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
-&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
-step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Выберите образ жесткого диска, который будет
-загрузочным диском виртуальной машины. Вы можете создать новый
-жесткий диск, нажав кнопку &lt;b&gt;Создать&lt;/b&gt;, либо выбрать существующий
-из выпадающего списка или из Менеджера виртуальных дисков (который откроется
-при нажатии на кнопку &lt;b&gt;Существующий&lt;/b&gt;).&lt;/p&gt;
-&lt;p&gt;Если Вам требуется более сложная конфигурация жестких дисков, то можно пропустить
-этот шаг и подсоединить жесткие диски позднее с помощью диалога Свойств машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="873"/>
@@ -3752,46 +2823,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Виртуальный жесткий диск</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>
-                            &lt;p&gt;
-                            You are going to create a new virtual machine
-                            with the following parameters:
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">
-                            &lt;p&gt;
-                            Вы собираетесь создать виртуальную машину
-                            со следующими параметрами:
-                            &lt;/p&gt;
-                            </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-                            &lt;p&gt;
-                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new virtual machine will be created.
-                            &lt;/p&gt;&lt;p&gt;
-                            Note that you can alter these and all other setting of the
-                            created virtual machine at any time using the
-                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
-                            the menu of the main window.
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">
-                            &lt;p&gt;
-                            Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;.
-                            После этого будет создана новая виртуальная машина.
-                            &lt;/p&gt;&lt;p&gt;
-                            Обратите внимание, что эти и другие параметры
-                            созданной машины можно будет изменить в любое время с помощью
-                            диалога &lt;b&gt;Свойства&lt;/b&gt;, доступ к которому можно получить через
-                            меню главного окна.
-                            &lt;/p&gt;
-                            </translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1012"/>
         <source>Summary</source>
         <translation>Итог</translation>
@@ -3800,16 +2831,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxNewVMWzd.cpp" line="162"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;МБ&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Имя:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Тип ОС:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Основная память:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;МБ&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Загрузочный жесткий диск:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="152"/>
@@ -4126,21 +3147,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Не удалось удалить общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на  &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) из виртуальной машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы &lt;b&gt;щелкнули кнопкой мыши&lt;/b&gt; внутри экрана виртуальной машины или нажали &lt;b&gt;хост-клавишу&lt;/b&gt;. Это приведет к тому, что виртуальная машина &lt;b&gt;захватит&lt;/b&gt; указатель мыши (только в случае, если интеграция указателя мыши не поддерживается гостевой ОС) и клавиатуру основного ПК, что сделает их недоступными для других приложений, работающих на компьютере.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;У Вас включена настройка &lt;b&gt;Автозахват клавиатуры&lt;/b&gt;. Это приведет к тому, что виртуальная машина будет автоматически &lt;b&gt;захватывать&lt;/b&gt; клавиатуру каждый раз при переключении в окно ВМ, что сделает ее недоступной для других приложений, работающих на компьютере: когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab) будут направлены в виртуальную машину.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Виртуальная машина сообщает, что гостевая ОС поддерживает &lt;b&gt;интеграцию указателя мыши&lt;/b&gt;. Это означает, что не требуется &lt;i&gt;захватывать&lt;/i&gt; указатель мыши для того, чтобы использовать ее в гостевой ОС -- все действия с мышью, когда ее указатель находится в пределах экрана виртуальной машины, напрямую передаются в гостевую ОС. Если мышь в настоящий момент захвачена, она будет автоматически освобождена.&lt;/p&gt;&lt;p&gt;Значок мыши в строке состояния будет выглядеть так: &amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp; -- это говорит о том, что интеграция мыши поддерживается гостевой ОС и в настоящий момент включена.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание&lt;/b&gt;: Некоторые приложения могут вести себя неправильно в режиме интеграции указателя мыши. Вы всегда можете отключить этот режим для текущей сессии (и включить его снова), выбрав соответствующее действие из меню.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1662"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Виртуальная машина сообщает, гостевая ОС не поддерживает &lt;b&gt;интеграцию указателя мыши&lt;/b&gt; в текущем видеорежиме. Чтобы использовать мышь в гостевой ОС, нужно захватить мышь (щелкнув кнопкой мыши в пределах экрана ВМ или нажав хост-клавишу).&lt;/p&gt;</translation>
@@ -4284,16 +3290,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxProblemReporter.cpp" line="1440"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;CD-образ Дополнений гостевой ОС был успешно скачан по ссылке &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранен локально как &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Хотите ли Вы зарегистрировать этот CD-образ и подключить его к виртуальному CD/DVD-приводу?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Сейчас окно виртуальной машины будет переключено в &lt;b&gt;полноэкранный&lt;/b&gt; режим. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;. Обратите внимание, что в данный момент в качестве &lt;i&gt;хост-клавиши&lt;/i&gt; используется &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имейте в виду, что в полноэкранном режиме основное меню окна скрыто. Вы можете получить к нему доступ, нажав &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Сейчас окно виртуальной машины будет переключено в режим &lt;b&gt;интеграции дисплея&lt;/b&gt;. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;. Обратите внимание, что в данный момент в качестве &lt;i&gt;хост-клавиши&lt;/i&gt; используется &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имейте в виду, что в режиме интеграции дисплея основное меню окна скрыто. Вы можете получить к нему доступ, нажав &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1820"/>
@@ -4631,11 +3627,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Регистрационная форма VirtualBox</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Confirm</source>
-        <translation type="obsolete">О&amp;тправить</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="366"/>
         <source>Connection timed out.</source>
         <translation>Вышло время ожидания соединения.</translation>
@@ -4677,21 +3668,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxConsoleWnd.cpp" line="3533"/>
         <source>Shared Folders</source>
         <translation>Общие папки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
     </message>
 </context>
 <context>
@@ -4758,11 +3734,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Создать...</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>New</source>
-        <translation type="obsolete">Создать</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1201"/>
         <source>Ctrl+N</source>
         <translation>Ctrl+N</translation>
@@ -4776,11 +3747,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxSelectorWnd.cpp" line="1204"/>
         <source>&amp;Settings...</source>
         <translation>С&amp;войства...</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Settings</source>
-        <translation type="obsolete">Свойства</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1205"/>
@@ -4798,11 +3764,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Удалить</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Delete</source>
-        <translation type="obsolete">Удалить</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1209"/>
         <source>Delete the selected virtual machine</source>
         <translation>Удалить выбранную виртуальную машину</translation>
@@ -4813,11 +3774,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Отменить</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Discard</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1215"/>
         <source>Discard the saved state of the selected virtual machine</source>
         <translation>Отменить сохраненное состояние выбранной виртуальной машины</translation>
@@ -4826,11 +3782,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxSelectorWnd.cpp" line="1217"/>
         <source>&amp;Refresh</source>
         <translation>О&amp;бновить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Refresh</source>
-        <translation type="obsolete">Обновить</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1218"/>
@@ -4846,11 +3797,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxSelectorWnd.cpp" line="1227"/>
         <source>&amp;Contents...</source>
         <translation>&amp;Содержание...</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1229"/>
@@ -4918,11 +3864,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&amp;Показать</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Show</source>
-        <translation type="obsolete">Показать</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1320"/>
         <source>Switch to the window of the selected virtual machine</source>
         <translation>Переключиться в окно выбранной виртуальной машины</translation>
@@ -4933,19 +3874,9 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>С&amp;тарт</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Start</source>
-        <translation type="obsolete">Старт</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1415"/>
         <source>Start the selected virtual machine</source>
         <translation>Начать выполнение выбранной виртуальной машины</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Добро пожаловать в мир VirtualBox!&lt;/h3&gt;&lt;p&gt;Левая часть этого окна предназначена для отображения списка Ваших  виртуальных машин. Этот список сейчас пуст, потому что Вы не создали ни одной виртуальной машины.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Чтобы создать новую машину, нажмите кнопку &lt;b&gt;Создать&lt;/b&gt; на основной панели инструментов, расположенной вверху окна.&lt;/p&gt;&lt;p&gt;Hажмите клавишу &lt;b&gt;F1&lt;/b&gt; для получения оперативной помощи или посетите сайт &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;, чтобы узнать свежие новости и получить актуальную информацию.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1251"/>
@@ -4956,11 +3887,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxSelectorWnd.cpp" line="1222"/>
         <source>Show &amp;Log...</source>
         <translation>Показать &amp;журнал...</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Show Log...</source>
-        <translation type="obsolete">Показать журнал...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1223"/>
@@ -4993,11 +3919,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>П&amp;родолжить</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Resume</source>
-        <translation type="obsolete">Продолжить</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1347"/>
         <source>Ctrl+P</source>
         <translation></translation>
@@ -5011,11 +3932,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxSelectorWnd.cpp" line="1346"/>
         <source>&amp;Pause</source>
         <translation>Па&amp;уза</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Pause</source>
-        <translation type="obsolete">Пауза</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1349"/>
@@ -5057,114 +3973,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
 </context>
 <context>
-    <name>VBoxSharedFoldersSettings</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Name</source>
-        <translation type="obsolete">Имя</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Path</source>
-        <translation type="obsolete">Путь</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Shared &amp;Folders</source>
-        <translation type="obsolete">О&amp;бщие папки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
-Use
-&lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
-to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
-&lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
-to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Перечисляет все общие папки, доступные этой машине.
-Используйте команду
-&lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
-для доступа к общей папке с именем &lt;i&gt;share&lt;/i&gt; в DOS-подобной ОС, или
-&lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
-для доступа к ней из Линукс-подобной ОС. Эта возможность требует установки Дополнений гостевой ОС.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Adds a new shared folder definition.</source>
-        <translation type="obsolete">Добавляет определение новой общей папки.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Removes the selected shared folder definition.</source>
-        <translation type="obsolete">Удаляет определение выбранной общей папки.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Machine Folders</source>
-        <translation type="obsolete"> Папки машины</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Transient Folders</source>
-        <translation type="obsolete"> Временные папки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Edits the selected shared folder definition.</source>
-        <translation type="obsolete">Изменяет определение выбранной общей папки.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ins</source>
-        <translation type="obsolete">Ins</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add a new shared folder (Ins)</source>
-        <translation type="obsolete">Добавить новую общую папку (Ins)</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Del</source>
-        <translation type="obsolete">Del</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Remove the selected shared folder (Del)</source>
-        <translation type="obsolete">Удалить выбранную общую папку (Del)</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Access</source>
-        <translation type="obsolete">Доступ</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Edit the selected shared folder (Ctrl+Space)</source>
-        <translation type="obsolete">Изменить выбранную общую папку (Ctrl+Space)</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Full</source>
-        <translation type="obsolete">Полный</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Read-only</source>
-        <translation type="obsolete">Чтение</translation>
-    </message>
-</context>
-<context>
     <name>VBoxSnapshotDetailsDlg</name>
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="30"/>
         <source>VBoxSnapshotDetailsDlg</source>
         <translation></translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Snapshot Details </source>
-        <translation type="obsolete"> Сведения о снимке </translation>
     </message>
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="50"/>
@@ -5180,26 +3993,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="98"/>
         <source>&amp;Machine Details</source>
         <translation>Сведения о &amp;машине</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotDetailsDlg.cpp" line="81"/>
@@ -5225,19 +4018,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation></translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Discard Snapshot</source>
-        <translation type="obsolete">Отменить снимок</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
         <translation>От&amp;менить снимок</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Take Snapshot</source>
-        <translation type="obsolete">Сделать снимок</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
@@ -5245,19 +4028,9 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>&amp;Сделать снимок</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Discard Current Snapshot and State</source>
-        <translation type="obsolete">Отменить текущий снимок и состояние</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
         <translation>О&amp;тменить текущий снимок и состояние</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Show Details</source>
-        <translation type="obsolete">Показать детали</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
@@ -5338,11 +4111,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>Сделать снимок текущего состояния виртуальной машины</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Revert to Current Snapshot</source>
-        <translation type="obsolete">Вернуться к текущему снимку</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
         <translation>&amp;Вернуться к текущему снимку</translation>
@@ -5375,11 +4143,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <source>Enable</source>
         <translation>Включить</translation>
     </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>%1 %2</source>
-        <translation type="obsolete">%1 %2</translation>
-    </message>
 </context>
 <context>
     <name>VBoxTakeSnapshotDlg</name>
@@ -5397,195 +4160,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <location filename="../ui/VBoxTakeSnapshotDlg.ui" line="98"/>
         <source>Snapshot &amp;Description</source>
         <translation>О&amp;писание снимка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxUSBFilterSettings</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Name</source>
-        <translation type="obsolete">&amp;Имя</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the filter name.</source>
-        <translation type="obsolete">Показывает название фильтра.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Manufacturer</source>
-        <translation type="obsolete">П&amp;роизводитель</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Pro&amp;duct</source>
-        <translation type="obsolete">Прод&amp;укт</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Serial No.</source>
-        <translation type="obsolete">&amp;Серийный №</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>R&amp;emote</source>
-        <translation type="obsolete">Уд&amp;аленное</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Action</source>
-        <translation type="obsolete">Де&amp;йствие</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Vendor ID</source>
-        <translation type="obsolete">ID &amp;поставщика</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Product ID</source>
-        <translation type="obsolete">ID про&amp;дукта</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Revision</source>
-        <translation type="obsolete">Р&amp;евизия</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Por&amp;t</source>
-        <translation type="obsolete">Пор&amp;т</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Any</source>
-        <comment>remote</comment>
-        <translation type="obsolete">Оба</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Yes</source>
-        <comment>remote</comment>
-        <translation type="obsolete">Да</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>No</source>
-        <comment>remote</comment>
-        <translation type="obsolete">Нет</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines the manufacturer filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает фильтр по производителю в виде
-строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому
-значению.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines the product name filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает фильтр по названию продукта в виде
-строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому
-значению.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines the serial number filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает фильтр по серийному номеру в виде
-строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому
-значению.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines whether this filter applies
-to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
-to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
-or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Определяет, применяется ли этот фильтр
-к USB-устройствам, подсоединенным локально к основному ПК (&lt;i&gt;Нет&lt;/i&gt;),
-к компьютеру VRDP-клиента (&lt;i&gt;Да&lt;/i&gt;),
-или к обоим (&lt;i&gt;Оба&lt;/i&gt;).&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines an action performed by the host
-computer when a matching device is attached: give it up to the host OS
-(&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
-(&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает действие, выполняемое основным
-ПК при подключении совпадающего устройства: передать его в основную ОС
-(&lt;i&gt;Игнорировать&lt;/i&gt;) или захватить его для дальнейшего использования виртуальными машинами
-(&lt;i&gt;Удержать&lt;/i&gt;).&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines the vendor ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает фильтр по ID поставщика. Формат
-строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где
-&lt;tt&gt;X&lt;/tt&gt; - шестнадцатиричная цифра. Пустая строка соответствует любому
-значению.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines the product ID filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
-&lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает фильтр по ID продукта. Формат
-строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где
-&lt;tt&gt;X&lt;/tt&gt; - шестнадцатиричная цифра. Пустая строка соответствует любому
-значению.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines the revision number filter. The
-&lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
-&lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
-is a decimal digit of the fractional part. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает фильтр по номеру ревизии. Формат
-строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;IIFF&lt;/tt&gt;, где
-&lt;tt&gt;I&lt;/tt&gt; - десятичная цифра целой части, а &lt;tt&gt;F&lt;/tt&gt;
-- десятичная цифра дробной части. Пустая строка соответствует любому
-значению.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Defines the host USB port filter as an
-&lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
-value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Задает фильтр по физическому порту USB в виде
-строки &lt;i&gt;точного соответствия&lt;/i&gt;. Пустая строка соответствует любому
-значению.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -5810,11 +4384,6 @@ value.&lt;/qt&gt;</source>
         <translation>Ф&amp;айл образа</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>VDM</source>
-        <translation type="obsolete">МВД</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="249"/>
         <source>Select Installation Media</source>
         <translation>Выберите установочный носитель</translation>
@@ -5823,11 +4392,6 @@ value.&lt;/qt&gt;</source>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="651"/>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Вы выбрали следующий носитель для загрузки виртуальной машины:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. После этого, указанный носитель будет временно подключен к виртуальной машине, и машина начнет загрузку с этого носителя.&lt;/p&gt;&lt;p&gt;Обратите внимание, что после выключения виртуальной машины, указанный носитель будет автоматически отключен и машина будет переключена на загрузку с первого жесткого диска.&lt;/p&gt;&lt;p&gt;В зависимости от типа программы установки, Вам может потребоваться вручную отключить указанный носитель после того, как программа установки перезагрузит виртуальную машину, для предотвращения повторного запуска процесса установки. Это можно сделать, выбрав соответствующий пункт &lt;b&gt;Отключить...&lt;/b&gt; в меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="593"/>
@@ -5848,11 +4412,6 @@ value.&lt;/qt&gt;</source>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="98"/>
         <source>Host Drive %1</source>
         <translation>Физический привод %1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Тип:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Носитель:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="146"/>
@@ -5917,16 +4476,6 @@ p, li { white-space: pre-wrap; }
 </context>
 <context>
     <name>VBoxVMInformationDlg</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Session Information Dialog</source>
-        <translation type="obsolete">Информация о сессии</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Close</source>
-        <translation type="obsolete">&amp;Закрыть</translation>
-    </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="155"/>
         <source>%1 - Session Information</source>
@@ -6109,26 +4658,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMListBox</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
-        <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="obsolete">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 с %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Сессия %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
-        <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Недоступна с %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Inaccessible</source>
-        <translation type="obsolete">Недоступна</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMListView</name>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="151"/>
@@ -6195,16 +4724,6 @@ p, li { white-space: pre-wrap; }
         <translation>Сохранить журнал VirtualBox как</translation>
     </message>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="263"/>
         <source>&amp;Find</source>
         <translation>&amp;Найти</translation>
@@ -6213,275 +4732,6 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMLogViewer.cpp" line="266"/>
         <source>Close</source>
         <translation>Закрыть</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxVMNetworkSettings</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Attached to</source>
-        <translation type="obsolete">&amp;Подсоединен к</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;MAC Address</source>
-        <translation type="obsolete">MAC-&amp;адрес</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Generate</source>
-        <translation type="obsolete">С&amp;генерировать</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ca&amp;ble Connected</source>
-        <translation type="obsolete">&amp;Кабель подключен</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Host Interface Settings</source>
-        <translation type="obsolete"> Настройки хост-интерфейса </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Interface Name</source>
-        <translation type="obsolete">&amp;Имя интерфейса</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;File Descriptor</source>
-        <translation type="obsolete">&amp;Дескриптор файла</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Setup Application</source>
-        <translation type="obsolete">Программа &amp;настройки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select</source>
-        <translation type="obsolete">Выбрать</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Terminate Application</source>
-        <translation type="obsolete">Программа &amp;удаления</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Enable Network Adapter</source>
-        <translation type="obsolete">&amp;Включить сетевой адаптер</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Generates a new random MAC address.</source>
-        <translation type="obsolete">Генерирует новый случайный MAC-адрес.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select TAP setup application</source>
-        <translation type="obsolete">Выберите программу настройки TAP-интерфейса</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select TAP terminate application</source>
-        <translation type="obsolete">Выберите программу удаления TAP-интерфейса</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="obsolete">Если стоит галочка, то этот виртуальный сетевой адаптер будет подключен к виртуальной машине.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="obsolete">Определяет способ, которым этот виртуальный сетевой адаптер подсоединяется к настоящей сети основной ОС.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="obsolete">Определяет, подключен виртуальный сетевой кабель при запуске машины или нет.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="obsolete">Показывает имя хост-интерфейса, выбранного для этого адаптера.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the TAP interface name.</source>
-        <translation type="obsolete">Показывает имя TAP-интерфейса.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="obsolete">Показывает команду (приложение или скрипт), выполяемую для создания и настройки TAP-интерфейса.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Selects the setup application.</source>
-        <translation type="obsolete">Выбирает программу для настройки.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="obsolete">Показывает команду (приложение или скрипт), выполняемую для удаления TAP-интерфейса.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Selects the terminate application.</source>
-        <translation type="obsolete">Выбирает программу для удаления.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">Показывает MAC-адрес этого адаптера. Он состоит ровно из 12 символов из диапазона {0-9,A-F}. Имейте ввиду, что второй символ должен быть четной цифрой.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Network Name</source>
-        <translation type="obsolete">И&amp;мя сети</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Adapter &amp;Type</source>
-        <translation type="obsolete">&amp;Тип адаптера</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="obsolete">Задает тип виртуального сетевого адаптера. В зависимости от выбранного значения, VirtualBox обеспечит виртуальную машину соответствующим сетевым устройством.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="obsolete">Показывает имя внутренней сети, выбранной для этого адаптера.</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxVMParallelPortSettings</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Enable Parallel Port</source>
-        <translation type="obsolete">&amp;Включить параллельный порт</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="obsolete">Когда стоит галочка, активизируется указанный параллельный порт виртуальной машины.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port &amp;Number</source>
-        <translation type="obsolete">&amp;Номер порта</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="obsolete">Задает номер параллельного порта. Вы можете выбрать один из стандартных номеров портов или выбрать &lt;b&gt;Пользовательский&lt;/b&gt; и указать параметры порта вручную.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;IRQ</source>
-        <translation type="obsolete">&amp;Прерывание</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Показывает номер прерывания (IRQ) для этого параллельного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значения больше &lt;tt&gt;15&lt;/tt&gt; могут использоваться только в том случае, если для этой машины включен &lt;b&gt;IO APIC&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>I/O Po&amp;rt</source>
-        <translation type="obsolete">Пор&amp;т В/В</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">Показывает базовый адрес ввода-вывода для этого параллельного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port &amp;Path</source>
-        <translation type="obsolete">П&amp;уть к порту</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the host parallel device name.</source>
-        <translation type="obsolete">Показывает имя устройства параллельного порта основного ПК.</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxVMSerialPortSettings</name>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Enable Serial Port</source>
-        <translation type="obsolete">&amp;Включить последовательный порт</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="obsolete">Когда стоит галочка, активизируется указанный последовательный порт виртуальной машины.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port &amp;Number</source>
-        <translation type="obsolete">&amp;Номер порта</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="obsolete">Задает номер последовательного порта. Вы можете выбрать один из стандартных номеров портов или выбрать &lt;b&gt;Пользовательский&lt;/b&gt; и указать параметры порта вручную.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;IRQ</source>
-        <translation type="obsolete">&amp;Прерывание</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Показывает номер прерывания (IRQ) для этого последовательного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значения больше &lt;tt&gt;15&lt;/tt&gt; могут использоваться только в том случае, если для этой машины включен &lt;b&gt;IO APIC&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>I/O Po&amp;rt</source>
-        <translation type="obsolete">Пор&amp;т В/В</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="obsolete">Показывает базовый адрес ввода-вывода для этого последовательного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port &amp;Mode</source>
-        <translation type="obsolete">&amp;Режим порта</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="obsolete">Управляет режимом работы последовательного порта. Если выбрать &lt;b&gt;Отключен&lt;/b&gt;, то гостевая ОС обнаружит последовательный порт, но не сможет с ним работать.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Create Pipe</source>
-        <translation type="obsolete">&amp;Создать канал</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="obsolete">Если стоит галочка, то канал, указанный в поле &lt;b&gt;Путь к порту&lt;/b&gt;, будет создан при старте виртуальой машины. В противном случае, виртуальная машина попытается использовать существующий канал.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port &amp;Path</source>
-        <translation type="obsolete">П&amp;уть к порту</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="obsolete">Показывает путь к каналу последовательного порта на основном ПК, когда порт работает в режиме &lt;b&gt;Хост-канал&lt;/b&gt;, либо имя устройства последовательного порта основного ПК, когда порт работает в режиме &lt;b&gt;Хост-устройство&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -6588,779 +4838,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="792473150"/>
-        <source>Category</source>
-        <translation type="obsolete">Раздел</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>[id]</source>
-        <translation type="obsolete">[id]</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>[link]</source>
-        <translation type="obsolete">[link]</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>[name]</source>
-        <translation type="obsolete">[name]</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;Выберите раздел настроек из списка слева, после чего поместите курсор мыши над нужным элементом настроек для получения подробной информации&lt;i&gt;.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> General </source>
-        <translation type="obsolete"> Общие </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Hard Disks </source>
-        <translation type="obsolete"> Жесткие диски </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Floppy </source>
-        <translation type="obsolete"> Дискета </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete"> CD/DVD-ROM </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Audio </source>
-        <translation type="obsolete"> Аудио </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Network </source>
-        <translation type="obsolete"> Сеть </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> USB </source>
-        <translation type="obsolete"> USB </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Remote Display </source>
-        <translation type="obsolete"> Удаленный дисплей </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Shared Folders </source>
-        <translation type="obsolete"> Общие папки </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Identification</source>
-        <translation type="obsolete">&amp;Идентификация</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Name</source>
-        <translation type="obsolete">И&amp;мя</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the name of the virtual machine.</source>
-        <translation type="obsolete">Указывает имя виртуальной машины.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>OS &amp;Type</source>
-        <translation type="obsolete">&amp;Тип ОС</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">&amp;Размер основной памяти</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="obsolete">Регулирует количество памяти, доступной для виртуальной машины. Если установить слишком большое значение, то машина может не запуститься.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>MB</source>
-        <translation type="obsolete">МБ</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Video Memory Size</source>
-        <translation type="obsolete">Р&amp;азмер видеопамяти</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="obsolete">Регулирует количество видеопамяти, доступной для виртуальной машины.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Basic</source>
-        <translation type="obsolete">О&amp;сновные</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Select</source>
-        <translation type="obsolete">Выбрать</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Selects the snapshot folder path.</source>
-        <translation type="obsolete">Выбирает путь к папке для снимков.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Reset</source>
-        <translation type="obsolete">Сбросить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Extended Features</source>
-        <translation type="obsolete">Дополнительные возможности</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Enable A&amp;CPI</source>
-        <translation type="obsolete">&amp;Включить ACPI</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Enable IO A&amp;PIC</source>
-        <translation type="obsolete">В&amp;ключить IO APIC</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Boo&amp;t Order</source>
-        <translation type="obsolete">&amp;Порядок загрузки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Advanced</source>
-        <translation type="obsolete">&amp;Дополнительно</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Description</source>
-        <translation type="obsolete">Описа&amp;ние</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Mount Floppy Drive</source>
-        <translation type="obsolete">&amp;Подключить дискету</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Host Floppy &amp;Drive</source>
-        <translation type="obsolete">&amp;Физический привод</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="obsolete">Подключает указанный привод гибких дисков к виртуальному приводу гибких дисков.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Image File</source>
-        <translation type="obsolete">Ф&amp;айл образа</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation type="obsolete">Подключает указанный файл образа дискеты к виртуальному приводу гибких дисков.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="obsolete">&amp;Подключить CD/DVD</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Host CD/DVD &amp;Drive</source>
-        <translation type="obsolete">&amp;Физический CD/DVD-привод</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation type="obsolete">Подключает указанный CD/DVD-привод к виртуальному CD/DVD-приводу.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;ISO Image File</source>
-        <translation type="obsolete">Ф&amp;айл ISO-образа</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation type="obsolete">Подключает указанный файл образа CD/DVD к виртуальному CD/DVD-приводу.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Enable Audio</source>
-        <translation type="obsolete">&amp;Включить аудио</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Host Audio &amp;Driver</source>
-        <translation type="obsolete">&amp;Аудиодрайвер</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Enable &amp;USB Controller</source>
-        <translation type="obsolete">&amp;Включить контроллер USB</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>USB Device &amp;Filters</source>
-        <translation type="obsolete">Фильтры &amp;устройств USB</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ins</source>
-        <translation type="obsolete">Ins</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Alt+Ins</source>
-        <translation type="obsolete">Alt+Ins</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Del</source>
-        <translation type="obsolete">Del</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ctrl+Up</source>
-        <translation type="obsolete">Ctrl+Up</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Ctrl+Down</source>
-        <translation type="obsolete">Ctrl+Down</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Enable VRDP Server</source>
-        <translation type="obsolete">&amp;Включить VRDP-сервер</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Defines the VRDP authentication method.</source>
-        <translation type="obsolete">Задает способ авторизации VRDP-сервера.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="obsolete">Задает максимальное время ожидания авторизации подключения к гостевой ОС в миллисекундах.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Help</source>
-        <translation type="obsolete">Справка</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the dialog help.</source>
-        <translation type="obsolete">Показывает диалоговую справку.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Invalid settings detected</source>
-        <translation type="obsolete">Обнаружены неправильные настройки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;OK</source>
-        <translation type="obsolete">&amp;ОК</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Accepts (saves) changes and closes the dialog.</source>
-        <translation type="obsolete">Сохраняет изменения и закрывает диалог.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Cancels changes and closes the dialog.</source>
-        <translation type="obsolete">Отменяет изменения и закрывает диалог.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">Когда стоит галочка, подключает указанный носитель к приводу CD/DVD виртуальной машины. Обратите внимание, что привод CD/DVD всегда подсоединен к мастер-раззему вторичного IDE-контроллера машины.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="obsolete">Показывает файл образа для подключения к виртуальному CD/DVD-приводу и позволяет быстро выбрать другой файл образа.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="obsolete">Когда стоит галочка, подключает указанный носитель к приводу гибких дисков виртуальной машины.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="obsolete">Показывает файл образа для подключения к виртуальному приводу гибких дисков и позволяет быстро выбрать другой файл образа.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="obsolete">Когда стоит галочка, к виртуальной машине подключается виртуальная звуковая PCI-карта, которая использует указанный аудиодрайвер для связи со звуковой картой основного компьютера.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="obsolete">Если стоит галочка, то виртуальная машина будет работать как сервер удаленного рабочего стола (RDP), позволяя удаленным клиентам соединяться и использовать ВМ (когда она работает) с помощью стандартного RDP-клиента.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MБ&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;not attached&gt;</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&lt;не подсоединен&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> - Settings</source>
-        <translation type="obsolete"> - Свойства</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>New Filter %1</source>
-        <comment>usb</comment>
-        <translation type="obsolete">Новый фильтр %1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Shared Clipboard</source>
-        <translation type="obsolete">&amp;Общий буфер обмена</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>S&amp;napshot Folder</source>
-        <translation type="obsolete">&amp;Папка для снимков</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">Задает тип операционной системы, которую вы хотите установить на эту виртуальную машину (эта операционная система называется гостевая ОС).</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;When checked, the virtual machine will support
-the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
-this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Если стоит галочка, то виртуальная машина будет поддерживать
-улучшенный интерфейс для конфигурации и управления электропитанием (ACPI). &lt;b&gt;Примечание:&lt;/b&gt; не
-выключайте это свойство после установки Windows в качестве гостевой ОС!&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
-this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Если стоит галочка, то виртуальная машина будет поддерживать
-операции ввода/вывода контроллера прерываний (IO APIC), что может слегка снизить производительность ВМ. &lt;b&gt;Примечание:&lt;/b&gt; не выключайте
-это свойство после установки Windows в качестве гостевой ОС!&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Задает режим работы буфера обмена между гостевой и основной ОС. Заметьте, что использование этой функции требует установки пакета Дополнений гостевой ОС.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="obsolete">Показывает путь к папке для сохранения снимков этой виртуальной машины. Имейте ввиду, что снимки могут занимать достаточно много места на жестком диске.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Задает значение по умолчанию для папки снимков. Фактическая папка по умолчанию будет показана после принятия изменений и открытия этого диалога еще раз.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="obsolete">Показывает описание виртуальной машины. Поле описания удобно использовать для занесения заметок о настройках установленной гостевой ОС.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="obsolete">Показывает список физических приводов гибких дисков, доступных для подключения к виртуальной машине.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">Открывает диалог Менеджера виртуальных дисков для выбора файла образа.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="obsolete">Показывает список физических CD/DVD-приводов, доступных для подключения к виртуальной машине.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">Открывает диалог Менеджера виртуальных дисков для выбора файла образа.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
-makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Управляет драйвером основного ПК, используемым для вывода звука. Пункт &lt;b&gt;Пустой аудиодрайвер&lt;/b&gt;
-позволяет гостевой ОС обнаружить звуковую карту, однако любой доступ к ней будет проигнорирован.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="obsolete">Когда стоит галочка, активизируется виртуальный USB-контроллер этой машины.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Adapter %1</source>
-        <comment>network</comment>
-        <translation type="obsolete">Адаптер %1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Host &amp;Interfaces</source>
-        <translation type="obsolete">Хост &amp;интерфейсы</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Lists all available host interfaces.</source>
-        <translation type="obsolete">Перечисляет все имеющиеся хост-интерфейсы.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Adds a new host interface.</source>
-        <translation type="obsolete">Добавляет новый хост-интерфейс.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Removes the selected host interface.</source>
-        <translation type="obsolete">Удаляет выбранный хост-интерфейс.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;No suitable interfaces&gt;</source>
-        <translation type="obsolete">&lt;Нет подходящих интерфейсов&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add</source>
-        <translation type="obsolete">Добавить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Remove</source>
-        <translation type="obsolete">Удалить</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>VirtualBox Host Interface %1</source>
-        <translation type="obsolete">Хост-интерфейс VirtualBox %1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Хотите ли Вы удалить выбранный хост-интерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; Этот интерфейс может использоваться другими сетевыми адаптерами этой или другой ВМ. После его удаления такие адаптеры не будут работать, пока Вы не исправите их настройки выбором другого хост-интерфейса или изменением типа подсоединения адаптера.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Serial Ports </source>
-        <translation type="obsolete"> COM-порты </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="obsolete">Вк&amp;лючить VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
-        <translation type="obsolete">Если стоит галочка, виртуальная машина будет пытаться задействовать расширенные функции аппаратной виртуализации процессора основного ПК, такие как Intel VT-x или AMD-V. Затененное состояние переключателя означает, что эта настройка определяется значением соответствующей глобальной настройки.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Other &amp;Settings</source>
-        <translation type="obsolete">П&amp;рочие настройки</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Remember Media Mounted at Runtime</source>
-        <translation type="obsolete">&amp;Запоминать динамически подключенные носители</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation type="obsolete">Если стоит галочка, то любое изменение подключенных CD/DVD-носителей или гибких дисков, произведенное во время работы машины, будет сохранено в файле настроек для восстановления конфигурации подключенных носителей при последующих запусках.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>O&amp;ther</source>
-        <translation type="obsolete">&amp;Прочие</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Enable Passthrough</source>
-        <translation type="obsolete">В&amp;ключить прямой доступ</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="obsolete">Когда стоит галочка, гостевой ОС разрешается посылать ATAPI-команды напрямую в физический привод, что делает возможным использовать подключенные к основному ПК устройства для записи CD/DVD внутри виртуальной машины. Обратите внимание, что запись аудио-CD внутри ВМ пока еще не поддерживается.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Server Port </source>
-        <translation type="obsolete">&amp;Порт сервера</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Authentication &amp;Method </source>
-        <translation type="obsolete">&amp;Метод аутентификации</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Authentication &amp;Timeout </source>
-        <translation type="obsolete">&amp;Время ожидания аутентификации</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Показывает номер порта VRDP-сервера. Вы можете указать &lt;tt&gt;0&lt;/tt&gt; (ноль) для сброса номера порта к значению по умолчанию.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>CD/DVD image file is not selected</source>
-        <translation type="obsolete">Не выбран файл образа CD/DVD</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Floppy image file is not selected</source>
-        <translation type="obsolete">Не выбран файл образа дискеты</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Incorrect host network interface is selected</source>
-        <translation type="obsolete">Выбран неверный сетевой хост-интерфейс</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Duplicate port number is selected </source>
-        <translation type="obsolete">Выбран повторяющийся номер порта</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Duplicate port path is entered </source>
-        <translation type="obsolete">Введен повторяющийся путь к порту</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="370"/>
         <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
         <translation>%1 на странице &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port %1</source>
-        <comment>serial ports</comment>
-        <translation type="obsolete">Порт %1</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source> Parallel Ports </source>
-        <translation type="obsolete"> LPT-порты </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Enable PA&amp;E/NX</source>
-        <translation type="obsolete">Вкл&amp;ючить PAE/NX</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;When
-                                                          checked, the Physical
-                                                          Address Extension
-                                                          (PAE) feature of the
-                                                          host CPU will be
-                                                          exposed to the virtual
-                                                          machine.&lt;/qt&gt;
-                                                        </source>
-        <translation type="obsolete">&lt;qt&gt;Если стоит галочка, виртуальной машине будет предоставлен доступ к функции Physical Address Extension (PAE, расширение физического адреса) центрального процессора основного ПК.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;IDE Controller Type</source>
-        <translation type="obsolete">&amp;Тип контроллера IDE</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="obsolete">Задает тип виртуального контроллера IDE. В зависимости от выбранного значения, VirtualBox обеспечит виртуальную машину соответствующим IDE-устройством.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Audio &amp;Controller</source>
-        <translation type="obsolete">А&amp;удио-контроллер </translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="obsolete">Задает тип виртуальной звуковой карты. В зависимости от выбранного значения, VirtualBox обеспечит виртуальную машину соответствующим звуковым устройством.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Enable USB &amp;2.0 Controller</source>
-        <translation type="obsolete">Включить контроллер USB &amp;2.0</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="obsolete">Когда стоит галочка, активизируется контроллер USB EHCI для этой машины. Контроллер USB EHCI предоставляет поддержку USB 2.0.</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-                                              &lt;qt&gt;Lists all USB filters of
-                                              this machine. The checkbox to the
-                                              left defines whether the
-                                              particular filter is enabled or
-                                              not. Use the context menu or
-                                              buttons to the right to add or
-                                              remove USB filters.&lt;/qt&gt;
-                                            </source>
-        <translation type="obsolete">&lt;qt&gt;Показывает список всех USB-фильтров этой машины. Галочка слева указывает, включен данный фильтр или нет. Используйте контекстное меню или кнопки справа для добавления или удаления фильтров.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add Empty Filter</source>
-        <translation type="obsolete">Добавить пустой фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Add Empty Filter</source>
-        <translation type="obsolete">&amp;Добавить пустой фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Adds a new USB filter with all fields initially set to
-              empty strings. Note that such a filter will match any attached USB
-              device.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Добавляет новый USB-фильтр, в котором все поля первоначально пустые. Имейте ввиду, что пустой фильтр будет соответствовать любому подсоединенному USB-устройству.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Add Filter From Device</source>
-        <translation type="obsolete">Добавить из устройства</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>A&amp;dd Filter From Device</source>
-        <translation type="obsolete">Д&amp;обавить из устройства</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
-              values of the selected USB device attached to the host
-              PC.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Добавляет новый USB-фильтр, в котором все поля заполнены значениями одного из USB-устройств, подключенных к основному ПК.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Remove Filter</source>
-        <translation type="obsolete">Удалить фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Remove Filter</source>
-        <translation type="obsolete">&amp;Удалить фильтр</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Удаляет выбранный USB-фильтр.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Move Filter Up</source>
-        <translation type="obsolete">Переместить вверх</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>&amp;Move Filter Up</source>
-        <translation type="obsolete">&amp;Переместить вверх</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Перемещает выбранный USB-фильтр вверх.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Move Filter Down</source>
-        <translation type="obsolete">Переместить вниз</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>M&amp;ove Filter Down</source>
-        <translation type="obsolete">П&amp;ереместить вниз</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>
-              &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
-            </source>
-        <translation type="obsolete">&lt;qt&gt;Перемещает выбранный USB-фильтр вниз.&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Internal network name is not set</source>
-        <translation type="obsolete">Не задано имя внутренней сети</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port path is not specified </source>
-        <translation type="obsolete">Не задан путь к порту</translation>
-    </message>
-    <message>
-        <location filename="" line="792473150"/>
-        <source>Port %1</source>
-        <comment>parallel ports</comment>
-        <translation type="obsolete">Порт %1</translation>
-    </message>
-    <message>
+   <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="411"/>
         <source>General</source>
         <translation>Общие</translation>
