@@ -1605,10 +1605,10 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * The hypervisor stack.
      */
-    SSMR3PutGCPtr(pSSM, pVM->vmm.s.pbGCStackBottom);
-    RTGCPTR GCPtrESP = CPUMGetHyperESP(pVM);
+    SSMR3PutRCPtr(pSSM, pVM->vmm.s.pbGCStackBottom);
+    RTRCPTR GCPtrESP = CPUMGetHyperESP(pVM);
     AssertMsg(pVM->vmm.s.pbGCStackBottom - GCPtrESP <= VMM_STACK_SIZE, ("Bottom %VGv ESP=%VGv\n", pVM->vmm.s.pbGCStackBottom, GCPtrESP));
-    SSMR3PutGCPtr(pSSM, GCPtrESP);
+    SSMR3PutRCPtr(pSSM, GCPtrESP);
     SSMR3PutMem(pSSM, pVM->vmm.s.pbHCStack, VMM_STACK_SIZE);
     return SSMR3PutU32(pSSM, ~0); /* terminator */
 }
@@ -1638,10 +1638,10 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /*
      * Check that the stack is in the same place, or that it's fearly empty.
      */
-    RTGCPTR GCPtrStackBottom;
-    SSMR3GetGCPtr(pSSM, &GCPtrStackBottom);
-    RTGCPTR GCPtrESP;
-    int rc = SSMR3GetGCPtr(pSSM, &GCPtrESP);
+    RTRCPTR GCPtrStackBottom;
+    SSMR3GetRCPtr(pSSM, &GCPtrStackBottom);
+    RTRCPTR GCPtrESP;
+    int rc = SSMR3GetRCPtr(pSSM, &GCPtrESP);
     if (VBOX_FAILURE(rc))
         return rc;
     if (    GCPtrStackBottom == pVM->vmm.s.pbGCStackBottom
@@ -1669,7 +1669,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         return VINF_SUCCESS;
     }
 
-    LogRel(("The stack is not in the same place and it's not empty! GCPtrStackBottom=%VGv pbGCStackBottom=%VGv ESP=%VGv\n",
+    LogRel(("The stack is not in the same place and it's not empty! GCPtrStackBottom=%VRv pbGCStackBottom=%VRv ESP=%VRv\n",
             GCPtrStackBottom, pVM->vmm.s.pbGCStackBottom, GCPtrESP));
     if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT)
         return VINF_SUCCESS; /* ignore this */
