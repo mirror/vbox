@@ -1644,37 +1644,24 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     int rc = SSMR3GetRCPtr(pSSM, &GCPtrESP);
     if (VBOX_FAILURE(rc))
         return rc;
-    if (    GCPtrStackBottom == pVM->vmm.s.pbGCStackBottom
-        ||  (GCPtrStackBottom -  GCPtrESP < 32)) /** @todo This will break if we start preemting the hypervisor. */
+
+    /* Previously we checked if the location of the stack was identical or that the stack was empty.
+     * This is not required as we can never initiate a save when GC context code performs a ring 3 call.
+     */
+    /* restore the stack. (not necessary; just consistency checking) */
+    SSMR3GetMem(pSSM, pVM->vmm.s.pbHCStack, VMM_STACK_SIZE);
+
+    /* terminator */
+    uint32_t u32;
+    rc = SSMR3GetU32(pSSM, &u32);
+    if (VBOX_FAILURE(rc))
+        return rc;
+    if (u32 != ~0U)
     {
-        /*
-         * We *must* set the ESP because the CPUM load + PGM load relocations will render
-         * the ESP in CPUM fatally invalid.
-         */
-        CPUMSetHyperESP(pVM, GCPtrESP);
-
-        /* restore the stack. */
-        SSMR3GetMem(pSSM, pVM->vmm.s.pbHCStack, VMM_STACK_SIZE);
-
-        /* terminator */
-        uint32_t u32;
-        rc = SSMR3GetU32(pSSM, &u32);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        if (u32 != ~0U)
-        {
-            AssertMsgFailed(("u32=%#x\n", u32));
-            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-        }
-        return VINF_SUCCESS;
+        AssertMsgFailed(("u32=%#x\n", u32));
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-
-    LogRel(("The stack is not in the same place and it's not empty! GCPtrStackBottom=%VRv pbGCStackBottom=%VRv ESP=%VRv\n",
-            GCPtrStackBottom, pVM->vmm.s.pbGCStackBottom, GCPtrESP));
-    if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT)
-        return VINF_SUCCESS; /* ignore this */
-    AssertFailed();
-    return VERR_SSM_LOAD_CONFIG_MISMATCH;
+    return VINF_SUCCESS;
 }
 
 
