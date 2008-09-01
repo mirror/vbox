@@ -38,6 +38,7 @@
 #include <QTimer>
 #include <QStatusBar>
 #include <QPainter>
+#include <QBitmap>
 
 #ifdef Q_WS_WIN
 // VBox/cdefs.h defines these:
@@ -826,7 +827,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
 
 #ifdef Q_WS_MAC
-    DarwinCursorClearHandle (&mDarwinCursor);
+//    DarwinCursorClearHandle (&mDarwinCursor);
 #endif
 }
 
@@ -2815,8 +2816,8 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
     {
 #ifdef Q_WS_MAC /** @todo Christian, can you look at this. It causes flickering and IIRC is really a Qt3 workaround which probably isn't needed. If it is needed it needs to be redone. */
         /* Update the mouse cursor; this is a bit excessive really... */
-        if (!DarwinCursorIsNull (&mDarwinCursor))
-            DarwinCursorSet (&mDarwinCursor);
+//        if (!DarwinCursorIsNull (&mDarwinCursor))
+//            DarwinCursorSet (&mDarwinCursor);
 #endif
         if (mMainWnd->isTrueFullscreen())
         {
@@ -3504,31 +3505,66 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
 
 #elif defined(Q_WS_MAC)
 
+        /* Create a ARGB image out of the shape data. */
+        QImage image  (me->width(), me->height(), QImage::Format_ARGB32);
+        unsigned char alpha;
+        for (unsigned int y = 0; y < me->height(); ++y)
+            for (unsigned int x = 0; x < me->width(); ++x)
+            {
+               unsigned int color = ((unsigned int*)srcShapePtr)[y*me->width()+x];
+               if (me->hasAlpha())
+                   alpha = qAlpha (color);
+               else
+                   alpha = 0xff;
+               image.setPixel (x, y, qRgba (qRed (color), qGreen (color), qBlue (color), alpha));
+            }
+        /* Invert the mask channel if there is one */
+        QPixmap pixmap (QPixmap::fromImage (image));
+        if (!me->hasAlpha())
+        {
+            uchar* pu8DstData = (uchar*)alloca(me->width() * me->height());
+            unsigned int i = 0;
+            while (i < me->width() * me->height())
+            {
+                pu8DstData[i] = 0xff-srcAndMaskPtr[i];
+                ++i;
+            }
+            QBitmap bitmap = QBitmap::fromData (QSize (me->width(), me->height()),
+                                                pu8DstData, QImage::Format_Mono);
+            /* Set the mask to the pixmap */
+            pixmap.setMask (bitmap);
+        }
+//        printf ("has alpha %d- %d %d\n", me->hasAlpha(), me->width(), me->height());
+        /* Set the new cursor */
+        QCursor cursor (pixmap,
+                        me->xHot(), me->yHot());
+        viewport()->setCursor (cursor);
+        ok = true;
         /*
          * Qt3/Mac only supports black/white cursors and it offers no way
          * to create your own cursors here unlike on X11 and Windows.
          * Which means we're pretty much forced to do it our own way.
          */
-        int rc;
-
-        /* dispose of the old cursor. */
-        if (!DarwinCursorIsNull (&mDarwinCursor))
-        {
-            rc = DarwinCursorDestroy (&mDarwinCursor);
-            AssertRC (rc);
-        }
-
-        /* create the new cursor */
-        rc = DarwinCursorCreate (me->width(), me->height(), me->xHot(), me->yHot(), me->hasAlpha(),
-                                 srcAndMaskPtr, srcShapePtr, &mDarwinCursor);
-        AssertRC (rc);
-        if (VBOX_SUCCESS (rc))
-        {
-            /** @todo check current mouse coordinates. */
-            rc = DarwinCursorSet (&mDarwinCursor);
-            AssertRC (rc);
-        }
-        ok = VBOX_SUCCESS (rc);
+//        int rc;
+//
+//        /* dispose of the old cursor. */
+//        if (!DarwinCursorIsNull (&mDarwinCursor))
+//        {
+//            rc = DarwinCursorDestroy (&mDarwinCursor);
+//            AssertRC (rc);
+//        }
+//
+//        /* create the new cursor */
+//        rc = DarwinCursorCreate (me->width(), me->height(), me->xHot(), me->yHot(), me->hasAlpha(),
+//                                 srcAndMaskPtr, srcShapePtr, &mDarwinCursor);
+//        AssertRC (rc);
+//        if (VBOX_SUCCESS (rc))
+//        {
+//            /** @todo check current mouse coordinates. */
+//            rc = DarwinCursorSet (&mDarwinCursor);
+//            AssertRC (rc);
+//        }
+//        ok = VBOX_SUCCESS (rc);
         NOREF (srcShapePtrScan);
 
 #else
