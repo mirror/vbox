@@ -578,6 +578,10 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      */
     pVM->rem.s.fIgnoreAll = false;
 
+    /*
+     * Sync the whole CPU state when executing code in the recompiler.
+     */
+    CPUMSetChangedFlags(pVM, CPUM_CHANGED_ALL);
     return VINF_SUCCESS;
 }
 
