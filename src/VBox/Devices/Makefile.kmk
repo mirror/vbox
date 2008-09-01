@@ -196,8 +196,7 @@ VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
 
-ifndef VBOX_SINGLE_MAKEFILE
-# damn, fix this.
+ifneq ($(int-ge $(KMK_REVISION),1692),1) ## @todo remove this after updating kBuild the next time.
 ifeq ($(KBUILD_TARGET),win)
 $(PATH_LIB)/VBoxDD2.lib: $(PATH_BIN)/VBoxDD2.dll
 $(PATH_LIB)/VBoxDDU.lib: $(PATH_BIN)/VBoxDDU.dll
