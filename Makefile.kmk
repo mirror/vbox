@@ -608,16 +608,22 @@ endif
 #
 additions-fetch:
 	+ $(KMK) -C tools fetch
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86 BUILD_TARGET=linux
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86 BUILD_TARGET=os2
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86 BUILD_TARGET=solaris
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86 KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86 BUILD_TARGET=win
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=amd64 BUILD_TARGET=solaris
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86   BUILD_TARGET=solaris
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     BUILD_TARGET_ARCH=amd64 BUILD_TARGET=win
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86   BUILD_TARGET=win
 
 
 additions-build: \
+	additions-build-win.amd64 \
 	additions-build-win.x86 \
+	additions-build-solaris.amd64 \
 	additions-build-solaris.x86 \
 	additions-build-os2.x86 \
+	additions-build-linux.amd64 \
 	additions-build-linux.x86
 
 VBOX_ADDITIONS_BUILD.amd64 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
@@ -632,30 +638,34 @@ VBOX_ADDITIONS_BUILD.x86 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
 	VBOX_SVN_REV=$(VBOX_SVN_REV) \
 	all packing
 
+# Oh well, this gets really fancy - ms vc8 doesn't work inside ssh due to some
+# session setup issue. So do this indirectly through psexec. The downside is
+# that there is no direct build feedback. Also I couldn't get the share to
+# work via psexec, so rsync over the result of the build.
 additions-build-win.amd64:
 ifeq ($(KBUILD_TARGET),win)
 	+ $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
-	false
-	rsync -av --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/c/vbox
-	ssh vbox@192.168.27.15 " cd /cygdrive/c/vbox && PATH_OUT_BASE=Z:/add/out tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64)"
-#	ssh vbox@192.168.27.15 "cmd.exe /c cd /d z:\\add && set PATH_DEVTOOLS=c:\\vbox\\tools && c:\\vbox\\tools\\env.cmd -KBUILD c:\\vbox\\kBuild && set KMK_DONT_USE_NT_QUERY_INFORMATION_FILE=1 && set USER=vbox && kmk $(VBOX_ADDITIONS_BUILD.amd64)"
+	rsync -av --no-perms --no-owner --no-group --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/c/vbox
+	ssh vbox@192.168.27.5 c:/psexec/psexec.exe \\\\\\\\addvm -u vbox -p $(WIN64PASSWORD) c:\\\\cygwin\\\\bin\\\\bash.exe -c \''PATH=/usr/bin:/bin c:/vbox/tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) > c:/build.log 2>&1'\'
+	rsync -av --delete 192.168.27.5:/cygdrive/c/vbox/out/win.amd64/ out/win.amd64
+	rsync -a --delete 192.168.27.5:/cygdrive/c/build.log out/win.amd64
+	cat out/win.amd64/build.log
 endif
 
 additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
 	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 else
-	rsync -av --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/c/vbox
+	rsync -av --no-perms --no-owner --no-group --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/c/vbox
 	ssh vbox@192.168.27.5 " cd /cygdrive/c/vbox && PATH_OUT_BASE=Z:/add/out tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86)"
-#	ssh vbox@192.168.27.5 "cmd.exe /c cd /d z:\\add && set PATH_DEVTOOLS=c:\\vbox\\tools && c:\\vbox\\tools\\env.cmd -KBUILD c:\\vbox\\kBuild && set KMK_DONT_USE_NT_QUERY_INFORMATION_FILE=1 && set USER=vbox && kmk $(VBOX_ADDITIONS_BUILD.x86)"
 endif
 
 additions-build-solaris.amd64:
 ifeq ($(KBUILD_TARGET),solaris)
 	+ $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
-	ssh vbox@192.168.27.14 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) "
+	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) "
 endif
 
 additions-build-solaris.x86:
@@ -691,11 +701,11 @@ additions-packing:
 	+ $(KMK) VBOX_ONLY_ADDITIONS=1 \
 		VBOX_WITH_ADDITIONS_ISO.freebsd.amd64= \
 		VBOX_WITH_ADDITIONS_ISO.freebsd.x86= \
-		VBOX_WITH_ADDITIONS_ISO.linux.amd64= \
+		VBOX_WITH_ADDITIONS_ISO.linux.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.linux.x86=1 \
-		VBOX_WITH_ADDITIONS_ISO.solaris.amd64= \
+		VBOX_WITH_ADDITIONS_ISO.solaris.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.solaris.x86=1 \
-		VBOX_WITH_ADDITIONS_ISO.win.amd64= \
+		VBOX_WITH_ADDITIONS_ISO.win.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.win.x86=1 \
 		-C src/VBox/Additions \
 		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
