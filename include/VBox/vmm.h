@@ -267,7 +267,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM);
  * @param   cArgs       The number of arguments in the ....
  * @param   ...         Arguments to the function.
  */
-VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, ...);
+VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, ...);
 
 /**
  * Calls GC a function.
@@ -277,7 +277,7 @@ VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, ...);
  * @param   cArgs       The number of arguments in the ....
  * @param   args        Arguments to the function.
  */
-VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTGCPTR GCPtrEntry, unsigned cArgs, va_list args);
+VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list args);
 
 /**
  * Resumes executing hypervisor code when interrupted
