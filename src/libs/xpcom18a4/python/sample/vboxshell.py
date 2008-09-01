@@ -38,7 +38,7 @@
 import xpcom.vboxxpcom
 import xpcom
 import xpcom.components
-import sys
+import sys, traceback
 
 from shellcommon import interpret
 
