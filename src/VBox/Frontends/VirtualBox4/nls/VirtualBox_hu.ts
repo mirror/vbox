@@ -8123,11 +8123,6 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="unfinished">&amp;Generál</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished">Alt+G</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">Jelzi, hogy a virtuális hálózati kábel be lesz-e dugva a gépbe induláskor vagy sem.</translation>

@@ -9423,11 +9423,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Generează</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation>Alt+G</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Indică dacă rețeaua virtuală este conectată la mașină la pornire sau nu.</translation>

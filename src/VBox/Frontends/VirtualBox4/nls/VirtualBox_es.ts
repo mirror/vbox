@@ -8907,11 +8907,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">&amp;Generar</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished">Alt+G</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">Indica si el cable de red virtual estará conectado en el inicio de la máquina o no.</translation>

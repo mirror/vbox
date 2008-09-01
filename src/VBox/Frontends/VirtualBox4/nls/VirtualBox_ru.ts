@@ -5325,11 +5325,6 @@ p, li { white-space: pre-wrap; }
         <translation>С&amp;генерировать</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation></translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Определяет, подключен виртуальный сетевой кабель при запуске машины или нет.</translation>

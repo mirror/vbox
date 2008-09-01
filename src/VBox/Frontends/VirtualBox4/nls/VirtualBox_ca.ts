@@ -8476,11 +8476,6 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="unfinished">&amp;Genera</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">Indica si el cable de la xarxa virtual està connectat a l&apos;inici de la màquina virtual o no.</translation>
