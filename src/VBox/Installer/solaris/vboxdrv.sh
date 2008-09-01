@@ -127,7 +127,7 @@ restart_module()
 start_vboxflt()
 {
     if vboxflt_module_loaded; then
-        info "VirtualBox Net Filter kernel module already loaded."
+        info "VirtualBox NetFilter kernel module already loaded."
     else
     	if test -n "_HARDENED_"; then
             /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME
@@ -136,9 +136,9 @@ start_vboxflt()
         fi
         /usr/sbin/modload -p drv/$FLTMODNAME
         if test ! vboxflt_module_loaded; then
-            abort "## Failed to load VirtualBox Net Filter kernel module."
+            abort "## Failed to load VirtualBox NetFilter kernel module."
         else
-            info "VirtualBox Net Filter kernel module loaded."
+            info "VirtualBox NetFilter kernel module loaded."
         fi
     fi
 }
@@ -146,10 +146,10 @@ start_vboxflt()
 stop_vboxflt()
 {
     if vboxflt_module_loaded; then
-        /usr/sbin/rem_drv $FLTMODNAME || abort "## Failed to unload VirtualBox Net Filter module."
-        info "VirtualBox Net Filter kernel module unloaded."
+        /usr/sbin/rem_drv $FLTMODNAME || abort "## Failed to unload VirtualBox NetFilter module."
+        info "VirtualBox NetFilter kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
-        info "VirtualBox Net Filter kernel module not loaded."
+        info "VirtualBox NetFilter kernel module not loaded."
     fi
 }
 
