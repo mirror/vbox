@@ -632,6 +632,8 @@ typedef struct SegmentCache_Ver16 {
 #endif
 } SegmentCache_Ver16;
 
+#define CPU_NB_REGS_VER16 8
+
 /* Version 1.6 structure; just for loading the old saved state */
 typedef struct CPUX86State_Ver16 {
 #if TARGET_LONG_BITS > HOST_LONG_BITS
@@ -640,7 +642,7 @@ typedef struct CPUX86State_Ver16 {
 #endif
 
     /* standard registers */
-    uint32_t regs[CPU_NB_REGS];
+    uint32_t regs[CPU_NB_REGS_VER16];
     uint32_t eip;
     uint32_t eflags; /* eflags register. During CPU emulation, CC
                         flags and DF are set to zero because they are
@@ -695,7 +697,7 @@ typedef struct CPUX86State_Ver16 {
     
     float_status sse_status;
     uint32_t mxcsr;
-    XMMReg xmm_regs[CPU_NB_REGS];
+    XMMReg xmm_regs[CPU_NB_REGS_VER16];
     XMMReg xmm_t0;
     MMXReg mmx_t0;
 
