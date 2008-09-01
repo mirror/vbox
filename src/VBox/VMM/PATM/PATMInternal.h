@@ -27,6 +27,7 @@
 #include <VBox/patm.h>
 #include <VBox/stam.h>
 #include <VBox/dis.h>
+#include <VBox/pgm.h>
 #include <iprt/avl.h>
 #include <iprt/param.h>
 #include <VBox/log.h>
@@ -520,6 +521,7 @@ typedef struct PATM
  */
 DECLCALLBACK(int) patmr3Save(PVM pVM, PSSMHANDLE pSSM);
 
+DECLCALLBACK(int) patmVirtPageHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 
 /**
  * Execute state load operation.
