@@ -44,10 +44,8 @@
 *******************************************************************************/
 /** The last assert message, 1st part. */
 RTDATADECL(char) g_szRTAssertMsg1[1024];
-#if 0 /* later. */
 /** The last assert message, 2nd part. */
 RTDATADECL(char) g_szRTAssertMsg2[2048];
-#endif
 
 
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
@@ -72,7 +70,6 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
 }
 
 
-#if 0 /* later (just drop assertA-r0drv-nt.asm) */
 RTDECL(void) AssertMsg2(const char *pszFormat, ...)
 {
     va_list va;
@@ -94,5 +91,4 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, va);
     va_end(va);
 }
-#endif
 
