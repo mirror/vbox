@@ -2070,5 +2070,24 @@ if [ "$OS" = "linux" ]; then
     echo "  make"
     echo ""
 fi
+if [ $WITH_HARDENING -gt 0 ]; then
+    echo ""
+    echo "  +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++"
+    echo "  Hardening is enabled which means that the VBox binaries will not run from"
+    echo "  the binary directory. The binaries have to be installed suid root and some"
+    echo "  more prerequisites have to be fulfilled which is normally done by installing"
+    echo "  the final package. For development, the hardening feature can be disabled"
+    echo "  by specifying the --disable-hardening parameter. Please never disable that"
+    echo "  feature for the final distribution!"
+    echo "  +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++"
+    echo ""
+else
+    echo ""
+    echo "  +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++"
+    echo "  Hardening is disabled. Please do NOT build packages for distribution with"
+    echo "  disabled hardening!"
+    echo "  +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++"
+    echo ""
+fi
 echo "Enjoy!"
 cleanup
