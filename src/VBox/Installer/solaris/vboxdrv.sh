@@ -137,7 +137,7 @@ start_vboxflt()
         /usr/sbin/modload -p drv/$FLTMODNAME
         if test ! vboxflt_module_loaded; then
             abort "## Failed to load VirtualBox Net Filter kernel module."
-        elif
+        else
             info "VirtualBox Net Filter kernel module loaded."
         fi
     fi
