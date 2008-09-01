@@ -996,7 +996,6 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/mpnotification-r0drv.c \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/assert-r0drv-nt.cpp \
-	r0drv/nt/assertA-r0drv-nt.asm \
 	r0drv/nt/initterm-r0drv-nt.cpp \
 	r0drv/nt/memobj-r0drv-nt.cpp \
 	r0drv/nt/mp-r0drv-nt.cpp \
