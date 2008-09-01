@@ -1778,7 +1778,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
                     item += QString (sSectionItemTpl)
                         .arg (tr ("Adapter %1", "details report (network)")
-                              .arg (adapter.GetSlot()))
+                              .arg (adapter.GetSlot() + 1))
                         .arg (attType);
                     ++ rows;
                 }
@@ -1820,7 +1820,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
                     item += QString (sSectionItemTpl)
                         .arg (tr ("Port %1", "details report (serial ports)")
-                              .arg (port.GetSlot()))
+                              .arg (port.GetSlot() + 1))
                         .arg (data);
                     ++ rows;
                 }
@@ -1856,7 +1856,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
                     item += QString (sSectionItemTpl)
                         .arg (tr ("Port %1", "details report (parallel ports)")
-                              .arg (port.GetSlot()))
+                              .arg (port.GetSlot() + 1))
                         .arg (data);
                     ++ rows;
                 }

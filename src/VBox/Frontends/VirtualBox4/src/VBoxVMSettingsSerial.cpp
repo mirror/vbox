@@ -125,7 +125,7 @@ QString VBoxVMSettingsSerial::pageTitle() const
     if (!mPort.isNull())
     {
         pageTitle = QString (tr ("Port %1", "serial ports"))
-            .arg (mPort.GetSlot());
+            .arg (QString ("&%1").arg (mPort.GetSlot() + 1));
     }
     return pageTitle;
 }

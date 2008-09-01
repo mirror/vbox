@@ -111,7 +111,7 @@ QString VBoxVMSettingsParallel::pageTitle() const
     QString pageTitle;
     if (!mPort.isNull())
         pageTitle = QString (tr ("Port %1", "parallel ports"))
-            .arg (mPort.GetSlot());
+            .arg (QString ("&%1").arg (mPort.GetSlot() + 1));
     return pageTitle;
 }
 

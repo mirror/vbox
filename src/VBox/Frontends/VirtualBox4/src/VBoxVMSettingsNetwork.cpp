@@ -176,7 +176,7 @@ QString VBoxVMSettingsNetwork::pageTitle() const
     if (!mAdapter.isNull())
     {
         pageTitle = VBoxGlobal::tr ("Adapter %1", "network")
-            .arg (mAdapter.GetSlot());
+            .arg (QString ("&%1").arg (mAdapter.GetSlot() + 1));
     }
     return pageTitle;
 }
@@ -518,7 +518,7 @@ void VBoxNIList::setCurrentInterface (const QString &aName)
         /* Make sure no one of items selected in the list currently */
         mList->setCurrentItem (NULL);
         mList->clearSelection();
-#endif 
+#endif
     }
     else
     {
