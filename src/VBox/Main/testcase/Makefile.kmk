@@ -27,7 +27,16 @@ SUB_DEPTH = ..
 endif
 include $(KBUILD_PATH)/subheader.kmk
 
-ifndef VBOX_ONLY_SDK
+ifeq ($(KBUILD_TARGET),win)
+ NEED_MSCOM_SAMPLE = 1
+else
+ NEED_XPCOM_SAMPLE = 1
+endif
+
+ifdef VBOX_ONLY_SDK
+ NEED_MSCOM_SAMPLE = 1
+ NEED_XPCOM_SAMPLE = 1
+else
  ifdef VBOX_WITH_TESTCASES
   PROGRAMS       += tstAPI
   PROGRAMS.linux += tstVBoxAPILinux
@@ -44,26 +53,35 @@ ifndef VBOX_ONLY_SDK
   PROGRAMS.solaris += tstVBoxAPILinux
   PROGRAMS.win   += tstVBoxAPIWin
  endif # VBOX_WITH_TESTCASES
-endif #! VBOX_ONLY_SDK
+endif # VBOX_ONLY_SDK
 
-INSTALLS += samples
+ifdef  NEED_MSCOM_SAMPLE 
+  INSTALLS += samplesMSCOM
+endif
+
+ifdef  NEED_XPCOM_SAMPLE 
+  INSTALLS += samplesXPCOM
+endif
+
+# maybe, if will ship glue COM headers with SDK
+#INSTALLS += tstAPI
 
 #
 # The samples
 #
-samples_MODE = a+r,u+w
-ifeq ($(KBUILD_TARGET),win)
- samples_INST = $(INST_SDK)bindings/mscom/samples/
- samples_SOURCES = tstVBoxAPIWin.cpp
-else
- samples_INST = $(INST_SDK)bindings/xpcom/samples/
- samples_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux=>Makefile
-endif
+samplesMSCOM_MODE = a+r,u+w
+samplesMSCOM_INST = $(INST_SDK)bindings/mscom/samples/
+samplesMSCOM_SOURCES = tstVBoxAPIWin.cpp
+
+samplesXPCOM_MODE = a+r,u+w
+samplesXPCOM_INST = $(INST_SDK)bindings/xpcom/samples/
+samplesXPCOM_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux=>Makefile
 
 #
 # tstAPI
 #
 tstAPI_TEMPLATE = VBOXMAINCLIENTEXE
+#tstAPI_INST = $(INST_SDK)bindings/gluecom/samples/
 tstAPI_SOURCES  = tstAPI.cpp
 ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
 tstAPI_DEPS     = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h

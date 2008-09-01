@@ -91,6 +91,7 @@ IDLHEADER.XPCOM       = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM
 
 ifdef VBOX_ONLY_SDK
   NEED_MSCOM = 1
+  NEED_XPCOM = 1
 endif
 
 ifeq ($(KBUILD_TARGET),win)
