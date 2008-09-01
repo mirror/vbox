@@ -647,8 +647,19 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock (this);
-    AssertReturn (mState == SessionState_Open &&
-                  mType == SessionType_Direct, E_FAIL);
+
+    AssertReturn (mType == SessionType_Direct, E_FAIL);
+
+    if (mState != SessionState_Open, E_FAIL)
+    {
+        /* the call from Machine issued when the session is open can arrive
+         * after the session starts closing or gets closed. Note that when
+         * aCheck is false, we return E_FAIL to indicate that aWinId we return
+         * is not valid */
+        *aCanShow = FALSE;
+        *aWinId = 0;
+        return aCheck ? S_OK : E_FAIL;
+    }
 
     return mConsole->onShowWindow (aCheck, aCanShow, aWinId);
 }
