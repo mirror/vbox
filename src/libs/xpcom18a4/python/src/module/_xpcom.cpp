@@ -599,9 +599,13 @@ initVBoxPython() {
 #else
     const char *home = getenv("VBOX_PROGRAM_PATH");
     if (home) {
-	rc = RTR3InitWithProgramPath(home);
+      size_t len = strlen(home);
+      char *exepath = (char *)alloca(len + 32);
+      memcpy(exepath, home, len);
+      memcpy(exepath + len, "/pythonfake", sizeof("/pythonfake"));
+      rc = RTR3InitWithProgramPath(exepath);
     } else {
-	rc = RTR3Init();
+      rc = RTR3Init();
     }
 #endif 
 
