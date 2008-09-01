@@ -44,7 +44,7 @@ if1of ($(KBUILD_TARGET), os2)
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
  else # OS/2:
-  # The library order is crusial, so a bit of trickery is necessary.
+  # The library order is crucial, so a bit of trickery is necessary.
   # A library is used to make sure that VBoxGuestA-os2.asm is first in the link. (temporary hack?)
   VBoxGuest_SOURCES       = \
   	VBoxGuestA-os2.asm \
