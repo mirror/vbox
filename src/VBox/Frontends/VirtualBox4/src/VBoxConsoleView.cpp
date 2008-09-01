@@ -3506,34 +3506,59 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
 #elif defined(Q_WS_MAC)
 
         /* Create a ARGB image out of the shape data. */
+        /* @todo: The following isn't nice but is working. Will fix this tomorrow. */
         QImage image  (me->width(), me->height(), QImage::Format_ARGB32);
         unsigned char alpha;
+        const uint8_t *pbSrcMask = (const uint8_t *)srcAndMaskPtr;
+        unsigned cbSrcMaskLine = RT_ALIGN(me->width(), 8) / 8;
         for (unsigned int y = 0; y < me->height(); ++y)
+        {
             for (unsigned int x = 0; x < me->width(); ++x)
             {
-               unsigned int color = ((unsigned int*)srcShapePtr)[y*me->width()+x];
+               int i = y*me->width()+x;
+               unsigned int color = ((unsigned int*)srcShapePtr)[i];
                if (me->hasAlpha())
                    alpha = qAlpha (color);
                else
-                   alpha = 0xff;
+               {
+//                   alpha = !srcAndMaskPtr[i] ? 0xff : 0x00;
+                   if (!(pbSrcMask[x / 8] & (1 << (7 - (x % 8)))))
+                       alpha  = 0xff;
+                   else
+                   {
+                       if (qRed (color) == 0xff &&
+                           qGreen (color) == 0xff &&
+                           qBlue (color) == 0xff)
+                       {
+                           color = 0;
+                           alpha = 0xff;
+                       }else
+                       {
+                           color = 0;
+                           alpha  = 0;
+                       }
+                   }
+               }
                image.setPixel (x, y, qRgba (qRed (color), qGreen (color), qBlue (color), alpha));
             }
+            pbSrcMask += cbSrcMaskLine;
+        }
         /* Invert the mask channel if there is one */
         QPixmap pixmap (QPixmap::fromImage (image));
-        if (!me->hasAlpha())
-        {
-            uchar* pu8DstData = (uchar*)alloca(me->width() * me->height());
-            unsigned int i = 0;
-            while (i < me->width() * me->height())
-            {
-                pu8DstData[i] = 0xff-srcAndMaskPtr[i];
-                ++i;
-            }
-            QBitmap bitmap = QBitmap::fromData (QSize (me->width(), me->height()),
-                                                pu8DstData, QImage::Format_Mono);
-            /* Set the mask to the pixmap */
-            pixmap.setMask (bitmap);
-        }
+//        if (!me->hasAlpha())
+//        {
+//            uchar* pu8DstData = (uchar*)alloca(me->width() * me->height());
+//            unsigned int i = 0;
+//            while (i < me->width() * me->height())
+//            {
+//                pu8DstData[i] =  !srcAndMaskPtr[i] ? 0xff : 0x00;
+//                ++i;
+//            }
+//            QBitmap bitmap = QBitmap::fromData (QSize (me->width(), me->height()),
+//                                                pu8DstData, QImage::Format_Mono);
+//            /* Set the mask to the pixmap */
+//            pixmap.setMask (bitmap);
+//        }
 //        printf ("has alpha %d- %d %d\n", me->hasAlpha(), me->width(), me->height());
         /* Set the new cursor */
         QCursor cursor (pixmap,
