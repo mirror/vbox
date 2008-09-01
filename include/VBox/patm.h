@@ -109,11 +109,6 @@ typedef struct PATMGCSTATE
         uint32_t    eFlags;
         uint32_t    uFlags;
     } Restore;
-
-#if GC_ARCH_BITS == 64
-    uint32_t        padding;
-#endif
-
 } PATMGCSTATE, *PPATMGCSTATE;
 
 typedef struct PATMTRAPREC
