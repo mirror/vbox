@@ -688,12 +688,8 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
         CPUMHyperSetCtxCore(pVM, NULL);
         CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
         uint64_t u64TS = RTTimeProgramStartNanoTS();
-#if GC_ARCH_BITS == 32
         CPUMPushHyper(pVM, (uint32_t)(u64TS >> 32));    /* Param 3: The program startup TS - Hi. */
         CPUMPushHyper(pVM, (uint32_t)u64TS);            /* Param 3: The program startup TS - Lo. */
-#else /* 64-bit GC */
-        CPUMPushHyper(pVM, u64TS);                      /* Param 3: The program startup TS. */
-#endif
         CPUMPushHyper(pVM, VMMGetSvnRev());             /* Param 2: Version argument. */
         CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
         CPUMPushHyper(pVM, pVM->pVMGC);                 /* Param 0: pVM */
@@ -1611,7 +1607,7 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     SSMR3PutGCPtr(pSSM, pVM->vmm.s.pbGCStackBottom);
     RTGCPTR GCPtrESP = CPUMGetHyperESP(pVM);
-    Assert(pVM->vmm.s.pbGCStackBottom - GCPtrESP <= VMM_STACK_SIZE);
+    AssertMsg(pVM->vmm.s.pbGCStackBottom - GCPtrESP <= VMM_STACK_SIZE, ("Bottom %VGv ESP=%VGv\n", pVM->vmm.s.pbGCStackBottom, GCPtrESP));
     SSMR3PutGCPtr(pSSM, GCPtrESP);
     SSMR3PutMem(pSSM, pVM->vmm.s.pbHCStack, VMM_STACK_SIZE);
     return SSMR3PutU32(pSSM, ~0); /* terminator */
