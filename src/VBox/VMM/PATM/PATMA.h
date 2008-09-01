@@ -79,7 +79,7 @@
 /* PATM stack size (identical in PATMA.mac!!) */
 #define PATM_STACK_SIZE                         (PAGE_SIZE)
 #define PATM_STACK_TOTAL_SIZE                   (2*PATM_STACK_SIZE)
-#define PATM_MAX_STACK                          (PATM_STACK_SIZE/sizeof(RTGCPTR))
+#define PATM_MAX_STACK                          (PATM_STACK_SIZE/sizeof(RTRCPTR))
 
 /* Patch Manager pending actions (in GCSTATE). */
 #define PATM_ACTION_LOOKUP_ADDRESS              1

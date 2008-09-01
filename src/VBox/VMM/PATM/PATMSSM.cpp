@@ -639,6 +639,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     PRELOCREC pRec = 0;
     AVLPVKEY  key  = 0;
 
+    Log(("Correct fixups in global helper functions\n"));
     while (true)
     {
         int32_t offset;
