@@ -639,24 +639,24 @@ $(PATH_VBoxCOM)/VirtualBox_i.c \
 #
 # Translation stuff
 #
-VBoxSVC_HEADERS = \
+VBoxSVC_VBOX_HEADERS = \
 	include/collection.h \
 	include/MachineImpl.h \
 	include/HostDVDDriveImpl.h \
 	include/HostFloppyDriveImpl.h
 
-VBoxC_HEADERS = \
+VBoxC_VBOX_HEADERS = \
 	include/ConsoleImpl.h
 
-VBoxSVC_TRANSLATIONS = \
+VBoxSVC_VBOX_TRANSLATIONS = \
 	nls/VBoxSVC_de.ts
 
-VBoxC_TRANSLATIONS = \
+VBoxC_VBOX_TRANSLATIONS = \
 	nls/VBoxC_de.ts
 
-updatenls:
-	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_HEADERS) -ts $(VBoxSVC_TRANSLATIONS)
-	$(VBOX_LUPDATE) $(VBoxC_SOURCES) $(VBoxC_HEADERS) -ts $(VBoxC_TRANSLATIONS)
+updatenls::
+	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
+	$(VBOX_LUPDATE) $(VBoxC_SOURCES) $(VBoxC_VBOX_HEADERS) -ts $(VBoxC_VBOX_TRANSLATIONS)
 
 ifdef VBOX_WITH_XPCOM
 
