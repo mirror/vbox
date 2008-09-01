@@ -2314,6 +2314,22 @@ SSMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 
 
 /**
+ * Saves an RC virtual address item to the current data unit.
+ *
+ * @returns VBox status.
+ * @param   pSSM            SSM operation handle.
+ * @param   RCPtr           The item to save.
+ */
+SSMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
+{
+    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
+        return ssmr3Write(pSSM, &RCPtr, sizeof(RCPtr));
+    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
+    return VERR_SSM_INVALID_STATE;
+}
+
+
+/**
  * Saves a GC virtual address (represented as an unsigned integer) item to the current data unit.
  *
  * @returns VBox status.
@@ -2898,6 +2914,7 @@ SSMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 SSMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
 {
     Assert(cbGCPtr == sizeof(RTGCPTR32) || cbGCPtr == sizeof(RTGCPTR64));
+    Log(("SSMR3SetGCPtrSize %d bytes\n", cbGCPtr));
     pSSM->cbGCPtr = cbGCPtr;
     return VINF_SUCCESS;
 }
@@ -2929,6 +2946,21 @@ SSMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
     return VERR_SSM_INVALID_STATE;
 }
 
+/**
+ * Loads an RC virtual address item from the current data unit.
+ *
+ * @returns VBox status.
+ * @param   pSSM            SSM operation handle.
+ * @param   pRCPtr          Where to store the RC virtual address.
+ */
+SSMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
+{
+    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
+        return ssmr3Read(pSSM, pRCPtr, sizeof(*pRCPtr));
+
+    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
+    return VERR_SSM_INVALID_STATE;
+}
 
 /**
  * Loads a GC virtual address (represented as unsigned integer) item from the current data unit.
