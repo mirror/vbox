@@ -8073,11 +8073,6 @@ bezeroak audio txartela ikustea eragiten du baina sortzen duen edozein irteera b
         <translation type="unfinished">&amp;Sortu</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished">ALT+S</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">Abiaraztean sare kable birtuala konektaturik dagoen erakusten du.</translation>

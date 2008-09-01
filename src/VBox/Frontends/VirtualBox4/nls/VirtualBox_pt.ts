@@ -8893,11 +8893,6 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
         <translation type="unfinished">&amp;Gerar</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">Indica se o cabo de rede virtual está ligado no arranque da máquina virtual ou não.</translation>

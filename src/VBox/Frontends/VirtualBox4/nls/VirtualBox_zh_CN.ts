@@ -9138,11 +9138,6 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="unfinished">随机生成(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished">Alt+G</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">指示虚拟网线在启动时是否与主机连接.</translation>

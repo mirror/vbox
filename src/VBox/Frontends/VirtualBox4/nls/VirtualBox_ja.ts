@@ -8013,11 +8013,6 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="unfinished">生成(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>

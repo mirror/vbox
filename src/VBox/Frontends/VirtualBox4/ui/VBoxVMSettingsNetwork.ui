@@ -168,9 +168,6 @@
         <property name="text" >
          <string>&amp;Generate</string>
         </property>
-        <property name="shortcut" >
-         <string>Alt+G</string>
-        </property>
        </widget>
       </item>
       <item row="4" column="1" >

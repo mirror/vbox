@@ -9021,11 +9021,6 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <translation type="unfinished">&amp;Gerar</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="unfinished">Alt+G</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="unfinished">Indica se o cabo de rede virtual será conectado na inicialização da máquina ou não.</translation>
