@@ -31,6 +31,11 @@ currentzone=`zonename`
 if test "$currentzone" = "global"; then
     echo "Configuring VirtualBox kernel module..."
     /opt/VirtualBox/vboxdrv.sh restart silentunload
+    
+    echo "Configuring VirtualBox NetFilter kernel module..."
+    if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
+        /opt/VirtualBox/vboxdrv.sh fltrestart silentunload
+    fi
 fi
 
 # create links
@@ -68,7 +73,7 @@ if test "$currentzone" = "global"; then
     # create /dev link for vboxdrv (only possible from global zone)
     /usr/sbin/devfsadm -i vboxdrv
 fi
-    
+
 echo "Done."
 
 # return 20 = requires reboot, 2 = partial failure, 0  = success
