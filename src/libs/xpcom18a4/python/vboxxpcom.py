@@ -24,12 +24,21 @@ import platform
 # XXX: maybe implement per Python version module search
 #cglue = __import__('VBoxPython')
 if platform.system() == 'Darwin':
-    # TODO: This needs to be changed if it is supposed to work with OSE as well.
+    # On Darwin (aka Mac OS X) we know exactly where things are in a normal 
+    # VirtualBox installation. Also, there are two versions of python there
+    # (2.3.x and 2.5.x) depending on whether the os is striped or spotty, so
+    # we have to choose the right module to load.
+    # 
+    # XXX: This needs to be adjusted for OSE builds. A more general solution would 
+    #      be to to sed the file during install and inject the VBOX_PATH_APP_PRIVATE_ARCH
+    #      and VBOX_PATH_SHARED_LIBS when these are set.
     saved_sys_path = sys.path;
     sys.path = [ '/Applications/VirtualBox.app/Contents/MacOS', ] + saved_sys_path
-    cglue = __import__('VBoxPython')
+    mod = 'VBoxPython' + str(sys.version_info[0]) + '_' + str(sys.version_info[1])
+    cglue = __import__(mod)
     sys.path = saved_sys_path    
 else:
     cglue = __import__('VBoxPython')  
 sys.modules['xpcom._xpcom'] = cglue
 xpcom._xpcom = cglue
+
