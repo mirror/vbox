@@ -1,9 +1,9 @@
 /** @file
  * IPRT / No-CRT - GCC specifics.
  *
- * A quick hack for freebsd where there are no separate location 
- * for compiler specific headers like on linux, mingw, os2, ++. 
- * This file will be cleaned up later...  
+ * A quick hack for freebsd where there are no separate location
+ * for compiler specific headers like on linux, mingw, os2, ++.
+ * This file will be cleaned up later...
  */
 
 /*
