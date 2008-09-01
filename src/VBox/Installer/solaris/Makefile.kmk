@@ -68,6 +68,7 @@ solaris-doc_SOURCES = \
 # Strip these binaries
 SOLARIS_STRIP_BINS = \
 	vboxdrv \
+	$(if $(VBOX_WITH_NETFLT),vboxflt) \
 	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE) \
 	VBoxDD.so \
 	VBoxDD2.so \
@@ -135,6 +136,7 @@ SOLARIS_EXTRAS = \
 	VBox.png \
 	autoresponse \
 	vboxdrv.conf \
+	$(if $(VBOX_WITH_NETFLT),vboxflt.conf) \
 	vboxdrv.sh \
 	VBox.sh \
 	vnic_setup.sh \
@@ -228,6 +230,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QT4GUI)),$(PATH_BIN)/License-$(VBOX_LICENSE_VER).html) \
 		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
+		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf) \
 		$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh \
 		$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh \
 		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS),$(SOLARIS_ARCH_FILES)))
@@ -240,6 +243,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/VBoxGuestAdditions.iso)
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/vboxdrv                                                          $(SOLARIS_INST_DIR)/vboxdrv
+	$(QUIET)$(if $(VBOX_WITH_NETFLT),$(INSTALL) -m 0644 $(PATH_BIN)/vboxflt                                 $(SOLARIS_INST_DIR)/vboxflt,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE                                $(SOLARIS_INST_DIR)/VBoxBFE)
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxBFE.so                             $(SOLARIS_INST_DIR)/VBoxBFE.so)
@@ -290,6 +294,9 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(INSTALL) -m 644 $(wildcard $(PATH_BIN)/rdesktop-vrdp-keymaps/*) $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps/,)
 	$(call MSG_L1,Stripping binaries $(SOLARIS_INST_DIR))
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/vboxdrv,)
+ifdef VBOX_WITH_NETFLT
+	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/vboxflt,)
+endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXBFE),strip $(SOLARIS_INST_DIR)/VBoxBFE,))
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXBFE),strip $(SOLARIS_INST_DIR)/VBoxBFE.so,))
@@ -349,6 +356,7 @@ endif
 		--output $(SOLARIS_INST_DIR)/vbox.pkginfo \
 		$(PATH_CURRENT)/vbox.pkginfo
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARIS_INST_DIR)/vboxdrv.conf
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf            $(SOLARIS_INST_DIR)/vboxflt.conf
 	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_DOCS)),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf  $(SOLARIS_INST_DIR)/UserManual.pdf,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
@@ -428,6 +436,7 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(QUIET)$(RM) -Rf -- $(SOLARIS_DBG_DIR)
 	$(QUIET)$(MKDIR) -p -- $(SOLARIS_DBG_DIR)/components
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxdrv                                                            $(SOLARIS_DBG_DIR)/vboxdrv
+	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxflt                                                            $(SOLARIS_DBG_DIR)/vboxflt
 	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxBFE                                  $(SOLARIS_DBG_DIR)/VBoxBFE)
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxBFE.so                               $(SOLARIS_DBG_DIR)/VBoxBFE.so)

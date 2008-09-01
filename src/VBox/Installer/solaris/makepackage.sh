@@ -100,7 +100,16 @@ else
     filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv=vboxdrv"'                                   '$3 = "platform/i86pc/kernel/drv/amd64/vboxdrv=vboxdrv"; $6 = "sys"'
 fi
 
+# install vboxflt to the right place.
+if test "$3" = "x86"; then
+    filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt=vboxflt"'                                   '$3 = "platform/i86pc/kernel/drv/vboxflt=vboxflt"; $6 = "sys"'
+else
+    filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt=vboxflt"'                                   '$3 = "platform/i86pc/kernel/drv/amd64/vboxflt=vboxflt"; $6 = "sys"'
+fi
+
 filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv.conf=vboxdrv.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxdrv.conf=vboxdrv.conf"'
+
+filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt.conf=vboxflt.conf"'                             '$3 = "platform/i86pc/kernel/drv/vboxflt.conf=vboxflt.conf"'
 
 # hardening requires some executables to be marked setuid.
 if test -n "$HARDENED"; then

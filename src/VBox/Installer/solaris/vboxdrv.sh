@@ -19,6 +19,7 @@
 
 SILENTUNLOAD=""
 MODNAME="vboxdrv"
+FLTMODNAME="vboxflt"
 MODDIR32="/platform/i86pc/kernel/drv"
 MODDIR64=$MODDIR32/amd64
 
@@ -52,6 +53,19 @@ module_loaded()
         loadentry=`cat /etc/name_to_major | grep $MODNAME`
     else
         loadentry=`/usr/sbin/modinfo | grep $MODNAME`
+    fi
+    if test -z "$loadentry"; then
+        return 1
+    fi
+    return 0
+}
+
+vboxflt_module_loaded()
+{
+    if test -f "/etc/name_to_major"; then
+        loadentry=`cat /etc/name_to_major | grep $FLTMODNAME`
+    else
+        loadentry=`/usr/sbin/modinfo | grep $FLTMODNAME`
     fi
     if test -z "$loadentry"; then
         return 1
@@ -110,6 +124,43 @@ restart_module()
     return 0
 }
 
+start_vboxflt()
+{
+    if vboxflt_module_loaded; then
+        info "VirtualBox Net Filter kernel module already loaded."
+    else
+    	if test -n "_HARDENED_"; then
+            /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME
+        else
+            /usr/sbin/add_drv -m'* 0666 root sys' $FLTMODNAME
+        fi
+        /usr/sbin/modload -p drv/$FLTMODNAME
+        if test ! vboxflt_module_loaded; then
+            abort "## Failed to load VirtualBox Net Filter kernel module."
+        elif
+            info "VirtualBox Net Filter kernel module loaded."
+        fi
+    fi
+}
+
+stop_vboxflt()
+{
+    if vboxflt_module_loaded; then
+        /usr/sbin/rem_drv $FLTMODNAME || abort "## Failed to unload VirtualBox Net Filter module."
+        info "VirtualBox Net Filter kernel module unloaded."
+    elif test -z "$SILENTUNLOAD"; then
+        info "VirtualBox Net Filter kernel module not loaded."
+    fi
+}
+
+restart_vboxflt()
+{
+    stop_vboxflt
+    sync
+    start_vboxflt
+    return 0
+}
+
 status_module()
 {
     if module_loaded; then
@@ -139,8 +190,11 @@ restart)
 status)
     status_module
     ;;
+fltrestart)
+    restart_vboxflt
+    ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status}"
+    echo "Usage: $0 {start|stop|restart|status|fltrestart}"
     exit 1
 esac
 
