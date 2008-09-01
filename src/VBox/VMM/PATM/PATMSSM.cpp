@@ -557,7 +557,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         pPatchRec->Core.Key          = patch.Core.Key;
         pPatchRec->CoreOffset.Key    = patch.CoreOffset.Key;
 
-        Log(("Restoring patch %VRv -> %VRv\n", pPatchRec->patch.pPrivInstrGC, pVM->patm.s.pPatchMemGC + pPatchRec->patch.pPatchBlockOffset));
+        Log(("Restoring patch %VRv -> %VRv\n", pPatchRec->patch.pPrivInstrGC, patmInfo.pPatchMemGC + pPatchRec->patch.pPatchBlockOffset));
         bool ret = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pPatchRec->Core);
         Assert(ret);
         if (pPatchRec->patch.uState != PATCH_REFUSED)
@@ -644,6 +644,20 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             rc = patmInsertPatchPages(pVM, &pPatchRec->patch);
             AssertRCReturn(rc, rc);
         }
+
+#ifdef LOG_ENABLED
+        if (    pPatchRec->patch.uState != PATCH_REFUSED
+            &&  !(pPatchRec->patch.flags & PATMFL_INT3_REPLACEMENT))
+        {
+            pPatchRec->patch.pTempInfo = (PPATCHINFOTEMP)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(PATCHINFOTEMP));
+            Log(("Patch code ----------------------------------------------------------\n"));
+            patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(&pPatchRec->patch), PATCHCODE_PTR_GC(&pPatchRec->patch), patmr3DisasmCallback, &pPatchRec->patch);
+            Log(("Patch code ends -----------------------------------------------------\n"));
+            MMR3HeapFree(pPatchRec->patch.pTempInfo);
+            pPatchRec->patch.pTempInfo = NULL;
+        }
+#endif
+
     }
 
     /*
