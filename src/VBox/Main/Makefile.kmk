@@ -37,7 +37,7 @@ ifndef VBOX_ONLY_SDK
  LIBRARIES       += VBoxCOM
  DLLS            += VBoxSettings VBoxC
  PROGRAMS        += VBoxSVC
- MAKE_WIN_PATH   = $(subst /,\\,$(1))
+ VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(1))
 else
  # used by some rules
  PATH_VBoxCOM    = $(PATH_TARGET)/VBoxCOM
@@ -46,7 +46,7 @@ else
  include $(KBUILD_PATH)/tools/VCC70.kmk
  include $(KBUILD_PATH)/sdks/WINPSDK.kmk
  # on Wine Z: is always FS root
- MAKE_WIN_PATH   = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
+ VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
 endif #!VBOX_ONLY_SDK
 
 OTHERS           += $(VBOX_PATH_SDK)/bindings/VirtualBox.xidl
@@ -590,7 +590,7 @@ $(IDLHEADER.XPCOM): $(IDLFILE.XPCOM) | $(call DIRDEP,$(dir $(IDLHEADER.XPCOM))) 
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
 
-MAIN_IDL ?= $(EXEC_X86_WIN32) $(call MAKE_WIN_PATH,$(firstword $(wildcard \
+MAIN_IDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
 	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
 	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
@@ -623,11 +623,11 @@ $(PATH_VBoxCOM)/VirtualBox_i.c \
 + $(PATH_VBoxCOM)/VirtualBox.tlb \
 + $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb: $(IDLFILE.MSCOM) | $(call DIRDEP,$(PATH_VBoxCOM))
 	$(MAIN_IDL) $(IDL_DEFS) \
-		/out $(call MAKE_WIN_PATH,$(PATH_VBoxCOM)) \
-		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
-		/I $(call MAKE_WIN_PATH,$(PATH_SDK_WINPSDK_INC)) \
+		/out $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_VBoxCOM)) \
+		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_WINPSDK_INC)) \
 		/I idl \
-		$(call MAKE_WIN_PATH,$<)
+		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/include
 	$(CP) $(PATH_VBoxCOM)/VirtualBox.h $(VBOX_PATH_SDK)/bindings/mscom/include
 	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/lib
