@@ -27,40 +27,39 @@ SUB_DEPTH = ..
 endif
 include $(KBUILD_PATH)/subheader.kmk
 
-ifeq ($(KBUILD_TARGET),win)
- NEED_MSCOM_SAMPLE = 1
-else
- NEED_XPCOM_SAMPLE = 1
-endif
-
 ifdef VBOX_ONLY_SDK
- NEED_MSCOM_SAMPLE = 1
- NEED_XPCOM_SAMPLE = 1
-else
+ VBOX_NEED_MSCOM_SAMPLE = 1
+ VBOX_NEED_XPCOM_SAMPLE = 1
+else # !VBOX_ONLY_SDK
+ ifeq ($(KBUILD_TARGET),win)
+  VBOX_NEED_MSCOM_SAMPLE = 1
+ else
+  VBOX_NEED_XPCOM_SAMPLE = 1
+ endif
  ifdef VBOX_WITH_TESTCASES
   PROGRAMS       += tstAPI
   PROGRAMS.linux += tstVBoxAPILinux
   # That testcase is actually not linux specific, it's generic XPCOM.
   PROGRAMS.solaris += tstVBoxAPILinux
   PROGRAMS.win   += tstVBoxAPIWin
- ifdef VBOX_WITH_RESOURCE_USAGE_API
-  PROGRAMS       += tstCollector
- endif
+  ifdef VBOX_WITH_RESOURCE_USAGE_API
+   PROGRAMS      += tstCollector
+  endif
  else ifeq ($(USERNAME),dmik)
   PROGRAMS       += tstAPI
   PROGRAMS.linux += tstVBoxAPILinux
   # That testcase is actually not linux specific, it's generic XPCOM.
   PROGRAMS.solaris += tstVBoxAPILinux
   PROGRAMS.win   += tstVBoxAPIWin
- endif # VBOX_WITH_TESTCASES
-endif # VBOX_ONLY_SDK
+ endif # !VBOX_WITH_TESTCASES
+endif # !VBOX_ONLY_SDK
 
-ifdef  NEED_MSCOM_SAMPLE 
-  INSTALLS += samplesMSCOM
+ifdef VBOX_NEED_MSCOM_SAMPLE
+ INSTALLS += samplesMSCOM
 endif
 
-ifdef  NEED_XPCOM_SAMPLE 
-  INSTALLS += samplesXPCOM
+ifdef VBOX_NEED_XPCOM_SAMPLE
+ INSTALLS += samplesXPCOM
 endif
 
 # maybe, if will ship glue COM headers with SDK
