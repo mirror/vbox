@@ -34,15 +34,15 @@ include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxTray/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxHook/Makefile.kmk
-ifndef VBOX_OSE
 include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
-include $(PATH_SUB_CURRENT)/Network/Makefile.kmk
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/Network/Makefile.kmk
 endif
 ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
-include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
 endif
 ifneq ($(wildcard $(PATH_SUB_CURRENT)/Installer),)
-include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
 endif
 
 #
