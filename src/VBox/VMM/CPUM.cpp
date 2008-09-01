@@ -714,6 +714,8 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
 
     /* Init PAT MSR */
     pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
+
+    pCtx->msrEFER                   = 0;
 }
 
 
