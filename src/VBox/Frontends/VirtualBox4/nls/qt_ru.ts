@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="ru">
+<defaultcodec></defaultcodec>
 <context>
     <name>PPDOptionsModel</name>
     <message>
@@ -654,7 +655,7 @@ to
     <message>
         <location filename="../src/qt3support/dialogs/q3wizard.cpp" line="147"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Вперед &gt;</translation>
+        <translation type="unfinished">&amp;Далее &gt;</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3wizard.cpp" line="148"/>
