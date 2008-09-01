@@ -432,7 +432,7 @@ typedef struct CPUMCTX_VER1_6
     RTSEL           ss;
     RTSEL           ssPadding;
     /* Note: no overlap with esp here. */
-    uint64_t        rsp;
+    uint64_t        rsp_notused;
 
     RTSEL           gs;
     RTSEL           gsPadding;
