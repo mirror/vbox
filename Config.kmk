@@ -412,7 +412,7 @@ ifdef VBOX_WITH_HARDENING
  endif
 endif
 # Use VBoxNetFlt for host interface networking.
-if1of ($(KBUILD_TARGET), darwin) ## @todo add solaris.
+if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_NETFLT = 1
 endif
 
