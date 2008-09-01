@@ -584,14 +584,16 @@ init_xpcom() {
 #include <VBox/com/com.h>
 using namespace com;
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
+#include <iprt/string.h>
+#include <iprt/alloca.h>
 #include <iprt/stream.h>
 
 extern "C" NS_EXPORT
 void 
 initVBoxPython() {
-  static bool vboxInited = false;
-  if (!vboxInited) {
+  static bool s_vboxInited = false;
+  if (!s_vboxInited) {
     int rc = 0;
 
 #if defined(VBOX_PATH_APP_PRIVATE_ARCH) && defined(VBOX_PATH_SHARED_LIBS)
