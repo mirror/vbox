@@ -120,7 +120,7 @@
          <string>I/O Po&amp;rt:</string>
         </property>
         <property name="buddy" >
-         <cstring>mLbIOPort</cstring>
+         <cstring>mLeIOPort</cstring>
         </property>
        </widget>
       </item>
