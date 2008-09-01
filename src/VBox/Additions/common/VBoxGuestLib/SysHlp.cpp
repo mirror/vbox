@@ -226,47 +226,84 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
 #endif
 }
 
+#ifdef RT_OS_WINDOWS
+static NTSTATUS vbglDriverIOCtlCompletion (IN PDEVICE_OBJECT DeviceObject,
+                                           IN PIRP Irp,
+                                           IN PVOID Context)
+{
+    Log(("VBGL completion %x\n", Irp));
+
+    KEVENT *pEvent = (KEVENT *)Context;
+    KeSetEvent (pEvent, IO_NO_INCREMENT, FALSE);
+
+    return STATUS_MORE_PROCESSING_REQUIRED;
+}
+#endif
+
 int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, uint32_t cbData)
 {
     Log(("vbglDriverIOCtl: pDriver: %p, Func: %x, pvData: %p, cbData: %d\n", pDriver, u32Function, pvData, cbData));
 
 #ifdef RT_OS_WINDOWS
-    IO_STATUS_BLOCK ioStatusBlock;
-
     KEVENT Event;
+
     KeInitializeEvent (&Event, NotificationEvent, FALSE);
 
-    PIRP irp = IoBuildDeviceIoControlRequest (u32Function,
-                                              pDriver->pDeviceObject,
-                                              pvData,
-                                              cbData,
-                                              pvData,
-                                              cbData,
-                                              FALSE, /* external */
-                                              &Event,
-                                              &ioStatusBlock);
+    /* Have to use the IoAllocateIRP method because this code is generic and
+     * must work in any thread context.
+     * The IoBuildDeviceIoControlRequest, which was used here, does not work
+     * when APCs are disabled, for example.
+     */
+    PIRP irp = IoAllocateIrp (pDriver->pDeviceObject->StackSize, FALSE);
+
+    Log(("vbglDriverIOCtl: irp %p, IRQL = %d\n", irp, KeGetCurrentIrql()));
+
     if (irp == NULL)
     {
-        Log(("vbglDriverIOCtl: IoBuildDeviceIoControlRequest failed!\n"));
+        Log(("vbglDriverIOCtl: IRP allocation failed!\n"));
         return VERR_NO_MEMORY;
     }
 
+    /*
+     * Setup the IRP_MJ_DEVICE_CONTROL IRP.
+     */
+
+    PIO_STACK_LOCATION nextStack = IoGetNextIrpStackLocation (irp);
+
+    nextStack->MajorFunction = IRP_MJ_DEVICE_CONTROL;
+    nextStack->MinorFunction = 0;
+    nextStack->DeviceObject = pDriver->pDeviceObject;
+    nextStack->Parameters.DeviceIoControl.OutputBufferLength = cbData;
+    nextStack->Parameters.DeviceIoControl.InputBufferLength = cbData;
+    nextStack->Parameters.DeviceIoControl.IoControlCode = u32Function;
+    nextStack->Parameters.DeviceIoControl.Type3InputBuffer = pvData;
+
+    irp->AssociatedIrp.SystemBuffer = pvData; /* Output buffer. */
+    irp->MdlAddress = NULL;    
+
+    /* A completion routine is required to signal the Event. */
+    IoSetCompletionRoutine (irp, vbglDriverIOCtlCompletion, &Event, TRUE, TRUE, TRUE);
+
     NTSTATUS rc = IoCallDriver (pDriver->pDeviceObject, irp);
 
-    if (rc == STATUS_PENDING)
+    if (NT_SUCCESS (rc))
     {
-        Log(("vbglDriverIOCtl: STATUS_PENDING\n"));
-        rc = KeWaitForSingleObject(&Event,
-                                   Executive,
-                                   KernelMode,
-                                   FALSE,
-                                   NULL);
+        /* Wait the event to be signalled by the completion routine. */
+        KeWaitForSingleObject (&Event,
+                               Executive,
+                               KernelMode,
+                               FALSE,
+                               NULL);
 
-        rc = ioStatusBlock.Status;
+        rc = irp->IoStatus.Status;
+
+        Log(("vbglDriverIOCtl: wait completed IRQL = %d\n", KeGetCurrentIrql()));
     }
 
-    if (!NT_SUCCESS(rc))
-        Log(("vbglDriverIOCtl: IoCallDriver failed with ntstatus=%x\n", rc));
+    IoFreeIrp (irp);
+
+    if (rc != STATUS_SUCCESS)
+        Log(("vbglDriverIOCtl: ntstatus=%x\n", rc));
 
     return NT_SUCCESS(rc)? VINF_SUCCESS: VERR_VBGL_IOCTL_FAILED;
 
