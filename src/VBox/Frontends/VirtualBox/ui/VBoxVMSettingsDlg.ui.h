@@ -2149,7 +2149,7 @@ void VBoxVMSettingsDlg::addNetworkAdapter (const CNetworkAdapter &aAdapter)
     page->loadNetworksList (mNetworksList);
     page->getFromAdapter (aAdapter);
     QString pageTitle = QString (tr ("Adapter %1", "network"))
-                                 .arg (aAdapter.GetSlot());
+                                 .arg (QString ("&%1").arg (aAdapter.GetSlot() + 1));
     tbwNetwork->addTab (page, pageTitle);
 
     /* fix the tab order so that main dialog's buttons are always the last */
@@ -2227,7 +2227,7 @@ void VBoxVMSettingsDlg::addSerialPort (const CSerialPort &aPort)
     VBoxVMSerialPortSettings *page = new VBoxVMSerialPortSettings();
     page->getFromPort (aPort);
     QString pageTitle = QString (tr ("Port %1", "serial ports"))
-                                 .arg (aPort.GetSlot());
+                                 .arg (QString ("&%1").arg (aPort.GetSlot() + 1));
     tbwSerialPorts->addTab (page, pageTitle);
 
     /* fix the tab order so that main dialog's buttons are always the last */
@@ -2261,7 +2261,7 @@ void VBoxVMSettingsDlg::addParallelPort (const CParallelPort &aPort)
     VBoxVMParallelPortSettings *page = new VBoxVMParallelPortSettings();
     page->getFromPort (aPort);
     QString pageTitle = QString (tr ("Port %1", "parallel ports"))
-                                 .arg (aPort.GetSlot());
+                                 .arg (QString ("&%1").arg (aPort.GetSlot() + 1));
     tbwParallelPorts->addTab (page, pageTitle);
 
     /* fix the tab order so that main dialog's buttons are always the last */
