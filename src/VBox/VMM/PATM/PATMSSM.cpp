@@ -55,6 +55,8 @@
 #define PATM_SUBTRACT_PTR(a, b) *(uintptr_t *)&(a) = (uintptr_t)(a) - (uintptr_t)(b)
 #define PATM_ADD_PTR(a, b)      *(uintptr_t *)&(a) = (uintptr_t)(a) + (uintptr_t)(b)
 
+static void patmCorrectAbsoluteFixup(PVM pVM, PATM &patmInfo, int32_t offset, RTRCPTR *pFixup);
+
 #ifdef VBOX_STRICT
 /**
  * Callback function for RTAvlPVDoWithAll
@@ -400,29 +402,18 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     }
 #endif
 
-    /** @todo this restriction could be removed as we relocate when loading the saved state,.. */
-    if (    pVM->patm.s.pGCStateGC != patmInfo.pGCStateGC
-        ||  pVM->patm.s.pCPUMCtxGC != patmInfo.pCPUMCtxGC
-        ||  pVM->patm.s.pStatsGC   != patmInfo.pStatsGC)
-    {
-        if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT) /* hack for x86 / amd64 mix. */
-            return VINF_SUCCESS;
-        AssertMsgFailed(("GC state, stat or cpum ptrs don't match (state %VRv:%VRv, cpum %VRv:%VRv, stats %VRv:%VRv!!!\n", pVM->patm.s.pGCStateGC, patmInfo.pGCStateGC, pVM->patm.s.pCPUMCtxGC, patmInfo.pCPUMCtxGC, pVM->patm.s.pStatsGC, patmInfo.pStatsGC));
-        return VERR_SSM_INVALID_STATE;
-    }
-
-    /* Relative calls are made to the helper functions. Therefor their location must not change! */
-    if (    pVM->patm.s.pfnHelperCallGC != patmInfo.pfnHelperCallGC
-        ||  pVM->patm.s.pfnHelperRetGC  != patmInfo.pfnHelperRetGC
-        ||  pVM->patm.s.pfnHelperJumpGC != patmInfo.pfnHelperJumpGC
-        ||  pVM->patm.s.pfnHelperIretGC != patmInfo.pfnHelperIretGC)
+    /* Relative calls are made to the helper functions. Therefor their relative location must not change! */
+    /* Note: we reuse the saved global helpers and assume they are identical, which is kind of dangerous. */
+    if (    (pVM->patm.s.pfnHelperCallGC - pVM->patm.s.pPatchMemGC) != (patmInfo.pfnHelperCallGC  - patmInfo.pPatchMemGC)
+        ||  (pVM->patm.s.pfnHelperRetGC  - pVM->patm.s.pPatchMemGC) != (patmInfo.pfnHelperRetGC   - patmInfo.pPatchMemGC)
+        ||  (pVM->patm.s.pfnHelperJumpGC - pVM->patm.s.pPatchMemGC) != (patmInfo.pfnHelperJumpGC  - patmInfo.pPatchMemGC)
+        ||  (pVM->patm.s.pfnHelperIretGC - pVM->patm.s.pPatchMemGC) != (patmInfo.pfnHelperIretGC  - patmInfo.pPatchMemGC))
     {
         AssertMsgFailed(("Helper function ptrs don't match!!!\n"));
         return VERR_SSM_INVALID_STATE;
     }
 
-    if (    pVM->patm.s.pPatchMemGC != patmInfo.pPatchMemGC
-        ||  pVM->patm.s.cbPatchMem != patmInfo.cbPatchMem)
+    if (pVM->patm.s.cbPatchMem != patmInfo.cbPatchMem)
     {
         AssertMsgFailed(("Patch memory ptrs and/or sizes don't match!!!\n"));
         return VERR_SSM_INVALID_STATE;
@@ -537,11 +528,6 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Restore PATM stack page
      */
-    if (pVM->patm.s.pGCStackGC != patmInfo.pGCStackGC)
-    {
-        AssertMsgFailed(("GC patch stack ptrs don't match!!!\n"));
-        return VERR_SSM_INVALID_STATE;
-    }
     rc = SSMR3GetMem(pSSM, pVM->patm.s.pGCStackHC, PATM_STACK_TOTAL_SIZE);
     AssertRCReturn(rc, rc);
 
@@ -597,10 +583,21 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         for (int i=0;i<patch.patch.nrFixups;i++)
         {
             RELOCREC rec;
+            int32_t offset;
+            RTRCPTR *pFixup;
 
             rc = SSMR3GetMem(pSSM, &rec, sizeof(rec));
             AssertRCReturn(rc, rc);
+
+            /* rec.pRelocPos now contains the relative position inside the hypervisor area. */
+            offset = (int32_t)rec.pRelocPos;
+            /* Convert to HC pointer again. */
             PATM_ADD_PTR(rec.pRelocPos, pVM->patm.s.pPatchMemHC);
+            pFixup = (RTRCPTR *)rec.pRelocPos;
+
+            /* Correct absolute fixups that refer to PATM structures in the hypervisor region (their addresses might have changed). */
+            if (rec.uType == FIXUP_ABSOLUTE)
+                patmCorrectAbsoluteFixup(pVM, patmInfo, offset, pFixup);
 
             rc = patmPatchAddReloc32(pVM, &pPatchRec->patch, rec.pRelocPos, rec.uType, rec.pSource, rec.pDest);
             AssertRCReturn(rc, rc);
@@ -635,6 +632,34 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         }
     }
 
+    /*
+     * Correct absolute fixups in the global patch. (helper functions)
+     * Bit of a mess. Uses the new patch record, but restored patch functions. 
+     */
+    PRELOCREC pRec = 0;
+    AVLPVKEY  key  = 0;
+
+    while (true)
+    {
+        int32_t offset;
+        RTRCPTR *pFixup;
+
+        /* Get the record that's closest from above */
+        pRec = (PRELOCREC)RTAvlPVGetBestFit(&pVM->patm.s.pGlobalPatchRec->patch.FixupTree, key, true);
+        if (pRec == 0)
+            break;
+
+        key = (AVLPVKEY)(pRec->pRelocPos + 1);   /* search for the next record during the next round. */
+
+        /* rec.pRelocPos now contains the relative position inside the hypervisor area. */
+        offset = (int32_t)(pRec->pRelocPos - pVM->patm.s.pPatchMemHC);
+        pFixup = (RTRCPTR *)pRec->pRelocPos;
+
+        /* Correct absolute fixups that refer to PATM structures in the hypervisor region (their addresses might have changed). */
+        if (pRec->uType == FIXUP_ABSOLUTE)
+            patmCorrectAbsoluteFixup(pVM, patmInfo, offset, pFixup);
+    }
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Restore relevant old statistics
@@ -647,4 +672,51 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     return VINF_SUCCESS;
 }
 
-
+/**
+ * Correct absolute fixups to predefined hypervisor PATM regions. (their addresses might have changed)
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   patmInfo        Saved PATM structure
+ * @param   offset          Offset of referenced data/code
+ * @param   pFixup          Fixup address
+ */
+static void patmCorrectAbsoluteFixup(PVM pVM, PATM &patmInfo, int32_t offset, RTRCPTR *pFixup)
+{
+    if (    patmInfo.pPatchMemGC + offset >= patmInfo.pGCStateGC 
+        &&  patmInfo.pPatchMemGC + offset <  patmInfo.pGCStateGC + sizeof(PATMGCSTATE))
+    {
+        LogFlow(("Changing absolute GCState from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStateGC) + pVM->patm.s.pGCStateGC));
+        *pFixup = (*pFixup - patmInfo.pGCStateGC) + pVM->patm.s.pGCStateGC;
+    }
+    else
+    if (    patmInfo.pPatchMemGC + offset >= patmInfo.pCPUMCtxGC 
+        &&  patmInfo.pPatchMemGC + offset <  patmInfo.pCPUMCtxGC + sizeof(CPUMCTX))
+    {
+        LogFlow(("Changing absolute CPUMCTX from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC));
+        *pFixup = (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC;
+    }
+    else
+    if (    patmInfo.pPatchMemGC + offset >= patmInfo.pStatsGC 
+        &&  patmInfo.pPatchMemGC + offset <  patmInfo.pStatsGC + sizeof(CPUMCTX))
+    {
+        LogFlow(("Changing absolute Stats from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC));
+        *pFixup = (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC;
+    }
+    else
+    if (    patmInfo.pPatchMemGC + offset >= patmInfo.pGCStackGC 
+        &&  patmInfo.pPatchMemGC + offset <  patmInfo.pGCStackGC + PATM_STACK_TOTAL_SIZE)
+    {
+        LogFlow(("Changing absolute Stats from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStackGC) + pVM->patm.s.pGCStackGC));
+        *pFixup = (*pFixup - patmInfo.pGCStackGC) + pVM->patm.s.pGCStackGC;
+    }
+    else
+    if (    patmInfo.pPatchMemGC + offset >= patmInfo.pPatchMemGC 
+        &&  patmInfo.pPatchMemGC + offset <  patmInfo.pPatchMemGC + patmInfo.cbPatchMem)
+    {
+        LogFlow(("Changing absolute Stats from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC));
+        *pFixup = (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC;
+    }
+    else
+        AssertFailed();
+}
