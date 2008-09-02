@@ -2547,7 +2547,7 @@
   <interface
      name="IBIOSSettings" extends="$unknown"
      uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
-     wsmap="struct"
+     wsmap="managed"
      >
     <desc>
         The IBIOSSettings interface represents BIOS settings of the virtual
