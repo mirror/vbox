@@ -848,7 +848,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
         }
         else
         if (    *pFixup >= patmInfo.pStatsGC 
-            &&  *pFixup <  patmInfo.pStatsGC + sizeof(CPUMCTX))
+            &&  *pFixup <  patmInfo.pStatsGC + PATM_STAT_MEMSIZE)
         {
             LogFlow(("Changing absolute Stats at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC));
             *pFixup = (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC;
