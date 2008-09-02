@@ -139,8 +139,8 @@ SOLARIS_EXTRAS = \
 	$(if $(VBOX_WITH_NETFLT),vboxflt.conf) \
 	vboxdrv.sh \
 	VBox.sh \
-	vnic_setup.sh \
-	vnic_term.sh \
+	$(if $(not $(VBOX_WITH_NETFLT))vnic_setup.sh,) \
+	$(if $(not $(VBOX_WITH_NETFLT))vnic_term.sh,) \
 	virtualbox-webservice.xml \
 	smf-vboxwebsrv.sh \
 	vbox.copyright \
@@ -231,8 +231,8 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QT4GUI)),$(PATH_BIN)/License-$(VBOX_LICENSE_VER).html) \
 		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
 		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf) \
-		$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh \
-		$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh \
+		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh,) \
+		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh,) \
 		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS),$(SOLARIS_ARCH_FILES)))
 	$(call MSG_L1,Installing binaries $(SOLARIS_INST_DIR))
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/additions
@@ -368,8 +368,8 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARIS_INST_DIR)/webtest,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(PATH_CURRENT)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(PATH_CURRENT)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh
+	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh,)
+	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \
 		-e "s/_HARDENED_/$(if $(VBOX_WITH_HARDENED),hardened,))/" \
 		--output $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp \
