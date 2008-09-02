@@ -782,12 +782,12 @@ void VBoxDiskImageManagerDlg::retranslateUi()
     mReleaseAction->setText (tr ("Re&lease"));
     mRefreshAction->setText (tr ("Re&fresh"));
 
-    mNewAction->setShortcut (tr ("Ctrl+N"));
-    mAddAction->setShortcut (tr ("Ctrl+A"));
-    // mEditAction->setShortcut (tr ("Ctrl+E"));
-    mRemoveAction->setShortcut (tr ("Ctrl+D"));
-    mReleaseAction->setShortcut (tr ("Ctrl+L"));
-    mRefreshAction->setShortcut (tr ("Ctrl+R"));
+    mNewAction->setShortcut (QKeySequence ("Ctrl+N"));
+    mAddAction->setShortcut (QKeySequence ("Ctrl+A"));
+    // mEditAction->setShortcut (QKeySequence ("Ctrl+E"));
+    mRemoveAction->setShortcut (QKeySequence ("Ctrl+D"));
+    mReleaseAction->setShortcut (QKeySequence ("Ctrl+L"));
+    mRefreshAction->setShortcut (QKeySequence ("Ctrl+R"));
 
     mNewAction->setStatusTip (tr ("Create a new virtual hard disk"));
     mAddAction->setStatusTip (tr ("Add (register) an existing image file"));
