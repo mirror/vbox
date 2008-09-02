@@ -2210,8 +2210,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #endif
 
         /* Adjust colors and appearance. */
+        clearMask();
         centralWidget()->setPalette (mErasePalette);
-        centralWidget()->setAutoFillBackground (true);
+        centralWidget()->setAutoFillBackground (false);
         console->setFrameStyle (console_style);
         console->setMaximumSize (console->sizeHint());
         console->setHorizontalScrollBarPolicy (Qt::ScrollBarAsNeeded);
@@ -2296,7 +2297,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     if (wasHidden)
         hide();
 #endif
-    clearMask();
     return true;
 }
 
@@ -2841,6 +2841,15 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
     }
 #else
     QMainWindow::setMask (region);
+#endif
+}
+
+void VBoxConsoleWnd::clearMask()
+{
+#ifdef Q_WS_WIN
+    SetWindowRgn (winId(), 0, TRUE);
+#else
+    QMainWindow::clearMask();
 #endif
 }
 
