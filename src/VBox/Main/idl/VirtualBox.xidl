@@ -6392,13 +6392,13 @@
       description for more details).
 
       <note>
-        Because of the possible slowness of the accessibility check,
-        it is not implicitly performed upon the VirtualBox server startup
-        (to prevent the application freeze). In partcular, this means that
-        if you try to read hard disk properties that depend on the
-        accessibility state without first reading the value of the
-        <link to="#accessible"/> attribute and ensuring it's value is
-        <tt>true</tt>, you will get wrong (zero) values.
+        Since checking the accessibility of a hard disk is a potentially
+        very slow operation, it is not performed implicitly when the
+        VirtualBox server process starts up to prevent the application from
+        freezing. In particular, this means that if you try to read hard disk
+        properties that depend on the accessibility state without first
+        reading the value of the <link to="#accessible"/> attribute and
+        ensuring its value is <tt>true</tt>, you will get wrong (zero) values.
       </note>
 
     </desc>
