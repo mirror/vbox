@@ -30,18 +30,15 @@ VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
 
 [Manufacturer]
-;x86   %SUN%=VBoxVideo
-;amd64 %SUN%=VBoxVideo, NTamd64
-;amd64 %SUN%=VBoxVideo, NTamd64.6.0
+;x86   %SUN%=Model
+;amd64 %SUN%=Model, NTamd64.6.0
 
-;x86   [VBoxVideo]
-;amd64 [VBoxVideo.NTamd64]
+;x86   [Model]
+;amd64 [Model.NTamd64.6.0]
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
-;amd64 [VBoxVideo.NTamd64.6.0]
-;amd64 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
-
 [VBoxVideo]
+;amd64 FeatureScore = F8
 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
 
 [VBoxVideo.Miniport]
@@ -78,7 +75,8 @@ HKR,, VgaCompatible, %REG_DWORD%, 0
 
 [VBoxVideo.OpenGLSoftwareSettings]
 
-[SourceDisksNames]
+;x86   [SourceDisksNames]
+;amd64 [SourceDisksNames.amd64]
 1 = %VBoxVideo.Disk%,,,""
 2 = %VBoxVideo.Disk%,,,""
 
