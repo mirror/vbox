@@ -195,6 +195,7 @@ private slots:
 
 private:
 
+    void keyPressEvent (QKeyEvent *aEvent);
     void populate (const HDSltValue &aIncluding);
 
     QList<HDSltValue> mList;
@@ -227,6 +228,8 @@ private slots:
     void onActivate();
 
 private:
+
+    void keyPressEvent (QKeyEvent *aEvent);
 
     static HDVdiEditor *mInstance;
 };
@@ -325,6 +328,7 @@ private:
     QAction *mNewAction;
     QAction *mDelAction;
     QAction *mVdmAction;
+    bool mWasTableSelected;
 };
 
 #endif // __VBoxVMSettingsHD_h__

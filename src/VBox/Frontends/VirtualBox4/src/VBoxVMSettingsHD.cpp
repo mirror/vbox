@@ -242,6 +242,19 @@ void HDSltEditor::onActivate()
     emit readyToCommit (this);
 }
 
+void HDSltEditor::keyPressEvent (QKeyEvent *aEvent)
+{
+    /* Make F2 key to show the popup. */
+    if (aEvent->key() == Qt::Key_F2)
+    {
+        aEvent->accept();
+        showPopup();
+    }
+    else
+        aEvent->ignore();
+    QComboBox::keyPressEvent (aEvent);
+}
+
 void HDSltEditor::populate (const HDSltValue &aIncluding)
 {
     clear();
@@ -312,6 +325,19 @@ HDVdiEditor* HDVdiEditor::activeEditor()
 void HDVdiEditor::onActivate()
 {
     emit readyToCommit (this);
+}
+
+void HDVdiEditor::keyPressEvent (QKeyEvent *aEvent)
+{
+    /* Make F2 key to show the popup. */
+    if (aEvent->key() == Qt::Key_F2)
+    {
+        aEvent->accept();
+        showPopup();
+    }
+    else
+        aEvent->ignore();
+    VBoxMediaComboBox::keyPressEvent (aEvent);
 }
 
 /** Singleton QObject class reimplementation to use for making selected IDE &
@@ -394,6 +420,7 @@ void HDSlotUniquizer::makeSATAList()
 
 VBoxVMSettingsHD::VBoxVMSettingsHD()
     : mValidator (0)
+    , mWasTableSelected (false)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsHD::setupUi (this);
@@ -858,6 +885,12 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
                 default:
                     break;
             }
+        } else
+        if (aEvent->type() == QEvent::WindowDeactivate)
+        {
+            /* Store focus state if it is on temporary editor. */
+            if (widget->hasFocus())
+                mWasTableSelected = true;
         }
     } else
     if (widget == mTwAts->viewport() &&
@@ -868,6 +901,15 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
         if (mNewAction->isEnabled() &&
             (index.row() == mModel->rowCount() - 1 || !index.isValid()))
             newClicked();
+    } else
+    if (aEvent->type() == QEvent::WindowActivate)
+    {
+        if (mWasTableSelected)
+        {
+            /* Restore focus state if it was on temporary editor. */
+            mWasTableSelected = false;
+            mTwAts->setFocus();
+        }
     }
 
     return QWidget::eventFilter (aObject, aEvent);

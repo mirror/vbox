@@ -218,6 +218,14 @@ protected:
         QTableView::currentChanged (aCurrent, aPrevious);
         emit currentChanged (aCurrent);
     }
+
+    void focusInEvent (QFocusEvent *aEvent)
+    {
+        /* Restore edit-mode on focus in. */
+        QTableView::focusInEvent (aEvent);
+        if (model()->flags (currentIndex()) & Qt::ItemIsEditable)
+            edit (currentIndex());
+    }
 };
 
 class VBoxWarnIconLabel: public QWidget
