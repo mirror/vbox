@@ -116,14 +116,6 @@ stop_module()
     fi
 }
 
-restart_module()
-{
-    stop_module
-    sync
-    start_module
-    return 0
-}
-
 start_vboxflt()
 {
     if vboxflt_module_loaded; then
@@ -153,14 +145,6 @@ stop_vboxflt()
     fi
 }
 
-restart_vboxflt()
-{
-    stop_vboxflt
-    sync
-    start_vboxflt
-    return 0
-}
-
 status_module()
 {
     if module_loaded; then
@@ -168,6 +152,18 @@ status_module()
     else
         info "Stopped."
     fi
+}
+
+stop_all_modules()
+{
+    stop_vboxflt
+    stop_module
+}
+
+start_all_modules()
+{
+    start_module
+    start_vboxflt
 }
 
 check_root
@@ -178,23 +174,29 @@ if test "$2" = "silentunload"; then
 fi
 
 case "$1" in
+stopall)
+    stop_all_modules
+    ;;
+startall)
+    start_all_modules
+    ;;
 start)
     start_module
     ;;
 stop)
     stop_module
     ;;
-restart)
-    restart_module
-    ;;
 status)
     status_module
     ;;
-fltrestart)
-    restart_vboxflt
+fltstart)
+    start_vboxflt
+    ;;
+fltstop)
+    stop_vboxflt
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status|fltrestart}"
+    echo "Usage: $0 {start|stop|status|fltstart|fltstop|stopall|startall}"
     exit 1
 esac
 
