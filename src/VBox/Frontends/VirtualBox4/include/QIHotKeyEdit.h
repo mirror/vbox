@@ -76,7 +76,7 @@ public slots:
 protected:
 
 #if defined (Q_WS_WIN32)
-    bool winEvent (MSG *msg);
+    bool winEvent (MSG *aMsg, long *aResult);
 #elif defined (Q_WS_PM)
     bool pmEvent (QMSG *aMsg);
 #elif defined (Q_WS_X11)
