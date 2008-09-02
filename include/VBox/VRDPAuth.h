@@ -53,7 +53,18 @@ typedef enum _VRDPAuthGuestJudgement
 /* UUID memory representation. Array of 16 bytes. */
 typedef unsigned char VRDPAUTHUUID[16];
 typedef VRDPAUTHUUID *PVRDPAUTHUUID;
-
+/*
+Note: VirtualBox uses a consistent binary representation of UUIDs on all platforms. For this reason
+the integer fields comprising the UUID are stored as little endian values. If you want to pass such
+UUIDs to code which assumes that the integer fields are big endian (often also called network byte
+order), you need to adjust the contents of the UUID to e.g. achieve the same string representation.
+The required changes are:
+ * reverse the order of byte 0, 1, 2 and 3
+ * reverse the order of byte 4 and 5
+ * reverse the order of byte 6 and 7.
+Using this conversion you will get identical results when converting the binary UUID to the string
+representation.
+*/
 
 /* The library entry point calling convention. */
 #ifdef _MSC_VER
