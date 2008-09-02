@@ -200,20 +200,54 @@ int _init(void)
     else
         LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
 
-    int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
-    if (!rc)
+    /*
+     * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
+     */
+    int rc = RTR0Init(0);
+    if (RT_SUCCESS(rc))
     {
-        rc = mod_install(&g_VBoxDrvSolarisModLinkage);
-        if (!rc)
-            return 0; /* success */
+        /*
+         * Initialize the device extension
+         */
+        rc = supdrvInitDevExt(&g_DevExt);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Initialize the session hash table.
+             */
+            memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
+            rc = RTSpinlockCreate(&g_Spinlock);
+            if (RT_SUCCESS(rc))
+            {
+                int rc = ddi_soft_state_init(&g_pVBoxDrvSolarisState, sizeof(vbox_devstate_t), 8);
+                if (!rc)
+                {
+                    rc = mod_install(&g_VBoxDrvSolarisModLinkage);
+                    if (!rc)
+                        return 0; /* success */
 
-        ddi_soft_state_fini(&g_pVBoxDrvSolarisState);
-        LogRel((DEVICE_NAME ":mod_install failed! rc=%d\n", rc));
+                    ddi_soft_state_fini(&g_pVBoxDrvSolarisState);
+                    LogRel((DEVICE_NAME ":mod_install failed! rc=%d\n", rc));
+                }
+                else
+                    LogRel((DEVICE_NAME ":failed to initialize soft state.\n"));
+
+                RTSpinlockDestroy(g_Spinlock);
+                g_Spinlock = NIL_RTSPINLOCK;
+            }
+            else
+                LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: RTSpinlockCreate failed\n"));
+            supdrvDeleteDevExt(&g_DevExt);
+        }
+        else
+            LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: supdrvInitDevExt failed\n"));
+        RTR0Term();
     }
     else
-        LogRel((DEVICE_NAME ":failed to initialize soft state.\n"));
+        LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: failed to init R0Drv\n"));
+    memset(&g_DevExt, 0, sizeof(g_DevExt));
 
-    return rc;
+    return -1;
 }
 
 
@@ -221,12 +255,25 @@ int _fini(void)
 {
     LogFlow((DEVICE_NAME ":_fini\n"));
 
-    int e = mod_remove(&g_VBoxDrvSolarisModLinkage);
-    if (e != 0)
-        return e;
+    /*
+     * Undo the work we did at start (in the reverse order).
+     */
+    int rc = mod_remove(&g_VBoxDrvSolarisModLinkage);
+    if (rc != 0)
+        return rc;
+
+    supdrvDeleteDevExt(&g_DevExt);
+
+    rc = RTSpinlockDestroy(g_Spinlock);
+    AssertRC(rc);
+    g_Spinlock = NIL_RTSPINLOCK;
+
+    RTR0Term();
+
+    memset(&g_DevExt, 0, sizeof(g_DevExt));
 
     ddi_soft_state_fini(&g_pVBoxDrvSolarisState);
-    return e;
+    return 0;
 }
 
 
@@ -269,62 +316,25 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 #endif
 
             /*
-             * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
+             * Register ourselves as a character device, pseudo-driver
              */
-            rc = RTR0Init(0);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Initialize the device extension
-                 */
-                rc = supdrvInitDevExt(&g_DevExt);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Initialize the session hash table.
-                     */
-                    memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab));
-                    rc = RTSpinlockCreate(&g_Spinlock);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /*
-                         * Register ourselves as a character device, pseudo-driver
-                         */
 #ifdef VBOX_WITH_HARDENING
-                        rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
-                                                        0, "all", "all", 0600);
+            rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
+                                            0, "all", "all", 0600);
 #else
-                        rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
-                                                        0, "none", "none", 0666);
+            rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
+                                            0, "none", "none", 0666);
 #endif
-                        if (rc == DDI_SUCCESS)
-                        {
+            if (rc == DDI_SUCCESS)
+            {
 #ifdef USE_SESSION_HASH
-                            pState->pDip = pDip;
+                pState->pDip = pDip;
 #endif
-                            ddi_report_dev(pDip);
-                            return DDI_SUCCESS;
-                        }
-
-                        /* Is this really necessary? */
-                        ddi_remove_minor_node(pDip, NULL);
-                        LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: ddi_create_priv_minor_node failed.\n"));
-
-                        RTSpinlockDestroy(g_Spinlock);
-                        g_Spinlock = NIL_RTSPINLOCK;
-                    }
-                    else
-                        LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: RTSpinlockCreate failed\n"));
-                    supdrvDeleteDevExt(&g_DevExt);
-                }
-                else
-                    LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: supdrvInitDevExt failed\n"));
-                RTR0Term();
+                ddi_report_dev(pDip);
+                return DDI_SUCCESS;
             }
-            else
-                LogRel((DEVICE_NAME ":VBoxDrvSolarisAttach: failed to init R0Drv\n"));
-            memset(&g_DevExt, 0, sizeof(g_DevExt));
-            break;
+            
+            return DDI_FAILURE;
         }
 
         case DDI_RESUME:
@@ -370,16 +380,6 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             ddi_remove_minor_node(pDip, NULL);
             ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
 #endif
-
-            supdrvDeleteDevExt(&g_DevExt);
-
-            rc = RTSpinlockDestroy(g_Spinlock);
-            AssertRC(rc);
-            g_Spinlock = NIL_RTSPINLOCK;
-
-            RTR0Term();
-
-            memset(&g_DevExt, 0, sizeof(g_DevExt));
             return DDI_SUCCESS;
         }
 
