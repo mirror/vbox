@@ -325,7 +325,7 @@ void VBoxVMDescriptionPage::retranslateUi()
     mLabel->setText (tr ("No description. Press the Edit button below to add it."));
 
     mBtnEdit->setText (tr ("Edit"));
-    mBtnEdit->setShortcut (tr ("Ctrl+E"));
+    mBtnEdit->setShortcut (QKeySequence ("Ctrl+E"));
     mBtnEdit->setToolTip (tr ("Edit (Ctrl+E)"));
     mBtnEdit->adjustSize();
     mBtnEdit->updateGeometry();
@@ -1167,7 +1167,7 @@ void VBoxSelectorWnd::retranslateUi()
     vmListViewCurrentChanged();
 
     fileDiskMgrAction->setText (tr ("Virtual &Disk Manager..."));
-    fileDiskMgrAction->setShortcut (tr ("Ctrl+D"));
+    fileDiskMgrAction->setShortcut (QKeySequence ("Ctrl+D"));
     fileDiskMgrAction->setStatusTip (tr ("Display the Virtual Disk Manager dialog"));
 
 #ifdef Q_WS_MAC
@@ -1190,21 +1190,21 @@ void VBoxSelectorWnd::retranslateUi()
      */
     fileSettingsAction->setText (tr ("&Preferences...", "global settings"));
 #endif
-    fileSettingsAction->setShortcut (tr ("Ctrl+G"));
+    fileSettingsAction->setShortcut (QKeySequence ("Ctrl+G"));
     fileSettingsAction->setStatusTip (tr ("Display the global settings dialog"));
 
     fileExitAction->setText (tr ("E&xit"));
-    fileExitAction->setShortcut (tr ("Ctrl+Q"));
+    fileExitAction->setShortcut (QKeySequence ("Ctrl+Q"));
     fileExitAction->setStatusTip (tr ("Close application"));
 
     vmNewAction->setText (tr ("&New..."));
-    vmNewAction->setShortcut (tr ("Ctrl+N"));
+    vmNewAction->setShortcut (QKeySequence ("Ctrl+N"));
     vmNewAction->setStatusTip (tr ("Create a new virtual machine"));
     vmNewAction->setToolTip (vmNewAction->text().remove ('&').remove ('.') +
         QString (" (%1)").arg (vmNewAction->shortcut().toString()));
 
     vmConfigAction->setText (tr ("&Settings..."));
-    vmConfigAction->setShortcut (tr ("Ctrl+S"));
+    vmConfigAction->setShortcut (QKeySequence ("Ctrl+S"));
     vmConfigAction->setStatusTip (tr ("Configure the selected virtual machine"));
     vmConfigAction->setToolTip (vmConfigAction->text().remove ('&').remove ('.') +
         QString (" (%1)").arg (vmConfigAction->shortcut().toString()));
@@ -1219,12 +1219,12 @@ void VBoxSelectorWnd::retranslateUi()
         tr ("Discard the saved state of the selected virtual machine"));
 
     vmRefreshAction->setText (tr ("&Refresh"));
-    vmRefreshAction->setShortcut (tr ("Ctrl+R"));
+    vmRefreshAction->setShortcut (QKeySequence ("Ctrl+R"));
     vmRefreshAction->setStatusTip (
         tr ("Refresh the accessibility state of the selected virtual machine"));
 
     vmShowLogsAction->setText (tr ("Show &Log..."));
-    vmShowLogsAction->setShortcut (tr ("Ctrl+L"));
+    vmShowLogsAction->setShortcut (QKeySequence ("Ctrl+L"));
     vmShowLogsAction->setStatusTip (
         tr ("Show the log files of the selected virtual machine"));
 
@@ -1338,7 +1338,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         if (state == KMachineState_Paused)
         {
             vmPauseAction->setText (tr ("R&esume"));
-            vmPauseAction->setShortcut (tr ("Ctrl+P"));
+            vmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
             vmPauseAction->setStatusTip (
                 tr ("Resume the execution of the virtual machine"));
             vmPauseAction->blockSignals (true);
@@ -1348,7 +1348,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         else
         {
             vmPauseAction->setText (tr ("&Pause"));
-            vmPauseAction->setShortcut (tr ("Ctrl+P"));
+            vmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
             vmPauseAction->setStatusTip (
                 tr ("Suspend the execution of the virtual machine"));
             vmPauseAction->blockSignals (true);
