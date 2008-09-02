@@ -804,7 +804,7 @@ BEGINPROC WrapMSC2GCC7Int
     push    rbp
     mov     rbp, rsp
     sub     rsp, 30h
-    mov     [ebp - 10h], rsi
+    mov     [ebp - 10h], rsi ;; @todo wtf is this using ebp instead of rbp?
     mov     [ebp - 18h], rdi
 
     mov     rdi, rcx
