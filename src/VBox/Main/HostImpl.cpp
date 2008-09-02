@@ -51,6 +51,7 @@
 # include <errno.h>
 # include <limits.h>
 # include <stdio.h>
+# include <net/if.h>
 # include <sys/socket.h>
 # include <sys/sockio.h>
 # include <net/if_arp.h>
@@ -108,6 +109,7 @@ extern "C" char *getfullrawname(char *);
 #include <iprt/env.h>
 #ifdef RT_OS_SOLARIS
 # include <iprt/path.h>
+# include <iprt/ctype.h>
 #endif
 
 #include <stdio.h>
@@ -555,6 +557,34 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
 # elif defined(RT_OS_SOLARIS)
 
+    typedef std::map <std::string, std::string> NICMap;
+    typedef std::pair <std::string, std::string> NICPair;
+    static NICMap SolarisNICMap;
+    SolarisNICMap.insert(NICPair("bge", "Broadcom BCM57xx Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("ce", "Cassini Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("chxge", "Chelsio Ethernet"));
+    SolarisNICMap.insert(NICPair("dmfe", "Davicom Fast Ethernet"));
+    SolarisNICMap.insert(NICPair("dnet", "DEC 21040/41 21140 Ethernet"));
+    SolarisNICMap.insert(NICPair("e1000", "Intel PRO/1000 Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("e1000g", "Intel PRO/1000 Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("elx", "3COM EtherLink III Ethernet"));
+    SolarisNICMap.insert(NICPair("elxl", "3COM Ethernet"));
+    SolarisNICMap.insert(NICPair("elxl", "eri Fast Ethernet"));
+    SolarisNICMap.insert(NICPair("ge", "GEM Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("hme", "SUNW,hme Fast-Ethernet"));
+    SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("iprb", "Intel 82557/58/59 Ethernet"));
+    SolarisNICMap.insert(NICPair("nge", "nVidia Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("pcelx", "3COM EtherLink III PCMCIA Ethernet"));
+    SolarisNICMap.insert(NICPair("pcn", "AMD PCnet Ethernet"));
+    SolarisNICMap.insert(NICPair("qfe", "SUNW,qfe Quad Fast-Ethernet"));
+    SolarisNICMap.insert(NICPair("rge", "Realtek Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("rtls", "Realtek 8139 Fast Ethernet"));
+    SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432)   Ethernet"));
+    SolarisNICMap.insert(NICPair("xge", "Neterior Xframe Gigabit Ethernet"));
+    SolarisNICMap.insert(NICPair("xge", "Neterior Xframe 10Gigabit Ethernet"));
+
     int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (Sock > 0)
     {
@@ -603,8 +633,39 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                         else
                             memset(&Mac, 0, sizeof(Mac));
 
+                        char szNICDesc[LIFNAMSIZ + 256];
                         char *pszIface = Ifaces[i].lifr_name;
+                        strcpy(szNICDesc, pszIface);
 
+                        /*
+                         * Clip off the instance number from the interface name.
+                         */
+                        int cbInstance = 0;
+                        int cbIface = strlen(pszIface);
+                        char *pszEnd = pszIface + cbIface - 1;
+                        for (int i = 0; i < cbIface - 1; i++)
+                        {
+                            if (!RT_C_IS_DIGIT(*pszEnd))
+                                break;
+                            cbInstance++;
+                            pszEnd--;
+                        }
+
+                        /*
+                         * Try picking up description from our NIC map.
+                         */
+                        char szIfaceName[LIFNAMSIZ + 1];
+                        strncpy(szIfaceName, pszIface, cbIface - cbInstance);
+                        szIfaceName[cbIface - cbInstance] = '\0';
+                        std::string Description = SolarisNICMap[szIfaceName];
+                        if (Description != "")
+                            RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - %s", pszIface, Description.c_str());
+                        else
+                            RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", pszIface);
+
+                        /*
+                         * Construct UUID with BSD-name of the interface and the MAC address.
+                         */
                         RTUUID Uuid;
                         RTUuidClear(&Uuid);
                         memcpy(&Uuid, pszIface, RT_MIN(strlen(pszIface), sizeof(Uuid)));
@@ -619,7 +680,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
                         ComObjPtr<HostNetworkInterface> IfObj;
                         IfObj.createObject();
-                        if (SUCCEEDED(IfObj->init(Bstr(pszIface), Guid(Uuid))))
+                        if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid))))
                             list.push_back(IfObj);
                     }
                 }
