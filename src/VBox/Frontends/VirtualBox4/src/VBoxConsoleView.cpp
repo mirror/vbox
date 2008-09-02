@@ -80,7 +80,6 @@ const int XKeyRelease = KeyRelease;
 
 #if defined (Q_WS_MAC)
 # include "DarwinKeyboard.h"
-# include "DarwinCursor.h"
 # ifdef VBOX_WITH_HACKED_QT
 #  include "QIApplication.h"
 # endif
@@ -824,10 +823,6 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     bool ok = VBoxHlpInstallKbdHook (0, winId(), UM_PREACCEL_CHAR);
     Assert (ok);
     NOREF (ok);
-#endif
-
-#ifdef Q_WS_MAC
-//    DarwinCursorClearHandle (&mDarwinCursor);
 #endif
 }
 
@@ -2814,11 +2809,6 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
     }
     else /* !mMouseCaptured */
     {
-#ifdef Q_WS_MAC /** @todo Christian, can you look at this. It causes flickering and IIRC is really a Qt3 workaround which probably isn't needed. If it is needed it needs to be redone. */
-        /* Update the mouse cursor; this is a bit excessive really... */
-//        if (!DarwinCursorIsNull (&mDarwinCursor))
-//            DarwinCursorSet (&mDarwinCursor);
-#endif
         if (mMainWnd->isTrueFullscreen())
         {
             if (mode != VBoxDefs::SDLMode)
@@ -3506,90 +3496,41 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
 #elif defined(Q_WS_MAC)
 
         /* Create a ARGB image out of the shape data. */
-        /* @todo: The following isn't nice but is working. Will fix this tomorrow. */
         QImage image  (me->width(), me->height(), QImage::Format_ARGB32);
-        unsigned char alpha;
-        const uint8_t *pbSrcMask = (const uint8_t *)srcAndMaskPtr;
-        unsigned cbSrcMaskLine = RT_ALIGN(me->width(), 8) / 8;
+        const uint8_t* pbSrcMask = static_cast<const uint8_t*> (srcAndMaskPtr);
+        unsigned cbSrcMaskLine = RT_ALIGN (me->width(), 8) / 8;
         for (unsigned int y = 0; y < me->height(); ++y)
         {
             for (unsigned int x = 0; x < me->width(); ++x)
             {
-               int i = y*me->width()+x;
-               unsigned int color = ((unsigned int*)srcShapePtr)[i];
-               if (me->hasAlpha())
-                   alpha = qAlpha (color);
-               else
+               unsigned int color = ((unsigned int*)srcShapePtr)[y*me->width()+x];
+               /* If the alpha channel isn't in the shape data, we have to
+                * create them from the and-mask. This is a bit field where 1
+                * represent transparency & 0 opaque respectively. */
+               if (!me->hasAlpha())
                {
-//                   alpha = !srcAndMaskPtr[i] ? 0xff : 0x00;
                    if (!(pbSrcMask[x / 8] & (1 << (7 - (x % 8)))))
-                       alpha  = 0xff;
+                       color  |= 0xff000000;
                    else
                    {
-                       if (qRed (color) == 0xff &&
-                           qGreen (color) == 0xff &&
-                           qBlue (color) == 0xff)
-                       {
-                           color = 0;
-                           alpha = 0xff;
-                       }else
-                       {
-                           color = 0;
-                           alpha  = 0;
-                       }
+                       /* This isn't quite right, but it's the best we can do I
+                        * think... */
+                       if (color & 0x00ffffff)
+                           color = 0xff000000;
+                       else
+                           color = 0x00000000;
                    }
                }
-               image.setPixel (x, y, qRgba (qRed (color), qGreen (color), qBlue (color), alpha));
+               image.setPixel (x, y, color);
             }
+            /* Move one scanline forward. */
             pbSrcMask += cbSrcMaskLine;
         }
-        /* Invert the mask channel if there is one */
-        QPixmap pixmap (QPixmap::fromImage (image));
-//        if (!me->hasAlpha())
-//        {
-//            uchar* pu8DstData = (uchar*)alloca(me->width() * me->height());
-//            unsigned int i = 0;
-//            while (i < me->width() * me->height())
-//            {
-//                pu8DstData[i] =  !srcAndMaskPtr[i] ? 0xff : 0x00;
-//                ++i;
-//            }
-//            QBitmap bitmap = QBitmap::fromData (QSize (me->width(), me->height()),
-//                                                pu8DstData, QImage::Format_Mono);
-//            /* Set the mask to the pixmap */
-//            pixmap.setMask (bitmap);
-//        }
-//        printf ("has alpha %d- %d %d\n", me->hasAlpha(), me->width(), me->height());
         /* Set the new cursor */
-        QCursor cursor (pixmap,
+        QCursor cursor (QPixmap::fromImage (image),
                         me->xHot(), me->yHot());
         viewport()->setCursor (cursor);
         ok = true;
-        /*
-         * Qt3/Mac only supports black/white cursors and it offers no way
-         * to create your own cursors here unlike on X11 and Windows.
-         * Which means we're pretty much forced to do it our own way.
-         */
-//        int rc;
-//
-//        /* dispose of the old cursor. */
-//        if (!DarwinCursorIsNull (&mDarwinCursor))
-//        {
-//            rc = DarwinCursorDestroy (&mDarwinCursor);
-//            AssertRC (rc);
-//        }
-//
-//        /* create the new cursor */
-//        rc = DarwinCursorCreate (me->width(), me->height(), me->xHot(), me->yHot(), me->hasAlpha(),
-//                                 srcAndMaskPtr, srcShapePtr, &mDarwinCursor);
-//        AssertRC (rc);
-//        if (VBOX_SUCCESS (rc))
-//        {
-//            /** @todo check current mouse coordinates. */
-//            rc = DarwinCursorSet (&mDarwinCursor);
-//            AssertRC (rc);
-//        }
-//        ok = VBOX_SUCCESS (rc);
         NOREF (srcShapePtrScan);
 
 #else

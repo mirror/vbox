@@ -39,7 +39,6 @@
 
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
-# include "DarwinCursor.h"
 #endif
 
 class VBoxConsoleWnd;
@@ -290,8 +289,6 @@ private:
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
     UInt32 mDarwinKeyModifiers;
-    /** The darwin cursor handle (see DarwinCursor.h/.cpp). */
-    DARWINCURSOR mDarwinCursor;
 #endif
 
     VBoxFrameBuffer *mFrameBuf;

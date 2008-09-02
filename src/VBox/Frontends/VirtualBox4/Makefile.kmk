@@ -620,7 +620,6 @@ VirtualBox4_SOURCES.win += \
 
 VirtualBox4_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
-	src/darwin/DarwinCursor.cpp \
 	src/darwin/VBoxUtils-darwin.cpp \
 	src/VBoxFBQuartz2D.cpp
 #	src/darwin/VBoxAquaStyle.cpp
