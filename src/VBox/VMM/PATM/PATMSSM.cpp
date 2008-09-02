@@ -868,7 +868,14 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             *pFixup = (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC;
         }
         else
+        /* Note: rather assumptive! */
+        if (    *pFixup >= pVM->pVMGC
+            &&  *pFixup < pVM->pVMGC + 32)
+            *pFixup = pVM->pVMGC + RT_OFFSETOF(VM, fForcedActions);
+        else
             AssertMsgFailed(("Unexpected fixup value %x\n", *pFixup));
+
+        AssertCompile(RT_OFFSETOF(VM, fForcedActions) < 32);
         break;
     }
 
