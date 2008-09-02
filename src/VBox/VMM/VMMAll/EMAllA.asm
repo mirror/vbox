@@ -876,7 +876,7 @@ BEGINPROC   EMEmulateLockCmpXchg
 
 %ifdef RT_ARCH_AMD64
     cmp     al, 8
-    je short .do_qword                  ; 4 bytes variant
+    je short .do_qword                  ; 8 bytes variant
 %endif
     cmp     al, 4
     je short .do_dword                  ; 4 bytes variant
@@ -963,7 +963,7 @@ BEGINPROC   EMEmulateCmpXchg
 
 %ifdef RT_ARCH_AMD64
     cmp     al, 8
-    je short .do_qword                  ; 4 bytes variant
+    je short .do_qword                  ; 8 bytes variant
 %endif
     cmp     al, 4
     je short .do_dword                  ; 4 bytes variant
