@@ -988,7 +988,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
         <source>C&amp;heck for a new version...</source>
-        <translation>&amp;Überprüfe auf neue Version...</translation>
+        <translation>Überprüfung auf &amp;Update...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
