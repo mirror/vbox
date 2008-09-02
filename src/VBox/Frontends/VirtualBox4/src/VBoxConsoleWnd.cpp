@@ -2725,7 +2725,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
             QDir::convertSeparators (src1), QDir::convertSeparators (src2));
         if (rc == QIMessageBox::Yes)
         {
-            QString url = QString ("http://www.virtualbox.org/download/%1/")
+            QString url = QString ("http://download.virtualbox.org/virtualbox/%1/")
                                    .arg (vbox.GetVersion().remove ("_OSE")) + name;
             QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
                                    .absoluteFilePath (name);
