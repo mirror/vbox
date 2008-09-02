@@ -704,7 +704,7 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
 
     pCtx->trHid.u32Limit            = 0xffff;
     pCtx->trHid.Attr.n.u1Present    = 1;
-    pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_286_TSS_BUSY;
+    pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
     pCtx->dr6                       = UINT32_C(0xFFFF0FF0);
     pCtx->dr7                       = 0x400;
@@ -714,8 +714,6 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
 
     /* Init PAT MSR */
     pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
-
-    pCtx->msrEFER                   = 0;
 }
 
 
