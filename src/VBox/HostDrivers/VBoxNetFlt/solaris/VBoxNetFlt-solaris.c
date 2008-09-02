@@ -396,19 +396,6 @@ int _fini(void)
     int rc;
     LogFlow((DEVICE_NAME ":_fini\n"));
 
-#if 0
-    /*
-     * First check if Detach has been called and thus unloaded the correct way.
-     * This fixes the boot-up auto-unload problem where Solaris silently unloads
-     * us without calling detach which would wrongly succeed.
-     */
-    if (g_VBoxNetFltSolarisMtx == NIL_RTSEMFASTMUTEX)
-    {
-        LogRel((DEVICE_NAME ":_fini - cannot unload now!\n"));
-        return EBUSY;
-    }
-#endif
-
     /*
      * Undo the work done during start (in reverse order).
      */
