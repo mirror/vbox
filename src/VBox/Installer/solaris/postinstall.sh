@@ -30,11 +30,12 @@ fi
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
     echo "Configuring VirtualBox kernel module..."
-    /opt/VirtualBox/vboxdrv.sh restart silentunload
-    
+    /opt/VirtualBox/vboxdrv.sh stopall silentunload
+    /opt/VirtualBox/vboxdrv.sh start
+
     echo "Configuring VirtualBox NetFilter kernel module..."
     if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
-        /opt/VirtualBox/vboxdrv.sh fltrestart silentunload
+        /opt/VirtualBox/vboxdrv.sh fltstart
     fi
 fi
 

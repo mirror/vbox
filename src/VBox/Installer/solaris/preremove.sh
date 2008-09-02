@@ -21,7 +21,7 @@ echo "Sun xVM VirtualBox - preremove script"
 echo "This script will unload the VirtualBox kernel module..."
 
 # vboxdrv.sh would've been installed, we just need to call it.
-/opt/VirtualBox/vboxdrv.sh stop
+/opt/VirtualBox/vboxdrv.sh stopall
 
 # remove /dev/vboxdrv
 currentzone=`zonename`
