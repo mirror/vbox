@@ -137,7 +137,7 @@ def cmdExistingVm(ctx,mach,cmd):
     ops={'pause' :     lambda: console.pause(),
          'resume':     lambda: console.resume(),
          'powerdown':  lambda: console.powerDown(),
-         'stats':      lambda: guestStats(ctx, console.guest)
+         'stats':      lambda: guestStats(ctx, console.guest),
          }
     ops[cmd]()
     session.close()
@@ -166,8 +166,6 @@ def argsToMach(ctx,args):
     if m == None:
         print "Machine '%s' is unknown, use list command to find available machines" %(id)
     return m
-
-
 
 def helpCmd(ctx, args):
     if len(args) == 1:
@@ -251,6 +249,30 @@ def statsCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'stats')
     return 0
 
+def setvarCmd(ctx, args):
+    if (len(args) < 4):
+        print "usage: setvar [vmname|uuid] expr value"
+        return 0
+    mach = argsToMach(ctx,args) 
+    if mach == None:
+        return 0
+    vbox = ctx['vb']
+    session = ctx['mgr'].getSessionObject(vbox)
+    vbox.openSession(session, mach.id)
+    mach = session.machine
+    expr = 'mach.'+args[2]+' = '+args[3]
+    print "Executing",expr
+    try:
+        #mach.BIOSSettings.IOAPICEnabled = True
+        exec expr
+    except Exception, e:
+        print 'failed: ',e
+        if g_verbose:
+            traceback.print_exc()
+    mach.saveSettings()
+    session.close()
+    return 0
+
 def quitCmd(ctx, args):
     return 1
 
@@ -297,6 +319,7 @@ commands = {'help':['Prints help information', helpCmd],
             'info':['Shows info on machine', infoCmd],
             'aliases':['Shows aliases', aliasesCmd],
             'verbose':['Toggle verbosity', verboseCmd],
+            'setvar':['Set VMs variable: "setvar Fedora BIOSSettings.ACPIEnabled True"', setvarCmd],
             'quit':['Exits', quitCmd],
             'host':['Show host information', hostCmd]}
 
