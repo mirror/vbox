@@ -682,7 +682,7 @@ static int VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp)
     PSUPDRVSESSION      pSession;
     Log(("VBoxDrvLinuxCreate: pFilp=%p pid=%d/%d %s\n", pFilp, RTProcSelf(), current->pid, current->comm));
 
-#ifndef VBOX_WITH_HARDENING
+#if 0 /** @todo test this: #ifdef VBOX_WITH_HARDENING */
     /*
      * Only root is allowed to access the device, enforce it!
      */
