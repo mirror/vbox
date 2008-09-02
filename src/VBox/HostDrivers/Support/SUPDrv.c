@@ -183,7 +183,11 @@ static SUPFUNC g_aFunctions[] =
     { "RTSemEventMultiSignal",                  (void *)RTSemEventMultiSignal },
     { "RTSemEventMultiReset",                   (void *)RTSemEventMultiReset },
     { "RTSemEventMultiWait",                    (void *)RTSemEventMultiWait },
+#ifdef SUPDRV_WITH_UNWIND_HACK
+    { "RTSemEventMultiWaitNoResume",            (void *)supdrvNtWrapRTSemEventMultiWaitNoResume },
+#else
     { "RTSemEventMultiWaitNoResume",            (void *)RTSemEventMultiWaitNoResume },
+#endif
     { "RTSemEventMultiDestroy",                 (void *)RTSemEventMultiDestroy },
     { "RTSpinlockCreate",                       (void *)RTSpinlockCreate },
     { "RTSpinlockDestroy",                      (void *)RTSpinlockDestroy },
@@ -1115,7 +1119,11 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
                 /* execute */
                 if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
+#ifdef SUPDRV_WITH_UNWIND_HACK
+                    pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
+#else
                     pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
+#endif
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
             }
@@ -1129,7 +1137,11 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
                 /* execute */
                 if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
+#ifdef SUPDRV_WITH_UNWIND_HACK
+                    pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
+#else
                     pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
+#endif
                 else
                     pReq->Hdr.rc = VERR_WRONG_ORDER;
             }
