@@ -17,6 +17,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/*
+ * Sun GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
+
 /* Tags used in this file:
  *
  * FIXME : obvious
@@ -147,7 +157,7 @@ int pxe_initialise_nic ( void ) {
 		DBG ( " probing for any NIC" );
 		nic.dev.how_probe = PROBE_FIRST;
 	}
-	
+
 	/* Call probe routine to bring up the NIC */
 	if ( eth_probe ( &nic.dev ) != PROBE_WORKED ) {
 		DBG ( " failed" );
@@ -399,7 +409,7 @@ PXENV_EXIT_t pxenv_undi_transmit ( t_PXENV_UNDI_TRANSMIT *undi_transmit ) {
 
 	/* Send the packet */
 	eth_transmit ( dest, type, length, data );
-	
+
 	undi_transmit->Status = PXENV_STATUS_SUCCESS;
 	return PXENV_EXIT_SUCCESS;
 }
@@ -560,10 +570,10 @@ PXENV_EXIT_t pxenv_undi_get_mcast_address ( t_PXENV_UNDI_GET_MCAST_ADDRESS
 PXENV_EXIT_t pxenv_undi_get_nic_type ( t_PXENV_UNDI_GET_NIC_TYPE
 				       *undi_get_nic_type ) {
 	struct dev *dev = &nic.dev;
-	
+
 	DBG ( "PXENV_UNDI_GET_NIC_TYPE" );
 	ENSURE_READY ( undi_get_nic_type );
-	
+
 	if ( dev->to_probe == PROBE_PCI ) {
 		struct pci_device *pci = &dev->state.pci.dev;
 
@@ -645,7 +655,7 @@ PXENV_EXIT_t pxenv_undi_isr ( t_PXENV_UNDI_ISR *undi_isr ) {
 		undi_isr->Status = PXENV_STATUS_UNDI_INVALID_STATE;
 		return PXENV_EXIT_FAILURE;
 	}
-	
+
 	/* Just in case some idiot actually looks at these fields when
 	 * we weren't meant to fill them in...
 	 */
@@ -817,7 +827,7 @@ PXENV_EXIT_t pxenv_tftp_open ( t_PXENV_TFTP_OPEN *tftp_open ) {
 	ENSURE_READY ( tftp_open );
 
 	/* Change server address if different */
-	if ( tftp_open->ServerIPAddress && 
+	if ( tftp_open->ServerIPAddress &&
 	     tftp_open->ServerIPAddress!=arptable[ARP_SERVER].ipaddr.s_addr ) {
 		memset(arptable[ARP_SERVER].node, 0, ETH_ALEN ); /* kill arp */
 		arptable[ARP_SERVER].ipaddr.s_addr=tftp_open->ServerIPAddress;
@@ -826,9 +836,9 @@ PXENV_EXIT_t pxenv_tftp_open ( t_PXENV_TFTP_OPEN *tftp_open ) {
 	/* Fill in request structure */
 	request.name = tftp_open->FileName;
 	request.port = ntohs(tftp_open->TFTPPort);
-#ifdef WORK_AROUND_BPBATCH_BUG        
-	/* Force use of port 69; BpBatch tries to use port 4 for some         
-	* bizarre reason.         */        
+#ifdef WORK_AROUND_BPBATCH_BUG
+	/* Force use of port 69; BpBatch tries to use port 4 for some
+	* bizarre reason.         */
 	request.port = TFTP_PORT;
 #endif
 	request.blksize = tftp_open->PacketSize;
@@ -893,7 +903,7 @@ PXENV_EXIT_t pxenv_tftp_read ( t_PXENV_TFTP_READ *tftp_read ) {
 	memcpy ( SEGOFF16_TO_PTR(tftp_read->Buffer), block.data, block.len );
 	DBG ( " %d to %hx:%hx", block.len, tftp_read->Buffer.segment,
 	      tftp_read->Buffer.offset );
- 
+
 	tftp_read->Status = PXENV_STATUS_SUCCESS;
 	return PXENV_EXIT_SUCCESS;
 }
@@ -1014,7 +1024,7 @@ int await_pxe_udp ( int ival __unused, void *ptr,
 		DBG ( " non-UDP" );
 		return 0;
 	}
-	
+
 	/* Check dest_ip */
 	if ( udp_read->dest_ip && ( udp_read->dest_ip != ip->dest.s_addr ) ) {
 		DBG ( " wrong dest IP (got %@, wanted %@)",
@@ -1088,12 +1098,12 @@ PXENV_EXIT_t pxenv_udp_write ( t_PXENV_UDP_WRITE *udp_write ) {
 	dst_port = ntohs(udp_write->dst_port);
 	DBG ( " %d->%@:%d (%d)", src_port, udp_write->ip, dst_port,
 	      udp_write->buffer_size );
-	
+
 	/* FIXME: we ignore the gateway specified, since we're
 	 * confident of being able to do our own routing.  We should
 	 * probably allow for multiple gateways.
 	 */
-	
+
 	/* Copy payload to packet buffer */
 	packet_size = ( (void*)&packet->payload - (void*)packet )
 		+ udp_write->buffer_size;
@@ -1197,7 +1207,7 @@ PXENV_EXIT_t pxenv_get_cached_info ( t_PXENV_GET_CACHED_INFO
         }
 #else /* !VBOX */
 	/* I don't think there's actually any way we can be called in
-	 * the middle of a DHCP request... 
+	 * the middle of a DHCP request...
 	 */
 	cached_info->opcode = BOOTP_REP;
 	/* We only have Ethernet drivers */
@@ -1224,7 +1234,7 @@ PXENV_EXIT_t pxenv_get_cached_info ( t_PXENV_GET_CACHED_INFO
 	/* Copy DHCP vendor options */
 	memcpy ( &cached_info->vendor.d, bootp_data.bootp_reply.bp_vend,
 		 sizeof(cached_info->vendor.d) );
-	
+
 	/* Copy to user-specified buffer, or set pointer to our buffer */
 	get_cached_info->BufferLimit = sizeof(*cached_info);
 	/* PXESPEC: says to test for Buffer == NULL *and* BufferSize =
@@ -1324,7 +1334,7 @@ PXENV_EXIT_t pxenv_undi_loader ( undi_loader_t *loader ) {
 	uint32_t loader_phys = virt_to_phys ( loader );
 
 	DBG ( "PXENV_UNDI_LOADER" );
-	
+
 	/* Set UNDI DS as our real-mode stack */
 	use_undi_ds_for_rm_stack ( loader->undi_ds );
 
@@ -1350,7 +1360,7 @@ PXENV_EXIT_t pxenv_undi_loader ( undi_loader_t *loader ) {
 
 	/* Install PXE stack to area specified by NBP */
 	install_pxe_stack ( VIRTUAL ( loader->undi_cs, 0 ) );
-	
+
 	/* Call pxenv_start_undi to set parameters.  Why the hell PXE
 	 * requires these parameters to be provided twice is beyond
 	 * the wit of any sane man.  Don't worry if it fails; the NBP
@@ -1365,7 +1375,7 @@ PXENV_EXIT_t pxenv_undi_loader ( undi_loader_t *loader ) {
 	/* Fill in addresses of !PXE and PXENV+ structures */
 	PTR_TO_SEGOFF16 ( &pxe_stack->pxe, loader->pxe_ptr );
 	PTR_TO_SEGOFF16 ( &pxe_stack->pxenv, loader->pxenv_ptr );
-	
+
 	loader->Status = PXENV_STATUS_SUCCESS;
 	return PXENV_EXIT_SUCCESS;
 }
@@ -1505,7 +1515,7 @@ PXENV_EXIT_t pxe_api_call ( int opcode, t_PXENV_ANY *params ) {
 	case PXENV_UNDI_LOADER:
 		ret = pxenv_undi_loader ( &params->loader );
 		break;
-		
+
 	default:
 		DBG ( "PXENV_UNKNOWN_%hx", opcode );
 		params->Status = PXENV_STATUS_UNSUPPORTED;
