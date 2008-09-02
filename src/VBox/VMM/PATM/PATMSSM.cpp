@@ -883,8 +883,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
 #ifdef LOG_ENABLED
             RTRCPTR oldFixup = *pFixup;
 #endif
-            /* very dirty assumptions about the cpuid patch */
-
+            /* very dirty assumptions about the cpuid patch and cpuid ordering. */
             switch(cCpuidFixup % 4)
             {
             case 0:
