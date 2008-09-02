@@ -435,9 +435,11 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
     Assert(patmInfo.ulCallDepth == 0 && pVM->patm.s.ulCallDepth == 0);
 
+    Log(("pPatchMemGC %VRv vs old %VRv\n", pVM->patm.s.pPatchMemGC, patmInfo.pPatchMemGC));
     Log(("pGCStateGC  %VRv vs old %VRv\n", pVM->patm.s.pGCStateGC, patmInfo.pGCStateGC));
     Log(("pGCStackGC  %VRv vs old %VRv\n", pVM->patm.s.pGCStackGC, patmInfo.pGCStackGC));
     Log(("pCPUMCtxGC  %VRv vs old %VRv\n", pVM->patm.s.pCPUMCtxGC, patmInfo.pCPUMCtxGC));
+    
 
     /** @note patch statistics are not restored. */
 
@@ -728,17 +730,17 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
         if (pRec->pSource && !PATMIsPatchGCAddr(pVM, pRec->pSource))
             break;
 
-        if (    patmInfo.pPatchMemGC + offset >= patmInfo.pGCStateGC 
-            &&  patmInfo.pPatchMemGC + offset <  patmInfo.pGCStateGC + sizeof(PATMGCSTATE))
+        if (    *pFixup >= patmInfo.pGCStateGC 
+            &&  *pFixup <  patmInfo.pGCStateGC + sizeof(PATMGCSTATE))
         {
-            LogFlow(("Changing absolute GCState from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStateGC) + pVM->patm.s.pGCStateGC));
+            LogFlow(("Changing absolute GCState at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStateGC) + pVM->patm.s.pGCStateGC));
             *pFixup = (*pFixup - patmInfo.pGCStateGC) + pVM->patm.s.pGCStateGC;
         }
         else
-        if (    patmInfo.pPatchMemGC + offset >= patmInfo.pCPUMCtxGC 
-            &&  patmInfo.pPatchMemGC + offset <  patmInfo.pCPUMCtxGC + sizeof(CPUMCTX))
+        if (    *pFixup >= patmInfo.pCPUMCtxGC 
+            &&  *pFixup <  patmInfo.pCPUMCtxGC + sizeof(CPUMCTX))
         {
-            LogFlow(("Changing absolute CPUMCTX from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC));
+            LogFlow(("Changing absolute CPUMCTX at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC));
 
             /* The CPUMCTX structure has completely changed, so correct the offsets too. */
             if (ulSSMVersion == PATM_SSM_VERSION_VER16)
@@ -750,123 +752,123 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
                  * function is not available in older gcc versions, at least not in gcc-3.3 */
                 if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr0))
                 {
-                    Log(("Changing dr0 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr0)));
+                    LogFlow(("Changing dr0 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr0)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr0);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr1))
                 {
-                    Log(("Changing dr1 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr1)));
+                    LogFlow(("Changing dr1 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr1)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr1);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr2))
                 {
-                    Log(("Changing dr2 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr2)));
+                    LogFlow(("Changing dr2 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr2)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr2);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr3))
                 {
-                    Log(("Changing dr3 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr3)));
+                    LogFlow(("Changing dr3 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr3)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr3);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr4))
                 {
-                    Log(("Changing dr4 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr4)));
+                    LogFlow(("Changing dr4 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr4)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr4);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr5))
                 {
-                    Log(("Changing dr5 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr5)));
+                    LogFlow(("Changing dr5 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr5)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr5);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr6))
                 {
-                    Log(("Changing dr6 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr6)));
+                    LogFlow(("Changing dr6 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr6)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr6);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr7))
                 {
-                    Log(("Changing dr7 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr7)));
+                    LogFlow(("Changing dr7 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr7)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr7);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr0))
                 {
-                    Log(("Changing cr0 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr0)));
+                    LogFlow(("Changing cr0 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr0)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr0);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr2))
                 {
-                    Log(("Changing cr2 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr2)));
+                    LogFlow(("Changing cr2 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr2)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr2);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr3))
                 {
-                    Log(("Changing cr3 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr3)));
+                    LogFlow(("Changing cr3 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr3)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr3);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr4))
                 {
-                    Log(("Changing cr4 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr4)));
+                    LogFlow(("Changing cr4 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr4)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr4);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, tr))
                 {
-                    Log(("Changing tr offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, tr)));
+                    LogFlow(("Changing tr offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, tr)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, ldtr))
                 {
-                    Log(("Changing ldtr offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, ldtr)));
+                    LogFlow(("Changing ldtr offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, ldtr)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, ldtr);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.pGdt))
                 {
-                    Log(("Changing pGdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, gdtr.pGdt)));
+                    LogFlow(("Changing pGdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, gdtr.pGdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, gdtr.pGdt);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.cbGdt))
                 {
-                    Log(("Changing cbGdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, gdtr.cbGdt)));
+                    LogFlow(("Changing cbGdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, gdtr.cbGdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, gdtr.cbGdt);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, idtr.pIdt))
                 {
-                    Log(("Changing pIdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, idtr.pIdt)));
+                    LogFlow(("Changing pIdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, idtr.pIdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, idtr.pIdt);
                 }
                 else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, idtr.cbIdt))
                 {
-                    Log(("Changing cbIdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, idtr.cbIdt)));
+                    LogFlow(("Changing cbIdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, idtr.cbIdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, idtr.cbIdt);
                 }
                 else
-                    AssertFailed();
+                    AssertMsgFailed(("Unexpected CPUMCTX offset %x\n", uCPUMOffset));
             }
             else
                 *pFixup = (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC;
         }
         else
-        if (    patmInfo.pPatchMemGC + offset >= patmInfo.pStatsGC 
-            &&  patmInfo.pPatchMemGC + offset <  patmInfo.pStatsGC + sizeof(CPUMCTX))
+        if (    *pFixup >= patmInfo.pStatsGC 
+            &&  *pFixup <  patmInfo.pStatsGC + sizeof(CPUMCTX))
         {
-            LogFlow(("Changing absolute Stats from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC));
+            LogFlow(("Changing absolute Stats at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC));
             *pFixup = (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC;
         }
         else
-        if (    patmInfo.pPatchMemGC + offset >= patmInfo.pGCStackGC 
-            &&  patmInfo.pPatchMemGC + offset <  patmInfo.pGCStackGC + PATM_STACK_TOTAL_SIZE)
+        if (    *pFixup >= patmInfo.pGCStackGC 
+            &&  *pFixup <  patmInfo.pGCStackGC + PATM_STACK_TOTAL_SIZE)
         {
-            LogFlow(("Changing absolute Stack from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStackGC) + pVM->patm.s.pGCStackGC));
+            LogFlow(("Changing absolute Stack at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStackGC) + pVM->patm.s.pGCStackGC));
             *pFixup = (*pFixup - patmInfo.pGCStackGC) + pVM->patm.s.pGCStackGC;
         }
         else
-        if (    patmInfo.pPatchMemGC + offset >= patmInfo.pPatchMemGC 
-            &&  patmInfo.pPatchMemGC + offset <  patmInfo.pPatchMemGC + patmInfo.cbPatchMem)
+        if (    *pFixup >= patmInfo.pPatchMemGC 
+            &&  *pFixup <  patmInfo.pPatchMemGC + patmInfo.cbPatchMem)
         {
-            LogFlow(("Changing absolute PatchMem from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC));
+            LogFlow(("Changing absolute PatchMem at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC));
             *pFixup = (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC;
         }
         else
-            AssertFailed();
+            AssertMsgFailed(("Unexpected fixup value %x\n", *pFixup));
         break;
     }
 
