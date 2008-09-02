@@ -159,6 +159,7 @@ typedef struct VBOXNETFLTINS
             /** The MAC address of the interface. */
             RTMAC Mac;
 # elif defined(RT_OS_WINDOWS)
+            /** pointer to the filter driver device context */
             PADAPT volatile pIfAdaptor;
 # else
 #  error "PORTME"
