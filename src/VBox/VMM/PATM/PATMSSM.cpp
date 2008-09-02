@@ -55,7 +55,7 @@
 #define PATM_SUBTRACT_PTR(a, b) *(uintptr_t *)&(a) = (uintptr_t)(a) - (uintptr_t)(b)
 #define PATM_ADD_PTR(a, b)      *(uintptr_t *)&(a) = (uintptr_t)(a) + (uintptr_t)(b)
 
-static void patmCorrectFixup(PVM pVM, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec, int32_t offset, RTRCPTR *pFixup);
+static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec, int32_t offset, RTRCPTR *pFixup);
 
 #ifdef VBOX_STRICT
 /**
@@ -284,6 +284,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     int  rc;
 
     if (    u32Version != PATM_SSM_VERSION
+        &&  u32Version != PATM_SSM_VERSION_VER16
 #ifdef PATM_WITH_NEW_SSM
         &&  u32Version != PATM_SSM_VERSION_GETPUTMEM)
 #else
@@ -610,7 +611,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                     pFixup        = (RTRCPTR *)rec.pRelocPos;
                 }
 
-                patmCorrectFixup(pVM, patmInfo, &pPatchRec->patch, &rec, offset, pFixup);
+                patmCorrectFixup(pVM, u32Version, patmInfo, &pPatchRec->patch, &rec, offset, pFixup);
             }
 
             rc = patmPatchAddReloc32(pVM, &pPatchRec->patch, rec.pRelocPos, rec.uType, rec.pSource, rec.pDest);
@@ -685,7 +686,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         pFixup = (RTRCPTR *)pRec->pRelocPos;
 
         /* Correct fixups that refer to PATM structures in the hypervisor region (their addresses might have changed). */
-        patmCorrectFixup(pVM, patmInfo, &pVM->patm.s.pGlobalPatchRec->patch, pRec, offset, pFixup);
+        patmCorrectFixup(pVM, u32Version, patmInfo, &pVM->patm.s.pGlobalPatchRec->patch, pRec, offset, pFixup);
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -705,13 +706,14 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
  *
  * @returns VBox status code.
  * @param   pVM             VM Handle.
+ * @param   ulSSMVersion    SSM version
  * @param   patmInfo        Saved PATM structure
  * @param   pPatch          Patch record
  * @param   pRec            Relocation record
  * @param   offset          Offset of referenced data/code
  * @param   pFixup          Fixup address
  */
-static void patmCorrectFixup(PVM pVM, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec, int32_t offset, RTRCPTR *pFixup)
+static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec, int32_t offset, RTRCPTR *pFixup)
 {
     int32_t delta = pVM->patm.s.pPatchMemGC - patmInfo.pPatchMemGC;
 
@@ -733,7 +735,75 @@ static void patmCorrectFixup(PVM pVM, PATM &patmInfo, PPATCHINFO pPatch, PRELOCR
             &&  patmInfo.pPatchMemGC + offset <  patmInfo.pCPUMCtxGC + sizeof(CPUMCTX))
         {
             LogFlow(("Changing absolute CPUMCTX from %VRv (%VRv) to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC));
-            *pFixup = (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC;
+
+            /* The CPUMCTX structure has completely changed, so correct the offsets too. */
+            if (ulSSMVersion == PATM_SSM_VERSION_VER16)
+            {
+                unsigned uCPUMOffset = *pFixup - patmInfo.pCPUMCtxGC;
+
+                switch(uCPUMOffset)
+                {
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr0):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr0);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr1):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr1);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr2):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr2);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr3):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr3);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr4):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr4);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr5):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr5);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr6):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr6);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, dr7):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr7);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, cr0):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr0);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, cr2):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr2);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, cr3):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr3);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, cr4):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr4);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, tr):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, ldtr):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, ldtr);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.pGdt):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, gdtr.pGdt);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.cbGdt):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, gdtr.cbGdt);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, idtr.pIdt):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, idtr.pIdt);
+                    break;
+                case RT_OFFSETOF(CPUMCTX_VER1_6, idtr.cbIdt):
+                    *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, idtr.cbIdt);
+                    break;
+                default:
+                    AssertFailed();
+                    break;
+                }
+            }
+            else
+                *pFixup = (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC;
         }
         else
         if (    patmInfo.pPatchMemGC + offset >= patmInfo.pStatsGC 
