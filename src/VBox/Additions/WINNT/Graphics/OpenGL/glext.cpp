@@ -2,7 +2,7 @@
  *
  * VirtualBox Windows NT/2000/XP guest OpenGL ICD
  *
- * OpenGL extensions 
+ * OpenGL extensions
  *
  * References:  http://oss.sgi.com/projects/ogl-sample/registry/
  *              http://icps.u-strasbg.fr/~marchesin/perso/extensions/
