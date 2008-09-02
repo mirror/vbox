@@ -532,39 +532,39 @@ void QIHotKeyEdit::clear()
 
 #if defined (Q_WS_WIN32)
 
-bool QIHotKeyEdit::winEvent (MSG *msg)
+bool QIHotKeyEdit::winEvent (MSG *aMsg, long* /* aResult */)
 {
-    if (!(msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN ||
-          msg->message == WM_KEYUP || msg->message == WM_SYSKEYUP ||
-          msg->message == WM_CHAR || msg->message == WM_SYSCHAR ||
-          msg->message == WM_DEADCHAR || msg->message == WM_SYSDEADCHAR ||
-          msg->message == WM_CONTEXTMENU))
+    if (!(aMsg->message == WM_KEYDOWN || aMsg->message == WM_SYSKEYDOWN ||
+          aMsg->message == WM_KEYUP || aMsg->message == WM_SYSKEYUP ||
+          aMsg->message == WM_CHAR || aMsg->message == WM_SYSCHAR ||
+          aMsg->message == WM_DEADCHAR || aMsg->message == WM_SYSDEADCHAR ||
+          aMsg->message == WM_CONTEXTMENU))
         return false;
 
     /* ignore if not a valid hot key */
-    if (!isValidKey (msg->wParam))
+    if (!isValidKey (aMsg->wParam))
         return false;
 
 #if 0
     LogFlow (("%WM_%04X: vk=%04X rep=%05d scan=%02X ext=%01d"
               "rzv=%01X ctx=%01d prev=%01d tran=%01d\n",
-              msg->message, msg->wParam,
-              (msg->lParam & 0xFFFF),
-              ((msg->lParam >> 16) & 0xFF),
-              ((msg->lParam >> 24) & 0x1),
-              ((msg->lParam >> 25) & 0xF),
-              ((msg->lParam >> 29) & 0x1),
-              ((msg->lParam >> 30) & 0x1),
-              ((msg->lParam >> 31) & 0x1)));
+              aMsg->message, aMsg->wParam,
+              (aMsg->lParam & 0xFFFF),
+              ((aMsg->lParam >> 16) & 0xFF),
+              ((aMsg->lParam >> 24) & 0x1),
+              ((aMsg->lParam >> 25) & 0xF),
+              ((aMsg->lParam >> 29) & 0x1),
+              ((aMsg->lParam >> 30) & 0x1),
+              ((aMsg->lParam >> 31) & 0x1)));
 #endif
 
-    if (msg->message == WM_KEYDOWN || msg->message == WM_SYSKEYDOWN)
+    if (aMsg->message == WM_KEYDOWN || aMsg->message == WM_SYSKEYDOWN)
     {
         /* determine platform-dependent key */
-        mKeyVal = qi_distinguish_modifier_vkey (msg->wParam);
+        mKeyVal = qi_distinguish_modifier_vkey (aMsg->wParam);
         /* determine symbolic name */
         TCHAR *str = new TCHAR [256];
-        if (::GetKeyNameText (msg->lParam, str, 256))
+        if (::GetKeyNameText (aMsg->lParam, str, 256))
         {
             mSymbName = QString::fromUtf16 (str);
         }
