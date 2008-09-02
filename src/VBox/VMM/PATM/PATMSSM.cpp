@@ -884,7 +884,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             RTRCPTR oldFixup = *pFixup;
 #endif
             /* very dirty assumptions about the cpuid patch and cpuid ordering. */
-            switch(cCpuidFixup % 4)
+            switch(cCpuidFixup & 3)
             {
             case 0:
                 *pFixup = CPUMGetGuestCpuIdDefGCPtr(pVM);
