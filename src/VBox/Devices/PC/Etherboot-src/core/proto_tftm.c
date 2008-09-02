@@ -1,6 +1,6 @@
 /**************************************************************************
 *
-*    proto_tftm.c -- Etherboot Multicast TFTP 
+*    proto_tftm.c -- Etherboot Multicast TFTP
 *    Written 2003-2003 by Timothy Legge <tlegge@rogers.com>
 *
 *    This program is free software; you can redistribute it and/or modify
@@ -17,8 +17,19 @@
 *    along with this program; if not, write to the Free Software
 *    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 *
-*    This code is based on the DOWNLOAD_PROTO_TFTM section of 
+*    This code is based on the DOWNLOAD_PROTO_TFTM section of
 *    Etherboot 5.3 core/nic.c and:
+*
+*    Anselm Martin Hoffmeister's previous proto_tftm.c multicast work
+*    Eric Biederman's proto_slam.c
+*
+*    REVISION HISTORY:
+*    ================
+*    09-07-2003	timlegge	Release Version, Capable of Multicast Booting
+*    08-30-2003	timlegge	Initial version, Assumes consecutive blocks
+*
+*    Indent Options: indent -kr -i8
+***************************************************************************/
 
 /*
  * Sun GPL Disclaimer: For the avoidance of doubt, except that if any license choice
@@ -28,21 +39,6 @@
  * that GPLv2 or any later version may be used, or where a choice of which version
  * of the GPL is applied is otherwise unspecified.
  */
-*    
-*    Anselm Martin Hoffmeister's previous proto_tftm.c multicast work
-*    Eric Biederman's proto_slam.c
-*
-*    $Revision$
-*    $Author$
-*    $Date$
-*
-*    REVISION HISTORY:
-*    ================
-*    09-07-2003	timlegge	Release Version, Capable of Multicast Booting
-*    08-30-2003	timlegge	Initial version, Assumes consecutive blocks
-*
-*    Indent Options: indent -kr -i8
-***************************************************************************/
 
 #ifdef DOWNLOAD_PROTO_TFTM
 #include "etherboot.h"
