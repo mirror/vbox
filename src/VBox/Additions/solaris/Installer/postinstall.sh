@@ -25,6 +25,14 @@ vboxadditions_path="/opt/VirtualBoxAdditions"
 # vboxguest.sh would've been installed, we just need to call it.
 $vboxadditions_path/vboxguest.sh restart silentunload
 
+# get what ISA the guest is running
+cputype=`isainfo -k`
+isadir=""
+if test "$cputype" = "amd64"; then
+    isadir="amd64"
+fi
+
+
 # suid permissions for timesync
 chmod 04755 $vboxadditions_path/VBoxService
 chmod a+x $vboxadditions_path/VBoxClient
@@ -74,8 +82,8 @@ if test -z "$vboxmouse_src"; then
     retval=2
 else
     echo "Configuring Xorg..."
-    vboxmouse_dest="/usr/X11/lib/modules/input/vboxmouse_drv.so"
-    vboxvideo_dest="/usr/X11/lib/modules/input/vboxvideo_drv.so"
+    vboxmouse_dest="/usr/X11/lib/modules/input/$isadir/vboxmouse_drv.so"
+    vboxvideo_dest="/usr/X11/lib/modules/input/$isadir/vboxvideo_drv.so"
     /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
     /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
     cp "$vboxmouse_src" "$vboxmouse_dest"
