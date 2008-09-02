@@ -560,30 +560,33 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
     typedef std::map <std::string, std::string> NICMap;
     typedef std::pair <std::string, std::string> NICPair;
     static NICMap SolarisNICMap;
-    SolarisNICMap.insert(NICPair("bge", "Broadcom BCM57xx Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("ce", "Cassini Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("chxge", "Chelsio Ethernet"));
-    SolarisNICMap.insert(NICPair("dmfe", "Davicom Fast Ethernet"));
-    SolarisNICMap.insert(NICPair("dnet", "DEC 21040/41 21140 Ethernet"));
-    SolarisNICMap.insert(NICPair("e1000", "Intel PRO/1000 Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("e1000g", "Intel PRO/1000 Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("elx", "3COM EtherLink III Ethernet"));
-    SolarisNICMap.insert(NICPair("elxl", "3COM Ethernet"));
-    SolarisNICMap.insert(NICPair("elxl", "eri Fast Ethernet"));
-    SolarisNICMap.insert(NICPair("ge", "GEM Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("hme", "SUNW,hme Fast-Ethernet"));
-    SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("iprb", "Intel 82557/58/59 Ethernet"));
-    SolarisNICMap.insert(NICPair("nge", "nVidia Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("pcelx", "3COM EtherLink III PCMCIA Ethernet"));
-    SolarisNICMap.insert(NICPair("pcn", "AMD PCnet Ethernet"));
-    SolarisNICMap.insert(NICPair("qfe", "SUNW,qfe Quad Fast-Ethernet"));
-    SolarisNICMap.insert(NICPair("rge", "Realtek Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("rtls", "Realtek 8139 Fast Ethernet"));
-    SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432)   Ethernet"));
-    SolarisNICMap.insert(NICPair("xge", "Neterior Xframe Gigabit Ethernet"));
-    SolarisNICMap.insert(NICPair("xge", "Neterior Xframe 10Gigabit Ethernet"));
+    if (SolarisNICMap.empty())
+    {
+        SolarisNICMap.insert(NICPair("bge", "Broadcom BCM57xx Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("ce", "Cassini Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("chxge", "Chelsio Ethernet"));
+        SolarisNICMap.insert(NICPair("dmfe", "Davicom Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("dnet", "DEC 21040/41 21140 Ethernet"));
+        SolarisNICMap.insert(NICPair("e1000", "Intel PRO/1000 Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("e1000g", "Intel PRO/1000 Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("elx", "3COM EtherLink III Ethernet"));
+        SolarisNICMap.insert(NICPair("elxl", "3COM Ethernet"));
+        SolarisNICMap.insert(NICPair("elxl", "eri Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("ge", "GEM Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("hme", "SUNW,hme Fast-Ethernet"));
+        SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("iprb", "Intel 82557/58/59 Ethernet"));
+        SolarisNICMap.insert(NICPair("nge", "nVidia Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("pcelx", "3COM EtherLink III PCMCIA Ethernet"));
+        SolarisNICMap.insert(NICPair("pcn", "AMD PCnet Ethernet"));
+        SolarisNICMap.insert(NICPair("qfe", "SUNW,qfe Quad Fast-Ethernet"));
+        SolarisNICMap.insert(NICPair("rge", "Realtek Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("rtls", "Realtek 8139 Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432)   Ethernet"));
+        SolarisNICMap.insert(NICPair("xge", "Neterior Xframe Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("xge", "Neterior Xframe 10Gigabit Ethernet"));
+    }
 
     int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (Sock > 0)
