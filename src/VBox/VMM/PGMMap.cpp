@@ -738,7 +738,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
     if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
         return;
 
-    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE);
+    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 
     /*
      * Init the page tables and insert them into the page directories.
@@ -1043,7 +1043,7 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
     if (pVM->pgm.s.fMappingsFixed)
         return false;
 
-    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE);
+    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 
     /*
      * Iterate mappings.
@@ -1075,7 +1075,8 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
         }
     }
     else
-    if (PGMGetGuestMode(pVM) == PGMMODE_PAE)
+    if (   PGMGetGuestMode(pVM) == PGMMODE_PAE
+        || PGMGetGuestMode(pVM) == PGMMODE_PAE_NX)
     {
         for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
         {
