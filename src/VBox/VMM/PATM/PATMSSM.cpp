@@ -652,7 +652,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             AssertRCReturn(rc, rc);
         }
 
-#ifdef LOG_ENABLED
+#if 0 /* can fail def LOG_ENABLED */
         if (    pPatchRec->patch.uState != PATCH_REFUSED
             &&  !(pPatchRec->patch.flags & PATMFL_INT3_REPLACEMENT))
         {
