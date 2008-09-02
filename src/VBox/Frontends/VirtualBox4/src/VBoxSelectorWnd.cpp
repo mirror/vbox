@@ -974,9 +974,6 @@ void VBoxSelectorWnd::vmStart()
 
     session.Close();
 
-#ifdef Q_WS_MAC
-    item->switchTo();
-#endif /* Q_WS_MAC */
 #else // !VBOX_GUI_SEPARATE_VM_PROCESS
 
     if (!vboxGlobal().startMachine (id))
