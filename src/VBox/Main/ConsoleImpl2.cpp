@@ -1224,8 +1224,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     const char *pszTrunk = szTrunk;
 
 # elif defined(RT_OS_SOLARIS) 
-                    /* The name is on the form BSD format 'ifX'; use as-is. */
-                    const char *pszTrunk = pszHifName;
+                    /* The name is on the form BSD format 'ifX - long name, chop it off at space. */
+                    char szTrunk[8];
+                    strncpy(szTrunk, pszHifName, sizeof(szTrunk));
+                    char *pszSpace = (char *)memchr(szTrunk, ' ', sizeof(szTrunk));
+                    if (!pszSpace)
+                    {
+                        hrc = networkAdapter->Detach();                              H();
+                        return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                          N_("Malformed host interface networking name '%ls'"),
+                                          HifName.raw());
+                    }
+                    *pszSpace = '\0';
+                    const char *pszTrunk = szTrunk;
 # else 
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
