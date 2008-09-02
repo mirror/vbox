@@ -299,7 +299,7 @@ private:
     QRect mNormalGeo;
     QSize prev_min_size;
 
-#ifdef Q_WS_WIN32
+#ifdef Q_WS_WIN
     QRegion mPrevRegion;
 #endif
 
