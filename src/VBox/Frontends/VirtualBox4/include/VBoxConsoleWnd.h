@@ -82,6 +82,8 @@ public:
 
     void setMask (const QRegion &aRegion);
 
+    void clearMask();
+
 #ifdef Q_WS_MAC
     CGImageRef dockImageState () const;
 #endif
