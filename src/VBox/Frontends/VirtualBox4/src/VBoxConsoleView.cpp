@@ -1174,7 +1174,10 @@ bool VBoxConsoleView::event (QEvent *e)
                 }
                 else if (!mLastVisibleRegion.isEmpty() &&
                          !mMainWnd->isTrueSeamless())
+                {
                     mLastVisibleRegion = QRegion();
+                    mMainWnd->clearMask();
+                }
                 return true;
             }
 

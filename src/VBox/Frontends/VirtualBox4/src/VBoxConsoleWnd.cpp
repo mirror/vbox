@@ -2139,7 +2139,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         if (aSeamless)
             setViewInSeamlessMode (scrGeo);
 
-#ifdef Q_WS_WIN32
+#ifdef Q_WS_WIN
         mPrevRegion = dtw->screenGeometry (this);
 #endif
 
