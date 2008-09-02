@@ -26,7 +26,9 @@
 #include "COMDefs.h"
 
 #include "QIWithRetranslateUI.h"
+
 #include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
 
 /* Qt includes */
 #include <QMainWindow>
@@ -125,12 +127,8 @@ private:
     QAction *vmPauseAction;
     QAction *vmRefreshAction;
     QAction *vmShowLogsAction;
-    QAction *helpContentsAction;
-    QAction *helpWebAction;
-    QAction *helpRegisterAction;
-    QAction *helpUpdateAction;
-    QAction *helpAboutAction;
-    QAction *helpResetMessagesAction;
+
+    VBoxHelpActions mHelpActions;
 
     /* The vm list view/model */
     VBoxVMListView *mVMListView;

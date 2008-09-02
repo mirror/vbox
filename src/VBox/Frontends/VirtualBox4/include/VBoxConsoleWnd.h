@@ -24,14 +24,16 @@
 #define __VBoxConsoleWnd_h__
 
 #include "COMDefs.h"
+
 #include "QIWithRetranslateUI.h"
+
+#include "VBoxProblemReporter.h"
 
 /* Qt includes */
 #include <QMainWindow>
 #include <QMap>
 #include <QColor>
 #include <QDialog>
-
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
@@ -238,12 +240,7 @@ private:
 #endif
 
     // Help actions
-    QAction *helpContentsAction;
-    QAction *helpWebAction;
-    QAction *helpRegisterAction;
-    QAction *helpUpdateAction;
-    QAction *helpAboutAction;
-    QAction *helpResetMessagesAction;
+    VBoxHelpActions mHelpActions;
 
     // Machine popup menus
     VBoxSwitchMenu *vmAutoresizeMenu;

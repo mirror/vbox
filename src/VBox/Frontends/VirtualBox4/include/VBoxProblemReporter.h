@@ -29,13 +29,69 @@
 /* Qt icludes */
 #include <QObject>
 
+class QAction;
+class QMenu;
+
+// VBoxHelpActions class
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Help Menu action container.
+ *
+ * Contains actions for all help menu items and methods to insert them to a
+ * QMenu and to perform NLS string translation.
+ *
+ * Instances of this class are to be created as members of QWidget classes that
+ * need a Help menu. The containing class usually passes itself as an argument
+ * to the #setup() method and then calls #addTo() to add actions to its Help
+ * menu. The #retranslateUi() method is called when it is necessary to
+ * re-translate all action NLS according to the current language.
+ */
+struct VBoxHelpActions
+{
+    VBoxHelpActions()
+        : contentsAction (NULL), webAction (NULL)
+        , resetMessagesAction (NULL), registerAction (NULL)
+        , updateAction (NULL), aboutAction (NULL)
+        {}
+
+    void setup (QObject *aParent);
+    void addTo (QMenu *aMenu);
+    void retranslateUi();
+
+    QAction *contentsAction;
+    QAction *webAction;
+    QAction *resetMessagesAction;
+    QAction *registerAction;
+    QAction *updateAction;
+    QAction *aboutAction;
+};
+
+// VBoxProblemReporter class
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * The VBoxProblemReporter class is a central place to handle all problem/error
+ * situations that happen during application runtime and require the user's
+ * attention.
+ *
+ * The role of this class is to describe the problem and/or the cause of the
+ * error to the user and give him the opportunity to select an action (when
+ * appropriate).
+ *
+ * Every problem sutiation has its own (correspondingly named) method in this
+ * class that takes a list of arguments necessary to describe the situation and
+ * to provide the appropriate actions. The method then returns the choice to the
+ * caller.
+ */
 class VBoxProblemReporter : public QObject
 {
     Q_OBJECT
 
 public:
 
-    enum Type {
+    enum Type
+    {
         Info = 1,
         Question,
         Warning,
@@ -43,7 +99,9 @@ public:
         Critical,
         GuruMeditation
     };
-    enum {
+
+    enum
+    {
         AutoConfirmed = 0x8000
     };
 
@@ -338,6 +396,10 @@ private:
                                       HRESULT aWrapperRC = S_OK);
 };
 
+/**
+ * Shortcut to the static VBoxProblemReporter::instance() method, for
+ * convenience.
+ */
 inline VBoxProblemReporter &vboxProblem() { return VBoxProblemReporter::instance(); }
 
 #endif // __VBoxProblemReporter_h__
