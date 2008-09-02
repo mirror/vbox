@@ -745,84 +745,101 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             {
                 unsigned uCPUMOffset = *pFixup - patmInfo.pCPUMCtxGC;
 
-                switch(uCPUMOffset)
+                /* ''case RT_OFFSETOF()'' does not work as gcc refuses to use & as a constant expression.
+                 * Defining RT_OFFSETOF as __builtin_offsetof for gcc would make this possible. But this
+                 * function is not available in older gcc versions, at least not in gcc-3.3 */
+                if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr0))
                 {
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr0):
                     Log(("Changing dr0 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr0)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr0);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr1):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr1))
+                {
                     Log(("Changing dr1 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr1)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr1);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr2):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr2))
+                {
                     Log(("Changing dr2 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr2)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr2);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr3):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr3))
+                {
                     Log(("Changing dr3 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr3)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr3);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr4):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr4))
+                {
                     Log(("Changing dr4 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr4)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr4);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr5):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr5))
+                {
                     Log(("Changing dr5 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr5)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr5);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr6):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr6))
+                {
                     Log(("Changing dr6 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr6)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr6);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, dr7):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, dr7))
+                {
                     Log(("Changing dr7 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, dr7)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, dr7);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, cr0):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr0))
+                {
                     Log(("Changing cr0 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr0)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr0);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, cr2):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr2))
+                {
                     Log(("Changing cr2 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr2)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr2);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, cr3):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr3))
+                {
                     Log(("Changing cr3 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr3)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr3);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, cr4):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, cr4))
+                {
                     Log(("Changing cr4 offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, cr4)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, cr4);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, tr):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, tr))
+                {
                     Log(("Changing tr offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, tr)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, tr);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, ldtr):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, ldtr))
+                {
                     Log(("Changing ldtr offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, ldtr)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, ldtr);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.pGdt):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.pGdt))
+                {
                     Log(("Changing pGdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, gdtr.pGdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, gdtr.pGdt);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.cbGdt):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, gdtr.cbGdt))
+                {
                     Log(("Changing cbGdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, gdtr.cbGdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, gdtr.cbGdt);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, idtr.pIdt):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, idtr.pIdt))
+                {
                     Log(("Changing pIdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, idtr.pIdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, idtr.pIdt);
-                    break;
-                case RT_OFFSETOF(CPUMCTX_VER1_6, idtr.cbIdt):
+                }
+                else if (uCPUMOffset == (unsigned)RT_OFFSETOF(CPUMCTX_VER1_6, idtr.cbIdt))
+                {
                     Log(("Changing cbIdt offset from %x to %x\n", uCPUMOffset, RT_OFFSETOF(CPUMCTX, idtr.cbIdt)));
                     *pFixup = pVM->patm.s.pCPUMCtxGC + RT_OFFSETOF(CPUMCTX, idtr.cbIdt);
-                    break;
-                default:
-                    AssertFailed();
-                    break;
                 }
+                else
+                    AssertFailed();
             }
             else
                 *pFixup = (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC;
