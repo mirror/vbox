@@ -32,19 +32,23 @@ VBoxVideo.Display  = 11 ; system32
 [Manufacturer]
 ;x86   %SUN%=VBoxVideo
 ;amd64 %SUN%=VBoxVideo, NTamd64
+;amd64 %SUN%=VBoxVideo, NTamd64.6.0
 
 ;x86   [VBoxVideo]
 ;amd64 [VBoxVideo.NTamd64]
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
+;amd64 [VBoxVideo.NTamd64.6.0]
+;amd64 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
+
 [VBoxVideo]
 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
 
 [VBoxVideo.Miniport]
-VBoxVideo.sys
+VBoxVideo.sys,,,0x100
 
 [VBoxVideo.Display]
-VBoxDisp.dll
+VBoxDisp.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
 [VBoxVideo.Services]
 AddService=VBoxVideo, 0x00000002, vboxvideo_Service_Inst, vboxvideo_EventLog_Inst
