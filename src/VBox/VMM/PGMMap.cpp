@@ -303,6 +303,11 @@ PGMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
 {
     Log(("PGMR3MappingsFix: GCPtrBase=%#x cb=%#x\n", GCPtrBase, cb));
 
+    /* Ignore the additions mapping fix call in VT-x/AMD-V. */
+    if (    pVM->pgm.s.fMappingsFixed
+        &&  HWACCMR3IsActive(pVM))
+        return VINF_SUCCESS;
+
     /*
      * This is all or nothing at all. So, a tiny bit of paranoia first.
      */
@@ -434,6 +439,11 @@ PGMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
 PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
 {
     Log(("PGMR3MappingsUnfix: fMappingsFixed=%d\n", pVM->pgm.s.fMappingsFixed));
+
+    /* Refuse in VT-x/AMD-V mode. */
+    if (HWACCMR3IsActive(pVM))
+        return VINF_SUCCESS;
+
     pVM->pgm.s.fMappingsFixed    = false;
     pVM->pgm.s.GCPtrMappingFixed = 0;
     pVM->pgm.s.cbMappingFixed    = 0;
