@@ -2066,6 +2066,7 @@ static int vboxNetFltSolarisIOWorker(PVBOXNETFLTINS pThis, queue_t *pQueue, vbox
             pMsg = pRawMsg;
         else
         {
+            freemsg(pMsg);
             LogRel((DEVICE_NAME ":vboxNetFltSolarisIOWorker invalid message!\n"));
             return VERR_GENERAL_FAILURE;
         }
@@ -2078,7 +2079,9 @@ static int vboxNetFltSolarisIOWorker(PVBOXNETFLTINS pThis, queue_t *pQueue, vbox
     if (vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
         fSrc = INTNETTRUNKDIR_HOST;
 
+#if 0
     vboxNetFltSolarisAnalyzeMBlk(pMsg);
+#endif
 
     /*
      * Don't route ARP stream packets from the wire up the internal network,
@@ -2103,7 +2106,7 @@ static int vboxNetFltSolarisIOWorker(PVBOXNETFLTINS pThis, queue_t *pQueue, vbox
 
     if (fDropIt)
     {
-        LogFlow((DEVICE_NAME ":Dropping packet consumed by internal network.\n"));
+        LogFlow((DEVICE_NAME ":Packet consumed by internal network.\n"));
         freemsg(pOrigMsg);
         freemsg(pMsg);
     }
