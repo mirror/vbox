@@ -1524,10 +1524,8 @@ void VBoxProblemReporter::showUpdateSuccess (QWidget *aParent,
                                              const QString &aLink)
 {
     message (aParent, Info,
-             tr ("<p>There is a new version of VirtualBox found on the "
-                 "VirtualBox web-site: <b>%1</b>.</p>"
-                 "<p>If you want to download and install this version "
-                 "please proceed with the following link:</p>"
+             tr ("<p>A new version of VirtualBox has been released! Version <b>%1</b> is available at <a href=\"http://www.virtualbox.org/\">virtualbox.org</a>.</p>"
+                 "<p>You can download this version from this direct link:</p>"
                  "<p><a href=%2>%3</a></p>")
                  .arg (aVersion, aLink, aLink));
 }
