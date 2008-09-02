@@ -905,7 +905,9 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
         else
             AssertMsgFailed(("Unexpected fixup value %x\n", *pFixup));
 
+#ifdef RT_OS_WINDOWS
         AssertCompile(RT_OFFSETOF(VM, fForcedActions) < 32);
+#endif
         break;
     }
 
