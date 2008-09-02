@@ -155,6 +155,10 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
                     Assert(pAsmRecord->uReloc[i+1] == 0);
 #endif
 
+                /**
+                 * BE VERY CAREFUL WITH THESE FIXUPS. TAKE INTO ACCOUNT THAT PROBLEMS MAY ARISE WHEN RESTORING A SAVED STATE WITH
+                 * A DIFFERENT HYPERVISOR LAYOUT.
+                 */
                 switch (pAsmRecord->uReloc[i])
                 {
                 case PATM_VMFLAGS:
@@ -230,18 +234,22 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
                     break;
 
                 case PATM_CPUID_STD_PTR:
+                    /* @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMGetGuestCpuIdStdGCPtr(pVM);
                     break;
 
                 case PATM_CPUID_EXT_PTR:
+                    /* @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMGetGuestCpuIdExtGCPtr(pVM);
                     break;
 
                 case PATM_CPUID_CENTAUR_PTR:
+                    /* @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMGetGuestCpuIdCentaurGCPtr(pVM);
                     break;
 
                 case PATM_CPUID_DEF_PTR:
+                    /* @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMGetGuestCpuIdDefGCPtr(pVM);
                     break;
 
@@ -277,6 +285,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
                     break;
 
                 case PATM_VM_FORCEDACTIONS:
+                    /* @todo dirty assumptions when correcting this fixup during saved state loading. */
                     dest = pVM->pVMGC + RT_OFFSETOF(VM, fForcedActions);
                     break;
 
