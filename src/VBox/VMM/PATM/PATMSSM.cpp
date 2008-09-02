@@ -871,7 +871,38 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
         /* Note: rather assumptive! */
         if (    *pFixup >= pVM->pVMGC
             &&  *pFixup < pVM->pVMGC + 32)
+        {
+            LogFlow(("Changing fForcedActions fixup from %x to %x\n", *pFixup, pVM->pVMGC + RT_OFFSETOF(VM, fForcedActions)));
             *pFixup = pVM->pVMGC + RT_OFFSETOF(VM, fForcedActions);
+        }
+        else
+        if (    *pFixup >= pVM->pVMGC
+            &&  *pFixup < pVM->pVMGC + 8192)
+        {
+            static int cCpuidFixup = 0;
+#ifdef LOG_ENABLED
+            RTRCPTR oldFixup = *pFixup;
+#endif
+            /* very dirty assumptions about the cpuid patch */
+
+            switch(cCpuidFixup % 4)
+            {
+            case 0:
+                *pFixup = CPUMGetGuestCpuIdDefGCPtr(pVM);
+                break;
+            case 1:
+                *pFixup = CPUMGetGuestCpuIdStdGCPtr(pVM);
+                break;
+            case 2:
+                *pFixup = CPUMGetGuestCpuIdExtGCPtr(pVM);
+                break;
+            case 3:
+                *pFixup = CPUMGetGuestCpuIdCentaurGCPtr(pVM);
+                break;
+            }
+            LogFlow(("Changing cpuid fixup %d from %x to %x\n", cCpuidFixup, oldFixup, *pFixup));
+            cCpuidFixup++;
+        }
         else
             AssertMsgFailed(("Unexpected fixup value %x\n", *pFixup));
 

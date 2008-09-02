@@ -1542,6 +1542,7 @@ PATMCpuidStart:
     cmp     eax, PATM_CPUID_CENTAUR_MAX
     jb      cpuid_centaur
 
+    ; Dirty assumptions in patmCorrectFixup about the pointer fixup order!!!!
 cpuid_def:
     mov     eax, PATM_CPUID_DEF_PTR
     jmp     cpuid_fetch
