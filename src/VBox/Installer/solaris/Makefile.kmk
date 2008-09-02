@@ -408,6 +408,7 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		vbi/vboxkern.pkginfo \
 		vbi/makepackage.sh \
+		vbi/preremove.sh \
 		Makefile.kmk \
 		$(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/32/vbi \
 		$(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/64/vbi
@@ -425,6 +426,7 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(PATH_CURRENT)/vbi/vboxkern.pkginfo
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_VBI_DIR)/vbox.copyright)
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/vbi/makepackage.sh                                           $(SOLARIS_VBI_DIR)/makepackage.sh
+	$(QUIET)$(INSTALL) -m 0755 $(PATH_CURRENT)/vbi/preremove.sh                                             $(SOLARIS_VBI_DIR)/preremove.sh
 	$(call MSG_L1,Creating install package: $(VBIPKG_FILENAME).pkg)
 	$(QUIET)$(SOLARIS_VBI_DIR)/makepackage.sh $(SOLARIS_VBI_DIR) $(VBIPKG_FILENAME)
 

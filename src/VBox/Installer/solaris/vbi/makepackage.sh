@@ -53,10 +53,11 @@ set -e
 # prepare file list
 cd "$1"
 echo 'i pkginfo=./vboxkern.pkginfo' > prototype
+echo 'i preremove=./preremove.sh' >> prototype
 if test -f "./vbox.copyright"; then
     echo 'i copyright=./vbox.copyright' >> prototype
 fi
-find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxkern.pkginfo|vbox.copyright' | pkgproto >> prototype
+find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|preremove.sh|vboxkern.pkginfo|vbox.copyright' | pkgproto >> prototype
 
 $VBOX_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "sys" } { print }' prototype > prototype2
 $VBOX_AWK 'NF == 6 && $2 == "none" { $3 = "platform/i86pc/kernel/misc/"$3"="$3 } { print }' prototype2 > prototype
