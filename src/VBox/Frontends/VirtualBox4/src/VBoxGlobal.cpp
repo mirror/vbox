@@ -4096,6 +4096,15 @@ bool VBoxGlobal::openURL (const QString &aURL)
     return false;
 }
 
+/**
+ * Shows the VirtualBox registration dialog.
+ *
+ * @note that this method is not part of VBoxProblemReporter (like e.g.
+ *       VBoxProblemReporter::showHelpAboutDialog()) because it is tied to
+ *       VBoxCallback::OnExtraDataChange() handling performed by VBoxGlobal.
+ *
+ * @param aForce
+ */
 void VBoxGlobal::showRegistrationDialog (bool aForce)
 {
 #ifdef VBOX_WITH_REGISTRATION
@@ -4133,6 +4142,15 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
 #endif
 }
 
+/**
+ * Shows the VirtualBox version check & update dialog.
+ *
+ * @note that this method is not part of VBoxProblemReporter (like e.g.
+ *       VBoxProblemReporter::showHelpAboutDialog()) because it is tied to
+ *       VBoxCallback::OnExtraDataChange() handling performed by VBoxGlobal.
+ *
+ * @param aForce
+ */
 void VBoxGlobal::showUpdateDialog (bool aForce)
 {
     bool isNecessary = VBoxUpdateDlg::isNecessary();

@@ -41,6 +41,8 @@
 #ifdef Q_WS_MAC
 # include <QPushButton>
 #endif
+#include <QAction>
+#include <QMenu>
 
 #include <iprt/err.h>
 #include <iprt/param.h>
@@ -50,18 +52,22 @@
 #include <Htmlhelp.h>
 #endif
 
+////////////////////////////////////////////////////////////////////////////////
+// VBoxProgressDialog class
+////////////////////////////////////////////////////////////////////////////////
+
 /**
- *  A QProgressDialog enhancement that allows to:
+ * A QProgressDialog enhancement that allows to:
  *
- *  1) prevent closing the dialog when it has no cancel button;
- *  2) effectively track the IProgress object completion
- *     (w/o using IProgress::waitForCompletion() and w/o blocking the UI thread
- *     in any other way for too long).
+ * 1) prevent closing the dialog when it has no cancel button;
+ * 2) effectively track the IProgress object completion (w/o using
+ *    IProgress::waitForCompletion() and w/o blocking the UI thread in any other
+ *    way for too long).
  *
- *  @note The CProgress instance is passed as a non-const reference to the
- *        constructor (to memorize COM errors if they happen), and therefore
- *        must not be destroyed before the created VBoxProgressDialog instance
- *        is destroyed.
+ * @note The CProgress instance is passed as a non-const reference to the
+ *       constructor (to memorize COM errors if they happen), and therefore must
+ *       not be destroyed before the created VBoxProgressDialog instance is
+ *       destroyed.
  */
 class VBoxProgressDialog : public QProgressDialog
 {
@@ -186,20 +192,109 @@ private:
 
 const char *VBoxProgressDialog::sOpDescTpl = "%1... (%2/%3)";
 
+////////////////////////////////////////////////////////////////////////////////
+// VBoxHelpActions class
+////////////////////////////////////////////////////////////////////////////////
 
-/** @class VBoxProblemReporter
- *
- *  The VBoxProblemReporter class is a central place to handle all
- *  problem/error situations that happen during application
- *  runtime and require the user's attention. Its role is to
- *  describe the problem and/or the cause of the error to the user and give
- *  him the opportunity to select an action (when appropriate).
- *
- *  Every problem sutiation has its own (correspondingly named) method in
- *  this class that takes a list of arguments necessary to describe the
- *  situation and to provide the appropriate actions. The method then
- *  returns the choice to the caller.
- */
+void VBoxHelpActions::setup (QObject *aParent)
+{
+    AssertReturnVoid (contentsAction == NULL);
+
+    contentsAction = new QAction (aParent);
+    contentsAction->setIcon (VBoxGlobal::iconSet (":/help_16px.png"));
+
+    webAction = new QAction (aParent);
+    webAction->setIcon (VBoxGlobal::iconSet (":/site_16px.png"));
+
+    resetMessagesAction = new QAction (aParent);
+    resetMessagesAction->setIcon (VBoxGlobal::iconSet (":/reset_16px.png"));
+
+    registerAction = new QAction (aParent);
+    registerAction->setIcon (VBoxGlobal::iconSet (":/register_16px.png",
+                                                  ":/register_disabled_16px.png"));
+    updateAction = new QAction (aParent);
+    updateAction->setIcon (VBoxGlobal::iconSet (":/refresh_16px.png",
+                                                ":/refresh_disabled_16px.png"));
+    aboutAction = new QAction (aParent);
+    aboutAction->setIcon (VBoxGlobal::iconSet (":/about_16px.png"));
+
+    QObject::connect (contentsAction, SIGNAL (triggered()),
+                      &vboxProblem(), SLOT (showHelpHelpDialog()));
+    QObject::connect (webAction, SIGNAL (triggered()),
+                      &vboxProblem(), SLOT (showHelpWebDialog()));
+    QObject::connect (resetMessagesAction, SIGNAL (triggered()),
+                      &vboxProblem(), SLOT (resetSuppressedMessages()));
+    QObject::connect (registerAction, SIGNAL (triggered()),
+                      &vboxGlobal(), SLOT (showRegistrationDialog()));
+    QObject::connect (updateAction, SIGNAL (triggered()),
+                      &vboxGlobal(), SLOT (showUpdateDialog()));
+    QObject::connect (aboutAction, SIGNAL (triggered()),
+                      &vboxProblem(), SLOT (showHelpAboutDialog()));
+
+    QObject::connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
+                      registerAction, SLOT (setEnabled (bool)));
+    QObject::connect (&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
+                      updateAction, SLOT (setEnabled (bool)));
+}
+
+void VBoxHelpActions::addTo (QMenu *aMenu)
+{
+    AssertReturnVoid (contentsAction != NULL);
+
+    aMenu->addAction (contentsAction);
+    aMenu->addAction (webAction);
+    aMenu->addSeparator();
+
+    aMenu->addAction (resetMessagesAction);
+    aMenu->addSeparator();
+
+#ifdef VBOX_WITH_REGISTRATION
+    aMenu->addAction (registerAction);
+    registerAction->setEnabled (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
+#endif
+
+    aMenu->addAction (updateAction);
+    updateAction->setEnabled (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_UpdateDlgWinID).isEmpty());
+
+    aMenu->addSeparator();
+    aMenu->addAction (aboutAction);
+}
+
+void VBoxHelpActions::retranslateUi()
+{
+    AssertReturnVoid (contentsAction != NULL);
+
+    contentsAction->setText (VBoxProblemReporter::tr ("&Contents..."));
+    contentsAction->setShortcut (QKeySequence::HelpContents);
+    contentsAction->setStatusTip (VBoxProblemReporter::tr (
+        "Show the online help contents"));
+
+    webAction->setText (VBoxProblemReporter::tr ("&VirtualBox Web Site..."));
+    webAction->setStatusTip (VBoxProblemReporter::tr (
+        "Open the browser and go to the VirtualBox product web site"));
+
+    resetMessagesAction->setText (VBoxProblemReporter::tr ("&Reset All Warnings"));
+    resetMessagesAction->setStatusTip (VBoxProblemReporter::tr (
+        "Cause all suppressed warnings and messages to be shown again"));
+
+    registerAction->setText (VBoxProblemReporter::tr ("R&egister VirtualBox..."));
+    registerAction->setStatusTip (VBoxProblemReporter::tr (
+        "Open VirtualBox registration form"));
+
+    updateAction->setText (VBoxProblemReporter::tr ("C&heck for Updates..."));
+    updateAction->setStatusTip (VBoxProblemReporter::tr (
+        "Check for a new VirtualBox version"));
+
+    aboutAction->setText (VBoxProblemReporter::tr ("&About VirtualBox..."));
+    aboutAction->setStatusTip (VBoxProblemReporter::tr (
+        "Show a dialog with product information"));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// VBoxProblemReporter class
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  *  Returns a reference to the global VirtualBox problem reporter instance.
@@ -2190,8 +2285,3 @@ void VBoxProblemReporter::resetSuppressedMessages()
     vbox.SetExtraData (VBoxDefs::GUI_SuppressMessages, QString::null);
 }
 
-/** @fn vboxProblem
- *
- *  Shortcut to the static VBoxProblemReporter::instance() method, for
- *  convenience.
- */

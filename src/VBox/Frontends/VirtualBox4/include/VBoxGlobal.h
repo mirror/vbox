@@ -197,7 +197,7 @@ protected:
     Process (QWidget *aParent = 0) : QProcess (aParent) {}
 };
 
-// VBoxGlobal
+// VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
 
 class VBoxSelectorWnd;

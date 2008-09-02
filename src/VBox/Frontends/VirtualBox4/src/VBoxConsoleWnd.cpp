@@ -275,20 +275,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     /* Help menu actions */
 
-    helpContentsAction = new QAction (this);
-    helpContentsAction->setIcon (VBoxGlobal::iconSet (":/help_16px.png"));
-    helpWebAction = new QAction (this);
-    helpWebAction->setIcon (VBoxGlobal::iconSet (":/site_16px.png"));
-    helpRegisterAction = new QAction (this);
-    helpRegisterAction->setIcon (VBoxGlobal::iconSet (":/register_16px.png",
-                                                      ":/register_disabled_16px.png"));
-    helpUpdateAction = new QAction (this);
-    helpUpdateAction->setIcon (VBoxGlobal::iconSet (":/refresh_16px.png",
-                                                    ":/refresh_disabled_16px.png"));
-    helpAboutAction = new QAction (this);
-    helpAboutAction->setIcon (VBoxGlobal::iconSet (":/about_16px.png"));
-    helpResetMessagesAction = new QAction (this);
-    helpResetMessagesAction->setIcon (VBoxGlobal::iconSet (":/reset_16px.png"));
+    mHelpActions.setup (this);
 
     ///// Menubar ///////////////////////////////////////////////////////////
 
@@ -384,20 +371,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mHelpMenu = menuBar()->addMenu (QString::null);
     mMainMenu->addMenu (mHelpMenu);
 
-    mHelpMenu->addAction (helpContentsAction);
-    mHelpMenu->addAction (helpWebAction);
-    mHelpMenu->addSeparator();
-#ifdef VBOX_WITH_REGISTRATION
-    mHelpMenu->addAction (helpRegisterAction);
-    helpRegisterAction->setEnabled (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
-#endif
-    mHelpMenu->addAction (helpUpdateAction);
-    helpUpdateAction->setEnabled (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_UpdateDlgWinID).isEmpty());
-    mHelpMenu->addAction (helpAboutAction);
-    mHelpMenu->addSeparator();
-    mHelpMenu->addAction (helpResetMessagesAction);
+    mHelpActions.addTo (mHelpMenu);
 
     ///// Status bar ////////////////////////////////////////////////////////
 
@@ -554,23 +528,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
              this, SLOT (clearStatusBar()));
     connect (mDevicesNetworkMenu, SIGNAL (aboutToHide()),
              this, SLOT (clearStatusBar()));
-
-    connect (helpContentsAction, SIGNAL (triggered()),
-             &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (helpWebAction, SIGNAL (triggered()),
-             &vboxProblem(), SLOT (showHelpWebDialog()));
-    connect (helpRegisterAction, SIGNAL (triggered()),
-             &vboxGlobal(), SLOT (showRegistrationDialog()));
-    connect (helpUpdateAction, SIGNAL (triggered()),
-             &vboxGlobal(), SLOT (showUpdateDialog()));
-    connect (&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
-             helpRegisterAction, SLOT (setEnabled (bool)));
-    connect (&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
-             helpUpdateAction, SLOT (setEnabled (bool)));
-    connect (helpAboutAction, SIGNAL (triggered()),
-             &vboxProblem(), SLOT (showHelpAboutDialog()));
-    connect (helpResetMessagesAction, SIGNAL (triggered()),
-             &vboxProblem(), SLOT (resetSuppressedMessages()));
 
     connect (fd_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
              this, SLOT (showIndicatorContextMenu (QIStateIndicator *, QContextMenuEvent *)));
@@ -1590,28 +1547,7 @@ void VBoxConsoleWnd::retranslateUi()
 
     /* Help actions */
 
-    helpContentsAction->setText (tr ("&Contents..."));
-    helpContentsAction->setShortcut (QKeySequence::HelpContents);
-    helpContentsAction->setStatusTip (tr ("Show the online help contents"));
-
-    helpWebAction->setText (tr ("&VirtualBox Web Site..."));
-    helpWebAction->setStatusTip (
-        tr ("Open the browser and go to the VirtualBox product web site"));
-
-    helpRegisterAction->setText (tr ("R&egister VirtualBox..."));
-    helpRegisterAction->setStatusTip (
-        tr ("Open VirtualBox registration form"));
-
-    helpUpdateAction->setText (tr ("C&heck for a new version..."));
-    helpUpdateAction->setStatusTip (
-        tr ("Check for a new VirtualBox version"));
-
-    helpAboutAction->setText (tr ("&About VirtualBox..."));
-    helpAboutAction->setStatusTip (tr ("Show a dialog with product information"));
-
-    helpResetMessagesAction->setText (tr ("&Reset All Warnings"));
-    helpResetMessagesAction->setStatusTip (
-        tr ("Cause all suppressed warnings and messages to be shown again"));
+    mHelpActions.retranslateUi();
 
     /* Devices menu submenus */
 
