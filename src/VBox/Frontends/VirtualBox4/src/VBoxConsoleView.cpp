@@ -1094,8 +1094,19 @@ bool VBoxConsoleView::event (QEvent *e)
                           re->width(), re->height(), re->bitsPerPixel()));
 
                 /* do frame buffer dependent resize */
+#if defined (Q_WS_X11) && (QT_VERSION >= 0x040309) && (QT_VERSION < 0x040401)
+                /* restoreOverrideCursor() is broken in Qt 4.4.0 if WA_PaintOnScreen
+                 * widgets are present. This is the case on linux with SDL. As
+                 * workaround we save/restore the arrow cursor manually. See
+                 * http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry
+                 * for details. */
+                QCursor cursor = viewport()->cursor();
+                mFrameBuf->resizeEvent (re);
+                viewport()->setCursor(cursor);
+#else
                 mFrameBuf->resizeEvent (re);
                 viewport()->unsetCursor();
+#endif
 
                 /* This event appears in case of guest video was changed
                  * for somehow even without video resolution change.
