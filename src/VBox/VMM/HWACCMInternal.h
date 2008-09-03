@@ -281,6 +281,12 @@ typedef struct HWACCM
 
         /* Last instruction error */
         uint32_t                    ulLastInstrError;
+
+        struct
+        {
+            uint64_t                u64VMCSPhys;
+            uint32_t                ulVMCSRevision;
+        } lasterror;
     } vmx;
 
     struct

@@ -827,6 +827,30 @@ HWACCMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
 }
 
 /**
+ * Check fatal VT-x/AMD-V error and produce some meaningful 
+ * log release message.
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   iStatusCode VBox status code
+ */
+HWACCMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
+{
+    switch(iStatusCode)
+    {
+    case VERR_VMX_INVALID_VMCS_FIELD:
+        break;
+
+    case VERR_VMX_INVALID_VMCS_PTR:
+        LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current pointer %VGp vs %VGp\n", pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->hwaccm.s.vmx.pVMCSPhys));
+        LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current VMCS version %x\n", pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision));
+        break;
+
+    case VERR_VMX_INVALID_VMXON_PTR:
+        break;
+    }
+}
+
+/**
  * Execute state save operation.
  *
  * @returns VBox status code.
