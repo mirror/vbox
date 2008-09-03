@@ -242,6 +242,7 @@ void HDSltEditor::onActivate()
     emit readyToCommit (this);
 }
 
+#if 0
 void HDSltEditor::keyPressEvent (QKeyEvent *aEvent)
 {
     /* Make F2 key to show the popup. */
@@ -254,6 +255,7 @@ void HDSltEditor::keyPressEvent (QKeyEvent *aEvent)
         aEvent->ignore();
     QComboBox::keyPressEvent (aEvent);
 }
+#endif
 
 void HDSltEditor::populate (const HDSltValue &aIncluding)
 {
@@ -327,6 +329,7 @@ void HDVdiEditor::onActivate()
     emit readyToCommit (this);
 }
 
+#if 0
 void HDVdiEditor::keyPressEvent (QKeyEvent *aEvent)
 {
     /* Make F2 key to show the popup. */
@@ -339,6 +342,7 @@ void HDVdiEditor::keyPressEvent (QKeyEvent *aEvent)
         aEvent->ignore();
     VBoxMediaComboBox::keyPressEvent (aEvent);
 }
+#endif
 
 /** Singleton QObject class reimplementation to use for making selected IDE &
  * SATA slots unique */
@@ -879,7 +883,10 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
                 }
                 case Qt::Key_Backtab:
                 {
-                    focusNextPrevChild (false);
+                    /* Due to table on getting focus back from the child
+                     * put it instantly to its child again, make a hack
+                     * to put focus to the real owner. */
+                    mCbSATA->setFocus();
                     return true;
                 }
                 default:
