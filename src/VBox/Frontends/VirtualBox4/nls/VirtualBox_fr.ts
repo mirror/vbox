@@ -4034,11 +4034,6 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;%1:&amp;nbsp;&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;%3:&amp;nbsp;&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%4&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;%5:&amp;nbsp;&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%6&amp;nbsp;(%7&amp;nbsp;%8)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
         <source>Type</source>
         <comment>summary</comment>
@@ -6623,11 +6618,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="105"/>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;%1:&amp;nbsp;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;%3:&amp;nbsp;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

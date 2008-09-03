@@ -194,13 +194,13 @@ void VBoxNewHDWzd::retranslateUi()
         quint64 sizeB = imageSize() * _1M;
 
         /* compose summary */
-        QString summary = QString (tr (
+        QString summary = QString (
             "<table>"
             "<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>"
             "<tr><td><nobr>%3:&nbsp;</nobr></td><td><nobr>%4</nobr></td></tr>"
             "<tr><td><nobr>%5:&nbsp;</nobr></td><td><nobr>%6&nbsp;(%7&nbsp;%8)</nobr></td></tr>"
             "</table>"
-        ))
+        )
             .arg (tr ("Type", "summary"), type)
             .arg (tr ("Location", "summary"), composeFullFileName (imageFileName()))
             .arg (tr ("Size", "summary"), VBoxGlobal::formatSize (sizeB))

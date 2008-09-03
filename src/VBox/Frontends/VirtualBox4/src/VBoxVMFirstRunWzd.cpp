@@ -97,12 +97,12 @@ void VBoxVMFirstRunWzd::retranslateUi()
         QString source =
             mRbHost->isChecked() ? tr ("Host Drive %1").arg (mCbHost->currentText()) :
             mRbImage->isChecked() ? mCbImage->currentText() : QString::null;
-        QString summary = QString (tr (
+        QString summary = QString (
             "<table>"
             "<tr><td>%1:&nbsp;</td><td>%2</td></tr>"
             "<tr><td>%3:&nbsp;</td><td>%4</td></tr>"
             "</table>"
-        ))
+        )
             .arg (tr ("Type", "summary"), type)
             .arg (tr ("Source", "summary"), source);
 
