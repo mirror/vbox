@@ -384,6 +384,10 @@ void VBoxFilePathSelectorWidget::refreshText()
 {
     if (mIsEditableMode)
     {
+        /* Skip this step if text already the same */
+        if (mPath == lineEdit()->text())
+            return;
+
         /* Cursor positioning variables */
         int curPos = -1;
         int diffPos = -1;
