@@ -27,7 +27,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>VirtualBox New Version Notifier</string>
+   <string>VirtualBox Update Wizard</string>
   </property>
   <property name="windowIcon" >
    <iconset resource="../VirtualBox.qrc" >:/refresh_16px.png</iconset>
@@ -63,7 +63,7 @@
           </font>
          </property>
          <property name="text" >
-          <string>Check for a new version</string>
+          <string>Check for Updates</string>
          </property>
         </widget>
        </item>
@@ -112,7 +112,9 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p>&lt;p>You can make VirtualBox look for the newer version now by pressing &lt;b>Check&lt;/b> button or postpone it for then next time by pressing &lt;b>Cancel&lt;/b>.&lt;/p>&lt;p>You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b>'Check for a new version...'&lt;/b> action.&lt;/p></string>
+              <string>&lt;p>This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p>
+&lt;p>Use the &lt;b>Check&lt;/b> button to check for a new version now or the &lt;b>Cancel&lt;/b> button if you do not want to perform this check.&lt;/p>
+&lt;p>You can run this wizard at any time by choosing &lt;b>Check for Updates...&lt;/b> from the &lt;b>Help&lt;/b> menu.&lt;/p></string>
              </property>
              <property name="wordWrap" >
               <bool>true</bool>
@@ -212,7 +214,7 @@
          <item>
           <widget class="QPushButton" name="mBtnCancel" >
            <property name="text" >
-            <string>&amp;Cancel</string>
+            <string>Cancel</string>
            </property>
           </widget>
          </item>
@@ -233,7 +235,7 @@
           </font>
          </property>
          <property name="text" >
-          <string>Check Results</string>
+          <string>Summary</string>
          </property>
         </widget>
        </item>
@@ -287,7 +289,7 @@
                 </size>
                </property>
                <property name="text" >
-                <string>&lt;p>New VirtualBox %1 version available to download from:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></string>
+                <string>&lt;p>A new version of VirtualBox has been released! Version &lt;b>%1&lt;/b> is available at &lt;a href="http://www.virtualbox.org/">virtualbox.org&lt;/a>.&lt;/p>&lt;p>You can download this version from this direct link:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></string>
                </property>
                <property name="wordWrap" >
                 <bool>true</bool>
@@ -309,7 +311,7 @@
                 </size>
                </property>
                <property name="text" >
-                <string>&lt;p>Unable to obtain new version information due to network error:&lt;/p>&lt;p>&lt;b>%1&lt;/b>&lt;/p></string>
+                <string>&lt;p>Unable to obtain the new version information due to the following network error:&lt;/p>&lt;p>&lt;b>%1&lt;/b>&lt;/p></string>
                </property>
                <property name="wordWrap" >
                 <bool>true</bool>
@@ -331,7 +333,7 @@
                 </size>
                </property>
                <property name="text" >
-                <string>You have already installed the latest VirtualBox version, there is no newer version currently available.</string>
+                <string>You have already installed the latest VirtualBox version. Please repeat the version check later.</string>
                </property>
                <property name="wordWrap" >
                 <bool>true</bool>

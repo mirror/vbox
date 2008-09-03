@@ -183,7 +183,7 @@
       <item row="5" column="0" colspan="3" >
        <widget class="QILabelSeparator" name="mGbTap" >
         <property name="text" >
-         <string>&amp;Host Interface Settings</string>
+         <string>Host Interface Settings</string>
         </property>
         <property name="buddy" >
          <cstring>mLeInterface_x11</cstring>

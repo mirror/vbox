@@ -33,7 +33,7 @@
    </size>
   </property>
   <property name="windowTitle" >
-   <string>Filter details</string>
+   <string>USB Filter Details</string>
   </property>
   <layout class="QGridLayout" >
    <item row="0" column="0" >

@@ -195,16 +195,16 @@ void VBoxNewHDWzd::retranslateUi()
 
         /* compose summary */
         QString summary = QString (tr (
-            "<table cellspacing=0 cellpadding=2>"
-            "<tr><td><nobr>Type:</nobr></td><td><nobr>%1</nobr></td></tr>"
-            "<tr><td><nobr>Location:</nobr></td><td><nobr>%2</nobr></td></tr>"
-            "<tr><td><nobr>Size:</nobr></td><td><nobr>%3&nbsp;(%4&nbsp;Bytes)</nobr></td></tr>"
+            "<table>"
+            "<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>"
+            "<tr><td><nobr>%3:&nbsp;</nobr></td><td><nobr>%4</nobr></td></tr>"
+            "<tr><td><nobr>%5:&nbsp;</nobr></td><td><nobr>%6&nbsp;(%7&nbsp;%8)</nobr></td></tr>"
             "</table>"
         ))
-            .arg (type)
-            .arg (composeFullFileName (imageFileName()))
-            .arg (VBoxGlobal::formatSize (sizeB))
-            .arg (sizeB);
+            .arg (tr ("Type", "summary"), type)
+            .arg (tr ("Location", "summary"), composeFullFileName (imageFileName()))
+            .arg (tr ("Size", "summary"), VBoxGlobal::formatSize (sizeB))
+            .arg (sizeB).arg (tr ("Bytes", "summary"), sizeB);
 
         mTeSummary->setText (summary);
     }

@@ -158,28 +158,32 @@ void VBoxNewVMWzd::retranslateUi()
     const uint MinRAM = sysProps.GetMinGuestRAM();
     const uint MaxRAM = sysProps.GetMaxGuestRAM();
 
-    mTxRAMMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MinRAM));
-    mTxRAMMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (MaxRAM));
+    mTxRAMMin->setText (QString ("<qt>%1&nbsp;%2</qt>")
+                        .arg (MinRAM).arg (tr ("MB", "megabytes")));
+    mTxRAMMax->setText (QString ("<qt>%1&nbsp;%2</qt>")
+                        .arg (MaxRAM).arg (tr ("MB", "megabytes")));
 
     QWidget *page = mPageStack->currentWidget();
 
     if (page == mPageSummary)
     {
         /* compose summary */
-        QString summary = QString (tr (
-            "<tr><td><nobr>Name:</nobr></td><td>%1</td></tr>"
-            "<tr><td><nobr>OS Type:</nobr></td><td>%2<</td></tr>"
-            "<tr><td><nobr>Base Memory:</nobr></td><td>%3&nbsp;MB</td></tr>"))
-            .arg (mLeName->text())
-            .arg (vboxGlobal().vmGuestOSType (mCbOS->currentIndex()).GetDescription())
-            .arg (mSlRAM->value());
+        QString summary = QString (
+            "<tr><td><nobr>%1:&nbsp;</nobr></td><td>%2</td></tr>"
+            "<tr><td><nobr>%3:&nbsp;</nobr></td><td>%4</td></tr>"
+            "<tr><td><nobr>%5:&nbsp;</nobr></td><td>%6&nbsp;%7</td></tr>")
+            .arg (tr ("Name", "summary"), mLeName->text())
+            .arg (tr ("OS Type", "summary"),
+                  vboxGlobal().vmGuestOSType (mCbOS->currentIndex()).GetDescription())
+            .arg (tr ("Base Memory", "summary")).arg (mSlRAM->value())
+            .arg (tr ("MB", "megabytes"));
 
         if (mMediaCombo->currentIndex())
-            summary += QString (tr (
-                "<tr><td><nobr>Boot Hard Disk:</nobr></td><td>%4</td></tr>"))
-                .arg (mMediaCombo->currentText());
+            summary += QString (
+                "<tr><td><nobr>%8:&nbsp;</nobr></td><td><nobr>%9</nobr></td></tr>")
+                .arg (tr ("Boot Hard Disk", "summary"), mMediaCombo->currentText());
 
-        mTeSummary->setText ("<table cellspacing=0 cellpadding=2>" + summary + "</table>");
+        mTeSummary->setText ("<table>" + summary + "</table>");
     }
 }
 
