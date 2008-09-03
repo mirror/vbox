@@ -123,6 +123,7 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
+#ifndef Q_WS_WIN
 /**
  * Show all available command line parameters.
  */
@@ -167,6 +168,7 @@ static void showHelp()
             mode.toLatin1().constData(),
             dflt.toLatin1().constData());
 }
+#endif
 
 extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 {
@@ -185,6 +187,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
     HRESULT hrc = COMBase::InitializeCOM();
 #endif
 
+#ifndef Q_WS_WIN
     int i;
     for (i=0; i<argc; i++)
         if (   !strcmp(argv[i], "-h")
@@ -195,6 +198,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             showHelp();
             return 0;
         }
+#endif
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
     /* install our signal handler to backtrace the call stack */
