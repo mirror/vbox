@@ -7592,23 +7592,60 @@ static int handleVMStatistics(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static char *toBaseMetricNames(const char *metricList)
+{
+    char *newList = (char*)RTMemAlloc(strlen(metricList) + 1);
+    int cSlashes = 0;
+    bool fSkip = false;
+    char c, *dst = newList, *src = metricList;
+    while ((c = *src++))
+        if (c == ':')
+            fSkip = true;
+        else if (c == '/' && ++cSlashes == 2)
+            fSkip = true;
+        else if (c == ',')
+        {
+            fSkip = false;
+            cSlashes = 0;
+            *dst++ = c;
+        }
+        else
+            if (!fSkip)
+                *dst++ = c;
+    *dst = 0;
+    return newList;
+}
+
 static int parseFilterParameters(int argc, char *argv[],
                                  ComPtr<IVirtualBox> aVirtualBox,
                                  ComSafeArrayOut(BSTR, outMetrics),
+                                 ComSafeArrayOut(BSTR, outBaseMetrics),
                                  ComSafeArrayOut(IUnknown *, outObjects))
 {
     HRESULT rc = S_OK;
     com::SafeArray<BSTR> retMetrics(1);
+    com::SafeArray<BSTR> retBaseMetrics(1);
     com::SafeIfaceArray <IUnknown> retObjects;
 
-    Bstr metricNames;
+    Bstr metricNames, baseNames;
 
     /* Metric list */
     if (argc > 1)
+    {
         metricNames = argv[1];
+        char *tmp   = toBaseMetricNames(argv[1]);
+        if (!tmp)
+            return VERR_NO_MEMORY;
+        baseNames   = tmp;
+        RTMemFree(tmp);
+    }
     else
+    {
         metricNames = L"*";
+        baseNames = L"*";
+    }
     metricNames.cloneTo(&retMetrics[0]);
+    baseNames.cloneTo(&retBaseMetrics[0]);
 
     /* Object name */
     if (argc > 0 && strcmp(argv[0], "*"))
@@ -7639,6 +7676,7 @@ static int parseFilterParameters(int argc, char *argv[],
     }
 
     retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
+    retBaseMetrics.detachTo(ComSafeArrayOutArg(outBaseMetrics));
     retObjects.detachTo(ComSafeArrayOutArg(outObjects));
 
     return rc;
@@ -7664,100 +7702,288 @@ static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
     return Bstr("unknown");
 }
 
-static int handleMetrics(int argc, char *argv[],
-                         ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+/*********************************************************************
+* list                                                               *
+*********************************************************************/
+static int handleMetricsList(int argc, char *argv[],
+                             ComPtr<IVirtualBox> aVirtualBox,
+                             ComPtr<IPerformanceCollector> performanceCollector)
 {
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
+    com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
 
-    /* at least one option: sub-command name */
-    if (argc < 1)
-        return errorSyntax(USAGE_METRICS, "Sub-command missing");
+    rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
+                               ComSafeArrayAsOutParam(metrics),
+                               ComSafeArrayAsOutParam(baseMetrics),
+                               ComSafeArrayAsOutParam(objects));
+    if (FAILED(rc))
+        return 1;
 
-    ComPtr<IPerformanceCollector> performanceCollector;
-    CHECK_ERROR(aVirtualBox, COMGETTER(PerformanceCollector)(performanceCollector.asOutParam()));
+    com::SafeIfaceArray<IPerformanceMetric> metricInfo;
 
-    if (!strcmp(argv[0], "list"))
-    {
-        /*********************************************************************
-        * list                                                               *
-        *********************************************************************/
-        rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
-                                   ComSafeArrayAsOutParam(metrics),
-                                   ComSafeArrayAsOutParam(objects));
-        if (FAILED(rc))
-            return 1;
+    CHECK_ERROR(performanceCollector,
+        GetMetrics(ComSafeArrayAsInParam(metrics),
+                   ComSafeArrayAsInParam(objects),
+                   ComSafeArrayAsOutParam(metricInfo)));
 
-        com::SafeIfaceArray<IPerformanceMetric> metricInfo;
-
-        CHECK_ERROR(performanceCollector,
-            GetMetrics(ComSafeArrayAsInParam(metrics),
-                       ComSafeArrayAsInParam(objects),
-                       ComSafeArrayAsOutParam(metricInfo)));
-
-        ComPtr<IUnknown> object;
-        Bstr metricName, unit, description;
-        ULONG period, count;
-        LONG minimum, maximum;
-        RTPrintf(
+    ComPtr<IUnknown> object;
+    Bstr metricName, unit, description;
+    ULONG period, count;
+    LONG minimum, maximum;
+    RTPrintf(
 "Object     Metric               Unit Minimum    Maximum    Period     Count      Description\n"
 "---------- -------------------- ---- ---------- ---------- ---------- ---------- -----------\n");
-        for (size_t i = 0; i < metricInfo.size(); i++)
+    for (size_t i = 0; i < metricInfo.size(); i++)
+    {
+        CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
+        CHECK_ERROR(metricInfo[i], COMGETTER(MetricName)(metricName.asOutParam()));
+        CHECK_ERROR(metricInfo[i], COMGETTER(Period)(&period));
+        CHECK_ERROR(metricInfo[i], COMGETTER(Count)(&count));
+        CHECK_ERROR(metricInfo[i], COMGETTER(MinimumValue)(&minimum));
+        CHECK_ERROR(metricInfo[i], COMGETTER(MaximumValue)(&maximum));
+        CHECK_ERROR(metricInfo[i], COMGETTER(Unit)(unit.asOutParam()));
+        CHECK_ERROR(metricInfo[i], COMGETTER(Description)(description.asOutParam()));
+        RTPrintf("%-10ls %-20ls %-4ls %10d %10d %10u %10u %ls\n",
+            getObjectName(aVirtualBox, object).raw(), metricName.raw(), unit.raw(),
+            minimum, maximum, period, count, description.raw());
+    }
+    
+    return 0;
+}
+
+/*********************************************************************
+* setup                                                              *
+*********************************************************************/
+static int handleMetricsSetup(int argc, char *argv[],
+                              ComPtr<IVirtualBox> aVirtualBox,
+                              ComPtr<IPerformanceCollector> performanceCollector)
+{
+    HRESULT rc;
+    com::SafeArray<BSTR>          metrics;
+    com::SafeArray<BSTR>          baseMetrics;
+    com::SafeIfaceArray<IUnknown> objects;
+
+    if (argc < 3)
+        return errorSyntax(USAGE_METRICS, "Missing parameters for '%s' subcommand", argv[0]);
+
+    ULONG period, count;
+    char *endptr = NULL;
+
+    period = strtoul (argv[1], &endptr, 10);
+    if (!endptr || *endptr)
+        return errorArgument("Invalid value for 'period' parameter: '%s'", argv[1]);
+
+    count = strtoul (argv[2], &endptr, 10);
+    if (!endptr || *endptr)
+        return errorArgument("Invalid value for 'count' parameter: '%s'", argv[2]);
+
+    rc = parseFilterParameters(argc - 3, &argv[3], aVirtualBox,
+                               ComSafeArrayAsOutParam(metrics),
+                               ComSafeArrayAsOutParam(baseMetrics),
+                               ComSafeArrayAsOutParam(objects));
+    if (FAILED(rc))
+        return 1;
+
+    CHECK_ERROR(performanceCollector,
+        SetupMetrics(ComSafeArrayAsInParam(metrics),
+                     ComSafeArrayAsInParam(objects), period, count));
+
+    return 0;
+}
+
+/*********************************************************************
+* query                                                              *
+*********************************************************************/
+static int handleMetricsQuery(int argc, char *argv[],
+                              ComPtr<IVirtualBox> aVirtualBox,
+                              ComPtr<IPerformanceCollector> performanceCollector)
+{
+    HRESULT rc;
+    com::SafeArray<BSTR>          metrics;
+    com::SafeArray<BSTR>          baseMetrics;
+    com::SafeIfaceArray<IUnknown> objects;
+
+    rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
+                               ComSafeArrayAsOutParam(metrics),
+                               ComSafeArrayAsOutParam(baseMetrics),
+                               ComSafeArrayAsOutParam(objects));
+    if (FAILED(rc))
+        return 1;
+
+    com::SafeArray<BSTR>          retNames;
+    com::SafeIfaceArray<IUnknown> retObjects;
+    com::SafeArray<ULONG>         retIndices;
+    com::SafeArray<ULONG>         retLengths;
+    com::SafeArray<LONG>          retData;
+    CHECK_ERROR (performanceCollector, QueryMetricsData(ComSafeArrayAsInParam(metrics),
+                                             ComSafeArrayAsInParam(objects),
+                                             ComSafeArrayAsOutParam(retNames),
+                                             ComSafeArrayAsOutParam(retObjects),
+                                             ComSafeArrayAsOutParam(retIndices),
+                                             ComSafeArrayAsOutParam(retLengths),
+                                             ComSafeArrayAsOutParam(retData)) );
+
+    RTPrintf("Object     Metric               Values\n"
+             "---------- -------------------- --------------------------------------------\n");
+    for (unsigned i = 0; i < retNames.size(); i++)
+    {
+        // Get info for the metric
+        com::SafeArray<BSTR> nameOfMetric(1);
+        Bstr tmpName(retNames[i]);
+        tmpName.detachTo (&nameOfMetric[0]);
+        com::SafeIfaceArray<IUnknown> anObject(1);
+        ComPtr<IUnknown> tmpObject(retObjects[i]);
+        tmpObject.queryInterfaceTo(&anObject[0]);
+        com::SafeIfaceArray <IPerformanceMetric> metricInfo;
+        CHECK_RC_BREAK (performanceCollector->GetMetrics( ComSafeArrayAsInParam(nameOfMetric),
+                                               ComSafeArrayAsInParam(anObject),
+                                               ComSafeArrayAsOutParam(metricInfo) ));
+        BSTR metricUnitBSTR;
+        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(Unit) (&metricUnitBSTR));
+        Bstr metricUnit(metricUnitBSTR);
+        Bstr metricName(retNames[i]);
+        LONG minVal, maxVal;
+        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MinimumValue) (&minVal));
+        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MaximumValue) (&maxVal));
+        RTPrintf("%-10ls %-20ls ", getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
+        const char *separator = "";
+        for (unsigned j = 0; j < retLengths[i]; j++)
         {
-            CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
-            CHECK_ERROR(metricInfo[i], COMGETTER(MetricName)(metricName.asOutParam()));
-            CHECK_ERROR(metricInfo[i], COMGETTER(Period)(&period));
-            CHECK_ERROR(metricInfo[i], COMGETTER(Count)(&count));
-            CHECK_ERROR(metricInfo[i], COMGETTER(MinimumValue)(&minimum));
-            CHECK_ERROR(metricInfo[i], COMGETTER(MaximumValue)(&maximum));
-            CHECK_ERROR(metricInfo[i], COMGETTER(Unit)(unit.asOutParam()));
-            CHECK_ERROR(metricInfo[i], COMGETTER(Description)(description.asOutParam()));
-            RTPrintf("%-10ls %-20ls %-4ls %10d %10d %10u %10u %ls\n",
-                getObjectName(aVirtualBox, object).raw(), metricName.raw(), unit.raw(),
-                minimum, maximum, period, count, description.raw());
+            if (strcmp((const char *)metricUnit.raw(), "%"))
+                RTPrintf("%s%d %ls", separator, retData[retIndices[i] + j], metricUnit.raw());
+            else
+                RTPrintf("%s%d.%02d%%", separator, retData[retIndices[i] + j] / 1000, retData[retIndices[i] + j] % 100);
+            separator = ", ";
+        }
+        RTPrintf("\n");
+    }
+    
+    return 0;
+}
+
+static void getTimestamp(char *pts, size_t tsSize)
+{
+    *pts = 0;
+    AssertReturnVoid(tsSize >= 13); /* 3+3+3+3+1 */
+    RTTIMESPEC TimeSpec;
+    RTTIME Time;
+    RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
+    pts += RTStrFormatNumber(pts, Time.u8Hour, 10, 2, 0, RTSTR_F_ZEROPAD);
+    *pts++ = ':';
+    pts += RTStrFormatNumber(pts, Time.u8Minute, 10, 2, 0, RTSTR_F_ZEROPAD);
+    *pts++ = ':';
+    pts += RTStrFormatNumber(pts, Time.u8Second, 10, 2, 0, RTSTR_F_ZEROPAD);
+    *pts++ = '.';
+    pts += RTStrFormatNumber(pts, Time.u32Nanosecond / 1000000, 10, 3, 0, RTSTR_F_ZEROPAD);
+    *pts = 0;
+}    
+
+/*********************************************************************
+* collect                                                            *
+*********************************************************************/
+static int handleMetricsCollect(int argc, char *argv[],
+                                ComPtr<IVirtualBox> aVirtualBox,
+                                ComPtr<IPerformanceCollector> performanceCollector)
+{
+    HRESULT rc;
+    com::SafeArray<BSTR>          metrics;
+    com::SafeArray<BSTR>          baseMetrics;
+    com::SafeIfaceArray<IUnknown> objects;
+    ULONG period = 0, samples = 0;
+    bool isDetached = false, listMatches = false;
+    int i;
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-period") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            char *endptr = NULL;
+            period = strtoul (argv[++i], &endptr, 10);
+            if (!endptr || *endptr || !period)
+                return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
+        }
+        else if (strcmp(argv[i], "-samples") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            char *endptr = NULL;
+            samples = strtoul (argv[++i], &endptr, 10);
+            if (!endptr || *endptr)
+                return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
+        }
+        else if (strcmp(argv[i], "-list") == 0)
+            listMatches = true;
+        else if (strcmp(argv[i], "-detach") == 0)
+            isDetached = true;
+        else
+            break; /* The rest of params should define the filter */
+    }
+    
+    if (period == 0)
+        return errorSyntax(USAGE_METRICS, "Parameter -period is required");
+        
+    rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
+                               ComSafeArrayAsOutParam(metrics),
+                               ComSafeArrayAsOutParam(baseMetrics),
+                               ComSafeArrayAsOutParam(objects));
+    if (FAILED(rc))
+        return 1;
+
+    com::SafeIfaceArray<IPerformanceMetric> metricInfo;
+
+    CHECK_ERROR(performanceCollector,
+        GetMetrics(ComSafeArrayAsInParam(metrics),
+                   ComSafeArrayAsInParam(objects),
+                   ComSafeArrayAsOutParam(metricInfo)));
+
+    if (metricInfo.size())
+    {
+        if (listMatches)
+        {
+            ComPtr<IUnknown> object;
+            Bstr metricName;
+            RTPrintf("The following metrics will be collected:\n\n"
+                     "Object     Metric\n"
+                     "---------- --------------------\n");
+            for (size_t i = 0; i < metricInfo.size(); i++)
+            {
+                CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
+                CHECK_ERROR(metricInfo[i], COMGETTER(MetricName)(metricName.asOutParam()));
+                RTPrintf("%-10ls %-20ls\n",
+                    getObjectName(aVirtualBox, object).raw(), metricName.raw());
+            }
+            RTPrintf("\n");
         }
     }
-    else if (!strcmp(argv[0], "setup"))
+    else
     {
-        /*********************************************************************
-        * setup                                                              *
-        *********************************************************************/
-        if (argc < 3)
-            return errorSyntax(USAGE_METRICS, "Missing parameters for '%s' subcommand", argv[0]);
-
-        ULONG period, count;
-        char *endptr = NULL;
-
-        period = strtoul (argv[1], &endptr, 10);
-        if (!endptr || *endptr)
-            return errorArgument("Invalid value for 'period' parameter: '%s'", argv[1]);
-
-        count = strtoul (argv[2], &endptr, 10);
-        if (!endptr || *endptr)
-            return errorArgument("Invalid value for 'count' parameter: '%s'", argv[2]);
-
-        rc = parseFilterParameters(argc - 3, &argv[3], aVirtualBox,
-                                   ComSafeArrayAsOutParam(metrics),
-                                   ComSafeArrayAsOutParam(objects));
-        if (FAILED(rc))
-            return 1;
-
-        CHECK_ERROR(performanceCollector,
-            SetupMetrics(ComSafeArrayAsInParam(metrics),
-                         ComSafeArrayAsInParam(objects), period, count));
+        RTPrintf("No metrics match the specified filter!\n");
+        return 1;
     }
-    else if (!strcmp(argv[0], "query"))
-    {
-        /*********************************************************************
-        * query                                                              *
-        *********************************************************************/
-        rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
-                                   ComSafeArrayAsOutParam(metrics),
-                                   ComSafeArrayAsOutParam(objects));
-        if (FAILED(rc))
-            return 1;
+    
+    CHECK_ERROR(performanceCollector,
+        SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
+                     ComSafeArrayAsInParam(objects), period, isDetached?samples:1));
 
+    if (isDetached)
+    {
+        RTPrintf("Warning! The background process holding collected metrics will shutdown\n"
+                 "in few seconds, discarding all collected data and parameters.\n");
+        return 0;
+    }
+    
+    RTPrintf("Time stamp   Object     Metric               Value\n");
+    
+    for (unsigned n = 0; n < samples || samples == 0; n++)
+    {
+        RTPrintf("------------ ---------- -------------------- --------------------\n");
+        RTThreadSleep(period * 1000); // Sleep for 'period' seconds
+        char ts[15];
+        
+        getTimestamp(ts, sizeof(ts));
         com::SafeArray<BSTR>          retNames;
         com::SafeIfaceArray<IUnknown> retObjects;
         com::SafeArray<ULONG>         retIndices;
@@ -7770,11 +7996,9 @@ static int handleMetrics(int argc, char *argv[],
                                                  ComSafeArrayAsOutParam(retIndices),
                                                  ComSafeArrayAsOutParam(retLengths),
                                                  ComSafeArrayAsOutParam(retData)) );
-
-        RTPrintf("Object     Metric               Values\n"
-                 "---------- -------------------- --------------------------------------------\n");
         for (unsigned i = 0; i < retNames.size(); i++)
         {
+
             // Get info for the metric
             com::SafeArray<BSTR> nameOfMetric(1);
             Bstr tmpName(retNames[i]);
@@ -7793,7 +8017,7 @@ static int handleMetrics(int argc, char *argv[],
             LONG minVal, maxVal;
             CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MinimumValue) (&minVal));
             CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MaximumValue) (&maxVal));
-            RTPrintf("%-10ls %-20ls ", getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
+            RTPrintf("%-12s %-10ls %-20ls ", ts, getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
             const char *separator = "";
             for (unsigned j = 0; j < retLengths[i]; j++)
             {
@@ -7806,12 +8030,34 @@ static int handleMetrics(int argc, char *argv[],
             RTPrintf("\n");
         }
     }
-    else
-    {
-        return errorSyntax(USAGE_METRICS, "Invalid subcommand '%s'", argv[0]);
-    }
+    
+    return 0;
+}
 
-    return SUCCEEDED(rc) ? 0 : 1;
+static int handleMetrics(int argc, char *argv[],
+                         ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    int rc;
+
+    /* at least one option: sub-command name */
+    if (argc < 1)
+        return errorSyntax(USAGE_METRICS, "Sub-command missing");
+
+    ComPtr<IPerformanceCollector> performanceCollector;
+    CHECK_ERROR(aVirtualBox, COMGETTER(PerformanceCollector)(performanceCollector.asOutParam()));
+
+    if (!strcmp(argv[0], "list"))
+        rc = handleMetricsList(argc, argv, aVirtualBox, performanceCollector);
+    else if (!strcmp(argv[0], "setup"))
+        rc = handleMetricsSetup(argc, argv, aVirtualBox, performanceCollector);
+    else if (!strcmp(argv[0], "query"))
+        rc = handleMetricsQuery(argc, argv, aVirtualBox, performanceCollector);
+    else if (!strcmp(argv[0], "collect"))
+        rc = handleMetricsCollect(argc, argv, aVirtualBox, performanceCollector);
+    else
+        return errorSyntax(USAGE_METRICS, "Invalid subcommand '%s'", argv[0]);
+
+    return rc;
 }
 #endif /* !VBOX_ONLY_DOCS */
 
