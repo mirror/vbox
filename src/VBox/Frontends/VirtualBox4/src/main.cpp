@@ -123,6 +123,51 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
     }
 }
 
+/**
+ * Show all available command line parameters.
+ */
+static void showHelp()
+{
+    QString mode = "", dflt = "";
+#ifdef VBOX_GUI_USE_SDL
+    mode += "sdl";
+#endif
+#ifdef VBOX_GUI_USE_QIMAGE
+    if (!mode.isEmpty())
+        mode += "|";
+    mode += "image";
+#endif
+#ifdef VBOX_GUI_USE_DDRAW
+    if (!mode.isEmpty())
+        mode += "|";
+    mode += "ddraw";
+#endif
+#ifdef VBOX_GUI_USE_QUARTZ2D
+    if (!mode.isEmpty())
+        mode += "|";
+    mode += "quartz2d";
+#endif
+#if defined (Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
+    dflt = "quartz2d";
+#elif (defined (Q_WS_WIN32) || defined (Q_WS_PM)) && defined (VBOX_GUI_USE_QIMAGE)
+    dflt = "image";
+#elif defined (Q_WS_X11) && defined (VBOX_GUI_USE_SDL)
+    dflt = "sdl";
+#else
+    dflt = "image";
+#endif
+
+    RTPrintf("VirtualBox Graphical User Interface\n"
+            "(C) 2005-2008 Sun Microsystems, Inc.\n"
+            "All rights reserved.\n"
+            "\n"
+            "Usage:\n"
+            "  -startvm <vmname|UUID>     start a VM by specifying its UUID or name\n"
+            "  -rmode %-19s select different render mode (default is %s)\n",
+            mode.toLatin1().constData(),
+            dflt.toLatin1().constData());
+}
+
 extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 {
     LogFlowFuncEnter();
@@ -139,6 +184,17 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
     /// @todo find a proper solution that satisfies both OLE and VBox
     HRESULT hrc = COMBase::InitializeCOM();
 #endif
+
+    int i;
+    for (i=0; i<argc; i++)
+        if (   !strcmp(argv[i], "-h")
+            || !strcmp(argv[i], "-?")
+            || !strcmp(argv[i], "-help")
+            || !strcmp(argv[i], "--help"))
+        {
+            showHelp();
+            return 0;
+        }
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
     /* install our signal handler to backtrace the call stack */
