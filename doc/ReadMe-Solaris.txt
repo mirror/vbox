@@ -11,7 +11,7 @@ VirtualBox, please uninstall the previous version completely before installing a
 You should uninstall BOTH the VirtualBox base package as well as the VirtualBox kernel
 interface package before installing the new ones.
 
-Please refer to the "Uninstallation" section at the end of this document for how the details.
+Please refer to the "Uninstallation" section at the end of this document for the details.
 
 
 Installing:
