@@ -658,12 +658,12 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_METRICS)
     {
-        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] (comma-separated)\n"
+        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] (comma-separated)\n\n"
                  "VBoxManage metrics          setup\n"
                  "                            [-period <seconds>]\n"
                  "                            [-samples <count>]\n"
-                 "                            [*|host|<vmname> [<metric_list>]]\n"
-                 "VBoxManage metrics          query [*|host|<vmname> [<metric_list>]]\n"
+                 "                            [*|host|<vmname> [<metric_list>]]\n\n"
+                 "VBoxManage metrics          query [*|host|<vmname> [<metric_list>]]\n\n"
                  "VBoxManage metrics          collect\n"
                  "                            [-period <seconds>]\n"
                  "                            [-samples <count>]\n"
@@ -7835,7 +7835,7 @@ static int handleMetricsSetup(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             char *endptr = NULL;
             samples = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr || !samples)
+            if (!endptr || *endptr)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
         else
