@@ -834,7 +834,7 @@ BEGINPROC VMXGetActivateVMCS
     vmptrst qword [rcx]
  %endif
 %else
-    vmptrst [esp+04h]
+    vmptrst qword [esp+04h]
 %endif
     xor     eax, eax
     ret
