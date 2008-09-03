@@ -238,6 +238,15 @@ HWACCMR3DECL(void) HWACCMR3Reset(PVM pVM);
 
 
 /**
+ * Check fatal VT-x/AMD-V error and produce some meaningful 
+ * log release message.
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   iStatusCode VBox status code
+ */
+HWACCMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode);
+
+/**
  * Checks if we can currently use hardware accelerated raw mode.
  *
  * @returns boolean
