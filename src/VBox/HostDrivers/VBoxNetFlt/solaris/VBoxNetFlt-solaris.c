@@ -1504,7 +1504,6 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
         return VERR_INTNET_FLT_IF_NOT_FOUND;
     }
 
-    const char *pszAtChar = "@";
     char *pszModName = DEVICE_NAME;
 
     struct lifreq Interface;
@@ -1528,6 +1527,9 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
     ldi_handle_t UDPDevHandle;
     ldi_handle_t ARPDevHandle;
 
+    /*
+     * @todo Do opening of each stream separately with error checking.
+     */
     /*
      * Open the IP stream as a layered device.
      */
@@ -1600,6 +1602,10 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                 if (   VBOX_SUCCESS(rc)
                                     && VBOX_SUCCESS(rc2))
                                 {
+                                    /** @todo -XXX- Do each step here with full error checking. I know the if-levels are
+                                      * getting ridiculous but it has to be done as failure here is still possible
+                                      * (though unlikely) given a terribly ackward user configuration or messed up stack.
+                                      */
                                     /*
                                      * Set global data which will be grabbed by ModOpen.
                                      */
@@ -1670,6 +1676,17 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                     {
                                         LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: module %s or relinking failed. rc=%d rc2=%d rc3=%d.\n",
                                                 fAttach ? "insert" : "remove", rc, rc2, rc3));
+
+                                        /*
+                                         * Try failing gracefully during attach.
+                                         */
+                                        /** @todo -XXX- see todo above, and remove later accordingly. */
+                                        if (fAttach)
+                                        {
+                                            strioctl(pVNodeIp, _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
+                                            strioctl(pVNodeArp, _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K, kcred, &ret);
+                                            vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
+                                        }
                                     }
                                 }
                                 else
