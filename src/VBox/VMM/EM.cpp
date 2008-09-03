@@ -2289,6 +2289,11 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VERR_TRPM_PANIC:
             break;
 
+        case VERR_VMX_INVALID_VMCS_FIELD:
+        case VERR_VMX_INVALID_VMCS_PTR:
+        case VERR_VMX_INVALID_VMXON_PTR:
+            HWACCMR3CheckError(pVM, rc);
+            break;
         /*
          * Anything which is not known to us means an internal error
          * and the termination of the VM!
