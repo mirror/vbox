@@ -573,8 +573,8 @@ QVariant VBoxVMModel::data(const QModelIndex &aIndex, int aRole) const
     return v;
 }
 
-QVariant VBoxVMModel::headerData(int aSection, Qt::Orientation aOrientation,
-                                 int aRole /* = Qt::DisplayRole */) const
+QVariant VBoxVMModel::headerData(int /*aSection*/, Qt::Orientation /*aOrientation*/,
+                                 int /*aRole = Qt::DisplayRole */) const
 {
     return QVariant();
 }
