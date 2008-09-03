@@ -7814,7 +7814,7 @@ static int handleMetricsSetup(int argc, char *argv[],
     com::SafeArray<BSTR>          metrics;
     com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
-    ULONG period, samples;
+    ULONG period = 1, samples = 1;
     bool listMatches = false;
     int i;
 
