@@ -195,7 +195,10 @@ private slots:
 
 private:
 
+#if 0
     void keyPressEvent (QKeyEvent *aEvent);
+#endif
+
     void populate (const HDSltValue &aIncluding);
 
     QList<HDSltValue> mList;
@@ -229,7 +232,9 @@ private slots:
 
 private:
 
+#if 0
     void keyPressEvent (QKeyEvent *aEvent);
+#endif
 
     static HDVdiEditor *mInstance;
 };
