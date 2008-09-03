@@ -499,8 +499,6 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (&vboxGlobal(),
              SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
              this, SLOT (onMediaRemoved (VBoxDefs::DiskType, const QUuid &)));
-    connect (this, SIGNAL (signalToCloseEditor (QWidget*, QAbstractItemDelegate::EndEditHint)),
-             mTwAts, SLOT (closeEditor (QWidget*, QAbstractItemDelegate::EndEditHint)));
 
     /* Install global event filter */
     qApp->installEventFilter (this);
@@ -677,16 +675,18 @@ void VBoxVMSettingsHD::newClicked()
         /* Try to select unique vdi */
         editor->tryToChooseUniqueVdi (vdis);
 
+        /* Move the focus to the other than attachment table location.
+         * This will close the temporary editor of this table to prevent
+         * influencing the media enumeration mechanism to model data. */
+        mCbSATA->setFocus();
+        qApp->processEvents();
+
         /* Ask the user for method to add new vdi */
         int result = mModel->rowCount() - 1 > editor->count() ?
             vboxProblem().confirmRunNewHDWzdOrVDM (this) :
             QIMessageBox::Cancel;
         if (result == QIMessageBox::Yes)
         {
-            /* Close the editor to avoid it's infliction to data model */
-            emit signalToCloseEditor (HDVdiEditor::activeEditor(),
-                                      QAbstractItemDelegate::NoHint);
-
             /* Run new HD wizard */
             VBoxNewHDWzd dlg (this);
             if (dlg.exec() == QDialog::Accepted)
@@ -702,6 +702,9 @@ void VBoxVMSettingsHD::newClicked()
         }
         else if (result == QIMessageBox::No)
             vdmClicked();
+
+        /* Move the focus to the attachment table location again. */
+        mTwAts->setFocus();
     }
 }
 
@@ -740,9 +743,11 @@ void VBoxVMSettingsHD::vdmClicked()
 {
     Assert (mTwAts->currentIndex().isValid());
 
-    /* Close the editor to avoid it's infliction to data model */
-    emit signalToCloseEditor (HDVdiEditor::activeEditor(),
-                              QAbstractItemDelegate::NoHint);
+    /* Move the focus to the other than attachment table location.
+     * This will close the temporary editor of this table to prevent
+     * influencing the media enumeration mechanism to model data. */
+    mCbSATA->setFocus();
+    qApp->processEvents();
 
     HDVdiValue oldVdi (mModel->data (mTwAts->currentIndex(), Qt::EditRole)
                        .value<HDVdiValue>());
@@ -763,6 +768,9 @@ void VBoxVMSettingsHD::vdmClicked()
     }
 
     vboxGlobal().startEnumeratingMedia();
+
+    /* Move the focus to the attachment table location again. */
+    mTwAts->setFocus();
 }
 
 void VBoxVMSettingsHD::onCurrentChanged (const QModelIndex& /* aIndex */)
