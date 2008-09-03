@@ -8082,9 +8082,9 @@ static int handleMetrics(int argc, char *argv[],
 {
     int rc;
 
-    /* at least one option: sub-command name */
+    /* at least one option: subcommand name */
     if (argc < 1)
-        return errorSyntax(USAGE_METRICS, "Sub-command missing");
+        return errorSyntax(USAGE_METRICS, "Subcommand missing");
 
     ComPtr<IPerformanceCollector> performanceCollector;
     CHECK_ERROR(aVirtualBox, COMGETTER(PerformanceCollector)(performanceCollector.asOutParam()));
