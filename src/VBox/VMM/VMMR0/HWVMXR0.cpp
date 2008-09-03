@@ -2258,8 +2258,16 @@ end:
     /* translate into a less severe return code */
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
+    else
+    /* Try to extract more information about what might have gone wrong here. */
+    if (rc == VERR_VMX_INVALID_VMCS_PTR)
+    {
+        VMXGetActivateVMCS(&pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys);
+        pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVM->hwaccm.s.vmx.pVMCS;
+    }
 
     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+
     Log2(("X"));
     return rc;
 }
