@@ -379,8 +379,10 @@ void VBoxVMSettingsNetwork::setTapVisible (bool aVisible)
     mLbTerminate_x11->setVisible (aVisible);
     mLeTerminate_x11->setVisible (aVisible);
     mTbTerminate_x11->setVisible (aVisible);
+#ifdef Q_WS_MAC
     /* Make sure the layout is recalculated (Important on the mac). */
     layout()->activate();
+#endif
 }
 
 /* VBoxNIList Stuff */
