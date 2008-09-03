@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="de">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -1196,12 +1197,12 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Neu...</translation>
+        <translation>&amp;Neu...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hinzufügen...</translation>
     </message>
 </context>
 <context>
@@ -1473,7 +1474,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>Autor(en):</translation>
     </message>
 </context>
 <context>
@@ -1546,7 +1547,7 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1510"/>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>BS-Typ</translation>
+        <translation>Gastbetriebssystem</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1511"/>
@@ -2687,30 +2688,30 @@ Version %1</translation>
         <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Typ</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="205"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ort</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="206"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Größe</translation>
+        <translation>Größe</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="207"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Byte</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -2733,7 +2734,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="331"/>
         <source>OS &amp;Type</source>
-        <translation>BS-&amp;Typ</translation>
+        <translation>&amp;Typ des Gastbetriebssystems</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="224"/>
@@ -2848,7 +2849,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
+        <translation>&lt;p&gt;Drücken Sie &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1176"/>
@@ -2859,36 +2860,36 @@ Version %1</translation>
         <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">Name</translation>
+        <translation>Name</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">BS-Typ</translation>
+        <translation>BS-Typ</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">Hauptspeicher</translation>
+        <translation>Hauptspeicher</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bootfestplatte</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -3707,7 +3708,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
         <source>C&amp;onfirm</source>
-        <translation>Bestätigen</translation>
+        <translation>&amp;Bestätigen</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
@@ -3717,7 +3718,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -4272,27 +4273,27 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
         <source>Summary</source>
-        <translation type="unfinished">Zusammenfassung</translation>
+        <translation>Zusammenfassung</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Eine neue Version von VirtualBox ist verfügbar! Version &lt;b&gt;%1&lt;/b&gt; ist auf &lt;a href=&quot;http//www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; verfügbar.&lt;/p&gt;&lt;p&gt;Sie können diese Version von der folgenden Adresse herunterladen:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Eine neue Version von VirtualBox ist verfügbar! Version &lt;b&gt;%1&lt;/b&gt; ist auf &lt;a href=&quot;http//www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; verfügbar.&lt;/p&gt;&lt;p&gt;Sie können diese Version von der folgenden Adresse herunterladen:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Die Überprüfung auf eine neue Version konnte aufgrund des folgenden Netzwerkfehlers nicht durchgeführt werden:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die Überprüfung auf eine neue Version konnte aufgrund des folgenden Netzwerkfehlers nicht durchgeführt werden:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished">Sie haben bereits die neueste Version von VirtualBox installiert.</translation>
+        <translation>Sie haben bereits die neueste Version von VirtualBox installiert.</translation>
     </message>
 </context>
 <context>
@@ -4477,18 +4478,18 @@ p, li {white-space: pre-wrap; }
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="106"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Typ</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -5124,7 +5125,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="856"/>
         <source>&amp;Other</source>
-        <translation>Sonstiges</translation>
+        <translation>&amp;Sonstiges</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
@@ -5139,12 +5140,12 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="894"/>
         <source>&amp;Remember Mounted Media</source>
-        <translation></translation>
+        <translation>&amp;Gebundene Medien merken</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>Runtime:</source>
-        <translation type="unfinished"></translation>
+        <translation>Laufzeit:</translation>
     </message>
 </context>
 <context>
@@ -5212,7 +5213,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle an diese Maschine angeschlossenen Festplatten. Durch Mausklick oder Betätigen der Leertaste auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um Festplatten hinzuzufügen oder zu entfernen.</translation>
     </message>
 </context>
 <context>
@@ -5345,7 +5346,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
         <source>Host Interface Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen für Hostinterface</translation>
     </message>
 </context>
 <context>
@@ -5888,7 +5889,7 @@ p, li {white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Filter für USB-Geräte</translation>
     </message>
 </context>
 <context>
