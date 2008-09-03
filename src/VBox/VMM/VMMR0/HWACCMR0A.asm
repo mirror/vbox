@@ -836,7 +836,7 @@ BEGINPROC VMXGetActivateVMCS
 %else
     vmptrst [esp+04h]
 %endif
-    xor     rAX, rAX
+    xor     eax, eax
     ret
 ENDPROC
 
