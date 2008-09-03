@@ -1612,7 +1612,7 @@ EOF
   found=
   for p in $PYTHONDIR; do
     for d in python2.5 python2.4 python2.3; do
-      for b in lib64 lib; do
+      for b in lib64 lib/64 lib; do
         echo "compiling the following source file:" >> $LOG
         cat .tmp_src.cc >> $LOG
         echo "using the following command line:" >> $LOG
