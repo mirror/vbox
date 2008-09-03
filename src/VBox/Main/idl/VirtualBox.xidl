@@ -2836,7 +2836,7 @@
       </desc>
     </attribute>
 
-    <attribute name="HWVirtExNestedPagingEnabled" type="boolean" default="true">
+    <attribute name="HWVirtExNestedPagingEnabled" type="boolean" default="false">
       <desc>
         This setting determines whether VirtualBox will try to make use of
         the nested paging extension of Intel VT-x and AMD-V. Note that in case
