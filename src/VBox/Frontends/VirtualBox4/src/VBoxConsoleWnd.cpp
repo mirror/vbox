@@ -1794,8 +1794,9 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                                "USB device tooltip");
             QString info;
 
-            bool isUSBEnabled = cmachine.GetUSBController().GetEnabled();
-            if (isUSBEnabled)
+            CUSBController usbctl = cmachine.GetUSBController();
+            if (    !usbctl.isNull()
+                &&  usbctl.GetEnabled())
             {
                 mDevicesUSBMenu->setEnabled (isRunningOrPaused);
 
