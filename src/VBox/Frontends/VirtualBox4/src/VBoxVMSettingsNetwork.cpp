@@ -817,7 +817,7 @@ bool VBoxVMSettingsNetworkPage::revalidate (QString &aWarning,
 
         if (!valid)
         {
-            aTitle += ": " + page->pageTitle();
+            aTitle += ": " + vboxGlobal().removeAccelMark (page->pageTitle());
             break;
         }
     }
