@@ -379,7 +379,7 @@ VirtualBox4_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox4_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox4_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE VBOX_WITHOUT_QHTTP
 VirtualBox4_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox4_DEFS.linux     = VBOX_GUI_USE_SDL
+VirtualBox4_DEFS.linux     = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox4_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox4_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox4_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
@@ -395,7 +395,6 @@ endif
 ifneq ($(KBUILD_TYPE),release)
  # non-release builds has some extra features.
  VirtualBox4_DEFS.win     += VBOX_GUI_USE_DDRAW
- VirtualBox4_DEFS.linux   += VBOX_GUI_USE_QIMAGE
 endif
 ifdef VBOX_WITH_REGISTRATION
  VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION
