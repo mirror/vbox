@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="ro">
-<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -96,12 +95,12 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="209"/>
+        <location filename="../src/main.cpp" line="265"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>Executabilul &lt;b&gt;%1&lt;/b&gt; necesită Qt %2.x, găsit instalat Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="213"/>
+        <location filename="../src/main.cpp" line="269"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Eroare de incompatibilitate a bibliotecii Qt</translation>
     </message>
@@ -709,7 +708,7 @@ Versiunea %1</translation>
         <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;Controlorul USB este dezactivat&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1464"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1431"/>
         <source>VirtualBox OSE</source>
         <translation>VirtualBox OSE</translation>
     </message>
@@ -719,109 +718,109 @@ Versiunea %1</translation>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1484"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1451"/>
         <source>&amp;Fullscreen Mode</source>
         <translation>Ecran &amp;complet</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1485"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1452"/>
         <source>Switch to fullscreen mode</source>
         <translation>Treci pe ecran complet</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1491"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1458"/>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
         <translation>Integrare mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1493"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1460"/>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
         <translation>Redimensionează automat ecranul</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1494"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1461"/>
         <source>Auto-resize &amp;Guest Display</source>
         <translation>R&amp;edimensionează automat ecranul</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1498"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1465"/>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
         <translation>Redimensionează automat ecranul musafir atunci când fereastra este redimensionată (necesită Guest Additions)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1500"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1467"/>
         <source>&amp;Adjust Window Size</source>
         <translation>&amp;Ajustează dimensiunea fereastrei</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1502"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1469"/>
         <source>Adjust window size and position to best fit the guest display</source>
         <translation>Ajustează dimensiunea și poziția ferestrei pentru cea mai bună potrivire pe ecranul musafir</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1504"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1471"/>
         <source>&amp;Insert Ctrl-Alt-Del</source>
         <translation>&amp;Inserează Ctrl-Alt-Del</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1506"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1473"/>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
         <translation>Trimite secvența Ctrl-Alt-Del către mașina virtuală</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1509"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1476"/>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
         <translation>&amp;Inserează Ctrl-Alt-Backspace</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1512"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1479"/>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
         <translation>Trimite secvența Ctrl-Alt-Backspace către mașina virtuală</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1515"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1482"/>
         <source>&amp;Reset</source>
         <translation>&amp;Resetează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1516"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1483"/>
         <source>Reset the virtual machine</source>
         <translation>Resetează mașina virtuală</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1524"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1491"/>
         <source>ACPI S&amp;hutdown</source>
         <translation>Înc&amp;hidere ACPI</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1527"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1494"/>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
         <translation>Trimite evenimentul apăsare buton ACPI către mașina virtuală</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1529"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1496"/>
         <source>&amp;Close...</source>
         <translation>În&amp;chide...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1530"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1497"/>
         <source>Close the virtual machine</source>
         <translation>Închide mașina virtuală</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1533"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1500"/>
         <source>Take &amp;Snapshot...</source>
         <translation>Salvează in&amp;stantaneu...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1534"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1501"/>
         <source>Take a snapshot of the virtual machine</source>
         <translation>Salvează un instantaneu al mașinii virtuale</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1544"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1511"/>
         <source>&amp;Floppy Image...</source>
         <translation>Imagine &amp;dischetă...</translation>
     </message>
@@ -831,7 +830,7 @@ Versiunea %1</translation>
         <translation type="obsolete">Montează fișier imagine dischetă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1547"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1514"/>
         <source>Unmount F&amp;loppy</source>
         <translation>Demontează &amp;dischetă</translation>
     </message>
@@ -841,22 +840,22 @@ Versiunea %1</translation>
         <translation type="obsolete">Demontează mediul dischetă montat în prezent</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1551"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1518"/>
         <source>&amp;CD/DVD-ROM Image...</source>
         <translation>Imagine &amp;CD/DVD-ROM...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1553"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1520"/>
         <source>Mount a CD/DVD-ROM image file</source>
         <translation>Montează fișier imagine CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1555"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1522"/>
         <source>Unmount C&amp;D/DVD-ROM</source>
         <translation>Demontează C&amp;D/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1557"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1524"/>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
         <translation>Demontează mediul CD/DVD-ROM montat în prezent</translation>
     </message>
@@ -867,12 +866,12 @@ Versiunea %1</translation>
         <translation type="obsolete">Remote Desktop (RDP) Server</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1561"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1528"/>
         <source>Remote Dis&amp;play</source>
         <translation>Remote Dis&amp;play</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1563"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1530"/>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
         <translation>Activează sau dezactivează conexiuni remote desktop (RDP) către această mașină</translation>
     </message>
@@ -882,22 +881,22 @@ Versiunea %1</translation>
         <translation type="obsolete">Deschide</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1565"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1532"/>
         <source>&amp;Shared Folders...</source>
         <translation>Directoare &amp;partajate...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1567"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1534"/>
         <source>Open the dialog to operate on shared folders</source>
         <translation>Deschide dialogul directoare partajate</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1569"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1536"/>
         <source>&amp;Install Guest Additions...</source>
         <translation>&amp;Instalare Guest Additions...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1571"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1538"/>
         <source>Mount the Guest Additions installation image</source>
         <translation>Montează imaginea de instalare Guest Additions</translation>
     </message>
@@ -914,45 +913,45 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1588"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>Site web &amp;VirtualBox...</translation>
+        <translation type="obsolete">Site web &amp;VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Deschide browserul și navighează pe site-ul VirtualBox</translation>
+        <translation type="obsolete">Deschide browserul și navighează pe site-ul VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1600"/>
         <source>&amp;About VirtualBox...</source>
-        <translation>&amp;Despre VirtualBox...</translation>
+        <translation type="obsolete">&amp;Despre VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1601"/>
         <source>Show a dialog with product information</source>
-        <translation>Arată dialogul cu informații despre produs</translation>
+        <translation type="obsolete">Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1603"/>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Resetează toate avertizările</translation>
+        <translation type="obsolete">&amp;Resetează toate avertizările</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1605"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation>Arată din nou toate avertizările și mesajele ascunse</translation>
+        <translation type="obsolete">Arată din nou toate avertizările și mesajele ascunse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1609"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1555"/>
         <source>Mount &amp;Floppy</source>
         <translation>Montează &amp;dischetă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1610"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1556"/>
         <source>Mount &amp;CD/DVD-ROM</source>
         <translation>Montează &amp;CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1612"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1558"/>
         <source>&amp;USB Devices</source>
         <translation>Dispozitive &amp;USB</translation>
     </message>
@@ -962,17 +961,17 @@ Versiunea %1</translation>
         <translation type="obsolete">M&amp;V</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1619"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1565"/>
         <source>&amp;Devices</source>
         <translation>&amp;Dispozitive</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1624"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1570"/>
         <source>De&amp;bug</source>
         <translation>De&amp;bug</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1626"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1572"/>
         <source>&amp;Help</source>
         <translation>&amp;Ajutor</translation>
     </message>
@@ -992,7 +991,7 @@ Versiunea %1</translation>
         <translation type="obsolete">Indică dacă tastatura este capturată de către SO musafir (&lt;img src=hostkey_captured_16px.png/&gt;) sau nu (&lt;img src=hostkey_16px.png/&gt;)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1652"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation>Arată tasta gazdă setată în prezent.&lt;br&gt;Această tastă, când este apăsată singură, schimbă starea de captură a mouseului și a tastaturii. Poate fi utilizată în combinație cu alte taste pentru a efectua rapid acțiuni din meniul principal.</translation>
     </message>
@@ -1057,52 +1056,52 @@ Versiunea %1</translation>
         <translation type="obsolete">Indică dacă Remote Display (Server VRDP) este activat (&lt;img src=vrdp_16px.png/&gt;) sau nu (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1894"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1841"/>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;Serverul VRDP ascultă pe portul %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1952"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1896"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pauză</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1954"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1898"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Suspendă execuția mașinii virtuale</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1958"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1902"/>
         <source>R&amp;esume</source>
         <translation>R&amp;estabilirie</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1960"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1904"/>
         <source>Resume the execution of the virtual machine</source>
         <translation>Restabilește execuția mașinii virtuale</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1968"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1912"/>
         <source>Disable &amp;Mouse Integration</source>
         <translation>Dezactivează integrarea &amp;mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1971"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1915"/>
         <source>Temporarily disable host mouse pointer integration</source>
         <translation>Dezactivează temporar intergrarea mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1975"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1919"/>
         <source>Enable &amp;Mouse Integration</source>
         <translation>Activează integrare &amp;mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1978"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1922"/>
         <source>Enable temporarily disabled host mouse pointer integration</source>
         <translation>Activează integrarea mouse temporar dezactivată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2514"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2461"/>
         <source>Snapshot %1</source>
         <translation>Instantaneu %1</translation>
     </message>
@@ -1112,17 +1111,17 @@ Versiunea %1</translation>
         <translation type="obsolete">&lt;p&gt;Nu am găsit imaginea CD a VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2909"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2865"/>
         <source>Host Drive </source>
         <translation>Unitate gazdă </translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1545"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1512"/>
         <source>Mount a floppy image file</source>
         <translation>Montează fișier imagine dischetă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1549"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1516"/>
         <source>Unmount the currently mounted floppy media</source>
         <translation>Demontează mediul dischetă montat curent</translation>
     </message>
@@ -1132,7 +1131,7 @@ Versiunea %1</translation>
         <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;dischetă&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1616"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1562"/>
         <source>&amp;Machine</source>
         <translation>&amp;Mașină</translation>
     </message>
@@ -1167,45 +1166,45 @@ Versiunea %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Toate plăcile de rețea sunt dezactivate&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1611"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1557"/>
         <source>&amp;Network Adapters</source>
         <translation>&amp;Plăci de rețea</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2942"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2898"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>Placa de rețea %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2863"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2819"/>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
         <translation>Montează unitatea fizică selectată a PC gazdă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2911"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2867"/>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
         <translation>Montează unitatea fizică selectată a PC gazdă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2957"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2913"/>
         <source>Disconnect the cable from the selected virtual network adapter</source>
         <translation>Deconectează cablul de la placa de rețea virtuală selectată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2958"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2914"/>
         <source>Connect the cable to the selected virtual network adapter</source>
         <translation>Conectează cablul la placa de rețea virtuală selectată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1487"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1454"/>
         <source>Seam&amp;less Mode</source>
         <translation>Mod contin&amp;uu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1488"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1455"/>
         <source>Switch to seamless desktop integration mode</source>
         <translation>Schimbă în modul continuu de integrare cu spațiul de lucru</translation>
     </message>
@@ -1215,109 +1214,109 @@ Versiunea %1</translation>
         <translation type="obsolete">Indică dacă tastatura este capturată de SO musafir (&lt;img src=hostkey_captured_16px.png/&gt;) sau nu (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1697"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1644"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea dischetei:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1710"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1657"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Unitate gazdă&lt;/b&gt;:%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1717"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1664"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Imagine&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1723"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1670"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un mediu montat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1688"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea mediului CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1754"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1701"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Unitate gazdă&lt;/b&gt;:%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1761"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1708"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Imagine&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1767"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1714"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un mediu montat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1779"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1726"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea discului dur virtual:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1796"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1743"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un disc dur conectat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1817"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1764"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea mediului interfețelor de rețea:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1826"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1773"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Placa de rețea %1 (%2)&lt;/b&gt;: cablu %3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1829"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1776"/>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
         <translation>conectat</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1830"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1777"/>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
         <translation>deconectat</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1835"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1782"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Toate plăcile de rețea sunt dezactivate&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1847"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1794"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea dispozitivelor USB atașate:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1864"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1811"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un dispozitiv USB conectat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1871"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1818"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Controlorul USB este dezactivat&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -1328,13 +1327,13 @@ Versiunea %1</translation>
         <translation type="obsolete">Indică dacă Remote Display (Server VRDP) este activat (&lt;img src=vrdp_16px.png/&gt;) sau nu (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1903"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1850"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea dosarelor partajate:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1941"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1888"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un dosar partajat&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -1342,7 +1341,7 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1584"/>
         <source>&amp;Contents...</source>
-        <translation>&amp;Conținut...</translation>
+        <translation type="obsolete">&amp;Conținut...</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -1352,41 +1351,41 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1586"/>
         <source>Show the online help contents</source>
-        <translation>Arată conținutul ajutorului online</translation>
+        <translation type="obsolete">Arată conținutul ajutorului online</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1592"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation>Înr&amp;egistrează VirtualBox...</translation>
+        <translation type="obsolete">Înr&amp;egistrează VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1594"/>
         <source>Open VirtualBox registration form</source>
-        <translation>Deschide formularul de înregistrare VirtualBox</translation>
+        <translation type="obsolete">Deschide formularul de înregistrare VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1466"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1433"/>
         <source>Sun xVM VirtualBox</source>
         <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1536"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1503"/>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Dialog i&amp;nformații despre sesiune</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1538"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1505"/>
         <source>Show Session Information Dialog</source>
         <translation>Arată dialogul de informații despre sesiune</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1577"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1544"/>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
         <translation>&amp;Statistici...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1579"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1546"/>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation>Linie de &amp;comandă...</translation>
@@ -1394,30 +1393,30 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
         <source>C&amp;heck for a new version...</source>
-        <translation>Cau&amp;tă o versiune mai nouă...</translation>
+        <translation type="obsolete">Cau&amp;tă o versiune mai nouă...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
         <source>Check for a new VirtualBox version</source>
-        <translation>Caută o versiune mai nouă a VirtualBox</translation>
+        <translation type="obsolete">Caută o versiune mai nouă a VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1635"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1581"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation>Indică dacă funcția de autoredimnsionare a ecranului musafir este Activă (&lt;img src=auto_resize_on_16px.png/&gt;) sau Inactivă (&lt;Img src=auto_resize_off_16px.png/&gt;). Notă: această funcție necesită Guest Addition instalat pe SO musafir.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1644"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Inidică dacă cursorul mouse sistemului gazdă este capturat de către SO musafir:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul nu este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrare mouse (IM) este Activată&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul nu este capturat.&lt;/nobr&gt;&lt;br&gt;Notă: funcția integrare mouse necesită instalarea pe SO musafir a Guest Additions.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1647"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>Indică dacă tastatura este capturată de SO musafir (&lt;img src=hostkey_captured_16px.png/&gt;) sau nu (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1892"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1839"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
         <translation>Indică dacă Remote Display (Server VRDP) este activat (&lt;img src=vrdp_16px.png/&gt;) sau nu (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
@@ -1511,14 +1510,14 @@ Versiunea %1</translation>
         <translation></translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Nou...</translation>
+        <translation type="unfinished">&amp;Nou...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Adaugă...</translation>
+        <translation type="unfinished">&amp;Adaugă...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
@@ -1563,27 +1562,27 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="785"/>
         <source>Ctrl+N</source>
-        <translation>Ctrl+N</translation>
+        <translation type="obsolete">Ctrl+N</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="786"/>
         <source>Ctrl+A</source>
-        <translation>Ctrl+A</translation>
+        <translation type="obsolete">Ctrl+A</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="788"/>
         <source>Ctrl+D</source>
-        <translation>Ctrl+D</translation>
+        <translation type="obsolete">Ctrl+D</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="789"/>
         <source>Ctrl+L</source>
-        <translation>Ctrl+L</translation>
+        <translation type="obsolete">Ctrl+L</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="790"/>
         <source>Ctrl+R</source>
-        <translation>Ctrl+R</translation>
+        <translation type="obsolete">Ctrl+R</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -1793,12 +1792,12 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New</source>
-        <translation>&amp;Nou</translation>
+        <translation type="obsolete">&amp;Nou</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add</source>
-        <translation>&amp;Adaugă</translation>
+        <translation type="obsolete">&amp;Adaugă</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
@@ -1897,67 +1896,67 @@ Versiunea %1</translation>
 <context>
     <name>VBoxFilePathSelectorWidget</name>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="178"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="210"/>
         <source>&lt;reset to default&gt;</source>
         <translation>&lt;restabilește valoarea implicită&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="180"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
         <translation>Valoarea implicită actuală va fi afișată după acceptarea schimbărilor și redeschiderea acestei ferestre de dialog.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="184"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="216"/>
         <source>&lt;not selected&gt;</source>
         <translation>&lt;neselectat&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="186"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
         <translation>Vă rog folosiți opțiunea &lt;b&gt;Alta...&lt;/b&gt;pentru a selecta calea dorită.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="198"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="230"/>
         <source>Other...</source>
         <translation>Alta...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="202"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="234"/>
         <source>Reset</source>
         <translation>Resetare</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="209"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="241"/>
         <source>Opens a dialog to select a different folder.</source>
         <translation>Deschide o fereastră dialog pentru a selecta un alt dosar.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="244"/>
         <source>Resets the folder path to the default value.</source>
         <translation>Restabilește calea  către dosar la valoarea implicită.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="217"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="249"/>
         <source>Opens a dialog to select a different file.</source>
         <translation>Deschide o fereastră dialog pentru a selecta un alt fișier.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="220"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="252"/>
         <source>Resets the file path to the default value.</source>
         <translation>Restabilește calea  către fișier la valoarea implicită.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="228"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="260"/>
         <source>&amp;Copy</source>
         <translation>&amp;Copiază</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="361"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="410"/>
         <source>Please type the desired folder path here.</source>
         <translation>Vă rog introduceți calea către dosar dorită.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="362"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="411"/>
         <source>Please type the desired file path here.</source>
         <translation>Vă rog introduceți calea către fișier dorită.</translation>
     </message>
@@ -2086,7 +2085,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author:</source>
-        <translation>Autor:</translation>
+        <translation type="obsolete">Autor:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
@@ -2117,6 +2116,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="109"/>
         <source>Author</source>
         <translation>Autor</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
+        <source>Author(s):</source>
+        <translation type="unfinished">Autor(i):</translation>
     </message>
 </context>
 <context>
@@ -3113,7 +3117,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>rețea internă, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="180"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="179"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>Placă de rețea %1</translation>
@@ -3937,42 +3941,42 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
 <context>
     <name>VBoxNIList</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="562"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="561"/>
         <source>VirtualBox Host Interface %1</source>
         <translation>Interfață gazdă VirtualBox %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="623"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="622"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Doriți să ștergeți interfața de rețea gazdă selectată &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Notă:&lt;/b&gt; Această interfață ar putea fi utilizată în prezent de una sau mai multe plăci de rețea ale acestei MV sau ale alteia. Dacă este ștearsă, aceste plăci de rețea nu vor mai funcționa până când nu corectați setările corespunzătoare, alegând un nume de interfață diferit sau un tip diferit de atașare al plăcii de rețea.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="655"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="654"/>
         <source>Host &amp;Interfaces</source>
         <translation>Interfețe &amp;gazdă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="657"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
         <source>Lists all available host interfaces.</source>
         <translation>Listează toate interfețele gazdă disponibile.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="660"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="659"/>
         <source>A&amp;dd New Host Interface</source>
         <translation>A&amp;daugă o nouă interfață gazdă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="660"/>
         <source>&amp;Remove Selected Host Interface</source>
         <translation>Ște&amp;rge interfața gazdă selectată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>Adds a new host interface.</source>
         <translation>Adaugă o nouă interfață gazdă.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="663"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>Removes the selected host interface.</source>
         <translation>Șterge interfața gazdă selectată.</translation>
     </message>
@@ -4126,7 +4130,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
         <source>&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Location:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Size:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation>&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Tip:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Locație:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Dimensiune:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;octeți)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Tip:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Locație:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Dimensiune:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;octeți)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
@@ -4146,7 +4150,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>&amp;Cancel</source>
-        <translation>&amp;Revocare</translation>
+        <translation type="obsolete">&amp;Revocare</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
@@ -4172,6 +4176,40 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
         <source>&amp;Finish</source>
         <translation>&amp;Finalizare</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;%1:&amp;nbsp;&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;%3:&amp;nbsp;&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%4&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;%5:&amp;nbsp;&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%6&amp;nbsp;(%7&amp;nbsp;%8)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="205"/>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="unfinished">Amplasare</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="206"/>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="unfinished">Dimensiune</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="207"/>
+        <source>Bytes</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Revocare</translation>
     </message>
 </context>
 <context>
@@ -4340,7 +4378,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="162"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -4365,12 +4403,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="172"/>
         <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Name:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;OS Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Base Memory:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Nume:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Tip SO:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Memorie RAM:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Nume:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Tip SO:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Memorie RAM:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
         <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Boot Hard Disk:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Disc de boot&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Disc de boot&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
@@ -4390,7 +4428,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
         <source>&amp;Cancel</source>
-        <translation>&amp;Revocare</translation>
+        <translation type="obsolete">&amp;Revocare</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
@@ -4417,57 +4455,92 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <source>&amp;Finish</source>
         <translation>&amp;Finalizare</translation>
     </message>
+    <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
+        <source>MB</source>
+        <comment>megabytes</comment>
+        <translation type="unfinished">MO</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="unfinished">Nume</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished">Tip SO</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="unfinished">Memorie RAM</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Revocare</translation>
+    </message>
 </context>
 <context>
     <name>VBoxProblemReporter</name>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="307"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="402"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>Informații - VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="311"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="406"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>Întrebare - VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="315"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="410"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>Avertisment - VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="319"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="414"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>Eroare - VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="323"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="418"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>Eroare critică - VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="350"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="445"/>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
         <translation>Nu afișa acest mesaj din nou</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="477"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="572"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Nu am putut deschide &lt;tt&gt;%1&lt;/tt&gt;. Verificați dacă sistemul dvs poate manipula URL de acest tip.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="528"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="623"/>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut inițializa COM sau nu am putut găsi serverul COM al VirtualBox. Se pare că serverul VirtualBox nu rulează sau nu a putut porni.&lt;/p&gt;&lt;p&gt;Aplicația se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="536"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="631"/>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut crea obiectul COM VirtualBox.&lt;/p&gt;&lt;p&gt;Aplicația se va închide acum.&lt;/p&gt;</translation>
     </message>
@@ -4482,27 +4555,27 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Nu am putut salva configurația GUI globală.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="584"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="679"/>
         <source>Failed to set global VirtualBox properties.</source>
         <translation>Nu am putut seta proprietățile VirtualBox globale.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="598"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="693"/>
         <source>Failed to access the USB subsystem.</source>
         <translation>Nu am putut accesa subsistemul USB.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="609"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="704"/>
         <source>Failed to create a new virtual machine.</source>
         <translation>Nu am putut crea o mașină virtuală nouă.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="622"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="717"/>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut crea o mașină virtuală nouă &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="634"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="729"/>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut aplica setările mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -4517,87 +4590,87 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Nu am putut încărca setările mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="695"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="790"/>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut porni mașina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="707"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="802"/>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut întrerupe execuția mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="718"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="813"/>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut restabili execuția mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="755"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="850"/>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut salva starea mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="781"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="876"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut crea un instantaneu al mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="793"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="888"/>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut opri mașina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="805"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="900"/>
         <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut șterge mașina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="816"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="911"/>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut renunța la starea salvată a mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="856"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="951"/>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nu am putut renunța la instantaneul &lt;b&gt;%1&lt;/b&gt; mașinii virtuale &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="881"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="976"/>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut renunța la starea curentă a mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="905"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1000"/>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut renunța la instantaneul curent și la starea curentă a mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="916"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1011"/>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu există o mașină virtuală numită &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="964"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1059"/>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sunteți sigur că doriți să ștergeți pentru totdeauna mașina virtuală &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operație este definitivă.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="977"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1072"/>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sunteți sigur că doriți să ștergeți mașina virtuală inaccesibilă &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Nu veți mai putea să o înregistrați din nou din GUI.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="993"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1088"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sunteți sigur că doriți să renunțați la starea salvată a mașinii virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Această operație este echivalentă cu resetarea sau stingerea mașinii fără a face închidere normală din punctul de vedere al SO musafir.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1005"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1100"/>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Deconectarea acestei imagini o va detașa de la următoarele mașini virtuale: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Doriți să continuați?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1018"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1113"/>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Fișierul imagine &lt;b&gt;%1&lt;/b&gt; există deja. Nu puteți crea un nou disc hard virtual care să utilizeze acest fișier, pentru că este deja utilizat de către un alt disc virtual.&lt;/p&gt;&lt;p&gt;Vă rugăm alegeți un nume de fișier diferit pentru imagine.&lt;/p&gt;</translation>
     </message>
@@ -4607,17 +4680,17 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Doriți să ștergeți acest fișier imagine disc &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Dacă alegeți &lt;b&gt;Nu&lt;/b&gt; discul virtual va fi dezînregistrat și șters din colecție, dar fișierul imagine va rămâne pe discul dvs fizic.&lt;/p&gt;&lt;p&gt;Dacă alegeți &lt;b&gt;Da&lt;/b&gt;a tunci fișierul imagine va fi șters pentru totdeauna după dezînregistrare. Această operație este definitivă.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1050"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1145"/>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut șterge imaginea discului hard virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1060"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Doriți să ștergeți discul hard virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1100"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1195"/>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
         <translation>Nu am putut crea imaginea discului hard virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
@@ -4632,12 +4705,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Nu am putut detașa imaginea discului hard de la slotul %1 al controlerului %2 mașinii &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1157"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1252"/>
         <source>hard disk</source>
         <translation>disc hard</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1158"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1253"/>
         <source>CD/DVD image</source>
         <translation>Imagine CD/DVD</translation>
     </message>
@@ -4647,17 +4720,17 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Imagine dischetă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1148"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1243"/>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nu am putut înregistra %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1166"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1261"/>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nu am putut șterge %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1178"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1273"/>
         <source>Failed to create a new session.</source>
         <translation>Nu am putut crea o nouă sesiune.</translation>
     </message>
@@ -4667,42 +4740,42 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Nu am putut deschide o sesiune pentru mașina virtuală cu UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1197"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1292"/>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut deschide o sesiune pentru mașina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1225"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1320"/>
         <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
         <translation>Nu am putut obține starea de accesibilitate a mediului &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Unele dintre mediile înregistrate pot deveni inaccesibile.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1245"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1340"/>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut crea interfața de rețea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1263"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1358"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut șterge interfața de rețea a gazdei &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1290"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1385"/>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nu am putut conecta dispozitivul USB &lt;b&gt;%1&lt;/b&gt; la mașina virtuală &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1316"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1411"/>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Nu am putut deconecta dispozitivul USB &lt;b&gt;%1&lt;/b&gt; de la mașina virtuală &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1369"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1464"/>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Nu am putut crea un director partajat &lt;b&gt;%1&lt;/b&gt; (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) pentru mașina virtuală &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1351"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1446"/>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Nu am putut șterge directorul partajat &lt;b&gt;%1&lt;/b&gt; (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) din mașina virtuală &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
@@ -4722,12 +4795,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Mașina virtuală a detectat că SO musafir suportă &lt;b&gt;integrare cursor mouse&lt;/b&gt;. Aceasta însemnă că nu trebuie să &lt;i&gt;capturați&lt;/i&gt; cursorul mouse pentru a-l putea folosi în SO musafir -- toate acțiunile cu mouse pe care le faceți când cursorul este deasupra ecranului MV sunt trimise direct către SO musafir. Dacă mouse este capturat, va fi automat eliberat.&lt;/p&gt;&lt;p&gt;Iconul mouse din bara de stare va arăta&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;pentru a vă informa că integrarea mouse este suportată și pornită.,/p&gt;&lt;p&gt;&lt;b&gt;Notă&lt;/b&gt;: Unele aplicații se pot comporta incorect în modul integrare cursor mouse. Puteți oricând să o dezactivați în sesiunea curentă (și să o reactivați) selectând acțiunea corespunzătoare din bara meniu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1662"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1755"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Mașina virtuală raportează că SO musafir nu suportă &lt;b&gt;integrarea cursorului mouse&lt;/b&gt; în modul video curent. Va trebui să capturați mouse (dând click pe ecranul MV sau apăsând tasta gazdă) pentru a-l putea folosi în SO musafir.&lt;/P&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1681"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1774"/>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Mașina virtuală este în prezent în starea &lt;b&gt;Pauză&lt;/b&gt;, astfel nu acceptă introducere de date de la tastatură sau mouse. Dacă doriți sa reluați lucrul în mașina virtuală, trebuie să restabiliți rularea selectând acțiunea corespunzătoare de pe bara meniu.&lt;/p&gt;</translation>
     </message>
@@ -4742,98 +4815,98 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Mașina virtuală va trece acum în modul &lt;b&gt;ecran complet&lt;/b&gt;. Puteți oricând să vă întoarceți în modul fereastră, apăsând &lt;b&gt;%1&lt;/b&gt;. Notă: &lt;i&gt;tasta gazdă&lt;/i&gt; este definită în prezent ca &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1899"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1992"/>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut rula VirtualBox în mod &lt;i&gt;Selector MV&lt;/i&gt; datorită restricțiilor locale.&lt;/p&gt;&lt;p&gt;Aplicația se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1927"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2020"/>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Eroare fatală&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1933"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2026"/>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Eroare nefatală&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1939"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2032"/>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Avertisment&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1960"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2053"/>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;ID eroare:&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1962"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2055"/>
         <source>Severity: </source>
         <comment>runtime error info</comment>
         <translation>Grad de importanță: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1976"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2069"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
         <translation>&lt;p&gt;O eroare fatală s-a produs în timpul execuției mașinii virtuale! Mașina virtuală va fi oprită. Este recomandat să folosiți clipboard pentru a copia următorul mesaj de eroare pentru examinare ulterioară:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1988"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2081"/>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;O eroare s-a produs în timpul execuției mașinii virtuale! Detalii despre eroare sunt afișate în continuare. Puteți încerca să corectați eroarea descrisă și să restabiliți execuția mașinii virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1998"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2091"/>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Execuția mașinii virtuale poate ajunge la eroare descrisă mai jos. Puteți ignora acest mesaj dar este recomandat să urmați instrucțiunile pentru ca eroarea descrisă să nu se mai producă.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2096"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2189"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
         <translation>Cod&amp;nbsp;rezultat: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2102"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2195"/>
         <source>Component: </source>
         <comment>error info</comment>
         <translation>Componentă: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2110"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2203"/>
         <source>Interface: </source>
         <comment>error info</comment>
         <translation>Interfață: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2119"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2212"/>
         <source>Callee: </source>
         <comment>error info</comment>
         <translation>Callee: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2127"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2220"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
         <translation>Callee&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="507"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="602"/>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut găsi un fișier de limbă pentru limba &lt;b&gt;%1&lt;/b&gt; în directorul &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;
 &lt;p&gt;Limbajul interfeței va fi resetată temporar la cea implicită a sistemului. Mergeți la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteți deschide din meniul &lt;b&gt;Fișier&lt;/b&gt; al ferestrei principale VirtualBox, și selectați o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="519"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="614"/>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut încărca fișierul de limbă &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Limbajul interfeței va fi resetată temporar la Engleză (implicit). Mergeți la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteți deschide din meniul &lt;b&gt;Fișier&lt;/b&gt; al ferestrei principale VirtualBox, și selectați o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1159"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1254"/>
         <source>floppy image</source>
         <translation>imagine dischetă</translation>
     </message>
@@ -4843,22 +4916,22 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Unul sau mai multe discuri virtuale sau medii CD/DVD sau dischetă înregistrate nu sunt accesibile. Prin urmare, nu veți putea opera mașinile virtuale care fac uz de aceste medii până când ele devin accesibile din nou.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; pentru a deschide fereastra Manager de discuri virtuale și a vedea care medii sunt inaccesibile, sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a ignora acest mesaj.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1458"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1553"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pachetul VirtualBox Guest Additions instalat pe SO musafir este prea vechi: versiunea instalată este %1, versiunea așteptată fiind %2. Unele funcții care necesită Guest Additions (integrarea cursorului, auto redimensionarea ecranului musafir) s-ar putea să nu mai funcționeze corect.&lt;/p&gt;&lt;p&gt;Vă rugăm aduceți Guest Additions la versiunea curentă alegând &lt;b&gt;Instalare Guest Additions&lt;/b&gt; din meniul &lt;b&gt;Dispozitive&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1474"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1569"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pachetul VirtualBox Guest Additions instalat pe SO musafir este depășit: versiunea instalată este %1, versiunea așteptată fiind %2. Unele funcții care necesită Guest Additions (integrarea cursorului, auto redimensionarea ecranului musafir) s-ar putea să nu mai funcționeze corect.&lt;/p&gt;&lt;p&gt;Vă rugăm aduceți Guest Additions la versiunea curentă alegând &lt;b&gt;Instalare Guest Additions&lt;/b&gt; din meniul &lt;b&gt;Dispozitive&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1490"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1585"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pachetul VirtualBox Guest Additions instalat pe SO musafir este prea nou pentru acestă versiune a VirtualBox: versiunea instalată este %1, versiunea așteptată fiind %2. Folosirea unei versiuni mai noi a Guest Additions într-o versiune mai veche a VirtualBox nu este suportată.&lt;/p&gt;&lt;p&gt;Vă rugăm instalați versiunea curentă a Guest Additions alegând &lt;b&gt;Instalare Guest Additions&lt;/b&gt; din meniul &lt;b&gt;Dispozitive&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="828"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="923"/>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nu am putut schimba dosarul de instantanee al mașinii &lt;b&gt;%1&lt;/b&gt; în &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
@@ -4868,28 +4941,28 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Nu am putu intra în mod continuu din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1389"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1484"/>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ștergerea dosarului partajat &lt;b&gt;%1&lt;/b&gt; eșuată  (țintind la &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) din mașina virtuală &lt;/b&gt;%3&lt;/b&gt;.&lt;/p&gt;
 &lt;p&gt;Vă rugăm închideți toate programele din SO musafir care poate utilizează acum acest dosar partajat și încercați din nou.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1403"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1498"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut găsi fișierul de imagine al CD-ului cu VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Doriți să descărcați această imagine de CD de pe Internet?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1415"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1510"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut descărca imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1425"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1520"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sunteți sigur că doriți să descărcați imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensiune %3 octeți)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1440"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1535"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Imaginea de CD a VirtualBox Guest Additions a fost descărcată cu succes de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; și salvată local ca &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Doriți să înregistrați această imagine de CD și să o montați în unitatea de CD/DVD virtuală?&lt;/p&gt;</translation>
     </message>
@@ -4904,301 +4977,366 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Fereastra mașinii virtuale va trece acum în mod &lt;b&gt;Seamless&lt;/b&gt;. Vă puteți întoarce în modul fereastră în orice moment apăsând &lt;b&gt;%1&lt;/b&gt;. Notați că tasta &lt;i&gt;Gazdă&lt;/i&gt; este definită acum ca &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notați că bara de meniu principală este ascunsă în modul ecran complet. O puteți accesa prin combinația de taste &lt;b&gt;Gazdă+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1820"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1913"/>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Fereastra mașinii virtuale este optimizată pentru lucrul în modul de culori &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;, dar calitatea culorii al ecranului virtual este în prezent setată la &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vă rugăm deschideți dialogul de proprietăți ecran ale SO musafir și selectați modul de culoare &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, dacă este disponibil, pentru cea mai bună performanță posibilă a subsistemului video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Notați&lt;/b&gt; faptul că unele sisteme de operare ca OS/2, pot rula în mod de culoare 32bit dar reporta 24bit (16 milioane de culori). Trebuie să încercați calități diferite ale culorii pentru a vedea dacă acest mesaj de eroare dispare, sau puteți pur și simplu dezactiva acest mesaj acum dacă sunteți sigur că modul necesar (%4&amp;nbsp;bit) nu este disponibil pe SO musafir.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1946"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
         <translation>&lt;p&gt;O eroare critică s-a petrecut în timpul execuției mașinii virtuale și execuția a fost oprită.&lt;/p&gt;&lt;p&gt;Pentru ajutor, vă rugăm verificați secțiunea Community pe &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; sau contractul dvs de suport tehnic. Vă rugăm oferiți conținutul fișierului jurnal &lt;tt&gt;VBox.log&lt;/tt&gt; și fișierul imagine &lt;tt&gt;VBox.png&lt;/tt&gt;, pe care le puteți găsi în dosarul &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, alături de o descriere a ceea ce făceați în momentul producerii acestei erori. Notați că puteți de asemenea accesa fișierele de mai sus selectând &lt;b&gt;Afișează jurnal&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; dacă doriți să opriți mașina sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; dacă doriți să o lăsați așa cum este pentru depanare. Notați că depanarea necesită cunoștințe și unelte speciale, astfel că este recomandat să apăsați &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1885"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1978"/>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu ați conectat nici un disc dur la mașina virtuală nouă. Mașina nu va fi capabilă să booteze dacă nu conectați un disc dur cu un sistem de operare musafir sau un alt mediu bootabil, folosind dialogul setări mașină sau Asistentul de primă rulare.&lt;/p&gt;&lt;p&gt;Doriți să continuați?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="457"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="552"/>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nu am găsit fișiere licență în &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="467"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="562"/>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
         <translation>Nu am putut deschide fișierul de licență &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Verificați permisiile de fișier.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="730"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="825"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nu am putut trimite eveniment de apăsare buton de putere ACPI către mașina virtuală &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1505"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1600"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu m-am putut conecta la serviciul de înregistrare online a VirtualBox. &lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1516"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1611"/>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
         <translation>&lt;p&gt;Felicitări! V-ați înregistrat cu succes ca utilizator al VirtualBox. &lt;/p&gt;&lt;p&gt;Vă mulțumim pentru că v-ați făcut timp să completați formularul de înregistrare!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1519"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1614"/>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut înregistra produsul VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="549"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="644"/>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut salva setările globale VirtualBox la &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="563"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="658"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut încărca configurația GUI de la &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplicația se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="577"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="672"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut salva configurația GUI la &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplicația se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="648"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="743"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
         <translation>Nu am putut salva setările mașinii virtuale &lt;b&gt;%1&lt;/b&gt; la &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="670"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="765"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
         <translation>Nu am putut încărca setările mașinii virtuale &lt;b&gt;%1&lt;/b&gt; de la &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="965"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1060"/>
         <source>Delete</source>
         <comment>machine</comment>
         <translation>Șterge</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="978"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1073"/>
         <source>Unregister</source>
         <comment>machine</comment>
         <translation>Elimină</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="995"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1090"/>
         <source>Discard</source>
         <comment>saved state</comment>
         <translation>Renunță</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1007"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1102"/>
         <source>Continue</source>
         <comment>detach image</comment>
         <translation>Continuă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1033"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Doriți să ștergeți acest fișier imagine disc &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Dacă alegeți &lt;b&gt;Șterge&lt;/b&gt; atunci fișierul imagine va fi șters pentru totdeauna, după eliminarea discului hard. Această operație este definitivă.&lt;/p&gt;&lt;p&gt;Dacă alegeți &lt;b&gt;Elimină&lt;/b&gt; atunci discul virtual va fi eliminat și șters din colecție, dar fișierul imagine va rămâne pe discul dvs fizic.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1038"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>Delete</source>
         <comment>hard disk</comment>
         <translation>Șterge</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1062"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1157"/>
         <source>Unregister</source>
         <comment>hard disk</comment>
         <translation>Elimină</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1072"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1167"/>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Există discuri hard atașate la porturile SATA ale acestei mașini virtuale. Dacă dezactivați controlorul SATA, toate aceste discuri dure vor fi detașate automat.&lt;/p&gt;&lt;p&gt;Sigur doriți dezactivarea controlorului SATA?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1074"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1169"/>
         <source>Disable</source>
         <comment>hard disk</comment>
         <translation>Dezactivează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1113"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1208"/>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
         <translation>Nu am putut atașa imaginea de disc cu UUID %1 la slot-ul %2 de pe canalul %3 al magistralei %4 de pe mașina virtuală &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1223"/>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
         <translation>Nu am putut detașa imaginea de disc de la slot-ul %1 de pe canalul %2 al magistralei %3 de pe mașina virtuală &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1427"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1522"/>
         <source>Download</source>
         <comment>additions</comment>
         <translation>Descarcă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1442"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1537"/>
         <source>Mount</source>
         <comment>additions</comment>
         <translation>Montează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1609"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1702"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
         <translation>&lt;p&gt;Tasta gazdă este definită acum la &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1581"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1674"/>
         <source>Capture</source>
         <comment>do input capture</comment>
         <translation>Capturează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1697"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1790"/>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Unul sau mai multe discuri hard virtuale, medii CD/DVD sau dischetă nu sunt accesibile în mod curent. Ca rezultat, nu veți putea folosi mașinile virtuale care folosesc aceste medii până când ele devin accesibile.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;Verifică&lt;/b&gt; pentru a deschide fereastra Managerului de discuri virtuale și a vedea ce medii sunt inaccesibile, sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a ignora acest mesaj.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1702"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1795"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>Verifică</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1739"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Următoarele fișiere de setări ale VirtualBox au fost convertite automat la noua versiune a formatului de fișier de setări &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Oricum, rezultatele conversiei nu au fost încă salvate pe disc. Vă rugăm apăsați: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Salvează&lt;/b&gt; pentru a salva fișierele convertite automat acum (nu va mai fi posibilă utilizarea acestor fișiere de setări cu o versiune mai veche de VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Copie de siguranță&lt;/b&gt; pentru a crea copii de siguranță a fișierelor de setări în vechiul format înainte de a le salve în noul format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Revocare&lt;/b&gt; pentru a nu salva acum fișierele auto-convertite.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Notați faptul că dacă selectați &lt;b&gt;Revocare&lt;/b&gt;, fișierele de setări convertite automat vor fi oricum salvate implicit în noul format o dată ce schimbați o setare sau porniți o mașină virtuală și nu se va face &lt;b&gt;nicio&lt;/b&gt; copie de siguranță.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1745"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1838"/>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>&amp;Salvează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1746"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1839"/>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>Copie de si&amp;guranță</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1747"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1840"/>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>Revocare</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1769"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1862"/>
         <source>Switch</source>
         <comment>fullscreen</comment>
         <translation>Schimbă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1791"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1884"/>
         <source>Switch</source>
         <comment>seamless</comment>
         <translation>Schimbă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1869"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1962"/>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sigur doriți resetarea mașinii virtuale?&lt;/p&gt;&lt;p&gt;Când se resetează mașina, datele nesalvate ale aplicațiilor rulând în interior vor fi pierdute.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1871"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1964"/>
         <source>Reset</source>
         <comment>machine</comment>
         <translation>Resetare</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1983"/>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
         <translation>Continuă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1891"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1984"/>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
         <translation>Mergi înapoi</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="493"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="588"/>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
         <translation>Copierea fișierului &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; la &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; a eșuat (%3).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1085"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1180"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu există discuri hard disponibile pentru atașamentul nou creat.&lt;/p&gt;&lt;p&gt;Apăsați butonul &lt;b&gt;Creează&lt;/b&gt; pentru a porni asistentul &lt;i&gt;Disc virtual nou&lt;/i&gt; și a crea un disc hard nou, sau apăsați butonul &lt;b&gt;Selectează&lt;/b&gt; pentru a deschide &lt;i&gt;Manager discuri virtuale&lt;/i&gt; și a selecta ce doriți să faceți.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1090"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1185"/>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
         <translation>&amp;Creează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1091"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1186"/>
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>Selectează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="931"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1026"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut intra în modul continuu din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="946"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1041"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut intra în modul ecran complet din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a trece la modul ecran complet oricum sau apăsați &lt;b&gt;Revocare&lt;/b&gt; pentru a revoca  operațiunea.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1532"/>
         <source>&lt;p&gt;There is a new version of VirtualBox found on the VirtualBox web-site: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you want to download and install this version please proceed with the following link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;O nouă versiune a VirtualBox a fost găsită pe site-ul VirtualBox: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Dacă doriți să o descărcați și să o instalați, mergeți la următoarea legătură:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;O nouă versiune a VirtualBox a fost găsită pe site-ul VirtualBox: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Dacă doriți să o descărcați și să o instalați, mergeți la următoarea legătură:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1541"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1634"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nu am putut obține informații despre ultima versiune, datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1548"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1641"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
         <translation>Aveți instalată ultima versiune a VirtualBox. Vă rog repetați verificarea actualizărilor mai târziu.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1574"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1667"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ați &lt;b&gt;dat clic&lt;/b&gt; în interiorul ecranului mașinii virtuale sau ați apăsat &lt;b&gt;tasta gazdă&lt;/b&gt;. Acest lucru va cauza &lt;b&gt;capturarea&lt;/b&gt; de către mașina virtuală a cursorului mouse (numai dacă integrarea mouse nu este suportată de către SO musafir) și a tastaturi, ceea ce o va face indisponibilă celorlate aplicații rulând pe mașina dvs gazdă.&lt;/p&gt;&lt;p&gt;Puteți oricând apăsa &lt;b&gt;tasta gazdă&lt;/b&gt; pentru a &lt;b&gt;opri capturarea&lt;/b&gt; mouse și tastaturii și a le întoarce la operare normală. Tasta gazdă asociată în prezent este afișată în bara de stare, în partea de jos a ferestrei mașinii virtuale, lângă iconul&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Acest icon, împreună cu iconul mouse alăturat, indică starea curentă a capturării mouse și tastaturii.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1607"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1700"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Opțiunea &lt;b&gt;Captură automată tastatură&lt;/b&gt; este activă. Acest lucru va face ca mașina virtuală să &lt;b&gt;captureze&lt;/b&gt; automat tastatura de fiecare dată când fereastra MV este activată și să facă tastatura indisponibilă celorlate aplicații rulând pe mașina gazđă.&lt;/p&gt;&lt;p&gt;Puteți apăsa &lt;b&gt;tasta gazdă&lt;/b&gt; în orice moment pentru a &lt;b&gt;opri captura&lt;/b&gt; tastaturii și a mouse (dacă este capturat) și a le readuce la modul normal de funcționare. Tasta gazdă asociată în prezent este afișată în bara de stare, în partea de jos a ferestrei mașinii virtuale, lângă iconul&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Acest icon, împreună cu iconul mouse alăturat, indică starea curentă a capturării mouse și tastaturii.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1652"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1745"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Mașina virtuală a detectat că SO musafir suportă &lt;b&gt;integrare cursor mouse&lt;/b&gt;. Aceasta însemnă că nu trebuie să &lt;i&gt;capturați&lt;/i&gt; cursorul mouse pentru a-l putea folosi în SO musafir -- toate acțiunile cu mouse pe care le faceți când cursorul este deasupra ecranului MV sunt trimise direct către SO musafir. Dacă mouse este capturat, va fi automat eliberat.&lt;/p&gt;&lt;p&gt;Iconul mouse din bara de stare va arăta&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;pentru a vă informa că integrarea mouse este suportată și pornită.,/p&gt;&lt;p&gt;&lt;b&gt;Notă&lt;/b&gt;: Unele aplicații se pot comporta incorect în modul integrare cursor mouse. Puteți oricând să o dezactivați în sesiunea curentă (și să o reactivați) selectând acțiunea corespunzătoare din bara de meniu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1766"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Fereastra mașinii virtuale va trece acum în modul &lt;b&gt;ecran complet&lt;/b&gt;. Vă puteți întoarce în modul fereastră în orice moment apăsând &lt;b&gt;%1&lt;/b&gt;. Notați că tasta &lt;i&gt;Gazdă&lt;/i&gt; este definită acum ca &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notați că bara de meniu principală este ascunsă în modul ecran complet. O puteți accesa prin combinația de taste &lt;b&gt;Gazdă+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1788"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1881"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Fereastra mașinii virtuale va trece acum în mod &lt;b&gt;continuu&lt;/b&gt;. Vă puteți întoarce în modul fereastră în orice moment apăsând &lt;b&gt;%1&lt;/b&gt;. Notați că tasta &lt;i&gt;Gazdă&lt;/i&gt; este definită acum ca &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notați că bara de meniu principală este ascunsă în modul ecran complet. O puteți accesa prin combinația de taste &lt;b&gt;Gazdă+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished">&amp;Conținut...</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="272"/>
+        <source>Show the online help contents</source>
+        <translation type="unfinished">Arată conținutul ajutorului online</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="274"/>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="276"/>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation type="unfinished">Deschide browserul și navighează pe site-ul VirtualBox</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="278"/>
+        <source>&amp;Reset All Warnings</source>
+        <translation type="unfinished">&amp;Resetează toate avertizările</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="280"/>
+        <source>Cause all suppressed warnings and messages to be shown again</source>
+        <translation type="unfinished">Arată din nou toate avertizările și mesajele ascunse</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="282"/>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished">Înr&amp;egistrează VirtualBox...</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="284"/>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished">Deschide formularul de înregistrare VirtualBox</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="286"/>
+        <source>C&amp;heck for Updates...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="288"/>
+        <source>Check for a new VirtualBox version</source>
+        <translation type="unfinished">Caută o versiune mai nouă a VirtualBox</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="290"/>
+        <source>&amp;About VirtualBox...</source>
+        <translation type="unfinished">&amp;Despre VirtualBox...</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="292"/>
+        <source>Show a dialog with product information</source>
+        <translation type="unfinished">Arată dialogul cu informații despre produs</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1625"/>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5286,13 +5424,18 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>&amp;Cancel</source>
-        <translation>&amp;Revocare</translation>
+        <translation type="obsolete">&amp;Revocare</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Revocare</translation>
     </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="3533"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3490"/>
         <source>Shared Folders</source>
         <translation>Directoare partajate</translation>
     </message>
@@ -5320,7 +5463,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>VBoxSelectorWnd</name>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1157"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1111"/>
         <source>VirtualBox OSE</source>
         <translation>VirtualBox OSE</translation>
     </message>
@@ -5330,27 +5473,27 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1162"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1116"/>
         <source>&amp;Details</source>
         <translation>&amp;Detalii</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1169"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1123"/>
         <source>Virtual &amp;Disk Manager...</source>
         <translation>Manager &amp;discuri virtuale...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1170"/>
         <source>Ctrl+D</source>
-        <translation>Ctrl+D</translation>
+        <translation type="obsolete">Ctrl+D</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1171"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1125"/>
         <source>Display the Virtual Disk Manager dialog</source>
         <translation>Afișeză dialogul Manager discuri virtuale</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1191"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1145"/>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
         <translation>&amp;Preferințe...</translation>
@@ -5358,30 +5501,30 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1193"/>
         <source>Ctrl+G</source>
-        <translation>Ctrl+G</translation>
+        <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1194"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1148"/>
         <source>Display the global settings dialog</source>
         <translation>Afișează dialogul preferințe globale</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1196"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1150"/>
         <source>E&amp;xit</source>
         <translation>Ieși&amp;re</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1197"/>
         <source>Ctrl+Q</source>
-        <translation>Ctrl+Q</translation>
+        <translation type="obsolete">Ctrl+Q</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1198"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1152"/>
         <source>Close application</source>
         <translation>Închide aplicația</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1200"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1154"/>
         <source>&amp;New...</source>
         <translation>&amp;Nouă...</translation>
     </message>
@@ -5393,15 +5536,15 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1201"/>
         <source>Ctrl+N</source>
-        <translation>Ctrl+N</translation>
+        <translation type="obsolete">Ctrl+N</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1202"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1156"/>
         <source>Create a new virtual machine</source>
         <translation>Creează o mașină virtuală nouă</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1204"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1160"/>
         <source>&amp;Settings...</source>
         <translation>&amp;Setări...</translation>
     </message>
@@ -5413,15 +5556,15 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1205"/>
         <source>Ctrl+S</source>
-        <translation>Ctrl+S</translation>
+        <translation type="obsolete">Ctrl+S</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1206"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1162"/>
         <source>Configure the selected virtual machine</source>
         <translation>Configurează mașina virtuală selectată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1208"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1166"/>
         <source>&amp;Delete</source>
         <translation>&amp;Șterge</translation>
     </message>
@@ -5431,12 +5574,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Șterge</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1209"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1167"/>
         <source>Delete the selected virtual machine</source>
         <translation>Șterge mașina virtuală selectată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1213"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1171"/>
         <source>D&amp;iscard</source>
         <translation>Renun&amp;ță</translation>
     </message>
@@ -5446,12 +5589,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Renunță</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1215"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1173"/>
         <source>Discard the saved state of the selected virtual machine</source>
         <translation>Înlătură starea salvată a mașinii virtuale selectate</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1217"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1175"/>
         <source>&amp;Refresh</source>
         <translation>&amp;Reîmprospăteză</translation>
     </message>
@@ -5463,17 +5606,17 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1218"/>
         <source>Ctrl+R</source>
-        <translation>Ctrl+R</translation>
+        <translation type="obsolete">Ctrl+R</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1220"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1178"/>
         <source>Refresh the accessibility state of the selected virtual machine</source>
         <translation>Reîmprospătează starea de accesibilitate a mașinii virtuale selectate</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1227"/>
         <source>&amp;Contents...</source>
-        <translation>&amp;Conținut...</translation>
+        <translation type="obsolete">&amp;Conținut...</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -5483,40 +5626,40 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1229"/>
         <source>Show the online help contents</source>
-        <translation>Arată conținutul ajutorului online</translation>
+        <translation type="obsolete">Arată conținutul ajutorului online</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1231"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>Site Web &amp;VirtualBox...</translation>
+        <translation type="obsolete">Site Web &amp;VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1233"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Deschide browserul și navighează pe site-ul VirtualBox</translation>
+        <translation type="obsolete">Deschide browserul și navighează pe site-ul VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1243"/>
         <source>&amp;About VirtualBox...</source>
-        <translation>&amp;Despre VirtualBox...</translation>
+        <translation type="obsolete">&amp;Despre VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1244"/>
         <source>Show a dialog with product information</source>
-        <translation>Arată dialogul cu informații despre produs</translation>
+        <translation type="obsolete">Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1246"/>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Resetează toate avertizările</translation>
+        <translation type="obsolete">&amp;Resetează toate avertizările</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1248"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation>Arată din nou toate avertizările și mesajele ascunse</translation>
+        <translation type="obsolete">Arată din nou toate avertizările și mesajele ascunse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1250"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1187"/>
         <source>&amp;File</source>
         <translation>&amp;Fișier</translation>
     </message>
@@ -5526,27 +5669,27 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">M&amp;V</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1252"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1189"/>
         <source>&amp;Help</source>
         <translation>&amp;Ajutor</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1399"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1336"/>
         <source>&amp;Snapshots</source>
         <translation>In&amp;stantaneu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1403"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1340"/>
         <source>D&amp;escription</source>
         <translation>&amp;Descriere</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1300"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1237"/>
         <source>D&amp;escription *</source>
         <translation>&amp;Descriere *</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1318"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1255"/>
         <source>S&amp;how</source>
         <translation>A&amp;rată</translation>
     </message>
@@ -5556,12 +5699,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Arată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1320"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1257"/>
         <source>Switch to the window of the selected virtual machine</source>
         <translation>Treci la fereastra mașinii virtuale selectate</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1413"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1350"/>
         <source>S&amp;tart</source>
         <translation>S&amp;tart</translation>
     </message>
@@ -5571,7 +5714,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Start</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1415"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1352"/>
         <source>Start the selected virtual machine</source>
         <translation>Pornește mașina virtuală selectată</translation>
     </message>
@@ -5581,12 +5724,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;F1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1251"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1188"/>
         <source>&amp;Machine</source>
         <translation>&amp;Mașină</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1222"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1180"/>
         <source>Show &amp;Log...</source>
         <translation>Afișează &amp;log...</translation>
     </message>
@@ -5598,30 +5741,30 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1223"/>
         <source>Ctrl+L</source>
-        <translation>Ctrl+L</translation>
+        <translation type="obsolete">Ctrl+L</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1225"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1183"/>
         <source>Show the log files of the selected virtual machine</source>
         <translation>Afișează fișiere log ale mașinii virtuale selectate</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1235"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation>Înr&amp;egistrează VirtualBox...</translation>
+        <translation type="obsolete">Înr&amp;egistrează VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1237"/>
         <source>Open VirtualBox registration form</source>
-        <translation>Deschide formularul de înregistrare VirtualBox</translation>
+        <translation type="obsolete">Deschide formularul de înregistrare VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1159"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1113"/>
         <source>Sun xVM VirtualBox</source>
         <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1336"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1273"/>
         <source>R&amp;esume</source>
         <translation>R&amp;estabilirie</translation>
     </message>
@@ -5633,15 +5776,15 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1347"/>
         <source>Ctrl+P</source>
-        <translation>Ctrl+P</translation>
+        <translation type="obsolete">Ctrl+P</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1339"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1276"/>
         <source>Resume the execution of the virtual machine</source>
         <translation>Restabilește execuția mașinii virtuale</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1346"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1283"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pauză</translation>
     </message>
@@ -5651,22 +5794,22 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Pauză</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1349"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1286"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Suspendă execuția mașinii virtuale</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
         <source>C&amp;heck for update...</source>
-        <translation>Cau&amp;tă actualizări...</translation>
+        <translation type="obsolete">Cau&amp;tă actualizări...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
         <source>Check server for VirtualBox updates</source>
-        <translation>Caută pe server actualizări VirtualBox</translation>
+        <translation type="obsolete">Caută pe server actualizări VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1392"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;F1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
@@ -6136,12 +6279,12 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4700"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4718"/>
         <source>Disable</source>
         <translation>Dezactivează</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4700"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4718"/>
         <source>Enable</source>
         <translation>Activează</translation>
     </message>
@@ -6442,13 +6585,13 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4630"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4648"/>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;lipsă dispozitive&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4633"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4651"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Nici un dispozitiv suportat nu este conectat la PC gazdă</translation>
@@ -6524,52 +6667,94 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
         <source>VirtualBox New Version Notifier</source>
-        <translation>Agent versiune nouă VirtualBox</translation>
+        <translation type="obsolete">Agent versiune nouă VirtualBox</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
         <source>Check for a new version</source>
-        <translation>Caută o versiune mai nouă</translation>
+        <translation type="obsolete">Caută o versiune mai nouă</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
         <source>&lt;p&gt;VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p&gt;&lt;p&gt;You can make VirtualBox look for the newer version now by pressing &lt;b&gt;Check&lt;/b&gt; button or postpone it for then next time by pressing &lt;b&gt;Cancel&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b&gt;&apos;Check for a new version...&apos;&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox poate verifica după ultima versiune disponibilă spre descărcare. Doriți ca VirtualBox să facă asta acum?&lt;/p&gt;&lt;/p&gt;Puteți face asta apăsând butonul &lt;b&gt;Verifică&lt;/b&gt; sau puteți amâna acțiunea pentru data viitoare, apăsând &lt;b&gt;Revocare&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puteți rula Agentul versiune nouă VirtualBox oricând, din meniul Ajutor al aplicației prin acțiunea &lt;b&gt;&apos;Caută o versiune nouă...&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;VirtualBox poate verifica după ultima versiune disponibilă spre descărcare. Doriți ca VirtualBox să facă asta acum?&lt;/p&gt;&lt;/p&gt;Puteți face asta apăsând butonul &lt;b&gt;Verifică&lt;/b&gt; sau puteți amâna acțiunea pentru data viitoare, apăsând &lt;b&gt;Revocare&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puteți rula Agentul versiune nouă VirtualBox oricând, din meniul Ajutor al aplicației prin acțiunea &lt;b&gt;&apos;Caută o versiune nouă...&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="189"/>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="191"/>
         <source>Chec&amp;k</source>
         <translation>&amp;Verifică</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="215"/>
         <source>&amp;Cancel</source>
-        <translation>&amp;Revocare</translation>
+        <translation type="obsolete">&amp;Revocare</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="236"/>
         <source>Check Results</source>
-        <translation>Rezultate căutare</translation>
+        <translation type="obsolete">Rezultate căutare</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="290"/>
         <source>&lt;p&gt;New VirtualBox %1 version available to download from:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Noul VirtualBox versiunea %1 este disponibil pentru descărcare la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Noul VirtualBox versiunea %1 este disponibil pentru descărcare la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="312"/>
         <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nu am putut obține informații despre ultima versiune, datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nu am putut obține informații despre ultima versiune, datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="334"/>
         <source>You have already installed the latest VirtualBox version, there is no newer version currently available.</source>
-        <translation>Aveți instalată ultima versiune a VirtualBox, momentan nu există o versiune mai nouă.</translation>
+        <translation type="obsolete">Aveți instalată ultima versiune a VirtualBox, momentan nu există o versiune mai nouă.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="388"/>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="390"/>
         <source>&amp;Close</source>
         <translation>În&amp;chide</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
+        <source>Check for Updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Revocare</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
+        <source>Summary</source>
+        <translation type="unfinished">Rezumat</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Nu am putut obține informații despre ultima versiune, datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
+        <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
+        <translation type="unfinished">Aveți instalată ultima versiune a VirtualBox. Vă rog repetați verificarea actualizărilor mai târziu.</translation>
     </message>
 </context>
 <context>
@@ -6592,7 +6777,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="328"/>
         <source>Ctrl+E</source>
-        <translation>Ctrl+E</translation>
+        <translation type="obsolete">Ctrl+E</translation>
     </message>
 </context>
 <context>
@@ -6753,7 +6938,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="105"/>
         <source>&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation>&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Sursă:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+        <translation type="obsolete">&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Sursă:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
@@ -6768,7 +6953,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>&amp;Cancel</source>
-        <translation>&amp;Revocare</translation>
+        <translation type="obsolete">&amp;Revocare</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -6784,6 +6969,28 @@ p, li { white-space: pre-wrap; }
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
         <source>&amp;Finish</source>
         <translation>&amp;Finalizare</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="105"/>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;%1:&amp;nbsp;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;%3:&amp;nbsp;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="106"/>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Revocare</translation>
     </message>
 </context>
 <context>
@@ -6846,27 +7053,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
         <source>Enabled</source>
-        <translation>Activat</translation>
+        <translation type="obsolete">Activat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
         <source>Disabled</source>
-        <translation>Dezactivat</translation>
+        <translation type="obsolete">Dezactivat</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="644"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="436"/>
         <source>Runtime Attributes</source>
         <translation>Atribute la rulare</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="645"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="437"/>
         <source>Screen Resolution</source>
         <translation>Rezoluție ecran</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="646"/>
         <source>Hardware Virtualization</source>
-        <translation>Virtualizare hardware</translation>
+        <translation type="obsolete">Virtualizare hardware</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6879,19 +7086,19 @@ p, li { white-space: pre-wrap; }
         <translation>Statistici CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="664"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="503"/>
         <source>Network Adapter Statistics</source>
         <translation>Statistici placă de rețea</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="665"/>
         <source>Adapter 1</source>
-        <translation>Placă 1</translation>
+        <translation type="obsolete">Placă 1</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="665"/>
         <source>Adapter 2</source>
-        <translation>Placă 2</translation>
+        <translation type="obsolete">Placă 2</translation>
     </message>
     <message>
         <location filename="" line="7602291"/>
@@ -6911,27 +7118,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="651"/>
         <source>Hard Disks Statistics</source>
-        <translation>Statistici discuri hard</translation>
+        <translation type="obsolete">Statistici discuri hard</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="653"/>
         <source>Primary Master</source>
-        <translation>Primar master</translation>
+        <translation type="obsolete">Primar master</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="653"/>
         <source>Primary Slave</source>
-        <translation>Primar slave</translation>
+        <translation type="obsolete">Primar slave</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="658"/>
         <source>Secondary Master</source>
-        <translation>Secundar master</translation>
+        <translation type="obsolete">Secundar master</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="658"/>
         <source>Secondary Slave</source>
-        <translation>Secundar slave</translation>
+        <translation type="obsolete">Secundar slave</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="420"/>
@@ -7043,14 +7250,14 @@ p, li { white-space: pre-wrap; }
         <source>%1 (%2)
  %3</source>
         <comment>Accessible string of the list view item</comment>
-        <translation>%1 (%2)
+        <translation type="obsolete">%1 (%2)
  %3</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="583"/>
         <source>VM</source>
         <comment>Horizontal header description</comment>
-        <translation>MV</translation>
+        <translation type="obsolete">MV</translation>
     </message>
 </context>
 <context>
@@ -9003,7 +9210,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="453"/>
         <source>Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Remote Display</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="474"/>
@@ -9274,7 +9481,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>R&amp;untime:</source>
-        <translation>Timp &amp;rulare:</translation>
+        <translation type="obsolete">Timp &amp;rulare:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
@@ -9286,46 +9493,51 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>&amp;Remember Mounted Media</source>
         <translation>A&amp;mintește mediul montat în timpul rulării</translation>
     </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
+        <source>Runtime:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsHD</name>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="577"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="608"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation>Nici un disc hard nu este selectat pentru &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="589"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="620"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation>&lt;i&gt;%1&lt;/i&gt; folosește discul hard care este deja atașat la &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="609"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="640"/>
         <source>&amp;Add Attachment</source>
         <translation>&amp;Adaugă atașament</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="610"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="641"/>
         <source>&amp;Remove Attachment</source>
         <translation>&amp;Șterge atașament</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="611"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="642"/>
         <source>&amp;Select Hard Disk</source>
         <translation>&amp;Selectați disc hard</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="620"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="651"/>
         <source>Adds a new hard disk attachment.</source>
         <translation>Adaugă un nou atașament de disc hard.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="621"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="652"/>
         <source>Removes the highlighted hard disk attachment.</source>
         <translation>Șterge atașamentul evidențiat.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="624"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="655"/>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
         <translation>Invocă dialogul Manager discuri virtuale pentru a crea o nouă imagine disc pentru a o atașa slot-ului evidențiat.</translation>
     </message>
@@ -9347,18 +9559,23 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the F2 key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Listează toate discurile hard atașate la această mașină. Folosiți dublu click sau tasta &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt; pe itemul selectat pentru a activa lista și pentru a alege valoarea dorită. Folosiți meniul contextual sau butoanele din dreapta pentru a adăuga sau șterge atașamente de discuri hard.</translation>
+        <translation type="obsolete">Listează toate discurile hard atașate la această mașină. Folosiți dublu click sau tasta &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt; pe itemul selectat pentru a activa lista și pentru a alege valoarea dorită. Folosiți meniul contextual sau butoanele din dreapta pentru a adăuga sau șterge atașamente de discuri hard.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
+        <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetwork</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="290"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="289"/>
         <source>Select TAP setup application</source>
         <translation>Selectați aplicația de instalare TAP</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="299"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="298"/>
         <source>Select TAP terminate application</source>
         <translation>Selectați aplicație de închidere TAP</translation>
     </message>
@@ -9423,70 +9640,75 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&amp;Generează</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="176"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>Indică dacă rețeaua virtuală este conectată la mașină la pornire sau nu.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="182"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
         <translation>Ca&amp;blu de rețea conectat la pornire</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="189"/>
         <source>&amp;Host Interface Settings</source>
-        <translation>Setări interfață &amp;gazdă</translation>
+        <translation type="obsolete">Setări interfață &amp;gazdă</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="199"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
         <translation>Nume &amp;interfață:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="218"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
         <source>Displays the TAP interface name.</source>
         <translation>Afișează numele TAP al interfeței.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="225"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
         <translation>Aplicație &amp;setup:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="244"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation>Afișează comanda executată pentru configurarea interfeței TAP.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="251"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="248"/>
         <source>Selects the setup application.</source>
         <translation>Selectează aplicația de configurare.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="261"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="258"/>
         <source>&amp;Terminate Application:</source>
         <translation>A&amp;plicație de închidere:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="280"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="277"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation>Afișează comanda executată pentru a închide interfața TAP.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="287"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="284"/>
         <source>Selects the terminate application.</source>
         <translation>Selectează aplicația de închidere.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
+        <source>Host Interface Settings</source>
+        <translation type="unfinished">Setări interfață gazdă</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetworkPage</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="809"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="808"/>
         <source>No host network interface is selected</source>
         <translation>Nici o interfață gazdă nu este selectată</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="816"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="815"/>
         <source>Internal network name is not set</source>
         <translation>Numele rețelei interne nu este stabilit</translation>
     </message>
@@ -9601,22 +9823,22 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>Șterge definiția de director partajat selectată.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsSF.cpp" line="254"/>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="252"/>
         <source> Machine Folders</source>
         <translation> Directoarele mașinii</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsSF.cpp" line="261"/>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="259"/>
         <source> Transient Folders</source>
         <translation> Directoare de tranzit</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsSF.cpp" line="361"/>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="359"/>
         <source>Full</source>
         <translation>Complet</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsSF.cpp" line="362"/>
+        <location filename="../src/VBoxVMSettingsSF.cpp" line="360"/>
         <source>Read-only</source>
         <translation>Doar citire</translation>
     </message>
@@ -9913,7 +10135,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>Filter details</source>
-        <translation>Detalii filtru</translation>
+        <translation type="obsolete">Detalii filtru</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
@@ -10014,6 +10236,11 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
         <translation>Definește acțiunea executată de computerul gazdă atunci când un dispozitiv care respectă condițiile este conectat:îl oferă SO gazdă (&lt;i&gt;Ignoră&lt;/i&gt;) sau îl capturează pentru a fi folosit ulterior în mașinile virtuale (&lt;i&gt;Menține&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
+        <source>USB Filter Details</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
