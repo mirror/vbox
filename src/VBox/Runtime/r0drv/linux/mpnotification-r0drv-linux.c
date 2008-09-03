@@ -81,13 +81,22 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
     RTCPUID idCpu = (uintptr_t)pvCpu;
     NOREF(pNotifierBlock);
 
+    /*
+     * Note that redhat/CentOS ported _some_ of the FROZEN macros
+     * back to their 2.6.18-92.1.10.el5 kernel but actually don't
+     * use them. Thus we have to test for both CPU_TASKS_FROZEN and
+     * the individual event variants.
+     */
+
     /* ASSUMES iCpu == RTCPUID */
     switch (ulNativeEvent)
     {
+        /*
+         * Pick up online events or failures to go offline.
+         * Ignore failure events for CPUs we didn't see go offline.
+         */
 #ifdef CPU_DOWN_FAILED
         case CPU_DOWN_FAILED:
-        /* r=frank: redhat/CentOS ported _some_ of these constants back to their
-         *          2.6.18-92.1.10.el5 kernel but actually don't use them. */
 # if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
         case CPU_DOWN_FAILED_FROZEN:
 # endif
@@ -105,6 +114,11 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
             rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
             break;
 
+        /*
+         * Pick the earlies possible offline event.
+         * The only important thing here is that we get the event and that
+         * it's exactly one.
+         */
 #ifdef CPU_DOWN_PREPARE
         case CPU_DOWN_PREPARE:
 # if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
