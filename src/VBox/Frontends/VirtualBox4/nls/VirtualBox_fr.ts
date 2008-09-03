@@ -9080,12 +9080,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
         <source>&amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Attachements</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste de tous les disques durs raccordés à cette machine. Cliquez avec la souris sur l&apos;élément sélectionné ou appuyez sur la touche &lt;tt&gt;Espace&lt;/tt&gt; afin d&apos;activer le menu déroulant et choisir la valeur désirée. Utilisez le menu contextuel  ou les bouttons à droite pour ajouter ou enlever un attachement.</translation>
     </message>
 </context>
 <context>
@@ -9113,7 +9113,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Type d&apos;a&amp;daptateur&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
@@ -9123,7 +9123,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Attaché à&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
@@ -9133,7 +9133,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>&amp;Network Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nom du réseau&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
@@ -9143,7 +9143,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresse &amp;MAC&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
@@ -9173,7 +9173,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom de l&apos;&amp;interface&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
@@ -9183,7 +9183,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>Application d&apos;in&amp;stallation</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
@@ -9198,7 +9198,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="258"/>
         <source>&amp;Terminate Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>Application de désins&amp;tallation</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="277"/>
@@ -9221,7 +9221,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="808"/>
         <source>No host network interface is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Aucun interface réseau hôte n&apos;est sélectioné</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="815"/>
@@ -9235,7 +9235,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="113"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="33"/>
@@ -9250,7 +9250,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;numéro&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
@@ -9260,7 +9260,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
@@ -9270,17 +9270,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>Po&amp;rt I/O&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Affiche l&apos;adresse de base  I/O de ce port parallèle. Les valeurs  légales sont des entiers compris entre &lt;tt&gt;o&lt;/tt&gt; et &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+        <translation>Affiche l&apos;adresse de base I/O de ce port parallèle. Les valeurs  légales sont des entiers compris entre &lt;tt&gt;o&lt;/tt&gt; et &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chemin du &amp;port&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
@@ -9311,17 +9311,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="183"/>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ajouter un nouveau répertoire partagé</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="184"/>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifi&amp;er le répertoire partagé sélectionné</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="185"/>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Enlever le &amp;répertoire partagé sélectionné</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="198"/>
@@ -9361,7 +9361,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche tous les répertoires partagés accessible par cette machine. Utilisez &apos;net use x: \\vboxsvr\share&apos; pour accéder un répertoire partagé nommé &lt;i&gt;share&lt;/i&gt; à partir d&apos;un système d&apos;exploitation de type DOS, ou bien &apos;mount -t vboxsf share mount_point&apos; pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci nécessite l&apos;installation des additions invité.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
@@ -9395,17 +9395,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="30"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Boîte de dialogue</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chemin du répertoire&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom du répertoire&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
@@ -9434,7 +9434,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="127"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="33"/>
@@ -9449,7 +9449,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;Numéro&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
@@ -9459,7 +9459,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
@@ -9469,7 +9469,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>Po&amp;rt I/O&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
@@ -9479,7 +9479,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mode port&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
@@ -9499,7 +9499,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chemin &amp;port&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
@@ -9540,7 +9540,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="237"/>
         <source>&amp;Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifi&amp;er un filtre</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="238"/>
@@ -9560,22 +9560,22 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="258"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisés à vide. Notez qu&apos;un tel filtre cadrera tous les périphériques USB raccordés.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="261"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs correspondants aux valeurs du périphérique raccordé à l&apos;ordinateur hôte.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
         <source>Edits the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifie le filtre USB selectionné.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="263"/>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enlève le filtre USB selectionné.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="264"/>
@@ -9606,7 +9606,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si la case est cochée, le contrôleur USB EHCI virtuel de cette machine sera activé. Le contrôleur USB EHCI permet l&apos;emploi de la version USB 2.0.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
