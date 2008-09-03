@@ -86,7 +86,9 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
     {
 #ifdef CPU_DOWN_FAILED
         case CPU_DOWN_FAILED:
-# ifdef CPU_TASKS_FROZEN
+        /* r=frank: redhat/CentOS ported _some_ of these constants back to their
+         *          2.6.18-92.1.10.el5 kernel but actually don't use them. */
+# if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
         case CPU_DOWN_FAILED_FROZEN:
 # endif
             if (!RTCpuSetIsMember(&g_MpPendingOfflineSet, idCpu))
@@ -94,7 +96,7 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
         /* fall thru */
 #endif
         case CPU_ONLINE:
-#ifdef CPU_TASKS_FROZEN
+#if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
         case CPU_ONLINE_FROZEN:
 #endif
 #ifdef CPU_DOWN_FAILED
@@ -105,12 +107,12 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
 
 #ifdef CPU_DOWN_PREPARE
         case CPU_DOWN_PREPARE:
-# ifdef CPU_TASKS_FROZEN
+# if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
         case CPU_DOWN_PREPARE_FROZEN:
 # endif
 #else
         case CPU_DEAD:
-# ifdef CPU_TASKS_FROZEN
+# if defined(CPU_TASKS_FROZEN) && defined(CPU_DEAD_FROZEN)
         case CPU_DEAD_FROZEN:
 # endif
 #endif
