@@ -829,9 +829,9 @@ ENDPROC VMXActivateVMCS
 BEGINPROC VMXGetActivateVMCS
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
-    vmptrst rdi
+    vmptrst qword [rdi]
  %else
-    vmptrst rcx
+    vmptrst qword [rcx]
  %endif
 %else
     vmptrst [esp+04h]
