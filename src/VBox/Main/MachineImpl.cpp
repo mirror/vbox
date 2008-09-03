@@ -3396,6 +3396,10 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
 
     if (SUCCEEDED (rc))
     {
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+        registerMetrics (mParent->performanceCollector(), this, pid);
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
         /*
          *  Set the session state to Spawning to protect against subsequent
          *  attempts to open a session and to unregister the machine after
@@ -7872,10 +7876,6 @@ HRESULT SessionMachine::init (Machine *aMachine)
         unconst (mNetworkAdapters [slot]).createObject();
         mNetworkAdapters [slot]->init (this, aMachine->mNetworkAdapters [slot]);
     }
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-    registerMetrics (mParent->performanceCollector(), aMachine, mData->mSession.mPid);
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
