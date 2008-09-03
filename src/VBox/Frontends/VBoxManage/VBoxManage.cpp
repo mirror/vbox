@@ -658,9 +658,18 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_METRICS)
     {
-        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] (comma-separated) |\n"
-                 "                            setup <period> <count> [*|host|<vmname> [<metric_list>]] |\n"
-                 "                            query [*|host|<vmname> [<metric_list>]]\n"
+        RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]] (comma-separated)\n"
+                 "VBoxManage metrics          setup\n"
+                 "                            [-period <seconds>]\n"
+                 "                            [-samples <count>]\n"
+                 "                            [*|host|<vmname> [<metric_list>]]\n"
+                 "VBoxManage metrics          query [*|host|<vmname> [<metric_list>]]\n"
+                 "VBoxManage metrics          collect\n"
+                 "                            [-period <seconds>]\n"
+                 "                            [-samples <count>]\n"
+                 "                            [-list]\n"
+                 "                            [-detach]\n"
+                 "                            [*|host|<vmname> [<metric_list>]]\n"
                  "\n");
     }
 
@@ -7703,6 +7712,46 @@ static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
     return Bstr("unknown");
 }
 
+static int countMatchingMetrics(ComPtr<IVirtualBox> aVirtualBox,
+                                ComPtr<IPerformanceCollector> performanceCollector,
+                                ComSafeArrayIn(INPTR BSTR, metrics),
+                                ComSafeArrayIn(IUnknown *, objects),
+                                bool listMatches)
+{
+    HRESULT rc;
+    com::SafeIfaceArray<IPerformanceMetric> metricInfo;
+
+    CHECK_ERROR(performanceCollector,
+        GetMetrics(ComSafeArrayInArg(metrics),
+                   ComSafeArrayInArg(objects),
+                   ComSafeArrayAsOutParam(metricInfo)));
+
+    if (metricInfo.size())
+    {
+        if (listMatches)
+        {
+            ComPtr<IUnknown> object;
+            Bstr metricName;
+            RTPrintf("The following metrics will be collected:\n\n"
+                     "Object     Metric\n"
+                     "---------- --------------------\n");
+            for (size_t i = 0; i < metricInfo.size(); i++)
+            {
+                CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
+                CHECK_ERROR(metricInfo[i], COMGETTER(MetricName)(metricName.asOutParam()));
+                RTPrintf("%-10ls %-20ls\n",
+                    getObjectName(aVirtualBox, object).raw(), metricName.raw());
+            }
+            RTPrintf("\n");
+        }
+    }
+    else
+    {
+        RTPrintf("No metrics match the specified filter!\n");
+    }
+    return metricInfo.size();
+}
+
 /*********************************************************************
 * list                                                               *
 *********************************************************************/
@@ -7765,31 +7814,52 @@ static int handleMetricsSetup(int argc, char *argv[],
     com::SafeArray<BSTR>          metrics;
     com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
+    ULONG period, samples;
+    bool listMatches = false;
+    int i;
 
-    if (argc < 3)
-        return errorSyntax(USAGE_METRICS, "Missing parameters for '%s' subcommand", argv[0]);
-
-    ULONG period, count;
-    char *endptr = NULL;
-
-    period = strtoul (argv[1], &endptr, 10);
-    if (!endptr || *endptr)
-        return errorArgument("Invalid value for 'period' parameter: '%s'", argv[1]);
-
-    count = strtoul (argv[2], &endptr, 10);
-    if (!endptr || *endptr)
-        return errorArgument("Invalid value for 'count' parameter: '%s'", argv[2]);
-
-    rc = parseFilterParameters(argc - 3, &argv[3], aVirtualBox,
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-period") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            char *endptr = NULL;
+            period = strtoul (argv[++i], &endptr, 10);
+            if (!endptr || *endptr || !period)
+                return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
+        }
+        else if (strcmp(argv[i], "-samples") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            char *endptr = NULL;
+            samples = strtoul (argv[++i], &endptr, 10);
+            if (!endptr || *endptr || !samples)
+                return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
+        }
+        else
+            break; /* The rest of params should define the filter */
+        /*else if (strcmp(argv[i], "-list") == 0)
+            listMatches = true;*/
+    }
+    
+    rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
                                ComSafeArrayAsOutParam(baseMetrics),
                                ComSafeArrayAsOutParam(objects));
     if (FAILED(rc))
         return 1;
 
+/*    if (countMatchingMetrics(aVirtualBox, performanceCollector,
+                             ComSafeArrayAsInParam(metrics),
+                             ComSafeArrayAsInParam(objects),
+                             listMatches) == 0)
+        return 1;*/
+        
     CHECK_ERROR(performanceCollector,
         SetupMetrics(ComSafeArrayAsInParam(metrics),
-                     ComSafeArrayAsInParam(objects), period, count));
+                     ComSafeArrayAsInParam(objects), period, samples));
 
     return 0;
 }
@@ -7892,7 +7962,7 @@ static int handleMetricsCollect(int argc, char *argv[],
     com::SafeArray<BSTR>          metrics;
     com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
-    ULONG period = 0, samples = 0;
+    ULONG period = 1, samples = 1;
     bool isDetached = false, listMatches = false;
     int i;
     for (i = 1; i < argc; i++)
@@ -7912,8 +7982,8 @@ static int handleMetricsCollect(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             char *endptr = NULL;
             samples = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr)
-                return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
+            if (!endptr || *endptr || !samples)
+                return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-list") == 0)
             listMatches = true;
@@ -7923,9 +7993,6 @@ static int handleMetricsCollect(int argc, char *argv[],
             break; /* The rest of params should define the filter */
     }
     
-    if (period == 0)
-        return errorSyntax(USAGE_METRICS, "Parameter -period is required");
-        
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
                                ComSafeArrayAsOutParam(baseMetrics),
@@ -7933,41 +8000,16 @@ static int handleMetricsCollect(int argc, char *argv[],
     if (FAILED(rc))
         return 1;
 
-    com::SafeIfaceArray<IPerformanceMetric> metricInfo;
 
-    CHECK_ERROR(performanceCollector,
-        GetMetrics(ComSafeArrayAsInParam(metrics),
-                   ComSafeArrayAsInParam(objects),
-                   ComSafeArrayAsOutParam(metricInfo)));
-
-    if (metricInfo.size())
-    {
-        if (listMatches)
-        {
-            ComPtr<IUnknown> object;
-            Bstr metricName;
-            RTPrintf("The following metrics will be collected:\n\n"
-                     "Object     Metric\n"
-                     "---------- --------------------\n");
-            for (size_t i = 0; i < metricInfo.size(); i++)
-            {
-                CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
-                CHECK_ERROR(metricInfo[i], COMGETTER(MetricName)(metricName.asOutParam()));
-                RTPrintf("%-10ls %-20ls\n",
-                    getObjectName(aVirtualBox, object).raw(), metricName.raw());
-            }
-            RTPrintf("\n");
-        }
-    }
-    else
-    {
-        RTPrintf("No metrics match the specified filter!\n");
+    if (countMatchingMetrics(aVirtualBox, performanceCollector,
+                             ComSafeArrayAsInParam(metrics),
+                             ComSafeArrayAsInParam(objects),
+                             listMatches) == 0)
         return 1;
-    }
     
     CHECK_ERROR(performanceCollector,
         SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
-                     ComSafeArrayAsInParam(objects), period, isDetached?samples:1));
+                     ComSafeArrayAsInParam(objects), period, samples));
 
     if (isDetached)
     {
@@ -7978,7 +8020,7 @@ static int handleMetricsCollect(int argc, char *argv[],
     
     RTPrintf("Time stamp   Object     Metric               Value\n");
     
-    for (unsigned n = 0; n < samples || samples == 0; n++)
+    for (;;)
     {
         RTPrintf("------------ ---------- -------------------- --------------------\n");
         RTThreadSleep(period * 1000); // Sleep for 'period' seconds
