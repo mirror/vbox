@@ -1069,6 +1069,13 @@ success:
 }
 #endif
 
+/**
+ * Executes VMPTRST
+ *
+ * @returns VBox status code
+ * @param pVMCS    Address that will receive the current pointer
+ */
+DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
 
 /**
  * Executes VMWRITE
