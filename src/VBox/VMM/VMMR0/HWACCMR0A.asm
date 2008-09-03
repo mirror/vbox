@@ -838,7 +838,7 @@ BEGINPROC VMXGetActivateVMCS
 %endif
     xor     eax, eax
     ret
-ENDPROC
+ENDPROC VMXGetActivateVMCS
 
 
 ;/**
