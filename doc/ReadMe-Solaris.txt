@@ -2,6 +2,18 @@
 Sun xVM VirtualBox for OpenSolaris (TM) Operating System
 --------------------------------------------------------
 
+Upgrading:
+----------
+
+If you have an existing VirtualBox installation and you are upgrading to a newer version of
+VirtualBox, please uninstall the previous version completely before installing a newer one.
+
+You should uninstall BOTH the VirtualBox base package as well as the VirtualBox kernel
+interface package before installing the new ones.
+
+Please refer to the "Uninstallation" section at the end of this document for how the details.
+
+
 Installing:
 -----------
 
