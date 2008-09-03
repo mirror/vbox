@@ -266,7 +266,7 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
         /* Check the port path emptiness & unicity */
         KPortMode mode =
             vboxGlobal().toPortMode (page->mCbMode->currentText());
-        if (page->mGbSerial->isChecked() && mode != KPortMode_Disconnected)
+        if (mode != KPortMode_Disconnected)
         {
             QString path = page->mLePath->text();
             valid = !path.isEmpty() && !paths.contains (path);
