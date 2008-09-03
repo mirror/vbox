@@ -607,10 +607,18 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
   	include/VBoxLicenseViewer.h
   VirtualBox4_SOURCES += \
   	src/VBoxLicenseViewer.cpp
+ else
+  VirtualBox4_SOURCES_NLS += \
+    include/VBoxLicenseViewer.h \
+  	src/VBoxLicenseViewer.cpp
  endif
  VirtualBox4_SOURCES += \
  	src/linux/XKeyboard-new.cpp \
 	src/VBoxX11Helper.cpp
+else
+ VirtualBox4_SOURCES_NLS += \
+    include/VBoxLicenseViewer.h \
+  	src/VBoxLicenseViewer.cpp
 endif
 
 VirtualBox4_SOURCES.win += \
@@ -827,7 +835,7 @@ testwrappers:: $(VBOX_WRAPPERS_FILE4)
 # languages and should never be actually translated or installed.
 #
 updatenls:: \
-		$(filter-out %.qrc,$(VirtualBox4_SOURCES)) \
+		$(filter-out %.qrc,$(VirtualBox4_SOURCES) $(VirtualBox4_SOURCES_NLS)) \
 		$(wildcard include/*.h)
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
 	$(QUIET)$(TOOL_QT4_LUPDATE) \
@@ -835,6 +843,3 @@ updatenls:: \
 		-ts \
 		$(filter-out nls/qt_%.ts,$(VirtualBox4_QT_TRANSLATIONS)) \
 		nls/VirtualBox_xx_YY.ts
-
-
-
