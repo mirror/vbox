@@ -297,12 +297,12 @@ void VBoxGLSettingsLanguage::mTwLanguageChanged (QTreeWidgetItem *aCurItem,
 
     mTxName->setEnabled (enabled);
     mTxName->setText (QString ("<table>"
-                               "<tr><td>%1</td><td>%2</td></tr>"
-                               "<tr><td>%3</td><td>%4</td></tr>"
+                               "<tr><td>%1&nbsp;</td><td>%2</td></tr>"
+                               "<tr><td>%3&nbsp;</td><td>%4</td></tr>"
                                "</table>")
                       .arg (tr ("Language:"))
                       .arg (aCurItem->text (2))
-                      .arg (tr ("Author:"))
+                      .arg (tr ("Author(s):"))
                       .arg (aCurItem->text (3)));
 
     mLanguageChanged = true;

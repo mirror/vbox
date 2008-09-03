@@ -203,7 +203,7 @@
          <item>
           <widget class="QPushButton" name="mBtnCancel1" >
            <property name="text" >
-            <string>&amp;Cancel</string>
+            <string>Cancel</string>
            </property>
           </widget>
          </item>
@@ -411,7 +411,7 @@
          <item>
           <widget class="QPushButton" name="mBtnCancel2" >
            <property name="text" >
-            <string>&amp;Cancel</string>
+            <string>Cancel</string>
            </property>
           </widget>
          </item>
@@ -717,7 +717,7 @@
          <item>
           <widget class="QPushButton" name="mBtnCancel3" >
            <property name="text" >
-            <string>&amp;Cancel</string>
+            <string>Cancel</string>
            </property>
           </widget>
          </item>
@@ -931,7 +931,7 @@
          <item>
           <widget class="QPushButton" name="mBtnCancel4" >
            <property name="text" >
-            <string>&amp;Cancel</string>
+            <string>Cancel</string>
            </property>
           </widget>
          </item>

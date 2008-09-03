@@ -80,7 +80,7 @@
          <enum>Qt::ActionsContextMenu</enum>
         </property>
         <property name="whatsThis" >
-         <string>Lists all hard disks attached to this machine. Use a mouse click or the F2 key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</string>
+         <string>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</string>
         </property>
         <property name="horizontalScrollBarPolicy" >
          <enum>Qt::ScrollBarAlwaysOff</enum>

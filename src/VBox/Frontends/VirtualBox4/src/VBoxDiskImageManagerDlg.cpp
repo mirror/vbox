@@ -775,9 +775,9 @@ void VBoxDiskImageManagerDlg::retranslateUi()
 
     mActionsMenu->setTitle (tr ("&Actions"));
 
-    mNewAction->setText (tr ("&New"));
-    mAddAction->setText (tr ("&Add"));
-    // mEditAction->setText (tr ("&Edit"));
+    mNewAction->setText (tr ("&New..."));
+    mAddAction->setText (tr ("&Add..."));
+    // mEditAction->setText (tr ("&Edit..."));
     mRemoveAction->setText (tr ("R&emove"));
     mReleaseAction->setText (tr ("Re&lease"));
     mRefreshAction->setText (tr ("Re&fresh"));
