@@ -257,7 +257,7 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
             {
                 aWarning = tr ("Duplicate port number is selected ");
                 aTitle += ": " +
-                    mTabWidget->tabText (mTabWidget->indexOf (tab));
+                    vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                 break;
             }
             ports << port;
@@ -266,7 +266,7 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
         /* Check the port path emptiness & unicity */
         KPortMode mode =
             vboxGlobal().toPortMode (page->mCbMode->currentText());
-        if (mode != KPortMode_Disconnected)
+        if (page->mGbSerial->isChecked() && mode != KPortMode_Disconnected)
         {
             QString path = page->mLePath->text();
             valid = !path.isEmpty() && !paths.contains (path);
@@ -276,7 +276,7 @@ bool VBoxVMSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
                     tr ("Port path is not specified ") :
                     tr ("Duplicate port path is entered ");
                 aTitle += ": " +
-                    mTabWidget->tabText (mTabWidget->indexOf (tab));
+                    vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                 break;
             }
             paths << path;
