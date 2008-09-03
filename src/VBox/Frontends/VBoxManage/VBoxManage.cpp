@@ -7597,7 +7597,8 @@ static char *toBaseMetricNames(const char *metricList)
     char *newList = (char*)RTMemAlloc(strlen(metricList) + 1);
     int cSlashes = 0;
     bool fSkip = false;
-    char c, *dst = newList, *src = metricList;
+    const char *src = metricList;
+    char c, *dst = newList;
     while ((c = *src++))
         if (c == ':')
             fSkip = true;
