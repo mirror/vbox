@@ -1520,7 +1520,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
         STAM_COUNTER_INC(&s_aStatTrap[uTrap]);
     }
 #endif
-    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
+    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%VGv\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
     if(   uTrap < 0x20
        && (env->cr[0] & X86_CR0_PE)
        && !(env->eflags & X86_EFL_VM))
@@ -1704,6 +1704,12 @@ REMR3DECL(int) REMR3State(PVM pVM)
     pVM->rem.s.Env.cstar        = pCtx->msrCSTAR;
     pVM->rem.s.Env.fmask        = pCtx->msrSFMASK;
     pVM->rem.s.Env.kernelgsbase = pCtx->msrKERNELGSBASE;
+
+    /* Update the internal long mode activate flag according to the new EFER value. */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        pVM->rem.s.Env.hflags |= HF_LMA_MASK;
+    else
+        pVM->rem.s.Env.hflags &= ~(HF_LMA_MASK | HF_CS64_MASK);
 #endif
 
 
@@ -1711,6 +1717,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
      * Registers which are rarely changed and require special handling / order when changed.
      */
     fFlags = CPUMGetAndClearChangedFlagsREM(pVM);
+    LogFlow(("CPUMGetAndClearChangedFlagsREM %x\n", fFlags));
     if (fFlags & (  CPUM_CHANGED_CR4  | CPUM_CHANGED_CR3  | CPUM_CHANGED_CR0
                   | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR | CPUM_CHANGED_TR
                   | CPUM_CHANGED_FPU_REM | CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_CPUID))
@@ -1725,6 +1732,7 @@ REMR3DECL(int) REMR3State(PVM pVM)
             pVM->rem.s.fIgnoreCR3Load = false;
         }
 
+        /* CR4 before CR0! */
         if (fFlags & CPUM_CHANGED_CR4)
         {
             pVM->rem.s.fIgnoreCR3Load = true;
@@ -3483,6 +3491,10 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
 {
 #ifdef USE_OLD_DUMP_AND_DISASSEMBLY
     PVM pVM = env->pVM;
+
+    /* Doesn't work in long mode. */
+    if (env->hflags & HF_LMA_MASK)
+        return false; 
 
     /*
      * Determin 16/32 bit mode.
