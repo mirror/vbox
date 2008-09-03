@@ -222,7 +222,7 @@ bool VBoxVMSettingsParallelPage::revalidate (QString &aWarning, QString &aTitle)
             {
                 aWarning = tr ("Duplicate port number is selected ");
                 aTitle += ": " +
-                    mTabWidget->tabText (mTabWidget->indexOf (tab));
+                    vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                 break;
             }
             ports << port;
@@ -239,7 +239,7 @@ bool VBoxVMSettingsParallelPage::revalidate (QString &aWarning, QString &aTitle)
                     tr ("Port path is not specified ") :
                     tr ("Duplicate port path is entered ");
                 aTitle += ": " +
-                    mTabWidget->tabText (mTabWidget->indexOf (tab));
+                    vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                 break;
             }
             paths << path;
