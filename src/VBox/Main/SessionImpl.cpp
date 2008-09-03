@@ -650,7 +650,7 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
 
     AssertReturn (mType == SessionType_Direct, E_FAIL);
 
-    if (mState != SessionState_Open, E_FAIL)
+    if (mState != SessionState_Open)
     {
         /* the call from Machine issued when the session is open can arrive
          * after the session starts closing or gets closed. Note that when
