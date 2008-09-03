@@ -712,8 +712,16 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
     pCtx->fpu.FCW                   = 0x37f;
 
+    /* Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
+    pCtx->fpu.MXCSR                 = 0x1F80;
+
     /* Init PAT MSR */
     pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
+
+    /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State 
+     * The Intel docs don't mention it. 
+     */
+    pCtx->msrEFER                   = 0;
 }
 
 
