@@ -9611,7 +9611,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Active le contrôleur USB 2.0 (E&amp;HCI)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="87"/>
@@ -9621,12 +9621,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste tous les filtres USB de cette machine. La boîte a cocher indique si le filtre est activé.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
         <source>[filter]</source>
-        <translation type="unfinished"></translation>
+        <translation>[filtre]</translation>
     </message>
 </context>
 <context>
@@ -9652,7 +9652,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nom&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
@@ -9662,97 +9662,97 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>ID &amp;fabricant&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit le filtre ID fabricant. Le format de la chaîne de caractères pour une &lt;i&gt;concordance exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;. &lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>ID &amp;produit&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit le filtre ID produit. Le format de la chaîne de caractères pour une &lt;i&gt;concordance exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;. &lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Révision&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit le filtre ID révision. Le format de la chaîne de caractères pour une &lt;i&gt;concordance exacte&lt;/i&gt; est &lt;tt&gt;XXXX&lt;/tt&gt;. &lt;tt&gt;X&lt;/tt&gt; est un caractère hexadécimal. Une chaîne vide signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fabricant&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit le filtre fabricant comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne vide signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pro&amp;duit&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit le filtre nom du produit comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne vide signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished"></translation>
+        <translation>No. de &amp;série&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit le filtre numéro de série comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne vide signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
         <source>Por&amp;t:</source>
-        <translation type="unfinished"></translation>
+        <translation>Por&amp;t&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit le filtre port USB hôte comme &lt;i&gt;concordance exacte&lt;/i&gt;. Une chaîne vide signifie une concordance pour toutes les valeurs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation type="unfinished"></translation>
+        <translation>À distanc&amp;e&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit si le filtre sera appliqué sur les périphériques attachés à l&apos;ordinateur (&lt;i&gt;Non&lt;/i&gt;), à un client à distance VRDP (&lt;i&gt;Oui&lt;/i&gt;), ou aux deux (&lt;i&gt;Tous&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
         <source>&amp;Action:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Action&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Définit une action effectuée par l&apos;ordinateur hôte quand une périphérique passant est attaché : le laisser au système hôte (&lt;i&gt;Ignorer&lt;/i&gt;) ou bien le retenir pour une utilisation ultérieur par une machine virtuelle (&lt;i&gt;Retenir&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Détails filtre USB</translation>
     </message>
 </context>
 <context>
@@ -9770,17 +9770,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Port serveur&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Affiche le numéro du port du serveur VRDP. Vous pouvez spécifier &lt;tt&gt;0&lt;/tt&gt; (zéro) pour affecter au numéro du port sa valeur par défaut.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Methode d&apos;authentification&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
@@ -9790,7 +9790,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Timeout authentification&nbsp;:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
