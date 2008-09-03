@@ -1150,16 +1150,6 @@ Version %1</translation>
         <translation>Diskettenabbilder (*.img);;Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
-        <source>&amp;New</source>
-        <translation type="obsolete">&amp;Neu</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
-        <source>&amp;Add</source>
-        <translation type="obsolete">&amp;Hinzufügen</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
         <translation>Alle Plattenabbilder (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</translation>
@@ -1435,11 +1425,6 @@ Version %1</translation>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
         <translation>Sprache:</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
-        <source>Author:</source>
-        <translation type="obsolete">Autor:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
@@ -2635,11 +2620,6 @@ Version %1</translation>
         <translation>Wählen Sie eine Datei für ein neues Plattenabbild aus</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
-        <source>&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Location:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Size:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Ort:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Größe:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;Byte)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Dieser Assistent wird Ihnen helfen, eine neue virtuelle Festplatte für Ihre virtuelle Maschine zu erstellen.&lt;/p&gt;&lt;p&gt;Drücken Sie auf &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
@@ -2653,11 +2633,6 @@ Version %1</translation>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
@@ -2787,11 +2762,6 @@ Version %1</translation>
         <translation>Zusammenfassung</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="162"/>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="152"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Die empfohlene Hauptspeichergröße beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
@@ -2800,16 +2770,6 @@ Version %1</translation>
         <location filename="../src/VBoxNewVMWzd.cpp" line="155"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Die empfohlene Größe der Bootplatte beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="172"/>
-        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Name:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;OS Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Base Memory:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Name:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;BS Typ:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Hauptspeicher:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
-        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Boot Hard Disk:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Bootplatte:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
@@ -2825,11 +2785,6 @@ Version %1</translation>
         <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
@@ -3712,11 +3667,6 @@ Version %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
@@ -4204,49 +4154,9 @@ Version %1</translation>
         <translation>Die aktuellste Version konnte nicht ermittelt werden (Antwort: %1).</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
-        <source>VirtualBox New Version Notifier</source>
-        <translation type="obsolete">VirtualBox Versionsüberprüfung</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
-        <source>Check for a new version</source>
-        <translation type="obsolete">Überprüfe auf neue Version</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
-        <source>&lt;p&gt;VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p&gt;&lt;p&gt;You can make VirtualBox look for the newer version now by pressing &lt;b&gt;Check&lt;/b&gt; button or postpone it for then next time by pressing &lt;b&gt;Cancel&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b&gt;&apos;Check for a new version...&apos;&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox kann überprüfen, ob eine neue Version verfügbar ist. Soll diese Abfrage nun ausgeführt werden?&lt;/p&gt;&lt;p&gt;Durch Auswählen von &lt;b&gt;Überprüfe&lt;/b&gt; wird auf eine neue Version geprüft. Mittels &lt;b&gt;Abbrechen&lt;/b&gt; kann dieser Test auch später ausgeführt werden.&lt;/p&gt;&lt;p&gt;Die Versionsüberprüfung kann jederzeit durch Auswählen von &lt;b&gt;&apos;Überprüfe auf eine neue Version&apos;&lt;/b&gt; aus dem Anwendungsmenü erzwungen werden.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="191"/>
         <source>Chec&amp;k</source>
         <translation>&amp;Überprüfen</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="215"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="236"/>
-        <source>Check Results</source>
-        <translation type="obsolete">Überprüfe Ergebnisse</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="290"/>
-        <source>&lt;p&gt;New VirtualBox %1 version available to download from:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Die neue Version VirtualBox %1 steht unter folgender Adresse zum Herunterladen bereit:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="312"/>
-        <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Die Überprüfung auf eine neue Version konnte aufgrund des folgenden Netzwerkfehlers nicht durchgeführt werden:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="334"/>
-        <source>You have already installed the latest VirtualBox version, there is no newer version currently available.</source>
-        <translation type="obsolete">Sie haben bereits die neueste Version von VirtualBox installiert.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="390"/>
@@ -4435,11 +4345,6 @@ Version %1</translation>
         <translation>&lt;p&gt;Wenn die Auswahl stimmt, drücken Sie bitte &lt;b&gt;Fertigstellen&lt;/b&gt;. Danach wird das ausgewählte Medium der virtuellen Maschine zugewiesen und die Ausführung der Maschine beginnt.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="105"/>
-        <source>&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Quelle:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Rückw</translation>
@@ -4448,11 +4353,6 @@ Version %1</translation>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -5128,11 +5028,6 @@ p, li {white-space: pre-wrap; }
         <translation>&amp;Sonstiges</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
-        <source>R&amp;untime:</source>
-        <translation type="obsolete">&amp;Laufzeit:</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>Falls ausgewählt, werden zur Laufzeit zugewiesene CD/DVD- oder Diskettenmedien in den Einstellungen gespeichert um die Zuweisung über die Laufzeit der VM hinaus beizubehalten.</translation>
@@ -5204,11 +5099,6 @@ p, li {white-space: pre-wrap; }
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
         <source>&amp;Attachments</source>
         <translation>&amp;Anschlüsse</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
-        <source>Lists all hard disks attached to this machine. Use a mouse click or the F2 key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="obsolete">Zeigt alle an diese Maschine angeschlossenen Festplatten. Durch Mausklick oder Betätigen von F2 auf dem ausgewählten Eintrag aktivieren Sie eine Drop-Down-Liste und können den Anschlusstyp wählen. Benutzen Sie das Kontextmenü oder die Buttons auf der rechten Seite um Festplatten hinzuzufügen oder zu entfernen.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
@@ -5297,11 +5187,6 @@ p, li {white-space: pre-wrap; }
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
         <translation>Netzwerk&amp;kabel verbunden</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
-        <source>&amp;Host Interface Settings</source>
-        <translation type="obsolete">Einstellungen für &amp;Hostinterface</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
@@ -5780,11 +5665,6 @@ p, li {white-space: pre-wrap; }
         <source>No</source>
         <comment>remote</comment>
         <translation>Nein</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
-        <source>Filter details</source>
-        <translation type="obsolete">Filterkriterien</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
