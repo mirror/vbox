@@ -637,6 +637,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     pQueue->q_ptr = pStream;
     WR(pQueue)->q_ptr = pStream;
 
+    /** @todo Get rid of linked list maintenance; we're not a virtual DLPI device slaving for ring-3 consumers. */
     /*
      * Link it to the list of streams.
      */
