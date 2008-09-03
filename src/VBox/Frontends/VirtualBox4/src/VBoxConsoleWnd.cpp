@@ -679,10 +679,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
             h = str.section (',', 3, 3).toInt (&ok);
         if (ok)
             max = str.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
+
+        QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
         if (ok)
         {
-            QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
-
             /* Do some position checks */
             if (x < ar.left() || x > ar.right())
                 x = ar.left();
@@ -690,21 +690,30 @@ bool VBoxConsoleWnd::openView (const CSession &session)
                 y = ar.top();
 
             mNormalGeo = QRect (x, y, w, h);
+            setGeometry (mNormalGeo);
 
-            setGeometry (x, y, w, h);
+            /* Normalize to the optimal size */
+            console->normalizeGeometry (true /* adjustPosition */);
         }
         else
-            mNormalGeo = QRect();
+        {
+            /* Normalize to the optimal size */
+            console->normalizeGeometry (true /* adjustPosition */);
 
-        /* Normalize to the optimal size */
-        console->normalizeGeometry (true /* adjustPosition */);
+            /* Move newly created window to the screen center. */
+            mNormalGeo = geometry();
+            mNormalGeo.moveCenter (ar.center());
+            setGeometry (mNormalGeo);
+        }
 
         /* Maximize if needed */
         if (max)
             setWindowState (windowState() | Qt::WindowMaximized);
         was_max = max;
-
         show();
+
+        /* Process show & possible maximize events */
+        qApp->processEvents();
 
         vmSeamlessAction->setEnabled (false);
         str = cmachine.GetExtraData (VBoxDefs::GUI_Seamless);
