@@ -327,9 +327,9 @@ static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mb
 static mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst);
 static unsigned vboxNetFltSolarisMBlkCalcSGSegs(PVBOXNETFLTINS pThis, mblk_t *pMsg);
 static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc);
-static int vboxNetFltSolarisIOWorker(PVBOXNETFLTINS pThis, queue_t *pQueue, vboxnetflt_stream_t *pStream, mblk_t *pMsg, uint32_t fSrc);
+static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStream, queue_t *pQueue, mblk_t *pMsg);
 static PVBOXNETFLTINS vboxNetFltSolarisFindInstance(vboxnetflt_stream_t *pStream);
-static void vboxNetFltSolarisFinalizeMBlk(mblk_t *pMsg);
+static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg);
 static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg);
 
 
@@ -749,123 +749,134 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
 
     bool fSendUpstream = true;
     vboxnetflt_stream_t *pStream = pQueue->q_ptr;
-    PVBOXNETFLTINS pThis = vboxNetFltSolarisFindInstance(pStream);
 
-    if (pStream->Type == kIpStream)
+    /*
+     * In the unlikely case where VirtualBox crashed and this filter
+     * is somehow still in the host stream we must try not to panic the host.
+     */
+    if (   pStream
+        && pStream->Type == kIpStream
+        && pMsg)
     {
-        switch (DB_TYPE(pMsg))
+        PVBOXNETFLTINS pThis = vboxNetFltSolarisFindInstance(pStream);
+        if (RT_LIKELY(pThis))
         {
-            case M_DATA:
+            switch (DB_TYPE(pMsg))
             {
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut M_DATA\n"));
-
-                vboxNetFltSolarisIOWorker(pThis, pStream->pReadQueue, pStream, pMsg, INTNETTRUNKDIR_WIRE);
-                fSendUpstream = false;          /* vboxNetFltSolarisIOWorker would send it if required, do nothing more here. */
-                break;
-            }
-
-            case M_PROTO:
-            case M_PCPROTO:
-            {
-                union DL_primitives *pPrim = (union DL_primitives *)pMsg->b_rptr;
-                t_uscalar_t Prim = pPrim->dl_primitive;
-
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO %d\n", Prim));
-                switch (Prim)
+                case M_DATA:
                 {
-                    case DL_UNITDATA_IND:
-                    {
-                        /*
-                         * I do not think control would come here... We convert all outgoing fast mode requests
-                         * to raw mode; so I don't think we should really receive any fast mode replies.
-                         */
-                        LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_UNITDATA_IND\n"));
+                    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut M_DATA\n"));
 
-                        vboxNetFltSolarisIOWorker(pThis, pStream->pReadQueue, pStream, pMsg, INTNETTRUNKDIR_WIRE);
-                        fSendUpstream = false;      /* vboxNetFltSolarisIOWorker would send it if required, do nothing more here. */
-                        break;
-                    }
-
-                    case DL_PHYS_ADDR_ACK:
-                    {
-                        vboxNetFltSolarisCachePhysAddr(pThis, pMsg);
-
-                        /*
-                         * Swallow our fake physical address request acknowledgement.
-                         */
-                        if (pStream->UnAckPrim == DL_PHYS_ADDR_REQ)
-                        {
-                            freemsg(pMsg);
-                            fSendUpstream = false;
-                        }
-                        break;
-                    }
-
-                    case DL_OK_ACK:
-                    {
-                        dl_ok_ack_t *pOkAck = (dl_ok_ack_t *)pMsg->b_rptr;
-                        if (pOkAck->dl_correct_primitive == DL_PROMISCON_REQ)
-                        {
-                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO: DL_OK_ACK: fPromisc is ON.\n"));
-                            pStream->fPromisc = true;
-                        }
-                        else if (pOkAck->dl_correct_primitive == DL_PROMISCOFF_REQ)
-                        {
-                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO: DL_OK_ACK: fPromisc is OFF.\n"));
-                            pStream->fPromisc = false;
-                        }
-
-                        /*
-                         * Swallow our fake promiscous request acknowledgement.
-                         */
-                        if (pStream->UnAckPrim == pOkAck->dl_correct_primitive)
-                        {
-                            freemsg(pMsg);
-                            fSendUpstream = false;
-                        }
-                        break;
-                    }
+                    vboxNetFltSolarisRecv(pThis, pStream, pQueue, pMsg);
+                    fSendUpstream = false;          /* vboxNetFltSolarisRecv would send it if required, do nothing more here. */
+                    break;
                 }
-                break;
-            }
 
-            case M_IOCACK:
-            {
-                /*
-                 * Swallow our fake raw/fast path mode request acknowledgement.
-                 */
-                struct iocblk *pIOC = (struct iocblk *)pMsg->b_rptr;
-                if (pIOC->ioc_id == pStream->ModeReqId)
+                case M_PROTO:
+                case M_PCPROTO:
                 {
-                    pStream->ModeReqId = VBOXNETFLT_MODE_REQ_MAGIC;
-                    pStream->fRawMode = !pStream->fRawMode;
+                    union DL_primitives *pPrim = (union DL_primitives *)pMsg->b_rptr;
+                    t_uscalar_t Prim = pPrim->dl_primitive;
 
+                    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO %d\n", Prim));
+                    switch (Prim)
+                    {
+                        case DL_UNITDATA_IND:
+                        {
+                            /*
+                             * I do not think control would come here... We convert all outgoing fast mode requests
+                             * to raw mode; so I don't think we should really receive any fast mode replies.
+                             */
+                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_UNITDATA_IND\n"));
+
+                            vboxNetFltSolarisRecv(pThis, pStream, pQueue, pMsg);
+                            fSendUpstream = false;      /* vboxNetFltSolarisRecv would send it if required, do nothing more here. */
+                            break;
+                        }
+
+                        case DL_PHYS_ADDR_ACK:
+                        {
+                            vboxNetFltSolarisCachePhysAddr(pThis, pMsg);
+
+                            /*
+                             * Swallow our fake physical address request acknowledgement.
+                             */
+                            if (pStream->UnAckPrim == DL_PHYS_ADDR_REQ)
+                            {
+                                freemsg(pMsg);
+                                fSendUpstream = false;
+                            }
+                            break;
+                        }
+
+                        case DL_OK_ACK:
+                        {
+                            dl_ok_ack_t *pOkAck = (dl_ok_ack_t *)pMsg->b_rptr;
+                            if (pOkAck->dl_correct_primitive == DL_PROMISCON_REQ)
+                            {
+                                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO: DL_OK_ACK: fPromisc is ON.\n"));
+                                pStream->fPromisc = true;
+                            }
+                            else if (pOkAck->dl_correct_primitive == DL_PROMISCOFF_REQ)
+                            {
+                                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO: DL_OK_ACK: fPromisc is OFF.\n"));
+                                pStream->fPromisc = false;
+                            }
+
+                            /*
+                             * Swallow our fake promiscous request acknowledgement.
+                             */
+                            if (pStream->UnAckPrim == pOkAck->dl_correct_primitive)
+                            {
+                                freemsg(pMsg);
+                                fSendUpstream = false;
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+
+                case M_IOCACK:
+                {
                     /*
-                     * Somehow raw mode is turned off??
+                     * Swallow our fake raw/fast path mode request acknowledgement.
                      */
-                    if (pStream->fRawMode == false)
+                    struct iocblk *pIOC = (struct iocblk *)pMsg->b_rptr;
+                    if (pIOC->ioc_id == pStream->ModeReqId)
                     {
-                        LogFlow((DEVICE_NAME ":re-requesting raw mode!!!!!!!!!!!!!!!!!!!!!!!!!!\n"));
-                        vboxNetFltSolarisSetRawMode(pQueue);
+                        pStream->ModeReqId = VBOXNETFLT_MODE_REQ_MAGIC;
+                        pStream->fRawMode = !pStream->fRawMode;
+
+                        /*
+                         * Somehow raw mode is turned off?? This should never really happen...
+                         */
+                        if (pStream->fRawMode == false)
+                        {
+                            LogFlow((DEVICE_NAME ":re-requesting raw mode!\n"));
+                            vboxNetFltSolarisSetRawMode(pQueue);
+                        }
+
+                        freemsg(pMsg);
+                        fSendUpstream = false;
                     }
-
-                    freemsg(pMsg);
-                    fSendUpstream = false;
+                    break;
                 }
-                break;
-            }
 
-            case M_FLUSH:
-            {
-                /*
-                 * We must support flushing queues.
-                 */
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_FLUSH\n"));
-                if (*pMsg->b_rptr & FLUSHR)
-                    flushq(pQueue, FLUSHALL);
-                break;
+                case M_FLUSH:
+                {
+                    /*
+                     * We must support flushing queues.
+                     */
+                    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_FLUSH\n"));
+                    if (*pMsg->b_rptr & FLUSHR)
+                        flushq(pQueue, FLUSHALL);
+                    break;
+                }
             }
         }
+        else
+            LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Could not find VirtualBox instance!!\n"));
     }
 
     if (   fSendUpstream
@@ -905,103 +916,114 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
      */
     bool fSendDownstream = true;
     vboxnetflt_stream_t *pStream = pQueue->q_ptr;
-    PVBOXNETFLTINS pThis = vboxNetFltSolarisFindInstance(pStream);
-    int rc;
-    if (pStream->Type == kIpStream)
+
+    /*
+     * In the unlikely case where VirtualBox crashed and this filter
+     * is somehow still in the host stream we must try not to panic the host.
+     */
+    if (   pStream
+        && pStream->Type == kIpStream
+        && pMsg)
     {
-        switch (DB_TYPE(pMsg))
+        PVBOXNETFLTINS pThis = vboxNetFltSolarisFindInstance(pStream);
+        if (RT_LIKELY(pThis))
         {
-            case M_DATA:
+            switch (DB_TYPE(pMsg))
             {
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_DATA\n"));
-                break;
-            }
-
-            case M_PROTO:
-            case M_PCPROTO:
-            {
-                /*
-                 * Queue up other primitives to the service routine.
-                 */
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_PROTO/M_PCPROTO\n"));
-
-                union DL_primitives *pPrim = (union DL_primitives *)pMsg->b_rptr;
-                t_uscalar_t Prim = pPrim->dl_primitive;
-                switch (Prim)
+                case M_DATA:
                 {
-                    case DL_UNITDATA_REQ:
+                    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_DATA\n"));
+                    break;
+                }
+
+                case M_PROTO:
+                case M_PCPROTO:
+                {
+                    /*
+                     * Queue up other primitives to the service routine.
+                     */
+                    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_PROTO/M_PCPROTO\n"));
+
+                    union DL_primitives *pPrim = (union DL_primitives *)pMsg->b_rptr;
+                    t_uscalar_t Prim = pPrim->dl_primitive;
+                    switch (Prim)
                     {
-                        LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut DL_UNITDATA_REQ\n"));
-                        mblk_t *pRawMsg;
-                        rc = vboxNetFltSolarisUnitDataToRaw(pThis, pMsg, &pRawMsg);
-                        if (VBOX_SUCCESS(rc))
-                            pMsg = pRawMsg;
-                        else
+                        case DL_UNITDATA_REQ:
+                        {
+                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut DL_UNITDATA_REQ\n"));
+                            mblk_t *pRawMsg;
+                            int rc = vboxNetFltSolarisUnitDataToRaw(pThis, pMsg, &pRawMsg);
+                            if (VBOX_SUCCESS(rc))
+                                pMsg = pRawMsg;
+                            else
+                                fSendDownstream = false;
+                            break;
+                        }
+
+                        default:
+                        {
+                            /*
+                             * Enqueue other DLPI primitives and service them later.
+                             */
                             fSendDownstream = false;
-                        break;
+                            putq(pQueue, pMsg);
+                            break;
+                        }
                     }
-
-                    default:
-                    {
-                        /*
-                         * Enqueue other DLPI primitives and service them later.
-                         */
-                        fSendDownstream = false;
-                        putq(pQueue, pMsg);
-                        break;
-                    }
+                    break;
                 }
-                break;
-            }
 
-            case M_IOCTL:
-            {
-                struct iocblk *pIOC = (struct iocblk *)pMsg->b_rptr;
-                if (pIOC->ioc_cmd == DL_IOC_HDR_INFO)
+                case M_IOCTL:
                 {
-                    if (pThis->fActive)
+                    struct iocblk *pIOC = (struct iocblk *)pMsg->b_rptr;
+                    if (pIOC->ioc_cmd == DL_IOC_HDR_INFO)
                     {
-                        /*
-                         * Somebody is wanting fast path when we need raw mode.
-                         * Since we are evil, let's acknowledge the request ourselves!
-                         */
-                        miocnak(pQueue, pMsg, 0, EINVAL);
-                        fSendDownstream = false;
-                        LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Fast path request when we need raw mode!\n"));
+                        if (pThis->fActive)
+                        {
+                            /*
+                             * Somebody is wanting fast path when we need raw mode.
+                             * Since we are evil, let's acknowledge the request ourselves!
+                             */
+                            miocnak(pQueue, pMsg, 0, EINVAL);
+                            fSendDownstream = false;
+                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Fast path request when we need raw mode!\n"));
+                        }
                     }
+                    break;
                 }
-                break;
-            }
 
-            case M_FLUSH:
-            {
-                /*
-                 * Canonical flush courtesy man qreply(9F) while we have a service routine.
-                 */
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_FLUSH\n"));
-                if (*pMsg->b_rptr & FLUSHW)
+                case M_FLUSH:
                 {
                     /*
-                     * Flush and mark as serviced.
+                     * Canonical flush courtesy man qreply(9F) while we have a service routine.
                      */
-                    flushq(pQueue, FLUSHALL);
-                    *pMsg->b_rptr &= ~FLUSHW;
-                }
+                    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_FLUSH\n"));
+                    if (*pMsg->b_rptr & FLUSHW)
+                    {
+                        /*
+                         * Flush and mark as serviced.
+                         */
+                        flushq(pQueue, FLUSHALL);
+                        *pMsg->b_rptr &= ~FLUSHW;
+                    }
 
-                if (*pMsg->b_rptr & FLUSHR)
-                {
-                    /*
-                     * Send the request upstream.
-                     */
-                    flushq(RD(pQueue), FLUSHALL);
-                    qreply(pQueue, pMsg);
-                }
-                else
-                    freemsg(pMsg);
+                    if (*pMsg->b_rptr & FLUSHR)
+                    {
+                        /*
+                         * Send the request upstream.
+                         */
+                        flushq(RD(pQueue), FLUSHALL);
+                        qreply(pQueue, pMsg);
+                    }
+                    else
+                        freemsg(pMsg);
 
-                break;
+                    break;
+                }
             }
         }
+        else
+            LogRel((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Could not find VirtualBox instance!!\n"));
     }
 
     if (   fSendDownstream
@@ -1036,39 +1058,18 @@ static int VBoxNetFltSolarisModWriteService(queue_t *pQueue)
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWriteService pQueue=%p\n", pQueue));
 
     /*
-     * Drain the queue as we service the messages.
+     * Implment just the flow controlled service draining of the queue.
+     * Nothing else to do here, we handle all the important stuff in the Put procedure.
      */
     mblk_t *pMsg;
     while (pMsg = getq(pQueue))
     {
-        switch (DB_TYPE(pMsg))
+        if (canputnext(pQueue))
+            putnext(pQueue, pMsg);
+        else
         {
-            case M_DATA:
-            case M_PROTO:
-            case M_PCPROTO:
-            {
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWriteService M_DATA/M_PROTO/M_PCPROTO forwarding downstream\n"));
-                putnext(pQueue, pMsg);
-                break;
-            }
-
-            case M_IOCTL:
-            case M_IOCDATA:
-            {
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_IOCTL/M_IOCDATA\n"));
-                putnext(pQueue, pMsg);
-                break;
-            }
-
-            default:
-            {
-                LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWriteService (Unknown)!\n"));
-                if (canputnext(pQueue))
-                    putnext(pQueue, pMsg);
-                else
-                    putq(pQueue, pMsg);
-                break;
-            }
+            putbq(pQueue, pMsg);
+            break;
         }
     }
 
@@ -1521,203 +1522,215 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
 
     int rc;
     int rc2;
-    int rc3;
     int ret;
-    ldi_ident_t DevId = ldi_ident_from_anon();
+    ldi_ident_t IPDevId = ldi_ident_from_anon();
+    ldi_ident_t ARPDevId = ldi_ident_from_anon();
     ldi_handle_t IPDevHandle;
     ldi_handle_t UDPDevHandle;
     ldi_handle_t ARPDevHandle;
 
     /*
-     * @todo Do opening of each stream separately with error checking.
+     * Open the IP and ARP streams as layered devices.
      */
+    rc = ldi_open_by_name(IP_DEV_NAME, FREAD | FWRITE, kcred, &IPDevHandle, IPDevId);
+    ldi_ident_release(IPDevId);
+    if (rc)
+    {
+        LogRel((DEVICE_NAME ":failed to open the IP stream on '%s'.\n", pThis->szName));
+        return VERR_INTNET_FLT_IF_FAILED;
+    }
+
+    rc = ldi_open_by_name("/dev/arp", FREAD | FWRITE, kcred, &ARPDevHandle, ARPDevId);
+    ldi_ident_release(ARPDevId);
+    if (rc)
+    {
+        LogRel((DEVICE_NAME ":failed to open the ARP stream on '%s'.\n", pThis->szName));
+        ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
+        return VERR_INTNET_FLT_IF_FAILED;
+    }
+
     /*
-     * Open the IP stream as a layered device.
+     * Obtain the interface flags from IP.
      */
-    rc = ldi_open_by_name(IP_DEV_NAME, FREAD | FWRITE, kcred, &IPDevHandle, DevId);
-    rc2 = ldi_open_by_name("/dev/arp", FREAD | FWRITE, kcred, &ARPDevHandle, DevId);
-    if (   !rc
-        && !rc2)
+    rc = vboxNetFltSolarisGetIfFlags(IPDevHandle, &Interface);
+    if (VBOX_SUCCESS(rc))
     {
         /*
-         * Obtain the interface flags from IP.
+         * Open the UDP stream. We sort of cheat here and obtain the vnode so that we can perform
+         * things that are not possible from the layered interface.
          */
-        rc = vboxNetFltSolarisGetIfFlags(IPDevHandle, &Interface);
+        vnode_t *pVNodeUDP = NULL;
+        vnode_t *pVNodeUDPHeld = NULL;
+        TIUSER *pUserUDP = NULL;
+        rc = vboxNetFltSolarisOpenDev(UDP_DEV_NAME, &pVNodeUDP, &pVNodeUDPHeld, &pUserUDP);
         if (VBOX_SUCCESS(rc))
         {
             /*
-             * Open the UDP stream. We sort of cheat here and obtain the vnode so that we can perform
-             * things that are not possible from the layered interface.
+             * Get the multiplexor IDs.
              */
-            vnode_t *pVNodeUDP = NULL;
-            vnode_t *pVNodeUDPHeld = NULL;
-            TIUSER *pUserUDP = NULL;
-            rc = vboxNetFltSolarisOpenDev(UDP_DEV_NAME, &pVNodeUDP, &pVNodeUDPHeld, &pUserUDP);
-            if (VBOX_SUCCESS(rc))
+            rc = ldi_ioctl(IPDevHandle, SIOCGLIFMUXID, (intptr_t)&Interface, FKIOCTL, kcred, &ret);
+            if (!rc)
             {
                 /*
-                 * Get the multiplexor IDs.
+                 * Get the multiplex file descriptor to the lower streams. Generally this is lost
+                 * once a module is I_PLINK, we need to reobtain it for inserting/removing ourselves from the stack.
                  */
-                rc = ldi_ioctl(IPDevHandle, SIOCGLIFMUXID, (intptr_t)&Interface, FKIOCTL, kcred, &ret);
-                if (!rc)
+                int IpMuxFd;
+                int ArpMuxFd;
+                rc = vboxNetFltSolarisMuxIdToFd(pVNodeUDP, Interface.lifr_ip_muxid, &IpMuxFd);
+                rc2 = vboxNetFltSolarisMuxIdToFd(pVNodeUDP, Interface.lifr_arp_muxid, &ArpMuxFd);
+                if (   VBOX_SUCCESS(rc)
+                    && VBOX_SUCCESS(rc2))
                 {
                     /*
-                     * Get the multiplex file descriptor to the lower streams. Generally this is lost
-                     * once a module is I_PLINK, we need to reobtain it for inserting/removing ourselves from the stack.
+                     * We need to I_PUNLINK on these multiplexor IDs before we can start
+                     * operating on the lower stream as insertions are direct operations on the lower stream.
                      */
-                    int IpMuxFd;
-                    int ArpMuxFd;
-                    rc = vboxNetFltSolarisMuxIdToFd(pVNodeUDP, Interface.lifr_ip_muxid, &IpMuxFd);
-                    rc2 = vboxNetFltSolarisMuxIdToFd(pVNodeUDP, Interface.lifr_arp_muxid, &ArpMuxFd);
-                    if (   VBOX_SUCCESS(rc)
-                        && VBOX_SUCCESS(rc2))
+                    int ret;
+                    rc = strioctl(pVNodeUDP, I_PUNLINK, (intptr_t)Interface.lifr_ip_muxid, 0, K_TO_K, kcred, &ret);
+                    rc2 = strioctl(pVNodeUDP, I_PUNLINK, (intptr_t)Interface.lifr_arp_muxid, 0, K_TO_K, kcred, &ret);
+                    if (   !rc
+                        && !rc2)
                     {
                         /*
-                         * We need to I_PUNLINK on these multiplexor IDs before we can start
-                         * operating on the lower stream as insertions are direct operations on the lower stream.
+                         * Obtain the vnode from the useless userland file descriptor.
                          */
-                        int ret;
-                        rc = strioctl(pVNodeUDP, I_PUNLINK, (intptr_t)Interface.lifr_ip_muxid, 0, K_TO_K, kcred, &ret);
-                        rc2 = strioctl(pVNodeUDP, I_PUNLINK, (intptr_t)Interface.lifr_arp_muxid, 0, K_TO_K, kcred, &ret);
-                        if (   !rc
-                            && !rc2)
+                        file_t *pIpFile = getf(IpMuxFd);
+                        file_t *pArpFile = getf(ArpMuxFd);
+                        if (   pIpFile
+                            && pArpFile
+                            && pArpFile->f_vnode
+                            && pIpFile->f_vnode)
                         {
+                            vnode_t *pVNodeIp = pIpFile->f_vnode;
+                            vnode_t *pVNodeArp = pArpFile->f_vnode;
+
                             /*
-                             * Obtain the vnode from the useless userland file descriptor.
+                             * Find the position on the host stack for attaching/detaching ourselves.
                              */
-                            file_t *pIpFile = getf(IpMuxFd);
-                            file_t *pArpFile = getf(ArpMuxFd);
-                            if (   pIpFile
-                                && pArpFile
-                                && pArpFile->f_vnode
-                                && pIpFile->f_vnode)
+                            rc = vboxNetFltSolarisDetermineModPos(fAttach, pVNodeIp, &StrMod.pos);
+                            rc2 = vboxNetFltSolarisDetermineModPos(fAttach, pVNodeArp, &ArpStrMod.pos);
+                            if (   VBOX_SUCCESS(rc)
+                                && VBOX_SUCCESS(rc2))
                             {
-                                vnode_t *pVNodeIp = pIpFile->f_vnode;
-                                vnode_t *pVNodeArp = pArpFile->f_vnode;
+                                /*
+                                 * Set global data which will be grabbed by ModOpen.
+                                 */
+                                g_VBoxNetFltSolarisState.pCurInstance = pThis;
+                                g_VBoxNetFltSolarisState.CurType = kIpStream;
 
                                 /*
-                                 * Find the position on the host stack for attaching/detaching ourselves.
+                                 * Inject/Eject from the host IP stack.
                                  */
-                                rc = vboxNetFltSolarisDetermineModPos(fAttach, pVNodeIp, &StrMod.pos);
-                                rc2 = vboxNetFltSolarisDetermineModPos(fAttach, pVNodeArp, &ArpStrMod.pos);
-                                if (   VBOX_SUCCESS(rc)
-                                    && VBOX_SUCCESS(rc2))
+                                rc = strioctl(pVNodeIp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
+                                if (!rc)
                                 {
-                                    /** @todo -XXX- Do each step here with full error checking. I know the if-levels are
-                                      * getting ridiculous but it has to be done as failure here is still possible
-                                      * (though unlikely) given a terribly ackward user configuration or messed up stack.
-                                      */
-                                    /*
-                                     * Set global data which will be grabbed by ModOpen.
-                                     */
-                                    g_VBoxNetFltSolarisState.pCurInstance = pThis;
-                                    g_VBoxNetFltSolarisState.CurType = kIpStream;
-
-                                    /*
-                                     * Inject/Eject from the host IP stack.
-                                     */
-                                    rc = strioctl(pVNodeIp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
-
                                     /*
                                      * Inject/Eject from the host ARP stack.
                                      */
                                     g_VBoxNetFltSolarisState.CurType = kArpStream;
-                                    rc2 = strioctl(pVNodeArp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K, kcred, &ret);
-
-                                    g_VBoxNetFltSolarisState.pCurInstance = NULL;
-                                    g_VBoxNetFltSolarisState.CurType = kUndefined;
-
-                                    /*
-                                     * Our job's not yet over; we need to relink the upper and lower streams
-                                     * otherwise we've pretty much screwed up the host interface.
-                                     */
-                                    rc3 = vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
-                                    if (   !rc
-                                        && !rc2
-                                        && VBOX_SUCCESS(rc3))
+                                    rc = strioctl(pVNodeArp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K, kcred, &ret);
+                                    if (!rc)
                                     {
-                                        bool fRawModeOk = !fAttach;         /* Raw mode check is always ok during the detach case */
-                                        if (fAttach)
+                                        g_VBoxNetFltSolarisState.pCurInstance = NULL;
+                                        g_VBoxNetFltSolarisState.CurType = kUndefined;
+
+                                        /*
+                                         * Our job's not yet over; we need to relink the upper and lower streams
+                                         * otherwise we've pretty much screwed up the host interface.
+                                         */
+                                        rc = vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
+                                        if (VBOX_SUCCESS(rc))
                                         {
-                                            /*
-                                             * Check if our raw mode request was successful (only in the IP stream).
-                                             */
-                                            vboxnetflt_stream_t *pStream = pThis->u.s.pvStream;
-                                            AssertRelease(pStream);
-                                            if (   pStream->fRawMode == true
-                                                && pStream->ModeReqId == VBOXNETFLT_MODE_REQ_MAGIC)
+                                            bool fRawModeOk = !fAttach;         /* Raw mode check is always ok during the detach case */
+                                            if (fAttach)
                                             {
-                                                pStream->ModeReqId = 0;
-                                                fRawModeOk = true;
+                                                /*
+                                                 * Check if our raw mode request was successful (only in the IP stream).
+                                                 */
+                                                vboxnetflt_stream_t *pStream = pThis->u.s.pvStream;
+                                                if (RT_LIKELY(pStream))
+                                                {
+                                                    if (   pStream->fRawMode == true
+                                                        && pStream->ModeReqId == VBOXNETFLT_MODE_REQ_MAGIC)
+                                                    {
+                                                        pStream->ModeReqId = 0;
+                                                        fRawModeOk = true;
+                                                    }
+                                                }
+                                            }
+
+                                            if (fRawModeOk)
+                                            {
+                                                /*
+                                                 * Close the devices ONLY during the return from function case; otherwise
+                                                 * we end up close twice which is an instant kernel panic.
+                                                 */
+                                                vboxNetFltSolarisCloseDev(pVNodeUDPHeld, pUserUDP);
+                                                ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
+                                                ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
+
+                                                LogFlow((DEVICE_NAME ":vboxNetFltSolarisModSetup: Success! %s %s@(Ip:%d Arp:%d) %s interface %s\n",
+                                                        fAttach ? "Injected" : "Ejected", StrMod.mod_name, StrMod.pos, ArpStrMod.pos,
+                                                        fAttach ? "to" : "from", pThis->szName));
+                                                return VINF_SUCCESS;
                                             }
                                             else
-                                                fRawModeOk = false;
-                                        }
-
-                                        if (fRawModeOk)
-                                        {
-                                            /*
-                                             * Close the devices ONLY during the return from function case; otherwise
-                                             * we end up close twice which is an instant kernel panic.
-                                             */
-                                            vboxNetFltSolarisCloseDev(pVNodeUDPHeld, pUserUDP);
-                                            ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
-                                            ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
-                                            ldi_ident_release(DevId);
-
-                                            LogFlow((DEVICE_NAME ":vboxNetFltSolarisModSetup: Success! %s %s@(Ip:%d Arp:%d) %s %s\n",
-                                                    fAttach ? "Attached" : "Detached", StrMod.mod_name, StrMod.pos, ArpStrMod.pos,
-                                                    fAttach ? "to" : "from", pThis->szName));
-                                            return VINF_SUCCESS;
+                                                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: Raw mode request failed.\n"));
                                         }
                                         else
-                                            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: Raw mode request failed.\n"));
-                                    }
-                                    else
-                                    {
-                                        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: module %s or relinking failed. rc=%d rc2=%d rc3=%d.\n",
-                                                fAttach ? "insert" : "remove", rc, rc2, rc3));
+                                        {
+                                            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: module relinking failed. Mode=%s rc=%d.\n",
+                                                    fAttach ? "inject" : "eject", rc));
+                                        }
 
                                         /*
                                          * Try failing gracefully during attach.
                                          */
-                                        /** @todo -XXX- see todo above, and remove later accordingly. */
                                         if (fAttach)
-                                        {
                                             strioctl(pVNodeIp, _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
-                                            strioctl(pVNodeArp, _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K, kcred, &ret);
-                                            vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
-                                        }
                                     }
+                                    else
+                                    {
+                                        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to %s the ARP stack. rc=%d\n",
+                                                fAttach ? "inject into" : "eject from", rc));
+                                    }
+
+                                    if (fAttach)
+                                        strioctl(pVNodeIp, _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
+
+                                    vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
                                 }
                                 else
-                                    LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: vboxNetFltSolarisDetermineModPos failed. rc=%d rc2=%d\n", rc, rc2));
+                                {
+                                    LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to %s the IP stack. rc=%d\n",
+                                            fAttach ? "inject into" : "eject from", rc));
+                                }
                             }
                             else
-                                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get vnode from MuxFd.\n"));
+                                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: vboxNetFltSolarisDetermineModPos failed. rc=%d rc2=%d\n", rc, rc2));
                         }
                         else
-                            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to unlink upper stream rc=%d rc2=%d.\n", rc, rc2));
+                            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get vnode from MuxFd.\n"));
                     }
                     else
-                        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get MuxFd from MuxId. rc=%d rc2=%d\n"));
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to unlink upper stream rc=%d rc2=%d.\n", rc, rc2));
                 }
                 else
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get Mux Ids.\n"));
-                vboxNetFltSolarisCloseDev(pVNodeUDPHeld, pUserUDP);
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get MuxFd from MuxId. rc=%d rc2=%d\n"));
             }
             else
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to open UDP.\n"));
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get Mux Ids.\n"));
+            vboxNetFltSolarisCloseDev(pVNodeUDPHeld, pUserUDP);
         }
         else
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: invalid interface '%s'.\n", pThis->szName));
-
-        ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
-        ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
-        ldi_ident_release(DevId);
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to open UDP.\n"));
     }
     else
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to open IP and/or ARP!\n"));
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: invalid interface '%s'.\n", pThis->szName));
+
+    ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
+    ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
 
     return VERR_INTNET_FLT_IF_FAILED;
 }
@@ -2020,6 +2033,13 @@ static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mb
     pEtherMsg->b_wptr += cbLen;
 
     pEtherMsg->b_cont = pMsg->b_cont;
+
+    /*
+     * Change the chained blocks to type M_DATA.
+     */
+    for (mblk_t *pTmp = pEtherMsg->b_cont; pTmp; pTmp = pTmp->b_cont)
+        DB_TYPE(pTmp) = M_DATA;
+
     pMsg->b_cont = NULL;
     freemsg(pMsg);
 
@@ -2032,21 +2052,22 @@ static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mb
  * Worker for routing messages from the wire or from the host.
  *
  * @returns VBox status code.
- * @param   pThis   The instance.
- * @param   pQueue  Pointer to the queue.
- * @param   pMsg    Pointer to the message.
- * @param   fSrc    The source of the frame.
+ * @param   pThis       The instance.
+ * @param   pStream     Pointer to the stream.
+ * @param   pQueue      Pointer to the queue.
+ * @param   pOrigMsg    Pointer to the message.
  */
-static int vboxNetFltSolarisIOWorker(PVBOXNETFLTINS pThis, queue_t *pQueue, vboxnetflt_stream_t *pStream, mblk_t *pMsg, uint32_t fSrc)
+static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStream, queue_t *pQueue, mblk_t *pOrigMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisIOWorker pThis=%p pQueue=%p pMsg=%p fSrc=%d\n", pThis, pQueue, pMsg, fSrc));
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRecv pThis=%p pOrigMsg=%p\n", pThis, pOrigMsg));
 
     AssertCompile(sizeof(struct ether_header) == sizeof(RTNETETHERHDR));
+    Assert(pStream->Type == kIpStream);
 
     /*
      * Make a copy as we will alter pMsg.
      */
-    mblk_t *pOrigMsg = copymsg(pMsg);
+    mblk_t *pMsg = copymsg(pOrigMsg);
 
     /*
      * Sort out M_PROTO and M_DATA.
@@ -2062,66 +2083,77 @@ static int vboxNetFltSolarisIOWorker(PVBOXNETFLTINS pThis, queue_t *pQueue, vbox
         else
         {
             freemsg(pMsg);
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisIOWorker invalid message!\n"));
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisRecv invalid message!\n"));
             return VERR_GENERAL_FAILURE;
         }
     }
 
     /*
-     * Figure out the source of the frame based on the source Mac address.
+     * Figure out the source of the packet based on the source Mac address.
      */
+    /** @todo Is there a more fool-proof way to determine if the packet was indeed sent from the host?? */
+    uint32_t fSrc = INTNETTRUNKDIR_WIRE;
     PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
     if (vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
         fSrc = INTNETTRUNKDIR_HOST;
 
+    bool fChecksumAdjusted = false;
 #if 0
-    vboxNetFltSolarisAnalyzeMBlk(pMsg);
+    if (fSrc & INTNETTRUNKDIR_HOST)
+    {
+        mblk_t *pCorrectedMsg = vboxNetFltSolarisFixChecksums(pMsg);
+        if (pCorrectedMsg)
+        {
+            fChecksumAdjusted = true;
+            pMsg = pCorrectedMsg;
+        }
+    }
 #endif
 
     /*
-     * Don't route ARP stream packets from the wire up the internal network,
-     * because we already get them on the IP stream under full promiscous mode.
-     * This avoids sending 2 copies of packets into the internal network.
+     * Route all received packets into the internal network.
      */
-    bool fDropIt = false;
-    if (    pStream->Type == kIpStream
-         || (pStream->Type == kArpStream && (fSrc & INTNETTRUNKDIR_HOST)))      /** Do we really need these?? */
+    unsigned cSegs = vboxNetFltSolarisMBlkCalcSGSegs(pThis, pMsg);
+    PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
+    int rc = vboxNetFltSolarisMBlkToSG(pThis, pMsg, pSG, cSegs, fSrc);
+    if (VBOX_FAILURE(rc))
     {
-        unsigned cSegs = vboxNetFltSolarisMBlkCalcSGSegs(pThis, pMsg);
-        PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
-        int rc = vboxNetFltSolarisMBlkToSG(pThis, pMsg, pSG, cSegs, fSrc);
-        if (VBOX_FAILURE(rc))
-        {
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG failed. rc=%d\n", rc));
-            return rc;
-        }
-
-        fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG failed. rc=%d\n", rc));
+        return rc;
     }
 
+    bool fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+
+    /*
+     * Drop messages consumed by the internal network.
+     */
     if (fDropIt)
     {
-        LogFlow((DEVICE_NAME ":Packet consumed by internal network.\n"));
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisRecv Packet consumed by internal network.\n"));
         freemsg(pOrigMsg);
         freemsg(pMsg);
     }
     else
     {
         /*
-         * Packets from the host must be send down as raw mode packets.
-         * Packets from the wire, we don't care; just push the original
-         * upstream in whatever way we go it.
+         * Packets from the host, push them up in raw mode.
+         * Packets from the wire, we must push them in their original form
+         * as upstream consumers expect this format.
          */
         if (pStream->fRawMode)
         {
             if (fSrc & INTNETTRUNKDIR_HOST)
             {
-                if (fOriginalIsRaw)
+                /* Raw packets with correct checksums, pass-through the original */
+                if (    fOriginalIsRaw
+                    && !fChecksumAdjusted)
+                {
                     putnext(pQueue, pOrigMsg);
-                else
+                }
+                else    /* For M_PROTO packets or checksum corrected raw packets, pass-through the raw */
                 {
                     putnext(pQueue, pMsg);
-                    pMsg = pOrigMsg;    /* for freeing the M_PROTO message */
+                    pMsg = pOrigMsg;        /* for the freemsg that follows */
                 }
             }
             else    /* INTNETTRUNKDIR_WIRE */
@@ -2161,112 +2193,118 @@ static PVBOXNETFLTINS vboxNetFltSolarisFindInstance(vboxnetflt_stream_t *pStream
 
 /**
  * Finalize the message to be fed into the internal network.
+ * Verifies and tries to fix checksums for TCP, UDP and IP.
  *
+ * @returns Corrected message or NULL if no change was required.
  * @param   pMsg    Pointer to the message block.
  *                  This must not be DLPI linked messages, must be M_DATA.
  *
- * @remarks We don't compute ethernet CRC here.
+ * @remarks This function expects raw mblk_t (chained is acceptible) and if it
+ *          returns a corrected message, the passed in input message has been
+ *          freed and should not be referenced anymore.
  */
-static void vboxNetFltSolarisFinalizeMBlk(mblk_t *pMsg)
+static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisFinalizeMBlk pMsg=%p\n"));
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisFixChecksums pMsg=%p\n"));
 
     Assert(DB_TYPE(pMsg) == M_DATA);
 
-    /*
-     * Concatenate chained mblks.
-     */
-    if (pMsg->b_cont)
+    if (MBLKL(pMsg) < sizeof(RTNETETHERHDR))
     {
-        mblk_t *pFullMsg = allocb(msgdsize(pMsg), BPRI_MED);
-        if (!pFullMsg)
-        {
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisFinalizeMBlk failed to alloc new message.\n"));
-            return;
-        }
-
-        for (mblk_t *pTmp = pMsg; pTmp; pTmp = pTmp->b_cont)
-        {
-            if (DB_TYPE(pTmp) == M_DATA)
-            {
-                bcopy(pTmp->b_rptr, pFullMsg->b_wptr, MBLKL(pTmp));
-                pFullMsg->b_wptr += MBLKL(pTmp);
-            }
-            else
-            {
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisFinalizeMBlk non-M_DATA chained message!\n"));
-                freemsg(pFullMsg);
-                return;
-            }
-        }
-
-        freemsg(pMsg);
-        pMsg = pFullMsg;
-        DB_TYPE(pMsg) = M_DATA;
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisFixChecksums Packet shorter than ethernet header size!\n"));
+        return NULL;
     }
 
-    size_t cbMsg = MBLKL(pMsg);
-    if (cbMsg > sizeof(RTNETETHERHDR))
+    PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
+    if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
     {
-        PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
-        if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
+        /*
+         * Check if we have a complete packet or being fed a chain.
+         */
+        size_t cbIpPacket = 0;
+        if (pMsg->b_cont)
         {
-            cbMsg -= sizeof(RTNETETHERHDR);
+            LogFlow((DEVICE_NAME ":Chained mblk_t.\n"));
 
-            PRTNETIPV4 pIpHdr = NULL;
-            if (cbMsg > sizeof(RTNETIPV4))
-                pIpHdr = (PRTNETIPV4)(pEthHdr + 1);
-            else
+            /*
+             * Handle chain by making a packet copy to verify if the IP checksum is correct.
+             * Contributions to calculating IP checksums from a chained message block with
+             * odd/non-pulled up sizes are welcome.
+             */
+            size_t cbFullMsg = msgdsize(pMsg);
+            mblk_t *pFullMsg = allocb(cbFullMsg, BPRI_MED);
+            LogFlow((DEVICE_NAME ":msgdsize returns %d\n", cbFullMsg));
+            if (RT_UNLIKELY(!pFullMsg))
             {
-                LogRel((DEVICE_NAME ":IP packet too short.\n"));
-                return;
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisFixChecksums failed to alloc new message of %d bytes.\n", cbFullMsg));
+                return false;
             }
 
-            if (RTNetIPv4IsHdrValid(pIpHdr, cbMsg, cbMsg))
+            for (mblk_t *pTmp = pMsg; pTmp; pTmp = pTmp->b_cont)
             {
-#if 0
-                /*
-                 * Fix up TCP checksum.
-                 */
-                if (pIpHdr->ip_p == RTNETIPV4_PROT_TCP)
+                if (DB_TYPE(pTmp) == M_DATA)
                 {
-                    PRTNETTCP pTcpHdr = (PRTNETTCP)(pIpHdr + 1);
-                    cbLen -= pIpHdr->ip_hl * 4;
-                    if (!RTNetIPv4IsTCPValid(pIpHdr, pTcpHdr, cbLen, NULL, cbLen))
-                    {
-                        /*
-                         * @todo -XXX- this will horribly fail for an mblk_t chain! Fix this later by allocating, copying temp buffer.
-                         */
-                        RTNetIPv4TCPChecksum(pIpHdr, pTcpHdr, NULL);
-                        LogFlow((DEVICE_NAME ":computed TCP checksum.\n"));
-                    }
+                    bcopy(pTmp->b_rptr, pFullMsg->b_wptr, MBLKL(pTmp));
+                    pFullMsg->b_wptr += MBLKL(pTmp);
                 }
+                else
+                    LogFlow((DEVICE_NAME ":Not M_DATA.. this is really bad.\n"));
+            }
 
-                /*
-                 * Fix up UDP checksum.
-                 */
-                if (pIpHdr->ip_p == RTNETIPV4_PROT_UDP)
-                {
-                    PRTNETUDP pUdpHdr = (PRTNETUDP)(pIpHdr + 1);
-                    cbLen -= pIpHdr->ip_hl * 4;
-                    RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pUdpHdr + 1);
-                    LogFlow((DEVICE_NAME ":computed UDP checksum.\n"));
-                }
-                RTNetIPv4HdrChecksum(pIpHdr);
-                LogFlow((DEVICE_NAME ":computed IP checksum.\n"));
-#endif
-            }
-            else
-            {
-                RTNetIPv4HdrChecksum(pIpHdr);
-                LogFlow((DEVICE_NAME ":Re-Computed IP Header.\n"));
-            }
+            freemsg(pMsg);
+            pMsg = pFullMsg;
+            DB_TYPE(pMsg) = M_DATA;
+            pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
         }
-        else
-            LogFlow((DEVICE_NAME ":EtherType=%x D=%.6Rhxs S=%.6Rhxs\n", RT_H2BE_U16(pEthHdr->EtherType), &pEthHdr->DstMac, &pEthHdr->SrcMac));
+
+        cbIpPacket = MBLKL(pMsg) - sizeof(RTNETETHERHDR);
+
+        /*
+         * Check if the IP checksum is valid.
+         */
+        PRTNETIPV4 pIpHdr = (PRTNETIPV4)(pEthHdr + 1);
+        if (!RTNetIPv4IsHdrValid(pIpHdr, cbIpPacket, cbIpPacket))
+        {
+            LogFlow((DEVICE_NAME ":Invalid IP checksum detected. Trying to fix...\n"));
+
+            /*
+             * Fix up TCP/UDP and IP checksums if they're incomplete/invalid.
+             */
+            if (pIpHdr->ip_p == RTNETIPV4_PROT_TCP)
+            {
+                size_t cbTcpPacket = cbIpPacket - (pIpHdr->ip_hl << 2);
+
+                PRTNETTCP pTcpHdr = (PRTNETTCP)(pIpHdr + 1);
+                if (!RTNetIPv4IsTCPValid(pIpHdr, pTcpHdr, cbTcpPacket, NULL, cbTcpPacket))
+                {
+                    RTNetIPv4TCPChecksum(pIpHdr, pTcpHdr, NULL);
+                    LogFlow((DEVICE_NAME ":fixed TCP checkum.\n"));
+                }
+                else
+                    LogFlow((DEVICE_NAME ":valid TCP checksum invalid IP checksum...\n"));
+            }
+            else if (pIpHdr->ip_p == RTNETIPV4_PROT_UDP)
+            {
+                size_t cbUdpPacket = cbIpPacket - (pIpHdr->ip_hl << 2);
+
+                PRTNETUDP pUdpHdr = (PRTNETUDP)(pIpHdr + 1);
+                RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pUdpHdr + 1);
+
+                LogFlow((DEVICE_NAME ":fixed UDP checksum.\n"));
+            }
+            else
+            {
+                LogFlow((DEVICE_NAME ":Non TCP/UDP protocol with invalid IP header!\n"));
+            }
+
+            RTNetIPv4HdrChecksum(pIpHdr);
+            LogFlow((DEVICE_NAME ":fixed IP checkum.\n"));
+
+            return pMsg;
+        }
     }
-    else
-        LogRel((DEVICE_NAME ":Packet shorter than ethernet header size!\n"));
+
+    return NULL;
 }
 
 
