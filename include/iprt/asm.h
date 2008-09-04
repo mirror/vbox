@@ -1862,6 +1862,180 @@ DECLINLINE(RTCCUINTREG) ASMGetDR3(void)
 #endif
 
 /**
+ * Sets dr0.
+ *
+ * @param   uDRVal   Debug register value to write
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetDR0(RTCCUINTREG uDRVal);
+#else
+DECLINLINE(void) ASMSetDR0(RTCCUINTREG uDRVal)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %0, %%dr0\n\t" : "r" (uDRVal));
+#  else
+    __asm__ __volatile__("movl   %0, %%dr0\n\t" : "r" (uDRVal));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     dr0, [uDRVal]
+#  else
+        mov     dr0, [uDRVal]
+#  endif
+    }
+# endif
+}
+#endif
+
+/**
+ * Sets dr1.
+ *
+ * @param   uDRVal   Debug register value to write
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetDR1(RTCCUINTREG uDRVal);
+#else
+DECLINLINE(void) ASMSetDR1(RTCCUINTREG uDRVal)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %0, %%dr1\n\t" : "r" (uDRVal));
+#  else
+    __asm__ __volatile__("movl   %0, %%dr1\n\t" : "r" (uDRVal));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     dr1, [uDRVal]
+#  else
+        mov     dr1, [uDRVal]
+#  endif
+    }
+# endif
+}
+#endif
+
+/**
+ * Sets dr2.
+ *
+ * @param   uDRVal   Debug register value to write
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetDR2(RTCCUINTREG uDRVal);
+#else
+DECLINLINE(void) ASMSetDR2(RTCCUINTREG uDRVal)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %0, %%dr2\n\t" : "r" (uDRVal));
+#  else
+    __asm__ __volatile__("movl   %0, %%dr2\n\t" : "r" (uDRVal));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     dr2, [uDRVal]
+#  else
+        mov     dr2, [uDRVal]
+#  endif
+    }
+# endif
+}
+#endif
+
+/**
+ * Sets dr3.
+ *
+ * @param   uDRVal   Debug register value to write
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetDR3(RTCCUINTREG uDRVal);
+#else
+DECLINLINE(void) ASMSetDR3(RTCCUINTREG uDRVal)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %0, %%dr3\n\t" : "r" (uDRVal));
+#  else
+    __asm__ __volatile__("movl   %0, %%dr3\n\t" : "r" (uDRVal));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     dr3, [uDRVal]
+#  else
+        mov     dr3, [uDRVal]
+#  endif
+    }
+# endif
+}
+#endif
+
+/**
+ * Sets dr6.
+ *
+ * @param   uDRVal   Debug register value to write
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetDR6(RTCCUINTREG uDRVal);
+#else
+DECLINLINE(void) ASMSetDR6(RTCCUINTREG uDRVal)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %0, %%dr6\n\t" : "r" (uDRVal));
+#  else
+    __asm__ __volatile__("movl   %0, %%dr6\n\t" : "r" (uDRVal));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     dr6, [uDRVal]
+#  else
+        mov     dr6, [uDRVal]
+#  endif
+    }
+# endif
+}
+#endif
+
+/**
+ * Sets dr7.
+ *
+ * @param   uDRVal   Debug register value to write
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMSetDR7(RTCCUINTREG uDRVal);
+#else
+DECLINLINE(void) ASMSetDR7(RTCCUINTREG uDRVal)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %0, %%dr7\n\t" : "r" (uDRVal));
+#  else
+    __asm__ __volatile__("movl   %0, %%dr7\n\t" : "r" (uDRVal));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     dr7, [uDRVal]
+#  else
+        mov     dr7, [uDRVal]
+#  endif
+    }
+# endif
+}
+#endif
+
+/**
  * Compiler memory barrier.
  *
  * Ensure that the compiler does not use any cached (register/tmp stack) memory
