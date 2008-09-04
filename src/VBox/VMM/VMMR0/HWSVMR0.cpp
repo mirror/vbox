@@ -934,7 +934,7 @@ ResumeExecution:
         pVM->hwaccm.s.svm.fForceTLBFlush = true;
     }
     else
-        Assert(!pCpu->fFlushTLB);
+        Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
 
     pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
 
@@ -964,6 +964,7 @@ ResumeExecution:
         if (!pCpu->uCurrentASID)
             pVM->hwaccm.s.svm.uCurrentASID = pCpu->uCurrentASID = 1;
 
+        Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVM->hwaccm.s.svm.fForceTLBFlush);
         pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
     }
     AssertMsg(pVM->hwaccm.s.svm.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVM->hwaccm.s.svm.cTLBFlushes, pCpu->cTLBFlushes));
