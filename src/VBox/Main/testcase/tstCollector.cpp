@@ -33,6 +33,9 @@
 #include "../linux/PerformanceLinux.cpp"
 #endif
 #ifdef RT_OS_WINDOWS
+#define _WIN32_DCOM
+#include <objidl.h>
+#include <objbase.h>
 #include "../win/PerformanceWin.cpp"
 #endif
 #ifdef RT_OS_OS2
@@ -62,6 +65,20 @@ pm::CollectorHAL *createCollector()
     return 0;
 }
 
+#define CALLS_PER_SECOND(fn) \
+    nCalls = 0; \
+    start = RTTimeMilliTS(); \
+    do { \
+        rc = collector->fn; \
+        ++nCalls; \
+    } while(RTTimeMilliTS() - start < 1000); \
+    if (RT_FAILURE(rc)) \
+    { \
+        RTPrintf("tstCollector: "#fn" -> %Vrc\n", rc); \
+        return 1; \
+    } \
+    RTPrintf("%50s -- %u calls per second\n", #fn, nCalls)
+
 int main(int argc, char *argv[])
 {
     /*
@@ -74,6 +91,22 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: RTR3Init() -> %d\n", rc);
         return 1;
     }
+#ifdef RT_OS_WINDOWS
+    HRESULT hRes = CoInitialize(NULL);
+    /*
+     * Need to initialize security to access performance enumerators.
+     */
+    hRes = CoInitializeSecurity(
+        NULL,
+        -1,
+        NULL,
+        NULL,
+        RPC_C_AUTHN_LEVEL_NONE,
+        RPC_C_IMP_LEVEL_IMPERSONATE,
+        NULL, EOAC_NONE, 0);
+#endif
+
+    uint64_t start;
 
     pm::CollectorHAL *collector = createCollector();
     if (!collector)
@@ -81,7 +114,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: createMetricFactory() failed\n", rc);
         return 1;
     }
-
+#if 1
     uint64_t hostUserStart, hostKernelStart, hostIdleStart;
     uint64_t hostUserStop, hostKernelStop, hostIdleStop, hostTotal;
 
@@ -139,7 +172,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
         return 1;
     }
-    uint64_t start = RTTimeMilliTS();
+    start = RTTimeMilliTS();
     while(RTTimeMilliTS() - start < 5000); // Loop for 5 seconds
     rc = collector->getRawHostCpuLoad(&hostUserStop, &hostKernelStop, &hostIdleStop);
     if (RT_FAILURE(rc))
@@ -182,10 +215,26 @@ int main(int argc, char *argv[])
     RTPrintf("tstCollector: host mem used      = %lu kB\n", used);
     RTPrintf("tstCollector: host mem available = %lu kB\n", available);
     RTPrintf("tstCollector: process mem used   = %lu kB\n", processUsed);
-
+#endif
+    RTPrintf("\ntstCollector: TESTING - Performance\n\n");
+    unsigned nCalls;
+    ULONG tmp;
+    uint64_t tmp64;
+    RTPROCESS pid = RTProcSelf();
+    /* Host CPU load */
+    CALLS_PER_SECOND(getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
+    /* Process CPU load */
+    CALLS_PER_SECOND(getRawProcessCpuLoad(pid, &tmp64, &tmp64, &tmp64));
+    /* Host CPU speed */
+    CALLS_PER_SECOND(getHostCpuMHz(&tmp));
+    /* Host RAM usage */
+    CALLS_PER_SECOND(getHostMemoryUsage(&tmp, &tmp, &tmp));
+    /* Process RAM usage */
+    CALLS_PER_SECOND(getProcessMemoryUsage(pid, &tmp));
+    
     delete collector;
 
-    printf ("tstCollector FINISHED.\n");
+    printf ("\ntstCollector FINISHED.\n");
 
     return rc;
 }
