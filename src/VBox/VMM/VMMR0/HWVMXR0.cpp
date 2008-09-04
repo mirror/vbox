@@ -1144,19 +1144,6 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
         Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: one\n"));
 #endif
 
-#if 0
-    /*
-     * Check if debug registers are armed.
-     */
-    uint32_t u32DR7 = ASMGetDR7();
-    if (u32DR7 & X86_DR7_ENABLED_MASK)
-    {
-        pVM->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
-    }
-    else
-        pVM->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS_HOST;
-#endif
-
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
 ResumeExecution:
@@ -1541,6 +1528,20 @@ ResumeExecution:
     pCtx->SysEnter.eip      = val;
     VMXReadVMCS(VMX_VMCS_GUEST_SYSENTER_ESP,     &val);
     pCtx->SysEnter.esp      = val;
+
+    /* Misc. registers; must sync everything otherwise we can get out of sync when jumping to ring 3. */
+    VMX_READ_SELREG(LDTR, ldtr);
+    VMX_READ_SELREG(TR, tr);
+
+    VMXReadVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       &val);
+    pCtx->gdtr.cbGdt        = val;
+    VMXReadVMCS(VMX_VMCS_GUEST_GDTR_BASE,        &val);
+    pCtx->gdtr.pGdt         = val;
+
+    VMXReadVMCS(VMX_VMCS_GUEST_IDTR_LIMIT,       &val);
+    pCtx->idtr.cbIdt        = val;
+    VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE,        &val);
+    pCtx->idtr.pIdt         = val;
 
     /** @note NOW IT'S SAFE FOR LOGGING! */
     Log2(("Raw exit reason %08x\n", exitReason));
@@ -1949,6 +1950,7 @@ ResumeExecution:
             rc = EMInterpretDRxWrite(pVM, CPUMCTX2CORE(pCtx),
                                      VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification),
                                      VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification));
+            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
             Log2(("DR7=%08x\n", pCtx->dr7));
         }
         else
@@ -2220,22 +2222,6 @@ ResumeExecution:
 
     }
 end:
-    if (fGuestStateSynced)
-    {
-        /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR. */
-        VMX_READ_SELREG(LDTR, ldtr);
-        VMX_READ_SELREG(TR, tr);
-
-        VMXReadVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       &val);
-        pCtx->gdtr.cbGdt        = val;
-        VMXReadVMCS(VMX_VMCS_GUEST_GDTR_BASE,        &val);
-        pCtx->gdtr.pGdt         = val;
-
-        VMXReadVMCS(VMX_VMCS_GUEST_IDTR_LIMIT,       &val);
-        pCtx->idtr.cbIdt        = val;
-        VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE,        &val);
-        pCtx->idtr.pIdt         = val;
-    }
 
     /* Signal changes for the recompiler. */
     CPUMSetChangedFlags(pVM, CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_LDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_TR | CPUM_CHANGED_HIDDEN_SEL_REGS);
