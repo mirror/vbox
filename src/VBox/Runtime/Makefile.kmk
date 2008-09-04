@@ -186,6 +186,9 @@ RuntimeR3_SOURCES       = \
 	common/ldr/ldrNative.cpp \
 	common/ldr/ldrPE.cpp \
 	common/log/log.cpp \
+	common/log/logellipsis.cpp \
+	common/log/logrel.cpp \
+	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
@@ -827,6 +830,8 @@ RuntimeR0_SOURCES       = \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
+	common/log/logellipsis.cpp \
+	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
@@ -928,11 +933,15 @@ ifdef VBOX_WITH_SOLARIS_VBI
 endif
 
 RuntimeR0Drv_SOURCES    = \
+	common/alloc/alloc.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
 	common/log/log.cpp \
+	common/log/logellipsis.cpp \
+	common/log/logrel.cpp \
+	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
@@ -1282,6 +1291,9 @@ RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
 RuntimeGC_INCS          = include
 RuntimeGC_SOURCES       = \
 	common/log/log.cpp \
+	common/log/logellipsis.cpp \
+	common/log/logrel.cpp \
+	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \

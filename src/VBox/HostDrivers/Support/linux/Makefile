@@ -102,6 +102,9 @@ endif
 
 ifeq ($(BUILD_TYPE),debug)
 OBJS += common/log/log.o \
+	common/log/logellipsis.o \
+	common/log/logrel.o \
+	common/log/logrelellipsis.o \
 	common/log/logcom.o \
 	common/log/logformat.o \
 	common/string/strformat.o \
