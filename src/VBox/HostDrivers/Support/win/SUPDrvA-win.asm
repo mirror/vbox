@@ -390,11 +390,11 @@ NtWrapFunctionWithAllRegParams  RTR0MemObjAllocCont
 NtWrapFunctionWithAllRegParams  RTR0MemObjLockUser
 NtWrapFunctionWith5Params       RTR0MemObjMapKernel
 NtWrapFunctionWith6Params       RTR0MemObjMapUser
-NtWrapFunctionWithAllRegParams  RTR0MemObjAddress
-NtWrapFunctionWithAllRegParams  RTR0MemObjAddressR3
-NtWrapFunctionWithAllRegParams  RTR0MemObjSize
-NtWrapFunctionWithAllRegParams  RTR0MemObjIsMapping
-NtWrapFunctionWithAllRegParams  RTR0MemObjGetPagePhysAddr
+;NtWrapFunctionWithAllRegParams  RTR0MemObjAddress      - not necessary
+;NtWrapFunctionWithAllRegParams  RTR0MemObjAddressR3    - not necessary
+;NtWrapFunctionWithAllRegParams  RTR0MemObjSize         - not necessary
+;NtWrapFunctionWithAllRegParams  RTR0MemObjIsMapping    - not necessary
+;NtWrapFunctionWithAllRegParams  RTR0MemObjGetPagePhysAddr - not necessary
 NtWrapFunctionWithAllRegParams  RTR0MemObjFree
 ;NtWrapFunctionWithAllRegParams  RTProcSelf             - not necessary
 ;NtWrapFunctionWithAllRegParams  RTR0ProcHandleSelf     - not necessary
