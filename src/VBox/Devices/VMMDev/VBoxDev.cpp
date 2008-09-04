@@ -261,15 +261,16 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
     PPDMDEVINS pDevIns = VMMDEVSTATE_2_DEVINS(pVMMDevState);
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     int rc;
-    PVMREQ pReq;
 
     Log3(("VMMDevNotifyGuest: u32EventMask = 0x%08X.\n", u32EventMask));
 
-    rc = VMR3ReqCallVoid (pVM, &pReq, RT_INDEFINITE_WAIT,
-                          (PFNRT) vmmdevNotifyGuest_EMT,
-                          2, pVMMDevState, u32EventMask);
-    AssertReleaseRC (rc);
-    VMR3ReqFree (pReq);
+    /* No need to wait for the completion of this request. It is a notification
+     * about something, which has already happened.
+     */
+    rc = VMR3ReqCallEx(pVM, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
+                       (PFNRT) vmmdevNotifyGuest_EMT,
+                       2, pVMMDevState, u32EventMask);
+    AssertRC(rc);
 }
 
 /**
