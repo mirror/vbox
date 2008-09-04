@@ -1883,7 +1883,8 @@ DECLINLINE(void) ASMSetDR0(RTCCUINTREG uDRVal)
 #  ifdef RT_ARCH_AMD64
         mov     dr0, [uDRVal]
 #  else
-        mov     dr0, [uDRVal]
+        mov     eax, [uDRVal]
+        mov     dr0, eax
 #  endif
     }
 # endif
@@ -1912,7 +1913,8 @@ DECLINLINE(void) ASMSetDR1(RTCCUINTREG uDRVal)
 #  ifdef RT_ARCH_AMD64
         mov     dr1, [uDRVal]
 #  else
-        mov     dr1, [uDRVal]
+        mov     eax, [uDRVal]
+        mov     dr1, eax
 #  endif
     }
 # endif
@@ -1941,7 +1943,8 @@ DECLINLINE(void) ASMSetDR2(RTCCUINTREG uDRVal)
 #  ifdef RT_ARCH_AMD64
         mov     dr2, [uDRVal]
 #  else
-        mov     dr2, [uDRVal]
+        mov     eax, [uDRVal]
+        mov     dr2, eax
 #  endif
     }
 # endif
@@ -1970,7 +1973,8 @@ DECLINLINE(void) ASMSetDR3(RTCCUINTREG uDRVal)
 #  ifdef RT_ARCH_AMD64
         mov     dr3, [uDRVal]
 #  else
-        mov     dr3, [uDRVal]
+        mov     eax, [uDRVal]
+        mov     dr3, eax
 #  endif
     }
 # endif
@@ -1999,7 +2003,8 @@ DECLINLINE(void) ASMSetDR6(RTCCUINTREG uDRVal)
 #  ifdef RT_ARCH_AMD64
         mov     dr6, [uDRVal]
 #  else
-        mov     dr6, [uDRVal]
+        mov     eax, [uDRVal]
+        mov     dr6, eax
 #  endif
     }
 # endif
@@ -2028,7 +2033,8 @@ DECLINLINE(void) ASMSetDR7(RTCCUINTREG uDRVal)
 #  ifdef RT_ARCH_AMD64
         mov     dr7, [uDRVal]
 #  else
-        mov     dr7, [uDRVal]
+        mov     eax, [uDRVal]
+        mov     dr7, eax
 #  endif
     }
 # endif
