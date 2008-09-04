@@ -1005,11 +1005,13 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
         case VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION:
         {
+            LogRel(("VRDP_SESSION: Enable. Currently: %sabled\n", pDevExt->fVRDPEnabled? "en": "dis"));
             if (!pDevExt->fVRDPEnabled)
             {
                 KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
 
                 pDevExt->fVRDPEnabled            = TRUE;
+                LogRel(("VRDP_SESSION: Current active console id: 0x%08X\n", pSharedUserData->ActiveConsoleId));
                 pDevExt->ulOldActiveConsoleId    = pSharedUserData->ActiveConsoleId;
                 pSharedUserData->ActiveConsoleId = 2;
             }
@@ -1018,11 +1020,13 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         case VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION:
         {
+            LogRel(("VRDP_SESSION: Disable. Currently: %sabled\n", pDevExt->fVRDPEnabled? "en": "dis"));
             if (pDevExt->fVRDPEnabled)
             {
                 KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
 
                 pDevExt->fVRDPEnabled            = FALSE;
+                LogRel(("VRDP_SESSION: Current active console id: 0x%08X\n", pSharedUserData->ActiveConsoleId));
                 pSharedUserData->ActiveConsoleId = pDevExt->ulOldActiveConsoleId;
                 pDevExt->ulOldActiveConsoleId    = 0;
             }
