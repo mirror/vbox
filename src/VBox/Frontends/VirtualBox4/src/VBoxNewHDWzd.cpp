@@ -204,7 +204,7 @@ void VBoxNewHDWzd::retranslateUi()
             .arg (tr ("Type", "summary")).arg (type)
             .arg (tr ("Location", "summary")).arg (composeFullFileName (imageFileName()))
             .arg (tr ("Size", "summary")).arg (VBoxGlobal::formatSize (sizeB))
-            .arg (tr ("Bytes", "summary")).arg (sizeB);
+            .arg (sizeB).arg (tr ("Bytes", "summary"));
 
         mTeSummary->setText (summary);
     }
