@@ -683,7 +683,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     egid = getegid();
     rgid = sgid = getgid();
 
-# elif defined(RT_SOLARIS)
+# elif defined(RT_OS_SOLARIS)
     /* Solaris doesn't have setresuid, but the setreuid interface is BSD
        compatible and will set the saved uid to euid when we pass it a ruid
        that isn't -1 (which we do). */
