@@ -400,8 +400,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     fileDiskMgrAction = new QAction (this);
     fileDiskMgrAction->setIcon (VBoxGlobal::iconSet (":/diskim_16px.png"));
     fileSettingsAction = new QAction(this);
+    fileSettingsAction->setMenuRole (QAction::PreferencesRole);
     fileSettingsAction->setIcon (VBoxGlobal::iconSet (":/global_settings_16px.png"));
     fileExitAction = new QAction (this);
+    fileExitAction->setMenuRole (QAction::QuitRole);
     fileExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
 
     vmNewAction = new QAction (this);

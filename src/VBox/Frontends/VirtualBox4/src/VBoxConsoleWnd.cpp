@@ -218,6 +218,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
         VBoxGlobal::iconSet (":/acpi_16px.png", ":/acpi_disabled_16px.png"));
 
     vmCloseAction = new QAction (this);
+    vmCloseAction->setMenuRole (QAction::QuitRole);
     vmCloseAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
 
     vmTakeSnapshotAction = new QAction (mRunningOrPausedActions);
