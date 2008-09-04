@@ -86,6 +86,10 @@
  *          0x50 - 0x57
  *     Fourth Sata HDD:
  *          0x58 - 0x5f
+ *     Number of CPUs:
+ *          0x60
+ *     RAM above 4G (in 64K units):
+ *          0x61 - 0x63
  */
 
 

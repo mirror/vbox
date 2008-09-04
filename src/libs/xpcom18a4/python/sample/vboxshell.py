@@ -18,8 +18,6 @@
 #  export VBOX_PROGRAM_PATH=/home/nike/work/ws/out/linux.amd64/debug/bin/
 # To allow Python find modules
 #  export PYTHONPATH=$VBOX_PROGRAM_PATH/sdk/bindings/xpcom/python:$VBOX_PROGRAM_PATH
-# To allow library resolution
-#  export LD_LIBRARY_PATH=$VBOX_PROGRAM_PATH
 #
 # Additionally, on 64-bit Solaris, you need to use 64-bit Python from 
 # /usr/bin/amd64/python and due to quirks in native modules loading of 
