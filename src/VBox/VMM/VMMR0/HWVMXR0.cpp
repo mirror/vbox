@@ -1751,14 +1751,14 @@ ResumeExecution:
 #endif
             default:
                 AssertMsgFailed(("Unexpected vm-exit caused by exception %x\n", vector));
-                rc = VERR_EM_INTERNAL_ERROR;
+                rc = VERR_VMX_UNEXPECTED_EXCEPTION;
                 break;
             } /* switch (vector) */
 
             break;
 
         default:
-            rc = VERR_EM_INTERNAL_ERROR;
+            rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE;
             AssertFailed();
             break;
         }
@@ -2207,14 +2207,14 @@ ResumeExecution:
         VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE, &val);
         Log(("VMX_VMCS_GUEST_IDTR_BASE    %VGv\n", val));
 #endif /* VBOX_STRICT */
-        rc = VERR_EM_INTERNAL_ERROR;
+        rc = VERR_VMX_INVALID_GUEST_STATE;
         break;
     }
 
     case VMX_EXIT_ERR_MSR_LOAD:         /* 34 VM-entry failure due to MSR loading. */
     case VMX_EXIT_ERR_MACHINE_CHECK:    /* 41 VM-entry failure due to machine-check. */
     default:
-        rc = VERR_EM_INTERNAL_ERROR;
+        rc = VERR_VMX_UNEXPECTED_EXIT_CODE;
         AssertMsgFailed(("Unexpected exit code %d\n", exitReason));                 /* Can't happen. */
         break;
 
