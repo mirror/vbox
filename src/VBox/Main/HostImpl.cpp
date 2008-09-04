@@ -822,7 +822,7 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
-    *count = RTMpGetCount();
+    *count = RTMpGetPresentCount();
     return S_OK;
 }
 
