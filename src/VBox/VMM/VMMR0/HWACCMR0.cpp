@@ -743,6 +743,20 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
     /* Always load the guest's FPU/XMM state on-demand. */
     CPUMDeactivateGuestFPUState(pVM);
 
+#ifdef VBOX_WITH_DEBUG_REGISTER_SUPPORT
+    /*
+     * Check if host debug registers are armed. All context switches set DR7 back to 0x400.
+     */
+    uint64_t u64DR7 = ASMGetDR7();
+    if (u32DR7 & X86_DR7_ENABLED_MASK)
+    {
+        pVM->hwaccm.s.savedhoststate.dr7  = u64DR7;
+        pVM->hwaccm.s.savedhoststate.fHostDR7Saved = true;
+    }
+    else
+        pVM->hwaccm.s.savedhoststate.fHostDR7Saved = false;
+#endif
+
     /* Always reload the host context and the guest's CR0 register. (!!!!) */
     pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_HOST_CONTEXT;
 
@@ -790,6 +804,14 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
 
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
     }
+
+#ifdef VBOX_WITH_DEBUG_REGISTER_SUPPORT
+    if (pVM->hwaccm.s.savedhoststate.fHostDR7Saved)
+    {
+        ASMSetDR7(pVM->hwaccm.s.savedhoststate.dr7);
+        pVM->hwaccm.s.savedhoststate.fHostDR7Saved = false;
+    }
+#endif
 
     return HWACCMR0Globals.pfnLeaveSession(pVM);
 }

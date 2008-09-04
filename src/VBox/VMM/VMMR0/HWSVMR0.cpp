@@ -1168,6 +1168,16 @@ ResumeExecution:
     pCtx->SysEnter.eip      = pVMCB->guest.u64SysEnterEIP;
     pCtx->SysEnter.esp      = pVMCB->guest.u64SysEnterESP;
 
+    /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR; must sync everything otherwise we can get out of sync when jumping to ring 3. */
+    SVM_READ_SELREG(LDTR, ldtr);
+    SVM_READ_SELREG(TR, tr);
+
+    pCtx->gdtr.cbGdt        = pVMCB->guest.GDTR.u32Limit;
+    pCtx->gdtr.pGdt         = pVMCB->guest.GDTR.u64Base;
+
+    pCtx->idtr.cbIdt        = pVMCB->guest.IDTR.u32Limit;
+    pCtx->idtr.pIdt         = pVMCB->guest.IDTR.u64Base;
+
     /* Note: no reason to sync back the CRx and DRx registers. They can't be changed by the guest. */
     /* Note: only in the nested paging case can CR3 & CR4 be changed by the guest. */
     if (    pVM->hwaccm.s.fNestedPaging
@@ -1655,6 +1665,7 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */
+            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
 
             /* Only resume if successful. */
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -1879,18 +1890,6 @@ ResumeExecution:
     }
 
 end:
-    if (fGuestStateSynced)
-    {
-        /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR. */
-        SVM_READ_SELREG(LDTR, ldtr);
-        SVM_READ_SELREG(TR, tr);
-
-        pCtx->gdtr.cbGdt        = pVMCB->guest.GDTR.u32Limit;
-        pCtx->gdtr.pGdt         = pVMCB->guest.GDTR.u64Base;
-
-        pCtx->idtr.cbIdt        = pVMCB->guest.IDTR.u32Limit;
-        pCtx->idtr.pIdt         = pVMCB->guest.IDTR.u64Base;
-    }
 
     /* Signal changes for the recompiler. */
     CPUMSetChangedFlags(pVM, CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_LDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_TR | CPUM_CHANGED_HIDDEN_SEL_REGS);
