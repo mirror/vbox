@@ -3695,6 +3695,10 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pReq->u.Out.pvImageBase = pImage->pvImage;
     pReq->u.Out.fNeedsLoading = true;
     RTSemFastMutexRelease(pDevExt->mtxLdr);
+
+#if defined(RT_OS_WINDOWS) && defined(DEBUG)
+    SUPR0Printf("VBoxDrv: windbg> .reload /f %s=%#p\n", pImage->szName, pImage->pvImage);
+#endif
     return VINF_SUCCESS;
 }
 
