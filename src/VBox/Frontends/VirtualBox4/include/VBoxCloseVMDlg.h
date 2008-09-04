@@ -27,7 +27,7 @@
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
 
-class VBoxCloseVMDlg : public QIWithRetranslateUI2<QIDialog>,
+class VBoxCloseVMDlg : public QIWithRetranslateUI<QIDialog>,
                        public Ui::VBoxCloseVMDlg
 {
     Q_OBJECT;

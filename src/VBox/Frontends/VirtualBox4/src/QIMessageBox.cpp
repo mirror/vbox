@@ -26,6 +26,9 @@
 #include "QIMessageBox.h"
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
+#ifdef Q_WS_MAC
+# include "VBoxConsoleWnd.h"
+#endif /* Q_WS_MAC */
 
 /* Qt includes */
 #include <QHBoxLayout>
@@ -46,9 +49,20 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                             Icon aIcon, int aButton0, int aButton1, int aButton2,
                             QWidget *aParent, const char *aName, bool aModal)
     : QIDialog (aParent,
-                Qt::Window | Qt::Sheet | 
+                Qt::Window | 
                 Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint)
 {
+#ifdef Q_WS_MAC
+    /* Sheets are broken if the window is in fullscreen mode. So make it a
+     * normal window in that case. */
+    VBoxConsoleWnd *cwnd = qobject_cast<VBoxConsoleWnd*> (aParent);
+    if (cwnd != NULL &&
+        !cwnd->isTrueFullscreen() &&
+        !cwnd->isTrueSeamless())
+        setWindowFlags (windowFlags() | Qt::Sheet);
+#endif /* Q_WS_MAC */
+
+
     setWindowTitle (aCaption);
     /* Necessary to later find some of the message boxes */
     setObjectName (aName);

@@ -22,13 +22,26 @@
 
 #include "VBoxCloseVMDlg.h"
 #include "VBoxProblemReporter.h"
+#ifdef Q_WS_MAC
+# include "VBoxConsoleWnd.h"
+#endif /* Q_WS_MAC */
 
 /* Qt includes */
 #include <QPushButton>
 
 VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
-    : QIWithRetranslateUI2<QIDialog> (aParent, Qt::Sheet)
+    : QIWithRetranslateUI<QIDialog> (aParent)
 {
+#ifdef Q_WS_MAC
+    /* Sheets are broken if the window is in fullscreen mode. So make it a
+     * normal window in that case. */
+    VBoxConsoleWnd *cwnd = qobject_cast<VBoxConsoleWnd*> (aParent);
+    if (cwnd != NULL &&
+        !cwnd->isTrueFullscreen() &&
+        !cwnd->isTrueSeamless())
+        setWindowFlags (Qt::Sheet);
+#endif /* Q_WS_MAC */
+
     /* Apply UI decorations */
     Ui::VBoxCloseVMDlg::setupUi (this);
 
