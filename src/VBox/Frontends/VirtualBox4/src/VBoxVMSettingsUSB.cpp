@@ -177,13 +177,16 @@ void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
     mMachine = aMachine;
 
     CUSBController ctl = aMachine.GetUSBController();
-    mGbUSB->setChecked (ctl.GetEnabled());
-    mCbUSB2->setChecked (ctl.GetEnabledEhci());
+    mGbUSB->setChecked (!ctl.isNull() && ctl.GetEnabled());
+    mCbUSB2->setChecked (!ctl.isNull() && ctl.GetEnabledEhci());
     usbAdapterToggled (mGbUSB->isChecked());
 
-    CUSBDeviceFilterEnumerator en = ctl.GetDeviceFilters().Enumerate();
-    while (en.HasMore())
-        addUSBFilter (en.GetNext(), false /* isNew */);
+    if (!ctl.isNull())
+    {
+        CUSBDeviceFilterEnumerator en = ctl.GetDeviceFilters().Enumerate();
+        while (en.HasMore())
+            addUSBFilter (en.GetNext(), false /* isNew */);
+    }
 
     mTwFilters->setCurrentItem (mTwFilters->topLevelItem (0));
     currentChanged (mTwFilters->currentItem());
@@ -191,27 +194,28 @@ void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
 
 void VBoxVMSettingsUSB::putBackTo()
 {
-    CUSBController ctl = mMachine.GetUSBController();
-
-    ctl.SetEnabled (mGbUSB->isChecked());
-    ctl.SetEnabledEhci (mCbUSB2->isChecked());
-
-    if (mUSBFilterListModified)
+    CUSBController ctl = mMachine.GetUSBController(); 
+    if (!ctl.isNull())
     {
-        /* First, remove all old filters */
-        for (ulong count = ctl.GetDeviceFilters().GetCount(); count; -- count)
-            ctl.RemoveDeviceFilter (0);
+        ctl.SetEnabled (mGbUSB->isChecked());
+        ctl.SetEnabledEhci (mCbUSB2->isChecked());
 
-        /* Then add all new filters */
-        for (int i = 0; i < mFilters.size(); ++ i)
+        if (mUSBFilterListModified)
         {
-            CUSBDeviceFilter filter = mFilters [i];
-            filter.SetActive (mTwFilters->topLevelItem (i)->
-                checkState (0) == Qt::Checked);
-            ctl.InsertDeviceFilter (~0, filter);
+            /* First, remove all old filters */
+            for (ulong count = ctl.GetDeviceFilters().GetCount(); count; -- count)
+                ctl.RemoveDeviceFilter (0);
+
+            /* Then add all new filters */
+            for (int i = 0; i < mFilters.size(); ++ i)
+            {
+                CUSBDeviceFilter filter = mFilters [i];
+                filter.SetActive (mTwFilters->topLevelItem (i)->
+                    checkState (0) == Qt::Checked);
+                ctl.InsertDeviceFilter (~0, filter);
+            }
         }
     }
-
     mUSBFilterListModified = false;
 }
 
@@ -322,8 +326,10 @@ void VBoxVMSettingsUSB::newClicked()
     }
     else if (mType == MachineType)
     {
-        filter = mMachine.GetUSBController()
-            .CreateDeviceFilter (mUSBFilterName.arg (maxFilterIndex + 1));
+        CUSBController ctl = mMachine.GetUSBController();
+        if (ctl.isNull())
+            return;
+        filter = ctl.CreateDeviceFilter (mUSBFilterName.arg (maxFilterIndex + 1));
     }
     else
     {
@@ -361,8 +367,10 @@ void VBoxVMSettingsUSB::addConfirmed (QAction *aAction)
     }
     else if (mType == MachineType)
     {
-        filter = mMachine.GetUSBController()
-            .CreateDeviceFilter (vboxGlobal().details (usb));
+        CUSBController ctl = mMachine.GetUSBController();
+        if (ctl.isNull())
+            return;
+        filter = ctl.CreateDeviceFilter (vboxGlobal().details (usb));
     }
     else
     {
