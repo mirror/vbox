@@ -216,6 +216,7 @@ void VBoxHelpActions::setup (QObject *aParent)
     updateAction->setIcon (VBoxGlobal::iconSet (":/refresh_16px.png",
                                                 ":/refresh_disabled_16px.png"));
     aboutAction = new QAction (aParent);
+    aboutAction->setMenuRole (QAction::AboutRole);
     aboutAction->setIcon (VBoxGlobal::iconSet (":/about_16px.png"));
 
     QObject::connect (contentsAction, SIGNAL (triggered()),
