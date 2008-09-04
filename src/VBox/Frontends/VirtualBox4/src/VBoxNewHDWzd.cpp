@@ -201,10 +201,10 @@ void VBoxNewHDWzd::retranslateUi()
             "<tr><td><nobr>%5:&nbsp;</nobr></td><td><nobr>%6&nbsp;(%7&nbsp;%8)</nobr></td></tr>"
             "</table>"
         )
-            .arg (tr ("Type", "summary"), type)
-            .arg (tr ("Location", "summary"), composeFullFileName (imageFileName()))
-            .arg (tr ("Size", "summary"), VBoxGlobal::formatSize (sizeB))
-            .arg (sizeB).arg (tr ("Bytes", "summary"), sizeB);
+            .arg (tr ("Type", "summary")).arg (type)
+            .arg (tr ("Location", "summary")).arg (composeFullFileName (imageFileName()))
+            .arg (tr ("Size", "summary")).arg (VBoxGlobal::formatSize (sizeB))
+            .arg (tr ("Bytes", "summary")).arg (sizeB);
 
         mTeSummary->setText (summary);
     }
