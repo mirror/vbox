@@ -711,7 +711,7 @@ additions-packing:
 		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
 
 sdk:
-	+ $(KMK) VBOX_ONLY_SDK=1 VBOX_WITH_PYTHON=1  \
+	+ $(KMK) VBOX_ONLY_SDK=1  \
               pass_bldprogs pass_others pass_installs pass_packing
 
 
