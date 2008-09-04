@@ -297,6 +297,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTMpGetMaxFrequency-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
@@ -338,6 +339,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	r3/linux/mp-linux.cpp \
@@ -388,6 +390,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
 	generic/timer-generic.cpp \
@@ -429,6 +432,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
@@ -466,6 +470,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -505,6 +510,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -558,6 +564,7 @@ RuntimeR3L4_SOURCES = \
 	generic/RTSystemQueryOSInfo-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/semnoint-generic.cpp \
 	generic/semsrw-generic.cpp \
@@ -694,7 +701,7 @@ ifeq ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING),darwin)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                    = $(RuntimeR3_DEFS) IN_SUP_R3 IN_SUP_R3
-VBoxRT_DEFS.$(KBUILD_TYPE)      = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
+VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
 	$(RuntimeR3_SOURCES)
@@ -704,7 +711,7 @@ VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp
 VBoxRT_SOURCES.win.x86        += r3/win/VBoxRT-win32.def
 VBoxRT_SOURCES.win.amd64      += r3/win/VBoxRT-win64.def
 VBoxRT_INCS                    = $(RuntimeR3_INCS)
-VBoxRT_INCS.$(KBUILD_TARGET)    = $(RuntimeR3_INCS.$(KBUILD_TARGET))
+VBoxRT_INCS.$(KBUILD_TARGET)   = $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
@@ -970,6 +977,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	common/err/RTErrConvertToErrno.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
+	generic/mppresent-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/memobj-r0drv-linux.c \
@@ -1000,6 +1008,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strpbrk.cpp \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
+	generic/mppresent-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
@@ -1044,6 +1053,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTMpGetSet-generic.cpp \
 	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
@@ -1090,6 +1100,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	generic/RTMpGetSet-generic.cpp \
 	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
 	r0drv/memobj-r0drv.cpp \
@@ -1138,6 +1149,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTMpGetSet-generic.cpp \
 	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
@@ -1162,6 +1174,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
+	generic/mppresent-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c
 
@@ -1258,6 +1271,7 @@ RuntimeGuestR0_SOURCES.solaris = \
  	generic/RTMpGetSet-generic.cpp \
  	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
+	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
  	r0drv/solaris/alloc-r0drv-solaris.c \

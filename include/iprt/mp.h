@@ -83,6 +83,7 @@ RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu);
  */
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void);
 
+
 /**
  * Checks if a CPU exists in the system or may possibly be hotplugged later.
  *
@@ -108,6 +109,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet);
  */
 RTDECL(RTCPUID) RTMpGetCount(void);
 
+
 /**
  * Gets set of the CPUs present that are currently online.
  *
@@ -130,6 +132,31 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void);
  * @param   idCpu       The identifier of the CPU.
  */
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu);
+
+
+/**
+ * Gets set of the CPUs present in the system.
+ *
+ * @returns pSet.
+ * @param   pSet    Where to put the set.
+ */
+RTDECL(PRTCPUSET) RTMpGetPresentSet(PRTCPUSET pSet);
+
+/**
+ * Get the count of CPUs that are present in the system.
+ *
+ * @return The count.
+ */
+RTDECL(RTCPUID) RTMpGetPresentCount(void);
+
+/**
+ * Checks if a CPU is present in the system.
+ *
+ * @returns true/false accordingly.
+ * @param   idCpu       The identifier of the CPU.
+ */
+RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu);
+
 
 /**
  * Get the current frequency of a CPU.
