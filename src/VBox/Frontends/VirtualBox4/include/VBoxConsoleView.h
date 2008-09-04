@@ -80,6 +80,8 @@ public:
     CConsole &console() { return mConsole; }
 
     bool pause (bool on);
+    bool isPaused() { return mLastState == KMachineState_Paused; }
+    const QPixmap& pauseShot() const { return mPausedShot; }
 
     void setMouseIntegrationEnabled (bool enabled);
 
@@ -202,7 +204,6 @@ private:
 
     void setPointerShape (MousePointerChangeEvent *me);
 
-    bool isPaused() { return mLastState == KMachineState_Paused; }
     bool isRunning() { return mLastState == KMachineState_Running; }
 
     static void dimImage (QImage &img);

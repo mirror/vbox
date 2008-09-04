@@ -3022,23 +3022,30 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
         return;
     }
 
-    /* we have a snapshot for the paused state */
-    QRect r = pe->rect().intersect (viewport()->rect());
-    /* We have to disable paint on screen if we are using the regular painter */
-    bool paintOnScreen = viewport()->testAttribute (Qt::WA_PaintOnScreen);
-    viewport()->setAttribute (Qt::WA_PaintOnScreen, false);
-    QPainter pnt (viewport());
-    pnt.drawPixmap (r.x(), r.y(), mPausedShot,
-                    r.x() + contentsX(), r.y() + contentsY(),
-                    r.width(), r.height());
-    /* Restore the attribute to its previous state */
-    viewport()->setAttribute (Qt::WA_PaintOnScreen, paintOnScreen);
-
-#ifdef Q_WS_MAC
-    ::darwinUpdateDockPreview (::darwinToCGImageRef (&mPausedShot),
-                               mVirtualBoxLogo,
-                               mMainWnd->dockImageState());
+#ifdef VBOX_GUI_USE_QUARTZ2D
+    if (mode == VBoxDefs::Quartz2DMode)
+        mFrameBuf->paintEvent (pe);
+    else
 #endif
+    {
+        /* we have a snapshot for the paused state */
+        QRect r = pe->rect().intersect (viewport()->rect());
+        /* We have to disable paint on screen if we are using the regular painter */
+        bool paintOnScreen = viewport()->testAttribute (Qt::WA_PaintOnScreen);
+        viewport()->setAttribute (Qt::WA_PaintOnScreen, false);
+        QPainter pnt (viewport());
+        pnt.drawPixmap (r.x(), r.y(), mPausedShot,
+                        r.x() + contentsX(), r.y() + contentsY(),
+                        r.width(), r.height());
+        /* Restore the attribute to its previous state */
+        viewport()->setAttribute (Qt::WA_PaintOnScreen, paintOnScreen);
+#ifdef Q_WS_MAC
+        ::darwinUpdateDockPreview (::darwinToCGImageRef (&mPausedShot),
+                                   mVirtualBoxLogo,
+                                   mMainWnd->dockImageState());
+#endif
+    }
+
 }
 
 /**
