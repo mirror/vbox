@@ -1245,6 +1245,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
                     VBoxMedia::Error;
                 vboxGlobal().updateMedia (media);
             }
+            break;
         }
         /* If it is a floppy sub-item: */
         case VBoxDefs::FD:
@@ -1266,6 +1267,7 @@ void VBoxDiskImageManagerDlg::releaseImage()
                     VBoxMedia::Error;
                 vboxGlobal().updateMedia (media);
             }
+            break;
         }
         default:
             AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::DiskType.\n"));
