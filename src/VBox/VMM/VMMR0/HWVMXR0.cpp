@@ -968,7 +968,11 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         val  = pCtx->dr7 & 0xffffffff;                                  /* upper 32 bits reserved */
         val &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
         val |= 0x400;                                                   /* must be one */
+#ifdef VBOX_WITH_DEBUG_REGISTER_SUPPORT
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DR7,              val);
+#else
+        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DR7,            0x400);
+#endif
         AssertRC(rc);
 
         /* IA32_DEBUGCTL MSR. */
