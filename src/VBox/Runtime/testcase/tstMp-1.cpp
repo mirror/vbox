@@ -49,7 +49,6 @@ int main()
     RTR3Init();
     RTPrintf("tstMp-1: TESTING...\n");
 
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     /*
      * Present and possible CPUs.
      */
@@ -79,8 +78,21 @@ int main()
             RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
             if (RTCpuSetIsMemberByIndex(&Set, iCpu))
             {
-                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
-                         RTMpGetMaxFrequency(idCpu), RTMpIsCpuOnline(idCpu) ? "online" : "offline");
+                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz", iCpu, (int)idCpu,
+                         RTMpGetCurFrequency(idCpu), RTMpGetMaxFrequency(idCpu));
+                if (RTMpIsCpuPresent(idCpu))
+                    RTPrintf(RTMpIsCpuOnline(idCpu) ? " online\n" : " offline\n");
+                else
+                {
+                    if (!RTMpIsCpuOnline(idCpu))
+                        RTPrintf(" absent\n");
+                    else
+                    {
+                        RTPrintf(" online but absent!\n");
+                        RTPrintf("tstMp-1: FAILURE: Cpu with index %d is report as !RTIsCpuPresent while RTIsCpuOnline returns true!\n", iCpu);
+                        g_cErrors++;
+                    }
+                }
                 if (!RTMpIsCpuPossible(idCpu))
                 {
                     RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTCpuSet but not RTMpIsCpuPossible!\n", iCpu);
@@ -171,9 +183,66 @@ int main()
         g_cErrors++;
     }
 
-#else
-    RTPrintf("tstMp-1: SKIPPED - RTMp is not implemented on this host OS.\n");
-#endif
+    /*
+     * Present CPUs.
+     */
+    RTCPUID cCpusPresent = RTMpGetPresentCount();
+    if (cCpusPresent > 0)
+    {
+        if (    cCpusPresent <= cCpus
+            &&  cCpusPresent >= cCpusOnline)
+            RTPrintf("tstMp-1: RTMpGetPresentCount -> %d\n", (int)cCpusPresent);
+        else
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetPresentCount -> %d, expected <= %d and >= %d\n", (int)cCpusPresent, (int)cCpus, (int)cCpusOnline);
+            g_cErrors++;
+        }
+    }
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetPresentCount -> %d\n", (int)cCpusPresent);
+        g_cErrors++;
+        cCpusPresent = 1;
+    }
+
+    RTCPUSET SetPresent;
+    pSet = RTMpGetPresentSet(&SetPresent);
+    if (pSet == &SetPresent)
+    {
+        if (RTCpuSetCount(&SetPresent) <= 0)
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetPresentSet returned an empty set!\n");
+            g_cErrors++;
+        }
+        else if ((RTCPUID)RTCpuSetCount(&SetPresent) != cCpusPresent)
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetPresentSet returned a bad value; %d, expected = %d\n",
+                     RTCpuSetCount(&SetPresent), cCpusPresent);
+            g_cErrors++;
+        }
+        RTPrintf("tstMp-1: Present CPU mask:\n");
+        for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+            if (RTCpuSetIsMemberByIndex(&SetPresent, iCpu))
+            {
+                RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
+                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
+                         RTMpGetMaxFrequency(idCpu), RTMpIsCpuPresent(idCpu) ? "present" : "absent");
+                if (!RTCpuSetIsMemberByIndex(&Set, iCpu))
+                {
+                    RTPrintf("tstMp-1: FAILURE: online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
+                    g_cErrors++;
+                }
+            }
+
+        /* There isn't any sane way of testing RTMpIsCpuPresent really... :-/ */
+    }
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetPresentSet -> %p, expected %p\n", pSet, &Set);
+        g_cErrors++;
+    }
+
+
 
     if (!g_cErrors)
         RTPrintf("tstMp-1: SUCCESS\n", g_cErrors);
