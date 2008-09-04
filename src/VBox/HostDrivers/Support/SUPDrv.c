@@ -114,6 +114,156 @@
 # define VBOX_SVN_REV 0
 #endif
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
+static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
+#ifdef VBOX_WITH_IDT_PATCHING
+static int      supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL pReq);
+static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
+static int      supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
+static void     supdrvIdtRemoveOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
+static void     supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTEntry);
+#endif /* VBOX_WITH_IDT_PATCHING */
+static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
+static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
+static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
+static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
+static int      supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
+static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
+static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
+static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
+static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void);
+static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
+#ifdef RT_OS_WINDOWS
+static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
+static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3);
+#endif /* RT_OS_WINDOWS */
+static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
+static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
+static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
+
+#ifdef SUPDRV_WITH_UNWIND_HACK
+DECLASM(int)    supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
+DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned uOperation);
+DECLASM(void)   supdrvNtWrapObjDestructor(PFNRT pfnDestruction, void *pvObj, void *pvUser1, void *pvUser2);
+DECLASM(void *) supdrvNtWrapQueryFactoryInterface(PFNRT pfnQueryFactoryInterface, struct SUPDRVFACTORY const *pSupDrvFactory, PSUPDRVSESSION pSession, const char *pszInterfaceUuid);
+DECLASM(int)    supdrvNtWrapModuleInit(PFNRT pfnModuleInit);
+DECLASM(void)   supdrvNtWrapModuleTerm(PFNRT pfnModuleTerm);
+
+DECLASM(int)    UNWIND_WRAP(SUPR0ComponentRegisterFactory)(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
+DECLASM(int)    UNWIND_WRAP(SUPR0ComponentDeregisterFactory)(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
+DECLASM(int)    UNWIND_WRAP(SUPR0ComponentQueryFactory)(PSUPDRVSESSION pSession, const char *pszName, const char *pszInterfaceUuid, void **ppvFactoryIf);
+DECLASM(void *) UNWIND_WRAP(SUPR0ObjRegister)(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2);
+DECLASM(int)    UNWIND_WRAP(SUPR0ObjAddRef)(void *pvObj, PSUPDRVSESSION pSession);
+DECLASM(int)    UNWIND_WRAP(SUPR0ObjRelease)(void *pvObj, PSUPDRVSESSION pSession);
+DECLASM(int)    UNWIND_WRAP(SUPR0ObjVerifyAccess)(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName);
+DECLASM(int)    UNWIND_WRAP(SUPR0LockMem)(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
+DECLASM(int)    UNWIND_WRAP(SUPR0UnlockMem)(PSUPDRVSESSION pSession, RTR3PTR pvR3);
+DECLASM(int)    UNWIND_WRAP(SUPR0ContAlloc)(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS pHCPhys);
+DECLASM(int)    UNWIND_WRAP(SUPR0ContFree)(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
+DECLASM(int)    UNWIND_WRAP(SUPR0LowAlloc)(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR ppvR0, PRTR3PTR ppvR3, PRTHCPHYS paPages);
+DECLASM(int)    UNWIND_WRAP(SUPR0LowFree)(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
+DECLASM(int)    UNWIND_WRAP(SUPR0MemAlloc)(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3);
+DECLASM(int)    UNWIND_WRAP(SUPR0MemGetPhys)(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages);
+DECLASM(int)    UNWIND_WRAP(SUPR0MemFree)(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
+DECLASM(int)    UNWIND_WRAP(SUPR0PageAlloc)(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
+DECLASM(int)    UNWIND_WRAP(SUPR0PageFree)(PSUPDRVSESSION pSession, RTR3PTR pvR3);
+//DECLASM(int)    UNWIND_WRAP(SUPR0Printf)(const char *pszFormat, ...);
+DECLASM(void *) UNWIND_WRAP(RTMemAlloc)(size_t cb) RT_NO_THROW;
+DECLASM(void *) UNWIND_WRAP(RTMemAllocZ)(size_t cb) RT_NO_THROW;
+DECLASM(void)   UNWIND_WRAP(RTMemFree)(void *pv) RT_NO_THROW;
+DECLASM(void *) UNWIND_WRAP(RTMemDup)(const void *pvSrc, size_t cb) RT_NO_THROW;
+DECLASM(void *) UNWIND_WRAP(RTMemDupEx)(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
+DECLASM(void *) UNWIND_WRAP(RTMemRealloc)(void *pvOld, size_t cbNew) RT_NO_THROW;
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjAllocLow)(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjAllocPage)(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjAllocPhys)(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjAllocPhysNC)(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjAllocCont)(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutable);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjLockUser)(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjMapKernel)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjMapUser)(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process);
+DECLASM(void *) UNWIND_WRAP(RTR0MemObjAddress)(RTR0MEMOBJ MemObj);
+DECLASM(RTR3PTR) UNWIND_WRAP(RTR0MemObjAddressR3)(RTR0MEMOBJ MemObj);
+DECLASM(size_t) UNWIND_WRAP(RTR0MemObjSize)(RTR0MEMOBJ MemObj);
+DECLASM(bool)   UNWIND_WRAP(RTR0MemObjIsMapping)(RTR0MEMOBJ MemObj);
+DECLASM(RTHCPHYS) UNWIND_WRAP(RTR0MemObjGetPagePhysAddr)(RTR0MEMOBJ MemObj, size_t iPage);
+DECLASM(int)    UNWIND_WRAP(RTR0MemObjFree)(RTR0MEMOBJ MemObj, bool fFreeMappings);
+/* RTProcSelf             - not necessary */
+/* RTR0ProcHandleSelf     - not necessary */
+DECLASM(int)    UNWIND_WRAP(RTSemFastMutexCreate)(PRTSEMFASTMUTEX pMutexSem);
+DECLASM(int)    UNWIND_WRAP(RTSemFastMutexDestroy)(RTSEMFASTMUTEX MutexSem);
+DECLASM(int)    UNWIND_WRAP(RTSemFastMutexRequest)(RTSEMFASTMUTEX MutexSem);
+DECLASM(int)    UNWIND_WRAP(RTSemFastMutexRelease)(RTSEMFASTMUTEX MutexSem);
+DECLASM(int)    UNWIND_WRAP(RTSemEventCreate)(PRTSEMEVENT pEventSem);
+DECLASM(int)    UNWIND_WRAP(RTSemEventSignal)(RTSEMEVENT EventSem);
+DECLASM(int)    UNWIND_WRAP(RTSemEventWait)(RTSEMEVENT EventSem, unsigned cMillies);
+DECLASM(int)    UNWIND_WRAP(RTSemEventWaitNoResume)(RTSEMEVENT EventSem, unsigned cMillies);
+DECLASM(int)    UNWIND_WRAP(RTSemEventDestroy)(RTSEMEVENT EventSem);
+DECLASM(int)    UNWIND_WRAP(RTSemEventMultiCreate)(PRTSEMEVENTMULTI pEventMultiSem);
+DECLASM(int)    UNWIND_WRAP(RTSemEventMultiSignal)(RTSEMEVENTMULTI EventMultiSem);
+DECLASM(int)    UNWIND_WRAP(RTSemEventMultiReset)(RTSEMEVENTMULTI EventMultiSem);
+DECLASM(int)    UNWIND_WRAP(RTSemEventMultiWait)(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies);
+DECLASM(int)    UNWIND_WRAP(RTSemEventMultiWaitNoResume)(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies);
+DECLASM(int)    UNWIND_WRAP(RTSemEventMultiDestroy)(RTSEMEVENTMULTI EventMultiSem);
+DECLASM(int)    UNWIND_WRAP(RTSpinlockCreate)(PRTSPINLOCK pSpinlock);
+DECLASM(int)    UNWIND_WRAP(RTSpinlockDestroy)(RTSPINLOCK Spinlock);
+DECLASM(void)   UNWIND_WRAP(RTSpinlockAcquire)(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
+DECLASM(void)   UNWIND_WRAP(RTSpinlockRelease)(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
+DECLASM(void)   UNWIND_WRAP(RTSpinlockAcquireNoInts)(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
+DECLASM(void)   UNWIND_WRAP(RTSpinlockReleaseNoInts)(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
+/* RTTimeNanoTS           - not necessary */
+/* RTTimeMilliTS          - not necessary */
+/* RTTimeSystemNanoTS     - not necessary */
+/* RTTimeSystemMilliTS    - not necessary */
+/* RTThreadNativeSelf     - not necessary */
+DECLASM(int)    UNWIND_WRAP(RTThreadSleep)(unsigned cMillies);
+DECLASM(bool)   UNWIND_WRAP(RTThreadYield)(void);
+#if 0
+/* RTThreadSelf           - not necessary */
+DECLASM(int)    UNWIND_WRAP(RTThreadCreate)(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
+                                            RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
+DECLASM(RTNATIVETHREAD) UNWIND_WRAP(RTThreadGetNative)(RTTHREAD Thread);
+DECLASM(int)    UNWIND_WRAP(RTThreadWait)(RTTHREAD Thread, unsigned cMillies, int *prc);
+DECLASM(int)    UNWIND_WRAP(RTThreadWaitNoResume)(RTTHREAD Thread, unsigned cMillies, int *prc);
+DECLASM(const char *) UNWIND_WRAP(RTThreadGetName)(RTTHREAD Thread);
+DECLASM(const char *) UNWIND_WRAP(RTThreadSelfName)(void);
+DECLASM(RTTHREADTYPE) UNWIND_WRAP(RTThreadGetType)(RTTHREAD Thread);
+DECLASM(int)    UNWIND_WRAP(RTThreadUserSignal)(RTTHREAD Thread);
+DECLASM(int)    UNWIND_WRAP(RTThreadUserReset)(RTTHREAD Thread);
+DECLASM(int)    UNWIND_WRAP(RTThreadUserWait)(RTTHREAD Thread, unsigned cMillies);
+DECLASM(int)    UNWIND_WRAP(RTThreadUserWaitNoResume)(RTTHREAD Thread, unsigned cMillies);
+#endif
+/* RTLogDefaultInstance   - a bit of a gamble, but we do not want the overhead! */
+/* RTMpCpuId              - not necessary */
+/* RTMpCpuIdFromSetIndex  - not necessary */
+/* RTMpCpuIdToSetIndex    - not necessary */
+/* RTMpIsCpuPossible      - not necessary */
+/* RTMpGetCount           - not necessary */
+/* RTMpGetMaxCpuId        - not necessary */
+/* RTMpGetOnlineCount     - not necessary */
+/* RTMpGetOnlineSet       - not necessary */
+/* RTMpGetSet             - not necessary */
+/* RTMpIsCpuOnline        - not necessary */
+DECLASM(int)   UNWIND_WRAP(RTMpOnAll)(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
+DECLASM(int)   UNWIND_WRAP(RTMpOnOthers)(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
+DECLASM(int)   UNWIND_WRAP(RTMpOnSpecific)(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
+/* RTLogRelDefaultInstance - not necessary. */
+DECLASM(int)   UNWIND_WRAP(RTLogSetDefaultInstanceThread)(PRTLOGGER pLogger, uintptr_t uKey);
+/* RTLogLogger            - can't wrap this buster.  */
+/* RTLogLoggerEx          - can't wrap this buster. */
+DECLASM(void)  UNWIND_WRAP(RTLogLoggerExV)(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args);
+/* RTLogPrintf            - can't wrap this buster. */  /** @todo provide va_list log wrappers in RuntimeR0. */
+DECLASM(void)  UNWIND_WRAP(RTLogPrintfV)(const char *pszFormat, va_list args);
+DECLASM(void)  UNWIND_WRAP(AssertMsg1)(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
+/* AssertMsg2             - can't wrap this buster. */
+#endif /* SUPDRV_WITH_UNWIND_HACK */
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -124,9 +274,9 @@
 static SUPFUNC g_aFunctions[] =
 {
     /* name                                     function */
-    { "SUPR0ComponentRegisterFactory",          (void *)SUPR0ComponentRegisterFactory },
-    { "SUPR0ComponentDeregisterFactory",        (void *)SUPR0ComponentDeregisterFactory },
-    { "SUPR0ComponentQueryFactory",             (void *)SUPR0ComponentQueryFactory },
+    { "SUPR0ComponentRegisterFactory",          (void *)UNWIND_WRAP(SUPR0ComponentRegisterFactory) },
+    { "SUPR0ComponentDeregisterFactory",        (void *)UNWIND_WRAP(SUPR0ComponentDeregisterFactory) },
+    { "SUPR0ComponentQueryFactory",             (void *)UNWIND_WRAP(SUPR0ComponentQueryFactory) },
     { "SUPR0ObjRegister",                       (void *)SUPR0ObjRegister },
     { "SUPR0ObjAddRef",                         (void *)SUPR0ObjAddRef },
     { "SUPR0ObjRelease",                        (void *)SUPR0ObjRelease },
@@ -172,36 +322,32 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0ProcHandleSelf",                     (void *)RTR0ProcHandleSelf },
     { "RTSemFastMutexCreate",                   (void *)RTSemFastMutexCreate },
     { "RTSemFastMutexDestroy",                  (void *)RTSemFastMutexDestroy },
-    { "RTSemFastMutexRequest",                  (void *)RTSemFastMutexRequest },
+    { "RTSemFastMutexRequest",                  (void *)UNWIND_WRAP(RTSemFastMutexRequest) },
     { "RTSemFastMutexRelease",                  (void *)RTSemFastMutexRelease },
     { "RTSemEventCreate",                       (void *)RTSemEventCreate },
     { "RTSemEventSignal",                       (void *)RTSemEventSignal },
-    { "RTSemEventWait",                         (void *)RTSemEventWait },
-    { "RTSemEventWaitNoResume",                 (void *)RTSemEventWaitNoResume },
+    { "RTSemEventWait",                         (void *)UNWIND_WRAP(RTSemEventWait) },
+    { "RTSemEventWaitNoResume",                 (void *)UNWIND_WRAP(RTSemEventWaitNoResume) },
     { "RTSemEventDestroy",                      (void *)RTSemEventDestroy },
     { "RTSemEventMultiCreate",                  (void *)RTSemEventMultiCreate },
     { "RTSemEventMultiSignal",                  (void *)RTSemEventMultiSignal },
     { "RTSemEventMultiReset",                   (void *)RTSemEventMultiReset },
-    { "RTSemEventMultiWait",                    (void *)RTSemEventMultiWait },
-#ifdef SUPDRV_WITH_UNWIND_HACK
-    { "RTSemEventMultiWaitNoResume",            (void *)supdrvNtWrapRTSemEventMultiWaitNoResume },
-#else
-    { "RTSemEventMultiWaitNoResume",            (void *)RTSemEventMultiWaitNoResume },
-#endif
+    { "RTSemEventMultiWait",                    (void *)UNWIND_WRAP(RTSemEventMultiWait) },
+    { "RTSemEventMultiWaitNoResume",            (void *)UNWIND_WRAP(RTSemEventMultiWaitNoResume) },
     { "RTSemEventMultiDestroy",                 (void *)RTSemEventMultiDestroy },
     { "RTSpinlockCreate",                       (void *)RTSpinlockCreate },
     { "RTSpinlockDestroy",                      (void *)RTSpinlockDestroy },
     { "RTSpinlockAcquire",                      (void *)RTSpinlockAcquire },
-    { "RTSpinlockRelease",                      (void *)RTSpinlockRelease },
+    { "RTSpinlockRelease",                      (void *)UNWIND_WRAP(RTSpinlockRelease) },
     { "RTSpinlockAcquireNoInts",                (void *)RTSpinlockAcquireNoInts },
-    { "RTSpinlockReleaseNoInts",                (void *)RTSpinlockReleaseNoInts },
+    { "RTSpinlockReleaseNoInts",                (void *)UNWIND_WRAP(RTSpinlockReleaseNoInts) },
     { "RTTimeNanoTS",                           (void *)RTTimeNanoTS },
     { "RTTimeMillieTS",                         (void *)RTTimeMilliTS },
     { "RTTimeSystemNanoTS",                     (void *)RTTimeSystemNanoTS },
     { "RTTimeSystemMillieTS",                   (void *)RTTimeSystemMilliTS },
     { "RTThreadNativeSelf",                     (void *)RTThreadNativeSelf },
-    { "RTThreadSleep",                          (void *)RTThreadSleep },
-    { "RTThreadYield",                          (void *)RTThreadYield },
+    { "RTThreadSleep",                          (void *)UNWIND_WRAP(RTThreadSleep) },
+    { "RTThreadYield",                          (void *)UNWIND_WRAP(RTThreadYield) },
 #if 0 /* Thread APIs, Part 2. */
     { "RTThreadSelf",                           (void *)RTThreadSelf },
     { "RTThreadCreate",                         (void *)RTThreadCreate },
@@ -240,40 +386,6 @@ static SUPFUNC g_aFunctions[] =
     { "AssertMsg1",                             (void *)AssertMsg1 },
     { "AssertMsg2",                             (void *)AssertMsg2 },
 };
-
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
-static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
-#ifdef VBOX_WITH_IDT_PATCHING
-static int      supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL pReq);
-static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
-static int      supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
-static void     supdrvIdtRemoveOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
-static void     supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTEntry);
-#endif /* VBOX_WITH_IDT_PATCHING */
-static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
-static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
-static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
-static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
-static int      supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
-static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
-static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
-static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
-static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
-static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void);
-static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
-#ifdef RT_OS_WINDOWS
-static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
-static bool     supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3);
-#endif /* RT_OS_WINDOWS */
-static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
-static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
-static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
-static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
-static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 
 
 /**
@@ -568,7 +680,11 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                 Log(("supdrvCleanupSession: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
                      pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
                 if (pObj->pfnDestructor)
+#ifdef SUPDRV_WITH_UNWIND_HACK
+                    supdrvNtWrapObjDestructor((PFNRT)pObj->pfnDestructor, pObj, pObj->pvUser1, pObj->pvUser2);
+#else
                     pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
+#endif
                 RTMemFree(pObj);
             }
 
@@ -728,13 +844,25 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSES
         switch (uIOCtl)
         {
             case SUP_IOCTL_FAST_DO_RAW_RUN:
+#ifdef SUPDRV_WITH_UNWIND_HACK
+                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
+#else
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
+#endif
                 break;
             case SUP_IOCTL_FAST_DO_HWACC_RUN:
+#ifdef SUPDRV_WITH_UNWIND_HACK
+                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
+#else
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
+#endif
                 break;
             case SUP_IOCTL_FAST_DO_NOP:
+#ifdef SUPDRV_WITH_UNWIND_HACK
+                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_NOP);
+#else
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_NOP);
+#endif
                 break;
             default:
                 return VERR_INTERNAL_ERROR;
@@ -1708,7 +1836,11 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
         Log(("SUPR0ObjRelease: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
              pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
         if (pObj->pfnDestructor)
+#ifdef SUPDRV_WITH_UNWIND_HACK
+            supdrvNtWrapObjDestructor((PFNRT)pObj->pfnDestructor, pObj, pObj->pvUser1, pObj->pvUser2);
+#else
             pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
+#endif
         RTMemFree(pObj);
     }
 
@@ -2126,8 +2258,8 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
                         )
                    )
                 {
-                    const unsigned cPages = RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT;
-                    unsigned iPage;
+                    const size_t cPages = RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT;
+                    size_t iPage;
                     for (iPage = 0; iPage < cPages; iPage++)
                     {
                         paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(pBundle->aMem[i].MemObj, iPage);
@@ -2303,8 +2435,9 @@ static int supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPa
                     &&  pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
                     &&  RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3)
                 {
-                    uint32_t iPage = RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT;
-                    cPages = RT_MIN(iPage, cPages);
+                    uint32_t iPage;
+                    size_t cMaxPages = RTR0MemObjSize(pBundle->aMem[i].MemObj) >> PAGE_SHIFT;
+                    cPages = (uint32_t)RT_MIN(cMaxPages, cPages);
                     for (iPage = 0; iPage < cPages; iPage++)
                         paPages[iPage] = RTR0MemObjGetPagePhysAddr(pBundle->aMem[i].MemObj, iPage);
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
@@ -2680,7 +2813,11 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
             if (    pCur->cchName == cchName
                 &&  !memcmp(pCur->pFactory->szName, pszName, cchName))
             {
+#ifdef SUPDRV_WITH_UNWIND_HACK
+                void *pvFactory = supdrvNtWrapQueryFactoryInterface((PFNRT)pCur->pFactory->pfnQueryFactoryInterface, pCur->pFactory, pSession, pszInterfaceUuid);
+#else
                 void *pvFactory = pCur->pFactory->pfnQueryFactoryInterface(pCur->pFactory, pSession, pszInterfaceUuid);
+#endif
                 if (pvFactory)
                 {
                     *ppvFactoryIf = pvFactory;
@@ -3691,7 +3828,11 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (RT_SUCCESS(rc) && pImage->pfnModuleInit)
     {
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
+#ifdef SUPDRV_WITH_UNWIND_HACK
+        rc = supdrvNtWrapModuleInit((PFNRT)pImage->pfnModuleInit);
+#else
         rc = pImage->pfnModuleInit();
+#endif
         if (rc && pDevExt->pvVMMR0 == pImage->pvImage)
             supdrvLdrUnsetR0EP(pDevExt);
     }
@@ -4161,7 +4302,11 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         &&  pImage->uState == SUP_IOCTL_LDR_LOAD)
     {
         LogFlow(("supdrvIOCtl_LdrLoad: calling pfnModuleTerm=%p\n", pImage->pfnModuleTerm));
+#ifdef SUPDRV_WITH_UNWIND_HACK
+        supdrvNtWrapModuleTerm(pImage->pfnModuleTerm);
+#else
         pImage->pfnModuleTerm();
+#endif
     }
 
     /* free the image */

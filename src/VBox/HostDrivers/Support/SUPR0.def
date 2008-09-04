@@ -110,10 +110,7 @@ EXPORTS
     RTLogDefaultInstance
     RTLogRelDefaultInstance
     RTLogSetDefaultInstanceThread
-    RTLogLogger
-    RTLogLoggerEx
     RTLogLoggerExV
-    RTLogPrintf
     RTLogPrintfV
     AssertMsg1
     AssertMsg2
