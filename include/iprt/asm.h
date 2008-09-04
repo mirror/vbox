@@ -1728,6 +1728,138 @@ DECLINLINE(RTCCUINTREG) ASMGetAndClearDR6(void)
 }
 #endif
 
+/**
+ * Gets dr0.
+ *
+ * @returns dr0.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(RTCCUINTREG) ASMGetDR0(void);
+#else
+DECLINLINE(RTCCUINTREG) ASMGetDR0(void)
+{
+    RTCCUINTREG uDR0;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %%dr0, %0\n\t" : "=r" (uDR0));
+#  else
+    __asm__ __volatile__("movl   %%dr0, %0\n\t" : "=r" (uDR0));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     rax, dr0
+        mov     [uDR0], rax
+#  else
+        mov     eax, dr0
+        mov     [uDR0], eax
+#  endif
+    }
+# endif
+    return uDR0;
+}
+#endif
+
+
+/**
+ * Gets dr1.
+ *
+ * @returns dr1.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(RTCCUINTREG) ASMGetDR1(void);
+#else
+DECLINLINE(RTCCUINTREG) ASMGetDR1(void)
+{
+    RTCCUINTREG uDR1;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %%dr1, %0\n\t" : "=r" (uDR1));
+#  else
+    __asm__ __volatile__("movl   %%dr1, %0\n\t" : "=r" (uDR1));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     rax, dr1
+        mov     [uDR1], rax
+#  else
+        mov     eax, dr1
+        mov     [uDR1], eax
+#  endif
+    }
+# endif
+    return uDR1;
+}
+#endif
+
+/**
+ * Gets dr2.
+ *
+ * @returns dr2.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(RTCCUINTREG) ASMGetDR2(void);
+#else
+DECLINLINE(RTCCUINTREG) ASMGetDR2(void)
+{
+    RTCCUINTREG uDR2;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %%dr2, %0\n\t" : "=r" (uDR2));
+#  else
+    __asm__ __volatile__("movl   %%dr2, %0\n\t" : "=r" (uDR2));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     rax, dr2
+        mov     [uDR2], rax
+#  else
+        mov     eax, dr2
+        mov     [uDR2], eax
+#  endif
+    }
+# endif
+    return uDR2;
+}
+#endif
+
+/**
+ * Gets dr3.
+ *
+ * @returns dr3.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(RTCCUINTREG) ASMGetDR3(void);
+#else
+DECLINLINE(RTCCUINTREG) ASMGetDR3(void)
+{
+    RTCCUINTREG uDR3;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    __asm__ __volatile__("movq   %%dr3, %0\n\t" : "=r" (uDR3));
+#  else
+    __asm__ __volatile__("movl   %%dr3, %0\n\t" : "=r" (uDR3));
+#  endif
+# else
+    __asm
+    {
+#  ifdef RT_ARCH_AMD64
+        mov     rax, dr3
+        mov     [uDR3], rax
+#  else
+        mov     eax, dr3
+        mov     [uDR3], eax
+#  endif
+    }
+# endif
+    return uDR3;
+}
+#endif
 
 /**
  * Compiler memory barrier.
