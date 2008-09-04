@@ -225,7 +225,8 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 
 RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu)
 {
-    return p_online() != -1;
+    int iStatus = p_online(idCpu, P_STATUS);
+    return iStatus != -1;
 }
 
 
