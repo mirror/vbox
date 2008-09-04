@@ -156,7 +156,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
 
     Assert (mImage);
 
-    QWidget *main = vboxGlobal().mainWindow();
+    VBoxConsoleWnd *main = qobject_cast <VBoxConsoleWnd *> (vboxGlobal().mainWindow());
     Assert (VALID_PTR (main));
     QWidget* viewport = mView->viewport();
     Assert (VALID_PTR (viewport));
@@ -170,14 +170,18 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
     CGContextRef ctx = ::darwinToCGContextRef (viewport);
     Assert (VALID_PTR (ctx));
     /* We handle the seamless mode as a special case. */
-    if (qobject_cast <VBoxConsoleWnd *> (main)->isTrueSeamless())
+    if (main->isTrueSeamless())
     {
         /* Here we paint the windows without any wallpaper.
          * So the background would be set transparently. */
 
         /* Create a subimage of the current view.
          * Currently this subimage is the whole screen. */
-        CGImageRef subImage = CGImageCreateWithImageInRect (mImage, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
+        CGImageRef subImage;
+        if (mView->isPaused())
+            subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
+        else
+            subImage = CGImageCreateWithImageInRect (mImage, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
         Assert (VALID_PTR (subImage));
         /* Clear the background (Make the rect fully transparent) */
         CGContextClearRect (ctx, viewRect);
@@ -220,7 +224,11 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
          * of the bounding box of the current paint event */
         QRect ir = aEvent->rect();
         QRect is = QRect (ir.x() + mView->contentsX(), ir.y() + mView->contentsY(), ir.width(), ir.height());
-        CGImageRef subImage = CGImageCreateWithImageInRect (mImage, ::darwinToHIRect (is));
+        CGImageRef subImage;
+        if (mView->isPaused())
+            subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), ::darwinToHIRect (is));
+        else
+            subImage = CGImageCreateWithImageInRect (mImage, ::darwinToHIRect (is));
         Assert (VALID_PTR (subImage));
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
