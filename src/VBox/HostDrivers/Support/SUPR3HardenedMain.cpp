@@ -271,7 +271,7 @@ DECLHIDDEN(int) supR3HardenedPathAppDocs(char *pszPath, size_t cchPath)
 
 /**
  * Returns the full path to the executable.
- * 
+ *
  * @returns IPRT status code.
  * @param   pszPath     Where to store it.
  * @param   cchPath     How big that buffer is.
@@ -321,7 +321,7 @@ static void supR3HardenedGetFullExePath(void)
 #else
 # error needs porting.
 #endif
-    
+
     /*
      * Strip off the filename part (RTPathStripFilename()).
      */
@@ -333,10 +333,10 @@ static void supR3HardenedGetFullExePath(void)
 #ifdef RT_OS_LINUX
 /**
  * Checks if we can read /proc/self/exe.
- * 
- * This is used on linux to see if we have to call init 
+ *
+ * This is used on linux to see if we have to call init
  * with program path or not.
- * 
+ *
  * @returns true / false.
  */
 static bool supR3HardenedMainIsProcSelfExeAccssible(void)
@@ -539,7 +539,7 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
 #ifdef RT_OS_LINUX
     if (!supR3HardenedMainIsProcSelfExeAccssible())
         pszExePath = g_szSupLibHardenedExePath;
-#endif 
+#endif
     rc = pfnRTInitEx(0, pszExePath, !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV));
     if (RT_FAILURE(rc))
         supR3HardenedFatal("RTR3Init: Failed with rc=%d\n", rc);
@@ -635,8 +635,8 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
         supR3HardenedFatal("SUPR3HardenedMain: effective uid is not root (euid=%d egid=%d uid=%d gid=%d)\n",
                            geteuid(), getegid(), uid, gid);
 
-# ifdef RT_OS_LINUX 
-    /* 
+# ifdef RT_OS_LINUX
+    /*
      * On linux we have to make sure the path is initialized because we
      * *might* not be able to access /proc/self/exe after the seteuid call.
      */
@@ -664,13 +664,63 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 #ifdef SUP_HARDENED_SUID
     /*
      * Drop any root privileges we might be holding.
+     *
+     * Try use setre[ug]id since this will clear the save uid/gid and thus
+     * leave fewer traces behind that libs like GTK+ may pick up.
      */
-    setegid(gid);
-    seteuid(uid);
-    if (    geteuid() != uid
-        ||  getegid() != gid)
-        supR3HardenedFatal("SUPR3HardenedMain: failed to drop root privileges! (euid=%d egid=%d; wanted %d and %d)\n",
-                           geteuid(), getegid(), uid, gid);
+    uid_t euid, ruid, suid;
+    gid_t egid, rgid, sgid;
+# if defined(RT_OS_DARWIN)
+    /* The really great thing here is that setreuid isn't available on
+       OS X 10.4, libc emulates it. While 10.4 have a sligtly different and
+       non-standard setuid implementation compared to 10.5, the following
+       works the same way with both version since we're super user (10.5 req).
+       So, the following will set all three variants of the group and user ids. */
+    setgid(gid);
+    setuid(uid);
+    euid = geteuid();
+    ruid = suid = getuid();
+    egid = getegid();
+    rgid = sgid = getgid();
+
+# elif defined(RT_SOLARIS)
+    /* Solaris doesn't have setresuid, but the setreuid interface is BSD
+       compatible and will set the saved uid to euid when we pass it a ruid
+       that isn't -1 (which we do). */
+    setregid(gid, gid);
+    setreuid(uid, uid);
+    euid = geteuid();
+    ruid = suid = getuid();
+    egid = getegid();
+    rgid = sgid = getgid();
+
+# else
+    /* This is the preferred one, full control no questions about semantics.
+       PORTME: If this isn't work, try join one of two other gangs above. */
+    setresgid(gid, gid, gid);
+    setresuid(uid, uid, gid);
+    if (getresuid(&ruid, &euid, &suid) != 0)
+    {
+        euid = geteuid();
+        ruid = suid = getuid();
+    }
+    if (getresgid(&rgid, &egid, &sgid) != 0)
+    {
+        egid = getegid();
+        rgid = sgid = getgid();
+    }
+# endif
+
+    /* Check that it worked out all right. */
+    if (    euid != uid
+        ||  ruid != uid
+        ||  suid != uid
+        ||  egid != gid
+        ||  rgid != gid
+        ||  sgid != gid)
+        supR3HardenedFatal("SUPR3HardenedMain: failed to drop root privileges!"
+                           " (euid=%d ruid=%d suid=%d  egid=%d rgid=%d sgid=%d; wanted uid=%d and gid=%d)\n",
+                           euid, ruid, suid, egid, rgid, sgid, uid, gid);
 #endif
 
     /*
