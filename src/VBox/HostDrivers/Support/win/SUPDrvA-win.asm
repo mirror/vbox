@@ -458,7 +458,7 @@ NtWrapFunctionWithAllRegParams  RTMpOnSpecific
 NtWrapFunctionWithAllRegParams  RTLogSetDefaultInstanceThread
 ;NtWrapFunctionWithAllRegParams  RTLogLogger            - can't wrap this buster.
 ;NtWrapFunctionWithAllRegParams  RTLogLoggerEx          - can't wrap this buster.
-NtWrapFunctionWithAllRegParams  RTLogLoggerExV
+NtWrapFunctionWith5Params       RTLogLoggerExV
 ;NtWrapFunctionWithAllRegParams  RTLogPrintf            - can't wrap this buster. ;; @todo provide va_list log wrappers in RuntimeR0.
 NtWrapFunctionWithAllRegParams  RTLogPrintfV
 NtWrapFunctionWithAllRegParams  AssertMsg1
