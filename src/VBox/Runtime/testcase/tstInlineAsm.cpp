@@ -547,8 +547,8 @@ static void tstASMAtomicXchgU64(void)
     CHECKOP(ASMAtomicXchgU64(&s.u64, 0xfedcba0987654321ULL),  ~0ULL, "%#llx", uint64_t);
     CHECKVAL(s.u64, 0xfedcba0987654321ULL, "%#llx");
 
-    CHECKVAL(s.u64Dummy0, 0x1122334455667788ULL, "%#x");
-    CHECKVAL(s.u64Dummy1, 0x1122334455667788ULL, "%#x");
+    CHECKVAL(s.u64Dummy0, 0x1122334455667788ULL, "%#llx");
+    CHECKVAL(s.u64Dummy1, 0x1122334455667788ULL, "%#llx");
 }
 
 
@@ -649,7 +649,7 @@ static void tstASMAtomicCmpXchgU64(void)
     uint64_t u64 = 0xffffffffffffffULL;
 
     CHECKOP(ASMAtomicCmpXchgU64(&u64, 0, 0), false, "%d", bool);
-    CHECKVAL(u64, 0xffffffffffffffULL, "%x");
+    CHECKVAL(u64, 0xffffffffffffffULL, "%#llx");
 
     CHECKOP(ASMAtomicCmpXchgU64(&u64, 0, 0xffffffffffffffULL), true, "%d", bool);
     CHECKVAL(u64, 0, "%x");
@@ -661,7 +661,7 @@ static void tstASMAtomicCmpXchgU64(void)
     CHECKVAL(u64, 0, "%x");
 
     CHECKOP(ASMAtomicCmpXchgU64(&u64, 0x80040008008efdULL, 0), true, "%d", bool);
-    CHECKVAL(u64, 0x80040008008efdULL, "%x");
+    CHECKVAL(u64, 0x80040008008efdULL, "%#llx");
 }
 
 
