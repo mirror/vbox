@@ -714,6 +714,10 @@ sdk:
 	+ $(KMK) VBOX_ONLY_SDK=1  \
               pass_bldprogs pass_others pass_installs pass_packing
 
+fetch_sdk_reqs:
+	+ $(KMK) KBUILD_TARGET=win  KBUILD_ARCH=x86  -C tools fetch
+	wget http://www.kegel.com/wine/winetricks
+	sh ./winetricks dcom98
 
 #
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution
