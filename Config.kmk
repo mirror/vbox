@@ -1872,9 +1872,6 @@ TEMPLATE_VBOXR0 = VBox Ring 0
 TEMPLATE_VBOXR0_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXR0_ASFLAGS             = $(VBOX_ASFLAGS)
 TEMPLATE_VBOXR0_DEFS                = IN_RING0 $(ARCH_BITS_DEFS)
-# Temporarily disabling release logging for the *R0.r0 modules while figuring out
-# why it it seems to be	the cause of #3137 and #3144.
-TEMPLATE_VBOXR0_DEFS               += RTLOG_REL_DISABLE
 
 ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBOXR0_TOOL                = $(VBOX_VCC_TOOL)
