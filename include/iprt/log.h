@@ -799,10 +799,11 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
-#if defined(LOG_USE_C99)
-# define _LogRelRemoveParentheseis(...)                __VA_ARGS__
-#  define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
-#  define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
+#ifndef IN_RING0
+# if defined(LOG_USE_C99)
+#  define _LogRelRemoveParentheseis(...)                __VA_ARGS__
+#   define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
+#   define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
     do \
     { \
         PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogRelDefaultInstance(); \
@@ -810,8 +811,8 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
             _LogRelIt(LogRelIt_pLogger, fFlags, iGroup, _LogRelRemoveParentheseis fmtargs); \
         LogIt(LOG_INSTANCE, fFlags, iGroup, fmtargs); \
     } while (0)
-#else
-# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
+# else
+#  define LogRelIt(pvInst, fFlags, iGroup, fmtargs) \
    do \
    { \
        PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogRelDefaultInstance(); \
@@ -823,8 +824,14 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
        } \
        LogIt(LOG_INSTANCE, fFlags, iGroup, fmtargs); \
   } while (0)
+# endif
+#else
+# define LogRelIt(pvInst, fFlags, iGroup, fmtargs)         do { } while (0)
+# if defined(LOG_USE_C99)
+#  define _LogRelRemoveParentheseis(...)                __VA_ARGS__
+#  define _LogRelIt(pvInst, fFlags, iGroup, ...)           do { } while (0)
+# endif
 #endif
-
 
 /** @def LogRel
  * Level 1 logging.
