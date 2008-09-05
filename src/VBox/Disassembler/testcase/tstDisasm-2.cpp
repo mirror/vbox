@@ -726,6 +726,43 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
     return rcRet;
 }
 
+/**
+ * Converts a hex char to a number.
+ *
+ * @returns 0..15 on success, -1 on failure.
+ * @param   ch      The character.
+ */
+static int HexDigitToNum(char ch)
+{
+    switch (ch)
+    {
+        case '0': return 0;
+        case '1': return 1;
+        case '2': return 2;
+        case '3': return 3;
+        case '4': return 4;
+        case '5': return 5;
+        case '6': return 6;
+        case '7': return 7;
+        case '8': return 8;
+        case '9': return 9;
+        case 'A':
+        case 'a': return 0xa;
+        case 'B':
+        case 'b': return 0xb;
+        case 'C':
+        case 'c': return 0xc;
+        case 'D':
+        case 'd': return 0xd;
+        case 'E':
+        case 'e': return 0xe;
+        case 'F':
+        case 'f': return 0xf;
+        default:
+            RTPrintf("error: Invalid hex digig '%c'\n", ch);
+            return -1;
+    }
+}
 
 /**
  * Prints usage info.
@@ -737,6 +774,7 @@ static int Usage(const char *argv0)
 {
     RTStrmPrintf(g_pStdErr,
 "usage: %s [options] <file1> [file2..fileN]\n"
+"   or: %s [options] <-x|--hex-bytes> <hex byte> [more hex..]\n"
 "   or: %s <--help|-h>\n"
 "\n"
 "Options:\n"
@@ -772,6 +810,7 @@ int main(int argc, char **argv)
     DISCPUMODE enmCpuMode = CPUMODE_32BIT;
     RTFOFF off = 0;
     RTFOFF cbMax = _1G;
+    bool fHexBytes = false;
 
     /*
      * Parse arguments.
@@ -780,13 +819,14 @@ int main(int argc, char **argv)
     {
         { "--address",      'a', RTGETOPT_REQ_UINT64 },
         { "--cpumode",      'c', RTGETOPT_REQ_UINT32 },
-        { "--help",         'h', 0 },
+        { "--help",         'h', RTGETOPT_REQ_NOTHING },
         { "--bytes",        'b', RTGETOPT_REQ_INT64 },
-        { "--listing",      'l', 0 },
-        { "--no-listing",   'L', 0 },
+        { "--listing",      'l', RTGETOPT_REQ_NOTHING },
+        { "--no-listing",   'L', RTGETOPT_REQ_NOTHING },
         { "--offset",       'o', RTGETOPT_REQ_INT64 },
         { "--style",        's', RTGETOPT_REQ_STRING },
         { "--undef-op",     'u', RTGETOPT_REQ_STRING },
+        { "--hex-bytes",    'x', RTGETOPT_REQ_NOTHING },
     };
 
     int ch;
@@ -865,6 +905,10 @@ int main(int argc, char **argv)
                 }
                 break;
 
+            case 'x':
+                fHexBytes = true;
+                break;
+
             default:
                 RTStrmPrintf(g_pStdErr, "%s: syntax error: %Rrc\n", argv0, ch);
                 return 1;
@@ -873,30 +917,85 @@ int main(int argc, char **argv)
     if (iArg >= argc)
         return Usage(argv0);
 
-    /*
-     * Process the files.
-     */
+
     int rc = VINF_SUCCESS;
-    for ( ; iArg < argc; iArg++)
+    if (fHexBytes)
     {
         /*
-         * Read the file into memory.
+         * Convert the remaining arguments from a hex byte string into
+         * a buffer that we disassemble.
          */
-        void   *pvFile;
-        size_t  cbFile;
-        rc = RTFileReadAllEx(argv[iArg], off, cbMax, 0, &pvFile, &cbFile);
-        if (RT_FAILURE(rc))
+        size_t      cb = 0;
+        uint8_t    *pb = NULL;
+        for ( ; iArg < argc; iArg++)
         {
-            RTStrmPrintf(g_pStdErr, "%s: %s: %Rrc\n", argv0, argv[iArg], rc);
-            break;
+            const char *psz = argv[iArg];
+            while (*psz)
+            {
+                /** @todo this stuff belongs in IPRT, same stuff as mac address reading. Could be reused for IPv6 with a different item size.*/
+                /* skip white space */
+                while (isspace(*psz))
+                    psz++;
+                if (!*psz)
+                    break;
+
+                /* one digit followed by a space or EOS, or two digits. */
+                int iNum = HexDigitToNum(*psz++);
+                if (iNum == -1)
+                    return 1;
+                if (!isspace(*psz) && *psz)
+                {
+                    int iDigit = HexDigitToNum(*psz++);
+                    if (iDigit == -1)
+                        return 1;
+                    iNum = iNum * 16 + iDigit;
+                }
+
+                /* add the byte */
+                if (!(cb % 4 /*64*/))
+                {
+                    pb = (uint8_t *)RTMemRealloc(pb, cb + 64);
+                    if (!pb)
+                    {
+                        RTPrintf("%s: error: RTMemRealloc failed\n", argv[0]);
+                        return 1;
+                    }
+                }
+                pb[cb++] = (uint8_t)iNum;
+            }
         }
 
         /*
          * Disassemble it.
          */
-        rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, enmUndefOp);
-        if (RT_FAILURE(rc))
-            break;
+        rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, pb, cb, enmStyle, fListing, enmUndefOp);
+    }
+    else
+    {
+        /*
+         * Process the files.
+         */
+        for ( ; iArg < argc; iArg++)
+        {
+            /*
+             * Read the file into memory.
+             */
+            void   *pvFile;
+            size_t  cbFile;
+            rc = RTFileReadAllEx(argv[iArg], off, cbMax, 0, &pvFile, &cbFile);
+            if (RT_FAILURE(rc))
+            {
+                RTStrmPrintf(g_pStdErr, "%s: %s: %Rrc\n", argv0, argv[iArg], rc);
+                break;
+            }
+
+            /*
+             * Disassemble it.
+             */
+            rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, enmUndefOp);
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
 
     return RT_SUCCESS(rc) ? 0 : 1;
