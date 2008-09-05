@@ -89,7 +89,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQtCore.so.4,) \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQtGui.so.4,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
-	$(if $(VBOX_WITH_PYTHON),$(wildcard VBoxPython.so 64/VBoxPython.so) \
+	$(if $(VBOX_WITH_PYTHON),$(if $(findstring amd64,$(KBUILD_ARCH)),64/VBoxPython.so,VBoxPython.so),) \
 	VBoxSettings.so \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
