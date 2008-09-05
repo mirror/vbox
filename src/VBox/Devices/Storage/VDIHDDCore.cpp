@@ -833,7 +833,8 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
     if (pIfProgress)
     {
         pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        pfnProgress = pCbProgress->pfnProgress;
+        if (pCbProgress)
+            pfnProgress = pCbProgress->pfnProgress;
         pvUser = pIfProgress->pvUser;
     }
 

@@ -1505,7 +1505,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
     }
 
-    if (RT_SUCCESS(rc) && pCbProgress->pfnProgress)
+    if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
         pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
                                  pIfProgress->pvUser);
 
@@ -1700,7 +1700,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         }
     }
 
-    if (RT_SUCCESS(rc) && pCbProgress->pfnProgress)
+    if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
         pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
                                  pIfProgress->pvUser);
 
@@ -1826,7 +1826,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 uOffset += cbThisRead;
                 cbRemaining -= cbThisRead;
 
-                if (pCbProgress->pfnProgress)
+                if (pCbProgress && pCbProgress->pfnProgress)
                 {
                     rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
                                                   uOffset * 99 / cbSize,
@@ -1875,7 +1875,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 uOffset += cbThisRead;
                 cbRemaining -= cbThisRead;
 
-                if (pCbProgress->pfnProgress)
+                if (pCbProgress && pCbProgress->pfnProgress)
                 {
                     rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
                                                   uOffset * 99 / cbSize,
@@ -1943,7 +1943,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
-    if (RT_SUCCESS(rc) && pCbProgress->pfnProgress)
+    if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
         pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
                                  pIfProgress->pvUser);
 
@@ -2147,7 +2147,7 @@ movefail:
             uOffset += cbThisRead;
             cbRemaining -= cbThisRead;
 
-            if (pCbProgress->pfnProgress)
+            if (pCbProgress && pCbProgress->pfnProgress)
             {
                 rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
                                               uOffset * 99 / cbSize,
@@ -2212,7 +2212,7 @@ movefail:
 
     if (RT_SUCCESS(rc))
     {
-        if (pCbProgress->pfnProgress)
+        if (pCbProgress && pCbProgress->pfnProgress)
             pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
                                      pIfProgress->pvUser);
         if (pDstCbProgress->pfnProgress)
