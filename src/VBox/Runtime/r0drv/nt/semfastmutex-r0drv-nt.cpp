@@ -96,7 +96,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
 
     ASMAtomicIncU32(&pFastInt->u32Magic);
     Assert(pFastInt->Mutex.Count == 1);
-    /* It's not very clear what this Contention field really means. Seems to be a counter for the number of times contention occurred. (see e.g. http://winprogger.com/?p=6) 
+    /* It's not very clear what this Contention field really means. Seems to be a counter for the number of times contention occurred. (see e.g. http://winprogger.com/?p=6)
      * The following assertion is therefor wrong:
      * Assert(pFastInt->Mutex.Contention == 0);
      */
@@ -117,6 +117,21 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
         AssertMsgFailed(("pFastInt->u32Magic=%RX32 pMutexInt=%p\n", pFastInt ? pFastInt->u32Magic : 0, pFastInt));
         return VERR_INVALID_PARAMETER;
     }
+#if 1
+    /*
+     * ExAcquireFastMutex will set the IRQL to APC regardless of our current
+     * level. Lowering the IRQL may screw things up, so to allow this.
+     */
+# if 0 /** @todo enable this when the logger has been fixed. */
+    AssertMsg(KeGetCurrentIrql() <= APC_LEVEL,
+              ("%d\n", KeGetCurrentIrql()),
+              VERR_INVALID_STATE);
+# else  /* the gentler approach. */
+    KIRQL Irql = KeGetCurrentIrql();
+    if (Irql > APC_LEVEL)
+        return VERR_INVALID_STATE;
+# endif
+#endif
 
     ExAcquireFastMutex(&pFastInt->Mutex);
     return VINF_SUCCESS;
