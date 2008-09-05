@@ -675,16 +675,17 @@ void VBoxVMSettingsHD::newClicked()
         /* Try to select unique vdi */
         editor->tryToChooseUniqueVdi (vdis);
 
+        /* Ask the user for method to add new vdi */
+        int result = mModel->rowCount() - 1 > editor->count() ?
+            vboxProblem().confirmRunNewHDWzdOrVDM (this) :
+            QIMessageBox::Cancel;
+
         /* Move the focus to the other than attachment table location.
          * This will close the temporary editor of this table to prevent
          * influencing the media enumeration mechanism to model data. */
         mCbSATA->setFocus();
         qApp->processEvents();
 
-        /* Ask the user for method to add new vdi */
-        int result = mModel->rowCount() - 1 > editor->count() ?
-            vboxProblem().confirmRunNewHDWzdOrVDM (this) :
-            QIMessageBox::Cancel;
         if (result == QIMessageBox::Yes)
         {
             /* Run new HD wizard */
