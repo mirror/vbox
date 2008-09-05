@@ -680,6 +680,9 @@ HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = HWACCMR0Globals.cpuid.u32AMDFeatureECX;
     pVM->hwaccm.s.cpuid.u32AMDFeatureEDX    = HWACCMR0Globals.cpuid.u32AMDFeatureEDX;
     pVM->hwaccm.s.lLastError                = HWACCMR0Globals.lLastError;
+#ifdef VBOX_STRICT
+    pVM->hwaccm.s.idEnteredCpu              = NIL_RTCPUID;
+#endif
 
     /* Init a VT-x or AMD-V VM. */
     return HWACCMR0Globals.pfnInitVM(pVM);
@@ -773,6 +776,15 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
     AssertRC(rc);
     rc |= HWACCMR0Globals.pfnLoadGuestState(pVM, pCtx);
     AssertRC(rc);
+
+#ifdef VBOX_STRICT
+    /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
+    if (RT_SUCCESS(rc))
+    {
+        AssertMsg(pVM->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVM->hwaccm.s.idEnteredCpu));
+        pVM->hwaccm.s.idEnteredCpu = idCpu;
+    }
+#endif
     return rc;
 }
 
@@ -825,7 +837,16 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
 
     /* Resync the debug register on the next entry. */
     pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
-    return HWACCMR0Globals.pfnLeaveSession(pVM);
+    rc = HWACCMR0Globals.pfnLeaveSession(pVM);
+
+#ifdef VBOX_STRICT
+    /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
+    RTCPUID idCpu = RTMpCpuId();
+    AssertMsg(pVM->hwaccm.s.idEnteredCpu == idCpu, ("owner is %d, I'm %d", (int)pVM->hwaccm.s.idEnteredCpu, (int)idCpu));
+    pVM->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
+#endif
+
+    return rc;
 }
 
 /**
