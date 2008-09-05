@@ -200,18 +200,23 @@ QWidget *VBoxSettingsTreeViewSelector::widget() const
     return mTwSelector;
 }
 
-QWidget *VBoxSettingsTreeViewSelector::addItem (const QString &aBigIcon,
+QWidget *VBoxSettingsTreeViewSelector::addItem (const QString & /* aBigIcon */,
+                                                const QString & /* aBigIconDisabled */,
                                                 const QString &aSmallIcon,
+                                                const QString &aSmallIconDisabled,
                                                 int aId,
                                                 const QString &aLink,
                                                 VBoxSettingsPage* aPage /* = NULL */,
                                                 int aParentId /* = -1 */)
 {
-    NOREF (aBigIcon);
     QWidget *result = NULL;
     if (aPage != NULL)
     {
-        SelectorItem *item = new SelectorItem (QIcon (aSmallIcon), "", aId, aLink, aPage, aParentId);
+        QIcon icon (aSmallIcon);
+        if (aSmallIconDisabled.isEmpty())
+            icon.addFile (aSmallIconDisabled, QSize(), QIcon::Disabled);
+
+        SelectorItem *item = new SelectorItem (icon, "", aId, aLink, aPage, aParentId);
         mItemList.append (item);
 
         QTreeWidgetItem *twitem = new QTreeWidgetItem (mTwSelector, QStringList() << QString ("")
@@ -379,14 +384,20 @@ QWidget *VBoxSettingsToolBarSelector::widget() const
 }
 
 QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
+                                               const QString &aBigIconDisabled,
                                                const QString &aSmallIcon,
+                                               const QString &aSmallIconDisabled,
                                                int aId,
                                                const QString &aLink,
                                                VBoxSettingsPage* aPage /* = NULL */,
                                                int aParentId /* = -1 */)
 {
+    QIcon icon (aBigIcon);
+    if (!aBigIconDisabled.isEmpty())
+        icon.addFile (aBigIconDisabled, QSize(), QIcon::Disabled);
+    
     QWidget *result = NULL;
-    SelectorActionItem *item = new SelectorActionItem (QIcon (aBigIcon), "", aId, aLink, aPage, aParentId, this);
+    SelectorActionItem *item = new SelectorActionItem (icon, "", aId, aLink, aPage, aParentId, this);
     mItemList.append (item);
 
     if (aParentId == -1 &&
@@ -417,8 +428,11 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
             QTabWidget *tabWidget = parent->tabWidget();
             aPage->setContentsMargins (9, 5, 9, 9);
             VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
+            QIcon icon1 (aSmallIcon);
+            if (!aSmallIconDisabled.isEmpty())
+                icon1.addFile (aSmallIconDisabled, QSize(), QIcon::Disabled);
             if (tabWidget)
-                tabWidget->addTab (aPage, QIcon (aSmallIcon), "");
+                tabWidget->addTab (aPage, icon1, "");
         }
     }
     return result;

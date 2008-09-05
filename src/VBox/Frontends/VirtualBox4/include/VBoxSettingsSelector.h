@@ -50,7 +50,7 @@ public:
 
     virtual QWidget *widget() const = 0;
 
-    virtual QWidget *addItem (const QString &aBigIcon, const QString &aSmallIcon, int aId, const QString &aLink, VBoxSettingsPage* aPage = NULL, int aParentId = -1) = 0;
+    virtual QWidget *addItem (const QString &aBigIcon, const QString &aBigIconDisabled, const QString &aSmallIcon, const QString &aSmallIconDisabled, int aId, const QString &aLink, VBoxSettingsPage* aPage = NULL, int aParentId = -1) = 0;
 
     virtual void setItemText (int aId, const QString &aText);
     virtual QString itemText (int aId) const = 0;
@@ -99,7 +99,7 @@ public:
 
     virtual QWidget *widget() const;
 
-    virtual QWidget *addItem (const QString &aBigIcon, const QString &aSmallIcon, int aId, const QString &aLink, VBoxSettingsPage* aPage = NULL, int aParentId = -1);
+    virtual QWidget *addItem (const QString &aBigIcon, const QString &aBigIconDisabled, const QString &aSmallIcon, const QString &aSmallIconDisabled, int aId, const QString &aLink, VBoxSettingsPage* aPage = NULL, int aParentId = -1);
     virtual void setItemText (int aId, const QString &aText);
     virtual QString itemText (int aId) const;
 
@@ -139,7 +139,7 @@ public:
 
     virtual QWidget *widget() const;
 
-    virtual QWidget *addItem (const QString &aBigIcon, const QString &aSmallIcon, int aId, const QString &aLink, VBoxSettingsPage* aPage = NULL, int aParentId = -1);
+    virtual QWidget *addItem (const QString &aBigIcon, const QString &aBigIconDisabled, const QString &aSmallIcon, const QString &aSmallIconDisabled, int aId, const QString &aLink, VBoxSettingsPage* aPage = NULL, int aParentId = -1);
     virtual void setItemText (int aId, const QString &aText);
     virtual QString itemText (int aId) const;
 
