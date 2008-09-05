@@ -1325,6 +1325,7 @@ VBoxPython_TEMPLATE = XPCOM
 VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
                   VBOX_PYXPCOM VBOX_WITH_XPCOM
 VBoxPython_NAME.darwin = VBoxPython2_3
+VBoxPython_INST.solaris.amd64 = $(INST_BIN)/64/
 VBoxPython_INCS = \
 	python/src \
 	$(VBOX_PATH_PYTHON_INC)
