@@ -21,23 +21,32 @@
 # Usage:
 #       makespackage.sh $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH)
 
-if test -z "$3"; then
-    echo "Usage: $0 installdir packagename x86|amd64"
+if test -z "$2"; then
+    echo "Usage: $0 installdir packagename"
     exit 1
 fi
 
-MY_PKGNAME=SUNWvboxguest
-MY_GGREP=/usr/sfw/bin/ggrep
-MY_AWK=/usr/bin/awk
+VBOX_PKGNAME=SUNWvboxguest
+VBOX_AWK=/usr/bin/awk
+VBOX_GGREP=/usr/sfw/bin/ggrep
+VBOX_AWK=/usr/bin/awk
 
 # check for GNU grep we use which might not ship with all Solaris
-if test ! -f "$MY_GGREP" && test ! -h "$MY_GGREP"; then
-    echo "## GNU grep not found in $MY_GGREP."
+if test ! -f "$VBOX_GGREP" && test ! -h "$VBOX_GGREP"; then
+    echo "## GNU grep not found in $VBOX_GGREP."
     exit 1
 fi
 
 # bail out on non-zero exit status
 set -e
+
+# Fixup filelist using awk, the parameters must be in awk syntax
+# params: filename condition action
+filelist_fixup()
+{
+    "$VBOX_AWK" 'NF == 6 && '"$2"' { '"$3"' } { print }' "$1" > "tmp-$1"
+    mv -f "tmp-$1" "$1"
+}
 
 # prepare file list
 cd "$1"
@@ -49,24 +58,25 @@ if test -f "./vboxguest.copyright"; then
     echo 'i copyright=./vboxguest.copyright' >> prototype
 fi
 echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
-find . -print | $MY_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.copyright' | pkgproto >> prototype
+find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.copyright' | pkgproto >> prototype
 
 # don't grok for the sed class files
-$MY_AWK 'NF == 6 && $2 == "none" { $5 = "root"; $6 = "bin" } { print }' prototype > prototype2
-$MY_AWK 'NF == 6 && $2 == "none" { $3 = "opt/VirtualBoxAdditions/"$3"="$3 } { print }' prototype2 > prototype
+filelist_fixup prototype '$2 == "none"'                                                     '$5 = "root"; $6 = "bin"'
+filelist_fixup prototype '$2 == "none"'                                                     '$3 = "opt/VirtualBoxAdditions/"$3"="$3'
 
-# install the kernel module to the right place
-if test "$3" = "x86"; then
-    $MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest" { $3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest"; $6 = "sys" } { print }' prototype > prototype2
-else
-    $MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest" { $3 = "platform/i86pc/kernel/drv/amd64/vboxguest=vboxguest"; $6 = "sys" } { print }' prototype > prototype2
-fi
-$MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf" { $3 = "platform/i86pc/kernel/drv/vboxguest.conf=vboxguest.conf" } { print }' prototype2 > prototype
+# 32-bit kernel module
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'              '$3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest"; $6="sys"'
 
-# install the timesync SMF service
-$MY_AWK 'NF == 6 && $3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml" { $3 = "/var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml" } { print }' prototype2 > prototype
+# 64-bit kernel module
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/vboxguest"'  '$3 = "platform/i86pc/kernel/drv/amd64/vboxguest=amd64/vboxguest"; $6="sys"'
 
-rm prototype2
+# kernel module config file
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "platform/i86pc/kernel/drv/vboxguest.conf=vboxguest.conf"'
+
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxservice.xml=vboxservice.xml"'  '$3 = "var/svc/manifest/system/virtualbox/vboxservice.xml=vboxservice.xml"'
+echo " --- start of prototype  ---" 
+cat prototype
+echo " --- end of prototype --- "
 
 # explicitly set timestamp to shutup warning
 VBOXPKG_TIMESTAMP=vboxguest`date '+%Y%m%d%H%M%S'`
@@ -75,8 +85,8 @@ VBOXPKG_TIMESTAMP=vboxguest`date '+%Y%m%d%H%M%S'`
 pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
 
 # translate into package datastream
-pkgtrans -s -o /var/spool/pkg `pwd`/$2 "$MY_PKGNAME"
+pkgtrans -s -o /var/spool/pkg `pwd`/$2 "$VBOX_PKGNAME"
 
-rm -rf "/var/spool/pkg/$MY_PKGNAME"
+rm -rf "/var/spool/pkg/$VBOX_PKGNAME"
 exit $?
 
