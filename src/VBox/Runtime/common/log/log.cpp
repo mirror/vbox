@@ -82,7 +82,6 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
 #ifndef IN_GC
 static unsigned rtlogGroupFlags(const char *psz);
 #endif
-static void rtlogLogger(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args);
 static void rtlogFlush(PRTLOGGER pLogger);
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars);
 static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars, size_t cbChars);
