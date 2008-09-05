@@ -331,6 +331,7 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
 
     mcAudioRefs = 0;
     mcVRDPClients = 0;
+    mu32SingleRDPClientId = 0;
 
     unconst (mVMMDev) = new VMMDev(this);
     AssertReturn (mVMMDev, E_FAIL);
@@ -512,27 +513,6 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
                     )
             ));
 
-    /* Multiconnection check. */
-    BOOL allowMultiConnection = FALSE;
-    hrc = mVRDPServer->COMGETTER(AllowMultiConnection) (&allowMultiConnection);
-    AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
-
-    LogFlowFunc(("allowMultiConnection %d, mcVRDPClients = %d\n", allowMultiConnection, mcVRDPClients));
-
-    if (allowMultiConnection == FALSE)
-    {
-        /* Note: the variable is incremented in ClientConnect callback, which is called when the client
-         * is successfully connected, that is after the ClientLogon callback. Therefore the mcVRDPClients
-         * value is 0 for first client.
-         */
-        if (mcVRDPClients > 0)
-        {
-            /* Reject. */
-            LogRel(("VRDPAUTH: Multiple connections are not enabled. Access denied.\n"));
-            return VERR_ACCESS_DENIED;
-        }
-    }
-
     switch (authType)
     {
         case VRDPAuthType_Null:
@@ -626,15 +606,56 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
     LogFlowFunc (("Result = %d\n", result));
     LogFlowFuncLeave();
 
-    if (result == VRDPAuthAccessGranted)
+    if (result != VRDPAuthAccessGranted)
     {
-        LogRel(("VRDPAUTH: Access granted.\n"));
-        return VINF_SUCCESS;
+        /* Reject. */
+        LogRel(("VRDPAUTH: Access denied.\n"));
+        return VERR_ACCESS_DENIED;
     }
 
-    /* Reject. */
-    LogRel(("VRDPAUTH: Access denied.\n"));
-    return VERR_ACCESS_DENIED;
+    LogRel(("VRDPAUTH: Access granted.\n"));
+
+    /* Multiconnection check must be made after authentication, so bad clients would not interfere with a good one. */
+    BOOL allowMultiConnection = FALSE;
+    hrc = mVRDPServer->COMGETTER(AllowMultiConnection) (&allowMultiConnection);
+    AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
+    
+    BOOL reuseSingleConnection = FALSE;
+    hrc = mVRDPServer->COMGETTER(ReuseSingleConnection) (&reuseSingleConnection);
+    AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
+
+    LogFlowFunc(("allowMultiConnection %d, reuseSingleConnection = %d, mcVRDPClients = %d, mu32SingleRDPClientId = %d\n", allowMultiConnection, reuseSingleConnection, mcVRDPClients, mu32SingleRDPClientId));
+
+    if (allowMultiConnection == FALSE)
+    {
+        /* Note: the 'mcVRDPClients' variable is incremented in ClientConnect callback, which is called when the client
+         * is successfully connected, that is after the ClientLogon callback. Therefore the mcVRDPClients
+         * value is 0 for first client.
+         */
+        if (mcVRDPClients != 0)
+        {
+            Assert(mcVRDPClients == 1);
+            /* There is a client already.
+             * If required drop the existing client connection and let the connecting one in.
+             */
+            if (reuseSingleConnection)
+            {
+                LogRel(("VRDPAUTH: Multiple connections are not enabled. Disconnecting existing client.\n"));
+                mConsoleVRDPServer->DisconnectClient (mu32SingleRDPClientId, false);
+            }
+            else
+            {
+                /* Reject. */
+                LogRel(("VRDPAUTH: Multiple connections are not enabled. Access denied.\n"));
+                return VERR_ACCESS_DENIED;
+            }
+        }
+
+        /* Save the connected client id. From now on it will be necessary to disconnect this one. */
+        mu32SingleRDPClientId = u32ClientId;
+    }
+
+    return VINF_SUCCESS;
 }
 
 void Console::VRDPClientConnect (uint32_t u32ClientId)

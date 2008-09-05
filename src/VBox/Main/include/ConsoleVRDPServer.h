@@ -97,6 +97,7 @@ public:
     }
 
     void EnableConnections (void);
+    void DisconnectClient (uint32_t u32ClientId, bool fReconnect);
     void MousePointerUpdate (const VRDPCOLORPOINTER *pPointer);
     void MousePointerHide (void);
 

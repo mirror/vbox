@@ -9679,7 +9679,7 @@
 
   <interface
      name="IVRDPServer" extends="$unknown"
-     uuid="ed9d31ae-867f-45fc-b727-6740084d1883"
+     uuid="f4584ae7-6bce-474b-83d6-17d235e6aa89"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
@@ -9715,6 +9715,14 @@
       <desc>
         Flag whether multiple simultaneous connections to the VM are permitted.
         Note that this will be replaced by a more powerful mechanism in the future.
+      </desc>
+    </attribute>
+
+    <attribute name="reuseSingleConnection" type="boolean">
+      <desc>
+        Flag whether the existing connection must be dropped and a new connection
+        must be established by the VRDP server, when a new client connects in single
+        connection mode.
       </desc>
     </attribute>
 
