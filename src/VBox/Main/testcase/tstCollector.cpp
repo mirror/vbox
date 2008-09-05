@@ -65,7 +65,7 @@ pm::CollectorHAL *createCollector()
     return 0;
 }
 
-#define CALLS_PER_SECOND(fn) \
+#define CALLS_PER_SECOND(n,fn) \
     nCalls = 0; \
     start = RTTimeMilliTS(); \
     do { \
@@ -77,7 +77,8 @@ pm::CollectorHAL *createCollector()
         RTPrintf("tstCollector: "#fn" -> %Vrc\n", rc); \
     } \
     else \
-        RTPrintf("%50s -- %u calls per second\n", #fn, nCalls)
+        RTPrintf("%50s -- %u calls per second\n", #fn, nCalls); \
+    totalTime += n * 1000000 / nCalls
 
 int main(int argc, char *argv[])
 {
@@ -220,17 +221,20 @@ int main(int argc, char *argv[])
     unsigned nCalls;
     ULONG tmp;
     uint64_t tmp64;
+    uint32_t totalTime = 0;
     RTPROCESS pid = RTProcSelf();
     /* Host CPU load */
-    CALLS_PER_SECOND(getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
+    CALLS_PER_SECOND(1, getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
     /* Process CPU load */
-    CALLS_PER_SECOND(getRawProcessCpuLoad(pid, &tmp64, &tmp64, &tmp64));
+    CALLS_PER_SECOND(100, getRawProcessCpuLoad(pid, &tmp64, &tmp64, &tmp64));
     /* Host CPU speed */
-    CALLS_PER_SECOND(getHostCpuMHz(&tmp));
+    CALLS_PER_SECOND(1, getHostCpuMHz(&tmp));
     /* Host RAM usage */
-    CALLS_PER_SECOND(getHostMemoryUsage(&tmp, &tmp, &tmp));
+    CALLS_PER_SECOND(1, getHostMemoryUsage(&tmp, &tmp, &tmp));
     /* Process RAM usage */
-    CALLS_PER_SECOND(getProcessMemoryUsage(pid, &tmp));
+    CALLS_PER_SECOND(100, getProcessMemoryUsage(pid, &tmp));
+    
+    printf("%.2f%% of CPU time\n", totalTime / 10000.);
     
     delete collector;
 
