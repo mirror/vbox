@@ -69,30 +69,19 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxguest \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxguest \
+		$(PATH_BIN)/additions/vboxguest \
 		$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf \
 		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/VBoxClient \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/VBoxService \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/VBoxControl \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_13.so \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_14.so \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_70.so \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_71.so \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxmouse_drv_14.so \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxmouse_drv_70.so \
-		$(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions/vboxmouse_drv_71.so \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/VBoxClient \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/VBoxService \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/VBoxControl \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_13.so \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_14.so \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_70.so \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxvideo_drv_71.so \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxmouse_drv_14.so \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxmouse_drv_70.so \
-		$(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions/vboxmouse_drv_71.so \
+		$(PATH_BIN)/additions/VBoxClient \
+		$(PATH_BIN)/additions/VBoxService \
+		$(PATH_BIN)/additions/VBoxControl \
+		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
+		$(PATH_BIN)/additions/vboxvideo_drv_14.so \
+		$(PATH_BIN)/additions/vboxvideo_drv_70.so \
+		$(PATH_BIN)/additions/vboxvideo_drv_71.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_14.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_70.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_71.so \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh \
 		$(PATH_SUB_CURRENT)/solaris/Makefile.kmk
