@@ -15,21 +15,9 @@
 # Please note the trailing slash in VBOX_PROGRAM_PATH - it's a must.
 # 
 # This is the place where VirtualBox resides
-#  export VBOX_PROGRAM_PATH=/home/nike/work/ws/out/linux.amd64/debug/bin/
+#  export VBOX_PROGRAM_PATH=/opt/VirtualBox-2.0.0/
 # To allow Python find modules
-#  export PYTHONPATH=$VBOX_PROGRAM_PATH/sdk/bindings/xpcom/python:$VBOX_PROGRAM_PATH
-#
-# Additionally, on 64-bit Solaris, you need to use 64-bit Python from 
-# /usr/bin/amd64/python and due to quirks in native modules loading of 
-# Python do the following:
-#   mkdir $VBOX_PROGRAM_PATH/64
-#   ln -s $VBOX_PROGRAM_PATH/VBoxPython.so $VBOX_PROGRAM_PATH/64/VBoxPython.so 
-#
-# Mac OS X users can get away with just this:
-#   export PYTHONPATH=$VBOX_SDK/bindings/xpcom/python:$PYTHONPATH
-# , where $VBOX_SDK is is replaced with the place you unzipped the SDK
-# or <trunk>/out/darwin.x86/release/dist/sdk.
-#  
+#  export PYTHONPATH=../:$VBOX_PROGRAM_PATH
 #
 
 # this one has to be the first XPCOM related import
