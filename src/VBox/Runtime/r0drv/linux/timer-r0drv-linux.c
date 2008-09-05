@@ -469,7 +469,7 @@ static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs
     do
     {
         RTMpGetOnlineSet(&OnlineSet);
-        for (iCpu = 0; iCpu <= pTimer->cCpus; iCpu++)
+        for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
         {
             Assert(pTimer->aSubTimers[iCpu].enmState != RTTIMERLNXSTATE_MP_STOPPING);
             rtTimerLnxSetState(&pTimer->aSubTimers[iCpu].enmState,
@@ -497,7 +497,7 @@ static int rtTimerLnxStartAll(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs
      */
     RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
 
-    for (iCpu = 0; iCpu <= pTimer->cCpus; iCpu++)
+    for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
         if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_STARTING))
         {
             /** @todo very odd case for a rainy day. Cpus that temporarily went offline while
