@@ -2198,6 +2198,7 @@ EMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 
     if (VBOX_SUCCESS(rc))
     {
+        /* @todo: we don't fail if illegal bits are set/cleared for e.g. dr7 */
         rc = CPUMSetGuestDRx(pVM, DestRegDrx, val);
         if (VBOX_SUCCESS(rc))
             return rc;
