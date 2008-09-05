@@ -799,7 +799,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
-#ifndef IN_RING0
+#ifndef IN_RING0 /* causes problems in ring 0; do not enable before tracking this down (see 3137 & 3144) */
 # if defined(LOG_USE_C99)
 #  define _LogRelRemoveParentheseis(...)                __VA_ARGS__
 #   define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
