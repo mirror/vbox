@@ -39,11 +39,13 @@ BEGINCODE
 %endif
 extern _DbgPrint
 
+%if 1 ; see alternative in SUPDrv-win.cpp
 ;;
 ; Kind of alias for DbgPrint
 BEGINPROC SUPR0Printf
         jmp     _DbgPrint
 ENDPROC SUPR0Printf
+%endif
 
 
 %ifdef SUPDRV_WITH_UNWIND_HACK
