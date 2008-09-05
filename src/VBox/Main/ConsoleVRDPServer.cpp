@@ -1135,6 +1135,16 @@ void ConsoleVRDPServer::EnableConnections (void)
 #endif /* VBOX_WITH_VRDP */
 }
 
+void ConsoleVRDPServer::DisconnectClient (uint32_t u32ClientId, bool fReconnect)
+{
+#ifdef VBOX_WITH_VRDP
+    if (mpEntryPoints && mhServer)
+    {
+        mpEntryPoints->VRDPDisconnect (mhServer, u32ClientId, fReconnect);
+    }
+#endif /* VBOX_WITH_VRDP */
+}
+
 void ConsoleVRDPServer::MousePointerUpdate (const VRDPCOLORPOINTER *pPointer)
 {
 #ifdef VBOX_WITH_VRDP
