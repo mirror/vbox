@@ -33,6 +33,8 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 
+////#define VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
+
 #if HC_ARCH_BITS == 64
 /* Enable 64 bits guest support. */
 # define VBOX_ENABLE_64_BITS_GUESTS
@@ -109,11 +111,11 @@ __BEGIN_DECLS
  *  Currently #NM and #PF only
  */
 #ifdef VBOX_STRICT
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #else
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
-#define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
+#define HWACCM_SVM_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #endif
 /** @} */
 
@@ -376,12 +378,13 @@ typedef struct HWACCM
     PGMMODE                 enmShadowMode;
 
 
-#ifdef VBOX_SAVE_HOST_DEBUG_REGISTERS
+#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
     struct
     {
         /* Saved host debug registers. */
         uint64_t                dr0, dr1, dr2, dr3, dr6, dr7;
         bool                    fHostDR7Saved;
+        bool                    fHostDebugRegsSaved;
     } savedhoststate;
 #endif
 
@@ -400,6 +403,7 @@ typedef struct HWACCM
     STAMCOUNTER             StatExitGuestNP;
     STAMCOUNTER             StatExitGuestGP;
     STAMCOUNTER             StatExitGuestDE;
+    STAMCOUNTER             StatExitGuestDB;
     STAMCOUNTER             StatExitGuestMF;
     STAMCOUNTER             StatExitInvpg;
     STAMCOUNTER             StatExitInvd;

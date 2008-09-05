@@ -743,12 +743,12 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
     /* Always load the guest's FPU/XMM state on-demand. */
     CPUMDeactivateGuestFPUState(pVM);
 
-#ifdef VBOX_WITH_DEBUG_REGISTER_SUPPORT
+#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
     /*
      * Check if host debug registers are armed. All context switches set DR7 back to 0x400.
      */
     uint64_t u64DR7 = ASMGetDR7();
-    if (u32DR7 & X86_DR7_ENABLED_MASK)
+    if (u64DR7 & X86_DR7_ENABLED_MASK)
     {
         pVM->hwaccm.s.savedhoststate.dr7  = u64DR7;
         pVM->hwaccm.s.savedhoststate.fHostDR7Saved = true;
@@ -805,7 +805,17 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
     }
 
-#ifdef VBOX_WITH_DEBUG_REGISTER_SUPPORT
+#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
+    /* Restore the host debug registers. First dr0-3, then dr6 and only then dr7! */
+    if (pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved)
+    {
+        ASMSetDR0(pVM->hwaccm.s.savedhoststate.dr0);
+        ASMSetDR1(pVM->hwaccm.s.savedhoststate.dr1);
+        ASMSetDR2(pVM->hwaccm.s.savedhoststate.dr2);
+        ASMSetDR3(pVM->hwaccm.s.savedhoststate.dr3);
+        ASMSetDR6(pVM->hwaccm.s.savedhoststate.dr6);
+        pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved = false;
+    }
     if (pVM->hwaccm.s.savedhoststate.fHostDR7Saved)
     {
         ASMSetDR7(pVM->hwaccm.s.savedhoststate.dr7);
@@ -813,6 +823,8 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
     }
 #endif
 
+    /* Resync the debug register on the next entry. */
+    pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
     return HWACCMR0Globals.pfnLeaveSession(pVM);
 }
 

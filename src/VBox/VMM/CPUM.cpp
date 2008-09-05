@@ -706,7 +706,7 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     pCtx->trHid.Attr.n.u1Present    = 1;
     pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
-    pCtx->dr6                       = UINT32_C(0xFFFF0FF0);
+    pCtx->dr6                       = X86_DR6_INIT_VAL;
     pCtx->dr7                       = 0x400;
 
     pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
