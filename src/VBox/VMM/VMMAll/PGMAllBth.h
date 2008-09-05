@@ -2107,6 +2107,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
 
             if (pPdeDst->n.u1Present)
             {
+#ifndef IN_RING0
                 /* Bail out here as pgmPoolGetPageByHCPhys will return NULL and we'll crash below.
                  * Our individual shadow handlers will provide more information and force a fatal exit.
                  */
@@ -2116,7 +2117,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
                     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,DirtyBitTracking), a);
                     return VINF_SUCCESS;
                 }
-
+#endif
                 /*
                  * Map shadow page table.
                  */
@@ -2186,7 +2187,7 @@ UpperLevelPageFault:
     STAM_COUNTER_INC(&pVM->pgm.s.StatGCDirtyTrackRealPF);
 #  endif
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat, DirtyBitTracking), a);
-    LogFlow(("CheckPageFault: real page fault at %VGv (%d)\n", GCPtrPage, uPageFaultLevel));
+    Log(("CheckPageFault: real page fault at %VGv (%d)\n", GCPtrPage, uPageFaultLevel));
 
     if (
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
