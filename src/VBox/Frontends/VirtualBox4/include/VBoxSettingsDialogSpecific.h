@@ -114,7 +114,7 @@ private slots:
 
 private:
 
-    void addItem (const QString &aBigIcon, const QString &aSmallIcon, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage = NULL, int aParentId = -1);
+    void addItem (const QString &aBigIcon, const QString &aBigIconDisabled, const QString &aSmallIcon, const QString &aSmallIconDisabled, int aId, const QString &aLink, VBoxSettingsPage* aPrefPage = NULL, int aParentId = -1);
     void updateAvailability();
     VBoxSettingsPage* attachValidator (VBoxSettingsPage *aPage);
 

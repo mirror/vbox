@@ -61,7 +61,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* General page */
     prefPage = new VBoxGLSettingsGeneral();
-    page = mSelector->addItem (":/machine_32px.png", ":/machine_16px.png",
+    page = mSelector->addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", "",
                                GeneralId, "#general",
                                prefPage);
     if (page)
@@ -70,7 +70,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Input page */
     prefPage = new VBoxGLSettingsInput();
-    page = mSelector->addItem (":/hostkey_32px.png", ":/hostkey_16px.png",
+    page = mSelector->addItem (":/hostkey_32px.png", ":/hostkey_disabled_32px.png", ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
                                InputId, "#input",
                                prefPage);
     if (page)
@@ -79,7 +79,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Update page */
     prefPage = new VBoxGLSettingsUpdate();
-    page = mSelector->addItem (":/vm_refresh_32px.png", ":/refresh_16px.png",
+    page = mSelector->addItem (":/refresh_32px.png", ":/refresh_disabled_32px.png", ":/refresh_16px.png", ":/refresh_disabled_16px.png",
                                UpdateId, "#update",
                                prefPage);
     if (page)
@@ -88,7 +88,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Language page */
     prefPage = new VBoxGLSettingsLanguage();
-    page = mSelector->addItem (":/site_32px.png", ":/site_16px.png",
+    page = mSelector->addItem (":/site_32px.png", ":/site_disabled_32px.png", ":/site_16px.png", "",
                                LanguageId, "#language",
                                prefPage);
     if (page)
@@ -98,7 +98,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 #ifdef ENABLE_GLOBAL_USB
     /* USB page */
     prefPage = VBoxVMSettingsUSB (VBoxVMSettingsUSB::HostType);
-    page = mSelector->addItem (":/usb_32px.png", ":/usb_16px.png",
+    page = mSelector->addItem (":/usb_32px.png", ":/usb_disabled_32px.png", ":/usb_16px.png", ":/usb_disabled_16px.png"
                                USBId, "#usb",
                                prefPage);
     if (page)
@@ -223,78 +223,78 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* General page */
     prefPage = new VBoxVMSettingsGeneral();
     connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/machine_32px.png", ":/machine_16px.png",
+    addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", "",
              GeneralId, "#general",
              prefPage);
 
     /* Storage page */
-    addItem (":/hd_32px.png", ":/hd_16px.png",
+    addItem (":/hd_32px.png", ":/hd_disabled_32px.png", ":/hd_16px.png", ":/hd_disabled_16px.png",
              StorageId, "#storage");
 
     /* HD page */
     prefPage = new VBoxVMSettingsHD();
     connect (prefPage, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/hd_32px.png", ":/hd_16px.png",
+    addItem (":/hd_32px.png", ":/hd_disabled_32px.png", ":/hd_16px.png", ":/hd_disabled_16px.png",
              HDId, "#hdds",
              prefPage, StorageId);
 
     /* CD page */
     prefPage = new VBoxVMSettingsCD();
     connect (prefPage, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/cd_32px.png", ":/cd_16px.png",
+    addItem (":/cd_32px.png", ":/cd_disabled_32px.png", ":/cd_16px.png", ":/cd_disabled_16px.png",
              CDId, "#dvd",
              prefPage, StorageId);
 
     /* FD page */
     prefPage = new VBoxVMSettingsFD();
     connect (prefPage, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/fd_32px.png", ":/fd_16px.png",
+    addItem (":/fd_32px.png", ":/fd_disabled_32px.png", ":/fd_16px.png", ":/fd_disabled_16px.png",
              FDId, "#floppy",
              prefPage, StorageId);
 
     /* Audio page */
     prefPage = new VBoxVMSettingsAudio();
-    addItem (":/sound_32px.png", ":/sound_16px.png",
+    addItem (":/sound_32px.png", ":/sound_disabled_32px.png", ":/sound_16px.png", "",
              AudioId, "#audio",
              prefPage);
 
     /* Network page */
     prefPage = new VBoxVMSettingsNetworkPage();
-    addItem (":/nw_32px.png", ":/nw_16px.png",
+    addItem (":/nw_32px.png", ":/nw_disabled_32px.png", ":/nw_16px.png", ":/nw_disabled_16px.png",
              NetworkId, "#network",
              prefPage);
 
     /* Ports page */
-    addItem (":/serial_port_32px.png", ":/serial_port_16px.png",
+    addItem (":/serial_port_32px.png", ":/serial_port_disabled_32px.png", ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
              PortsId, "#ports");
 
     /* USB page */
     prefPage = new VBoxVMSettingsUSB (VBoxVMSettingsUSB::MachineType);
-    addItem (":/usb_32px.png", ":/usb_16px.png",
+    addItem (":/usb_32px.png", ":/usb_disabled_32px.png", ":/usb_16px.png", ":/usb_disabled_16px.png",
              USBId, "#usb",
              prefPage, PortsId);
 
     /* Serial page */
     prefPage = new VBoxVMSettingsSerialPage();
-    addItem (":/serial_port_32px.png", ":/serial_port_16px.png",
+    addItem (":/serial_port_32px.png", ":/serial_port_disabled_32px.png", ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
              SerialId, "#serialPorts",
              prefPage, PortsId);
 
     /* Parallel page */
     prefPage = new VBoxVMSettingsParallelPage();
-    addItem (":/parallel_port_32px.png", ":/parallel_port_16px.png",
+    addItem (":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png", ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png", 
              ParallelId, "#parallelPorts",
              prefPage, PortsId);
 
     /* SFolders page */
     prefPage = new VBoxVMSettingsSF (MachineType);
-    addItem (":/shared_folder_32px.png", ":/shared_folder_16px.png",
+    addItem (":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png", ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
              SFId, "#sfolders",
              prefPage);
 
     /* VRDP page */
     prefPage = new VBoxVMSettingsVRDP();
-    addItem (":/vrdp_32px.png", ":/vrdp_16px.png",
+    addItem (":/vrdp_32px.png", ":/vrdp_disabled_32px.png", ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
              VRDPId, "#vrdp",
              prefPage);
 
@@ -337,13 +337,15 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 }
 
 void VBoxVMSettingsDlg::addItem (const QString &aBigIcon,
+                                 const QString &aBigIconDisabled,
                                  const QString &aSmallIcon,
+                                 const QString &aSmallIconDisabled,
                                  int aId,
                                  const QString &aLink,
                                  VBoxSettingsPage* aPrefPage /* = NULL*/,
                                  int aParentId /* = -1 */)
 {
-    QWidget *page = mSelector->addItem (aBigIcon, aSmallIcon,
+    QWidget *page = mSelector->addItem (aBigIcon, aBigIconDisabled, aSmallIcon, aSmallIconDisabled,
                                         aId, aLink,
                                         aPrefPage, aParentId);
     if (page)
