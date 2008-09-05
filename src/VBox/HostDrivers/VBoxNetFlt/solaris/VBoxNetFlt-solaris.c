@@ -519,7 +519,8 @@ static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  */
 static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppResult)
 {
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisGetInfo pDip=%p enmCmd=%d pArg=%p instance=%d\n", pDip, enmCmd, getminor((dev_t)pvArg)));
+    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisGetInfo pDip=%p enmCmd=%d pArg=%p instance=%d\n", pDip, enmCmd,
+                getminor((dev_t)pvArg)));
 
     switch (enmCmd)
     {
@@ -556,7 +557,8 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
 {
     Assert(pQueue);
 
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModOpen pQueue=%p pDev=%p fOpenMode=%d fStreamMode=%d\n", pQueue, pDev, fOpenMode, fStreamMode));
+    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModOpen pQueue=%p pDev=%p fOpenMode=%d fStreamMode=%d\n", pQueue, pDev,
+            fOpenMode, fStreamMode));
 
     /*
      * Already open?
@@ -637,7 +639,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     pQueue->q_ptr = pStream;
     WR(pQueue)->q_ptr = pStream;
 
-    /** @todo Get rid of linked list maintenance; we're not a virtual DLPI device slaving for ring-3 consumers. */
     /*
      * Link it to the list of streams.
      */
@@ -984,7 +985,7 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
                              * Somebody is wanting fast path when we need raw mode.
                              * Since we are evil, let's acknowledge the request ourselves!
                              */
-                            miocnak(pQueue, pMsg, 0, EINVAL);
+                            miocack(pQueue, pMsg, 0, EINVAL);
                             fSendDownstream = false;
                             LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Fast path request when we need raw mode!\n"));
                         }
@@ -1250,7 +1251,8 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
     {
         bcopy(pMsg->b_rptr + pPhysAddrAck->dl_addr_offset, &pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
 
-        LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: DL_PHYS_ADDR_ACK: Mac=%.*Rhxs\n", sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: DL_PHYS_ADDR_ACK: Mac=%.*Rhxs\n", sizeof(pThis->u.s.Mac),
+                    &pThis->u.s.Mac));
     }
 }
 
@@ -1381,7 +1383,8 @@ static int vboxNetFltSolarisMuxIdToFd(vnode_t *pVNode, int MuxId, int *pFd)
  */
 static int vboxNetFltSolarisRelink(vnode_t *pVNode, struct lifreq *pInterface, int IpMuxFd, int ArpMuxFd)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRelink: pVNode=%p pInterface=%p IpMuxFd=%d ArpMuxFd=%d\n", pVNode, pInterface, IpMuxFd, ArpMuxFd));
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRelink: pVNode=%p pInterface=%p IpMuxFd=%d ArpMuxFd=%d\n", pVNode,
+            pInterface, IpMuxFd, ArpMuxFd));
 
     int NewIpMuxId;
     int NewArpMuxId;
@@ -1622,14 +1625,16 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                 /*
                                  * Inject/Eject from the host IP stack.
                                  */
-                                rc = strioctl(pVNodeIp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
+                                rc = strioctl(pVNodeIp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K,
+                                            kcred, &ret);
                                 if (!rc)
                                 {
                                     /*
                                      * Inject/Eject from the host ARP stack.
                                      */
                                     g_VBoxNetFltSolarisState.CurType = kArpStream;
-                                    rc = strioctl(pVNodeArp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K, kcred, &ret);
+                                    rc = strioctl(pVNodeArp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K,
+                                                kcred, &ret);
                                     if (!rc)
                                     {
                                         g_VBoxNetFltSolarisState.pCurInstance = NULL;
@@ -1642,7 +1647,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                         rc = vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
                                         if (VBOX_SUCCESS(rc))
                                         {
-                                            bool fRawModeOk = !fAttach;         /* Raw mode check is always ok during the detach case */
+                                            bool fRawModeOk = !fAttach;   /* Raw mode check is always ok during the detach case */
                                             if (fAttach)
                                             {
                                                 /*
@@ -1670,9 +1675,9 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                                 ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
                                                 ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
 
-                                                LogFlow((DEVICE_NAME ":vboxNetFltSolarisModSetup: Success! %s %s@(Ip:%d Arp:%d) %s interface %s\n",
-                                                        fAttach ? "Injected" : "Ejected", StrMod.mod_name, StrMod.pos, ArpStrMod.pos,
-                                                        fAttach ? "to" : "from", pThis->szName));
+                                                LogFlow((DEVICE_NAME ":vboxNetFltSolarisModSetup: Success! %s %s@(Ip:%d Arp:%d) "
+                                                        "%s interface %s\n", fAttach ? "Injected" : "Ejected", StrMod.mod_name,
+                                                        StrMod.pos, ArpStrMod.pos, fAttach ? "to" : "from", pThis->szName));
                                                 return VINF_SUCCESS;
                                             }
                                             else
@@ -1680,7 +1685,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                         }
                                         else
                                         {
-                                            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: module relinking failed. Mode=%s rc=%d.\n",
+                                            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: Relinking failed. Mode=%s rc=%d.\n",
                                                     fAttach ? "inject" : "eject", rc));
                                         }
 
@@ -1708,7 +1713,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                 }
                             }
                             else
-                                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: vboxNetFltSolarisDetermineModPos failed. rc=%d rc2=%d\n", rc, rc2));
+                                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to find position. rc=%d rc2=%d\n", rc, rc2));
                         }
                         else
                             LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get vnode from MuxFd.\n"));
@@ -2098,7 +2103,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         fSrc = INTNETTRUNKDIR_HOST;
 
     bool fChecksumAdjusted = false;
-#if 0
+#if 1
     if (fSrc & INTNETTRUNKDIR_HOST)
     {
         mblk_t *pCorrectedMsg = vboxNetFltSolarisFixChecksums(pMsg);
@@ -2199,9 +2204,9 @@ static PVBOXNETFLTINS vboxNetFltSolarisFindInstance(vboxnetflt_stream_t *pStream
  * @param   pMsg    Pointer to the message block.
  *                  This must not be DLPI linked messages, must be M_DATA.
  *
- * @remarks This function expects raw mblk_t (chained is acceptible) and if it
- *          returns a corrected message, the passed in input message has been
- *          freed and should not be referenced anymore.
+ * @remarks If this function returns a checksum adjusted message, the
+ *          passed in input message has been freed and should not be
+ *          referenced anymore by the caller.
  */
 static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
 {
@@ -2222,6 +2227,7 @@ static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
          * Check if we have a complete packet or being fed a chain.
          */
         size_t cbIpPacket = 0;
+        mblk_t *pFullMsg = NULL;
         if (pMsg->b_cont)
         {
             LogFlow((DEVICE_NAME ":Chained mblk_t.\n"));
@@ -2251,13 +2257,12 @@ static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
                     LogFlow((DEVICE_NAME ":Not M_DATA.. this is really bad.\n"));
             }
 
-            freemsg(pMsg);
-            pMsg = pFullMsg;
-            DB_TYPE(pMsg) = M_DATA;
-            pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
+            DB_TYPE(pFullMsg) = M_DATA;
+            pEthHdr = (PRTNETETHERHDR)pFullMsg->b_rptr;
+            cbIpPacket = MBLKL(pFullMsg) - sizeof(RTNETETHERHDR);
         }
-
-        cbIpPacket = MBLKL(pMsg) - sizeof(RTNETETHERHDR);
+        else
+            cbIpPacket = MBLKL(pMsg) - sizeof(RTNETETHERHDR);
 
         /*
          * Check if the IP checksum is valid.
@@ -2300,8 +2305,25 @@ static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
             RTNetIPv4HdrChecksum(pIpHdr);
             LogFlow((DEVICE_NAME ":fixed IP checkum.\n"));
 
+            /*
+             * If we made a copy and the checksum is corrected on the copy,
+             * free the original, return the checksum fixed copy.
+             */
+            if (pFullMsg)
+            {
+                freemsg(pMsg);
+                return pFullMsg;
+            }
+
             return pMsg;
         }
+
+        /*
+         * If we made a copy and the checksum is NOT corrected, free the copy,
+         * and return NULL.
+         */
+        if (pFullMsg)
+            freemsg(pFullMsg);
     }
 
     return NULL;
@@ -2340,7 +2362,8 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
     }
     else
     {
-        LogFlow((DEVICE_NAME ":Unknown EtherType=%x D=%.6Rhxs S=%.6Rhxs\n", RT_H2BE_U16(pEthHdr->EtherType), &pEthHdr->DstMac, &pEthHdr->SrcMac));
+        LogFlow((DEVICE_NAME ":Unknown EtherType=%x D=%.6Rhxs S=%.6Rhxs\n", RT_H2BE_U16(pEthHdr->EtherType), &pEthHdr->DstMac,
+                    &pEthHdr->SrcMac));
         /* LogFlow((DEVICE_NAME ":%.*Vhxd\n", MBLKL(pMsg), pMsg->b_rptr)); */
     }
 }
