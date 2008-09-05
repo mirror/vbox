@@ -2483,8 +2483,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
                          : "0" (*pu64),
                            "m" ( u32EBX ),
                            "c" ( (uint32_t)(u64 >> 32) ),
-                           "S" (pu64),
-                           "m" (*pu64));
+                           "S" (pu64));
 #   else /* !PIC */
     __asm__ __volatile__("1:\n\t"
                          "lock; cmpxchg8b %1\n\t"
