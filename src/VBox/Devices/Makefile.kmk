@@ -78,13 +78,10 @@ VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD-new.cpp \
 	Storage/VDICore.cpp \
 	Storage/VDIHDDCore.cpp \
+	Storage/VHDHDDCore.cpp \
 	Storage/VmdkHDDCore.cpp \
 	Storage/RawHDDCore.cpp \
 	VBoxDDUDeps.cpp
-ifndef VBOX_OSE
-VBoxDDU_SOURCES         += \
-	Storage/VHDHDDCore.cpp
-endif
 ifdef VBOX_WITH_USB
  VBoxDDU_INCS.os2       += \
 	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2

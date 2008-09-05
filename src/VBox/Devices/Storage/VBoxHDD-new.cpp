@@ -122,9 +122,7 @@ struct VBOXHDD
 extern VBOXHDDBACKEND g_RawBackend;
 extern VBOXHDDBACKEND g_VmdkBackend;
 extern VBOXHDDBACKEND g_VDIBackend;
-#ifndef VBOX_OSE
 extern VBOXHDDBACKEND g_VhdBackend;
-#endif
 #ifdef VBOX_WITH_ISCSI
 extern VBOXHDDBACKEND g_ISCSIBackend;
 #endif
@@ -134,9 +132,7 @@ static PCVBOXHDDBACKEND aBackends[] =
     &g_RawBackend,
     &g_VmdkBackend,
     &g_VDIBackend,
-#ifndef VBOX_OSE
     &g_VhdBackend,
-#endif
 #ifdef VBOX_WITH_ISCSI
     &g_ISCSIBackend,
 #endif
