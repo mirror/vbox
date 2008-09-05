@@ -624,6 +624,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR6_BS                          RT_BIT(14)
 /** Bit 15 - BT - Task switch. (TSS T bit.) */
 #define X86_DR6_BT                          RT_BIT(15)
+/** Value of DR6 after powerup/reset. */
+#define X86_DR6_INIT_VAL                    UINT64_C(0xFFFF0FF0)
 /** @} */
 
 
@@ -716,7 +718,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR7_LEN(iBp, cb)                ( (cb) << ((iBp) * 4 + 18) )
 
 /** Mask used to check if any breakpoints are enabled. */
-#define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7))
+#define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7)) | X86_DR7_GD
 
 /** @} */
 
