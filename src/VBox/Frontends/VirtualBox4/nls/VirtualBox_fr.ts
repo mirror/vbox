@@ -2734,7 +2734,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="1848"/>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivées</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1856"/>
@@ -2866,13 +2866,13 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="1884"/>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Désactivé</translation>
+        <translation>Désactivées</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1893"/>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>Port parallèles</translation>
+        <translation>Interfaces parallèles</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2553"/>
@@ -3838,7 +3838,7 @@ Choisir &lt;i&gt;par défaut&lt;/i&gt; pour réactiver la langue par défaut du 
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="622"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Désirez vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines virtuelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Désirez-vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines virtuelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="654"/>
@@ -4482,7 +4482,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1059"/>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez vous vraiment supprimer la machine virtuelle &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;&lt;p&gt;Cette opération est irréversible&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez-vous vraiment supprimer la machine virtuelle &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;&lt;p&gt;Cette opération est irréversible&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1072"/>
@@ -4521,7 +4521,7 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Désirez vous enlever (désenregistrer) le disque dur virtuel &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Désirez-vous enlever (désenregistrer) le disque dur virtuel &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1195"/>
@@ -4775,7 +4775,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1498"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;image CD &quot;Additions invité VirtualBox&quot; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas été trouvée ou &lt;nibr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez vous télécharger cette image CD à partir de la toile ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;image CD &quot;Additions invité VirtualBox&quot; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas été trouvée ou &lt;nibr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez-vous télécharger cette image CD à partir de la toile ?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1510"/>
@@ -4785,12 +4785,12 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1520"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez vous vraiment télécharger l&apos;image CD Addition invité VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taille %3 octets)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez-vous vraiment télécharger l&apos;image CD Addition invité VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taille %3 octets)?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1535"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;image CD Additions invité VirtualBox a été téléchargé a pertir du site  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; et enregistré sous &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez vous utiliser cette image CD et l&apos;attacher sous le lecteur virtuel CD/DVD ?&gt;/p&gt; </translation>
+        <translation>&lt;p&gt;L&apos;image CD Additions invité VirtualBox a été téléchargé a pertir du site  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; et enregistré sous &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez-vous utiliser cette image CD et l&apos;attacher sous le lecteur virtuel CD/DVD ?&gt;/p&gt; </translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -4815,7 +4815,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1978"/>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous n&apos;avez pas raccordé une disque dure à la nouvelle machine virtuelle. La machine ne pourra pas démarrer tant que vous ne raccorderez pas une disque dure contenant un système d&apos;exploitation ou un autre média d&apos;amorcage. Vous pouvez faire ceci en utilisant la boîte de dialogue Préférances pour cette machine ou bien en utilisant l&apos;assistant du premier lancement.&lt;/p&gt;&lt;p&gt;Voulez vous continuer?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous n&apos;avez pas raccordé un disque dur à la nouvelle machine virtuelle. La machine ne pourra pas démarrer tant que vous ne raccorderez pas un disque dur contenant un système d&apos;exploitation ou un autre média d&apos;amorçage. Vous pouvez faire ceci en utilisant la boîte de dialogue Préférances pour cette machine ou bien en utilisant l&apos;assistant du premier lancement.&lt;/p&gt;&lt;p&gt;Voulez-vous continuer?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="552"/>
@@ -4918,7 +4918,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1167"/>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Des disques durs sont raccordés aux ports SATA de cette machine virtuelle. Si vous désactivez le contrôleur SATA, tous les disques seront automatiquement détachés.&lt;/p&gt;Désirez vous vraiment  désactivez le contrôleur SATA ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Des disques durs sont raccordés aux ports SATA de cette machine virtuelle. Si vous désactivez le contrôleur SATA, tous les disques seront automatiquement détachés.&lt;/p&gt;Désirez-vous vraiment  désactivez le contrôleur SATA ?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1169"/>
@@ -5010,7 +5010,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1962"/>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Désirez vous vraiment remettre la machine Virtuelle à zéro ?&lt;/p&gt;&lt;p&gt;Si la machine est remise à zéro, les données non sauvegardées des applications lancée seront perdues.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Désirez-vous vraiment remettre la machine Virtuelle à zéro ?&lt;/p&gt;&lt;p&gt;Si la machine est remise à zéro, les données non sauvegardées des applications lancées seront perdues.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1964"/>
@@ -7184,7 +7184,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="" line="7209057"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Désirez vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines virtuelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Désirez-vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines virtuelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -7600,7 +7600,7 @@ p, li { white-space: pre-wrap; }
         <location filename="" line="7209057"/>
         <source>Displays the operating system type that you
 plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appeller Système d&apos;exploitation invité).</translation>
+        <translation type="obsolete">Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appelé système d&apos;exploitation invité).</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -8170,14 +8170,14 @@ that this feature requires Guest Additions to be installed in the guest OS.
     <message>
         <location filename="" line="7209057"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appeller Système d&apos;exploitation invité).</translation>
+        <translation type="obsolete">Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appelé système d&apos;exploitation invité).</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle supportera l&apos;interface avancée de gestion et de configuration de l&apos;énergie (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivé pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Si cette fonction est cochée, la machine virtuelle supportera l&apos;interface avancée de gestion et de configuration de l&apos;énergie (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -8306,7 +8306,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="" line="7209057"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Désirez vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines viruelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Désirez-vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt; ?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines viruelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -8847,7 +8847,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appeller Système d&apos;exploitation invité).</translation>
+        <translation>Affiche le type du système d&apos;exploitation que vous désirez installer sur cette machine virtuelle (appelé système d&apos;exploitation invité).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="125"/>
