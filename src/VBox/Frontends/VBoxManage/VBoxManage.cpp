@@ -424,7 +424,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
                      "                            [-vrdpport default|<port>]\n"
                      "                            [-vrdpaddress <host>]\n"
                      "                            [-vrdpauthtype null|external|guest]\n"
-                     "                            [-vrdpmulticon on|off]\n");
+                     "                            [-vrdpmulticon on|off]\n"
+                     "                            [-vrdpreusecon on|off]\n");
         }
         RTPrintf("                            [-usb on|off]\n"
                  "                            [-usbehci on|off]\n"
@@ -1647,6 +1648,8 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             vrdpServer->COMGETTER(NetAddress)(address.asOutParam());
             BOOL fMultiCon;
             vrdpServer->COMGETTER(AllowMultiConnection)(&fMultiCon);
+            BOOL fReuseCon;
+            vrdpServer->COMGETTER(ReuseSingleConnection)(&fReuseCon);
             VRDPAuthType_T vrdpAuthType;
             const char *strAuthType;
             vrdpServer->COMGETTER(AuthType)(&vrdpAuthType);
@@ -1672,12 +1675,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                 RTPrintf("vrdpaddress=\"%lS\"\n", address.raw());
                 RTPrintf("vrdpauthtype=\"%s\"\n", strAuthType);
                 RTPrintf("vrdpmulticon=\"%s\"\n", fMultiCon ? "on" : "off");
+                RTPrintf("vrdpreusecon=\"%s\"\n", fReuseCon ? "on" : "off");
             }
             else
             {
                 if (address.isEmpty())
                     address = "0.0.0.0";
-                RTPrintf("VRDP:            enabled (Address %lS, Port %d, MultiConn: %s, Authentication type: %s)\n", address.raw(), port, fMultiCon ? "on" : "off", strAuthType);
+                RTPrintf("VRDP:            enabled (Address %lS, Port %d, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), port, fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
             }
         }
         else
@@ -3793,6 +3797,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *vrdpaddress = NULL;
     char *vrdpauthtype = NULL;
     char *vrdpmulticon = NULL;
+    char *vrdpreusecon = NULL;
 #endif
     int   fUsbEnabled = -1;
     int   fUsbEhciEnabled = -1;
@@ -4245,6 +4250,13 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
             vrdpmulticon = argv[i];
+        }
+        else if (strcmp(argv[i], "-vrdpreusecon") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            vrdpreusecon = argv[i];
         }
 #endif /* VBOX_WITH_VRDP */
         else if (strcmp(argv[i], "-usb") == 0)
@@ -5333,7 +5345,7 @@ static int handleModifyVM(int argc, char *argv[],
             break;
 
 #ifdef VBOX_WITH_VRDP
-        if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype || vrdpmulticon)
+        if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype || vrdpmulticon || vrdpreusecon)
         {
             ComPtr<IVRDPServer> vrdpServer;
             machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
@@ -5399,6 +5411,23 @@ static int handleModifyVM(int argc, char *argv[],
                     else
                     {
                         errorArgument("Invalid -vrdpmulticon argument '%s'", vrdpmulticon);
+                        rc = E_FAIL;
+                        break;
+                    }
+                }
+                if (vrdpreusecon)
+                {
+                    if (strcmp(vrdpreusecon, "on") == 0)
+                    {
+                        CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(true));
+                    }
+                    else if (strcmp(vrdpreusecon, "off") == 0)
+                    {
+                        CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(false));
+                    }
+                    else
+                    {
+                        errorArgument("Invalid -vrdpreusecon argument '%s'", vrdpreusecon);
                         rc = E_FAIL;
                         break;
                     }

@@ -471,6 +471,7 @@ private:
 
     int mcAudioRefs;
     volatile uint32_t mcVRDPClients;
+    uint32_t mu32SingleRDPClientId; /* The id of a connected client in the single connection mode. */
 
     static const char *sSSMConsoleUnit;
     static uint32_t sSSMConsoleVer;
