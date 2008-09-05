@@ -140,7 +140,8 @@ DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
     if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
     {
         int rc = RTSemFastMutexRequest(pLogger->MutexSem);
-        AssertRCReturn(rc, rc);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 #endif
     return VINF_SUCCESS;
