@@ -388,6 +388,15 @@ typedef struct HWACCM
     } savedhoststate;
 #endif
 
+#ifdef VBOX_STRICT
+    /** The CPU ID of the CPU currently owning the VMCS. Set in
+     * HWACCMR0Enter and cleared in HWACCMR0Leave. */
+    RTCPUID                 idEnteredCpu;
+# if HC_ARCH_BITS == 32
+    RTCPUID                 Alignment0;
+# endif
+#endif
+
     STAMPROFILEADV          StatEntry;
     STAMPROFILEADV          StatExit;
     STAMPROFILEADV          StatInGC;
