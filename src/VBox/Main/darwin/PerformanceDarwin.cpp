@@ -64,16 +64,36 @@ namespace pm {
 class CollectorDarwin : public CollectorHAL
 {
 public:
+    CollectorDarwin();
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
+private:
+    ULONG totalRAM;
 };
 
 MetricFactoryDarwin::MetricFactoryDarwin()
 {
     mHAL = new CollectorDarwin();
     Assert(mHAL);
+}
+
+CollectorDarwin::CollectorDarwin()
+{
+    uint64_t hostMemory;
+    int mib[2];
+    size_t size;
+
+    mib[0] = CTL_HW;
+    mib[1] = HW_MEMSIZE;
+
+    size = sizeof(hostMemory);
+    if (sysctl(mib, 2, &hostMemory, &size, NULL, 0) == -1) {
+        Log(("sysctl() -> %s", strerror(errno)));
+        hostMemory = 0;
+    }
+    totalRAM = (ULONG)(hostMemory / 1024);
 }
 
 int CollectorDarwin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
@@ -113,20 +133,7 @@ int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availa
         return RTErrConvertFromDarwinKern(krc);
     }
 
-    uint64_t hostMemory;
-    int mib[2];
-    size_t size;
-
-    mib[0] = CTL_HW;
-    mib[1] = HW_MEMSIZE;
-
-    size = sizeof(hostMemory);
-    if (sysctl(mib, 2, &hostMemory, &size, NULL, 0) == -1) {
-        int error = errno;
-        Log(("sysctl() -> %s", strerror(error)));
-        return RTErrConvertFromErrno(error);
-    }
-    *total = (ULONG)(hostMemory / 1024);
+    *total = totalRAM;
     *available = info.free_count * (PAGE_SIZE / 1024);
     *used = *total - *available;
     return VINF_SUCCESS;

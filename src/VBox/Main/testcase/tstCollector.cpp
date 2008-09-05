@@ -75,9 +75,9 @@ pm::CollectorHAL *createCollector()
     if (RT_FAILURE(rc)) \
     { \
         RTPrintf("tstCollector: "#fn" -> %Vrc\n", rc); \
-        return 1; \
     } \
-    RTPrintf("%50s -- %u calls per second\n", #fn, nCalls)
+    else \
+        RTPrintf("%50s -- %u calls per second\n", #fn, nCalls)
 
 int main(int argc, char *argv[])
 {
