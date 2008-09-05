@@ -576,3 +576,25 @@ int VBOXCALL mymemcmp(const void *pv1, const void *pv2, size_t cb)
     return 0;
 }
 
+
+#if 0 /* See alternative in SUPDrvA-win.asm */
+/**
+ * Alternative version of SUPR0Printf for Windows.
+ *
+ * @returns 0.
+ * @param   pszFormat   The format string.
+ */
+SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
+{
+    va_list va;
+    char    szMsg[512];
+
+    va_start(va, pszFormat);
+    size_t cch = RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
+    szMsg[sizeof(szMsg) - 1] = '\0';
+    va_end(va);
+
+    RTLogWriteDebugger(szMsg, cch);
+    return 0;
+}
+#endif
