@@ -1003,7 +1003,7 @@ ResumeExecution:
         Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
 
         /* We never increase uCurrentASID in the fAlwaysFlushTLB (erratum 170) case. */
-        if (!pCpu->uCurrentASID)
+        if (!pCpu->uCurrentASID || !pVM->hwaccm.s.svm.uCurrentASID)
             pVM->hwaccm.s.svm.uCurrentASID = pCpu->uCurrentASID = 1;
 
         Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVM->hwaccm.s.svm.fForceTLBFlush);
