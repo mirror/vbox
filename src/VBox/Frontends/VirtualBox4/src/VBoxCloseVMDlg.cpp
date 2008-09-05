@@ -36,9 +36,9 @@ VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
     /* Sheets are broken if the window is in fullscreen mode. So make it a
      * normal window in that case. */
     VBoxConsoleWnd *cwnd = qobject_cast<VBoxConsoleWnd*> (aParent);
-    if (cwnd != NULL &&
-        !cwnd->isTrueFullscreen() &&
-        !cwnd->isTrueSeamless())
+    if (cwnd == NULL ||
+        (!cwnd->isTrueFullscreen() &&
+         !cwnd->isTrueSeamless()))
         setWindowFlags (Qt::Sheet);
 #endif /* Q_WS_MAC */
 
