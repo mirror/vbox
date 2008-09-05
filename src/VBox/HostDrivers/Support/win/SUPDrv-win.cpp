@@ -565,15 +565,6 @@ static NTSTATUS     VBoxDrvNtErr2NtStatus(int rc)
 
 
 
-/** @todo move this to IPRT */
-RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
-{
-    DbgPrint("\n!!Assertion Failed!!\n"
-             "Expression: %s\n"
-             "Location  : %s(%d) %s\n",
-             pszExpr, pszFile, uLine, pszFunction);
-}
-
 /** @todo use the nocrt stuff? */
 int VBOXCALL mymemcmp(const void *pv1, const void *pv2, size_t cb)
 {

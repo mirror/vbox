@@ -41,12 +41,6 @@ extern _DbgPrint
 
 ;;
 ; Kind of alias for DbgPrint
-BEGINPROC AssertMsg2
-        jmp     _DbgPrint
-ENDPROC AssertMsg2
-
-;;
-; Kind of alias for DbgPrint
 BEGINPROC SUPR0Printf
         jmp     _DbgPrint
 ENDPROC SUPR0Printf
