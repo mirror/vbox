@@ -296,7 +296,7 @@ typedef enum RTLOGFLAGS
     RTLOGFLAGS_BUFFERED             = 0x00000002,
     /** The logger instance expands LF to CR/LF. */
     RTLOGFLAGS_USECRLF              = 0x00000010,
-    /** Append to the log destination where applicable. */ 
+    /** Append to the log destination where applicable. */
     RTLOGFLAGS_APPEND               = 0x00000020,
     /** Show relative timestamps with PREFIX_TSC and PREFIX_TS */
     RTLOGFLAGS_REL_TS               = 0x00000040,
@@ -404,6 +404,30 @@ typedef enum RTLOGDEST
 
 RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, const char *pszFormat, ...);
 
+
+#ifdef DOXYGEN_RUNNING
+# define LOG_DISABLED
+# define LOG_ENABLED
+# define LOG_ENABLE_FLOW
+#endif
+
+/** @def LOG_DISABLED
+ * Use this compile time define to disable all logging macros. It can
+ * be overriden for each of the logging macros by the LOG_ENABLE*
+ * compile time defines.
+ */
+
+/** @def LOG_ENABLED
+ * Use this compile time define to enable logging when not in debug mode
+ * or LOG_DISABLED is set.
+ * This will enabled Log() only.
+ */
+
+/** @def LOG_ENABLE_FLOW
+ * Use this compile time define to enable flow logging when not in
+ * debug mode or LOG_DISABLED is defined.
+ * This will enable LogFlow() only.
+ */
 
 /*
  * Determin whether logging is enabled and forcefully normalize the indicators.
@@ -766,40 +790,44 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #define LogIsFlowEnabled()  LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP)
 
 
-#ifdef DOXYGEN_RUNNING
-# define LOG_DISABLED
-# define LOG_ENABLED
-# define LOG_ENABLE_FLOW
-#endif
-
-/** @def LOG_DISABLED
- * Use this compile time define to disable all logging macros. It can
- * be overriden for each of the logging macros by the LOG_ENABLE*
- * compile time defines.
- */
-
-/** @def LOG_ENABLED
- * Use this compile time define to enable logging when not in debug mode
- * or LOG_DISABLED is set.
- * This will enabled Log() only.
- */
-
-/** @def LOG_ENABLE_FLOW
- * Use this compile time define to enable flow logging when not in
- * debug mode or LOG_DISABLED is defined.
- * This will enable LogFlow() only.
- */
-
 
 
 /** @name Release Logging
  * @{
  */
 
+#ifdef DOXYGEN_RUNNING
+# define RTLOG_REL_DISABLED
+# define RTLOG_REL_ENABLED
+#endif
+
+/** @def RTLOG_REL_DISABLED
+ * Use this compile time define to disable all release logging
+ * macros.
+ */
+
+/** @def RTLOG_REL_ENABLED
+ * Use this compile time define to override RTLOG_REL_DISABLE.
+ */
+
+/*
+ * Determin whether release logging is enabled and forcefully normalize the indicators.
+ */
+#if !defined(RTLOG_REL_DISABLED) || defined(RTLOG_REL_ENABLED)
+# undef  RTLOG_REL_DISABLED
+# undef  RTLOG_REL_ENABLED
+# define RTLOG_REL_ENABLED
+#else
+# undef  RTLOG_REL_ENABLED
+# undef  RTLOG_REL_DISABLED
+# define RTLOG_REL_DISABLED
+#endif
+
+
 /** @def LogIt
  * Write to specific logger if group enabled.
  */
-#ifndef IN_RING0 /* causes problems in ring 0; do not enable before tracking this down (see 3137 & 3144) */
+#ifdef RTLOG_REL_ENABLED
 # if defined(LOG_USE_C99)
 #  define _LogRelRemoveParentheseis(...)                __VA_ARGS__
 #   define _LogRelIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
@@ -825,13 +853,14 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
        LogIt(LOG_INSTANCE, fFlags, iGroup, fmtargs); \
   } while (0)
 # endif
-#else
-# define LogRelIt(pvInst, fFlags, iGroup, fmtargs)         do { } while (0)
+#else   /* !RTLOG_REL_ENABLED */
+# define LogRelIt(pvInst, fFlags, iGroup, fmtargs)      do { } while (0)
 # if defined(LOG_USE_C99)
 #  define _LogRelRemoveParentheseis(...)                __VA_ARGS__
-#  define _LogRelIt(pvInst, fFlags, iGroup, ...)           do { } while (0)
+#  define _LogRelIt(pvInst, fFlags, iGroup, ...)        do { } while (0)
 # endif
-#endif
+#endif  /* !RTLOG_REL_ENABLED */
+
 
 /** @def LogRel
  * Level 1 logging.
