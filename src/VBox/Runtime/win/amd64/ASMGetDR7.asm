@@ -43,3 +43,7 @@ BEGINPROC_EXPORTED ASMGetDR7
         ret
 ENDPROC ASMGetDR7
 
+BEGINPROC_EXPORTED ASMSetDR7
+        mov     dr7, rcx
+        ret
+ENDPROC ASMSetDR7
