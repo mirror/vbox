@@ -28,7 +28,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_KBUILD_HACKING
+ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
 else
 SUB_DEPTH = ../..
