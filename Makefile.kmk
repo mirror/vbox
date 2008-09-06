@@ -139,6 +139,32 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
 endif
 
 
+ifdef VBOX_WITH_QT4_SUN
+#
+# Install our Qt DLLs / Shared Objects / Frameworks.
+#
+## @todo move to the root Makefile.kmk, and remove qt4-bin from INSTALLS below.
+ INSTALLS += qt4-bin
+ qt4-bin_MODE = 644
+ ifeq ($(KBUILD_TARGET),darwin)
+  qt4-bin_INST = $(INST_VIRTUALBOX)Contents/Frameworks/
+  qt4-bin_SOURCES = \
+	$(VBOX_PATH_QT4)/Frameworks/QtCore.framework/Versions/4/QtCore=>QtCore.framework/Versions/4/QtCore \
+	$(VBOX_PATH_QT4)/Frameworks/QtGui.framework/Versions/4/QtGui=>QtGui.framework/Versions/4/QtGui
+ else ifeq ($(KBUILD_TARGET),win)
+  qt4-bin_INST = $(INST_BIN)
+  qt4-bin_SOURCES = \
+	$(VBOX_PATH_QT4_LIB)/VBoxQtCore4.dll \
+	$(VBOX_PATH_QT4_LIB)/VBoxQtGui4.dll
+ else
+  qt4-bin_INST = $(INST_BIN)
+  qt4-bin_SOURCES = \
+	$(VBOX_PATH_QT4_LIB)/libVBoxQtCore.so.4 \
+	$(VBOX_PATH_QT4_LIB)/libVBoxQtGui.so.4
+ endif
+endif # VBOX_WITH_QT4_SUN
+
+
 #
 # Install additions iso from the build server.
 # The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has
