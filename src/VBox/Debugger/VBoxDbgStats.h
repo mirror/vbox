@@ -25,11 +25,21 @@
 
 #include "VBoxDbgBase.h"
 
-#include <qlistview.h>
-#include <qvbox.h>
-#include <qtimer.h>
-#include <qcombobox.h>
-#include <qpopupmenu.h>
+#ifdef VBOXDBG_USE_QT4
+# include <QTreeWidget>
+# include <QTimer>
+# include <QComboBox>
+# include <QMenu>
+  typedef QMenu QPopupMenu;
+  typedef QTreeWidget QListView;
+  typedef QTreeWidgetItem QListViewItem;
+#else
+# include <qlistview.h>
+# include <qvbox.h>
+# include <qtimer.h>
+# include <qcombobox.h>
+# include <qpopupmenu.h>
+#endif 
 
 class VBoxDbgStats;
 
@@ -107,7 +117,12 @@ public:
      */
     virtual QString key(int iColumn, bool fAscending) const
     {
+#ifdef VBOXDBG_USE_QT4
+        /** @todo */ NOREF(iColumn); NOREF(fAscending);
+        return "";
+#else
         return QListViewItem::key(iColumn, fAscending);
+#endif 
     }
 
     /**
@@ -237,9 +252,12 @@ protected:
  */
 class VBoxDbgStatsView : public QListView, public VBoxDbgBase
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
+#ifdef VBOXDBG_USE_QT4
+    /** @todo */
+#else
     /**
      * Creates a VM statistics list view widget.
      *
@@ -249,6 +267,7 @@ public:
      * @param   f           Widget flags.
      */
     VBoxDbgStatsView(PVM pVM, VBoxDbgStats *pParent = NULL, const char *pszName = NULL, WFlags f = 0);
+#endif
 
     /** Destructor. */
     virtual ~VBoxDbgStatsView();
@@ -353,11 +372,28 @@ protected:
  * a entry field for the selection pattern, a refresh interval
  * spinbutton, and the tree view with the statistics.
  */
-class VBoxDbgStats : public QVBox, public VBoxDbgBase
+class VBoxDbgStats : 
+#ifdef VBOXDBG_USE_QT4
+    public QWidget, 
+#else
+    public QVBox, 
+#endif 
+    public VBoxDbgBase
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
+#ifdef VBOXDBG_USE_QT4
+    /**
+     * Creates a VM statistics list view widget.
+     *
+     * @param   pVM             The VM this is hooked up to.
+     * @param   pszPat          Initial selection pattern. NULL means everything. (See STAM for details.)
+     * @param   uRefreshRate    The refresh rate. 0 means not to refresh and is the default.
+     * @param   pParent         Parent widget.
+     */
+    VBoxDbgStats(PVM pVM, const char *pszPat = NULL, unsigned uRefreshRate= 0, QWidget *pParent = NULL);
+#else
     /**
      * Creates a VM statistics list view widget.
      *
@@ -369,6 +405,7 @@ public:
      * @param   f               Widget flags.
      */
     VBoxDbgStats(PVM pVM, const char *pszPat = NULL, unsigned uRefreshRate= 0, QWidget *pParent = NULL, const char *pszName = NULL, WFlags f = 0);
+#endif
 
     /** Destructor. */
     virtual ~VBoxDbgStats();

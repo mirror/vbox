@@ -24,10 +24,17 @@
 
 #include "VBoxDbgBase.h"
 
-#include <qtextedit.h>
-#include <qcombobox.h>
-#include <qvbox.h>
-#include <qtimer.h>
+#ifdef VBOXDBG_USE_QT4
+# include <QTextEdit>
+# include <QComboBox>
+# include <QTimer>
+# include <QEvent>
+#else
+# include <qtextedit.h>
+# include <qcombobox.h>
+# include <qvbox.h>
+# include <qtimer.h>
+#endif 
 
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
@@ -128,7 +135,13 @@ protected:
 /**
  * The Debugger Console.
  */
-class VBoxDbgConsole : public QVBox, public VBoxDbgBase
+class VBoxDbgConsole : 
+#ifdef VBOXDBG_USE_QT4
+    public QWidget,
+#else
+    public QVBox,
+#endif
+    public VBoxDbgBase
 {
     Q_OBJECT
 

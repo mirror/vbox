@@ -41,7 +41,7 @@
  */
 class VBoxDbgGui : public QObject
 {
-    Q_OBJECT
+    Q_OBJECT;
 
 public:
     /**

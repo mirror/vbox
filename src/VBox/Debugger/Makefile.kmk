@@ -80,10 +80,10 @@ tstDBGCParser_LIBS = \
 
 
 #
-# Debugger GUI component.
+# Debugger GUI component (Qt3).
 #
-USES += qt3
 VBoxDbg3_TEMPLATE = VBOXQTGUI
+USES += qt3
 VBoxDbg3_USES = qt3
 VBoxDbg3_QTTOOL = QT3
 VBoxDbg3_DEFS = IN_DBG_R3
@@ -106,7 +106,31 @@ VBoxDbg3_LDFLAGS.darwin = \
 
 
 #
-# The VBoxDbg3 testcase.
+# Debugger GUI component (Qt4).
+#
+DLLS += VBoxDbg
+VBoxDbg_TEMPLATE = VBOXQT4GUI
+VBoxDbg_DEFS = IN_DBG_R3 VBOXDBG_USE_QT4
+VBoxDbg_INCS = .
+VBoxDbg_QT_MODULES = Core Gui
+VBoxDbg_QT_MOCHDRS = \
+	VBoxDbgGui.h \
+	VBoxDbgConsole.h
+#	VBoxDbgStats.h
+VBoxDbg_SOURCES = \
+	VBoxDbg.cpp \
+	VBoxDbgGui.cpp \
+	VBoxDbgBase.cpp \
+	VBoxDbgConsole.cpp 
+#	VBoxDbgStats.cpp
+VBoxDbg_LIBS = \
+	$(LIB_VMM)
+VBoxDbg_LDFLAGS.darwin = \
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDbg.dylib
+
+
+#
+# The VBoxDbg testcase (Qt3).
 #
 tstVBoxDbg3_TEMPLATE     = VBOXQTGUIEXE
 tstVBoxDbg3_USES         = qt3
@@ -117,10 +141,30 @@ tstVBoxDbg3_LIBS         = \
 	$(LIB_RUNTIME)
 ifeq ($(KBUILD_TARGET),win)
 tstVBoxDbg3_LIBS        += \
-	$(PATH_LIB)/VBoxDbg3.lib
+	$(PATH_LIB)/VBoxDbg.lib
 else
 tstVBoxDbg3_LIBS        += \
-	$(PATH_BIN)/VBoxDbg3$(VBOX_SUFF_DLL)
+	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
+endif
+
+#
+# The VBoxDbg testcase (Qt4).
+#
+#PROGRAMS += tstVBoxDbg
+tstVBoxDbg_TEMPLATE     = VBOXQTGUI4EXE
+tstVBoxDbg_USES         = qt4
+tstVBoxDbg_QTTOOL       = QT4
+tstVBoxDbg_QT_MODULES   = Core Gui
+tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
+tstVBoxDbg_LIBS         = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME)
+ifeq ($(KBUILD_TARGET),win)
+tstVBoxDbg_LIBS        += \
+	$(PATH_LIB)/VBoxDbg.lib
+else
+tstVBoxDbg_LIBS        += \
+	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
 endif
 
 
