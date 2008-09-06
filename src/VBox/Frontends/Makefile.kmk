@@ -40,7 +40,7 @@ ifndef VBOX_ONLY_DOCS
   include $(PATH_SUB_CURRENT)/VBoxHeadless/Makefile.kmk
  endif
 
- ifndef VBOX_KBUILD_HACKING # Have to convert these monsters if this is gonna make any sense at all... :-(
+ ifndef VBOX_SINGLE_MAKEFILE # Have to convert these monsters if this is gonna make any sense at all... :-(
   # Sub-directory walk (qt is too much work for now)
   ifdef VBOX_WITH_QTGUI
    SUBDIRS_AFTER += VirtualBox
@@ -48,7 +48,7 @@ ifndef VBOX_ONLY_DOCS
   ifdef VBOX_WITH_QT4GUI
    SUBDIRS_AFTER += VirtualBox4
   endif
- endif # !VBOX_KBUILD_HACKING
+ endif # !VBOX_SINGLE_MAKEFILE
 endif # !VBOX_ONLY_DOCS
 
 include $(KBUILD_PATH)/subfooter.kmk
