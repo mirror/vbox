@@ -2457,7 +2457,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
                          : "=m" (*pu64),
                            "=r" (u64)
                          : "1" (u64),
-                           "m" (pu64));
+                           "m" (*pu64));
 #  else
     __asm
     {
