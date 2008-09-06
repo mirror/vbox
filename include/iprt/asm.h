@@ -2797,8 +2797,13 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
                          : "A" (u64Old),
                            "m" ( u32EBX ),
                            "c" ( (uint32_t)(u64New >> 32) ),
-                           "S" (pu64),
-                           "m" (*pu64));
+                           "S" (pu64)
+#    ifdef RT_OS_DARWIN
+                         :  "memory"
+#    else
+                         ,  "m" (*pu64)
+#    endif 
+                        );
 #   else /* !PIC */
     uint32_t u32Spill;
     __asm__ __volatile__("lock; cmpxchg8b %2\n\t"
@@ -3681,8 +3686,13 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
                          : "0" (0),
                            "m" (u32EBX),
                            "c" (0),
-                           "S" (pu64),
-                           "m" (*pu64));
+                           "S" (pu64)
+#    ifdef RT_OS_DARWIN
+                         :  "memory"
+#    else
+                         ,  "m" (*pu64)
+#    endif 
+                        );
 #   else /* !PIC */
     __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
                          : "=A" (u64),
@@ -3755,8 +3765,13 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
                          : "0" (0),
                            "m" (u32EBX),
                            "c" (0),
-                           "S" (pu64),
-                           "m" (*pu64));
+                           "S" (pu64)
+#    ifdef RT_OS_DARWIN
+                         :  "memory"
+#    else
+                         ,  "m" (*pu64)
+#    endif 
+                        );
 #   else /* !PIC */
     __asm__ __volatile__("cmpxchg8b %1\n\t"
                          : "=A" (u64),
