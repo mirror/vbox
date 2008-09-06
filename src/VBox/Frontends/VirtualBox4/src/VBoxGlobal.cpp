@@ -4468,7 +4468,7 @@ void VBoxGlobal::init()
     /* process command line */
 
     vm_render_mode_str = 0;
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
 #ifdef VBOX_WITH_DEBUGGER_GUI_MENU
     dbg_enabled = true;
 #else
@@ -4513,7 +4513,7 @@ void VBoxGlobal::init()
             if (++i < argc)
                 vm_render_mode_str = qApp->argv() [i];
         }
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
         else if (!::strcmp (arg, "-dbg"))
         {
             dbg_enabled = true;

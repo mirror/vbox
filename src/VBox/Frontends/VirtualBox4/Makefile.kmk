@@ -40,7 +40,6 @@ VBOX_WITH_UPDATE_REQUEST := 1
 
 # Disable the debugger for now, this is another story.
 VBOX_WITH_DEBUGGER_GUI :=
-DEFS := $(filter-out VBOX_WITH_DEBUGGER_GUI,$(DEFS))
 
 # Guess VBOX_WITH_QT4_SUN
 ifndef VBOX_WITH_QT4_SUN

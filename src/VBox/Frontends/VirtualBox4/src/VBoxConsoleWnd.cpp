@@ -62,7 +62,7 @@
 #include <QPainter>
 #endif
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
 #include <VBox/err.h>
 #endif
 
@@ -114,7 +114,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
                 Qt::WindowFlags aFlags /* = Qt::Window */)
     : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
     , mMainMenu (0)
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     , dbgStatisticsAction (NULL)
     , dbgCommandLineAction (NULL)
     , mDbgMenu (NULL)
@@ -132,7 +132,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     , mIsOpenViewFinished (false)
     , mIsFirstTimeStarted (false)
     , mIsAutoSaveMedia (true)
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     , dbg_gui (NULL)
 #endif
 #ifdef Q_WS_MAC
@@ -261,7 +261,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     devicesInstallGuestToolsAction->setIcon (VBoxGlobal::iconSet (":/guesttools_16px.png",
                                                                      ":/guesttools_disabled_16px.png"));
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     if (vboxGlobal().isDebuggerEnabled())
     {
         dbgStatisticsAction = new QAction (this);
@@ -354,7 +354,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mDevicesMountDVDMenu->menuAction()->setData (false);
     mDevicesUSBMenu->menuAction()->setData (false);
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     /* Debug popup menu */
     if (vboxGlobal().isDebuggerEnabled())
     {
@@ -554,7 +554,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     connect (&vboxGlobal().settings(), SIGNAL (propertyChanged (const char *, const char *)),
              this, SLOT (processGlobalSettingChange (const char *, const char *)));
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     if (dbgStatisticsAction)
         connect (dbgStatisticsAction, SIGNAL (triggered()),
                  this, SLOT (dbgShowStatistics()));
@@ -918,7 +918,7 @@ void VBoxConsoleWnd::finalizeOpenView()
         return;
     }
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     /* open debugger windows if requested */
     if (vboxGlobal().isDebuggerVisibleAtStartup())
     {
@@ -1099,7 +1099,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
                 !isTrueFullscreen() && !isTrueSeamless())
             {
                 mNormalGeo.setSize (re->size());
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
                 dbgAdjustRelativePos();
 #endif
             }
@@ -1119,7 +1119,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
             if (!isMaximized() && !isTrueFullscreen() && !isTrueSeamless())
             {
                 mNormalGeo.moveTo (geometry().x(), geometry().y());
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
                 dbgAdjustRelativePos();
 #endif
             }
@@ -1538,7 +1538,7 @@ void VBoxConsoleWnd::retranslateUi()
     devicesInstallGuestToolsAction->setStatusTip (
         tr ("Mount the Guest Additions installation image"));
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     /* Debug actions */
 
     if (dbgStatisticsAction)
@@ -1566,7 +1566,7 @@ void VBoxConsoleWnd::retranslateUi()
     mDevicesMenu->setTitle (tr ("&Devices"));
 //    mDevicesMenu->setIcon (VBoxGlobal::iconSet (":/settings_16px.png"));
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     if (vboxGlobal().isDebuggerEnabled())
         mDbgMenu->setTitle (tr ("De&bug"));
 #endif
@@ -3390,7 +3390,7 @@ void VBoxConsoleWnd::processGlobalSettingChange (const char * /*publicName*/,
  */
 void VBoxConsoleWnd::dbgShowStatistics()
 {
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     if (dbgCreated())
         DBGGuiShowStatistics (dbg_gui);
 #endif
@@ -3401,13 +3401,13 @@ void VBoxConsoleWnd::dbgShowStatistics()
  */
 void VBoxConsoleWnd::dbgShowCommandLine()
 {
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     if (dbgCreated())
         DBGGuiShowCommandLine (dbg_gui);
 #endif
 }
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
 
 /**
  * Ensures that the debugger GUI instance is ready.
