@@ -444,9 +444,9 @@ endif
 
 ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
  ifeq ($(KBUILD_TARGET),win)
-  VirtualBox_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
+  VirtualBox_LIBS        += $(PATH_LIB)/VBoxDbg3$(VBOX_SUFF_LIB)
  else
-  VirtualBox_LIBS        += $(PATH_DLL)/VBoxDbg$(VBOX_SUFF_DLL)
+  VirtualBox_LIBS        += $(PATH_DLL)/VBoxDbg3$(VBOX_SUFF_DLL)
  endif
 endif
 
