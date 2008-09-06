@@ -35,7 +35,7 @@
 #include <QColor>
 #include <QDialog>
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
 # include <VBox/dbggui.h>
 #endif
 #ifdef Q_WS_MAC
@@ -103,7 +103,7 @@ protected:
 
     void retranslateUi();
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     bool dbgCreated();
     void dbgDestroy();
     void dbgAdjustRelativePos();
@@ -233,7 +233,7 @@ private:
     QAction *devicesSFDialogAction;
     QAction *devicesInstallGuestToolsAction;
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     // Debugger actions
     QAction *dbgStatisticsAction;
     QAction *dbgCommandLineAction;
@@ -263,7 +263,7 @@ private:
     QMenu *mDevicesNetworkMenu;
     VBoxUSBMenu *mDevicesUSBMenu;
     /* VBoxSwitchMenu *mDevicesVRDPMenu; */
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     // Debugger popup menu
     QMenu *mDbgMenu;
 #endif
@@ -323,7 +323,7 @@ private:
     bool mIsFirstTimeStarted : 1;
     bool mIsAutoSaveMedia : 1;
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
+#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
     // Debugger GUI
     PDBGGUI dbg_gui;
 #endif
