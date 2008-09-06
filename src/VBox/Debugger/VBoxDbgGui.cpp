@@ -26,8 +26,13 @@
 #include <VBox/err.h>
 
 #include "VBoxDbgGui.h"
-#include <qdesktopwidget.h>
-#include <qapplication.h>
+#ifdef VBOXDBG_USE_QT4
+# include <QDesktopWidget>
+# include <QApplication>
+#else
+# include <qdesktopwidget.h>
+# include <qapplication.h>
+#endif 
 
 
 VBoxDbgGui::VBoxDbgGui() :
@@ -87,11 +92,13 @@ int VBoxDbgGui::init(ISession *pSession)
 VBoxDbgGui::~VBoxDbgGui()
 {
 
+#ifndef VBOXDBG_USE_QT4
     if (m_pDbgStats)
     {
         delete m_pDbgStats;
         m_pDbgStats = NULL;
     }
+#endif
 
     if (m_pDbgConsole)
     {
@@ -129,6 +136,7 @@ VBoxDbgGui::~VBoxDbgGui()
 
 int VBoxDbgGui::showStatistics()
 {
+#ifndef VBOXDBG_USE_QT4
     if (!m_pDbgStats)
     {
         m_pDbgStats = new VBoxDbgStats(m_pVM);
@@ -136,11 +144,13 @@ int VBoxDbgGui::showStatistics()
         repositionStatistics();
     }
     m_pDbgStats->show();
+#endif 
     return VINF_SUCCESS;
 }
 
 void VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
 {
+#ifndef VBOXDBG_USE_QT4
     if (m_pDbgStats)
     {
         /* Move it to the right side of the VBox console. */
@@ -149,6 +159,7 @@ void VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
             /* Resize it to cover all the space to the left side of the desktop. */
             resizeWidget(m_pDbgStats, m_cxDesktop - m_cx - m_x + m_xDesktop, m_cyDesktop - m_y + m_yDesktop);
     }
+#endif 
 }
 
 
