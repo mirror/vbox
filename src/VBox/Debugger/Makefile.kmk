@@ -108,7 +108,7 @@ VBoxDbg3_LDFLAGS.darwin = \
 #
 # Debugger GUI component (Qt4).
 #
-DLLS += VBoxDbg
+#DLLS += VBoxDbg
 VBoxDbg_TEMPLATE = VBOXQT4GUI
 VBoxDbg_DEFS = IN_DBG_R3 VBOXDBG_USE_QT4
 VBoxDbg_INCS = .
