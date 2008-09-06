@@ -135,7 +135,7 @@ LINUXSTRIPBIN += \
 # Shared Clipboard
 LINUXSTRIPBIN += \
 	VBoxSharedClipboard.so \
-	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,)
+	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg3.so,)
 
 # Shared Info Services
 LINUXSTRIPBIN += \
