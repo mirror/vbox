@@ -25,6 +25,9 @@ VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 # kBuild stuff
 #
 
+# Experimental
+.SECONDTARGETEXPANSION:
+
 # Enable automatic installation of what's built.
 KBUILD_DO_AUTO_INSTALL := 1
 PASSES := $(filter-out PACKING,$(PASSES)) PACKING # temporary hack
