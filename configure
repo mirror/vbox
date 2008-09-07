@@ -1247,7 +1247,7 @@ EOF
       $CXX -O -Wall -o .tmp_out .tmp_src.cc -I$q/include -L$q/$l -lqt-mt $LIBPTHREAD >> $LOG 2>&1
       if [ $? -eq 0 ]; then
         if test_execute; then
-          cnf_append "QTDIR" "`cd $q ; pwd`"
+          cnf_append "PATH_SDK_QT3" "`cd $q ; pwd`"
           found_qt=1
           break
         fi
