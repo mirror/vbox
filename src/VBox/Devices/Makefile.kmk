@@ -302,7 +302,8 @@ endif
 ifdef VBOX_WITH_BUSLOGIC
 DevicesR3_DEFS	       += VBOX_WITH_BUSLOGIC
 DevicesR3_SOURCES      += \
-	Storage/DevBusLogic.cpp
+	Storage/DevBusLogic.cpp \
+	Storage/VBoxSCSI.cpp
 endif
 
 ifdef VBOX_WITH_USB
@@ -840,6 +841,8 @@ ifdef VBOX_WITH_BUSLOGIC
  Drivers_DEFS += VBOX_WITH_BUSLOGIC
  Drivers_SOURCES += \
 	Storage/DrvSCSI.cpp
+ Drivers_SOURCES.linux += \
+	Storage/DrvSCSIHost.cpp
 endif # VBOX_WITH_BUSLOGIC
 
 #
