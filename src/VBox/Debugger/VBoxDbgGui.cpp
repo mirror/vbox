@@ -136,21 +136,22 @@ VBoxDbgGui::~VBoxDbgGui()
 
 int VBoxDbgGui::showStatistics()
 {
-#ifndef VBOXDBG_USE_QT4
     if (!m_pDbgStats)
     {
+#ifdef VBOXDBG_USE_QT4
+        m_pDbgStats = new VBoxDbgStats(m_pVM, "*x*"); /// @todo the QTreeWidget/QTreeView sucks big time. it freezes the app for 30+ seconds. Need to write a new item model I fear. 'ing crap!!!
+#else
         m_pDbgStats = new VBoxDbgStats(m_pVM);
+#endif 
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionStatistics();
     }
     m_pDbgStats->show();
-#endif 
     return VINF_SUCCESS;
 }
 
 void VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
 {
-#ifndef VBOXDBG_USE_QT4
     if (m_pDbgStats)
     {
         /* Move it to the right side of the VBox console. */
@@ -159,7 +160,6 @@ void VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
             /* Resize it to cover all the space to the left side of the desktop. */
             resizeWidget(m_pDbgStats, m_cxDesktop - m_cx - m_x + m_xDesktop, m_cyDesktop - m_y + m_yDesktop);
     }
-#endif 
 }
 
 

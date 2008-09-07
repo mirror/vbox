@@ -108,6 +108,9 @@ public:
         return m_pParent;
     }
 
+#ifdef VBOXDBG_USE_QT4
+    ///virtual bool operator<(const QTreeWidgetItem &other) const;
+#else
     /**
      * Get sort key.
      *
@@ -117,13 +120,9 @@ public:
      */
     virtual QString key(int iColumn, bool fAscending) const
     {
-#ifdef VBOXDBG_USE_QT4
-        /** @todo */ NOREF(iColumn); NOREF(fAscending);
-        return "";
-#else
         return QListViewItem::key(iColumn, fAscending);
-#endif 
     }
+#endif 
 
     /**
      * Logs the tree starting at this item to one of the default logs.
@@ -143,6 +142,17 @@ public:
      */
     void copyTreeToClipboard(void) const;
 
+#ifdef VBOXDBG_USE_QT4
+    void setVisible(bool fVisible)
+    {
+        setHidden(!fVisible);
+    }
+
+    bool isVisible()
+    {
+        return !isHidden();
+    }
+#endif 
 
 protected:
     /** The name of this item. */
@@ -255,19 +265,13 @@ class VBoxDbgStatsView : public QListView, public VBoxDbgBase
     Q_OBJECT;
 
 public:
-#ifdef VBOXDBG_USE_QT4
-    /** @todo */
-#else
     /**
      * Creates a VM statistics list view widget.
      *
      * @param   pVM         The VM which STAM data is being viewed.
      * @param   pParent     Parent widget.
-     * @param   pszName     Widget name.
-     * @param   f           Widget flags.
      */
-    VBoxDbgStatsView(PVM pVM, VBoxDbgStats *pParent = NULL, const char *pszName = NULL, WFlags f = 0);
-#endif
+    VBoxDbgStatsView(PVM pVM, VBoxDbgStats *pParent = NULL);
 
     /** Destructor. */
     virtual ~VBoxDbgStatsView();
@@ -288,6 +292,7 @@ public:
      */
     void reset(const QString &rPatStr);
 
+#ifndef VBOXDBG_USE_QT4
     /**
      * Expand all items in the view.
      */
@@ -297,6 +302,7 @@ public:
      * Collaps all items in the view.
      */
     void collapsAll();
+#endif /* QT3 */
 
 private:
     /**
@@ -383,7 +389,6 @@ class VBoxDbgStats :
     Q_OBJECT;
 
 public:
-#ifdef VBOXDBG_USE_QT4
     /**
      * Creates a VM statistics list view widget.
      *
@@ -393,19 +398,6 @@ public:
      * @param   pParent         Parent widget.
      */
     VBoxDbgStats(PVM pVM, const char *pszPat = NULL, unsigned uRefreshRate= 0, QWidget *pParent = NULL);
-#else
-    /**
-     * Creates a VM statistics list view widget.
-     *
-     * @param   pVM             The VM this is hooked up to.
-     * @param   pszPat          Initial selection pattern. NULL means everything. (See STAM for details.)
-     * @param   uRefreshRate    The refresh rate. 0 means not to refresh and is the default.
-     * @param   pParent         Parent widget.
-     * @param   pszName         Widget name.
-     * @param   f               Widget flags.
-     */
-    VBoxDbgStats(PVM pVM, const char *pszPat = NULL, unsigned uRefreshRate= 0, QWidget *pParent = NULL, const char *pszName = NULL, WFlags f = 0);
-#endif
 
     /** Destructor. */
     virtual ~VBoxDbgStats();

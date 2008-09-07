@@ -28,6 +28,11 @@
 #include <VBox/vmapi.h>
 #include <VBox/dbg.h>
 #include <iprt/thread.h>
+#ifdef VBOXDBG_USE_QT4
+# include <QString>
+#else
+# include <qstring.h>
+#endif 
 
 
 /**
@@ -77,11 +82,11 @@ protected:
     /**
      * Wrapper for STAMR3Reset().
      */
-    int stamReset(const char *pszPat);
+    int stamReset(const QString &rPat);
     /**
      * Wrapper for STAMR3Enum().
      */
-    int stamEnum(const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
+    int stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
     /**
      * Wrapper for DBGCCreate().
      */
