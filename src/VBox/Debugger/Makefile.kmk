@@ -134,14 +134,14 @@ VBoxDbg_INCS = .
 VBoxDbg_QT_MODULES = Core Gui
 VBoxDbg_QT_MOCHDRS = \
 	VBoxDbgGui.h \
-	VBoxDbgConsole.h
-#	VBoxDbgStats.h
+	VBoxDbgConsole.h \
+	VBoxDbgStats.h
 VBoxDbg_SOURCES = \
 	VBoxDbg.cpp \
 	VBoxDbgGui.cpp \
 	VBoxDbgBase.cpp \
-	VBoxDbgConsole.cpp 
-#	VBoxDbgStats.cpp
+	VBoxDbgConsole.cpp \
+	VBoxDbgStats.cpp
 VBoxDbg_LIBS = \
 	$(LIB_VMM)
 VBoxDbg_LDFLAGS.darwin = \

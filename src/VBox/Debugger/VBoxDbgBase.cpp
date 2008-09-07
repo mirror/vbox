@@ -51,15 +51,27 @@ VBoxDbgBase::~VBoxDbgBase()
     }
 }
 
-int VBoxDbgBase::stamReset(const char *pszPat)
+int VBoxDbgBase::stamReset(const QString &rPat)
 {
+#ifdef VBOXDBG_USE_QT4
+    QByteArray Utf8Array = rPat.toUtf8();
+    const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
+#else
+    const char *pszPat = !rPat.isEmpty() ? rPat : NULL;
+#endif 
     if (m_pVM)
         return STAMR3Reset(m_pVM, pszPat);
     return VERR_INVALID_HANDLE;
 }
 
-int VBoxDbgBase::stamEnum(const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
+int VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 {
+#ifdef VBOXDBG_USE_QT4
+    QByteArray Utf8Array = rPat.toUtf8();
+    const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
+#else
+    const char *pszPat = !rPat.isEmpty() ? rPat : NULL;
+#endif 
     if (m_pVM)
         return STAMR3Enum(m_pVM, pszPat, pfnEnum, pvUser);
     return VERR_INVALID_HANDLE;
