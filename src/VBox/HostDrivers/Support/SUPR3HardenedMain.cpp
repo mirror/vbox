@@ -698,7 +698,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     /* This is the preferred one, full control no questions about semantics.
        PORTME: If this isn't work, try join one of two other gangs above. */
     setresgid(gid, gid, gid);
-    setresuid(uid, uid, gid);
+    setresuid(uid, uid, uid);
     if (getresuid(&ruid, &euid, &suid) != 0)
     {
         euid = geteuid();
