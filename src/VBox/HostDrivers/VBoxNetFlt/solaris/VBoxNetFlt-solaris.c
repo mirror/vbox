@@ -2199,6 +2199,9 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
  */
 static PVBOXNETFLTINS vboxNetFltSolarisFindInstance(vboxnetflt_stream_t *pStream)
 {
+    if (!pStream)
+        return NULL;
+
     vboxnetflt_stream_t *pCur = g_VBoxNetFltSolarisState.pOpenedStreams;
     for (; pCur; pCur = pCur->pNext)
         if (pCur == pStream)
