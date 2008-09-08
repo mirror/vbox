@@ -66,9 +66,9 @@
 *******************************************************************************/
 /** The module name. */
 #define DEVICE_NAME              "vboxflt"
+/** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox NetFilter Driver"
 #define DEVICE_DESC_MOD          "VirtualBox NetFilter Module"
-
 
 /** @todo Remove the below hackery once done! */
 #if defined(DEBUG_ramshankar) && defined(LOG_ENABLED)
@@ -369,17 +369,38 @@ int _init(void)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Initialize the globals and connect to the support driver.
-         *
-         * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
-         * for establishing the connect to the support driver.
+         * Initialize Solaris specific globals here.
          */
-        memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
-        rc = vboxNetFltInitGlobals(&g_VBoxNetFltSolarisGlobals);
+        g_VBoxNetFltSolarisState.pOpenedStreams = NULL;
+        g_VBoxNetFltSolarisState.pCurInstance = NULL;
+        rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
         if (RT_SUCCESS(rc))
-            return mod_install(&g_VBoxNetFltSolarisModLinkage);
+        {
+            /*
+             * Initialize the globals and connect to the support driver.
+             *
+             * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
+             * for establishing the connect to the support driver.
+             */
+            memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
+            rc = vboxNetFltInitGlobals(&g_VBoxNetFltSolarisGlobals);
+            if (RT_SUCCESS(rc))
+            {
+                rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
+                if (!rc)
+                    return rc;
+
+                LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
+                vboxNetFltTryDeleteGlobals(&g_VBoxNetFltSolarisGlobals);                
+            }
+            else
+                LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
+
+            RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
+            g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+        }
         else
-            LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
+            LogRel((DEVICE_NAME ":failed to create mutex.\n"));
 
         RTR0Term();
     }
@@ -404,6 +425,12 @@ int _fini(void)
     {
         LogRel((DEVICE_NAME ":_fini - busy!\n"));
         return EBUSY;
+    }
+
+    if (g_VBoxNetFltSolarisMtx != NIL_RTSEMFASTMUTEX)
+    {
+        RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
+        g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
     }
 
     RTR0Term();
@@ -439,27 +466,16 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
     {
         case DDI_ATTACH:
         {
-            int rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
-            if (RT_SUCCESS(rc))
+            int instance = ddi_get_instance(pDip);
+            int rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, CLONE_DEV);
+            if (rc == DDI_SUCCESS)
             {
-                int instance = ddi_get_instance(pDip);
-                int rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, CLONE_DEV);
-                if (rc == DDI_SUCCESS)
-                {
-                    g_VBoxNetFltSolarisState.pDip = pDip;
-                    g_VBoxNetFltSolarisState.pOpenedStreams = NULL;
-                    g_VBoxNetFltSolarisState.pCurInstance = NULL;
-                    ddi_report_dev(pDip);
-                    return DDI_SUCCESS;
-                }
-                else
-                    LogRel((DEVICE_NAME ":VBoxNetFltSolarisAttach failed to create minor node. rc%d\n", rc));
-
-                RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
-                g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+                g_VBoxNetFltSolarisState.pDip = pDip;
+                ddi_report_dev(pDip);
+                return DDI_SUCCESS;
             }
             else
-                LogRel((DEVICE_NAME ":VBoxNetFltSolarisAttach failed to create mutex.rc=%d\n", rc));
+                LogRel((DEVICE_NAME ":VBoxNetFltSolarisAttach failed to create minor node. rc%d\n", rc));
             return DDI_FAILURE;
         }
 
@@ -491,9 +507,6 @@ static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         {
             int instance = ddi_get_instance(pDip);
             ddi_remove_minor_node(pDip, NULL);
-
-            RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
-            g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
             return DDI_SUCCESS;
         }
 
@@ -651,7 +664,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
      * Request the physical address (we cache the acknowledgement).
      */
     if (pStream->Type == kIpStream)
-        vboxNetFltSolarisPhysAddrReq(pQueue);
+        vboxNetFltSolarisPhysAddrReq(pStream->pReadQueue);
 
     /*
      * Enable raw mode.
@@ -1486,19 +1499,16 @@ static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *
 
 /**
  * Dynamically attaches this streams module on to the host stack.
- * As a side-effect, this streams also gets opened during the actual
- * insertion phase.
+ * As a side-effect, this streams also gets opened/closed during
+ * the actual injection/ejection phase.
  *
  * @returns VBox status code.
- * @param   pThis           The instance.
- * @param   fRediscovery    Rediscovery attempt, currently unused on solaris.
+ * @param   pThis       The instance.
+ * @param   fAttach     Is this an attach or detach.
  */
 static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
 {
     LogFlow(("vboxNetFltSolarisModSetup: pThis=%p (%s) fAttach=%s\n", pThis, pThis->szName, fAttach ? "true" : "false"));
-
-    Assert(!g_VBoxNetFltSolarisState.pCurInstance);
-    Assert(g_VBoxNetFltSolarisState.CurType == kUndefined);
 
     /*
      * Statuatory Warning: Hackish code ahead.
@@ -1618,6 +1628,8 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                             {
                                 /*
                                  * Set global data which will be grabbed by ModOpen.
+                                 * There is a known (though very unlikely) race here because
+                                 * of the inability to pass user data while inserting.
                                  */
                                 g_VBoxNetFltSolarisState.pCurInstance = pThis;
                                 g_VBoxNetFltSolarisState.CurType = kIpStream;
@@ -2330,6 +2342,11 @@ static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
 }
 
 
+/**
+ * Simple packet dump, used for internal debugging.
+ *
+ * @param   pMsg    Pointer to the message to analyze and dump.
+ */
 static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltSolarisAnalyzeMBlk pMsg=%p\n"));
@@ -2338,7 +2355,7 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
     if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
     {
         PRTNETIPV4 pIpHdr = (PRTNETIPV4)(pEthHdr + 1);
-        size_t cbLen = MBLKSIZE(pMsg) - sizeof(*pEthHdr);
+        size_t cbLen = MBLKL(pMsg) - sizeof(*pEthHdr);
         if (RTNetIPv4IsHdrValid(pIpHdr, cbLen, cbLen))
         {
             uint8_t *pb = pMsg->b_rptr;
@@ -2396,7 +2413,10 @@ void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
 
 bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
 {
-    /* ASSUMES that the MAC address never changes. */
+    /*
+     * MAC address change acknowledgements are intercepted on the read side
+     * hence theoritically we are always update to date with any changes.
+     */
     return pThis->u.s.Mac.au16[0] == pMac->au16[0]
         && pThis->u.s.Mac.au16[1] == pMac->au16[1]
         && pThis->u.s.Mac.au16[2] == pMac->au16[2];
@@ -2408,7 +2428,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     LogFlow((DEVICE_NAME ":vboxNetFltPortOsSetActive pThis=%p fActive=%d\n", pThis, fActive));
 
     /*
-     * Enable promiscuous mode.
+     * Enable/disable promiscuous mode.
      */
     vboxnetflt_stream_t *pStream = pThis->u.s.pvStream;
     Assert(pStream->Type == kIpStream);
@@ -2460,7 +2480,11 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
 
 bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 {
-    return true;
+    /*
+     * We don't support interface rediscovery on Solaris hosts because the
+     * filter is very tightly bound to the stream.
+     */
+    return false;
 }
 
 
