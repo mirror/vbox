@@ -31,9 +31,12 @@ VBoxVideo.Display  = 11 ; system32
 
 [Manufacturer]
 ;x86   %SUN%=Model
-;amd64 %SUN%=Model, NTamd64.6.0
+;amd64 %SUN%=Model, NTamd64, NTamd64.6.0
 
 ;x86   [Model]
+;amd64 [Model.NTamd64]
+%VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
+
 ;amd64 [Model.NTamd64.6.0]
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
