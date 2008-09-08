@@ -61,7 +61,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* General page */
     prefPage = new VBoxGLSettingsGeneral();
-    page = mSelector->addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", "",
+    page = mSelector->addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", ":/machine_disabled_16px.png",
                                GeneralId, "#general",
                                prefPage);
     if (page)
@@ -88,7 +88,7 @@ VBoxGLSettingsDlg::VBoxGLSettingsDlg (QWidget *aParent)
 
     /* Language page */
     prefPage = new VBoxGLSettingsLanguage();
-    page = mSelector->addItem (":/site_32px.png", ":/site_disabled_32px.png", ":/site_16px.png", "",
+    page = mSelector->addItem (":/site_32px.png", ":/site_disabled_32px.png", ":/site_16px.png", ":/site_disabled_16px.png",
                                LanguageId, "#language",
                                prefPage);
     if (page)
@@ -223,7 +223,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* General page */
     prefPage = new VBoxVMSettingsGeneral();
     connect (prefPage, SIGNAL (tableChanged()), this, SLOT (resetFirstRunFlag()));
-    addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", "",
+    addItem (":/machine_32px.png", ":/machine_disabled_32px.png", ":/machine_16px.png", ":/machine_disabled_16px.png",
              GeneralId, "#general",
              prefPage);
 
@@ -254,7 +254,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 
     /* Audio page */
     prefPage = new VBoxVMSettingsAudio();
-    addItem (":/sound_32px.png", ":/sound_disabled_32px.png", ":/sound_16px.png", "",
+    addItem (":/sound_32px.png", ":/sound_disabled_32px.png", ":/sound_16px.png", ":/sound_disabled_16px.png",
              AudioId, "#audio",
              prefPage);
 
