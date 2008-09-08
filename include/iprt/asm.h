@@ -2837,7 +2837,11 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
                          "movzbl %%al, %%eax\n\t"
                          : "=a" (u32Ret),
                            "=d" (u32Spill),
+#    if (__GNUC__ * 100 + __GNUC_MINOR__) >= 403
                            "+m" (*pu64)
+#    else
+                           "=m" (*pu64)
+#    endif
                          : "A" (u64Old),
                            "m" ( u32EBX ),
                            "c" ( (uint32_t)(u64New >> 32) ),
@@ -3719,7 +3723,11 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
                          "lock; cmpxchg8b (%5)\n\t"
                          "movl %3, %%ebx\n\t"
                          : "=A" (u64),
+#    if (__GNUC__ * 100 + __GNUC_MINOR__) >= 403
                            "+m" (*pu64)
+#    else
+                           "=m" (*pu64)
+#    endif
                          : "0" (0),
                            "m" (u32EBX),
                            "c" (0),
@@ -3795,7 +3803,11 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
                          "lock; cmpxchg8b (%4)\n\t"
                          "movl %3, %%ebx\n\t"
                          : "=A" (u64),
+#    if (__GNUC__ * 100 + __GNUC_MINOR__) >= 403
                            "+m" (*pu64),
+#    else
+                           "=m" (*pu64),
+#    endif
                            "=c" (u32Spill)
                          : "m" (u32EBX),
                            "S" (pu64));
