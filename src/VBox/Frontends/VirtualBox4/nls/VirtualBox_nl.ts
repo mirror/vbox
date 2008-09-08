@@ -1487,7 +1487,7 @@ Version %1</source>
     <name>VBoxGLSettingsUpdate</name>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
-        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox verison is available.</source>
+        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5638,7 +5638,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

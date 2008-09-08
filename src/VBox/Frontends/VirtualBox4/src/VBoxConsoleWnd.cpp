@@ -3296,23 +3296,23 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     /* Check the Guest Additions version and warn the user about possible
      * compatibility issues in case if the installed version is outdated. */
     uint version = aVersion.toUInt();
-    QString verisonStr = QString ("%1.%2")
+    QString versionStr = QString ("%1.%2")
         .arg (RT_HIWORD (version)).arg (RT_LOWORD (version));
     QString expectedStr = QString ("%1.%2")
         .arg (VMMDEV_VERSION_MAJOR).arg (VMMDEV_VERSION_MINOR);
 
     if (RT_HIWORD (version) < VMMDEV_VERSION_MAJOR)
     {
-        vboxProblem().warnAboutTooOldAdditions (this, verisonStr, expectedStr);
+        vboxProblem().warnAboutTooOldAdditions (this, versionStr, expectedStr);
     }
     else if (RT_HIWORD (version) == VMMDEV_VERSION_MAJOR &&
              RT_LOWORD (version) <  VMMDEV_VERSION_MINOR)
     {
-        vboxProblem().warnAboutOldAdditions (this, verisonStr, expectedStr);
+        vboxProblem().warnAboutOldAdditions (this, versionStr, expectedStr);
     }
     else if (version > VMMDEV_VERSION)
     {
-        vboxProblem().warnAboutNewAdditions (this, verisonStr, expectedStr);
+        vboxProblem().warnAboutNewAdditions (this, versionStr, expectedStr);
     }
 }
 

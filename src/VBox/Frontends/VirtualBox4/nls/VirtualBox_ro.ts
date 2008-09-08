@@ -2127,7 +2127,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <name>VBoxGLSettingsUpdate</name>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
-        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox verison is available.</source>
+        <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Când este selectat, aplicația se va conecta periodic la website-ul VirtualBox și va verifica dacă sunt disponibile versiuni mai noi ale VirtualBox.</translation>
     </message>
     <message>
@@ -10078,7 +10078,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
-        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB ECHI controller provides USB 2.0 support.</source>
+        <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation>Când este bifat, activează controlorul virtual USB EHCI al acestei mașini. Controlorul USB EHCI oferă suport USB 2.0.</translation>
     </message>
     <message>
