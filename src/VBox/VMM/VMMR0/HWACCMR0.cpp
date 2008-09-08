@@ -751,7 +751,7 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
      * Check if host debug registers are armed. All context switches set DR7 back to 0x400.
      */
     uint64_t u64DR7 = ASMGetDR7();
-    if (u64DR7 & X86_DR7_ENABLED_MASK)
+    if (u64DR7 & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
     {
         pVM->hwaccm.s.savedhoststate.dr7  = u64DR7;
         pVM->hwaccm.s.savedhoststate.fHostDR7Saved = true;
