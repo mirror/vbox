@@ -2537,8 +2537,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
                            "=m" (*pu64)
                          : "0" (*pu64),
                            "b" ( (uint32_t)u64 ),
-                           "c" ( (uint32_t)(u64 >> 32) ),
-                           "m" (*pu64));
+                           "c" ( (uint32_t)(u64 >> 32) ));
 #   endif
 #  else
     __asm
@@ -2838,17 +2837,11 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
                          "movzbl %%al, %%eax\n\t"
                          : "=a" (u32Ret),
                            "=d" (u32Spill),
-                           "=m" (*pu64)
+                           "+m" (*pu64)
                          : "A" (u64Old),
                            "m" ( u32EBX ),
                            "c" ( (uint32_t)(u64New >> 32) ),
-                           "S" (pu64)
-#    ifdef RT_OS_DARWIN
-                         :  "memory"
-#    else
-                         ,  "m" (*pu64)
-#    endif
-                        );
+                           "S" (pu64));
 #   else /* !PIC */
     uint32_t u32Spill;
     __asm__ __volatile__("lock; cmpxchg8b %2\n\t"
@@ -2856,11 +2849,10 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
                          "movzbl %%al, %%eax\n\t"
                          : "=a" (u32Ret),
                            "=d" (u32Spill),
-                           "=m" (*pu64)
+                           "+m" (*pu64)
                          : "A" (u64Old),
                            "b" ( (uint32_t)u64New ),
-                           "c" ( (uint32_t)(u64New >> 32) ),
-                           "m" (*pu64));
+                           "c" ( (uint32_t)(u64New >> 32) ));
 #   endif
     return (bool)u32Ret;
 #  else
@@ -3727,25 +3719,18 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
                          "lock; cmpxchg8b (%5)\n\t"
                          "movl %3, %%ebx\n\t"
                          : "=A" (u64),
-                           "=m" (*pu64)
+                           "+m" (*pu64)
                          : "0" (0),
                            "m" (u32EBX),
                            "c" (0),
-                           "S" (pu64)
-#    ifdef RT_OS_DARWIN
-                         :  "memory"
-#    else
-                         ,  "m" (*pu64)
-#    endif
-                        );
+                           "S" (pu64));
 #   else /* !PIC */
     __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
                          : "=A" (u64),
-                           "=m" (*pu64)
+                           "+m" (*pu64)
                          : "0" (0),
                            "b" (0),
-                           "c" (0),
-                           "m" (*pu64));
+                           "c" (0));
 #   endif
 #  else
     Assert(!((uintptr_t)pu64 & 7));
@@ -3806,25 +3791,18 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
                          "lock; cmpxchg8b (%5)\n\t"
                          "movl %3, %%ebx\n\t"
                          : "=A" (u64),
-                           "=m" (*pu64)
+                           "+m" (*pu64)
                          : "0" (0),
                            "m" (u32EBX),
                            "c" (0),
-                           "S" (pu64)
-#    ifdef RT_OS_DARWIN
-                         :  "memory"
-#    else
-                         ,  "m" (*pu64)
-#    endif
-                        );
+                           "S" (pu64));
 #   else /* !PIC */
     __asm__ __volatile__("cmpxchg8b %1\n\t"
                          : "=A" (u64),
-                           "=m" (*pu64)
+                           "+m" (*pu64)
                          : "0" (0),
                            "b" (0),
-                           "c" (0),
-                           "m" (*pu64));
+                           "c" (0));
 #   endif
 #  else
     Assert(!((uintptr_t)pu64 & 7));
