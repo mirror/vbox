@@ -24,12 +24,11 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_KCHMVIEWER
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-4.3),)
-  # subdirectory currently not possible because of _QT_MOCHDRS
-  SUBDIRS_AFTER += kchmviewer-4.3
+  include $(PATH_SUB_CURRENT)/kchmviewer-4.3/Makefile.kmk
  endif
 endif
-ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
- ifeq ($(KBUILD_TARGET),linux)
+ifeq ($(KBUILD_TARGET),linux)
+ ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
   include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
  endif
 endif
