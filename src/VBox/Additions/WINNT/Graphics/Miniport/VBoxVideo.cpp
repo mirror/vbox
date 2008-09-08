@@ -21,6 +21,7 @@
 #include "VBoxVideo.h"
 #include "Helper.h"
 
+#include <iprt/log.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxDev.h>
 #include <VBox/VBoxVideo.h>
@@ -148,6 +149,8 @@ VP_STATUS VBoxRegistryCallback(PVOID HwDeviceExtension, PVOID Context,
 static VIDEO_MODE_INFORMATION VideoModes[MAX_VIDEO_MODES + 2] = { 0 };
 /* number of available video modes, set by VBoxBuildModesTable  */
 static uint32_t gNumVideoModes = 0;
+
+static uint32_t g_xresNoVRAM = 0, g_yresNoVRAM = 0, g_bppNoVRAM = 0;
 
 /**
  * Helper function to dynamically build our table of standard video
@@ -688,8 +691,19 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                     dprintf(("VBoxVideo: error %d writing CustomBPP\n", status));
             }
             else
+            {
                 dprintf(("VBoxVideo: invalid parameters for special mode: (xres = %d, yres = %d, bpp = %d, vramSize = %d)\n",
                          xres, yres, bpp, vramSize));
+                if (xres * yres * (bpp / 8) >= vramSize
+                    && (xres != g_xresNoVRAM || yres != g_yresNoVRAM || bpp != g_bppNoVRAM))
+                {
+                    LogRel(("VBoxVideo: not enough VRAM for video mode %dx%dx%dbpp. Available: %d bytes. Required: more than %d bytes.\n",
+                            xres, yres, bpp, vramSize, xres * yres * (bpp / 8)));
+                    g_xresNoVRAM = xres;
+                    g_yresNoVRAM = yres;
+                    g_bppNoVRAM = bpp;
+                }
+            }
         }
         else
             dprintf(("VBoxVideo: host does not like special mode: (xres = %d, yres = %d, bpp = %d)\n",
