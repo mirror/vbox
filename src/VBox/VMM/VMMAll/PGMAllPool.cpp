@@ -3613,7 +3613,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         return VINF_SUCCESS;
     }
     /* Safety precaution in case we change the paging for other modes too in the future. */
-    AssertFatal(PGMGetHyperCR3(CTXSUFF(pPool->pVM)) != pPage->Core.Key);
+    AssertFatalMsg(PGMGetHyperCR3(CTXSUFF(pPool->pVM)) != pPage->Core.Key, ("Can't free the shadow CR3! (%VGp vs %VGp kind=%d\n", PGMGetHyperCR3(CTXSUFF(pPool->pVM)), pPage->Core.Key, pPage->enmKind));
 
     /*
      * Mark the page as being in need of a ASMMemZeroPage().
