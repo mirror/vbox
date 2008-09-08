@@ -153,6 +153,8 @@ typedef struct DEVPCBIOS
     uint8_t        u8IOAPIC;
     /** PXE debug logging enabled? */
     uint8_t        u8PXEDebug;
+    /** Number of logical CPUs in guest */
+    uint16_t       u16numCPUs;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 #pragma pack(1)
@@ -499,28 +501,52 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Memory sizes.
      */
+    uint64_t ramInK = pThis->cbRam / _1K;
+    uint64_t above4GInK, below4GInK;
+    if (ramInK > 0xe0000000)
+    {
+        above4GInK = ramInK - 0xe0000000;
+        below4GInK = 0xe0000000;
+    }
+    else
+    {
+        above4GInK = 0;
+        below4GInK = ramInK;
+    }
+
+
     /* base memory. */
-    u32 = pThis->cbRam > 640 ? 640 : (uint32_t)pThis->cbRam / _1K;
+    u32 = below4GInK > 640 ? 640 : (uint32_t)below4GInK;
     pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);                                 /* 15h - Base Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);                                   /* 16h - Base Memory in K, High Byte */
 
     /* Extended memory, up to 65MB */
-    u32 = pThis->cbRam >= 65 * _1M ? 0xffff : ((uint32_t)pThis->cbRam - _1M) / _1K;
+    u32 = below4GInK >= 65 * _1K ? 0xffff : ((uint32_t)below4GInK - _1K);
     pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);                                 /* 17h - Extended Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);                                   /* 18h - Extended Memory in K, High Byte */
     pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);                                 /* 30h - Extended Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB */
-    if (pThis->cbRam > 16 * _1M)
+    if (below4GInK > 16 * _1K)
     {
-        u32 = (uint32_t)( (pThis->cbRam - 16 * _1M) / _64K );
+        u32 = (uint32_t)( (below4GInK - 16 * _1K) / 64 );
         u32 = RT_MIN(u32, 0xffff);
     }
     else
         u32 = 0;
     pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
     pcbiosCmosWrite(pDevIns, 0x35, u32 >> 8);
+
+    /* RAM above 4G */
+    pcbiosCmosWrite(pDevIns, 0x61, above4GInK >> 16);
+    pcbiosCmosWrite(pDevIns, 0x62, above4GInK >> 24);
+    pcbiosCmosWrite(pDevIns, 0x63, above4GInK >> 32);
+
+    /*
+     * Number of CPUs.
+     */
+    pcbiosCmosWrite(pDevIns, 0x60, pThis->u16numCPUs & 0xff);
 
     /*
      * Bochs BIOS specifics - boot device.
