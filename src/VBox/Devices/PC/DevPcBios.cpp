@@ -88,7 +88,7 @@
  *          0x58 - 0x5f
  *     Number of CPUs:
  *          0x60
- *     RAM above 4G (in 64K units):
+ *     RAM above 4G (in 64M units):
  *          0x61 - 0x63
  */
 
@@ -1330,6 +1330,15 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"RamSize\" as integer failed"));
+
+#if 0
+    rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &pThis->u16numCPUs, 1);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
+#else
+    pThis->u16numCPUs = 1;
+#endif
 
     rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
