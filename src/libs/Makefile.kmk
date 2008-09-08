@@ -31,17 +31,15 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Compression libs used by IPRT and <what was it again?>.
 include $(PATH_SUB_CURRENT)/liblzf-1.51/Makefile.kmk
-if !defined(VBOX_ONLY_SDK)
- ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
-  include $(PATH_SUB_CURRENT)/zlib-1.2.1/Makefile.kmk
- endif
+if !defined(VBOX_ONLY_SDK) \
+ && "$(SDK_VBOX_ZLIB_INCS)" == "$(PATH_ROOT)/src/libs/zlib-1.2.1"
+ include $(PATH_SUB_CURRENT)/zlib-1.2.1/Makefile.kmk
 endif
 
 # PNG support (for screenshots).
-if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK)
- ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
-  include $(PATH_SUB_CURRENT)/libpng-1.2.8/Makefile.kmk
- endif
+if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) \
+ && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.2.8"
+ include $(PATH_SUB_CURRENT)/libpng-1.2.8/Makefile.kmk
 endif # !VBOX_ONLY_DOCS
 
 # The kStuff lib used by IPRT and the debugger.
@@ -50,10 +48,9 @@ ifdef IPRT_WITH_KSTUFF
 endif
 
 # OpenSSL for VRDP.
-if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK)
- ifeq ($(SDK_VBOX_OPENSSL_INCS),$(SDK_VBOX_OPENSSL_DEFAULT_INCS))
-  include $(PATH_SUB_CURRENT)/openssl-0.9.8h/Makefile.kmk
- endif
+if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) \
+ && "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_DEFAULT_INCS)"
+ include $(PATH_SUB_CURRENT)/openssl-0.9.8h/Makefile.kmk
 endif
 
 
