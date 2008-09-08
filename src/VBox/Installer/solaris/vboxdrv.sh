@@ -37,14 +37,30 @@ info()
 check_if_installed()
 {
     cputype=`isainfo -k`
-    modulepath="$MODDIR32/$MODNAME"    
+    modulepath="$MODDIR32/$MODNAME"
     if test "$cputype" = "amd64"; then
         modulepath="$MODDIR64/$MODNAME"
     fi
     if test -f "$modulepath"; then
         return 0
     fi
-    abort "VirtualBox kernel module NOT installed."
+
+    # Let us go a step further and check if user has mixed up x86/amd64
+    # amd64 ISA, x86 kernel module??
+    if test "$cputype" = "amd64"; then
+        modulepath="$MODDIR32/$MODNAME"
+        if test -f "$modulepath"; then
+            abort "## Found x86 module instead of amd64. Please install the amd64 package!"
+        fi
+    else
+        # x86 ISA, amd64 kernel module??
+        modulepath="$MODDIR64/$MODNAME"
+        if test -f "$modulepath"; then
+            abort "## Found amd64 module instead of x86. Please install the x86 package!"
+        fi
+    fi
+
+    abort "## VirtualBox kernel module NOT installed."
 }
 
 module_loaded()
