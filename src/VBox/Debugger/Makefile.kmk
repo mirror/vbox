@@ -77,9 +77,9 @@ if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
 #
 # Debugger GUI component (Qt3).
 #
+USES += qt3
 DLLS += VBoxDbg3
 VBoxDbg3_TEMPLATE = VBOXQTGUI
-USES += qt3
 VBoxDbg3_USES = qt3
 VBoxDbg3_QTTOOL = QT3
 VBoxDbg3_DEFS = IN_DBG_R3
@@ -127,6 +127,7 @@ if defined(VBOX_WITH_QT4GUI) && defined(VBOX_WITH_DEBUGGER_GUI) && $(USER) == bi
 #
 # Debugger GUI component (Qt4).
 #
+USES += qt4
 DLLS += VBoxDbg
 VBoxDbg_TEMPLATE = VBOXQT4GUI
 VBoxDbg_DEFS = IN_DBG_R3 VBOXDBG_USE_QT4
