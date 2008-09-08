@@ -1274,7 +1274,8 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
 
             default:
             {
-                Log(("VBoxGuestCommonIOCtl: Unkown request %#x\n", iFunction));
+                Log(("VBoxGuestCommonIOCtl: Unknown request iFunction=%#x Stripped size=%#x\n", iFunction,
+                                VBOXGUEST_IOCTL_STRIP_SIZE(iFunction)));
                 rc = VERR_NOT_SUPPORTED;
                 break;
             }
