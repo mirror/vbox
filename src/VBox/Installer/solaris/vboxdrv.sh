@@ -85,7 +85,7 @@ start_module()
     if module_loaded; then
         info "VirtualBox kernel module already loaded."
     else
-    	if test -n "_HARDENED_"; then
+        if test -n "_HARDENED_"; then
             /usr/sbin/add_drv -m'* 0600 root sys' $MODNAME
         else
             /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME
@@ -121,11 +121,7 @@ start_vboxflt()
     if vboxflt_module_loaded; then
         info "VirtualBox NetFilter kernel module already loaded."
     else
-    	if test -n "_HARDENED_"; then
-            /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME
-        else
-            /usr/sbin/add_drv -m'* 0666 root sys' $FLTMODNAME
-        fi
+        /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME
         /usr/sbin/modload -p drv/$FLTMODNAME
         if test ! vboxflt_module_loaded; then
             abort "## Failed to load VirtualBox NetFilter kernel module."
