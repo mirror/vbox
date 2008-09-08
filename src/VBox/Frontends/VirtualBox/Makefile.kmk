@@ -20,7 +20,7 @@
 #
 
 # TESTING
-#USE_KBUILD_QT3_UNIT = 1
+USE_KBUILD_QT3_UNIT = 1
 
 DEPTH = ../../../..
 include $(KBUILD_PATH)/header.kmk
