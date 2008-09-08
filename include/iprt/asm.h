@@ -3787,14 +3787,15 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
 #   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
     uint32_t u32EBX = 0;
     Assert(!((uintptr_t)pu64 & 7));
-    __asm__ __volatile__("xchgl %%ebx, %3\n\t"
-                         "lock; cmpxchg8b (%5)\n\t"
+    __asm__ __volatile__("xor   %%eax,%%eax\n\t"
+                         "xor   %%ecx,%%ecx\n\t"
+                         "xor   %%edx,%%edx\n\t"
+                         "xchgl %%ebx, %2\n\t"
+                         "lock; cmpxchg8b (%3)\n\t"
                          "movl %3, %%ebx\n\t"
                          : "=A" (u64),
                            "+m" (*pu64)
-                         : "0" (0),
-                           "m" (u32EBX),
-                           "c" (0),
+                         : "m" (u32EBX),
                            "S" (pu64));
 #   else /* !PIC */
     __asm__ __volatile__("cmpxchg8b %1\n\t"
