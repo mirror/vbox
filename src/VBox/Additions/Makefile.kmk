@@ -136,14 +136,13 @@ ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
  	VBoxLinuxAdditions-x86.run=$(VBOX_PATH_ADDITIONS.linux.x86)/VBoxLinuxAdditions.run
 endif
 
-# Solaris has only one additions package containing both 32-bit and 64-bit additions
 ifdef VBOX_WITH_ADDITIONS_ISO.solaris.amd64
  VBOX_PATH_ADDITIONS.solaris = $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions
- GUESTADDITIONS_FILESPEC.solaris = \
+ GUESTADDITIONS_FILESPEC.solaris.amd64 = \
  	VBoxSolarisAdditions-amd64.pkg=$(VBOX_PATH_ADDITIONS.solaris)/VBoxSolarisAdditions.pkg
 endif
 ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
- VBOX_PATH_ADDITIONS.solaris = $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions
+ VBOX_PATH_ADDITIONS.solaris.x86 = $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.solaris = \
  	VBoxSolarisAdditions-x86.pkg=$(VBOX_PATH_ADDITIONS.solaris)/VBoxSolarisAdditions.pkg
 endif
