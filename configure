@@ -1272,6 +1272,11 @@ EOF
       fail
     else
       log_success "found version $moc_ver"
+      # cnf_append "VBOX_PATH_QT3" "$q" - later/never?
+      cnf_append "PATH_SDK_QT3"      "$q"
+      cnf_append "PATH_SDK_QT3_LIB"  "$q/$l"
+      cnf_append "PATH_SDK_QT3_INC"  "$q/include"
+      cnf_append "PATH_TOOL_QT3_BIN" "$q/bin"
     fi
   fi
 }
@@ -1404,6 +1409,7 @@ EOF
                 cnf_append "VBOX_PATH_QT4" "$q"
                 cnf_append "PATH_SDK_QT4" "$q"
                 cnf_append "PATH_TOOL_QT4" "$q"
+                cnf_append "PATH_TOOL_QT4_BIN" "$q/bin"
                 return
               fi
             fi
