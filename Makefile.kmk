@@ -22,20 +22,21 @@
 SUB_DEPTH = .
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_WITH_DOCS
- ifndef VBOX_ONLY_ADDITIONS
-  ifdef VBOX_SINGLE_MAKEFILE
-   include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
-  else
-   SUBDIRS = doc/manual
-  endif
- endif
-endif
+#
+# Sub-makefiles / Sub-directories.
+#
 ifdef VBOX_SINGLE_MAKEFILE
+ if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS)
+  include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
+ endif
  include $(PATH_SUB_CURRENT)/src/Makefile.kmk
 else
+ if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS)
+  SUBDIRS = doc/manual
+ endif
  SUBDIRS += src
 endif
+
 
 ifndef VBOX_ONLY_DOCS
 ifndef VBOX_ONLY_ADDITIONS
