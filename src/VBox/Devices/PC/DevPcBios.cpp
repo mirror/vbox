@@ -45,6 +45,9 @@
  * The BIOS uses a CMOS to store configuration data.
  * It is currently used as follows:
  *
+ * @todo Mark which bits are compatible with which BIOSes and
+ *       which are our own definitions.
+ *
  *     Base memory:
  *          0x15
  *          0x16
@@ -90,6 +93,11 @@
  *          0x60
  *     RAM above 4G (in 64M units):
  *          0x61 - 0x63
+ *
+ * @todo r=bird: Is the 0x61 - 0x63 range defined by AMI,
+ *       PHOENIX or AWARD? If not I'd say 64MB units is a bit
+ *       too big, besides it forces unnecessary math stuff onto
+ *       the BIOS.
  */
 
 
@@ -154,7 +162,7 @@ typedef struct DEVPCBIOS
     /** PXE debug logging enabled? */
     uint8_t        u8PXEDebug;
     /** Number of logical CPUs in guest */
-    uint16_t       u16numCPUs;
+    uint16_t       cCpus;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 #pragma pack(1)
@@ -501,36 +509,38 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Memory sizes.
      */
-    uint64_t ramInK = pThis->cbRam / _1K;
-    uint64_t above4GInK, below4GInK;
-    if (ramInK > 0xe0000000)
+#if 0
+    uint64_t cKBRam = pThis->cbRam / _1K;
+    uint64_t cKBAbove4GB = 0;
+    uint32_t cKBBelow4GB = cKBRam;
+    AssertRelease(cKBBelow4GB == cKBRam);
+    if (cKBRam > UINT32_C(0xe0000000)) /** @todo this limit must be picked up from CFGM and coordinated with MM/PGM! */
     {
-        above4GInK = ramInK - 0xe0000000;
-        below4GInK = 0xe0000000;
+        cKBAbove4GB = cKBRam - UINT32_C(0xe0000000);
+        cKBBelow4GB = UINT32_C(0xe0000000);
     }
     else
     {
-        above4GInK = 0;
-        below4GInK = ramInK;
+        cKBAbove4GB = 0;
+        cKBBelow4GB = cKBRam;
     }
 
-
     /* base memory. */
-    u32 = below4GInK > 640 ? 640 : (uint32_t)below4GInK;
+    u32 = cKBBelow4GB > 640 ? 640 : cKBBelow4GB;
     pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);                                 /* 15h - Base Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);                                   /* 16h - Base Memory in K, High Byte */
 
     /* Extended memory, up to 65MB */
-    u32 = below4GInK >= 65 * _1K ? 0xffff : ((uint32_t)below4GInK - _1K);
+    u32 = cKBBelow4GB >= 65 * _1K ? 0xffff : (cKBBelow4GB - _1K);
     pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);                                 /* 17h - Extended Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);                                   /* 18h - Extended Memory in K, High Byte */
     pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);                                 /* 30h - Extended Memory in K, Low Byte */
     pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB */
-    if (below4GInK > 16 * _1K)
+    if (cKBBelow4GB > 16 * _1K)
     {
-        u32 = (uint32_t)( (below4GInK - 16 * _1K) / 64 );
+        u32 = (uint32_t)( (cKBBelow4GB - 16 * _1K) / 64 );
         u32 = RT_MIN(u32, 0xffff);
     }
     else
@@ -538,15 +548,40 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
     pcbiosCmosWrite(pDevIns, 0x35, u32 >> 8);
 
-    /* RAM above 4G */
-    pcbiosCmosWrite(pDevIns, 0x61, above4GInK >> 16);
-    pcbiosCmosWrite(pDevIns, 0x62, above4GInK >> 24);
-    pcbiosCmosWrite(pDevIns, 0x63, above4GInK >> 32);
+    /* RAM above 4G, in 64MB units (needs discussing, see comments and @todos elsewhere). */
+    pcbiosCmosWrite(pDevIns, 0x61, cKBAbove4GB >> 16);
+    pcbiosCmosWrite(pDevIns, 0x62, cKBAbove4GB >> 24);
+    pcbiosCmosWrite(pDevIns, 0x63, cKBAbove4GB >> 32);
+
+#else  /* old code. */
+    /* base memory. */
+    u32 = pThis->cbRam > 640 ? 640 : (uint32_t)pThis->cbRam / _1K; /* <-- this test is wrong, but it doesn't matter since we never assign less than 1MB */
+    pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);                                 /* 15h - Base Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);                                   /* 16h - Base Memory in K, High Byte */
+
+    /* Extended memory, up to 65MB */
+    u32 = pThis->cbRam >= 65 * _1M ? 0xffff : ((uint32_t)pThis->cbRam - _1M) / _1K;
+    pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);                                 /* 17h - Extended Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);                                   /* 18h - Extended Memory in K, High Byte */
+    pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);                                 /* 30h - Extended Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
+
+    /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB */
+    if (pThis->cbRam > 16 * _1M)
+    {
+        u32 = (uint32_t)( (pThis->cbRam - 16 * _1M) / _64K );
+        u32 = RT_MIN(u32, 0xffff);
+    }
+    else
+        u32 = 0;
+    pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x35, u32 >> 8);
+#endif /* old code */
 
     /*
      * Number of CPUs.
      */
-    pcbiosCmosWrite(pDevIns, 0x60, pThis->u16numCPUs & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x60, pThis->cCpus & 0xff);
 
     /*
      * Bochs BIOS specifics - boot device.
@@ -1307,6 +1342,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "PXEDebug\0"
                               "UUID\0"
                               "IOAPIC\0"
+                              "NumCPUs\0"
                               "DmiBIOSVendor\0"
                               "DmiBIOSVersion\0"
                               "DmiBIOSReleaseDate\0"
@@ -1331,14 +1367,10 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"RamSize\" as integer failed"));
 
-#if 0
-    rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &pThis->u16numCPUs, 1);
+    rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &pThis->cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
-#else
-    pThis->u16numCPUs = 1;
-#endif
 
     rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
