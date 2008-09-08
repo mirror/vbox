@@ -121,6 +121,7 @@ include $(PATH_SUB_CURRENT)/VBoxUI.pro
 #
 # VirtualBox4 - The GUI program.
 #
+USES += qt4
 VirtualBox4_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE)
 VirtualBox4_NAME = VirtualBox
 ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
