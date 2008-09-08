@@ -75,6 +75,7 @@ private slots:
     void onActivated (int aIndex);
     void copyToClipboard();
     void refreshText();
+    void setPathInternal (const QString &aText);
 
 private:
 
@@ -93,6 +94,8 @@ private:
     QString mNoneTip;
     bool mIsEditableMode;
     bool mIsMouseAwaited;
+
+    bool mModified;
 };
 
 #endif /* __VBoxFilePathSelectorWidget_h__ */
