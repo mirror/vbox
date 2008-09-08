@@ -1576,17 +1576,9 @@ else
 endif
 
 SDK_VBOX_OPENSSL      = .
-if1of ($(KBUILD_TARGET), darwin linux solaris win)
- ifdef VBOX_SINGLE_MAKEFILE
-  SDK_VBOX_OPENSSL_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-headers/include
- else
-  SDK_VBOX_OPENSSL_DEFAULT_INCS := $(PATH_OUT)/obj/src/libs/openssl-0.9.8h/crypto-headers/include
- endif
- SDK_VBOX_OPENSSL_INCS ?= $(SDK_VBOX_OPENSSL_DEFAULT_INCS)
-else
- SDK_VBOX_OPENSSL_INCS ?= $(PATH_ROOT)/src/libs/openssl-0.9.7e/include
-endif
-SDK_VBOX_OPENSSL_LIBS?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+SDK_VBOX_OPENSSL_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-headers/include
+SDK_VBOX_OPENSSL_INCS ?= $(SDK_VBOX_OPENSSL_DEFAULT_INCS)
+SDK_VBOX_OPENSSL_LIBS ?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 # Build entire openssl library, not just the minimal subset.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL=1
