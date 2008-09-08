@@ -19,7 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
+if 1 #def VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
@@ -31,12 +31,14 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Compression libs used by IPRT and <what was it again?>.
 include $(PATH_SUB_CURRENT)/liblzf-1.51/Makefile.kmk
-ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
- include $(PATH_SUB_CURRENT)/zlib-1.2.1/Makefile.kmk
+if !defined(VBOX_ONLY_SDK)
+ ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
+  include $(PATH_SUB_CURRENT)/zlib-1.2.1/Makefile.kmk
+ endif
 endif
 
 # PNG support (for screenshots).
-ifndef VBOX_ONLY_DOCS
+if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK)
  ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
   include $(PATH_SUB_CURRENT)/libpng-1.2.8/Makefile.kmk
  endif
@@ -48,38 +50,34 @@ ifdef IPRT_WITH_KSTUFF
 endif
 
 # OpenSSL for VRDP.
-ifndef VBOX_ONLY_DOCS
- ifdef VBOX_WITH_VRDP
-  ifeq ($(SDK_VBOX_OPENSSL_INCS),$(SDK_VBOX_OPENSSL_DEFAULT_INCS))
-   include $(PATH_SUB_CURRENT)/openssl-0.9.8h/Makefile.kmk
-  endif
- endif #  VBOX_WITH_VRDP
-endif # !VBOX_ONLY_DOCS
+if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK)
+ ifeq ($(SDK_VBOX_OPENSSL_INCS),$(SDK_VBOX_OPENSSL_DEFAULT_INCS))
+  include $(PATH_SUB_CURRENT)/openssl-0.9.8h/Makefile.kmk
+ endif
+endif
 
 
 # Main related things - XML and XSLT, XPCOM.
-ifndef VBOX_ONLY_DOCS
- ifdef VBOX_WITH_MAIN
-  ifdef VBOX_WITH_XPCOM
-   include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk
-  endif
-  ifeq ($(SDK_VBOX_LIBXML2_INCS),$(PATH_ROOT)/src/libs/libxml2-2.6.30/include)
-   include $(PATH_SUB_CURRENT)/libxml2-2.6.30/Makefile.kmk
-  endif
-  ifeq ($(SDK_VBOX_LIBXSLT_INCS),$(PATH_ROOT)/src/libs/libxslt-1.1.22)
-   include $(PATH_SUB_CURRENT)/libxslt-1.1.22/Makefile.kmk
-  endif
+if defined(VBOX_WITH_MAIN) && !defined(VBOX_ONLY_DOCS)
 
-  # FFmpeg for test videos.
-  ifndef VBOX_OSE
-   ifdef VBOX_WITH_FFMPEG
-    if1of ($(KBUILD_TARGET), darwin)
-     include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
-    endif
-   endif
+ ifdef VBOX_WITH_XPCOM
+  include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk
+ endif
+ ifeq ($(SDK_VBOX_LIBXML2_INCS),$(PATH_ROOT)/src/libs/libxml2-2.6.30/include)
+  include $(PATH_SUB_CURRENT)/libxml2-2.6.30/Makefile.kmk
+ endif
+ ifeq ($(SDK_VBOX_LIBXSLT_INCS),$(PATH_ROOT)/src/libs/libxslt-1.1.22)
+  include $(PATH_SUB_CURRENT)/libxslt-1.1.22/Makefile.kmk
+ endif
+
+ # FFmpeg for test videos.
+ if defined(VBOX_WITH_FFMPEG) && !defined(VBOX_OSE) && !defined(VBOX_WITH_SDK)
+  if1of ($(KBUILD_TARGET), darwin)
+   include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
   endif
  endif
-endif
+
+endif # VBOX_WITH_MAIN && !VBOX_ONLY_DOCS 
 
 include $(KBUILD_PATH)/subfooter.kmk
 
