@@ -111,12 +111,12 @@ SOLARIS_STRIP_OBJS = \
 	VMMGC.gc \
 	VMMR0.r0
 
-PYTHON_AMD64_DIR=
+VBOX_SOL_PYTHON_INST =
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
-PYTHON_AMD64_DIR=64
-SOL64_PKG = 1
-SOLARIS_STRIP_OBJS += \
-	VBoxREM2.rel
+ VBOX_SOL_PYTHON_INST = 64/
+ SOL64_PKG = 1
+ SOLARIS_STRIP_OBJS += \
+ 	VBoxREM2.rel
 endif
 
 # Do not strip anything of these files
@@ -240,7 +240,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/additions
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/components
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/etc
-	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR)/$(PYTHON_AMD64_DIR),)
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST),)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(and $(VBOX_WITH_QT4GUI), $(not $(VBOX_WITH_SEPARATE_SDK))),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/VBoxGuestAdditions.iso)
@@ -282,7 +282,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQt3Support.so.4        $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig         $(SOLARIS_INST_DIR)/VBoxQtconfig,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg3.so                       $(SOLARIS_INST_DIR)/VBoxDbg3.so,)
-	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxPython.so                           $(SOLARIS_INST_DIR)/$(PYTHON_AMD64_DIR)/VBoxPython.so)
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxPython.so                           $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSettings.so                                                  $(SOLARIS_INST_DIR)/VBoxSettings.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxC.so                                              $(SOLARIS_INST_DIR)/components/VBoxC.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxSVCM.so                                           $(SOLARIS_INST_DIR)/components/VBoxSVCM.so
@@ -332,7 +332,7 @@ endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VBoxQtconfig,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_DEBUGGER_GUI),strip $(SOLARIS_INST_DIR)/VBoxDbg3.so,),)
-	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_PYTHON),strip $(SOLARIS_INST_DIR)/$(PYTHON_AMD64_DIR)/VBoxPython.so,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_PYTHON),strip $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxSettings.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/components/VBoxC.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/components/VBoxSVCM.so,)
@@ -440,7 +440,7 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(call MSG_L1,Installing debug binaries $(SOLARIS_DBG_DIR))
 	$(QUIET)$(RM) -Rf -- $(SOLARIS_DBG_DIR)
 	$(QUIET)$(MKDIR) -p -- $(SOLARIS_DBG_DIR)/components
-	$(QUIET)$(if $(VBOX_WITH_PYTHON), $(MKDIR) -p -- $(SOLARIS_DBG_DIR)/$(PYTHON_AMD64_DIR),)
+	$(QUIET)$(if $(VBOX_WITH_PYTHON), $(MKDIR) -p -- $(SOLARIS_DBG_DIR)/$(VBOX_SOL_PYTHON_INST),)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxdrv                                                            $(SOLARIS_DBG_DIR)/vboxdrv
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxflt                                                            $(SOLARIS_DBG_DIR)/vboxflt
 	$(QUIET)$(if $(VBOX_WITH_VBOXBFE),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxBFE                                  $(SOLARIS_DBG_DIR)/VBoxBFE)
