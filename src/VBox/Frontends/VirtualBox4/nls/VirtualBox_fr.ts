@@ -5115,7 +5115,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="282"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation>En&apos;registrer VirtualBox...</translation>
+        <translation>En&amp;registrer VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="284"/>
@@ -5218,7 +5218,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="115"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt; Remplissez, s&apos;il vous plaît, cette forme d&apos;enregistrement pour nous permettre de savoir que vous utilisez VirtualBox et, en option, vous informer sur les nouveautés VirtualBox et les mises à jour. &lt;/p&gt; &lt;p&gt; Entrez dans votre nom complet en utilisant des caractères latins et votre adresse e-mail dans champs ci-dessous. Notez que Sun Microsystems n&apos;utilise ces renseignements qi&apos;à des fins statistiques et vous pour envoyer des circulaires concernants VirtualBox. Particulièrement Sun Microsystems ne transmettra jamais vos données des tierces. Des renseignements détaillés sur l&apos;utilisation de vos informations personnelles peuvent être trouvées dans la section &lt;b&gt;Privacy Policy&lt;/b&gt; du Manuel VirtualBox ou sur le &lt;un href=http: // www.virtualbox.org/wiki/PrivacyPolicy&gt; Privacy Policy &lt;/a&gt; de la page du site Internet VirtualBox. &lt;/p&gt;</translation>
+        <translation>&lt;p&gt; Remplissez, s&apos;il vous plaît, cette forme d&apos;enregistrement pour nous permettre de savoir que vous utilisez VirtualBox et, en option, vous informer sur les nouveautés VirtualBox et les mises à jour. &lt;/p&gt; &lt;p&gt; Entrez votre nom complet en utilisant des caractères latins et votre adresse e-mail dans champs ci-dessous. Notez que Sun Microsystems n&apos;utilise ces renseignements qu&apos;à des fins statistiques et pour vous envoyer des circulaires concernants VirtualBox. Particulièrement Sun Microsystems ne transmettra jamais vos données à des tierces. Des renseignements détaillés sur l&apos;utilisation de vos informations personnelles peuvent être trouvées dans la section &lt;b&gt;Privacy Policy&lt;/b&gt; du Manuel VirtualBox ou sur le &lt;un href=http: // www.virtualbox.org/wiki/PrivacyPolicy&gt; Privacy Policy &lt;/a&gt; de la page du site Internet VirtualBox. &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="177"/>
@@ -7451,7 +7451,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Si la case est cochée, le média spécifié sera insérré dans lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
+        <translation>Si la case est cochée, le média spécifié sera inséré dans lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
@@ -8050,7 +8050,7 @@ Timeout d&apos;authentification </translation>
     <message>
         <location filename="" line="7209057"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">Si la case est cochée, le média spécifié sera insérré dans lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
+        <translation type="obsolete">Si la case est cochée, le média spécifié sera inséré dans lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -8060,7 +8060,7 @@ Timeout d&apos;authentification </translation>
     <message>
         <location filename="" line="7209057"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="obsolete">Si la case est cochée le média spécifié sera insérré dans le lecteur de disquette de la machine virtuelle.</translation>
+        <translation type="obsolete">Si la case est cochée le média spécifié sera inséré dans le lecteur de disquette de la machine virtuelle.</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -8764,7 +8764,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation>Si la case est cochée le média spécifié sera insérré dans le lecteur de disquette de la machine virtuelle.</translation>
+        <translation>Si la case est cochée le média spécifié sera inséré dans le lecteur de disquette de la machine virtuelle.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
