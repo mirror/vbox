@@ -3606,14 +3606,12 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (    pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4
-        &&  PGMGetHyperCR3(CTXSUFF(pPool->pVM)) == pPage->Core.Key)
+    if (PGMGetHyperCR3(CTXSUFF(pPool->pVM)) == pPage->Core.Key)
     {
+        AssertMsg(pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, ("Can't free the shadow CR3! (%VGp vs %VGp kind=%d\n", PGMGetHyperCR3(CTXSUFF(pPool->pVM)), pPage->Core.Key, pPage->enmKind));
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
         return VINF_SUCCESS;
     }
-    /* Safety precaution in case we change the paging for other modes too in the future. */
-    AssertFatalMsg(PGMGetHyperCR3(CTXSUFF(pPool->pVM)) != pPage->Core.Key, ("Can't free the shadow CR3! (%VGp vs %VGp kind=%d\n", PGMGetHyperCR3(CTXSUFF(pPool->pVM)), pPage->Core.Key, pPage->enmKind));
 
     /*
      * Mark the page as being in need of a ASMMemZeroPage().
