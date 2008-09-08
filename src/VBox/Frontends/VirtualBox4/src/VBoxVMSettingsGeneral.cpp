@@ -218,10 +218,10 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
         uint32_t u32FeaturesEDX;
         uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32AMDFeatureEDX, u32AMDFeatureECX;
 
-        ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
-        ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
+        ASMCpuId (0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
+        ASMCpuId (1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
         /* Query AMD features. */
-        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
+        ASMCpuId (0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
 
         fPAESupported = !!(u32FeaturesEDX & X86_CPUID_FEATURE_EDX_PAE);
 
@@ -234,9 +234,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
-            {
                 fVTxAMDVSupported = true;
-            }
         }
         else
         if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
@@ -248,16 +246,14 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
-            {
                 fVTxAMDVSupported = true;
-            }
         }
     }
 #ifdef Q_WS_MAC
     /* Not currently available on the Mac. */
     fVTxAMDVSupported = false;
 #endif
-    mCbVirt->setEnabled(fVTxAMDVSupported);
+    mCbVirt->setEnabled (fVTxAMDVSupported);
     
     /* VT-x/AMD-V */
     aMachine.GetHWVirtExEnabled() == KTSBool_True ?
@@ -265,7 +261,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
         mCbVirt->setCheckState (Qt::Unchecked);
 
     /* PAE/NX */
-    mCbPae->setEnabled(fPAESupported);
+    mCbPae->setEnabled (fPAESupported);
     mCbPae->setChecked (aMachine.GetPAEEnabled());
 
     /* Snapshot folder */
