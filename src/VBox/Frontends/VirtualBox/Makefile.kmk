@@ -226,6 +226,8 @@ VirtualBox_QT_TRANSLATIONS_INST = $(INST_BIN)nls3/
 ifndef VBOX_WITH_REGISTRATION
  FORMS := $(filter-out ui/VBoxRegistrationDlg.ui,$(FORMS))
 endif
+# OSE version is always necessary for lupdate/lrelease
+FORMS += ui/VBoxAboutDlg.ui
 ifdef USE_KBUILD_QT3_UNIT
  $(eval VirtualBox_SOURCES += $(FORMS) )
 else
@@ -359,8 +361,6 @@ ifndef VBOX_OSE
  VirtualBox_SOURCES += src/VBoxAboutNonOSEDlg.cpp
  VirtualBox_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
 endif
-# OSE version is always necessary for lupdate/lrelease
-VirtualBox_QT_UISRCS += ui/VBoxAboutDlg.ui
 
 VirtualBox_DEFS           = VBOX_GUI_SEPARATE_VM_PROCESS
 VirtualBox_DEFS.debug     = VBOX_GUI_DEBUG VBOX_CHECK_STATE # QT_FATAL_ASSERT
