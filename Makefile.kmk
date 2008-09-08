@@ -741,7 +741,7 @@ sdk:
               pass_bldprogs pass_others pass_installs pass_packing
 
 fetch_sdk_reqs:
-	+ $(KMK) KBUILD_TARGET=win  KBUILD_ARCH=x86  -C tools fetch
+	+ $(KMK) KBUILD_TARGET=win  KBUILD_TARGET_ARCH=x86  -C tools fetch
 
 #
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution
