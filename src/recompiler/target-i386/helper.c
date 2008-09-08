@@ -1775,8 +1775,10 @@ void helper_cmpxchg8b(void)
         stq(A0, ((uint64_t)ECX << 32) | EBX);
         eflags |= CC_Z;
     } else {
-        EDX = d >> 32;
-        EAX = d;
+        /* always do the store */
+        stq(A0, d);
+        EDX = (uint32_t)(d >> 32);
+        EAX = (uint32_t)d;
         eflags &= ~CC_Z;
     }
     CC_SRC = eflags;
