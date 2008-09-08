@@ -96,6 +96,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
 
     /*
      * Check if debug registers are armed.
+     * This ASSUMES that DR7.GD is not set, or that it's handled transparently!
      */
     uint32_t    u32DR7 = ASMGetDR7();
     if (u32DR7 & X86_DR7_ENABLED_MASK)
@@ -165,7 +166,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
 
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
     uint64_t oldMsrEFERHost;
- 	uint32_t oldCR0 = ASMGetCR0(); 
+ 	uint32_t oldCR0 = ASMGetCR0();
 
     /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
     if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
@@ -180,19 +181,19 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
         }
     }
 
-    /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */ 
+    /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
     int rc = CPUMHandleLazyFPU(pVM);
     AssertRC(rc);
-    Assert(CPUMIsGuestFPUStateActive(pVM)); 
+    Assert(CPUMIsGuestFPUStateActive(pVM));
 
     /* Restore EFER MSR */
     if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
         ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost);
 
- 	/* CPUMHandleLazyFPU could have changed CR0; restore it. */ 
-    ASMSetCR0(oldCR0); 
+ 	/* CPUMHandleLazyFPU could have changed CR0; restore it. */
+    ASMSetCR0(oldCR0);
 #else
-    /* Save the FPU control word and MXCSR, so we can restore the properly afterwards. 
+    /* Save the FPU control word and MXCSR, so we can restore the properly afterwards.
      * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
      */
     pVM->cpum.s.Host.fpu.FCW = CPUMGetFCW();
@@ -259,7 +260,7 @@ CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
         /* fxsave doesn't save the XMM state! */
         CPUMSaveXMMAsm(pCtx);
     }
-    /* Restore the original FPU control word and MXCSR. 
+    /* Restore the original FPU control word and MXCSR.
      * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
      */
     CPUMSetFCW(pVM->cpum.s.Host.fpu.FCW);
