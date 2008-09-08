@@ -1621,14 +1621,42 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     {
         ComPtr<IDisplay> display;
         CHECK_ERROR_RET(console, COMGETTER(Display)(display.asOutParam()), rc);
-        ULONG xRes, yRes, bpp;
-        CHECK_ERROR_RET(display, COMGETTER(Width)(&xRes), rc);
-        CHECK_ERROR_RET(display, COMGETTER(Height)(&yRes), rc);
-        CHECK_ERROR_RET(display, COMGETTER(BitsPerPixel)(&bpp), rc);
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("VideoMode=\"%d,%d,%d\"\n", xRes, yRes, bpp);
-        else
-            RTPrintf("Video mode:      %dx%dx%d\n", xRes, yRes, bpp);
+        do
+        {
+            ULONG xRes, yRes, bpp;
+            rc = display->COMGETTER(Width)(&xRes);
+            if (rc == E_ACCESSDENIED)
+                break; /* VM not powered up */
+            if (FAILED(rc))
+            {
+                com::ErrorInfo info (display);
+                PRINT_ERROR_INFO (info);
+                return rc;
+            }
+            rc = display->COMGETTER(Height)(&yRes);
+            if (rc == E_ACCESSDENIED)
+                break; /* VM not powered up */
+            if (FAILED(rc))
+            {
+                com::ErrorInfo info (display);
+                PRINT_ERROR_INFO (info);
+                return rc;
+            }
+            rc = display->COMGETTER(BitsPerPixel)(&bpp);
+            if (rc == E_ACCESSDENIED)
+                break; /* VM not powered up */
+            if (FAILED(rc))
+            {
+                com::ErrorInfo info (display);
+                PRINT_ERROR_INFO (info);
+                return rc;
+            }
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("VideoMode=\"%d,%d,%d\"\n", xRes, yRes, bpp);
+            else
+                RTPrintf("Video mode:      %dx%dx%d\n", xRes, yRes, bpp);
+        }
+        while (0);
     }
 
     /*
