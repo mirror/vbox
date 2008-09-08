@@ -23,6 +23,8 @@
 #include "VBoxVMSettingsGeneral.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include <iprt/asm.h>
+#include <VBox/x86.h>
 
 #include <QDir>
 
@@ -202,12 +204,68 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     /* IO APIC */
     mCbApic->setChecked (biosSettings.GetIOAPICEnabled());
 
+    /*
+     * Check for VT-x and AMD-V capabilities. 
+     * This is a best effort check. A full check requires ring-0 access (msrs).
+     */
+    bool fVTxAMDVSupported = false;
+    bool fPAESupported = false;
+
+    if (ASMHasCpuId())
+    {
+        uint32_t u32FeaturesECX;
+        uint32_t u32Dummy;
+        uint32_t u32FeaturesEDX;
+        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32AMDFeatureEDX, u32AMDFeatureECX;
+
+        ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
+        ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
+        /* Query AMD features. */
+        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
+
+        fPAESupported = !!(u32FeaturesEDX & X86_CPUID_FEATURE_EDX_PAE);
+
+        if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
+           )
+        {
+            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+            {
+                fVTxAMDVSupported = true;
+            }
+        }
+        else
+        if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
+           )
+        {
+            if (   (u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+            {
+                fVTxAMDVSupported = true;
+            }
+        }
+    }
+#ifdef Q_WS_MAC
+    /* Not currently available on the Mac. */
+    fVTxAMDVSupported = false;
+#endif
+    mCbVirt->setEnabled(fVTxAMDVSupported);
+    
     /* VT-x/AMD-V */
     aMachine.GetHWVirtExEnabled() == KTSBool_True ?
         mCbVirt->setCheckState (Qt::Checked) :
         mCbVirt->setCheckState (Qt::Unchecked);
 
     /* PAE/NX */
+    mCbPae->setEnabled(fPAESupported);
     mCbPae->setChecked (aMachine.GetPAEEnabled());
 
     /* Snapshot folder */
