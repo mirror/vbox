@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../..
-else
-SUB_DEPTH = .
-DEPTH     = ../../..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 
 # File for filtering out C symbols from the XPCOM library. Used to avoid
@@ -41,6 +36,8 @@ XPCOM_C_NAMESPACE_MAP = $(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
 # Globals.
 #
 VBOX_PATH_XPCOM_SRC := $(PATH_SUB_CURRENT)
+
+BLDDIRS += $(PATH_TARGET)/VBox-xpcom-xpt-files/
 
 
 #
@@ -109,8 +106,7 @@ ifn1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_XPCOM_LDFLAGS           += -fPIC
  TEMPLATE_XPCOM_DEFS              += MOZ_PRESERVE_PIC
 endif
-TEMPLATE_XPCOM_INCS                = $(PATH_TARGET) \
-                                     xpcom/build \
+TEMPLATE_XPCOM_INCS                = xpcom/build \
                                      xpcom/ds \
                                      xpcom/io \
                                      xpcom/base \
@@ -159,8 +155,7 @@ TEMPLATE_XPCOM_LIBS               += $(LIB_RUNTIME)
 TEMPLATE_XPCOMEXE                  = XPCOM executable files (testcases)
 TEMPLATE_XPCOMEXE_EXTENDS          = XPCOM
 ## @todo undo -fPIC.
-TEMPLATE_XPCOMEXE_INCS             = $(PATH_TARGET) \
-                                     ipc/ipcd/shared/src \
+TEMPLATE_XPCOMEXE_INCS             = ipc/ipcd/shared/src \
                                      $(VBOX_PATH_SDK)/bindings/xpcom/include \
                                      $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
                                      $(VBOX_PATH_SDK)/bindings/xpcom/include/string \
@@ -308,10 +303,6 @@ PATH_VBox-xpcom-string=$(PATH_BIN)
 
 endif # !VBOX_ONLY_SDK
 
-
-OTHER_CLEAN += \
-	$(PATH_TARGET)/VBox-xpcom-nspr/_pr_bld.h \
-	$(PATH_TARGET)/VBox-xpcom-nspr/_pl_bld.h
 
 
 
@@ -704,7 +695,7 @@ VBox-xpcom-nspr_DEFS.solaris = \
 	_PR_PTHREADS
 VBox-xpcom-nspr_INCS = \
 	nsprpub/pr/include/private \
-	$(PATH_TARGET)/VBox-xpcom-nspr
+	$(PATH_VBox-xpcom-nspr)
 
 VBox-xpcom-nspr_SOURCES  = \
 	nsprpub/pr/src/io/prfdcach.c \
@@ -852,9 +843,20 @@ VBox-xpcom-nspr_SOURCES.solaris = nsprpub/pr/src/md/unix/solaris.c
 VBox-xpcom-nspr_SOURCES.solaris.x86 = nsprpub/pr/src/md/unix/os_SunOS_x86.s
 VBox-xpcom-nspr_SOURCES.solaris.amd64 = nsprpub/pr/src/md/unix/os_SunOS_x86_64.s
 
-
+# generate build stamps
 nsprpub/pr/src/prvrsion.c_DEPS = $(PATH_VBox-xpcom-nspr)/_pr_bld.h
 nsprpub/lib/ds/plvrsion.c_DEPS = $(PATH_VBox-xpcom-nspr)/_pl_bld.h
+VBox-xpcom-nspr_CLEAN += \
+	$(PATH_VBox-xpcom-nspr)/_pr_bld.h \
+	$(PATH_VBox-xpcom-nspr)/_pl_bld.h
+
+$$(PATH_VBox-xpcom-nspr)/_pr_bld.h: | $$(PATH_VBox-xpcom-nspr)/
+	$(call MSG_GENERATE,,$@)
+	$(QUIET)$(APPEND) -t $@ '#define _BUILD_STRING "$(date +%Y-%m-%d %T)"'
+
+$$(PATH_VBox-xpcom-nspr)/_pl_bld.h: | $$(PATH_VBox-xpcom-nspr)/
+	$(call MSG_GENERATE,,$@)
+	$(QUIET)$(APPEND) -t $@ '#define _BUILD_STRING "$(date +%Y-%m-%d %T)"' 
 
 
 VBox-xpcom-typelib_TEMPLATE = XPCOM
@@ -1547,14 +1549,14 @@ OTHER_CLEAN += \
 	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES)))) \
 	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES)))) \
 	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/idl/,$(notdir $(XPCOM_IDLFILES))) \
-	$(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES))))
+	$(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES))))
 
 
 #
 # Create and install VBoxXPCOMBase.xpt
 #
 INSTALLS += VBoxXPCOMBase-xpt-inst
-VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/, \
+VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/, \
 	nsIConsoleListener.xpt \
 	nsIConsoleMessage.xpt \
 	nsIConsoleService.xpt \
@@ -1639,13 +1641,13 @@ VBOX_XPTFILES = $(addprefix $(PATH_TARGET)/, \
 VBoxXPCOMBase-xpt-inst_INST = $(INST_BIN)components/
 VBoxXPCOMBase-xpt-inst_MODE = 0644
 VBoxXPCOMBase-xpt-inst_SOURCES = \
-	$(PATH_TARGET)/VBoxXPCOMBase.xpt
+	$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt
 VBoxXPCOMBase-xpt-inst_CLEAN = \
 	$(VBOX_XPTFILES) \
-	$(PATH_TARGET)/VBoxXPCOMBase.xpt
+	$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt
 
 # combined typelib library
-$(PATH_TARGET)/VBoxXPCOMBase.xpt: $(VBOX_XPTFILES) | $$(TARGET_xpt_link)
+$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt: $(VBOX_XPTFILES) | $$(TARGET_xpt_link) $(PATH_TARGET)/VBox-xpcom-xpt-files/
 	$(call MSG_LINK,XPCOM_TYPELIB,$@)
 	$(QUIET)$(MKDIR) -p -- $(PATH_BIN)/components
 	$(QUIET)$(TARGET_xpt_link) $@ $^
@@ -1656,15 +1658,6 @@ $(PATH_TARGET)/VBoxXPCOMBase.xpt: $(VBOX_XPTFILES) | $$(TARGET_xpt_link)
 include $(KBUILD_PATH)/subfooter.kmk
 
 
-
-# generate build stamps
-$(PATH_VBox-xpcom-nspr)/_pr_bld.h:
-	$(call MSG_GENERATE,,$@)
-	$(QUIET)echo '#define _BUILD_STRING "$(shell date "+%Y-%m-%d %T")"' > $@
-
-$(PATH_VBox-xpcom-nspr)/_pl_bld.h:
-	$(call MSG_GENERATE,,$@)
-	$(QUIET)echo '#define _BUILD_STRING "$(shell date "+%Y-%m-%d %T")"' > $@
 
 #
 # Generate IDL rules.
@@ -1682,13 +1675,14 @@ XPIDL_INCS = \
 	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/reflect/xptinfo/public/
 define def_IDL
 $(VBOX_PATH_SDK)/bindings/xpcom/include/$(notdir $(subst .idl,.h,$(idl))) \
-+ $(PATH_TARGET)/$(notdir $(subst .idl,.xpt,$(idl))): \
++ $(PATH_TARGET)/VBox-xpcom-xpt-files/$(notdir $(subst .idl,.xpt,$(idl))): \
 		$(VBOX_PATH_XPCOM_SRC)/$(idl) \
-		| $$$$(TARGET_xpidl)
+		| $$$$(TARGET_xpidl) \
+		$(PATH_TARGET)/VBox-xpcom-xpt-files/
 	$$(call MSG_TOOL,xpidl,XPCOM,$$<,$$@)
 	$$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/xpcom/include $(VBOX_PATH_SDK)/bindings/xpcom/idl
 	$$(QUIET)$$(TARGET_xpidl) -m header $(XPIDL_INCS) -e $$@ $$<
-	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
+	$$(QUIET)$$(TARGET_xpidl) -m typelib $(XPIDL_INCS) -e $(addprefix $(PATH_TARGET)/VBox-xpcom-xpt-files/,$(notdir $(subst .idl,.xpt,$(idl)))) $$<
 	$$(QUIET)$(CP) $$< $$(VBOX_PATH_SDK)/bindings/xpcom/idl
 endef
 
@@ -1703,5 +1697,3 @@ $(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/in
 # Make sure main doesn't start using xpidl before we're done with the idl files here.
 $(VBOX_XPIDL): $$(PATH_VBox-xpcom-string)/idl_ts
 
-# Manual dependency...
-xpcom/string/src/nsAString.cpp: $(PATH_VBox-xpcom-string)/idl_ts
