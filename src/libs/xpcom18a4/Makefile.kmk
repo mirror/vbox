@@ -856,7 +856,7 @@ $$(PATH_VBox-xpcom-nspr)/_pr_bld.h: | $$(PATH_VBox-xpcom-nspr)/
 
 $$(PATH_VBox-xpcom-nspr)/_pl_bld.h: | $$(PATH_VBox-xpcom-nspr)/
 	$(call MSG_GENERATE,,$@)
-	$(QUIET)$(APPEND) -t $@ '#define _BUILD_STRING "$(date +%Y-%m-%d %T)"' 
+	$(QUIET)$(APPEND) -t $@ '#define _BUILD_STRING "$(date +%Y-%m-%d %T)"'
 
 
 VBox-xpcom-typelib_TEMPLATE = XPCOM
@@ -1193,7 +1193,7 @@ ifdef IPC_LOGGING
  TEMPLATE_XPCOMIPC_DEFS           += IPC_LOGGING
 endif
 
-TEMPLATE_XPCOMIPC_LIBS       = $(TARGET_VBoxXPCOM) $(TEMPLATE_XPCOM_LIBS)
+TEMPLATE_XPCOMIPC_LIBS             = $(TARGET_VBoxXPCOM) $(TEMPLATE_XPCOM_LIBS)
 
 TEMPLATE_XPCOMIPCEXE               = XPCOM IPC executables
 TEMPLATE_XPCOMIPCEXE_EXTENDS       = XPCOMEXE
