@@ -20,12 +20,7 @@
 #
 
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../..
-else
-SUB_DEPTH = .
-DEPTH     = ../../..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-liblzf
