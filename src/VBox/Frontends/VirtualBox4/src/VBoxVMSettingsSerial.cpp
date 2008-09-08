@@ -89,9 +89,9 @@ void VBoxVMSettingsSerial::putBackToPort()
     mPort.SetEnabled (mGbSerial->isChecked());
     mPort.SetIRQ (mLeIRQ->text().toULong (NULL, 0));
     mPort.SetIOBase (mLeIOPort->text().toULong (NULL, 0));
-    mPort.SetHostMode (vboxGlobal().toPortMode (mCbMode->currentText()));
     mPort.SetServer (mCbPipe->isChecked());
     mPort.SetPath (QDir::convertSeparators (mLePath->text()));
+    mPort.SetHostMode (vboxGlobal().toPortMode (mCbMode->currentText()));
 }
 
 void VBoxVMSettingsSerial::setValidator (QIWidgetValidator *aVal)
