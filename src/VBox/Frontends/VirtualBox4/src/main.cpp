@@ -158,7 +158,7 @@ static void showHelp()
     dflt = "image";
 #endif
 
-    RTPrintf("VirtualBox Graphical User Interface\n"
+    RTPrintf("VirtualBox Graphical User Interface "VBOX_VERSION_STRING"\n"
             "(C) 2005-2008 Sun Microsystems, Inc.\n"
             "All rights reserved.\n"
             "\n"
