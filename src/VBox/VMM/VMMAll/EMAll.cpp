@@ -75,6 +75,7 @@ EMDECL(EMSTATE) EMGetState(PVM pVM)
  */
 EMDECL(void) EMFlushREMTBs(PVM pVM)
 {
+    Log(("EMFlushREMTBs\n"));
     pVM->em.s.fREMFlushTBs = true;
 }
 
