@@ -25,6 +25,9 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Include Sub-Makefiles.
 #
+if "$(KBUILD_TARGET)" == "darwin" && "$(KBUILD_HOST)" == "darwin"
+ include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
+endif
 if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" == "win"
  include $(PATH_SUB_CURRENT)/win/Makefile.kmk
 endif
@@ -35,9 +38,6 @@ endif
 #
 # To be converted to sub-makefiles.
 #
-ifeq ($(KBUILD_HOST),darwin)
- SUBDIRS.darwin = darwin
-endif
 ifeq ($(KBUILD_HOST),linux)
  SUBDIRS.linux = linux
 endif
