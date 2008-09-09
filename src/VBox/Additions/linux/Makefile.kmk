@@ -76,12 +76,14 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_ROOT)/src/VBox/Installer/linux/routines.sh \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
+		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c \
 		$(PATH_BIN)/additions/vboxmouse_drv.o \
 		$(PATH_BIN)/additions/vboxmouse_drv_70.so \
 		$(PATH_BIN)/additions/vboxmouse_drv_71.so \
 		$(PATH_BIN)/additions/vboxmouse_drv_14.so \
+		$(PATH_BIN)/additions/vboxmouse_drv_15.so \
 		$(PATH_BIN)/additions/vboxvideo_drv.o \
 		$(PATH_BIN)/additions/vboxvideo_drv_70.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_71.so \
@@ -122,10 +124,13 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Installer/linux/routines.sh         $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids         $(PATH_TARGET)/install
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl          $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl        $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/90-vboxguest.fdi    $(PATH_TARGET)/install
 	$(QUIET)$(BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxmouse_drv.o        $(PATH_TARGET)/install/vboxmouse_drv.o
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so    $(PATH_TARGET)/install/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so    $(PATH_TARGET)/install/vboxmouse_drv_71.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so    $(PATH_TARGET)/install/vboxmouse_drv_14.so
+	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_15.so    $(PATH_TARGET)/install/vboxmouse_drv_15.so
 	$(QUIET)$(BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxvideo_drv.o        $(PATH_TARGET)/install/vboxvideo_drv.o
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so    $(PATH_TARGET)/install/vboxvideo_drv_70.so
 	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_71.so    $(PATH_TARGET)/install/vboxvideo_drv_71.so
