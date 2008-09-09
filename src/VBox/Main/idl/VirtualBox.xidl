@@ -938,6 +938,12 @@
       </desc>
     </attribute>
 
+    <attribute name="revision" type="unsigned long" readonly="yes">
+      <desc>
+        The internal build revision number of the product.
+      </desc>
+    </attribute>
+
     <attribute name="packageType" type="wstring" readonly="yes">
       <desc>
         A string representing the package type of this product. The

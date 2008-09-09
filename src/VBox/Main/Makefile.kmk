@@ -273,6 +273,7 @@ VBoxSVC_SOURCES = \
 	SharedFolderImpl.cpp \
 	SystemPropertiesImpl.cpp \
 	BIOSSettingsImpl.cpp \
+	Version.cpp \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
