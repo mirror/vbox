@@ -329,8 +329,7 @@ void rtR0MpNotificationTerm(void)
                 RTMemFree(pFree);
             }
 
-            RTSpinlockDestroy(g_hRTMpNotifySpinLock);
-            g_hRTMpNotifySpinLock = NULL;
+            RTSpinlockDestroy(hSpinlock);
         }
     }
 }
