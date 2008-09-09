@@ -470,7 +470,7 @@ int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RTRCPTR pNe
     PATMCALLINFO callInfo;
     uint32_t     size;
 
-    Log(("patmPatchGenSti at %VGv; next %VGv\n", pCurInstrGC, pNextInstrGC));
+    Log(("patmPatchGenSti at %VRv; next %VRv\n", pCurInstrGC, pNextInstrGC));
     PATCHGEN_PROLOG(pVM, pPatch);
     callInfo.pNextInstrGC = pNextInstrGC;
     size = patmPatchGenCode(pVM, pPatch, pPB, &PATMStiRecord, 0, false, &callInfo);
@@ -489,7 +489,7 @@ int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAdd
 
     callInfo.pNextInstrGC = pReturnAddrGC;
 
-    Log(("patmPatchGenPopf at %VGv\n", pReturnAddrGC));
+    Log(("patmPatchGenPopf at %VRv\n", pReturnAddrGC));
 
     /* Note: keep IOPL in mind when changing any of this!! (see comments in PATMA.asm, PATMPopf32Replacement) */
     if (fSizeOverride == true)
@@ -724,14 +724,14 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     }
     else
     {
-        AssertMsg(PATMIsPatchGCAddr(pVM, pTargetGC) == false, ("Target is already a patch address (%VGv)?!?\n", pTargetGC));
+        AssertMsg(PATMIsPatchGCAddr(pVM, pTargetGC) == false, ("Target is already a patch address (%VRv)?!?\n", pTargetGC));
         Assert(pTargetGC);
         Assert(OP_PARM_VTYPE(pCpu->pCurInstr->param1) == OP_PARM_J);
 
         /** @todo wasting memory as the complex search is overkill and we need only one lookup slot... */
 
         /* Relative call to patch code (patch to patch -> no fixup). */
-        Log(("PatchGenCall from %VGv (next=%VGv) to %VGv\n", pCurInstrGC, pCurInstrGC + pCpu->opsize, pTargetGC));
+        Log(("PatchGenCall from %VRv (next=%VRv) to %VRv\n", pCurInstrGC, pCurInstrGC + pCpu->opsize, pTargetGC));
 
         /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
          * a page fault. The assembly code restores the stack afterwards.
@@ -859,7 +859,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     /* Remember start of this patch for below. */
     pPatchRetInstrGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
 
-    Log(("patmPatchGenRet %VGv\n", pCurInstrGC));
+    Log(("patmPatchGenRet %VRv\n", pCurInstrGC));
 
     /** @note optimization: multiple identical ret instruction in a single patch can share a single patched ret. */
     if (    pPatch->pTempInfo->pPatchRetInstrGC
@@ -1301,7 +1301,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
 {
     uint32_t size, offset;
 
-    Log(("patmPatchGenMovFromSS %VGv\n", pCurInstrGC));
+    Log(("patmPatchGenMovFromSS %VRv\n", pCurInstrGC));
 
     Assert(pPatch->flags & PATMFL_CODE32);
 
