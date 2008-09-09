@@ -592,7 +592,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 #endif
 
     /*
-     * Free the mutex and the instance memory.
+     * Free the mutex, the wrapper and the instance memory.
      */
     MutexSem = pLogger->MutexSem;
     pLogger->MutexSem = NIL_RTSEMFASTMUTEX;
@@ -606,6 +606,11 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
             rc = rc2;
     }
 
+    if (pLogger->pfnLogger)
+    {
+        RTMemExecFree(*(void **)&pLogger->pfnLogger);
+        pLogger->pfnLogger = NULL;
+    }
     RTMemFree(pLogger);
 
     return rc;
