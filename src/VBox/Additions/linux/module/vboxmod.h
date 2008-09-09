@@ -58,6 +58,8 @@ struct VBoxDevice
         implemented as a counter to prevent one waiter swallowing the
         event. */
     uint32_t u32GuestInterruptions;
+    /** Queue structure */
+    struct fasync_struct *async_queue;
 };
 
 extern int vboxadd_verbosity;
