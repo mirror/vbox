@@ -72,6 +72,7 @@ do { \
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <linux/miscdevice.h>
+#include <linux/poll.h>
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -205,7 +206,6 @@ static int vboxadd_unregister_all_hgcm_connections(struct file *filp)
         return 0;
 }
 
-
 /**
  * File open handler
  *
@@ -214,16 +214,6 @@ static int vboxadd_open(struct inode *inode, struct file *filp)
 {
     /* no checks required */
     return 0;
-}
-
-/**
- * File close handler.  Clean up any HGCM connections associated with the open file
- * which might still be open.
- */
-static int vboxadd_release(struct inode *inode, struct file * filp)
-{
-        vboxadd_unregister_all_hgcm_connections(filp);
-        return 0;
 }
 
 static void
@@ -584,31 +574,66 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
         return rc;
 }
 
-#ifdef DEBUG
+/**
+ * Poll function.  This returns "ready to read" if the guest is in absolute
+ * mouse pointer mode and the pointer position has changed since the last
+ * poll.
+ */
+unsigned int
+vboxadd_poll (struct file *file, poll_table *wait)
+{
+    int result = 0;
+    poll_wait(file, &vboxDev->eventq, wait);
+    if (vboxDev->u32Events & VMMDEV_EVENT_MOUSE_POSITION_CHANGED)
+        result = (POLLIN | POLLRDNORM);
+    vboxDev->u32Events &= ~VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
+    return result;
+}
+
+/** Asynchronous notification activation method. */
+static int
+vboxadd_fasync(int fd, struct file *file, int mode)
+{
+    return fasync_helper(fd, file, mode, &vboxDev->async_queue);
+}
+
+/**
+ * Dummy read function - we only supply this because we implement poll and 
+ * fasync.
+ */
 static ssize_t
 vboxadd_read (struct file *file, char *buf, size_t count, loff_t *loff)
 {
-    if (count != 8 || *loff != 0)
+    if (0 == count || *loff != 0)
     {
         return -EINVAL;
     }
-    *(uint32_t *) buf = vboxDev->pVMMDevMemory->V.V1_04.fHaveEvents;
-    *(uint32_t *) (buf + 4) = vboxDev->u32Events;
-    *loff += 8;
-    return 8;
+    buf[0] = 0;
+    return 1;
 }
-#endif
+
+/**
+ * File close handler.  Clean up any HGCM connections associated with the open file
+ * which might still be open.
+ */
+static int vboxadd_release(struct inode *inode, struct file * filp)
+{
+        vboxadd_unregister_all_hgcm_connections(filp);
+        /* Deactivate our asynchronous queue. */
+        vboxadd_fasync(-1, filp, 0);
+        return 0;
+}
 
 /** strategy handlers (file operations) */
 static struct file_operations vbox_fops =
 {
     .owner   = THIS_MODULE,
     .open    = vboxadd_open,
-    .release = vboxadd_release,
     .ioctl   = vboxadd_ioctl,
-#ifdef DEBUG
+    .poll    = vboxadd_poll,
+    .fasync  = vboxadd_fasync,
     .read    = vboxadd_read,
-#endif
+    .release = vboxadd_release,
     .llseek  = no_llseek
 };
 
@@ -665,6 +690,9 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
             if (RT_LIKELY (vboxDev->irqAckRequest->events))
             {
                 vboxDev->u32Events |= vboxDev->irqAckRequest->events;
+                if (  vboxDev->irqAckRequest->events
+                    & VMMDEV_EVENT_MOUSE_POSITION_CHANGED)
+                    kill_fasync(&vboxDev->async_queue, SIGIO, POLL_IN);
                 wake_up (&vboxDev->eventq);
             }
         }
@@ -823,7 +851,15 @@ static void free_resources(void)
 {
     if (vboxDev)
     {
-        /* at first detach from IRQ! */
+        {
+            /* Unregister notifications when the host absolute pointer
+             * position changes. */
+            VBoxGuestFilterMaskInfo info;
+            info.u32OrMask = 0;
+            info.u32NotMask = VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
+            vboxadd_control_filter_mask(&info);
+        }
+        /* Detach from IRQ before cleaning up! */
         if (vboxDev->irq)
             free_irq(vboxDev->irq, vboxDev);
         if (vboxDev->hypervisorStart)
@@ -1060,6 +1096,21 @@ static __init int init(void)
     vboxDev->irq = pcidev->irq;
 
     init_waitqueue_head (&vboxDev->eventq);
+
+    {
+        /* Register for notification when the host absolute pointer position
+         * changes. */
+        VBoxGuestFilterMaskInfo info;
+        info.u32OrMask = VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
+        info.u32NotMask = 0;
+        rcVBox = vboxadd_control_filter_mask(&info);
+        if (!RT_SUCCESS(rcVBox))
+        {
+            LogRelFunc(("failed to register for VMMDEV_EVENT_MOUSE_POSITION_CHANGED events\n"));
+            err = -RTErrConvertToErrno(rcVBox);
+            goto fail;
+        }
+    }
 
     /* some useful information for the user but don't show this on the console */
     LogRel(("VirtualBox device settings: major %d, IRQ %d, "
