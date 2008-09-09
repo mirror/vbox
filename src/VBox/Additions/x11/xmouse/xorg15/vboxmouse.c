@@ -43,8 +43,8 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Authors:
- *	Kristian Høgsberg (krh@redhat.com)
- *	Adam Jackson (ajax@redhat.com)
+ *      Kristian Høgsberg (krh@redhat.com)
+ *      Adam Jackson (ajax@redhat.com)
  */
 
 #ifdef HAVE_CONFIG_H
@@ -61,83 +61,23 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#ifdef DEBUG_michael
-# define DEBUG_MOUSE 1
-#endif
-
-#ifdef DEBUG_MOUSE
-
-#define TRACE \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": entering\n"); \
-} while(0)
-#define TRACE2 \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": leaving\n"); \
-} while(0)
-#define TRACE3(...) \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, __VA_ARGS__); \
-} while(0)
-
-#else  /* DEBUG_MOUSE not defined */
-
-#define TRACE       do { } while(0)
-#define TRACE2      do { } while(0)
-#define TRACE3(...) do { } while(0)
-
-#endif  /* DEBUG_MOUSE not defined */
-
-#define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
-
-typedef struct {
-    int screen;
-} VBoxRec, *VBoxPtr;
-
-static const char *vboxDefaults[] = {
-    NULL
-};
-
-
 static void
 VBoxReadInput(InputInfoPtr pInfo)
 {
     uint32_t cx, cy, fFeatures;
-    TRACE;
-    VBoxPtr pVBox = pInfo->private;
-    int screenWidth = screenInfo.screens[pVBox->screen]->width;
-    int screenHeight = screenInfo.screens[pVBox->screen]->height;
 
     if (RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy)))
-    {
-        /* convert to screen resolution */
-        int x, y;
-        // x = (cx * screenWidth) / 65535;
-        // y = (cy * screenHeight) / 65535;
         /* send absolute movement */
-        // xf86PostMotionEvent(pInfo->dev, 1, 0, 2, x, y);
         xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
-    }
-}
-
-static void
-VBoxPtrCtrlProc(DeviceIntPtr device, PtrCtrl *ctrl)
-{
-    /* Nothing to do, dix handles all settings */
 }
 
 static int
 VBoxInit(DeviceIntPtr device)
 {
     InputInfoPtr pInfo;
-    VBoxPtr pVBox;
     int xrc;
 
     pInfo = device->public.devicePrivate;
-    pVBox = pInfo->private;
 
     if (!InitValuatorClassDeviceStruct(device, 2, GetMotionHistory,
                                        GetMotionHistorySize(), Absolute)) {
@@ -146,22 +86,15 @@ VBoxInit(DeviceIntPtr device)
         return BadAlloc;
     }
 
-    /* X valuator */
+    /* Tell the server about the range of axis values we report */
     xf86InitValuatorAxisStruct(device, 0, 0 /* min X */, 65536 /* max X */,
                                10000, 0, 10000);
     xf86InitValuatorDefaults(device, 0);
 
-    /* Y valuator */
     xf86InitValuatorAxisStruct(device, 1, 0 /* min Y */, 65536 /* max Y */,
                                10000, 0, 10000);
     xf86InitValuatorDefaults(device, 1);
     xf86MotionHistoryAllocate(pInfo);
-
-    if (!InitPtrFeedbackClassDeviceStruct(device, VBoxPtrCtrlProc)) {
-        xf86Msg(X_ERROR, "%s: InitPtrFeedbackClassDeviceStruct failed\n",
-                pInfo->name);
-        return BadAlloc;
-    }
 
     return Success;
 }
@@ -170,11 +103,9 @@ static int
 VBoxProc(DeviceIntPtr device, int what)
 {
     InputInfoPtr pInfo;
-    VBoxPtr pVBox;
     int rc, xrc;
 
     pInfo = device->public.devicePrivate;
-    pVBox = pInfo->private;
 
     switch (what)
     {
@@ -185,7 +116,8 @@ VBoxProc(DeviceIntPtr device, int what)
             return xrc;
         }
         xf86Msg(X_CONFIG, "%s: Mouse Integration associated with screen %d\n",
-                pInfo->name, pVBox->screen);
+                pInfo->name,
+                xf86SetIntOption(pInfo->options, "ScreenNumber", 0));
         break;
 
     case DEVICE_ON:
@@ -201,20 +133,20 @@ VBoxProc(DeviceIntPtr device, int what)
         }
 
         xf86AddEnabledDevice(pInfo);
-	device->public.on = TRUE;
-	break;
-	    
+        device->public.on = TRUE;
+        break;
+    
     case DEVICE_OFF:
         xf86Msg(X_INFO, "%s: Off.\n", pInfo->name);
         VbglR3SetMouseStatus(0);
         xf86RemoveEnabledDevice(pInfo);
-	device->public.on = FALSE;
-	break;
+        device->public.on = FALSE;
+        break;
 
     case DEVICE_CLOSE:
         VbglR3Term();
-	xf86Msg(X_INFO, "%s: Close\n", pInfo->name);
-	break;
+        xf86Msg(X_INFO, "%s: Close\n", pInfo->name);
+        break;
     }
 
     return Success;
@@ -238,10 +170,9 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 {
     InputInfoPtr pInfo;
     const char *device;
-    VBoxPtr pVBox;
 
     if (!(pInfo = xf86AllocateInput(drv, 0)))
-	return NULL;
+        return NULL;
 
     /* Initialise the InputInfoRec. */
     pInfo->name = dev->identifier;
@@ -253,25 +184,12 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS |
             XI86_ALWAYS_CORE | XI86_OPEN_ON_INIT;
 
-    if (!(pVBox = xcalloc(sizeof(*pVBox), 1)))
-        return pInfo;
-    pInfo->private = pVBox;
-
-    xf86CollectInputOptions(pInfo, vboxDefaults, NULL);
+    xf86CollectInputOptions(pInfo, NULL, NULL);
     xf86ProcessCommonOptions(pInfo, pInfo->options); 
 
-    pVBox->screen = xf86SetIntOption(pInfo->options, "ScreenNumber", 0);
+    device = xf86CheckStrOption(dev->commonOptions, "Device",
+                                "/dev/vboxadd");
 
-    device = xf86CheckStrOption(dev->commonOptions, "Path", "/dev/vboxadd");
-    if (!device)
-	device = xf86CheckStrOption(dev->commonOptions, "Device",
-	                            "/dev/vboxadd");
-    if (!device) {
-        xf86Msg(X_ERROR, "%s: No device specified.\n", pInfo->name);
-	xf86DeleteInput(pInfo, 0);
-        return NULL;
-    }
-	
     xf86Msg(X_CONFIG, "%s: Device: \"%s\"\n", pInfo->name, device);
     do {
         pInfo->fd = open(device, O_RDWR, 0);
@@ -280,18 +198,16 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
 
     if (pInfo->fd < 0) {
         xf86Msg(X_ERROR, "Unable to open VirtualBox device \"%s\".\n", device);
-	xf86DeleteInput(pInfo, 0);
+        xf86DeleteInput(pInfo, 0);
         return NULL;
     }
 
     if (VBoxProbe(pInfo) != Success) {
-	xf86DeleteInput(pInfo, 0);
+        xf86DeleteInput(pInfo, 0);
         return NULL;
     }
 
     pInfo->flags |= XI86_CONFIGURED;
-    pInfo->flags |= XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS |
-            XI86_ALWAYS_CORE | XI86_OPEN_ON_INIT | XI86_CONFIGURED;
     return pInfo;
 }
 
@@ -305,16 +221,11 @@ _X_EXPORT InputDriverRec VBOXMOUSE = {
     0
 };
 
-static void
-VBoxUnplug(pointer	p)
-{
-}
-
 static pointer
-VBoxPlug(pointer	module,
-          pointer	options,
-          int		*errmaj,
-          int		*errmin)
+VBoxPlug(pointer module,
+          pointer options,
+          int *errmaj,
+          int *errmin)
 {
     xf86AddInputDriver(&VBOXMOUSE, module, 0);
     return module;
@@ -338,5 +249,5 @@ _X_EXPORT XF86ModuleData vboxmouseModuleData =
 {
     &VBoxVersionRec,
     VBoxPlug,
-    VBoxUnplug
+    NULL
 };
