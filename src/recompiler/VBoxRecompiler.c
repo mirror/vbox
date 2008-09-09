@@ -735,7 +735,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
     /*
      * Sync the state and enable single instruction / single stepping.
      */
-    int rc = REMR3State(pVM);
+    int rc = REMR3State(pVM, false /* no need to flush the TBs; we always compile. */);
     if (VBOX_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
@@ -1355,6 +1355,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
  */
 void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
 {
+#ifndef VBOX_REM_FLUSH_ALL_TBS
     Assert(env->pVM->rem.s.fInREM);
     if (     (env->cr[0] & X86_CR0_PG)                      /* paging must be enabled */
         &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
@@ -1362,6 +1363,7 @@ void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
         &&  !(env->eflags & VM_MASK)                        /* no V86 mode */
         &&  !HWACCMIsEnabled(env->pVM))
         CSAMR3MonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
+#endif
 }
 
 /**
@@ -1373,12 +1375,14 @@ void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
 void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
 {
     Assert(env->pVM->rem.s.fInREM);
+#ifndef VBOX_REM_FLUSH_ALL_TBS
     if (     (env->cr[0] & X86_CR0_PG)                      /* paging must be enabled */
         &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
         &&   (((env->hflags >> HF_CPL_SHIFT) & 3) == 0)     /* supervisor mode only */
         &&  !(env->eflags & VM_MASK)                        /* no V86 mode */
         &&  !HWACCMIsEnabled(env->pVM))
         CSAMR3UnmonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
+#endif
 }
 
 
@@ -1586,12 +1590,13 @@ void remR3RecordCall(CPUState *env)
  * @returns VBox status code.
  *
  * @param   pVM         VM Handle.
+ * @param   fFlushTBs   Flush all translation blocks before executing code
  *
  * @remark  The caller has to check for important FFs before calling REMR3Run. REMR3State will
  *          no do this since the majority of the callers don't want any unnecessary of events
  *          pending that would immediatly interrupt execution.
  */
-REMR3DECL(int) REMR3State(PVM pVM)
+REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
 {
     Log2(("REMR3State:\n"));
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
@@ -1601,6 +1606,11 @@ REMR3DECL(int) REMR3State(PVM pVM)
 
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
+
+#ifdef VBOX_REM_FLUSH_ALL_TBS
+    if (fFlushTBs)
+        tb_flush(&pVM->rem.s.Env);
+#endif
 
     /*
      * Copy the registers which require no special handling.

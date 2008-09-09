@@ -67,7 +67,7 @@ REMR3DECL(int)  REMR3EmulateInstruction(PVM pVM);
 REMR3DECL(int)  REMR3Step(PVM pVM);
 REMR3DECL(int)  REMR3BreakpointSet(PVM pVM, RTGCUINTPTR Address);
 REMR3DECL(int)  REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address);
-REMR3DECL(int)  REMR3State(PVM pVM);
+REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs);
 REMR3DECL(int)  REMR3StateBack(PVM pVM);
 REMR3DECL(void) REMR3StateUpdate(PVM pVM);
 REMR3DECL(void) REMR3A20Set(PVM pVM, bool fEnable);
