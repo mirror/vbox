@@ -478,6 +478,8 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
     RTSpinlockDestroy(pDevExt->Spinlock);
     pDevExt->Spinlock = NIL_RTSPINLOCK;
+    RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
+    pDevExt->mtxComponentFactory = NIL_RTSEMFASTMUTEX;
 
     /*
      * Free lists.
