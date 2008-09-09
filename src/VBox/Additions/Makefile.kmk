@@ -139,12 +139,12 @@ endif
 ifdef VBOX_WITH_ADDITIONS_ISO.solaris.amd64
  VBOX_PATH_ADDITIONS.solaris.amd64 = $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.solaris.amd64 = \
- 	VBoxSolarisAdditions.pkg=$(VBOX_PATH_ADDITIONS.solaris.amd64)/VBoxSolarisAdditions.pkg
+ 	VBoxSolarisAdditions-amd64.pkg=$(VBOX_PATH_ADDITIONS.solaris.amd64)/VBoxSolarisAdditions.pkg
 endif
 ifdef VBOX_WITH_ADDITIONS_ISO.solaris.x86
  VBOX_PATH_ADDITIONS.solaris.x86 = $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.solaris = \
- 	VBoxSolarisAdditions.pkg=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions.pkg
+ 	VBoxSolarisAdditions-x86.pkg=$(VBOX_PATH_ADDITIONS.solaris.x86)/VBoxSolarisAdditions.pkg
 endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
