@@ -122,7 +122,7 @@ $$(PATH_VBoxSDL)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x01.pn
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
 # Icon include file.
-$$(PATH_VBoxSDL)/VBoxSDL-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $(VBoxSDL_PATH)/Makefile.kmk | $$(dir $$@)
+$$(PATH_VBoxSDL)/VBoxSDL-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxSDL_PATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
