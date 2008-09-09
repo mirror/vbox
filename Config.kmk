@@ -3022,10 +3022,15 @@ ifdef VBOX_WITH_XPCOM
 	$(VBOX_XPCOM_INCS)
  TEMPLATE_VBOXQT4GUIEXE_LIBS += \
 	$(LIB_XPCOM)
+ TEMPLATE_VBOXQT4GUIEXE_INTERMEDIATES += \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 else  # COM
  TEMPLATE_VBOXQT4GUIEXE_INCS += \
 	$(VBOX_PATH_SDK)/bindings/mscom/include
+ TEMPLATE_VBOXQT4GUIEXE_INTERMEDIATES += \
+ 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 endif # COM
+
 
 #
 # Template for building Qt4 GUI components.
