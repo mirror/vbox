@@ -19,25 +19,20 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-DEPTH    ?= ../../../..
-SUB_DEPTH = ..
-endif
 include $(KBUILD_PATH)/subheader.kmk
+if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin"  # No hardened VBoxBFE on darwin (.m).
 
 #
 # Targets.
 #
 ifdef VBOX_WITH_HARDENING
- ifneq ($(KBUILD_TARGET),darwin) # No hardened VBoxBFE on darwin (.m).
-  PROGRAMS += VBoxBFEHardened
-  DLLS += VBoxBFE
- endif
+ PROGRAMS += VBoxBFEHardened
+ DLLS += VBoxBFE
 else
  PROGRAMS += VBoxBFE
 endif
+
 
 #
 # Hardened VBoxBFE.
@@ -172,13 +167,13 @@ VBoxBFE_CFLAGS.linux += -O ## @todo what's this good for?
 VBoxBFE_CLEAN = $(PATH_VBoxBFE)/Ico64x01.h
 VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h
 
-
-include $(KBUILD_PATH)/subfooter.kmk
-
-ifdef PATH_VBoxBFE
 # Convert the pnm-file to a byte array.
-$(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pnm $(VBOX_BIN2C) | $(call DIRDEP,$(PATH_VBoxBFE))
+$$(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,VBoxBFE,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
-endif
+
+
+endif # !VBOX_WITH_HARDENING || !darwin
+include $(KBUILD_PATH)/subfooter.kmk
+
 
