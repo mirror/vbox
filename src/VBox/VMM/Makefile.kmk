@@ -19,11 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../..
-else
-DEPTH     = ../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
@@ -213,10 +209,9 @@ ifeq ($(VBOX_LDR_FMT32),pe)
 VMMGCBuiltin_SOURCES = VMMGC/VMMGCBuiltin.def
 endif
 ifeq ($(VBOX_LDR_FMT32),lx)
-VMMGCBuiltin_SOURCES = $(PATH_TARGET)/VMMGCBuiltin.def
-$(PATH_TARGET)/VMMGCBuiltin.def: $(PATH_SUB_CURRENT)/VMMGC/VMMGCBuiltin.def | $(call DIRDEP,$(PATH_TARGET))
-	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
-	$(MV) -f $@.tmp $@
+VMMGCBuiltin_SOURCES = $(PATH_VMMGCBuiltin)/VMMGCBuiltin.def
+$$(PATH_VMMGCBuiltin)/VMMGCBuiltin.def: $(PATH_SUB_CURRENT)/VMMGC/VMMGCBuiltin.def | $$(dir $$@)
+	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' --output $@ $<
 endif
 
 
@@ -229,12 +224,11 @@ ifeq ($(VBOX_LDR_FMT32),pe)
 VMMGCImp_SOURCES = VMMGC/VMMGC.def
 endif
 ifeq ($(VBOX_LDR_FMT32),lx)
-VMMGCImp_SOURCES = $(PATH_TARGET)/VMMGC.def
-$(PATH_TARGET)/VMMGC.def: $(PATH_SUB_CURRENT)/VMMGC/VMMGC.def | $(call DIRDEP,$(PATH_TARGET))
-	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
-	$(APPEND) "$@.tmp" ""
-	$(APPEND) "$@.tmp" "    ___ehInit"
-	$(MV) -f $@.tmp $@
+VMMGCImp_SOURCES = $(PATH_VMMGCImp)/VMMGC.def
+$$(PATH_VMMGCImp)/VMMGC.def: $(PATH_SUB_CURRENT)/VMMGC/VMMGC.def | $$(dir $$@)
+	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' --output $@  $<
+	$(APPEND) "$@" ""
+	$(APPEND) "$@" "    ___ehInit"
 endif
 
 endif # GC: pe + lx
@@ -250,12 +244,11 @@ VMMR0Imp_TEMPLATE = VBOXR0
 VMMR0Imp_SOURCES = VMMR0/VMMR0.def
  endif
  ifeq ($(VBOX_LDR_FMT),lx)
-VMMR0Imp_SOURCES = $(PATH_TARGET)/VMMR0.def
-$(PATH_TARGET)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $(call DIRDEP,$(PATH_TARGET))
-	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' $< > $@.tmp
-	$(APPEND) "$@.tmp" ""
-	$(APPEND) "$@.tmp" "    ___ehInit"
-	$(MV) -f $@.tmp $@
+VMMR0Imp_SOURCES = $(PATH_VMMR0Imp)/VMMR0.def
+$$(PATH_VMMR0Imp)/VMMR0.def: $(PATH_SUB_CURRENT)/VMMR0/VMMR0.def | $$(dir $$@)
+	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /'  --output $@ $<
+	$(APPEND) "$@" ""
+	$(APPEND) "$@" "    ___ehInit"
  endif
 endif # R0: pe + lx
 
@@ -337,7 +330,7 @@ ifeq ($(VBOX_LDR_FMT32),pe)
 VMMGC_SOURCES += VMMGC/VMMGC.def
 endif
 ifeq ($(VBOX_LDR_FMT32),lx)
-VMMGC_SOURCES += $(PATH_TARGET)/VMMGC.def
+VMMGC_SOURCES += $(PATH_VMMGCImp)/VMMGC.def
 endif
 
 # the very last one.
@@ -415,7 +408,7 @@ ifeq ($(VBOX_LDR_FMT),pe)
 VMMR0_SOURCES += VMMR0/VMMR0.def
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
-VMMR0_SOURCES += $(PATH_TARGET)/VMMR0.def
+VMMR0_SOURCES += $(PATH_VMMR0Imp)/VMMR0.def
 endif
 
 VMMR0_LIBS = \

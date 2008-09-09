@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-SUB_DEPTH = ..
-DEPTH    ?= ../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -46,6 +41,9 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  PROGRAMS  += tstPDMAsyncCompletion
 endif
 
+# Where we put our temporary files (just for simplicity)
+VBOX_VMM_TESTCASE_OUT_DIR := $(PATH_TARGET)/VMM
+BLDDIRS += $(VBOX_VMM_TESTCASE_OUT_DIR)
 
 #
 # We setup two 'other' targets for executing the two structure & alignment
@@ -54,28 +52,28 @@ endif
 ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
   OTHERS += \
-	$(PATH_TARGET)/tstAsmStructs.run \
-	$(PATH_TARGET)/tstVMStructSize.run
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
  endif
 endif
 
 # The normal testing pass.
 TESTING += \
-	$(PATH_TARGET)/tstAsmStructs.run \
-	$(PATH_TARGET)/tstVMStructSize.run
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
 
 OTHER_CLEAN += \
-	$(PATH_TARGET)/tstAsmStructs.run \
-	$(PATH_TARGET)/tstVMStructSize.run \
-	$(PATH_TARGET)/tstAsmStructs.h \
-	$(PATH_TARGET)/tstAsmStructsAsm.o \
-	$(PATH_TARGET)/tstAsmStructsAsm.mac \
-	$(PATH_TARGET)/tstAsmStructsAsm.mac.o \
-	$(PATH_TARGET)/tstAsmStructsAsm.mac.lst \
-	$(PATH_TARGET)/tstAsmStructs.h.dump \
-	$(PATH_TARGET)/tstAsmStructsGC.h \
-	$(PATH_TARGET)/tstAsmStructsHC.h \
-	$(PATH_TARGET)/tstVMStructGC.h
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.h \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac.o \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac.lst \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.h.dump \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsGC.h \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructGC.h
 
 #
 # Globals
@@ -98,16 +96,16 @@ tstVMStructSize_DEFS    = IN_VMM_R3 IN_PDM_R3 IN_CFGM_R3 IN_IOM_R3 IN_VM_R3 IN_C
 ifdef VBOX_WITH_IDT_PATCHING
 tstVMStructSize_DEFS   += VBOX_WITH_IDT_PATCHING
 endif
-tstVMStructSize_INCS    = $(VBOX_PATH_VMM_SRC) $(VBOX_PATH_VMM_SRC)/PATM $(PATH_TARGET)
+tstVMStructSize_INCS    = $(VBOX_PATH_VMM_SRC) $(VBOX_PATH_VMM_SRC)/PATM $(VBOX_VMM_TESTCASE_OUT_DIR)
 tstVMStructSize_SOURCES = tstVMStructSize.cpp
-tstVMStructSize.cpp_DEPS= $(PATH_TARGET)/tstVMStructGC.h
+tstVMStructSize.cpp_DEPS= $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructGC.h
 
 tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
 tstAsmStructs_DEFS      = IN_VMM_R3 IN_PDM_R3 IN_CFGM_R3 IN_IOM_R3 IN_VM_R3 IN_CPUM_R3 IN_SELM_R3 IN_PGM_R3 IN_TRPM_R3 IN_MM_R3 IN_PDM_R3 IN_DBGF_R3 IN_PATM_R3 IN_DIS_R3 IN_STAM_R3 IN_VGADEVICE_R3 IN_CSAM_R3 IN_SSM_R3
 ifdef VBOX_WITH_IDT_PATCHING
 tstAsmStructs_DEFS     += VBOX_WITH_IDT_PATCHING
 endif
-tstAsmStructs_INCS      = $(VBOX_PATH_VMM_SRC) $(PATH_TARGET)
+tstAsmStructs_INCS      = $(VBOX_PATH_VMM_SRC) $(VBOX_VMM_TESTCASE_OUT_DIR)
 tstAsmStructs_SOURCES   = tstAsmStructs.cpp
 
 tstAsmStructsGC_TEMPLATE= VBOXGCEXE
@@ -115,10 +113,10 @@ tstAsmStructsGC_DEFS    = IN_VMM_GC IN_PDM_GC IN_CFGM_GC IN_IOM_GC IN_VM_GC IN_C
 ifdef VBOX_WITH_IDT_PATCHING
 tstAsmStructsGC_DEFS    += VBOX_WITH_IDT_PATCHING
 endif
-tstAsmStructsGC_INCS    = $(VBOX_PATH_VMM_SRC) $(PATH_TARGET)
+tstAsmStructsGC_INCS    = $(VBOX_PATH_VMM_SRC) $(VBOX_VMM_TESTCASE_OUT_DIR)
 tstAsmStructsGC_SOURCES = tstAsmStructs.cpp
 
-tstAsmStructs.cpp_DEPS  = $(PATH_TARGET)/tstAsmStructsHC.h $(PATH_TARGET)/tstAsmStructsGC.h
+tstAsmStructs.cpp_DEPS  = $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsGC.h
 
 
 tstGlobalConfig_TEMPLATE= VBOXR3TSTEXE
@@ -226,10 +224,10 @@ MY_ASA_ASM_STUFF = \
 			$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
 		) \
 		-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
-		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(PATH_TARGET),-I$(inc)/)
+		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_VMM_TESTCASE_OUT_DIR),-I$(inc)/)
 
 # 1a. make a header file which makes all the structures+members globals.
-$(PATH_TARGET)/tstAsmStructsAsm.mac: \
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
 		$(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm.asm \
 		$(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm-lst.sed \
 		$(DEPTH)/include/iprt/asmdefs.mac \
@@ -241,7 +239,7 @@ $(PATH_TARGET)/tstAsmStructsAsm.mac: \
 		$(VBOX_PATH_VMM_SRC)/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
 		$(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG) \
-		| $(call DIRDEP,$(PATH_TARGET))
+		| $$(dir $$@)
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
 ifndef DONT_USE_YASM
 	$(QUIET)$(TOOL_YASM_AS) $(MY_ASA_ASM_STUFF) -o $@.o -l $@.lst $<
@@ -255,11 +253,11 @@ else
 endif
 
 # 1b. make an elf/macho object containing the offsets.
-$(PATH_TARGET)/tstAsmStructsAsm.o: \
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(VBOX_PATH_VMM_SRC)/testcase/tstAsmStructsAsm.asm \
-		$(PATH_TARGET)/tstAsmStructsAsm.mac \
+		$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
-		| $(call DIRDEP,$(PATH_TARGET))
+		| $$(dir $$@)
 	$(call MSG_COMPILE,tstAsmStructsasm,$<,$@,AS)
 ifndef DONT_USE_YASM
 	$(QUIET)$(TOOL_YASM_AS) $(MY_ASA_ASM_STUFF) -DDO_GLOBALS -o $@ $<
@@ -268,7 +266,7 @@ else
 endif
 
 # 2. use nm and sed to transform this into the header we want.
-$(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
 	$(QUIET)$(RM) -f $@ $@.dump $@.tmp
 	$(QUIET)$(REDIRECT) -wo $@.dump -- $(VBOX_NM) $<
@@ -282,7 +280,7 @@ $(PATH_TARGET)/tstAsmStructsHC.h: $(PATH_TARGET)/tstAsmStructsAsm.o
 	$(QUIET)$(RM) -f $@.dump
 
 # 3. transform the HC header into a GC one by omitting some HC only structures.
-$(PATH_TARGET)/tstAsmStructsGC.h: $(PATH_TARGET)/tstAsmStructsHC.h
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsGC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h
 	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
 	$(QUIET)$(SED) -e '/VMMSWITCHERDEF/d' --output $@ $^
 
@@ -290,7 +288,7 @@ $(PATH_TARGET)/tstAsmStructsGC.h: $(PATH_TARGET)/tstAsmStructsHC.h
 .SECONDEXPANSION:
 
 # 4. run it.
-$(PATH_TARGET)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(INSTARGET_tstAsmStructsGC)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(INSTARGET_tstAsmStructsGC)
 	$(QUIET)$(RM) -f $@
 	$(INSTARGET_tstAsmStructs)
 	$(INSTARGET_tstAsmStructsGC)
@@ -303,16 +301,16 @@ $(PATH_TARGET)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(INSTARGET_tstAs
 #
 
 # 1. Manually dump selected structures and members.
-$(PATH_TARGET)/tstVMStructGC.h: $$(INSTARGET_tstVMStructGC)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructGC.h: $$(INSTARGET_tstVMStructGC)
 	$(call MSG_GENERATE,tstVMStructSize,$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $^
 
 # 2. run it.
-$(PATH_TARGET)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize)
 	$(QUIET)$(RM) -f $@
 	$^
 	$(QUIET)$(APPEND) "$@" "done"
 
 # alias for the two struct tests.
-run-struct-tests: $(PATH_TARGET)/tstAsmStructs.run $(PATH_TARGET)/tstVMStructSize.run
+run-struct-tests: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
 
