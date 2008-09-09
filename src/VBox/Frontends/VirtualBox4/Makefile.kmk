@@ -190,6 +190,9 @@ ifdef VBOX_WITH_NETFLT
  VirtualBox4_DEFS         += VBOX_WITH_NETFLT
 endif
 
+src/main.cpp_DEFS         += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
+src/main.cpp_DEPS         += $(VBOX_VERSION_MK)
+
 VirtualBox4_INCS           = \
 	./include \
 	$(PATH_VirtualBox4)/include
