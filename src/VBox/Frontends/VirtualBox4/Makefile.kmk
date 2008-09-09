@@ -38,9 +38,6 @@ VBOX_WITH_REGISTRATION_REQUEST := 1
 VBOX_WITH_UPDATE_REQUEST := 1
 
 
-# Disable the debugger for now, this is another story.
-VBOX_WITH_DEBUGGER_GUI :=
-
 #
 # The targets.
 #
@@ -96,6 +93,9 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: \
 		&& tar -chvf - $(addprefix vboxkeyboard/,$(notdir $^)) \
 		   | gzip - > $@
 	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard
+
+OTHER_CLEAN += \
+	$(PATH_BIN)/vboxkeyboard.tar.gz
 
 
 #
@@ -218,12 +218,14 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
  VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
+if 0 ## @todo not finished yet.
 ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
  ifeq ($(KBUILD_TARGET),win)
   VirtualBox4_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
  else
   VirtualBox4_LIBS        += $(PATH_DLL)/VBoxDbg$(VBOX_SUFF_DLL)
  endif
+endif
 endif
 
 
@@ -388,7 +390,7 @@ endif
 
 VirtualBox4_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp \
-	$(PATH_TARGET)/VirtualBox4.rc
+	$(PATH_VirtualBox4)/VirtualBox4.rc
 
 VirtualBox4_SOURCES.darwin = \
 	src/darwin/DarwinKeyboard.cpp \
@@ -455,44 +457,43 @@ ifdef VBOX_WITH_XPCOM
 endif
 
 
+#
+# Generate the COM wrappers.
+#
+VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include/
+VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h
+VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h
 
+$$(PATH_VirtualBox4)/include/COMWrappers.h: \
+		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
+		$(PATH_SUB_CURRENT)/include/COMWrappers.xsl \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,VirtualBox4,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_WRAPPERS_TEMPLATE4) $<
+
+# alias for generating the COM Wrappers file.
+testwrappers:: $(VBOX_WRAPPERS_FILE4)
+
+
+ifeq ($(KBUILD_TYPE),win)
 #
 # On Windows we'll have to generate/edit the resource file.
 # The IDI_ICON1 name is Qt specific.
 #
-$(PATH_TARGET)/VirtualBox4.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(call DIRDEP,$$(@D))
+$$(PATH_VirtualBox4)/VirtualBox4.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
-VirtualBox4_CLEAN.win += $(PATH_TARGET)/VirtualBox4.rc
+VirtualBox4_CLEAN.win += $$(PATH_VirtualBox4)/VirtualBox4.rc
+endif
 
 
-#
-# Other stuff.
-#
-VBOX_WRAPPERS_FILE4 = $(PATH_VirtualBox4)/include/COMWrappers.h
-VirtualBox4_BLDDIRS += $(PATH_VirtualBox4)/include/
-VirtualBox4_INTERMEDIATES = $(VBOX_WRAPPERS_FILE4)
-
-VBOX_WRAPPERS_INC_FILE4 = include/COMDefs.h
-VBOX_WRAPPERS_TEMPLATE4 = include/COMWrappers.xsl
-VBOX_WRAPPERS_XIDLFILE4 = ../../Main/idl/VirtualBox.xidl
-
-
-
-# generated files we need to clean manually
-OTHER_CLEAN = \
-	$(VirtualBox4_GENSRCS) \
-	$(VirtualBox4_GENHDRS) \
-	$(VBOX_WRAPPERS_FILE4) \
-	$(PATH_BIN)/vboxkeyboard.tar.gz
-
-
+ifeq ($(KBUILD_TYPE),darwin)
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
 # The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
 #
-INSTALLS.darwin += VirtualBox.app
+INSTALLS += VirtualBox.app
 VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
 VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
@@ -510,7 +511,7 @@ $$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		$< > $@
 
-INSTALLS.darwin += VirtualBoxVM.app
+INSTALLS += VirtualBoxVM.app
 VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
 VirtualBoxVM.app_MODE = 644
 VirtualBoxVM.app_SOURCES = \
@@ -529,6 +530,8 @@ $$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		--output $@ $<
+endif # darwin
+
 
 #
 # Testcase for the darwin keyboard routines.
@@ -577,19 +580,6 @@ IMAGES :=
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
 include $(KBUILD_PATH)/footer.kmk
-
-
-#
-# Generate the COM wrappers.
-#
-$(VBOX_WRAPPERS_INC_FILE4): $(VBOX_WRAPPERS_FILE4)
-
-$(VBOX_WRAPPERS_FILE4): $(VBOX_WRAPPERS_XIDLFILE4) $(VBOX_WRAPPERS_TEMPLATE4) | $(call DIRDEP,$(PATH_VirtualBox4)/include/)
-	$(call MSG_TOOL,xsltproc,VirtualBox4,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_WRAPPERS_TEMPLATE4) $<
-
-# alias for generating the COM Wrappers file.
-testwrappers:: $(VBOX_WRAPPERS_FILE4)
 
 
 #
