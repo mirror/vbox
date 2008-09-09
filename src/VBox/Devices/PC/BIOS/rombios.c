@@ -4587,11 +4587,11 @@ int15_function32(regs, ES, DS, FLAGS)
   Bit16u ES, DS, FLAGS;
 {
   Bit32u  extended_memory_size=0; // 64bits long
-#if 0  /* bird: later */
+#if VBOX_WITH_SMP_GUESTS
   Bit32u  extra_lowbits_memory_size=0;
 #endif
   Bit16u  CX,DX;
-#if 0  /* bird: later */
+#if VBOX_WITH_SMP_GUESTS
   Bit8u   extra_highbits_memory_size=0;
 #endif
 
@@ -4667,7 +4667,7 @@ ASM_END
                     extended_memory_size *= 1024;
                 }
 
-#if 0 /* bird: later (btw. this ain't making sense complixity wise, unless its a AMI/AWARD/PHOENIX interface) */
+#if VBOX_WITH_SMP_GUESTS /* bird: later (btw. this ain't making sense complixity wise, unless its a AMI/AWARD/PHOENIX interface) */
                 extra_lowbits_memory_size = inb_cmos(0x61);
                 extra_lowbits_memory_size <<= 8;
                 extra_lowbits_memory_size |= inb_cmos(0x62);
@@ -4742,7 +4742,7 @@ ASM_END
                         /* 256KB BIOS area at the end of 4 GB */
                         set_e820_range(ES, regs.u.r16.di,
                                        0xfffc0000L, 0x00000000L, 0, 0, 2);
-#if 0 /* bird: later */
+#if VBOX_WITH_SMP_GUESTS
                         if (extra_highbits_memory_size || extra_lowbits_memory_size)
                             regs.u.r32.ebx = 6;
                         else
@@ -4752,7 +4752,7 @@ ASM_END
                         regs.u.r32.ecx = 0x14;
                         CLEAR_CF();
                         return;
-#if 0 /* bird: later */
+#if VBOX_WITH_SMP_GUESTS
                     case 6:
                         /* Mapping of memory above 4 GB */
                         set_e820_range(ES, regs.u.r16.di,
