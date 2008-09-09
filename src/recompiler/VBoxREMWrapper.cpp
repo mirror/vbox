@@ -496,20 +496,20 @@ static const REMPARMDESC g_aArgsCPUMQueryGuestCtxPtr[] =
 static const REMPARMDESC g_aArgsCSAMR3MonitorPage[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG), NULL }
 };
 static const REMPARMDESC g_aArgsCSAMR3UnmonitorPage[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG), NULL }
 };
 
 static const REMPARMDESC g_aArgsCSAMR3RecordCallAddress[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL }
 };
 
 #if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
