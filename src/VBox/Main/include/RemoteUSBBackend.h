@@ -79,7 +79,7 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
 
         int saveDeviceList (const void *pvList, uint32_t cbList);
         
-        int negotiateResponse (const VRDPUSBREQNEGOTIATERET *pret);
+        int negotiateResponse (const VRDPUSBREQNEGOTIATERET *pret, uint32_t cbRet);
 
         int reapURB (const void *pvBody, uint32_t cbBody);
 
@@ -129,6 +129,9 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
         bool mfWillBeDeleted;
         
         Guid aGuids[VRDP_MAX_USB_DEVICES_PER_CLIENT];
+
+        /* VRDP_USB_VERSION_2: the client version. */
+        uint32_t mClientVersion;
 };
 
 #endif /* ____H_REMOTEUSBBACKEND */
