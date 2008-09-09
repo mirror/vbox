@@ -85,7 +85,8 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: $(abspathex \
 		src/linux/keyboard-list.h \
 		src/linux/keyboard-tables.h \
 		src/linux/keyboard-types.h \
-		src/linux/Makefile,$(PATH_SUB_CURRENT))
+		src/linux/Makefile \
+		,$(PATH_SUB_CURRENT))
 	$(call MSG_TOOL,tar/gzip,,$@)
 	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard $@
 	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/linux/ $(PATH_TARGET)/vboxkeyboard
