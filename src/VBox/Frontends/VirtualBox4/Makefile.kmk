@@ -493,16 +493,16 @@ ifeq ($(KBUILD_TYPE),darwin)
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
 # The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
 #
-INSTALLS += VirtualBox.app
-VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
-VirtualBox.app_MODE = 644
-VirtualBox.app_SOURCES = \
+INSTALLS += VirtualBox4.app
+VirtualBox4.app_INST = $(INST_VIRTUALBOX)Contents/
+VirtualBox4.app_MODE = 644
+VirtualBox4.app_SOURCES = \
 	src/darwin/PkgInfo \
-	$(PATH_VirtualBox.app)/Info.plist \
+	$(PATH_VirtualBox4.app)/Info.plist \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns
 
-$$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
-	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
+$$(PATH_VirtualBox4.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+	$(call MSG_GENERATE,VirtualBox4.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
@@ -512,17 +512,17 @@ $$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(
 		$< > $@
 
 INSTALLS += VirtualBoxVM.app
-VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
-VirtualBoxVM.app_MODE = 644
-VirtualBoxVM.app_SOURCES = \
+VirtualBox4VM.app_INST = $(VirtualBox4.app_INST)Resources/VirtualBoxVM.app/Contents/
+VirtualBox4VM.app_MODE = 644
+VirtualBox4VM.app_SOURCES = \
 	src/darwin/VM-PkgInfo=>PkgInfo \
-	$(PATH_VirtualBoxVM.app)/VM-Info.plist=>Info.plist \
+	$(PATH_VirtualBox4VM.app)/VM-Info.plist=>Info.plist \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns
-VirtualBoxVM.app_SYMLINKS = \
+VirtualBox4VM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/
 
-$$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
-	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
+$$(PATH_VirtualBox4VM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+	$(call MSG_GENERATE,VirtualBox4VM.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \

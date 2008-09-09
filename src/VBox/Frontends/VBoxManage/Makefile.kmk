@@ -19,37 +19,32 @@
 # additional information or have any questions.
 #
 
-
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-DEPTH    ?= ../../../..
-SUB_DEPTH = ..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxManage
 ifdef VBOX_ONLY_DOCS
  VBoxManage_TEMPLATE   = VBOXR3NPEXE
  VBoxManage_DEFS      += VBOX_ONLY_DOCS
- VBoxManage_SOURCES     = \
+ VBoxManage_SOURCES = \
 	VBoxManage.cpp \
 	VBoxManageSVN.cpp
  VBoxManage_LIBS      += $(LIB_RUNTIME)
 else # !VBOX_ONLY_DOCS
  VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
- VBoxManage_DEFS      += $(if $(VBOX_WITH_VRDP),VBOX_WITH_VRDP,) \
-                         $(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA,) \
-                         $(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE,) \
-                         $(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
-                         $(if $(VBOX_WITH_AHCI),VBOX_WITH_AHCI,) \
-                         $(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
+ VBoxManage_DEFS      += \
+ 	$(if $(VBOX_WITH_VRDP), VBOX_WITH_VRDP) \
+ 	$(if $(VBOX_WITH_ALSA), VBOX_WITH_ALSA) \
+ 	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE) \
+ 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
+ 	$(if $(VBOX_WITH_AHCI), VBOX_WITH_AHCI) \
+ 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS)
  VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
- VBoxManage_SOURCES     = \
-	VBoxManage.cpp \
-	VBoxInternalManage.cpp \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
-	VBoxManageSVN.cpp
+ VBoxManage_SOURCES = \
+ 	VBoxManage.cpp \
+ 	VBoxInternalManage.cpp \
+ 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
+ 	VBoxManageSVN.cpp
 endif # !VBOX_ONLY_DOCS
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see
