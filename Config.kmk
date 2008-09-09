@@ -1088,11 +1088,7 @@ ifeq ($(KBUILD_TARGET),win)
  LIB_RUNTIME_EF  = #$(PATH_LIB)/RuntimeEFCPP.lib
  LIB_KPROFILE    = $(PATH_LIB)/kPrf2.lib
  LIB_VMM         = $(PATH_LIB)/VBoxVMM.lib
- ifdef VBOX_SINGLE_MAKEFILE
-  LIB_VMMGC      = $(PATH_OBJ)/VMMGC/VMMGC.lib
- else
-  LIB_VMMGC      = $(PATH_OBJ)/src/VBox/VMM/VMMGC/VMMGC.lib
- endif
+ LIB_VMMGC      = $(PATH_OBJ)/VMMGC/VMMGC.lib
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dll
  LIB_DDU         = $(PATH_LIB)/VBoxDDU.lib
