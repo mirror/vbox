@@ -26,7 +26,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 # Globals
 #
 VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
-VBOX_DEVICES_TEST_OUT_DIR := $(PATH_SUB_CURRENT)/Devices/testcase
+VBOX_DEVICES_TEST_OUT_DIR := $(PATH_TARGET)/Devices/testcase
 BLDDIRS += $(VBOX_DEVICES_TEST_OUT_DIR)
 
 #
