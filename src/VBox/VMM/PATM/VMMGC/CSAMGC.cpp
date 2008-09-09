@@ -70,6 +70,9 @@ CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 
     Assert(pVM->csam.s.cDirtyPages < CSAM_MAX_DIRTY_PAGES);
 
+    /* Flush the recompilers translation block cache as the guest seems to be modifying instructions. */
+    EMFlushREMTBs(pVM);
+
     pPATMGCState = PATMQueryGCState(pVM);
     Assert(pPATMGCState);
 
