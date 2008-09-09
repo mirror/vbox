@@ -103,7 +103,9 @@ $(PATH_TARGET)/$(SOURCE_DIRECTORY): | $$(dir $@)
 
 $(PATH_BIN)/vboxkeyboard3.tar.gz: $(abspathex $(VBoxKeyboard3_TARSOURCES),$(PATH_SUB_CURRENT)) $(PATH_TARGET)/$(SOURCE_DIRECTORY)
 	$(call MSG_TOOL,tar/gzip,,$@)
-	cd $(PATH_TARGET) && tar -chf - $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard3_TARSOURCES))) | gzip - > $@
+	$(QUIET)cd $(PATH_TARGET) \
+		&& tar -cvhf - $(addprefix $(SOURCE_DIRECTORY)/,$(subst $(DIRECTORY_PREFIX),,$(VBoxKeyboard3_TARSOURCES))) \
+		   | gzip - > $@
 
 OTHER_CLEAN += \
 	$(PATH_BIN)/vboxkeyboard3.tar.gz \
