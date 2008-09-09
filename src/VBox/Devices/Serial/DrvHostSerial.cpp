@@ -878,13 +878,13 @@ ioctl_error:
     rc = sigaction(SIGUSR2, &SigactionThread, &SigactionThreadOld);
     if (rc < 0)
         PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long."),
+                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long"),
                                     pThis->pszDevicePath, RTErrConvertFromErrno(errno));
 
     rc = pthread_kill(ThreadId, SIGUSR2);
     if (rc < 0)
         PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long."),
+                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long"),
                                     pThis->pszDevicePath, RTErrConvertFromErrno(rc));
 
     /* Restore old action handler. */
