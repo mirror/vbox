@@ -19,13 +19,15 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-SUB_DEPTH = ..
-DEPTH    ?= ../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
+
+#
+# Globals
+#
+VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
+VBOX_DEVICES_TEST_OUT_DIR := $(VBOX_DEVICES_TEST_OUT_DIR)/Devices/testcase
+BLDDIRS += $(VBOX_DEVICES_TEST_OUT_DIR)
 
 #
 # We setup one 'other' target for executing the structure & alignment
@@ -34,19 +36,14 @@ include	$(KBUILD_PATH)/subheader.kmk
 ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
   OTHERS += \
-	$(PATH_TARGET)/tstDeviceStructSize.run
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
  endif
 endif
 
 # The normal testing pass.
 TESTING += \
-	$(PATH_TARGET)/tstDeviceStructSize.run
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
 
-
-#
-# Globals
-#
-VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 
 #
 # The testcase generator.
@@ -70,7 +67,7 @@ tstDeviceStructSizeGC_SOURCES   = tstDeviceStructSizeGC.cpp
 tstDeviceStructSizeGC_INCS      = \
 	$(VBOX_PATH_DEVICES_SRC) \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
-	$(PATH_TARGET)
+	$(VBOX_DEVICES_TEST_OUT_DIR)
 
 #
 # The testcase it self.
@@ -93,12 +90,12 @@ endif
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
-	$(PATH_TARGET)
+	$(VBOX_DEVICES_TEST_OUT_DIR)
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp
 tstDeviceStructSize_CLEAN    = \
-	$(PATH_TARGET)/tstDeviceStructSizeGC.h \
-	$(PATH_TARGET)/tstDeviceStructSizeGC.run
-tstDeviceStructSize.cpp_DEPS = $(PATH_TARGET)/tstDeviceStructSizeGC.h
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h \
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.run
+tstDeviceStructSize.cpp_DEPS = $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h
 
 #
 # Run rule for tstDeviceStructSize.
@@ -109,18 +106,18 @@ tstDeviceStructSize.cpp_DEPS = $(PATH_TARGET)/tstDeviceStructSizeGC.h
 ## future
 
 # 1&2. Manually dump selected structures and members.
-$(PATH_TARGET)/tstDeviceStructSizeGC.h: $$(INSTARGET_tstDeviceStructSizeGC)
+$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h: $$(INSTARGET_tstDeviceStructSizeGC) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $^
 
 # 3. run it.
-$(PATH_TARGET)/tstDeviceStructSize.run: $$(INSTARGET_tstDeviceStructSize)
+$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run: $$(INSTARGET_tstDeviceStructSize) | $$(dir $$@)
 	$(QUIET)$(RM) -f $@
 	$^
 	$(QUIET)$(APPEND) "$@" "done"
 
 # alias for the struct test.
-run-struct-tests: $(PATH_TARGET)/tstDeviceStructSize.run
+run-struct-tests: $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
 
 
 include	$(KBUILD_PATH)/subfooter.kmk

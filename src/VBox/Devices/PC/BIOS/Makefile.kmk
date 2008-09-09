@@ -19,14 +19,12 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-SUB_DEPTH = ../..
-DEPTH    ?= ../../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
+#
+# Globals
+#
 VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 
 #
@@ -44,22 +42,22 @@ LIBRARIES += PcBiosBin
 PcBiosBin_TEMPLATE  = VBOXR3
 PcBiosBin_DEFS      = IN_VBOXDD2
 PcBiosBin_INCS      = $(VBOX_PATH_DEVICES_SRC)
-PcBiosBin_SOURCES   = $(PATH_TARGET)/PcBiosBin.c
-$(PATH_TARGET)/PcBiosBin.c_DEPS = $(PATH_TARGET)/pcbios-syms.h
+PcBiosBin_SOURCES   = $(PATH_PcBiosBin)/PcBiosBin.c
+PcBiosBin_DEPS      = $(PATH_PcBiosBin)/pcbios-syms.h
 PcBiosBin_CLEAN     = \
-	$(PATH_TARGET)/_rombios_.c \
-	$(PATH_TARGET)/rombios0.s \
-	$(PATH_TARGET)/rombios1.s \
-	$(PATH_TARGET)/pcbios.lst \
-	$(PATH_TARGET)/pcbios.tmp \
-	$(PATH_TARGET)/pcbios.bin \
-	$(PATH_TARGET)/PcBiosBin.c \
-	$(PATH_TARGET)/pcbios-syms.h
+	$(PATH_PcBiosBin)/_rombios_.c \
+	$(PATH_PcBiosBin)/rombios0.s \
+	$(PATH_PcBiosBin)/rombios1.s \
+	$(PATH_PcBiosBin)/pcbios.lst \
+	$(PATH_PcBiosBin)/pcbios.tmp \
+	$(PATH_PcBiosBin)/pcbios.bin \
+	$(PATH_PcBiosBin)/PcBiosBin.c \
+	$(PATH_PcBiosBin)/pcbios-syms.h
 
 #
 # Rule for making the bios.
 #
-$(PATH_TARGET)/PcBiosBin.c: $(PATH_TARGET)/pcbios.bin $(VBOX_BIN2C)
+$$(PATH_PcBiosBin)/PcBiosBin.c: $$(PATH_PcBiosBin)/pcbios.bin $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,PcBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 64 -max 256 -mask 0xffff -ascii -export PcBiosBinary $< $@
 
@@ -68,42 +66,42 @@ $(PATH_TARGET)/PcBiosBin.c: $(PATH_TARGET)/pcbios.bin $(VBOX_BIN2C)
 #
 
 # 1. precompile rombios.c
-$(PATH_TARGET)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT)/logo.c $(PATH_SUB_CURRENT)/apmbios.S \
-		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h | $(call DIRDEP,$(PATH_TARGET))
+$$(PATH_PcBiosBin)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT)/logo.c $(PATH_SUB_CURRENT)/apmbios.S \
+		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h | $$(dir $@)
 	$(call MSG_TOOL,cpp,PcBiosBin,$<,$@)
-	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -I$(PATH_TARGET) -I$(VBOX_PATH_DEVICES_SRC)/PC -I$(PATH_ROOT)/include -I$(PATH_OUT) -DBX_SMP_PROCESSORS=1 -DVBOX -DVBOX_PC_BIOS $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) -P -o $@ $<
+	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -I$(PATH_PcBiosBin) -I$(VBOX_PATH_DEVICES_SRC)/PC -I$(PATH_ROOT)/include -I$(PATH_OUT) -DBX_SMP_PROCESSORS=1 -DVBOX -DVBOX_PC_BIOS $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) -P -o $@ $<
 
 # 2. compile to intermediate asm file.
 # BCC tempfile clashes, order the BCC jobs to make sure they don't interfere with one another.
-$(PATH_TARGET)/rombios0.s: $(PATH_TARGET)/_rombios_.c $(VBOX_VERSION_STAMP) | $(VBOX_BCC_JOBS)
+$$(PATH_PcBiosBin)/rombios0.s: $$(PATH_PcBiosBin)/_rombios_.c $(VBOX_VERSION_STAMP) | $(VBOX_BCC_JOBS)
 	$(call MSG_COMPILE,PcBiosBin,$<,$@,C)
 	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $<
-VBOX_BCC_JOBS += $(PATH_TARGET)/rombios0.s
+VBOX_BCC_JOBS += $(PATH_PcBiosBin)/rombios0.s
 
 # 3. post process intermediate asm file.
-$(PATH_TARGET)/rombios1.s: $(PATH_TARGET)/rombios0.s
+$$(PATH_PcBiosBin)/rombios1.s: $$(PATH_PcBiosBin)/rombios0.s
 	$(call MSG_TOOL,Adjusting BCC Assembly,PcBiosBin,$<,$@)
 	$(QUIET)$(SED) -e 's/^\.text//' -e 's/^\.data//' --output $@ $^
 
 # 4. assemble the intermediate asm file. (also creates a listing rombios.lst)
-$(PATH_TARGET)/pcbios.tmp $(PATH_TARGET)/pcbios.lst: $(PATH_TARGET)/rombios1.s
+$$(PATH_PcBiosBin)/pcbios.tmp + $$(PATH_PcBiosBin)/pcbios.lst: $$(PATH_PcBiosBin)/rombios1.s
 	$(call MSG_COMPILE,PcBiosBin,$<,$@,AS)
-	$(QUIET)$(REDIRECT) -ri $^ -- $(VBOX_AS86) -b $(PATH_TARGET)/pcbios.tmp -u- -w- -g -0 -j -O -l $(PATH_TARGET)/pcbios.lst
+	$(QUIET)$(REDIRECT) -ri $^ -- $(VBOX_AS86) -b $(PATH_PcBiosBin)/pcbios.tmp -u- -w- -g -0 -j -O -l $(PATH_PcBiosBin)/pcbios.lst
 
 # 5. calculate checksums for the final BIOS image.
-$(PATH_TARGET)/pcbios.bin: $(PATH_TARGET)/pcbios.tmp $$(TARGET_pcbiossums)
+$$(PATH_PcBiosBin)/pcbios.bin: $$(PATH_PcBiosBin)/pcbios.tmp $$(TARGET_pcbiossums)
 	$(call MSG_TOOL,pcbiossums,PcBiosBin,$<,$@)
-	$(QUIET)$(CP) -f $(PATH_TARGET)/pcbios.tmp $(PATH_TARGET)/pcbios.bin
-	$(QUIET)$(TARGET_pcbiossums) $(PATH_TARGET)/pcbios.bin
+	$(QUIET)$(CP) -f $(PATH_PcBiosBin)/pcbios.tmp $(PATH_PcBiosBin)/pcbios.bin
+	$(QUIET)$(TARGET_pcbiossums) $(PATH_PcBiosBin)/pcbios.bin
 
 # 6. create the symbol table.
-$(PATH_TARGET)/pcbios-syms.h: $(PATH_TARGET)/pcbios.lst $(MAKEFILE_CURRENT)
+$$(PATH_PcBiosBin)/pcbios-syms.h: $$(PATH_PcBiosBin)/pcbios.lst $(MAKEFILE_CURRENT)
 	$(call MSG_GENERATE,PcBiosBin,$<,$@)
 	$(QUIET)$(SED) \
 		-e  '/^[0-9][0-9][0-9][0-9][0-9]                       000[0-9A-F]*            [[:space:]]*[a-zA-Z0-9_]*:/!d' \
 		-e 's/^[0-9][0-9][0-9][0-9][0-9]                       \(000[0-9A-F]*\)            [[:space:]]*\([a-zA-Z0-9_]*\):.*$$/    DEFSYM(0x\1, "\2"),/' \
 		--output $@ \
-		$(PATH_TARGET)/pcbios.lst
+		$(PATH_PcBiosBin)/pcbios.lst
 
 
 include	$(KBUILD_PATH)/subfooter.kmk

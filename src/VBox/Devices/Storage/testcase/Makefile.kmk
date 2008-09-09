@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-SUB_DEPTH = ../..
-DEPTH    ?= ../../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -40,7 +35,7 @@ else
  vditool_TEMPLATE = VBOXR3EXE
  vditool_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
 endif
-vditool_SOURCES  = vditool.cpp
+vditool_SOURCES   = vditool.cpp
 
 
 #

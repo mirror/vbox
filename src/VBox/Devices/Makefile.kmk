@@ -19,11 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../..
-else
-DEPTH     = ../../..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
@@ -324,12 +320,12 @@ DevicesR3_DEFS         += VBOX_WITH_HGCM
 DevicesR3_DEFS.linux   += _GNU_SOURCE
 DevicesR3_DEFS.l4      += _GNU_SOURCE
 
-# DevACPI.cpp needs vboxaml.hex which we generate from PC/vbox.dsl.
-DevicesR3_CLEAN        += $(PATH_TARGET)/vboxaml.hex $(PATH_TARGET)/vboxaml.aml
-PC/DevACPI.cpp_DEPS     = $(PATH_TARGET)/vboxaml.hex
-PC/DevACPI.cpp_INCS     = $(PATH_TARGET)
+# DevACPI.cpp needs vboxaml.hex which we generate from PC/vbox.dsl. (bird: What's vboxaml.aml?)
+DevicesR3_CLEAN        += $(PATH_DevicesR3)/vboxaml.hex $(PATH_DevicesR3)/vboxaml.aml
+PC/DevACPI.cpp_DEPS     = $(PATH_DevicesR3)/vboxaml.hex
+PC/DevACPI.cpp_INCS     = $(PATH_DevicesR3)
 
-$(PATH_TARGET)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl
+$$(PATH_DevicesR3)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 
@@ -337,8 +333,8 @@ $(PATH_TARGET)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl
 Bus/DevPCI.cpp_INCS     = Bus
 
 # For finding and generating vbetables.h (see Graphics/BIOS/Makefile.kmk).
-Graphics/DevVGA.cpp_INCS = $(PATH_TARGET)
-Graphics/DevVGA.cpp_DEPS = $(PATH_TARGET)/vbetables.h
+Graphics/DevVGA.cpp_INCS = $(PATH_VgaBiosBin)
+Graphics/DevVGA.cpp_DEPS = $(PATH_VgaBiosBin)/vbetables.h
 
 
 
@@ -897,3 +893,4 @@ endif
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
+
