@@ -19,51 +19,32 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-DEPTH    ?= ../../../..
-SUB_DEPTH = ..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_ONLY_SDK
- VBOX_NEED_MSCOM_SAMPLE = 1
- VBOX_NEED_XPCOM_SAMPLE = 1
-else # !VBOX_ONLY_SDK
- ifeq ($(KBUILD_TARGET),win)
-  VBOX_NEED_MSCOM_SAMPLE = 1
- else
-  VBOX_NEED_XPCOM_SAMPLE = 1
- endif
- ifdef VBOX_WITH_TESTCASES
+#
+# Target and globals (small mess)
+#
+ifndef VBOX_ONLY_SDK
+ if defined(VBOX_WITH_TESTCASES) || "$(USERNAME)" == "dmik"
   PROGRAMS       += tstAPI
-  PROGRAMS.linux += tstVBoxAPILinux
-  # That testcase is actually not linux specific, it's generic XPCOM.
-  PROGRAMS.solaris += tstVBoxAPILinux
-  PROGRAMS.win   += tstVBoxAPIWin
+  ifdef VBOX_WITH_XPCOM
+   PROGRAMS      += tstVBoxAPILinux
+  else
+   PROGRAMS      += tstVBoxAPIWin
+  endif
   ifdef VBOX_WITH_RESOURCE_USAGE_API
    PROGRAMS      += tstCollector
   endif
- else ifeq ($(USERNAME),dmik)
-  PROGRAMS       += tstAPI
-  PROGRAMS.linux += tstVBoxAPILinux
-  # That testcase is actually not linux specific, it's generic XPCOM.
-  PROGRAMS.solaris += tstVBoxAPILinux
-  PROGRAMS.win   += tstVBoxAPIWin
  endif # !VBOX_WITH_TESTCASES
 endif # !VBOX_ONLY_SDK
-
-ifdef VBOX_NEED_MSCOM_SAMPLE
+if defined(VBOX_ONLY_SDK) || !defined(VBOX_WITH_XPCOM)
  INSTALLS += samplesMSCOM
 endif
-
-ifdef VBOX_NEED_XPCOM_SAMPLE
+if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_XPCOM)
  INSTALLS += samplesXPCOM
 endif
 
-# maybe, if will ship glue COM headers with SDK
-#INSTALLS += tstAPI
 
 #
 # The samples
@@ -76,6 +57,7 @@ samplesXPCOM_MODE = a+r,u+w
 samplesXPCOM_INST = $(INST_SDK)bindings/xpcom/samples/
 samplesXPCOM_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux=>Makefile
 
+
 #
 # tstAPI
 #
@@ -83,9 +65,9 @@ tstAPI_TEMPLATE = VBOXMAINCLIENTEXE
 #tstAPI_INST = $(INST_SDK)bindings/gluecom/samples/
 tstAPI_SOURCES  = tstAPI.cpp
 ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
-tstAPI_DEPS     = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+tstAPI_DEPS = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 else
-tstAPI_DEPS     = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+tstAPI_DEPS = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 endif
 ifdef VBOX_WITH_RESOURCE_USAGE_API
 tstAPI_DEFS += VBOX_WITH_RESOURCE_USAGE_API
@@ -98,7 +80,7 @@ endif
 # We only build the testcase here to make sure it builds.
 # It comes with a custom makefile which should be tested as well!
 #
-tstVBoxAPILinux_TEMPLATE = VBOXR3
+tstVBoxAPILinux_TEMPLATE = VBOXR3EXE
 tstVBoxAPILinux_SOURCES  = tstVBoxAPILinux.cpp
 tstVBoxAPILinux_CXXFLAGS = -Wno-non-virtual-dtor -fshort-wchar
 tstVBoxAPILinux_LDFLAGS.solaris += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/../../..'
@@ -109,9 +91,10 @@ tstVBoxAPILinux_INCS     = \
 	$(VBOX_XPCOM_INCS) \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include
 tstVBoxAPILinux_LIBPATH  = $(LIBPATH_XPCOM)
-tstVBoxAPILinux_LIBS     = $(LIB_XPCOM)
+tstVBoxAPILinux_LIBS     = $(LIB_XPCOM) $(LIB_RUNTIME)
 tstVBoxAPILinux_DEPS     = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+
 
 #
 # tstVBoxAPIWin
@@ -122,6 +105,7 @@ tstVBoxAPIWin_SOURCES  = \
 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
 tstVBoxAPIWin_DEPS     = \
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+
 
 #
 # tstCollector
