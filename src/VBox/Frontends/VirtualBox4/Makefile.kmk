@@ -475,7 +475,7 @@ $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 testwrappers:: $(VBOX_WRAPPERS_FILE4)
 
 
-ifeq ($(KBUILD_TYPE),win)
+ifeq ($(KBUILD_TARGET),win)
 #
 # On Windows we'll have to generate/edit the resource file.
 # The IDI_ICON1 name is Qt specific.
@@ -485,7 +485,7 @@ $$(PATH_VirtualBox4)/VirtualBox4.rc: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_WIN
 	$(APPEND) $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
 VirtualBox4_CLEAN.win += $$(PATH_VirtualBox4)/VirtualBox4.rc
-endif
+endif # win
 
 
 ifeq ($(KBUILD_TYPE),darwin)
