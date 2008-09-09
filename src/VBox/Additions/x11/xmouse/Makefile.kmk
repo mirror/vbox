@@ -118,5 +118,20 @@ vboxmouse_drv_14_SOURCES = \
 	VBoxUtils.c
 
 
+#
+# vboxmouse_drv_15
+#
+DLLS += vboxmouse_drv_15
+vboxmouse_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_15_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
+vboxmouse_drv_15_INCS := \
+	$(VBOX_PATH_X11_XORG_1_5) \
+	$(VBOX_PATH_X11_XORG_1_5)/X11 \
+	$(VBOX_PATH_X11_XORG_1_5)/xorg \
+	$(PATH_SUB_CURRENT)
+vboxmouse_drv_15_SOURCES = \
+	xorg15/vboxmouse.c
+
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
