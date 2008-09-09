@@ -1108,7 +1108,7 @@ static uint8_t pcbiosChecksum(const uint8_t * const au8Data, uint32_t u32Length)
  * @param   pDevIns    The device instance data.
  * @param   addr       physical address in guest memory.
  */
-static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
+static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable, uint16_t numCpus)
 {
     /* configuration table */
     PMPSCFGTBLHEADER pCfgTab      = (MPSCFGTBLHEADER*)pTable;
@@ -1118,7 +1118,7 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
     memcpy(pCfgTab->au8ProductId, "VirtualBox  ", 12);
     pCfgTab->u32OemTablePtr        =  0;
     pCfgTab->u16OemTableSize       =  0;
-    pCfgTab->u16EntryCount         =  1 /* Processor */
+    pCfgTab->u16EntryCount         =  numCpus /* Processors */
                                    +  1 /* ISA Bus */
                                    +  1 /* I/O-APIC */
                                    + 16 /* Interrupts */;
@@ -1139,7 +1139,21 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
          * an MP table we have an IOAPIC and therefore a Local APIC. */
         u32FeatureFlags = u32Edx | X86_CPUID_FEATURE_EDX_APIC;
     }
-
+#ifdef VBOX_WITH_SMP_GUESTS
+    PMPSPROCENTRY pProcEntry       = (PMPSPROCENTRY)(pCfgTab+1);
+    for (int i = 0; i<numCpus; i++) 
+    {
+      pProcEntry->u8EntryType        = 0; /* processor entry */
+      pProcEntry->u8LocalApicId      = i;
+      pProcEntry->u8LocalApicVersion = 0x11;
+      pProcEntry->u8CPUFlags         = (i == 0 ? 2 /* bootstrap processor */ : 0 /* application processor */) | 1 /* enabled */;
+      pProcEntry->u32CPUSignature    = u32CPUSignature;
+      pProcEntry->u32CPUFeatureFlags = u32FeatureFlags;
+      pProcEntry->u32Reserved[0]     =
+        pProcEntry->u32Reserved[1]     = 0;
+      pProcEntry++;
+    }
+#else
     /* one processor so far */
     PMPSPROCENTRY pProcEntry       = (PMPSPROCENTRY)(pCfgTab+1);
     pProcEntry->u8EntryType        = 0; /* processor entry */
@@ -1150,6 +1164,7 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
     pProcEntry->u32CPUFeatureFlags = u32FeatureFlags;
     pProcEntry->u32Reserved[0]     =
     pProcEntry->u32Reserved[1]     = 0;
+#endif
 
     /* ISA bus */
     PMPSBUSENTRY pBusEntry         = (PMPSBUSENTRY)(pProcEntry+1);
@@ -1163,8 +1178,9 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
      * MP spec: "The configuration table contains one or more entries for I/O APICs.
      *           ... At least one I/O APIC must be enabled." */
     PMPSIOAPICENTRY pIOAPICEntry   = (PMPSIOAPICENTRY)(pBusEntry+1);
+    uint16_t apicId = numCpus;
     pIOAPICEntry->u8EntryType      = 2; /* I/O-APIC entry */
-    pIOAPICEntry->u8Id             = 1; /* this ID is referenced by the interrupt entries */
+    pIOAPICEntry->u8Id             = apicId; /* this ID is referenced by the interrupt entries */
     pIOAPICEntry->u8Version        = 0x11;
     pIOAPICEntry->u8Flags          = 1 /* enable */;
     pIOAPICEntry->u32Addr          = 0xfec00000;
@@ -1178,7 +1194,7 @@ static void pcbiosPlantMPStable(PPDMDEVINS pDevIns, uint8_t *pTable)
                                            trigger mode = conforms to bus */
         pIrqEntry->u8SrcBusId      = 0; /* ISA bus */
         pIrqEntry->u8SrcBusIrq     = i;
-        pIrqEntry->u8DstIOAPICId   = 1;
+        pIrqEntry->u8DstIOAPICId   = apicId;
         pIrqEntry->u8DstIOAPICInt  = i;
     }
 
@@ -1220,7 +1236,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     LogFlow(("pcbiosReset:\n"));
 
     if (pThis->u8IOAPIC)
-        pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE);
+        pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
 }
 
 
@@ -1466,7 +1482,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
     if (pThis->u8IOAPIC)
-        pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE);
+        pcbiosPlantMPStable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
 
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, false /* fShadow */, "DMI tables");
     if (RT_FAILURE(rc))
