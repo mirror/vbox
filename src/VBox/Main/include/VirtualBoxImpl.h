@@ -116,6 +116,7 @@ public:
 
     /* IVirtualBox properties */
     STDMETHOD(COMGETTER(Version)) (BSTR *aVersion);
+    STDMETHOD(COMGETTER(Revision)) (ULONG *aRevision);
     STDMETHOD(COMGETTER(PackageType)) (BSTR *aPackageType);
     STDMETHOD(COMGETTER(HomeFolder)) (BSTR *aHomeFolder);
     STDMETHOD(COMGETTER(SettingsFilePath)) (BSTR *aSettingsFilePath);
@@ -488,6 +489,7 @@ private:
     RWLockHandle mAsyncEventQLock;
 
     static Bstr sVersion;
+    static ULONG sRevision;
     static Bstr sPackageType;
     static Bstr sSettingsFormatVersion;
 
