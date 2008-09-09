@@ -75,7 +75,7 @@ $$(PATH_VgaBiosBin)/VgaBiosBin.c: $$(PATH_VgaBiosBin)/vgabios.bin $(VBOX_BIN2C)
 #
 
 # 1. create vbetables.h
-$$(PATH_VgaBiosBin)/vbetables.h: $(MAKEFILE_CURRENT) $$(TARGET_vbetables-gen)
+$$(PATH_VgaBiosBin)/vbetables.h: $(MAKEFILE_CURRENT) $$(TARGET_vbetables-gen) | $$(dir $$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $(TARGET_vbetables-gen)
 
 # 2. precompile
