@@ -67,7 +67,7 @@ $$(PATH_PcBiosBin)/PcBiosBin.c: $$(PATH_PcBiosBin)/pcbios.bin $(VBOX_BIN2C)
 
 # 1. precompile rombios.c
 $$(PATH_PcBiosBin)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT)/logo.c $(PATH_SUB_CURRENT)/apmbios.S \
-		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h | $$(dir $@)
+		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h | $$(dir $$@)
 	$(call MSG_TOOL,cpp,PcBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -I$(PATH_PcBiosBin) -I$(VBOX_PATH_DEVICES_SRC)/PC -I$(PATH_ROOT)/include -I$(PATH_OUT) -DBX_SMP_PROCESSORS=1 -DVBOX -DVBOX_PC_BIOS $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) -P -o $@ $<
 
