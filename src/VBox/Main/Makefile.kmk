@@ -579,17 +579,17 @@ VBOX_XIDL_FILE = $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.xidl
 ## @todo this hack ain't cutting it any longer. (the file name is abspath'ed since ages now.)
 xpcom/helpers.cpp: $(VBOX_IDL_TYPELIB.XPCOM)
 
-$(VBOX_IDL_FILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(VBOX_XIDL_FILE) | $(call DIRDEP,$(dir $(VBOX_IDL_FILE.XPCOM)))
+$(VBOX_IDL_FILE.XPCOM): $(VBOX_PATH_MAIN_SRC)/idl/xpidl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
-$(VBOX_IDL_TYPELIB.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $(call DIRDEP,$(dir $(VBOX_IDL_TYPELIB.XPCOM))) $(VBOX_XPIDL)
+$(VBOX_IDL_TYPELIB.XPCOM): $(VBOX_IDL_FILE.XPCOM) |  $$(dir $$@) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m typelib -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 	chmod 0644 $@
 ## @todo ^^^^^^^^^^^^ fix horrible hack
 
-$(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $(call DIRDEP,$(dir $(VBOX_IDL_HEADER.XPCOM))) $(VBOX_XPIDL)
+$(VBOX_IDL_HEADER.XPCOM): $(VBOX_IDL_FILE.XPCOM) | $$(dir $$@) $(VBOX_XPIDL)
 	$(call MSG_TOOL,xpidl,VBoxSVC,$<,$@)
 	$(QUIET)$(VBOX_XPIDL) -m header  -I $(VBOX_PATH_XPCOM_IDL) -e $@ $<
 
@@ -604,10 +604,9 @@ ifdef VBOX_WITH_VRDP
  IDL_DEFS += /D VBOX_WITH_VRDP
 endif
 
-$(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE)
+$(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)
-	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/idl
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
 
 # Aliases for testing purposes.
