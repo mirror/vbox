@@ -65,7 +65,7 @@
 /** Magic for the multiple release event semaphore structure. (Isaac Asimov) */
 #define RTSEMEVENTMULTI_MAGIC       0x19200102
 /** Magic value for RTSEMFASTMUTEXINTERNAL::u32Magic. (John Ronald Reuel Tolkien) */
-#define RTSEMFASTMUTEX_MAGIC        0x18920102
+#define RTSEMFASTMUTEX_MAGIC        0x18920103
 /** Dead magic value for RTSEMFASTMUTEXINTERNAL::u32Magic. */
 #define RTSEMFASTMUTEX_MAGIC_DEAD   0x19730902
 /** Magic for the mutex semaphore structure. (Douglas Adams) */
