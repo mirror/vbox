@@ -19,10 +19,10 @@
 
 #
 # Usage:
-#       makespackage.sh $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH)
+#       makespackage.sh $(PATH_TARGET)/install packagename
 
-if test -z "$3"; then
-    echo "Usage: $0 installdir packagename x86|amd64"
+if test -z "$2"; then
+    echo "Usage: $0 installdir packagename"
     exit 1
 fi
 
@@ -64,12 +64,15 @@ find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|po
 filelist_fixup prototype '$2 == "none"'                                                     '$5 = "root"; $6 = "bin"'
 filelist_fixup prototype '$2 == "none"'                                                     '$3 = "opt/VirtualBoxAdditions/"$3"="$3'
 
-# install kernel module in the right place
-if test "3" = "x86"; then
-    filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'           '$3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest"; $6="sys"'
-else
-    filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'           '$3 = "platform/i86pc/kernel/drv/amd64/vboxguest=vboxguest"; $6="sys"'
-fi
+# VBoxService requires suid
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxService=VBoxService"'              '$4 = "4755"'
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService=amd64/VBoxService"'  '$4 = "4755"'
+
+# 32-bit kernel module
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest=vboxguest"'              '$3 = "platform/i86pc/kernel/drv/vboxguest=vboxguest"; $6="sys"'
+
+# 64-bit kernel module
+filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/vboxguest=amd64/vboxguest"'  '$3 = "platform/i86pc/kernel/drv/amd64/vboxguest=amd64/vboxguest"; $6="sys"'
 
 # kernel module config file
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/vboxguest.conf=vboxguest.conf"'    '$3 = "platform/i86pc/kernel/drv/vboxguest.conf=vboxguest.conf"'
