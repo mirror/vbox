@@ -69,8 +69,6 @@ unsigned long get_phys_page_offset(target_ulong addr);
 #endif
 
 
-////#define VBOX_REM_FLUSH_ALL_TBS
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -1359,7 +1357,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
  */
 void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
 {
-#ifndef VBOX_REM_FLUSH_ALL_TBS
+#ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
     Assert(env->pVM->rem.s.fInREM);
     if (     (env->cr[0] & X86_CR0_PG)                      /* paging must be enabled */
         &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
@@ -1379,7 +1377,7 @@ void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
 void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
 {
     Assert(env->pVM->rem.s.fInREM);
-#ifndef VBOX_REM_FLUSH_ALL_TBS
+#ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
     if (     (env->cr[0] & X86_CR0_PG)                      /* paging must be enabled */
         &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
         &&   (((env->hflags >> HF_CPL_SHIFT) & 3) == 0)     /* supervisor mode only */
@@ -1611,13 +1609,11 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
 
-#ifdef VBOX_REM_FLUSH_ALL_TBS
     if (fFlushTBs)
     {
         STAM_COUNTER_INC(&gStatFlushTBs);
         tb_flush(&pVM->rem.s.Env);
     }
-#endif
 
     /*
      * Copy the registers which require no special handling.
@@ -2601,7 +2597,7 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
 
     VM_ASSERT_EMT(pVM);
 
-#ifndef VBOX_REM_FLUSH_ALL_TBS
+#ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
     /*
      * Get the physical page address.
      */
