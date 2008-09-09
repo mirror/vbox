@@ -323,6 +323,13 @@ EMDECL(int) EMInterpretCLTS(PVM pVM);
  */
 EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp);
 
+/**
+ * Flushes the REM translation blocks the next time we execute code there.
+ *
+ * @param   pVM         The VM handle.
+ */
+EMDECL(void) EMFlushREMTBs(PVM pVM);
+
 EMDECL(uint32_t) EMEmulateCmp(uint32_t u32Param1, uint64_t u64Param2, size_t cb);
 EMDECL(uint32_t) EMEmulateAnd(void *pvParam1, uint64_t u64Param2, size_t cb);
 EMDECL(uint32_t) EMEmulateInc(void *pvParam1, size_t cb);

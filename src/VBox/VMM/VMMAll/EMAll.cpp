@@ -68,6 +68,15 @@ EMDECL(EMSTATE) EMGetState(PVM pVM)
     return pVM->em.s.enmState;
 }
 
+/**
+ * Flushes the REM translation blocks the next time we execute code there.
+ *
+ * @param   pVM         The VM handle.
+ */
+EMDECL(void) EMFlushREMTBs(PVM pVM)
+{
+    pVM->em.s.fREMFlushTBs = true;
+}
 
 #ifndef IN_GC
 /**
