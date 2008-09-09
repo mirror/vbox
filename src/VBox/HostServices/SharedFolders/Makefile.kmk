@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-DEPTH    ?= ../../../..
-SUB_DEPTH = ..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile(s).
@@ -40,7 +35,6 @@ VBoxSharedFolders_DEFS      = VBOX_WITH_HGCM RTSHFL
 VBoxSharedFolders_INCS.win  = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)
-
 
 VBoxSharedFolders_LDFLAGS.darwin = \
 	-framework Carbon \
