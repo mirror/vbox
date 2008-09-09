@@ -1681,7 +1681,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
 
         PDMDevHlpVMSetRuntimeError (pDevIns, false, "HostAudioNotResponding",
             N_ ("No audio devices could be opened. Selecting the NULL audio backend "
-                "with the consequence that no sound is audible."));
+                "with the consequence that no sound is audible"));
     }
 #ifndef RT_OS_DARWIN
     else if (!s->voice_pi || !s->voice_po || !s->voice_mc)
@@ -1699,7 +1699,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
             N_ ("Some audio devices (%s) could not be opened. Guest applications generating audio "
                 "output or depending on audio input may hang. Make sure your host audio device "
                 "is working properly. Check the logfile for error messages of the audio "
-                "subsystem."), szMissingVoices);
+                "subsystem"), szMissingVoices);
     }
 #endif
 

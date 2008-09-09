@@ -1836,7 +1836,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
         AUD_init_null();
         PDMDevHlpVMSetRuntimeError(pDevIns, false, "HostAudioNotResponding",
             N_("No audio devices could be opened. Selecting the NULL audio backend "
-               "with the consequence that no sound is audible."));
+               "with the consequence that no sound is audible"));
     }
     return VINF_SUCCESS;
 }
