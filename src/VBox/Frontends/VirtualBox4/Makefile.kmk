@@ -77,7 +77,7 @@ VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
 # but wtf, it's not like we're even trying to be FHS compliant).
 #
 ## @todo this should be tar'ed down into the output directory and installed using an install target.
-$(PATH_BIN)/vboxkeyboard.tar.gz: \
+$(PATH_BIN)/vboxkeyboard.tar.gz: $(abspathex \
 		$(VBoxKeyboard_SOURCES) \
 		src/linux/COPYING.LIB \
 		src/linux/keyboard.h \
@@ -85,7 +85,7 @@ $(PATH_BIN)/vboxkeyboard.tar.gz: \
 		src/linux/keyboard-list.h \
 		src/linux/keyboard-tables.h \
 		src/linux/keyboard-types.h \
-		src/linux/Makefile
+		src/linux/Makefile,$(PATH_SUB_CURRENT))
 	$(call MSG_TOOL,tar/gzip,,$@)
 	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard $@
 	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/linux/ $(PATH_TARGET)/vboxkeyboard
