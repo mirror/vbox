@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-SUB_DEPTH = ..
-DEPTH    ?= ../../../..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_WITH_TESTCASES
 
@@ -75,70 +70,68 @@ endif
 #
 
 # Where we put the output files from the testcases.
-VBOX_DISAS_TEST_PATH := $(PATH_TARGET)/disas-testcase
-
-$(call DIRDEP,$(VBOX_DISAS_TEST_PATH)):
-	$(MKDIR) -p $@
+VBOX_DISAS_TEST_OUT_DIR := $(PATH_TARGET)/Disassembler/testcase
+BLDDIRS += $(VBOX_DISAS_TEST_OUT_DIR)
 
 # Generate the rules for creating the .bin files.
 VBOX_DISAS_TESTS_BIN = $(VBOX_DISAS_TESTS_BUILD) $(VBOX_DISAS_TESTS_INVALID)
-VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/,\
 	$(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)\
 	$(VBOX_DISAS_TESTS_BIN:.asm=-32.bin)\
 	$(VBOX_DISAS_TESTS_BIN:.asm=-64.bin))
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-16.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BIN:.asm=-16.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-16.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Assembling: $(<F) into $(@F)"
 	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=16 -o $@ $<
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-32.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-32.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BIN:.asm=-32.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-32.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Assembling: $(<F) into $(@F)"
 	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=32 -o $@ $<
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BIN:.asm=-64.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-64.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BIN:.asm=-64.bin)): $(PATH_SUB_CURRENT)/$$(patsubst %-64.bin,%.asm,$$(notdir $$(@))) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Assembling: $(<F) into $(@F)"
 	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=64 -o $@ $<
 
 
 # Generate the rules for the 'build' tests.
-VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/,\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm))
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Generating: $(@F) from $(<F)"
 	$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $@ -- $(INSTARGET_tstDisasm-2) --style=yasm --cpumode=16 $<
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Generating: $(@F) from $(<F)"
 	$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $@ -- $(INSTARGET_tstDisasm-2) --style=yasm --cpumode=32 $<
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.asm)): $$(subst -disas.asm,.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Generating: $(@F) from $(<F)"
 	$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $@ -- $(INSTARGET_tstDisasm-2) --style=yasm --cpumode=64 $<
 
 
-VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/,\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin)\
 	$(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin))
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-16-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
 	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=16 -o $@ $<
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-32-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
 	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=32 -o $@ $<
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_BUILD:.asm=-64-disas.bin)): $$(subst .bin,.asm,$$@) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "Re-assembling: $(<F) into $(@F)"
 	$(TOOL_YASM_AS) -f bin -a x86 --force-strict -DTEST_BITS=64 -o $@ $<
 
 
 VBOX_DISAS_TESTS += $(foreach test, $(VBOX_DISAS_TESTS_BUILD:.asm=), $(test)-16.tst $(test)-32.tst $(test)-64.tst)
-$(addprefix $(VBOX_DISAS_TEST_PATH)/,\
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/,\
 $(VBOX_DISAS_TESTS_BUILD:.asm=-16.tst)\
 $(VBOX_DISAS_TESTS_BUILD:.asm=-32.tst)\
 $(VBOX_DISAS_TESTS_BUILD:.asm=-64.tst) ): $$(subst .tst,-disas.bin,$$@) | $$(call DIRDEP,$$(@D))
@@ -153,21 +146,21 @@ $(VBOX_DISAS_TESTS_BUILD:.asm=-64.tst) ): $$(subst .tst,-disas.bin,$$@) | $$(cal
 # Generate the rules for the 'invalid' tests.
 VBOX_DISAS_TESTS += $(foreach test, $(VBOX_DISAS_TESTS_INVALID:.asm=), $(test)-16.tst $(test)-32.tst $(test)-64.tst)
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-16.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-16.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
 	$(REDIRECT) -E VBOX_LOG_DEST=nofile -- $(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=16 $<
 	@$(APPEND) $@ "done"
 	@$(ECHO) " PASSED:  $(@F) [--undef-op=all]"
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-32.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-32.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
 	$(REDIRECT) -E VBOX_LOG_DEST=nofile -- $(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=32 $<
 	@$(APPEND) $@ "done"
 	@$(ECHO) " PASSED:  $(@F) [--undef-op=all]"
 
-$(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
+$(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)): $$(patsubst %.tst,%.bin,$$@) $$(INSTARGET_tstDisasm-2) | $$(call DIRDEP,$$(@D))
 	@$(ECHO) "TESTING: $(@F) [--undef-op=all]"
 	@$(RM) -f $@
 	$(REDIRECT) -E VBOX_LOG_DEST=nofile -- $(INSTARGET_tstDisasm-2) --undef-op=all --cpumode=64 $<
@@ -177,7 +170,7 @@ $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS_INVALID:.asm=-64.tst)):
 
 # Generate the rules for the binary tests.
 define def_vbox_disas_binary_rules
-$(outbase).asm: $(full_binary) $$$$(INSTARGET_tstDisasm-2) | $(VBOX_DISAS_TEST_PATH)/
+$(outbase).asm: $(full_binary) $$$$(INSTARGET_tstDisasm-2) | $(VBOX_DISAS_TEST_OUT_DIR)/
 	@$$(ECHO) "Generating: $$(@F) from $$(<F)"
 	$$(REDIRECT) -E VBOX_LOG_DEST=nofile -o $$@ -- $$(INSTARGET_tstDisasm-2) --style=yasm --cpumode=$(bits) --undef-op=db $$<
 
@@ -200,7 +193,7 @@ endef # def_vbox_disas_binary_rules
 define def_vbox_disas_binary
 local name := $(notdir $(basename $(binary)))
 local full_binary := $(abspathex $(binary),$(PATH_SUB_CURRENT))
-local outbase := $(VBOX_DISAS_TEST_PATH)/$(name)-rebuild-$(bits)
+local outbase := $(VBOX_DISAS_TEST_OUT_DIR)/$(name)-rebuild-$(bits)
 $(eval $(def_vbox_disas_binary_rules))
 endef # def_vbox_disas_binary
 
@@ -210,7 +203,7 @@ $(foreach bits, 32 16, $(foreach binary, $(VBOX_DISAS_TESTS_BINARIES), $(evalval
 
 
 # Add the .tst to the clean up.
-VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_PATH)/, $(VBOX_DISAS_TESTS))
+VBOX_DISAS_TEST_CLEAN += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/, $(VBOX_DISAS_TESTS))
 OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
 
 # We don't want any of the tests rules to run in parallel because the
@@ -222,7 +215,7 @@ OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
 # Add the tests to the target list for the testing pass.
 # (kBuild r1646)
 #
-TESTING += $(addprefix $(VBOX_DISAS_TEST_PATH)/,$(VBOX_DISAS_TESTS))
+TESTING += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/,$(VBOX_DISAS_TESTS))
 
 # Aliases for use till kBuild gets updated.
 .PHONY: check test
@@ -238,7 +231,7 @@ check test: $(TESTING)
 define def_vbox_test_aliases
 local test_base := $(basename $(test))
 local test_root := $(patsubst %-16,%,$(patsubst %-32,%,$(patsubst %-64,%,$(test_base))))
-$(test_base).tst:: $(VBOX_DISAS_TEST_PATH)/$(test)
+$(test_base).tst:: $(VBOX_DISAS_TEST_OUT_DIR)/$(test)
 $(test_root).tst:: $(test_base).tst
 $(test_base).o:: $(test_base).tst
 $(test_base).obj:: $(test_base).tst
