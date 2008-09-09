@@ -695,11 +695,12 @@ else
 	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) "
 endif
 
+# ASSUMES 64-bit is built
 additions-build-solaris.x86:
 ifeq ($(KBUILD_TARGET),solaris)
-	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
+	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1
 else
-	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
+	ssh vbox@192.168.27.4 " cd /mnt/vbox/add && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
 endif
 
 additions-build-os2.x86:
@@ -730,7 +731,6 @@ additions-packing:
 		VBOX_WITH_ADDITIONS_ISO.freebsd.x86= \
 		VBOX_WITH_ADDITIONS_ISO.linux.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.linux.x86=1 \
-		VBOX_WITH_ADDITIONS_ISO.solaris.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.solaris.x86=1 \
 		VBOX_WITH_ADDITIONS_ISO.win.amd64=1 \
 		VBOX_WITH_ADDITIONS_ISO.win.x86=1 \

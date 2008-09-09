@@ -21,6 +21,8 @@ echo "Configuring VirtualBox guest kernel module..."
 
 sync
 vboxadditions_path="/opt/VirtualBoxAdditions"
+vboxadditions64_path=$vboxadditions_path/amd64
+solaris64dir="amd64"
 
 # vboxguest.sh would've been installed, we just need to call it.
 $vboxadditions_path/vboxguest.sh restart silentunload
@@ -30,21 +32,14 @@ cputype=`isainfo -k`
 isadir="" 
 if test "$cputype" = "amd64"; then 
     isadir="amd64" 
-fi 
-
-
-# suid permissions for timesync
-chmod 04755 $vboxadditions_path/VBoxService
-chmod a+x $vboxadditions_path/VBoxClient
-chmod a+x $vboxadditions_path/VBoxControl
-chmod a+x $vboxadditions_path/VBoxRandR.sh
+fi
 
 # create links
 echo "Creating links..."
 /usr/sbin/installf -c none $PKGINST /dev/vboxguest=../devices/pci@0,0/pci80ee,cafe@4:vboxguest s
-/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBoxClient s
-/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBoxService s
-/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxControl=$vboxadditions_path/VBoxControl s
+/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxClient=$vboxadditions_path/VBox.sh s
+/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxService=$vboxadditions_path/VBox.sh s
+/usr/sbin/installf -c none $PKGINST /usr/bin/VBoxControl=$vboxadditions_path/VBox.sh s
 /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxRandR=$vboxadditions_path/VBoxRandR.sh s
 
 # Install Xorg components to the required places
@@ -56,20 +51,20 @@ vboxvideo_src=""
 
 case "$xorgversion" in
     1.3.* )
-        vboxmouse_src="$vboxadditions_path/vboxmouse_drv_71.so"
-        vboxvideo_src="$vboxadditions_path/vboxvideo_drv_13.so"
+        vboxmouse_src="vboxmouse_drv_71.so"
+        vboxvideo_src="vboxvideo_drv_13.so"
         ;;
     1.4.* )
-        vboxmouse_src="$vboxadditions_path/vboxmouse_drv_14.so"
-        vboxvideo_src="$vboxadditions_path/vboxvideo_drv_14.so"
+        vboxmouse_src="vboxmouse_drv_14.so"
+        vboxvideo_src="vboxvideo_drv_14.so"
         ;;
     7.1.* | *7.2.* )
-        vboxmouse_src="$vboxadditions_path/vboxmouse_drv_71.so"
-        vboxvideo_src="$vboxadditions_path/vboxvideo_drv_71.so"
+        vboxmouse_src="vboxmouse_drv_71.so"
+        vboxvideo_src="vboxvideo_drv_71.so"
 	    ;;
     6.9.* | 7.0.* )
-        vboxmouse_src="$vboxadditions_path/vboxmouse_drv_70.so"
-        vboxvideo_src="$vboxadditions_path/vboxvideo_drv_70.so"
+        vboxmouse_src="vboxmouse_drv_70.so"
+        vboxvideo_src="vboxvideo_drv_70.so"
         ;;
 esac
 
@@ -83,20 +78,37 @@ if test -z "$vboxmouse_src"; then
 else
     echo "Configuring Xorg..."
 
-    vboxmouse_dest="/usr/X11/lib/modules/input/$isadir/vboxmouse_drv.so"
-    vboxvideo_dest="/usr/X11/lib/modules/drivers/$isadir/vboxvideo_drv.so"
-    /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
-    /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
-    cp "$vboxmouse_src" "$vboxmouse_dest"
-    cp "$vboxvideo_src" "$vboxvideo_dest"
+    # 32-bit x11 drivers
+    if test -f "$vboxadditions_path/$vboxmouse_src"; then
+        vboxmouse_dest="/usr/X11/lib/modules/input/vboxmouse_drv.so"
+        vboxvideo_dest="/usr/X11/lib/modules/drivers/vboxvideo_drv.so"
+        /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
+        /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
+        cp "$vboxadditions_path/$vboxmouse_src" "$vboxmouse_dest"
+        cp "$vboxadditions_path/$vboxvideo_src" "$vboxvideo_dest"
 
-    # Removing redudant files
-    /usr/sbin/removef $PKGINST $vboxadditions_path/vboxmouse_drv_* 1>/dev/null 2>/dev/null
-    /usr/sbin/removef $PKGINST $vboxadditions_path/vboxvideo_drv_* 1>/dev/null 2>/dev/null
-    rm -f $vboxadditions_path/vboxmouse_drv_*
-    rm -f $vboxadditions_path/vboxvideo_drv_*
+        # Removing redundent files
+        /usr/sbin/removef $PKGINST $vboxadditions_path/vboxmouse_drv_* 1>/dev/null 2>/dev/null
+        /usr/sbin/removef $PKGINST $vboxadditions_path/vboxvideo_drv_* 1>/dev/null 2>/dev/null
+        rm -f $vboxadditions_path/vboxmouse_drv_*
+        rm -f $vboxadditions_path/vboxvideo_drv_*
+    fi
 
-    /usr/sbin/removef -f $PKGINST
+    # 64-bit x11 drivers
+    if test -f "$vboxadditions64_path/$vboxmouse_src"; then
+        vboxmouse_dest="/usr/X11/lib/modules/input/$solaris64dir/vboxmouse_drv.so"
+        vboxvideo_dest="/usr/X11/lib/modules/drivers/$solaris64dir/vboxvideo_drv.so"
+        /usr/sbin/installf -c none $PKGINST "$vboxmouse_dest" f
+        /usr/sbin/installf -c none $PKGINST "$vboxvideo_dest" f
+        cp "$vboxadditions64_path/$vboxmouse_src" "$vboxmouse_dest"
+        cp "$vboxadditions64_path/$vboxvideo_src" "$vboxvideo_dest"
+
+        # Removing redundent files
+        /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxmouse_drv_* 1>/dev/null 2>/dev/null
+        /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxvideo_drv_* 1>/dev/null 2>/dev/null
+        rm -f $vboxadditions64_path/vboxmouse_drv_*
+        rm -f $vboxadditions64_path/vboxvideo_drv_*
+    fi
 
     # Some distros like Indiana have no xorg.conf, deal with this
     if test ! -f '/etc/X11/xorg.conf' && test ! -f '/etc/X11/.xorg.conf'; then
@@ -129,8 +141,9 @@ fi
 /usr/sbin/removef $PKGINST $vboxadditions_path/etc/devlink.tab 1>/dev/null
 /usr/sbin/removef $PKGINST $vboxadditions_path/etc 1>/dev/null
 rm -rf $vboxadditions_path/etc
-/usr/sbin/removef -f $PKGINST
 
+# Finalize
+/usr/sbin/removef -f $PKGINST
 /usr/sbin/installf -f $PKGINST
 
 
