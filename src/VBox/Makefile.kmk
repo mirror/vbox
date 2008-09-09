@@ -52,12 +52,12 @@ else
  ifdef VBOX_WITH_VRDP
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
  endif
- ifdef VBOX_WITH_ADDITIONS
-  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
- endif
- ifdef VBOX_WITH_INSTALLER
-  ##@todo include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		# Keep this last.
- endif
+# ifdef VBOX_WITH_ADDITIONS
+#  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
+# endif
+# ifdef VBOX_WITH_INSTALLER
+#  ##@todo include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		# Keep this last.
+# endif
 endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
 include $(KBUILD_PATH)/subfooter.kmk
