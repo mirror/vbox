@@ -19,8 +19,8 @@
 # additional information or have any questions.
 #
 
-DEPTH = ../../../..
-include $(KBUILD_PATH)/header.kmk
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
 
 #
 # Globals.
@@ -218,7 +218,7 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
  VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
-if 0 ## @todo not finished yet.
+if "$(USER)" == "bird"
 ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
  ifeq ($(KBUILD_TARGET),win)
   VirtualBox4_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
@@ -460,16 +460,16 @@ endif
 #
 # Generate the COM wrappers.
 #
-VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include/
+VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include
 VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h
 VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h
 
 $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
-		$(PATH_SUB_CURRENT)/include/COMWrappers.xsl \
+		$(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox4,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_WRAPPERS_TEMPLATE4) $<
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
 
 # alias for generating the COM Wrappers file.
 testwrappers:: $(VBOX_WRAPPERS_FILE4)
@@ -579,7 +579,7 @@ IMAGES :=
 
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
-include $(KBUILD_PATH)/footer.kmk
+include $(KBUILD_PATH)/subfooter.kmk
 
 
 #
