@@ -294,13 +294,25 @@ void VBoxUpdateDlg::search()
     connect (mNetfw, SIGNAL (netError (const QString&)),
              SLOT (onNetError (const QString&)));
 
+    int count = 1;
+    bool ok = false;
+    QString sc = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_UpdateCheckCount);
+    if (!sc.isEmpty())
+    {
+        int c = sc.toLongLong(&ok);
+        if (ok)
+            count = c;
+    }
     QString package = vboxGlobal().virtualBox().GetPackageType();
     QString version = vboxGlobal().virtualBox().GetVersion();
+    QString revision = QString::number (vboxGlobal().virtualBox().GetRevision());
     package = QUrl::toPercentEncoding (package);
     version = QUrl::toPercentEncoding (version);
+    revision = QUrl::toPercentEncoding (revision);
     QString body;
     body += QString ("platform=%1").arg (package);
-    body += QString ("&version=%1").arg (version);
+    body += QString ("&version=%1_%2").arg (version).arg (revision);
+    body += QString ("&count=%1").arg (count);
 
     QStringList header ("User-Agent");
     header << QString ("VirtualBox %1 <%2>")
@@ -435,5 +447,13 @@ void VBoxUpdateDlg::processResponse (const QString &aResponse)
             mPageStack->setCurrentIndex (1);
         }
     }
+
+    int count = 1;
+    bool ok = false;
+    QString sc = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_UpdateCheckCount);
+    if (!sc.isEmpty())
+        count = sc.toLongLong(&ok);
+    vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateCheckCount,
+                                            QString ("%1").arg ((qulonglong) count + 1));
 }
 
