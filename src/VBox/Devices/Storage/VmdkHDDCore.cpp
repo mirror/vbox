@@ -76,11 +76,14 @@
 
 /**
  * Magic number for hosted images created by VMware Workstation 4, VMware
- * Workstation 5, VMware Server or VMware Player.
+ * Workstation 5, VMware Server or VMware Player. Not necessarily sparse.
  */
 #define VMDK_SPARSE_MAGICNUMBER 0x564d444b /* 'V' 'M' 'D' 'K' */
 
-/** VMDK hosted sparse extent header. */
+/**
+ * VMDK hosted binary extent header. The "Sparse" is a total misnomer, as
+ * this header is also used for monolithic flat images.
+ */
 #pragma pack(1)
 typedef struct SparseExtentHeader
 {
@@ -783,6 +786,9 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
     uint32_t *pGD = NULL, *pRGD = NULL, *pGDTmp, *pRGDTmp;
     size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
 
+    if (pExtent->enmType != VMDKETYPE_HOSTED_SPARSE)
+        goto out;
+
     pGD = (uint32_t *)RTMemAllocZ(cbGD);
     if (!pGD)
     {
@@ -1452,7 +1458,8 @@ static int vmdkPreprocessDescriptor(PVMDKIMAGE pImage, char *pDescData,
     /* Pointer right after the end of the used part of the buffer. */
     pDescriptor->aLines[cLine] = pTmp;
 
-    if (strcmp(pDescriptor->aLines[0], "# Disk DescriptorFile"))
+    if (    strcmp(pDescriptor->aLines[0], "# Disk DescriptorFile")
+        &&  strcmp(pDescriptor->aLines[0], "# Disk Descriptor File"))
     {
         rc = vmdkError(pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor does not start as expected in '%s'"), pImage->pszFilename);
         goto out;
@@ -2015,12 +2022,13 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
 }
 
 /**
- * Internal: read metadata belonging to a sparse extent.
+ * Internal: read metadata belonging to an extent with binary header, i.e.
+ * as found in monolithic files.
  */
-static int vmdkReadMetaSparseExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 {
     SparseExtentHeader Header;
-    uint64_t cbExtentSize, cSectorsPerGDE;
+    uint64_t cSectorsPerGDE;
 
     int rc = vmdkFileReadAt(pExtent->pFile, 0, &Header, sizeof(Header), NULL);
     AssertRC(rc);
@@ -2035,14 +2043,6 @@ static int vmdkReadMetaSparseExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: incorrect magic/version in extent header in '%s'"), pExtent->pszFullname);
         goto out;
     }
-    /* The image must be a multiple of a sector in size. If not, it means the
-     * image is at least truncated, or even seriously garbled. */
-    rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
-    if (RT_FAILURE(rc))
-    {
-        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
-        goto out;
-    }
     if (    (RT_LE2H_U32(Header.flags) & 1)
         &&  (   Header.singleEndLineChar != '\n'
              || Header.nonEndLineChar != ' '
@@ -2052,17 +2052,9 @@ static int vmdkReadMetaSparseExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: corrupted by CR/LF translation in '%s'"), pExtent->pszFullname);
         goto out;
     }
-    pExtent->enmType = VMDKETYPE_HOSTED_SPARSE;
+    pExtent->enmType = VMDKETYPE_HOSTED_SPARSE; /* Just dummy value, changed later. */
     pExtent->cSectors = RT_LE2H_U64(Header.capacity);
     pExtent->cSectorsPerGrain = RT_LE2H_U64(Header.grainSize);
-    /* The spec says that this must be a power of two and greater than 8,
-     * but probably they meant not less than 8. */
-    if (    (pExtent->cSectorsPerGrain & (pExtent->cSectorsPerGrain - 1))
-        ||  pExtent->cSectorsPerGrain < 8)
-    {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: invalid extent grain size %u in '%s'"), pExtent->cSectorsPerGrain, pExtent->pszFullname);
-        goto out;
-    }
     pExtent->uDescriptorSector = RT_LE2H_U64(Header.descriptorOffset);
     pExtent->cDescriptorSectors = RT_LE2H_U64(Header.descriptorSize);
     if (pExtent->uDescriptorSector && !pExtent->cDescriptorSectors)
@@ -2071,14 +2063,6 @@ static int vmdkReadMetaSparseExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         goto out;
     }
     pExtent->cGTEntries = RT_LE2H_U32(Header.numGTEsPerGT);
-    /* This code requires that a grain table must hold a power of two multiple
-     * of the number of entries per GT cache entry. */
-    if (    (pExtent->cGTEntries & (pExtent->cGTEntries - 1))
-        ||  pExtent->cGTEntries < VMDK_GT_CACHELINE_SIZE)
-    {
-        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: grain table cache size problem in '%s'"), pExtent->pszFullname);
-        goto out;
-    }
     if (RT_LE2H_U32(Header.flags) & 2)
     {
         pExtent->uSectorRGD = RT_LE2H_U64(Header.rgdOffset);
@@ -2101,6 +2085,70 @@ static int vmdkReadMetaSparseExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     }
     pExtent->cSectorsPerGDE = cSectorsPerGDE;
     pExtent->cGDEntries = (pExtent->cSectors + cSectorsPerGDE - 1) / cSectorsPerGDE;
+
+    /* Fix up the number of descriptor sectors, as some flat images have
+     * really just one, and this causes failures when inserting the UUID
+     * values and other extra information. */
+    if (pExtent->cDescriptorSectors != 0 && pExtent->cDescriptorSectors < 4)
+    {
+        /* Do it the easy way - just fix it for flat images which have no
+         * other complicated metadata which needs space too. */
+        if (    pExtent->uDescriptorSector + 4 < pExtent->cOverheadSectors
+            &&  pExtent->cGTEntries * pExtent->cGDEntries == 0)
+            pExtent->cDescriptorSectors = 4;
+    }
+
+out:
+    if (RT_FAILURE(rc))
+        vmdkFreeExtentData(pImage, pExtent, false);
+
+    return rc;
+}
+
+/**
+ * Internal: read additional metadata belonging to an extent. For those
+ * extents which have no additional metadata just verify the information.
+ */
+static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t cbExtentSize;
+
+    /* The image must be a multiple of a sector in size and contain the data
+     * area (flat images only). If not, it means the image is at least
+     * truncated, or even seriously garbled. */
+    rc = vmdkFileGetSize(pExtent->pFile, &cbExtentSize);
+    if (RT_FAILURE(rc))
+    {
+        rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
+        goto out;
+    }
+    if (    cbExtentSize != RT_ALIGN_64(cbExtentSize, 512)
+        &&  (pExtent->enmType != VMDKETYPE_FLAT || pExtent->cNominalSectors + pExtent->uSectorOffset > VMDK_BYTE2SECTOR(cbExtentSize)))
+    {
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: file size is not a multiple of 512 in '%s', file is truncated or otherwise garbled"), pExtent->pszFullname);
+        goto out;
+    }
+    if (pExtent->enmType == VMDKETYPE_HOSTED_SPARSE)
+        goto out;
+
+    /* The spec says that this must be a power of two and greater than 8,
+     * but probably they meant not less than 8. */
+    if (    (pExtent->cSectorsPerGrain & (pExtent->cSectorsPerGrain - 1))
+        ||  pExtent->cSectorsPerGrain < 8)
+    {
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: invalid extent grain size %u in '%s'"), pExtent->cSectorsPerGrain, pExtent->pszFullname);
+        goto out;
+    }
+
+    /* This code requires that a grain table must hold a power of two multiple
+     * of the number of entries per GT cache entry. */
+    if (    (pExtent->cGTEntries & (pExtent->cGTEntries - 1))
+        ||  pExtent->cGTEntries < VMDK_GT_CACHELINE_SIZE)
+    {
+        rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: grain table cache size problem in '%s'"), pExtent->pszFullname);
+        goto out;
+    }
 
     rc = vmdkReadGrainDirectory(pExtent);
 
@@ -2367,7 +2415,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     /* Handle the file according to its magic number. */
     if (RT_LE2H_U32(u32Magic) == VMDK_SPARSE_MAGICNUMBER)
     {
-        /* It's a hosted sparse single-extent image. */
+        /* It's a hosted single-extent image. */
         rc = vmdkCreateExtents(pImage, 1);
         if (RT_FAILURE(rc))
             goto out;
@@ -2382,10 +2430,10 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             rc = VERR_NO_MEMORY;
             goto out;
         }
-        rc = vmdkReadMetaSparseExtent(pImage, pExtent);
+        rc = vmdkReadBinaryMetaExtent(pImage, pExtent);
         if (RT_FAILURE(rc))
             goto out;
-        /* As we're dealing with a monolithic sparse image here, there must
+        /* As we're dealing with a monolithic image here, there must
          * be a descriptor embedded in the image file. */
         if (!pExtent->uDescriptorSector || !pExtent->cDescriptorSectors)
         {
@@ -2412,6 +2460,10 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
 
         rc = vmdkParseDescriptor(pImage, pExtent->pDescData,
                                  VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
+        if (RT_FAILURE(rc))
+            goto out;
+
+        rc = vmdkReadMetaExtent(pImage, pExtent);
         if (RT_FAILURE(rc))
             goto out;
 
@@ -2534,7 +2586,10 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                          * failed. */
                         goto out;
                     }
-                    rc = vmdkReadMetaSparseExtent(pImage, pExtent);
+                    rc = vmdkReadBinaryMetaExtent(pImage, pExtent);
+                    if (RT_FAILURE(rc))
+                        goto out;
+                    rc = vmdkReadMetaExtent(pImage, pExtent);
                     if (RT_FAILURE(rc))
                         goto out;
 
@@ -3532,6 +3587,7 @@ static int vmdkAllocGrain(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
         if (RT_FAILURE(rc))
             return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         Assert(!(cbExtentSize % 512));
+        cbExtentSize = RT_ALIGN_64(cbExtentSize, 512);
         uGTSector = VMDK_BYTE2SECTOR(cbExtentSize);
         /* Normally the grain table is preallocated for hosted sparse extents
          * that support more than 32 bit sector numbers. So this shouldn't
