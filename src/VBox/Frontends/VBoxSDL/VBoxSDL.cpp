@@ -1131,7 +1131,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     SDL_Event EvHKeyDown2;
 
     LogFlow(("SDL GUI started\n"));
-    RTPrintf("VirtualBox SDL GUI %s built %s %s\n",
+    RTPrintf("Sun xVM VirtualBox SDL GUI %s built %s %s\n",
              VBOX_VERSION_STRING, __DATE__, __TIME__);
 
     // less than one parameter is not possible
