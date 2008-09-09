@@ -21,7 +21,7 @@
 
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
-if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" == "darwin" # No hardened VBoxSDL on darwin.
+if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin" # No hardened VBoxSDL on darwin.
 
 #
 # Targets.
@@ -177,5 +177,4 @@ tstSDL_CXXFLAGS.linux = \
 
 endif # !VBOX_WITH_HARDENING || "$(KBUILD_TARGET)" != "darwin"
 include $(KBUILD_PATH)/subfooter.kmk
-
 
