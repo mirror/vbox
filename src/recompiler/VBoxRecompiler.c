@@ -69,6 +69,8 @@ unsigned long get_phys_page_offset(target_ulong addr);
 #endif
 
 
+////#define VBOX_REM_FLUSH_ALL_TBS
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -137,6 +139,7 @@ static STAMCOUNTER    gStatREMLDTRChange;
 static STAMCOUNTER    gStatREMTRChange;
 static STAMCOUNTER    gStatSelOutOfSync[6];
 static STAMCOUNTER    gStatSelOutOfSyncStateBack[6];
+static STAMCOUNTER    gStatFlushTBs;
 #endif
 
 /*
@@ -369,6 +372,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatRefuseWP0,          STAMTYPE_COUNTER, "/REM/Refuse/WP0",      STAMUNIT_OCCURENCES,     "Raw mode refused because of WP=0");
     STAM_REG(pVM, &gStatRefuseRing1or2,     STAMTYPE_COUNTER, "/REM/Refuse/Ring1or2", STAMUNIT_OCCURENCES,     "Raw mode refused because of ring 1/2 execution");
     STAM_REG(pVM, &gStatRefuseCanExecute,   STAMTYPE_COUNTER, "/REM/Refuse/CanExecuteRaw", STAMUNIT_OCCURENCES,     "Raw mode refused because of cCanExecuteRaw");
+    STAM_REG(pVM, &gStatFlushTBs,           STAMTYPE_COUNTER, "/REM/FlushTB",         STAMUNIT_OCCURENCES,     "Number of TB flushes");
 
     STAM_REG(pVM, &gStatREMGDTChange,       STAMTYPE_COUNTER, "/REM/Change/GDTBase",   STAMUNIT_OCCURENCES,     "GDT base changes");
     STAM_REG(pVM, &gStatREMLDTRChange,      STAMTYPE_COUNTER, "/REM/Change/LDTR",      STAMUNIT_OCCURENCES,     "LDTR changes");
@@ -1609,7 +1613,10 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
 
 #ifdef VBOX_REM_FLUSH_ALL_TBS
     if (fFlushTBs)
+    {
+        STAM_COUNTER_INC(&gStatFlushTBs);
         tb_flush(&pVM->rem.s.Env);
+    }
 #endif
 
     /*
@@ -2594,6 +2601,7 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
 
     VM_ASSERT_EMT(pVM);
 
+#ifndef VBOX_REM_FLUSH_ALL_TBS
     /*
      * Get the physical page address.
      */
@@ -2612,6 +2620,7 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
 
         tb_invalidate_phys_page_range(PhysGC, PhysGC + PAGE_SIZE - 1, 0);
     }
+#endif
     return VINF_SUCCESS;
 }
 
