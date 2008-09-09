@@ -909,6 +909,12 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
             pGVM->gvmm.s.VMMemObj = NIL_RTR0MEMOBJ;
         }
 
+        if (pGVM->gvmm.s.HaltEventMulti != NIL_RTSEMEVENTMULTI)
+        {
+            rc = RTSemEventMultiDestroy(pGVM->gvmm.s.HaltEventMulti); AssertRC(rc);
+            pGVM->gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
+        }
+
         /* the GVM structure itself. */
         pGVM->u32Magic++;
         RTMemFree(pGVM);
