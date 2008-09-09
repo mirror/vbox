@@ -98,6 +98,13 @@
  *       PHOENIX or AWARD? If not I'd say 64MB units is a bit
  *       too big, besides it forces unnecessary math stuff onto
  *       the BIOS.
+ *       nike: The way how values encoded are defined by Bochs/QEmu BIOS,
+ *       although for them position in CMOS is different:
+ *         0x5b - 0x5c: RAM above 4G
+ *         0x5f: number of CPUs
+ *        Unfortunately for us those positions in our CMOS are already taken 
+ *        by 4th SATA drive configuration. 
+ *         
  */
 
 
@@ -509,7 +516,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Memory sizes.
      */
-#if 0
+#if VBOX_WITH_SMP_GUESTS
     uint64_t cKBRam = pThis->cbRam / _1K;
     uint64_t cKBAbove4GB = 0;
     uint32_t cKBBelow4GB = cKBRam;
@@ -1371,6 +1378,17 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
+
+#ifdef VBOX_WITH_SMP_GUESTS
+    pThis->cCpus = 2;
+    LogRel(("Running with %d CPUs\n", pThis->cCpus));
+#else
+    if (pThis->cCpus != 1)
+    {
+        LogRel(("WARNING: guest SMP not supported in this build, going UP\n"));
+        pThis->cCpus = 1;
+    }
+#endif
 
     rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
