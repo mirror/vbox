@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
-SUB_DEPTH = ../..
-else
-SUB_DEPTH = ../..
-DEPTH    ?= ../../..
-endif
+SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_HOST),win) # guard when cross-compiling.
@@ -41,8 +36,8 @@ ifeq ($(KBUILD_HOST),solaris)
 endif
 
 ifndef VBOX_OSE
-# Include Sub-Makefiles.
-include $(PATH_SUB_CURRENT)/common/Makefile.kmk
+ # Include Sub-Makefiles.
+ include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
