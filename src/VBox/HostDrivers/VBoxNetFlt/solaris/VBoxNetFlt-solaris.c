@@ -954,6 +954,12 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
                 case M_PCPROTO:
                 {
                     /*
+                     * If we are not  yet in raw mode; just pass through.
+                     */
+                    if (!pStream->fRawMode)
+                        break;
+
+                    /*
                      * Queue up other primitives to the service routine.
                      */
                     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut M_PROTO/M_PCPROTO\n"));
@@ -994,13 +1000,54 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
                     {
                         if (pThis->fActive)
                         {
+                            fSendDownstream = false;
+
+                            /*
+                             * Some sanity checks.
+                             */
+                            if (   !pMsg->b_cont
+                                || (MBLKL(pMsg->b_cont) < sizeof(dl_unitdata_req_t) + VBOXNETFLT_DLADDRL)
+                                || (*((uint32_t *)pMsg->b_cont->b_rptr) != DL_UNITDATA_REQ))
+                            {
+                                LogRel((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Invalid fast path request!\n"));
+                                miocnak(pQueue, pMsg, 0, EPROTO);
+                                break;
+                            }
+
+                            dl_unitdata_req_t *pDlReq = (dl_unitdata_req_t *)pMsg->b_cont->b_rptr;
+                            size_t cbOffset = pDlReq->dl_dest_addr_offset;
+                            size_t cbAddr = pDlReq->dl_dest_addr_length;
+                            if (   !MBLKIN(pMsg->b_cont, cbOffset, cbAddr)
+                                || cbAddr != VBOXNETFLT_DLADDRL)
+                            {
+                                LogRel((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Invalid header in fast path request!\n"));
+                                miocnak(pQueue, pMsg, 0, EPROTO);
+                                break;
+                            }
+
+                            vboxnetflt_dladdr_t *pDLSapAddr = (vboxnetflt_dladdr_t *)(pMsg->b_cont->b_rptr + cbOffset);
+                            mblk_t *pReplyMsg = allocb(sizeof(RTNETETHERHDR), BPRI_MED);
+                            if (RT_UNLIKELY(!pReplyMsg))
+                            {
+                                LogRel((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Invalid header in fast path request!\n"));
+                                miocnak(pQueue, pMsg, 0, ENOMEM);
+                                break;                                
+                            }
+
+                            PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
+                            bcopy(&pDLSapAddr->Mac, &pEthHdr->DstMac, sizeof(RTMAC));
+                            bcopy(&pThis->u.s.Mac, &pEthHdr->SrcMac, sizeof(RTMAC)); 
+                            pEthHdr->EtherType = RT_H2BE_U16(pDLSapAddr->SAP);
+
+                            linkb(pMsg, pReplyMsg);
+
                             /*
                              * Somebody is wanting fast path when we need raw mode.
                              * Since we are evil, let's acknowledge the request ourselves!
                              */
-                            miocack(pQueue, pMsg, 0, EINVAL);
-                            fSendDownstream = false;
-                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Fast path request when we need raw mode!\n"));
+                            miocack(pQueue, pMsg, msgsize(pMsg->b_cont), EINVAL);
+                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Fast path request acknowledged.\n"));
+                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: ============================================\n"));
                         }
                     }
                     break;
@@ -1659,6 +1706,8 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                         rc = vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
                                         if (RT_SUCCESS(rc))
                                         {
+                                            bool fRawModeOk = true;
+#if 0
                                             bool fRawModeOk = !fAttach;   /* Raw mode check is always ok during the detach case */
                                             if (fAttach)
                                             {
@@ -1676,6 +1725,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                                     }
                                                 }
                                             }
+#endif
 
                                             if (fRawModeOk)
                                             {
@@ -2082,6 +2132,17 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     Assert(pStream->Type == kIpStream);
 
     /*
+     * Due to the asynchronous nature of streams we may get messages before the
+     * raw mode is turned on, in this case just pass through.
+     */
+    if (!pStream->fRawMode)
+    {
+        LogFlow((DEVICE_NAME ":IP stream not yet in raw mode. Passing through packet.\n"));
+        putnext(pQueue, pOrigMsg);
+        return VINF_SUCCESS;
+    }
+
+    /*
      * Make a copy as we will alter pMsg.
      */
     mblk_t *pMsg = copymsg(pOrigMsg);
@@ -2157,32 +2218,27 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
          * Packets from the wire, we must push them in their original form
          * as upstream consumers expect this format.
          */
-        if (pStream->fRawMode)
+        if (fSrc & INTNETTRUNKDIR_HOST)
         {
-            if (fSrc & INTNETTRUNKDIR_HOST)
+            /* Raw packets with correct checksums, pass-through the original */
+            if (    fOriginalIsRaw
+                && !fChecksumAdjusted)
             {
-                /* Raw packets with correct checksums, pass-through the original */
-                if (    fOriginalIsRaw
-                    && !fChecksumAdjusted)
-                {
-                    putnext(pQueue, pOrigMsg);
-                }
-                else    /* For M_PROTO packets or checksum corrected raw packets, pass-through the raw */
-                {
-                    putnext(pQueue, pMsg);
-                    pMsg = pOrigMsg;        /* for the freemsg that follows */
-                }
-            }
-            else    /* INTNETTRUNKDIR_WIRE */
-            {
-                if (fOriginalIsRaw)
-                    pOrigMsg->b_rptr += sizeof(RTNETETHERHDR);
-
                 putnext(pQueue, pOrigMsg);
             }
+            else    /* For M_PROTO packets or checksum corrected raw packets, pass-through the raw */
+            {
+                putnext(pQueue, pMsg);
+                pMsg = pOrigMsg;        /* for the freemsg that follows */
+            }
         }
-        else
+        else    /* INTNETTRUNKDIR_WIRE */
+        {
+            if (fOriginalIsRaw)
+                pOrigMsg->b_rptr += sizeof(RTNETETHERHDR);
+
             putnext(pQueue, pOrigMsg);
+        }
 
         freemsg(pMsg);
     }
