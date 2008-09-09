@@ -187,7 +187,7 @@ struct ACPIState
     uint8_t             u8UseIOApic;
     uint8_t             u8UseFdc;
     bool                fPowerButtonHandled;
-
+   
     /** ACPI port base interface. */
     PDMIBASE            IBase;
     /** ACPI port interface. */
@@ -198,6 +198,10 @@ struct ACPIState
     R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** Pointer to the driver connector interface */
     R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
+#if 0
+  /** Number of logical CPUs in guest */
+    uint16_t             cCpus;
+#endif
 };
 
 #pragma pack(1)
@@ -1573,7 +1577,13 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     bool fR0Enabled;
 
     /* Validate and read the configuration. */
-    if (!CFGMR3AreValuesValid (pCfgHandle, "RamSize\0IOAPIC\0GCEnabled\0R0Enabled\0FdcEnabled\0"))
+    if (!CFGMR3AreValuesValid (pCfgHandle, 
+                               "RamSize\0"
+                               "IOAPIC\0"
+                               "NumCPUs\0"
+                               "GCEnabled\0"
+                               "R0Enabled\0"
+                               "FdcEnabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config key for ACPI device"));
 
@@ -1586,6 +1596,13 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
+
+#if 0
+    rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &s->cCpus, 1);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
+#endif
 
     /* query whether we are supposed to present an FDC controller */
     rc = CFGMR3QueryU8 (pCfgHandle, "FdcEnabled", &s->u8UseFdc);
