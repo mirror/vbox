@@ -19,14 +19,12 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-SUB_DEPTH = ../..
-DEPTH    ?= ../../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
+#
+# Globals
+#
 VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 
 #
@@ -45,30 +43,30 @@ LIBRARIES += VgaBiosBin
 VgaBiosBin_TEMPLATE = VBOXR3
 VgaBiosBin_DEFS     = IN_VBOXDD2
 VgaBiosBin_INCS     = $(VBOX_PATH_DEVICES_SRC)
-VgaBiosBin_SOURCES  = $(PATH_TARGET)/VgaBiosBin.c
+VgaBiosBin_SOURCES  = $(PATH_VgaBiosBin)/VgaBiosBin.c
 VgaBiosBin_CLEAN    = \
-	$(PATH_TARGET)/vbetables.h \
+	$(PATH_VgaBiosBin)/vbetables.h \
 	\
-	$(PATH_TARGET)/_vgabios_.c \
-	$(PATH_TARGET)/vgabios0.s \
-	$(PATH_TARGET)/vgabios1.s \
-	$(PATH_TARGET)/vgabios.tmp \
-	$(PATH_TARGET)/vgabios.lst \
-	$(PATH_TARGET)/vgabios.bin \
-	$(PATH_TARGET)/VgaBiosBin.c \
-	$(PATH_TARGET)/VgaDefBiosLogo.c \
+	$(PATH_VgaBiosBin)/_vgabios_.c \
+	$(PATH_VgaBiosBin)/vgabios0.s \
+	$(PATH_VgaBiosBin)/vgabios1.s \
+	$(PATH_VgaBiosBin)/vgabios.tmp \
+	$(PATH_VgaBiosBin)/vgabios.lst \
+	$(PATH_VgaBiosBin)/vgabios.bin \
+	$(PATH_VgaBiosBin)/VgaBiosBin.c \
+	$(PATH_VgaBiosBin)/VgaDefBiosLogo.c \
 	\
-	$(PATH_TARGET)/_vgabios-cirrus_.c \
-	$(PATH_TARGET)/vgabios-cirrus0.s \
-	$(PATH_TARGET)/vgabios-cirrus1.s \
-	$(PATH_TARGET)/vgabios-cirrus.tmp \
-	$(PATH_TARGET)/vgabios-cirrus.lst \
-	$(PATH_TARGET)/vgabios-cirrus.bin
+	$(PATH_VgaBiosBin)/_vgabios-cirrus_.c \
+	$(PATH_VgaBiosBin)/vgabios-cirrus0.s \
+	$(PATH_VgaBiosBin)/vgabios-cirrus1.s \
+	$(PATH_VgaBiosBin)/vgabios-cirrus.tmp \
+	$(PATH_VgaBiosBin)/vgabios-cirrus.lst \
+	$(PATH_VgaBiosBin)/vgabios-cirrus.bin
 
 #
 # Rule for making the bios.
 #
-$(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
+$$(PATH_VgaBiosBin)/VgaBiosBin.c: $$(PATH_VgaBiosBin)/vgabios.bin $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) -min 32 -max 64 -mask 0x0fff -ascii -export VgaBiosBinary $< $@
 
@@ -77,35 +75,35 @@ $(PATH_TARGET)/VgaBiosBin.c: $(PATH_TARGET)/vgabios.bin $(VBOX_BIN2C)
 #
 
 # 1. create vbetables.h
-$(PATH_TARGET)/vbetables.h: $(MAKEFILE_CURRENT) $$(TARGET_vbetables-gen)
+$$(PATH_VgaBiosBin)/vbetables.h: $(MAKEFILE_CURRENT) $$(TARGET_vbetables-gen)
 	$(QUIET)$(REDIRECT) -wo $@ -- $(TARGET_vbetables-gen)
 
 # 2. precompile
-$(PATH_TARGET)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c) $(PATH_TARGET)/vbetables.h $(VBOX_VERSION_STAMP)
+$$(PATH_VgaBiosBin)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c) $$(PATH_VgaBiosBin)/vbetables.h $(VBOX_VERSION_STAMP)
 	$(call MSG_TOOL,cpp,VgaBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -P -DVBOX -DVBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" -DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) -o $@ $<
 
 # 3. compile
 # BCC tempfile clashes, order the BCC jobs to make sure they don't interfere with one another.
-$(PATH_TARGET)/vgabios0.s: $(PATH_TARGET)/_vgabios_.c | $(VBOX_BCC_JOBS)
+$$(PATH_VgaBiosBin)/vgabios0.s: $$(PATH_VgaBiosBin)/_vgabios_.c | $(VBOX_BCC_JOBS)
 	$(call MSG_COMPILE,VgaBiosBin,$<,$@,C)
 	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $^
-VBOX_BCC_JOBS += $(PATH_TARGET)/vgabios0.s
+VBOX_BCC_JOBS += $(PATH_VgaBiosBin)/vgabios0.s
 
 # 4. preprocess intermediate assembly.
-$(PATH_TARGET)/vgabios1.s: $(PATH_TARGET)/vgabios0.s
+$$(PATH_VgaBiosBin)/vgabios1.s: $$(PATH_VgaBiosBin)/vgabios0.s
 	$(call MSG_TOOL,Adjusting BCC Assembly,VgaBiosBin,$<,$@)
 	$(QUIET)$(SED) -e 's/^\.text//' -e 's/^\.data//' --output $@ $^
 
 # 5. assemble
-$(PATH_TARGET)/vgabios.tmp $(PATH_TARGET)/vgabios.lst: $(PATH_TARGET)/vgabios1.s
+$$(PATH_VgaBiosBin)/vgabios.tmp $$(PATH_VgaBiosBin)/vgabios.lst: $$(PATH_VgaBiosBin)/vgabios1.s
 	$(call MSG_COMPILE,VgaBiosBin,$<,$@,AS)
-	$(QUIET)$(REDIRECT) -ri $^ -- $(VBOX_AS86) -b $(PATH_TARGET)/vgabios.tmp -u- -w- -g -0 -j -O -l $(PATH_TARGET)/vgabios.lst
+	$(QUIET)$(REDIRECT) -ri $^ -- $(VBOX_AS86) -b $(PATH_VgaBiosBin)/vgabios.tmp -u- -w- -g -0 -j -O -l $(PATH_VgaBiosBin)/vgabios.lst
 
 # 6. checksums
-$(PATH_TARGET)/vgabios.bin: $(PATH_TARGET)/vgabios.tmp $$(TARGET_vgabiossums)
+$$(PATH_VgaBiosBin)/vgabios.bin: $$(PATH_VgaBiosBin)/vgabios.tmp $$(TARGET_vgabiossums)
 	$(call MSG_TOOL,vgabiossums,VgaBiosBin,$<,$@)
-	$(QUIET)$(CP) -f $(PATH_TARGET)/vgabios.tmp $@
+	$(QUIET)$(CP) -f $(PATH_VgaBiosBin)/vgabios.tmp $@
 	$(QUIET)$(TARGET_vgabiossums) $@
 
 #
@@ -114,17 +112,17 @@ $(PATH_TARGET)/vgabios.bin: $(PATH_TARGET)/vgabios.tmp $$(TARGET_vgabiossums)
 LIBRARIES += VgaDefBiosLogo
 VgaDefBiosLogo_TEMPLATE  = VBOXR3
 VgaDefBiosLogo_INCS      = $(VBOX_PATH_DEVICES_SRC)
-VgaDefBiosLogo_SOURCES   = $(PATH_TARGET)/VgaDefBiosLogo.c
+VgaDefBiosLogo_SOURCES   = $(PATH_VgaBiosBin)/VgaDefBiosLogo.c
 
 #
 # Rule for making the bios logo.
 #
 ifdef VBOX_OSE
-VBOX_LOGO_FILE := ose_logo.bmp
+ VBOX_LOGO_FILE := ose_logo.bmp
 else
-VBOX_LOGO_FILE := sun_logo.bmp
+ VBOX_LOGO_FILE := sun_logo.bmp
 endif
-$(PATH_TARGET)/VgaDefBiosLogo.c: $(PATH_SUB_CURRENT)/$(VBOX_LOGO_FILE) $(VBOX_BIN2C)
+$$(PATH_VgaBiosBin)/VgaDefBiosLogo.c: $(PATH_SUB_CURRENT)/$(VBOX_LOGO_FILE) $(VBOX_BIN2C)
 	$(call MSG_TOOL,bin2c,VgaBiosBin,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) VgaDefBiosLogo $< $@
 
