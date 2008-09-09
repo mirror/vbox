@@ -22,22 +22,27 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifeq ($(KBUILD_HOST),win) # guard when cross-compiling.
- SUBDIRS.win = win
+#
+# Include Sub-Makefiles.
+#
+if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" == "win"
+ include $(PATH_SUB_CURRENT)/win/Makefile.kmk
+endif
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/common/Makefile.kmk
+endif
+
+#
+# To be converted to sub-makefiles.
+#
+ifeq ($(KBUILD_HOST),darwin)
+ SUBDIRS.darwin = darwin
 endif
 ifeq ($(KBUILD_HOST),linux)
  SUBDIRS.linux = linux
 endif
-ifeq ($(KBUILD_HOST),darwin)
- SUBDIRS.darwin = darwin
-endif
 ifeq ($(KBUILD_HOST),solaris)
  SUBDIRS.solaris = solaris
-endif
-
-ifndef VBOX_OSE
- # Include Sub-Makefiles.
- include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
