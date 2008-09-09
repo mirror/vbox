@@ -967,7 +967,7 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
                             LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut DL_UNITDATA_REQ\n"));
                             mblk_t *pRawMsg;
                             int rc = vboxNetFltSolarisUnitDataToRaw(pThis, pMsg, &pRawMsg);
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                                 pMsg = pRawMsg;
                             else
                                 fSendDownstream = false;
@@ -1409,7 +1409,7 @@ static int vboxNetFltSolarisRelink(vnode_t *pVNode, struct lifreq *pInterface, i
         pInterface->lifr_ip_muxid = NewIpMuxId;
         pInterface->lifr_arp_muxid = NewArpMuxId;
         rc = vboxNetFltSolarisSetMuxId(pVNode, pInterface);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
 
         LogRel((DEVICE_NAME ":vboxNetFltSolarisRelink: failed to set new Mux Id.\n"));
@@ -1566,7 +1566,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
      * Obtain the interface flags from IP.
      */
     rc = vboxNetFltSolarisGetIfFlags(IPDevHandle, &Interface);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Open the UDP stream. We sort of cheat here and obtain the vnode so that we can perform
@@ -1576,7 +1576,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
         vnode_t *pVNodeUDPHeld = NULL;
         TIUSER *pUserUDP = NULL;
         rc = vboxNetFltSolarisOpenDev(UDP_DEV_NAME, &pVNodeUDP, &pVNodeUDPHeld, &pUserUDP);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * Get the multiplexor IDs.
@@ -1592,8 +1592,8 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                 int ArpMuxFd;
                 rc = vboxNetFltSolarisMuxIdToFd(pVNodeUDP, Interface.lifr_ip_muxid, &IpMuxFd);
                 rc2 = vboxNetFltSolarisMuxIdToFd(pVNodeUDP, Interface.lifr_arp_muxid, &ArpMuxFd);
-                if (   VBOX_SUCCESS(rc)
-                    && VBOX_SUCCESS(rc2))
+                if (   RT_SUCCESS(rc)
+                    && RT_SUCCESS(rc2))
                 {
                     /*
                      * We need to I_PUNLINK on these multiplexor IDs before we can start
@@ -1623,8 +1623,8 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                              */
                             rc = vboxNetFltSolarisDetermineModPos(fAttach, pVNodeIp, &StrMod.pos);
                             rc2 = vboxNetFltSolarisDetermineModPos(fAttach, pVNodeArp, &ArpStrMod.pos);
-                            if (   VBOX_SUCCESS(rc)
-                                && VBOX_SUCCESS(rc2))
+                            if (   RT_SUCCESS(rc)
+                                && RT_SUCCESS(rc2))
                             {
                                 /*
                                  * Set global data which will be grabbed by ModOpen.
@@ -1657,7 +1657,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                          * otherwise we've pretty much screwed up the host interface.
                                          */
                                         rc = vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
-                                        if (VBOX_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
                                         {
                                             bool fRawModeOk = !fAttach;   /* Raw mode check is always ok during the detach case */
                                             if (fAttach)
@@ -1737,11 +1737,11 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                     LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get MuxFd from MuxId. rc=%d rc2=%d\n"));
             }
             else
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get Mux Ids.\n"));
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to get Mux Ids. rc=%d\n", rc));
             vboxNetFltSolarisCloseDev(pVNodeUDPHeld, pUserUDP);
         }
         else
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to open UDP.\n"));
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to open UDP. rc=%d\n", rc));
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: invalid interface '%s'.\n", pThis->szName));
@@ -2095,7 +2095,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         fOriginalIsRaw = false;
         mblk_t *pRawMsg;
         int rc = vboxNetFltSolarisUnitDataToRaw(pThis, pMsg, &pRawMsg);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             pMsg = pRawMsg;
         else
         {
