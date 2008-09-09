@@ -26,17 +26,12 @@ include $(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
 
-else ifdef VBOX_ONLY_DOCS
+else if defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
 
-else ifdef VBOX_ONLY_SDK
- include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
- include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
-
-else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
+else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
