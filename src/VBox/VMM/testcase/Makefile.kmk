@@ -301,14 +301,14 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run: $$(INSTARGET_tstAsmStructs) $$(I
 #
 
 # 1. Manually dump selected structures and members.
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructGC.h: $$(INSTARGET_tstVMStructGC)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructGC.h: $$(INSTARGET_tstVMStructGC) | $$(dir $$@)
 	$(call MSG_GENERATE,tstVMStructSize,$@)
-	$(QUIET)$(REDIRECT) -wo $@ -- $^
+	$(QUIET)$(REDIRECT) -wo $@ -- $<
 
 # 2. run it.
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize) | $$(dir $$@)
 	$(QUIET)$(RM) -f $@
-	$^
+	$<
 	$(QUIET)$(APPEND) "$@" "done"
 
 # alias for the two struct tests.
