@@ -103,8 +103,14 @@ typedef uint32_t VRDPAUDIOFORMAT;
  * Remote USB protocol.
  */
 
-/* The version of Remote USB Protocol. */
-#define VRDP_USB_VERSION (1)
+/* The initial version 1. */
+#define VRDP_USB_VERSION_1 (1)
+/* Version 2: look for VRDP_USB_VERSION_2 comments in the code. */
+#define VRDP_USB_VERSION_2 (2)
+
+/* The default VRDP server version of Remote USB Protocol. */
+#define VRDP_USB_VERSION VRDP_USB_VERSION_2
+
 
 /** USB backend operations. */
 #define VRDP_USB_REQ_OPEN              (0)
@@ -322,6 +328,16 @@ typedef struct _VRDP_USB_REQ_REAP_URB_PARM
 #define VRDP_USB_XFER_STALL (1)
 #define VRDP_USB_XFER_DNR   (2)
 #define VRDP_USB_XFER_CRC   (3)
+/* VRDP_USB_VERSION_2: New error codes. */
+#define VRDP_USB_XFER_BS    (4)
+#define VRDP_USB_XFER_DTM   (5)
+#define VRDP_USB_XFER_PCF   (6)
+#define VRDP_USB_XFER_UPID  (7)
+#define VRDP_USB_XFER_DO    (8)
+#define VRDP_USB_XFER_DU    (9)
+#define VRDP_USB_XFER_BO    (10)
+#define VRDP_USB_XFER_BU    (11)
+#define VRDP_USB_XFER_ERR   (12) /* VBox protocol error. */ 
 
 #define VRDP_USB_REAP_FLAG_CONTINUED (0x0)
 #define VRDP_USB_REAP_FLAG_LAST      (0x1)
@@ -439,13 +455,24 @@ typedef struct _VRDPUSBREQNEGOTIATEPARM
 
 #define VRDP_USB_CAPS_FLAG_ASYNC    (0x0)
 #define VRDP_USB_CAPS_FLAG_POLL     (0x1)
+/* VRDP_USB_VERSION_2: New flag. */
+#define VRDP_USB_CAPS2_FLAG_VERSION (0x2) /* The client is negotiating the protocol version. */
+
 
 #define VRDP_USB_CAPS_VALID_FLAGS   (VRDP_USB_CAPS_FLAG_POLL)
+/* VRDP_USB_VERSION_2: A set of valid flags. */
+#define VRDP_USB_CAPS2_VALID_FLAGS  (VRDP_USB_CAPS_FLAG_POLL | VRDP_USB_CAPS2_FLAG_VERSION)
 
 typedef struct _VRDPUSBREQNEGOTIATERET
 {
     uint8_t flags;
 } VRDPUSBREQNEGOTIATERET;
+
+typedef struct _VRDPUSBREQNEGOTIATERET_2
+{
+    uint8_t flags;
+    uint32_t u32Version; /* This field presents only if the VRDP_USB_CAPS2_FLAG_VERSION flag is set. */ 
+} VRDPUSBREQNEGOTIATERET_2;
 #pragma pack()
 
 #define VRDP_CLIPBOARD_FORMAT_NULL         (0x0)
