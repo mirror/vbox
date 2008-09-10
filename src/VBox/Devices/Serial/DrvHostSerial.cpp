@@ -555,8 +555,8 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
     DWORD dwRet = WaitForSingleObject(pThis->hHaltEventSem, 0)
 
     HANDLE ahWait[2];
-    haWait[0] = pThis->hEventRecv;
-    haWait[1] = pThis->hHaltEventSem;
+    aWait[0] = pThis->hEventRecv;
+    aWait[1] = pThis->hHaltEventSem;
 #endif
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
