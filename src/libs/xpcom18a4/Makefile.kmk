@@ -217,6 +217,19 @@ TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS,
 
 
 #
+# Template for building VBoxPhython against the Mac OS X 10.5 SDK.
+# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
+#
+TEMPLATE_XPCOMOSX105                    = XPCOM libraries (shared) built against the Mac OS X 10.5 SDK
+TEMPLATE_XPCOMOSX105_EXTENDS            = XPCOM
+TEMPLATE_XPCOMOSX105_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPCOM_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS)
+TEMPLATE_XPCOMOSX105_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPCOM_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_CFLAGS)
+TEMPLATE_XPCOMOSX105_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS)
+TEMPLATE_XPCOMOSX105_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_DEFS)
+TEMPLATE_XPCOMOSX105_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_5)/Developer/Headers/FlatCarbon
+
+
+#
 # Header installs.
 #
 INSTALLS += \
@@ -1297,7 +1310,7 @@ ifdef VBOX_WITH_PYTHON
     $(error we are assuming 10.4 here; VBOX_DEF_MACOSX_VERSION_MIN=$(VBOX_DEF_MACOSX_VERSION_MIN))
    endif
    # Does -framework really work with CXXFLAGS and CFLAGS?
-   VBOX_PYTHON_FRAMEWORK :=  -framework Python
+   VBOX_PYTHON_FRAMEWORK := -framework Python
    VBOX_PATH_PYTHON_INC := $(VBOX_PATH_MACOSX_SDK_10_4)/System/Library/Frameworks/Python.framework/Headers
   endif
  else  # !darwin || configured darwin
@@ -1372,11 +1385,16 @@ VBoxPython_LIBS = \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(VBOX_LIB_PYTHON)
 
-## @todo we'll have to use the 10.5 SDK if we wish to build this. :-/
-#VBoxPython_DEFS.darwin = MAC_OS_X_VERSION_MIN_REQUIRED=1050 MAC_OS_X_VERSION_MAX_ALLOWED=1050
-#VBoxPython_CXXFLAGS.darwin = -mmacosx-version-min=10.5 -isysroot $(subst MacOSX10.4u,MacOSX10.5,$(VBOX_PATH_MACOSX_SDK)) -framework Python
-#VBoxPython_LDFLAGS.darwin  = -mmacosx-version-min=10.5 -isysroot $(subst MacOSX10.4u,MacOSX10.5,$(VBOX_PATH_MACOSX_SDK)) -framework Python
-
+if defined(VBOX_WITH_VBOXPYTHON_FOR_OSX_10_5) && "$(KBUILD_TARGET)" == "darwin"
+# Same VBoxPython except built against the Mac OS X 10.5 SDK.
+DLLS += VBoxPython2_5
+VBoxPython2_5_EXTENDS = VBoxPython
+VBoxPython2_5_TEMPLATE = XPCOMOSX105
+VBoxPython2_5_NAME.darwin = VBoxPython2_5
+VBoxPython2_5_INCS = \
+	python/src \
+	$(VBOX_PATH_MACOSX_SDK_10_5)/System/Library/Frameworks/Python.framework/Headers
+endif
 
 # Python Client Module - the Python bits.
 VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
