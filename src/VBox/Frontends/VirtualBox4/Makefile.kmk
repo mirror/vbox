@@ -495,7 +495,7 @@ VirtualBox4_CLEAN.win += $$(PATH_VirtualBox4)/VirtualBox4.rc
 endif # win
 
 
-ifeq ($(KBUILD_TYPE),darwin)
+ifeq ($(KBUILD_TARGET),darwin)
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
 # The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
