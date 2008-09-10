@@ -123,45 +123,6 @@
 # error "CONFIG_X86_HIGH_ENTRY is not supported by VBoxDrv at this time."
 #endif
 
-/*
- * This sucks soooo badly on x86! Why don't they export __PAGE_KERNEL_EXEC so PAGE_KERNEL_EXEC would be usable?
- */
-#if defined(RT_ARCH_AMD64)
-# define MY_PAGE_KERNEL_EXEC    PAGE_KERNEL_EXEC
-#elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
-# define MY_PAGE_KERNEL_EXEC    __pgprot(cpu_has_pge ? _PAGE_KERNEL_EXEC | _PAGE_GLOBAL : _PAGE_KERNEL_EXEC)
-#else
-# define MY_PAGE_KERNEL_EXEC    PAGE_KERNEL
-#endif
-
-/*
- * The redhat hack section.
- *  - The current hacks are for 2.4.21-15.EL only.
- */
-#ifndef NO_REDHAT_HACKS
-/* accounting. */
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#  ifdef VM_ACCOUNT
-#   define MY_DO_MUNMAP(a,b,c) do_munmap(a, b, c, 0) /* should it be 1 or 0? */
-#  endif
-# endif
-
-/* backported remap_page_range. */
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#  include <asm/tlb.h>
-#  ifdef tlb_vma /* probably not good enough... */
-#   define HAVE_26_STYLE_REMAP_PAGE_RANGE 1
-#  endif
-# endif
-
-#endif /* !NO_REDHAT_HACKS */
-
-
-#ifndef MY_DO_MUNMAP
-# define MY_DO_MUNMAP(a,b,c) do_munmap(a, b, c)
-#endif
-
-
 #ifdef CONFIG_X86_LOCAL_APIC
 
 /* If an NMI occurs while we are inside the world switcher the machine will
