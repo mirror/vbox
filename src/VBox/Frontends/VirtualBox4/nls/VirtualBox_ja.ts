@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="ja">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -36,22 +37,18 @@
 <context>
     <name>BootItemsList</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">上に移動(Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">下に移動(Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">選択した起動デバイスを上に移動します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">選択した起動デバイスを下に移動します。</translation>
     </message>
@@ -59,7 +56,6 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">起動デバイスの優先順序を指定します。チェックボックスを使い各デバイスを有効または無効にできます。項目を上または下に移動してデバイスの順序を変更してください。</translation>
     </message>
@@ -69,17 +65,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">ダブルクリックで新規の割り当てを追加</translation>
+        <translation>ダブルクリックで新規の割り当てを追加</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">ハードディスク</translation>
+        <translation>ハードディスク</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Slot</source>
-        <translation type="unfinished">スロット</translation>
+        <translation>スロット</translation>
     </message>
 </context>
 <context>
@@ -100,7 +96,7 @@
     <message>
         <location filename="../src/QIHelpButton.cpp" line="120"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">ヘルプ(&amp;H)</translation>
+        <translation>ヘルプ(&amp;H)</translation>
     </message>
 </context>
 <context>
@@ -331,7 +327,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>コピー(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -365,7 +361,6 @@
 <context>
     <name>QIRichLabel</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Copy to clipboard</source>
         <translation type="obsolete">クリップボードにコピー</translation>
     </message>
@@ -403,7 +398,6 @@
         <translation>VirtualBox について</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VirtualBox グラフィカルユーザーインターフェース バージョン %1&lt;br&gt;%2&lt;/qt&gt;</translation>
@@ -411,7 +405,7 @@
     <message>
         <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;VirtualBox グラフィカルユーザーインターフェース バージョン %1&lt;br&gt;%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -459,67 +453,54 @@ Version %1</source>
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add Share</source>
         <translation type="obsolete">共有フォルダの追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Edit Share</source>
         <translation type="obsolete">設定の編集</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select a folder to share</source>
         <translation type="obsolete">選択したフォルダを共有</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Folder Path</source>
         <translation type="obsolete">フォルダのパス</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Folder Name</source>
         <translation type="obsolete">フォルダ名</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the path to an existing folder on the host PC.</source>
         <translation type="obsolete">ホストPC上の既存のフォルダのパスを表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">ゲストOSで使用される共有フォルダ名を表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Opens the dialog to select a folder.</source>
         <translation type="obsolete">フォルダ選択ダイアログを開きます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">永続化する(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Read-only</source>
         <translation type="obsolete">読み込み専用(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">ゲストOSから指定された共有フォルダへの書き込みを禁止します。</translation>
     </message>
@@ -557,27 +538,22 @@ Version %1</source>
         <translation>仮想マシンの状態を最新のスナップショットに保存されている状態に戻す</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -592,7 +568,6 @@ Version %1</source>
         <translation>シャットダウン シグナル送信(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -601,7 +576,6 @@ Version %1</source>
 &lt;p&gt;仮想マシンがこの動作に反応しないならば、ゲストOSの構成に誤りがあるか、電源ボタン オフのACPIイベントに対応していません。この場合、仮想マシンの実行を停止するには[&lt;b&gt;仮想マシンの電源オフ&lt;/b&gt;]を選択します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンの電源を切ります。&lt;/p&gt;
@@ -610,22 +584,22 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;チェックすると、仮想マシンをオフした後、現在のスナップショットに保存された状態に復元します。これは直前のセッションの状態を破棄し、差現在のスナップショットの状態に戻りたい場合に役立ちます。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシンをオフにした後、現在のスナップショットに保存された状態に復元します。これは直前のセッションの状態を破棄し、差現在のスナップショットの状態に戻りたい場合に役立ちます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;現在実行中の仮想マシンの状態をホストPCの物理ハードディスクに保存します。&lt;/p&gt;&lt;p&gt;この仮想マシンの次回の起動時、すぐに作業を再開できるように仮想マシンは保存した状態を復元します。&lt;/p&gt;&lt;p&gt;注：ゲストOSの種別と仮想マシンに割り当てたメモリ量によっては、仮想マシンの状態の保存に長い時間を必要とします。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンに電源ボタン オフのACPIイベントを送信します。&lt;/p&gt;&lt;p&gt;通常、仮想マシン内で動作するゲストOSは、このイベントを検出して正しい終了処理を実行します。ゲストOSで動作するすべてのアプリケーションがデータと状態を保存することができるので、仮想マシンの電源を切るお勧めの方法です。&lt;/p&gt;&lt;p&gt;仮想マシンがこの動作に反応しないならば、ゲストOSの構成に誤りがあるか、電源ボタン オフのACPIイベントに対応していません。この場合、仮想マシンの実行を停止するには[&lt;b&gt;仮想マシンの電源オフ&lt;/b&gt;]を選択します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンの電源を切ります。&lt;/p&gt;&lt;p&gt;注：この動作は、ゲストOSを正しく終了することなく、直ちに仮想マシンの実行を停止します。仮想マシン内の&lt;i&gt;データの損失&lt;/i&gt;を招くかもしれません。この動作は、仮想マシンが[&lt;b&gt;シャットダウン シグナル送信&lt;/b&gt;]に反応しない場合のみ選択してください。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -778,7 +752,6 @@ Version %1</source>
         <translation>マウント中のCD/DVDメディアをマウント解除する</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
         <translation type="obsolete">リモートデスクトップ(RDP)サーバ</translation>
@@ -874,13 +847,11 @@ Version %1</source>
         <translation>ヘルプ(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">ゲストOSの画面の自動リサイズ機能が有効なとき(&lt;img src=auto_resize_on_16px.png/&gt;)を、無効なとき(&lt;img src=auto_resize_off_16px.png/&gt;)を表示します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。
 </translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">ホスト マウスポインタのキャプチャ状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。
 </translation>
@@ -994,7 +965,6 @@ Version %1</source>
         <translation>シームレスモードに切り替える</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
         <translation type="obsolete">キーボードがゲストOSにキャプチャされているとき(&lt;img src=hostkey_captured_16px.png/&gt;)を、無効なとき(&lt;img src=hostkey_16px.png/&gt;)を表示します。</translation>
     </message>
@@ -1107,7 +1077,6 @@ Version %1</source>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USBコントローラが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
         <translation type="obsolete">リモートディスプレイ(VRDPサーバ)機能が有効なとき(&lt;img src=vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=vrdp_disabled_16px.png/&gt;)を表示します。</translation>
     </message>
@@ -1171,7 +1140,6 @@ Version %1</source>
         <translation>コマンドライン(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
         <translation type="obsolete">ログ取得(&amp;L)...</translation>
@@ -1179,22 +1147,22 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1581"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストOSの画面の自動リサイズ機能が有効なとき(&lt;img src=:/auto_resize_on_16px.png/&gt;)を、無効なとき(&lt;img src=:/auto_resize_off_16px.png/&gt;)を表示します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>ホスト マウスポインタのキャプチャ状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>キーボードがゲストOSにキャプチャされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;を、無効なとき(&lt;img src=:/hostkey_16px.png/&gt;)を表示します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1839"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>リモートディスプレイ(VRDPサーバ)機能が有効なとき(&lt;img src=:/vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=:/vrdp_disabled_16px.png/&gt;)を表示します。</translation>
     </message>
 </context>
 <context>
@@ -1225,7 +1193,6 @@ Version %1</source>
         <translation>仮想ディスクマネージャ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">ハードディスク(&amp;H)</translation>
     </message>
@@ -1240,37 +1207,30 @@ Version %1</source>
         <translation>フロッピーイメージ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Invoke dialog&apos;s help</source>
         <translation type="obsolete">ダイアログのヘルプを表示</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Accept dialog</source>
         <translation type="obsolete">ダイアログに同意</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel dialog</source>
         <translation type="obsolete">ダイアログをキャンセル</translation>
     </message>
@@ -1283,12 +1243,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">新規(&amp;N)...</translation>
+        <translation>新規(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">追加(&amp;A)...</translation>
+        <translation>追加(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
@@ -1306,27 +1266,22 @@ Version %1</source>
         <translation>最新の情報に更新(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>New</source>
         <translation type="obsolete">新規</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add</source>
         <translation type="obsolete">追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Remove</source>
         <translation type="obsolete">除去</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Release</source>
         <translation type="obsolete">解放</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Refresh</source>
         <translation type="obsolete">最新の情報に更新</translation>
     </message>
@@ -1361,27 +1316,22 @@ Version %1</source>
         <translation>動作</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Location</source>
         <translation type="obsolete">場所</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Disk Type</source>
         <translation type="obsolete">ディスク タイプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Storage Type</source>
         <translation type="obsolete">ストレージ タイプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Attached to</source>
         <translation type="obsolete">割り当て</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Snapshot</source>
         <translation type="obsolete">スナップショット</translation>
     </message>
@@ -1466,7 +1416,6 @@ Version %1</source>
         <translation>選択(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
         <translation type="obsolete">すべてのハードディスクイメージファイル(*.vdi; *.vmdk);;仮想ディスクイメージ(*.vdi);;VMDKイメージ(*.vmdk);;すべてのファイル (*)</translation>
     </message>
@@ -1523,37 +1472,37 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてのハードディスクイメージファイル(*.vdi *.vmdk *.vhd);;仮想ディスクイメージ(*.vdi);;VMDKイメージ(*.vmdk);;VHDイメージ(*.vhd);;すべてのファイル (*)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>ハードディスク(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;場所:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ディスク タイプ:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;ストレージ タイプ:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;割り当て先:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;スナップショット:&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1566,7 +1515,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;からダウンロード...</translation>
+        <translation>VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="185"/>
@@ -1576,7 +1525,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="226"/>
         <source>Could not locate the file on the server (response: %1).</source>
-        <translation>サーバにファイルが見つかりませんでした(レスポンス: %1)。</translation>
+        <translation>サーバー上にファイルが見つかりませんでした(応答: %1)。</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="271"/>
@@ -1604,67 +1553,67 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="210"/>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;デフォルトに戻す&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>変更後、再度このダイアログを開くとデフォルト パスが表示されます。</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="216"/>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;選択されていません&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation type="unfinished"></translation>
+        <translation>ドロップダウンリストから&lt;b&gt;[その他...]&lt;/b&gt;を実行して、使用するパスを選択してください。</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="230"/>
         <source>Other...</source>
-        <translation type="unfinished"></translation>
+        <translation>その他...</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="234"/>
         <source>Reset</source>
-        <translation type="unfinished">リセット</translation>
+        <translation>リセット</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="241"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>他のフォルダを選択するダイアログを開きます。</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="244"/>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>フォルダ パスの値をデフォルトに戻します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="249"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>他のファイルを選択するダイアログを開きます。</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="252"/>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>ファイル パスの値をデフォルトに戻します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="260"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>コピー(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="410"/>
         <source>Please type the desired folder path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>ここに使用するフォルダ パスを入力してください。</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="411"/>
         <source>Please type the desired file path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>ここに使用するファイル パスを入力してください。</translation>
     </message>
 </context>
 <context>
@@ -1672,32 +1621,32 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="156"/>
         <source>General</source>
-        <translation type="unfinished">一般</translation>
+        <translation>一般</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="159"/>
         <source>Input</source>
-        <translation type="unfinished"></translation>
+        <translation>入力</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデート</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
         <source>Language</source>
-        <translation type="unfinished">言語</translation>
+        <translation>言語</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="169"/>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="183"/>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1</translation>
     </message>
 </context>
 <context>
@@ -1705,32 +1654,32 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="76"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished">デフォルトのVDIフォルダのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
+        <translation>デフォルトのVDIフォルダのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="80"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">デフォルトの仮想マシン フォルダのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
+        <translation>デフォルトの仮想マシン フォルダのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリのパスを表示します。</translation>
+        <translation>リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリのパスを表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>デフォルト ハードディスク フォルダ(&amp;H):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>デフォルト 仮想マシン フォルダ(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDP認証ライブラリ(&amp;R):</translation>
     </message>
 </context>
 <context>
@@ -1738,22 +1687,22 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>ホストキー(&amp;K):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished">仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
+        <translation>仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャします。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
+        <translation>仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャします。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>キーボードの自動キャプチャ(&amp;A)</translation>
     </message>
 </context>
 <context>
@@ -1762,65 +1711,65 @@ Version %1</source>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished">(内蔵)</translation>
+        <translation>(内蔵)</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="115"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;利用不可&gt;</translation>
+        <translation>&lt;利用不可&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="116"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;不明&gt;</translation>
+        <translation>&lt;不明&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="129"/>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">デフォルト</translation>
+        <translation>デフォルト</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
-        <translation type="unfinished">言語:</translation>
+        <translation>言語:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>インターフェース言語:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>利用できるユーザーインターフェース言語の一覧です。有効な言語は&lt;b&gt;太字&lt;/b&gt;で示されます。システムのデフォルト言語に戻すには&lt;i&gt;デフォルト&lt;/i&gt;を選択してください。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
         <source>Name</source>
-        <translation type="unfinished">名前</translation>
+        <translation>名前</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="99"/>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation>Id</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="104"/>
         <source>Language</source>
-        <translation type="unfinished">言語</translation>
+        <translation>言語</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="109"/>
         <source>Author</source>
-        <translation type="unfinished"></translation>
+        <translation>作者</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished">作者:</translation>
+        <translation>作者:</translation>
     </message>
 </context>
 <context>
@@ -1828,27 +1777,27 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>定期的にVirtualBoxウェブサイトに接続して、VirtualBoxの新しいバージョンが利用可能であるかどうか確認します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
         <source>&amp;Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートを確認(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation type="unfinished"></translation>
+        <translation>頻度(&amp;O):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートを確認する頻度を指定します。 注：アップデートを確認しない場合は、上のチェックボックスをオフにしてください。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation type="unfinished"></translation>
+        <translation>次回の確認:</translation>
     </message>
 </context>
 <context>
@@ -2700,67 +2649,67 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="1413"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ベンダーID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1418"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;プロダクトID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1423"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;リビジョン: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1428"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;プロダクト: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1433"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;メーカー: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1438"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;シリアルNo.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1443"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ポート: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1450"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;状態: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1789"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>ホスト インターフェース, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1792"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>内部ネットワーク, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="179"/>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">アダプタ %1</translation>
+        <translation>アダプタ %1</translation>
     </message>
 </context>
 <context>
@@ -2784,231 +2733,186 @@ Version %1</source>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Category</source>
         <translation type="obsolete">カテゴリ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>[id]</source>
         <translation type="obsolete">[id]</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>[link]</source>
         <translation type="obsolete">[link]</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>[name]</source>
         <translation type="obsolete">[name]</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> General </source>
         <translation type="obsolete">一般</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Input </source>
         <translation type="obsolete">入力</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Default &amp;Folders</source>
         <translation type="obsolete">デフォルト フォルダ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Machines</source>
         <translation type="obsolete">仮想マシン</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>VDI files</source>
         <translation type="obsolete">VDIファイル</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select</source>
         <translation type="obsolete">選択</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Keyboard</source>
         <translation type="obsolete">キーボード(&amp;K)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Host Key</source>
         <translation type="obsolete">ホストキー(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Auto capture keyboard</source>
         <translation type="obsolete">キーボードの自動キャプチャ(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;USB Device Filters</source>
         <translation type="obsolete">USBデバイス フィルタ(&amp;U)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">ダイアログのヘルプを表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">無効な設定が見つかりました</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">変更を保存してダイアログを閉じます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">変更を破棄してダイアログを閉じます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>VirtualBox Preferences</source>
         <translation type="obsolete">VirtualBox 環境設定</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
         <translation type="obsolete">仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">新規フィルタ %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Language</source>
         <translation type="obsolete">言語</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Language </source>
         <translation type="obsolete">言語</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Interface Language</source>
         <translation type="obsolete">インターフェース言語(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Author(s):</source>
         <translation type="obsolete">作者:</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Language:</source>
         <translation type="obsolete">言語:</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> (built-in)</source>
         <comment>Language</comment>
         <translation type="obsolete">(内蔵)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation type="obsolete">&lt;利用不可&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
         <translation type="obsolete">&lt;不明&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
 &lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
@@ -3018,83 +2922,67 @@ to the system default language.&lt;/qt&gt;
 システムのデフォルト言語に戻すには&lt;i&gt;デフォルト&lt;/i&gt;を選択してください。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Default</source>
         <comment>Language</comment>
         <translation type="obsolete">デフォルト</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">デフォルトのVDIフォルダのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">仮想マシン フォルダのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">VDIフォルダのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルト パスが表示されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">デフォルトの仮想マシン フォルダのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Opens a dialog to select the default VDI folder.</source>
         <translation type="obsolete">ダイアログを開いてデフォルトのVDIフォルダを選択します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Opens a dialog to select the default virtual machine folder.</source>
         <translation type="obsolete">ダイアログを開いてデフォルトの仮想マシン フォルダを選択します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">仮想マシンのウィンドウがアクティブのとき、キーボードを自動的にキャプチャします。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>V&amp;RDP Authentication Library</source>
         <translation type="obsolete">VRDP認証ライブラリ(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリのパスを表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
         <translation type="obsolete">VRDP認証ライブラリ ファイルの選択ダイアログを開きます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">認証ライブラリ ファイルの値をデフォルト値にリセットします。変更を適用し、再度このダイアログを開くと現在の認証ライブラリ ファイルが表示されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Extended Features</source>
         <translation type="obsolete">拡張機能(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">VT-x/AMD-Vを有効にする(&amp;V)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation type="obsolete">仮想マシンがホストCPUのIntel VT-xやAMD-Vなどの仮想化支援機能をデフォルトで使用するかどうかを指定します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
                                               &lt;qt&gt;Lists all global USB
                                               filters. The checkbox to the left
@@ -3109,17 +2997,14 @@ to the system default language.&lt;/qt&gt;
 USBフィルタを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">空のフィルタを追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">空のフィルタを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -3128,17 +3013,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSBデバイスに適合します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">デバイスからフィルタを追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">デバイスからフィルタを追加する(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -3146,51 +3028,42 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;選択したホストPCのUSBデバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Remove Filter</source>
         <translation type="obsolete">フィルタを除去</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">フィルタを除去する(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルタを除去します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">フィルタを上に移動</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">フィルタを上に移動する(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたフィルタを上に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">フィルタを下に移動</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">フィルタを下に移動(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
@@ -3200,32 +3073,26 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Slot</source>
         <translation type="obsolete">スロット</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Hard Disk</source>
         <translation type="obsolete">ハードディスク</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>VBoxHardDiskSettings</source>
         <translation type="obsolete">VBoxHardDiskSettings</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">ハードディスク(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">SATAコントローラを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
                           &lt;qt&gt;When checked, enables the virtual SATA
                           controller of this machine. Note that you cannot
@@ -3235,12 +3102,10 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;この仮想マシンの仮想SATAコントローラを有効にします。注：仮想コントローラが無効なとき、ハードディスクをSATAポートに取り付けることができません。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Hard Disks &amp;Attachments</source>
         <translation type="obsolete">ハードディスクの割り当て(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
                                   &lt;qt&gt;Lists all hard disks attached to
                                   this machine. Use a mouse double-click or the
@@ -3257,66 +3122,54 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 </translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add Attachment</source>
         <translation type="obsolete">割り当ての追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Add Attachment</source>
         <translation type="obsolete">割り当てを追加する(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;新規ハードディスクの割り当てを追加します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Remove Attachment</source>
         <translation type="obsolete">割り当てを除去</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Remove Attachment</source>
         <translation type="obsolete">割り当てを除去する(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Delete</source>
         <translation type="obsolete">削除</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたハードディスクの割り当てを除去します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select Hard Disk</source>
         <translation type="obsolete">ハードディスクを選択</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Select Hard Disk</source>
         <translation type="obsolete">ハードディスクを選択する(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+スペース</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
@@ -3324,17 +3177,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;仮想ディスクマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt;はすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられている</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Double-click to add a new attachment</source>
         <translation type="obsolete">ダブルクリックで新規の割り当てを追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete"> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていない</translation>
     </message>
@@ -3344,17 +3194,17 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="unfinished">同意します(&amp;A)</translation>
+        <translation>同意します(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished">同意しません(&amp;D)</translation>
+        <translation>同意しません(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
         <source>VirtualBox License</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox ライセンス</translation>
     </message>
 </context>
 <context>
@@ -3428,42 +3278,42 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="561"/>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">VirtualBox ホスト インターフェース %1</translation>
+        <translation>VirtualBox ホスト インターフェース %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="622"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;選択したホスト インターフェース &quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&quot;を除去しますか?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;選択したホスト インターフェース &quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&quot;を除去しますか?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="654"/>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished">ホスト インターフェース(&amp;I)</translation>
+        <translation>ホスト インターフェース(&amp;I)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">利用可能なホスト インターフェースをリスト表示します。</translation>
+        <translation>利用可能なホスト インターフェースをリスト表示します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="659"/>
         <source>A&amp;dd New Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>新規ホスト インターフェースの追加(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="660"/>
         <source>&amp;Remove Selected Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したホスト インターフェースの除去(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">新規ホスト インターフェースを追加します。</translation>
+        <translation>新規ホスト インターフェースを追加します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">選択したホスト インターフェースを除去します。</translation>
+        <translation>選択したホスト インターフェースを除去します。</translation>
     </message>
 </context>
 <context>
@@ -3474,7 +3324,6 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation>新規仮想ディスクの作成</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -3507,7 +3356,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>仮想ディスクイメージのタイプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;[&lt;b&gt;選択&lt;/b&gt;]ボタンをクリックし、ファイルの場所と名前を選択して仮想ハードディスクイメージを保存するか、入力フィールドにファイル名を入力してください 。&lt;/p&gt;</translation>
@@ -3518,12 +3366,10 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
         <translation>イメージファイル名(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select</source>
         <translation type="obsolete">選択</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想ハードディスクのサイズを選択してください。
@@ -3545,7 +3391,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>新規仮想ハードディスクイメージは以下の設定で作成されます:</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
@@ -3562,7 +3407,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>&lt;nobr&gt;%1 バイト&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;タイプ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;場所:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;サイズ:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;バイト)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -3577,7 +3421,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>新規ハードディスクのファイルを選択してください</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -3594,71 +3437,71 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;このウィザードは仮想マシン用の新規仮想ハードディスクイメージ作成を手助けします。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには[&lt;b&gt;次へ&lt;/b&gt;]ボタンを、前のページに戻るには[&lt;b&gt;戻る&lt;/b&gt;]ボタンを使用してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;作成する仮想ハードディスクイメージのタイプを選択してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;可変サイズのイメージ&lt;/b&gt;は、最初に物理的なハードディスク上のごく小さな容量しか使用しません。ゲストOSが要求するディスク容量に応じてサイズが動的に増加(指定されたサイズまで)します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;固定サイズのイメージ&lt;/b&gt;の容量は増加しません。仮想ハードディスクのサイズとほぼ同じサイズのファイルに保存されます。固定サイズのイメージの作成は、イメージのサイズとハードディスクの書き込み性能に依存して長い時間がかかるかもしれません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;[&lt;b&gt;選択&lt;/b&gt;]ボタンをクリックし、ファイルの場所と名前を選択して仮想ハードディスクイメージを保存するか、入力フィールドにファイル名を入力してください 。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想ハードディスクのサイズを選択してください。このサイズは仮想ハードディスクのサイズとしてゲストOSに報告されます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>上記の設定が正しければ、[&lt;b&gt;完了&lt;/b&gt;]ボタンをクリックしてください。 新規ハードディスクイメージが作成されます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>完了(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>タイプ</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="205"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">場所</translation>
+        <translation>場所</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="206"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">サイズ</translation>
+        <translation>サイズ</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="207"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>バイト</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished">キャンセル</translation>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
@@ -3669,7 +3512,6 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <translation>新規仮想マシンの作成</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
@@ -3683,7 +3525,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>ようこそ新規仮想マシン作成ウィザードへ!</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
@@ -3717,17 +3558,14 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
         <translation>メインメモリのサイズ(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
@@ -3742,7 +3580,6 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
         <translation>メモリ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -3776,7 +3613,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>仮想ハードディスク</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
@@ -3786,7 +3622,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete"> &lt;p&gt;新規仮想マシンは以下の設定で作成されます: &lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -3812,12 +3647,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;名前:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OSタイプ:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;メインメモリ:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;起動ディスク:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
@@ -3834,77 +3667,77 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;このウィザードはVirtualBox用の新規仮想マシンを作成するために必要なステップを案内します。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには[&lt;b&gt;次へ&lt;/b&gt;]ボタンを、前のページに戻るには[&lt;b&gt;戻る&lt;/b&gt;]ボタンを使用してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1169"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;新規仮想マシンの名前を入力し、仮想マシンにインストールしたいゲストOSのタイプを選択してください。&lt;/p&gt;&lt;p&gt;通常、仮想マシンの名前はソフトウェアとハードウェア構成を示します。VirtualBoxは作成された仮想マシンを特定するためにこの名前を使用します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。[&lt;b&gt;新規&lt;/b&gt;]ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは[&lt;b&gt;選択&lt;/b&gt;]ボタンをクリック(仮想ディスクマネージャを起動します)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1070"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;新規仮想マシンは以下の設定で作成されます:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;上記の設定が正しければ、[&lt;b&gt;完了&lt;/b&gt;]ボタンをクリックしてください。新規仮想マシンが作成されます。 &lt;/p&gt;&lt;p&gt;注：メインウィンドウのツールバーからアクセスできる[&lt;b&gt;設定&lt;/b&gt;]ダイアログを使用して作成した仮想マシンのすべてのすべての設定をいつでも変更することができます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1176"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>完了(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">名前</translation>
+        <translation>名前</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">OSタイプ</translation>
+        <translation>OSタイプ</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">メインメモリ</translation>
+        <translation>メインメモリ</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>起動 ハードディスク</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
         <source>Cancel</source>
-        <translation type="unfinished">キャンセル</translation>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
@@ -4130,12 +3963,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1340"/>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>ホスト ネットワーク インターフェースの作成に失敗しました。</translation>
+        <translation>ホスト ネットワーク インターフェース&quot;&lt;b&gt;%1&lt;/b&gt;&quot;の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1358"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>ホスト ネットワーク インターフェースを取り除けませんでした。</translation>
+        <translation>ホスト ネットワーク インターフェース&quot;&lt;b&gt;%1&lt;/b&gt;&quot;を取り除けませんでした。</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1385"/>
@@ -4158,17 +3991,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>仮想マシン&quot;&lt;b&gt;%3&lt;/b&gt;&quot;の共有フォルダ&quot;&lt;b&gt;%1&lt;/b&gt; &quot;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の除去に失敗しました。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンの画面を&lt;b&gt;マウスクリック&lt;/b&gt;するか、または&lt;b&gt;ホストキー&lt;/b&gt;を押すと、仮想マシンはマウスポインタ(マウス統合機能がゲストOSでサポートされていないときだけ)とキーボードを&lt;b&gt;キャプチャ&lt;/b&gt;します。仮想マシンにキーボードとマウスがキャプチャされるとホストPCで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャされているとき)は&lt;b&gt;キャプチャ解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャ状態を表示します。.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;キーボードの自動キャプチャ&lt;/b&gt;機能が有効です。仮想マシンのウィンドウがアクティブのとき、仮想マシンはキーボードを自動的に&lt;b&gt;キャプチャ&lt;/b&gt;します。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られるため、ホストPCで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャされているとき)は&lt;b&gt;キャプチャ解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャ状態を表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;ゲストOSで&lt;b&gt;マウス統合&lt;/b&gt;機能がサポートされています。ゲストOSでマウスポインタを&lt;i&gt;キャプチャ&lt;/i&gt;することなく使用できます。仮想マシンの画面上にマウスポインタがあるとき、すべてのマウスの動作は直接ゲストOSに送られます。現在マウスがキャプチャされているときは、自動的にキャプチャ解除されます。ステータスバーのマウスアイコンは、マウス統合機能がゲストOSでサポートされ、現在有効であることを示すため&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;のように表示されます。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注&lt;/b&gt;: マウス統合機能が有効なとき、いくつかのアプリケーションの動作が不正になるかもしれません。メニューバーから対応する動作を選択して現在のセッションのマウス統合機能を無効化(または有効化)することができます。&lt;/p&gt;</translation>
     </message>
@@ -4318,13 +4148,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;からダウンロードし、&lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;に保存しました。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;CDイメージを登録し、仮想CD/DVDドライブにマウントしますか？&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンのウィンドウを&quot;フルスクリーン&quot;モードに切り替えます。&lt;b&gt;%1&lt;/b&gt;キーを押すといつでもウィンドウモードに戻ることができます。注：ホストキーは現在&lt;b&gt;%2&lt;/b&gt;に割り当てられています。&lt;/p&gt;&lt;p&gt;
 注：フルスクリーンモードではメインメニューバーは表示されません。メニューバーにアクセスするには &lt;b&gt;Host+Home&lt;/b&gt;キーを押してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンのウィンドウを&quot;シームレス&quot;モードに切り替えます。&lt;b&gt;%1&lt;/b&gt;キーを押すといつでもウィンドウ表示に戻ることができます。注：ホストキーは現在&lt;b&gt;%2&lt;/b&gt;に割り当てられています。&lt;/p&gt;&lt;p&gt;注：シームレスモードではメインメニューバーは表示されません。メニューバーにアクセスするには &lt;b&gt;Host+Home&lt;/b&gt;キーを押してください。&lt;/p&gt;</translation>
     </message>
@@ -4336,7 +4164,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1946"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;仮想マシン実行中に重大なエラーが発生したため、仮想マシンは停止しました。&lt;/p&gt;&lt;p&gt;問題の解決のため、&lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;のCommunityセクションを参照するか、サポート契約を締結してください。あなたがエラー発生時に行った操作と共に、&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ディレクトリに格納されているログファイル(&lt;tt&gt;VBox.log&lt;/tt&gt;)とイメージファイル(&lt;tt&gt;VBox.png&lt;/tt&gt;)を提供してください。注：VirualBoxメインウィンドウの[&lt;b&gt;仮想マシン&lt;/b&gt;]メニューから&quot;ログを参照&quot;を選択して、上記ファイルにアクセスすることができます。&lt;/p&gt;&lt;p&gt;仮想マシンを電源オフするには[&lt;b&gt;OK&lt;/b&gt;]ボタンを押してください。このままデバッグを行うには[&lt;b&gt;無視&lt;/b&gt;]ボタンを押してください。デバッグには特別な知識とツールを必要とするため、[&lt;b&gt;OK&lt;/b&gt;]ボタンを押すことを推奨します。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシン実行中に重大なエラーが発生したため、仮想マシンは停止しました。&lt;/p&gt;&lt;p&gt;問題の解決のため、&lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;のCommunityセクションを参照するか、サポート契約を締結してください。あなたがエラー発生時に行った操作と共に、&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ディレクトリに格納されているログファイル(&lt;tt&gt;VBox.log&lt;/tt&gt;)とイメージファイル(&lt;tt&gt;VBox.png&lt;/tt&gt;)を提供してください。注：VirualBoxメインウィンドウの[&lt;b&gt;仮想マシン&lt;/b&gt;]メニューから&quot;ログを参照&quot;を選択して、上記ファイルにアクセスすることができます。&lt;/p&gt;&lt;p&gt;仮想マシンを電源オフするには[&lt;b&gt;OK&lt;/b&gt;]ボタンをクリックしてください。このままデバッグを行うには[&lt;b&gt;無視&lt;/b&gt;]ボタンをクリックしてください。デバッグには特別な知識とツールを必要とするため、[&lt;b&gt;OK&lt;/b&gt;]ボタンをクリックすることを推奨します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1978"/>
@@ -4493,19 +4321,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <location filename="../src/VBoxProblemReporter.cpp" line="1790"/>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;登録された一つ以上の仮想ハードディスク、CD/DVDまたはフロッピーメディアのに現在アクセスできません。アクセス可能になるまでこれらのメディアを使用する仮想マシンを操作できません。&lt;/p&gt;
-&lt;p&gt;[&lt;b&gt;チェック&lt;/b&gt;]ボタンをクリックして仮想ディスクマネージャを起動し、どのメディアにアクセスできないのか確認してください。または[&lt;b&gt;無視&lt;/b&gt;]ボタンをクリックして、このメッセージを無視してください。&lt;/p&gt;</translation>
+&lt;p&gt;[&lt;b&gt;確認&lt;/b&gt;]ボタンをクリックして仮想ディスクマネージャを起動し、どのメディアにアクセスできないのか確認してください。または[&lt;b&gt;無視&lt;/b&gt;]ボタンをクリックして、このメッセージを無視してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1795"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation>チェック</translation>
+        <translation>確認</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
         <translation>&lt;p&gt;次のVirtualBox設定ファイルは自動的にバージョン &lt;b&gt;%1&lt;/b&gt; の新しい設定ファイル形式に変換されました。&lt;/p&gt;
-&lt;p&gt;しかしながら、変換後のファイルはまだディスクに保存されていません。ボタンを押してください：&lt;/p&gt;
+&lt;p&gt;しかしながら、変換後のファイルはまだディスクに保存されていません。ボタンをクリックしてください：&lt;/p&gt;
 &lt;ul&gt;&lt;li&gt;[&lt;b&gt;保存&lt;/b&gt;]： 自動変換されたすべての設定ファイルを保存します(旧バージョンの VirtualBox でこれらの設定ファイルを使用できません)。&lt;/li&gt;
 &lt;li&gt;[&lt;b&gt;バックアップ&lt;/b&gt;]： 新しい形式で設定ファイルを保存する前に、古い形式で設定ファイルのバックアップコピーを作成します。&lt;/li&gt;
 &lt;li&gt;[&lt;b&gt;キャンセル&lt;/b&gt;] ：自動変換された設定ファイルをすぐに保存しません。&lt;li&gt;&lt;/ul&gt;
@@ -4596,108 +4424,107 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1041"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ゲストOSのビデオメモリ不足のため、ゲスト画面をフルスクリーンモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;&lt;p&gt;[&lt;b&gt;無視&lt;/b&gt;]ボタンを押してフルスクリーンモードに切り換えるか、[&lt;b&gt;キャンセル&lt;/b&gt;]ボタンを押して操作を取り消してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ゲストOSのビデオメモリ不足のため、ゲスト画面をフルスクリーンモードに切り替えできません。&lt;/p&gt;&lt;p&gt;仮想マシンの設定でビデオメモリを &lt;b&gt;%1&lt;/b&gt;以上に設定してください。&lt;/p&gt;&lt;p&gt;[&lt;b&gt;無視&lt;/b&gt;]ボタンをクリックしてフルスクリーンモードに切り換えるか、[&lt;b&gt;キャンセル&lt;/b&gt;]ボタンをクリックして操作を取り消してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1634"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ネットワークエラーのため、新しいバージョン情報を取得できません:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1641"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished"></translation>
+        <translation>最新バージョンのVirtualBoxがインストールされています。 後でバージョン確認を行ってください。</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1667"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;仮想マシンの画面を&lt;b&gt;マウスクリック&lt;/b&gt;するか、または&lt;b&gt;ホストキー&lt;/b&gt;を押すと、仮想マシンはマウスポインタ(マウス統合機能がゲストOSでサポートされていないときだけ)とキーボードを&lt;b&gt;キャプチャ&lt;/b&gt;します。仮想マシンにキーボードとマウスがキャプチャされるとホストPCで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャされているとき)は&lt;b&gt;キャプチャ解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャ状態を表示します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1700"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;キーボードの自動キャプチャ&lt;/b&gt;機能が有効です。仮想マシンのウィンドウがアクティブのとき、仮想マシンはキーボードを自動的に&lt;b&gt;キャプチャ&lt;/b&gt;します。キーボードがキャプチャされると、すべてのキーストローク(Alt-Tabなどを含む)が仮想マシンに送られるため、ホストPCで動作する他のアプリケーションは利用できません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;ホストキー&lt;/b&gt;を押すと、キーボードとマウス(キャプチャされているとき)は&lt;b&gt;キャプチャ解除&lt;/b&gt;され、通常の操作に戻ることができます。現在割り当てられているホストキーは仮想マシンのウィンドウ下部のステータスバーに&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;アイコンで表示されます。このアイコンはマウスアイコンと共に現在のキーボ−ドとマウスのキャプチャ状態を表示します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1745"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ゲストOSで&lt;b&gt;マウス統合&lt;/b&gt;機能がサポートされています。ゲストOSでマウスポインタを&lt;i&gt;キャプチャ&lt;/i&gt;することなく使用できます。仮想マシンの画面上にマウスポインタがあるとき、すべてのマウスの動作は直接ゲストOSに送られます。現在マウスがキャプチャされているときは、自動的にキャプチャ解除されます。ステータスバーのマウスアイコンは、マウス統合機能がゲストOSでサポートされ、現在有効であることを示すため&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;のように表示されます。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注&lt;/b&gt;: マウス統合機能が有効なとき、いくつかのアプリケーションの動作が不正になるかもしれません。メニューバーから対応する動作を選択して現在のセッションのマウス統合機能を無効化(または有効化)することができます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;仮想マシンのウィンドウを&quot;フルスクリーン&quot;モードに切り替えます。&lt;b&gt;%1&lt;/b&gt;キーを押すといつでもウィンドウモードに戻ることができます。注：ホストキーは現在&lt;b&gt;%2&lt;/b&gt;に割り当てられています。&lt;/p&gt;&lt;p&gt;
-注：フルスクリーンモードではメインメニューバーは表示されません。メニューバーにアクセスするには &lt;b&gt;Host+Home&lt;/b&gt;キーを押してください。&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;仮想マシンのウィンドウを&quot;フルスクリーン&quot;モードに切り替えます。&lt;b&gt;%1&lt;/b&gt;キーを押すといつでもウィンドウモードに戻ることができます。注：ホストキーは現在&lt;b&gt;%2&lt;/b&gt;に割り当てられています。&lt;/p&gt;&lt;p&gt;￼注：フルスクリーンモードではメインメニューバーは表示されません。メニューバーにアクセスするには &lt;b&gt;Host+Home&lt;/b&gt;キーを押してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1881"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;仮想マシンのウィンドウを&quot;シームレス&quot;モードに切り替えます。&lt;b&gt;%1&lt;/b&gt;キーを押すといつでもウィンドウ表示に戻ることができます。注：ホストキーは現在&lt;b&gt;%2&lt;/b&gt;に割り当てられています。&lt;/p&gt;&lt;p&gt;注：シームレスモードではメインメニューバーは表示されません。メニューバーにアクセスするには &lt;b&gt;Host+Home&lt;/b&gt;キーを押してください。&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;仮想マシンのウィンドウを&quot;シームレス&quot;モードに切り替えます。&lt;b&gt;%1&lt;/b&gt;キーを押すといつでもウィンドウ表示に戻ることができます。注：ホストキーは現在&lt;b&gt;%2&lt;/b&gt;に割り当てられています。&lt;/p&gt;&lt;p&gt;注：シームレスモードではメインメニューバーは表示されません。メニューバーにアクセスするには &lt;b&gt;Host+Home&lt;/b&gt;キーを押してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">ヘルプを表示(&amp;C)...</translation>
+        <translation>ヘルプを表示(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="272"/>
         <source>Show the online help contents</source>
-        <translation type="unfinished">オンラインヘルプを表示</translation>
+        <translation>オンラインヘルプを表示</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="274"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">VirtualBox Webサイト(&amp;V)...</translation>
+        <translation>VirtualBox Webサイト(&amp;V)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="276"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">WebブラウザでVirtualBox製品のWebサイトを開く</translation>
+        <translation>WebブラウザでVirtualBox製品のWebサイトを開く</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="278"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">すべての警告をリセット(&amp;R)</translation>
+        <translation>すべての警告をリセット(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="280"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">すべての抑止された警告とメッセージを再度表示させる</translation>
+        <translation>すべての抑止された警告とメッセージを再度表示させる</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="282"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished">VirtualBox を登録(&amp;E)...</translation>
+        <translation>VirtualBox を登録(&amp;E)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="284"/>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished">VirtualBox 登録フォームを開く</translation>
+        <translation>VirtualBox 登録フォームを開く</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="286"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートを確認(&amp;H)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="288"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBoxの最新バージョンを確認</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="290"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">VirtualBox について(&amp;A)...</translation>
+        <translation>VirtualBox について(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="292"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>製品情報ダイアログを表示</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1625"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBoxの新しいバージョンがリリースされました! バージョン &lt;b&gt;%1&lt;/b&gt;は&lt;href=&quot; http://www.virtualbox.org/ &quot;&gt;virtualbox.org&lt;/a&gt;から入手できます。&lt;/p&gt;&lt;p&gt;このリンク: &lt;/p&gt;&lt;p&gt;(&lt;href=%2&gt;)%3から最新バージョンをダウンロードできます。&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4738,7 +4565,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>ようこそ VirtualBox 登録フォームへ!</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Confirm</source>
         <translation type="obsolete">確認(&amp;C)</translation>
     </message>
@@ -4770,12 +4596,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
         <source>C&amp;onfirm</source>
-        <translation type="unfinished"></translation>
+        <translation>確認(&amp;O)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>Cancel</source>
-        <translation type="unfinished">キャンセル</translation>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
@@ -4786,17 +4612,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>共有フォルダ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
@@ -4865,7 +4688,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>新規(&amp;N)...</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>New</source>
         <translation type="obsolete">新規</translation>
     </message>
@@ -4885,7 +4707,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>設定(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Settings</source>
         <translation type="obsolete">設定</translation>
     </message>
@@ -4905,7 +4726,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>削除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Delete</source>
         <translation type="obsolete">削除</translation>
     </message>
@@ -4920,7 +4740,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>破棄(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Discard</source>
         <translation type="obsolete">破棄</translation>
     </message>
@@ -4935,7 +4754,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>最新の情報に更新(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Refresh</source>
         <translation type="obsolete">最新の情報に更新</translation>
     </message>
@@ -4955,7 +4773,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">ヘルプを表示(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -5025,7 +4842,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>表示(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Show</source>
         <translation type="obsolete">表示</translation>
     </message>
@@ -5040,7 +4856,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>起動(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Start</source>
         <translation type="obsolete">起動</translation>
     </message>
@@ -5050,7 +4865,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>選択した仮想マシンを起動</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;ようこそVirtualBoxへ!&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピュータ上のすべての仮想マシンがリスト表示されます。まだ仮想マシンが作成されていないため、リストは空です。&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの[&lt;b&gt;新規&lt;/b&gt;]ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;F1&lt;/b&gt;キーでヘルプを表示できます。または最新の情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問してください。&lt;/p&gt;</translation>
     </message>
@@ -5065,7 +4879,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>ログを参照(&amp;L)...</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Show Log...</source>
         <translation type="obsolete">ログを参照...</translation>
     </message>
@@ -5100,7 +4913,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>再開(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Resume</source>
         <translation type="obsolete">再開</translation>
     </message>
@@ -5120,7 +4932,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>一時停止(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Pause</source>
         <translation type="obsolete">一時停止</translation>
     </message>
@@ -5132,7 +4943,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;ようこそVirtualBoxへ!&lt;/h3&gt;&lt;p&gt;このウィンドウの左側にコンピュータ上のすべての仮想マシンがリスト表示されます。まだ仮想マシンが作成されていないため、リストは空です。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;新規仮想マシンを作成するにはウィンドウ上部にあるメインツールバーの[&lt;b&gt;新規&lt;/b&gt;]ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;F1&lt;/b&gt;キーでヘルプを表示できます。または最新の情報とニュースを取得するため &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; を訪問してください。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5140,38 +4951,34 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="132"/>
         <source>Invalid settings detected</source>
-        <translation type="unfinished">無効な設定が見つかりました</translation>
+        <translation>無効な設定が見つかりました</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="204"/>
         <source>Settings</source>
-        <translation type="unfinished">設定</translation>
+        <translation>設定</translation>
     </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Name</source>
         <translation type="obsolete">名前</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Path</source>
         <translation type="obsolete">パス</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Shared &amp;Folders</source>
         <translation type="obsolete">共有フォルダ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
@@ -5184,78 +4991,63 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
 本機能を使用するには Guest Additions のインストールが必要です。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Adds a new shared folder definition.</source>
         <translation type="obsolete">新規共有フォルダを追加します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Removes the selected shared folder definition.</source>
         <translation type="obsolete">選択した共有フォルダの設定を削除します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Machine Folders</source>
         <translation type="obsolete">共有フォルダ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Transient Folders</source>
         <translation type="obsolete">一時的な共有フォルダ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Edits the selected shared folder definition.</source>
         <translation type="obsolete">選択した共有フォルダの設定を編集します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>VBoxSharedFoldersSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxSharedFoldersSettings</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add a new shared folder (Ins)</source>
         <translation type="obsolete">新規共有フォルダを追加(Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Remove the selected shared folder (Del)</source>
         <translation type="obsolete">選択した共有フォルダを削除(Del)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Access</source>
         <translation type="obsolete">アクセス権</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+スペース</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
         <translation type="obsolete">選択した共有フォルダの設定を編集(Ctrl+スペース)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Full</source>
         <translation type="obsolete">完全</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Read-only</source>
         <translation type="obsolete">読み込み専用</translation>
     </message>
@@ -5268,7 +5060,6 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Snapshot Details </source>
         <translation type="obsolete">スナップショット詳細</translation>
     </message>
@@ -5288,22 +5079,18 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>仮想マシン詳細(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
@@ -5315,7 +5102,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="39"/>
         <source>Snapshot Details</source>
-        <translation type="unfinished"></translation>
+        <translation>スナップショット詳細</translation>
     </message>
 </context>
 <context>
@@ -5331,59 +5118,52 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>VBoxSnapshotsWgt</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>snapshotActionGroup</source>
         <translation type="obsolete">snapshotActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Discard Snapshot</source>
         <translation type="obsolete">スナップショットを破棄</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished">スナップショットを破棄(&amp;D)</translation>
+        <translation>スナップショットを破棄(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Shift+D</source>
         <translation type="obsolete">Ctrl+Shift+D</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>curStateActionGroup</source>
         <translation type="obsolete">curStateActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Take Snapshot</source>
         <translation type="obsolete">スナップショット作成</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="unfinished">スナップショット作成(&amp;S)</translation>
+        <translation>スナップショット作成(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Discard Current Snapshot and State</source>
         <translation type="obsolete">最新のスナップショットと状態を破棄</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished">最新のスナップショットと状態を破棄(&amp;I)</translation>
+        <translation>最新のスナップショットと状態を破棄(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Show Details</source>
         <translation type="obsolete">詳細を表示</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="unfinished">詳細を表示(&amp;H)</translation>
+        <translation>詳細を表示(&amp;H)</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="125"/>
@@ -5451,55 +5231,50 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="unfinished">選択した仮想マシンのスナップショットを破棄</translation>
+        <translation>選択した仮想マシンのスナップショットを破棄</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Shift+S</source>
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished">現在の仮想マシンの状態のスナップショットを作成</translation>
+        <translation>現在の仮想マシンの状態のスナップショットを作成</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Revert to Current Snapshot</source>
         <translation type="obsolete">最新のスナップショットの状態に戻す</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="unfinished">最新のスナップショットの状態に戻す(&amp;R)</translation>
+        <translation>最新のスナップショットの状態に戻す(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Shift+R</source>
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="unfinished">仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
+        <translation>仮想マシンの状態を最新のスナップショットに保存された状態に復元</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Shift+B</source>
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="unfinished">最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
+        <translation>最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="unfinished">選択したスナップショットの詳細を表示</translation>
+        <translation>選択したスナップショットの詳細を表示</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+スペース</translation>
     </message>
@@ -5517,7 +5292,6 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>有効</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
     </message>
@@ -5540,22 +5314,18 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>スナップショットのコメント(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
@@ -5563,86 +5333,70 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
 <context>
     <name>VBoxUSBFilterSettings</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxUSBFilterSettings</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Name</source>
         <translation type="obsolete">名前(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the filter name.</source>
         <translation type="obsolete">フィルタ名を表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Manufacturer</source>
         <translation type="obsolete">メーカー(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Pro&amp;duct</source>
         <translation type="obsolete">製品名(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Serial No.</source>
         <translation type="obsolete">シリアル No.(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>R&amp;emote</source>
         <translation type="obsolete">リモート(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Action</source>
         <translation type="obsolete">動作(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Vendor ID</source>
         <translation type="obsolete">ベンダーID(&amp;V)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Product ID</source>
         <translation type="obsolete">プロダクトID(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Revision</source>
         <translation type="obsolete">リビジョン(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Por&amp;t</source>
         <translation type="obsolete">ポート(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Any</source>
         <comment>remote</comment>
         <translation type="obsolete">任意</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Yes</source>
         <comment>remote</comment>
         <translation type="obsolete">はい</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>No</source>
         <comment>remote</comment>
         <translation type="obsolete">いいえ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -5650,7 +5404,6 @@ value.&lt;/qt&gt;</source>
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -5658,7 +5411,6 @@ value.&lt;/qt&gt;</source>
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -5666,7 +5418,6 @@ value.&lt;/qt&gt;</source>
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
@@ -5676,7 +5427,6 @@ or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
 両方((&lt;i&gt;任意&lt;/i&gt;))。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
@@ -5685,7 +5435,6 @@ computer when a matching device is attached: give it up to the host OS
 ホストOSに譲る(&lt;i&gt;無視&lt;/i&gt;) 、仮想マシンで使用するために捕捉(&lt;i&gt;保持&lt;/i&gt;)。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -5695,7 +5444,6 @@ value.&lt;/qt&gt;</source>
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -5705,7 +5453,6 @@ value.&lt;/qt&gt;</source>
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
@@ -5717,7 +5464,6 @@ value.&lt;/qt&gt;</source>
 空の文字列はすべての値と一致します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -5745,119 +5491,119 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
         <source>1 day</source>
-        <translation type="unfinished"></translation>
+        <translation>1日</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
         <source>2 days</source>
-        <translation type="unfinished"></translation>
+        <translation>2日</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="86"/>
         <source>3 days</source>
-        <translation type="unfinished"></translation>
+        <translation>3日</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="87"/>
         <source>4 days</source>
-        <translation type="unfinished"></translation>
+        <translation>4日</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
         <source>5 days</source>
-        <translation type="unfinished"></translation>
+        <translation>5日</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
         <source>6 days</source>
-        <translation type="unfinished"></translation>
+        <translation>6日</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="92"/>
         <source>1 week</source>
-        <translation type="unfinished"></translation>
+        <translation>1週間</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
         <source>2 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>2週間</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="94"/>
         <source>3 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>3週間</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="97"/>
         <source>1 month</source>
-        <translation type="unfinished"></translation>
+        <translation>1月</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="144"/>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>確認しない</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
         <source>Connection timed out.</source>
-        <translation type="unfinished">接続がタイムアウトになりました。</translation>
+        <translation>接続がタイムアウトになりました。</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="334"/>
         <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>サーバー上に最新バージョンが見つかりませんでした(応答: %1)。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="191"/>
         <source>Chec&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>確認(&amp;K)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="390"/>
         <source>&amp;Close</source>
-        <translation type="unfinished">閉じる(&amp;C)</translation>
+        <translation>閉じる(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
         <source>VirtualBox Update Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox アップデート ウィザード</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートを確認</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
 &lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;このウィザードは、VirtualBox Webサイトに接続して、VirtualBoxの新しいバージョンが利用可能かどうか確認します。&lt;/p&gt;&lt;p&gt;[&lt;b&gt;確認&lt;/b&gt;]ボタンをクリックして新しいバージョンを今すぐ確認してください。確認しない場合は[&lt;b&gt;キャンセル&lt;/b&gt;]ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;このウィザードは[&lt;b&gt;ヘルプ&lt;/b&gt;]メニューから[&lt;b&gt;アップデートを確認...&lt;/b&gt;]を選ぶことで、いつでも実行できます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
         <source>Cancel</source>
-        <translation type="unfinished">キャンセル</translation>
+        <translation>キャンセル</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
         <source>Summary</source>
-        <translation type="unfinished">概要</translation>
+        <translation>概要</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBoxの新しいバージョンがリリースされました! バージョン &lt;b&gt;%1&lt;/b&gt;は&lt;href=&quot; http://www.virtualbox.org/ &quot;&gt;virtualbox.org&lt;/a&gt;から入手できます。&lt;/p&gt;&lt;p&gt;このリンク: &lt;/p&gt;&lt;p&gt;(&lt;href=%2&gt;)%3から最新バージョンをダウンロードできます。&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;ネットワークエラーのため、新しいバージョン情報を取得できません:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished"></translation>
+        <translation>最新バージョンのVirtualBoxがインストールされています。 後でバージョン確認を行ってください。</translation>
     </message>
 </context>
 <context>
@@ -5949,7 +5695,6 @@ value.&lt;/qt&gt;</source>
         <translation>イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>VDM</source>
         <translation type="obsolete">VDM</translation>
     </message>
@@ -5964,7 +5709,6 @@ value.&lt;/qt&gt;</source>
         <translation>&lt;p&gt;以下のメディアからの起動を選択しました:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;上記の設定が正しければ、[&lt;b&gt;完了&lt;/b&gt;]ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアップ プログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これは[&lt;b&gt;デバイス&lt;/b&gt;]メニューから対応する[&lt;b&gt;マウント解除...&lt;/b&gt;]の動作を選択することで可能です。&lt;/p&gt;</translation>
     </message>
@@ -5989,7 +5733,6 @@ value.&lt;/qt&gt;</source>
         <translation>ホスト ドライブ %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;タイプ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;ソース:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 </translation>
@@ -6017,17 +5760,17 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="753"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;上記が正しいなら、[&lt;b&gt;完了&lt;/b&gt;]ボタンを押してください。 選択されたメディアは仮想マシンに取り付けられ、仮想マシンは実行を開始します。</translation>
+        <translation>&lt;p&gt;上記が正しいなら、[&lt;b&gt;完了&lt;/b&gt;]ボタンをクリックしてください。 選択されたメディアは仮想マシンに取り付けられ、仮想マシンは実行を開始します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -6037,40 +5780,38 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;上記が正しいなら、[&lt;span style=&quot; font-weight:600;&quot;&gt;完了&lt;/span&gt;]ボタンをクリックしてください。 選択されたメディアが仮想マシンに一時的にマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;仮想マシンを終了すると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;セットアッププログラムの種類によっては、インストールプロセスが再度実行されないように、仮想マシンの再起動後にメディアを手動でマウント解除(取り出し)する必要があります。これは[&lt;span style=&quot; font-weight:600;&quot;&gt;デバイス&lt;/span&gt;]メニューから対応する[&lt;span style=&quot; font-weight:600;&quot;&gt;〜のマウント解除&lt;/span&gt;]の動作を選択することで行えます。&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>完了(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="106"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>タイプ</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>ソース</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation type="unfinished">キャンセル</translation>
+        <translation>キャンセル</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Session Information Dialog</source>
         <translation type="obsolete">セッション情報ダイアログ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Close</source>
         <translation type="obsolete">閉じる(&amp;C)</translation>
     </message>
@@ -6186,18 +5927,18 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">有効</translation>
+        <translation>有効</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="439"/>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation>ネステッドページング</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
@@ -6212,25 +5953,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
         <source>VBoxVMInformationDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVMInformationDlg</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMListBox</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="obsolete">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%3からの状態 %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;セッション %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2からの状態 アクセスできません&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Inaccessible</source>
         <translation type="obsolete">アクセスできません</translation>
     </message>
@@ -6240,19 +5978,19 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="151"/>
         <source>Inaccessible</source>
-        <translation type="unfinished">アクセスできません</translation>
+        <translation>アクセスできません</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="171"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%3からの状態 %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;セッション %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%3からの状態 %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;セッション %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="182"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2からの状態 アクセスできません&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2からの状態 アクセスできません&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6280,7 +6018,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="193"/>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ログファイルが見つかりません。[&lt;b&gt;最新の情報に更新&lt;/b&gt;]ボタンを押してログフォルダ&quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&quot;を再スキャンしてください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ログファイルが見つかりません。[&lt;b&gt;最新の情報に更新&lt;/b&gt;]ボタンをクリックしてログフォルダ&quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&quot;を再スキャンしてください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="225"/>
@@ -6288,12 +6026,10 @@ p, li { white-space: pre-wrap; }
         <translation>名前をつけてVirtualBox ログを保存</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -6311,147 +6047,118 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>VBoxVMNetworkSettings</source>
         <translation type="obsolete">VBoxVMNetworkSettings</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Enable Network Adapter</source>
         <translation type="obsolete">ネットワーク アダプタを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Attached to</source>
         <translation type="obsolete">割り当て(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;MAC Address</source>
         <translation type="obsolete">MACアドレス(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">生成(&amp;G)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">MACアドレスをランダムに生成します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">接続(&amp;B)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">ホスト インターフェースの設定</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Interface Name</source>
         <translation type="obsolete">インターフェース名(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;File Descriptor</source>
         <translation type="obsolete">ファイル識別子(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Setup Application</source>
         <translation type="obsolete">設定アプリケーション(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select</source>
         <translation type="obsolete">選択</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Terminate Application</source>
         <translation type="obsolete">終了アプリケーション(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select TAP setup application</source>
         <translation type="obsolete">TAP設定アプリケーションを選択</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select TAP terminate application</source>
         <translation type="obsolete">TAP終了アプリケーションを選択</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation type="obsolete">仮想ネットワーク アダプタを仮想マシンに接続します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">このアダプタ用に選択したホスト インターフェース名を表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">TAPインターフェース名を表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース設定時に実行するコマンドを表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">設定アプリケーションを選択します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース終了時に実行するコマンドを表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">終了アプリケーションを選択します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Network Name</source>
         <translation type="obsolete">ネットワーク名(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Adapter &amp;Type</source>
         <translation type="obsolete">アダプタ タイプ(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
         <translation type="obsolete">仮想ネットワークアダプタのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
     </message>
@@ -6459,57 +6166,46 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>VBoxVMParallelPortSettings</source>
         <translation type="obsolete">VBoxVMParallelPortSettings</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Enable Parallel Port</source>
         <translation type="obsolete">パラレルポートを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
         <translation type="obsolete">仮想マシンのパラレルポートを有効にします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">ポート番号(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">パラレルポート番号を表示します。 標準のパラレルポートか[&lt;b&gt;ユーザー定義&lt;/b&gt;]を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">IRQ(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/Oポート(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">ポート パス(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the host parallel device name.</source>
         <translation type="obsolete">ホストのパラレル デバイス名を表示します。</translation>
     </message>
@@ -6517,77 +6213,62 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSerialPortSettings</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>VBoxVMSerialPortSettings</source>
         <translation type="obsolete">VBoxVMSerialPortSettings</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Enable Serial Port</source>
         <translation type="obsolete">シリアルポートを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
         <translation type="obsolete">仮想マシンのシリアルポートを有効にします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">ポート番号(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">シリアルポート番号を表示します。 標準のシリアルポートか[&lt;b&gt;ユーザー定義&lt;/b&gt;]を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">IRQ(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/Oポート(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port &amp;Mode</source>
         <translation type="obsolete">ポート モード(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
         <translation type="obsolete">このシリアルポートの動作モードを指定します。 [&lt;b&gt;切断&lt;/b&gt;]を選択すると、ゲストOSはシリアルポートを検出しますが、それを操作することはできません。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Create Pipe</source>
         <translation type="obsolete">パイプ作成(&amp;C)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
         <translation type="obsolete">チェックがオンの場合、仮想マシンの起動時に [&lt;b&gt;ポート パス&lt;/b&gt;]フィールドで指定されたパイプが作成されます。そうでなければ仮想マシンは既存のパイプを使用します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">ポート パス(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">ポートが[&lt;b&gt;ホスト パイプ&lt;/b&gt;]モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが[&lt;b&gt;ホスト デバイス&lt;/b&gt;]モードで動作しているとき、ホスト シリアル デバイス名を表示します。</translation>
     </message>
@@ -6597,32 +6278,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished">指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
+        <translation>指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>オーディオを有効にする(&amp;A)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>ホスト オーディオ ドライバ(&amp;D):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>オーディオ出力ドライバを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>オーディオ コントローラ(&amp;C):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished">仮想サウンドカードのタイプを選択します。 この値により、VirtualBoxは異なったオーディオ ハードウェアを仮想マシンに提供します。</translation>
+        <translation>仮想サウンドカードのタイプを選択します。 この値により、VirtualBoxは異なったオーディオ ハードウェアを仮想マシンに提供します。</translation>
     </message>
 </context>
 <context>
@@ -6630,681 +6311,560 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="174"/>
         <source>Host CD/DVD drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>ホスト CD/DVDドライブが選択されていない</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="176"/>
         <source>CD/DVD image file is not selected</source>
-        <translation type="unfinished">CD/DVDイメージファイルが選択されていない</translation>
+        <translation>CD/DVDイメージファイルが選択されていない</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="unfinished">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
+        <translation>指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="unfinished">CD/DVD ドライブのマウント(&amp;M)</translation>
+        <translation>CD/DVD ドライブのマウント(&amp;M)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="83"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">指定したCD/DVDドライブを仮想CD/DVDドライブにマウントします。</translation>
+        <translation>指定したCD/DVDドライブを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="86"/>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation type="unfinished">ホスト CD/DVDドライブ(&amp;D)</translation>
+        <translation>ホスト CD/DVDドライブ(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="112"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
+        <translation>仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
+        <translation>ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
         <source>Enable &amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>パススルーを有効にする(&amp;P)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">指定したCD/DVDイメージを仮想CD/DVDドライブにマウントします。</translation>
+        <translation>指定したCD/DVDイメージを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="138"/>
         <source>&amp;ISO Image File</source>
-        <translation type="unfinished">ISO イメージファイル(&amp;I)</translation>
+        <translation>ISO イメージファイル(&amp;I)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="148"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
+        <translation>仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished">仮想ディスクマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
+        <translation>仮想ディスクマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="7667817"/>
         <source>Category</source>
         <translation type="obsolete">カテゴリ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>[id]</source>
         <translation type="obsolete">[id]</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>[link]</source>
         <translation type="obsolete">[link]</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>[name]</source>
         <translation type="obsolete">[name]</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>VBoxVMSettingsDlg</source>
         <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> General </source>
         <translation type="obsolete">一般</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Hard Disks </source>
         <translation type="obsolete">ハードディスク</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Floppy </source>
         <translation type="obsolete">フロッピー</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> CD/DVD-ROM </source>
         <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Audio </source>
         <translation type="obsolete">オーディオ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Network </source>
         <translation type="obsolete">ネットワーク</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Remote Display </source>
         <translation type="obsolete">リモートディスプレイ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Shared Folders </source>
         <translation type="obsolete">共有フォルダ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Identification</source>
         <translation type="obsolete">ID(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Name</source>
         <translation type="obsolete">名前(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the name of the virtual machine.</source>
         <translation type="obsolete">仮想マシンの名前を表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>OS &amp;Type</source>
         <translation type="obsolete">OSタイプ(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">メインメモリのサイズ(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>MB</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">ビデオメモリのサイズ(&amp;V)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Basic</source>
         <translation type="obsolete">基本(&amp;B)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Select</source>
         <translation type="obsolete">選択</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Selects the snapshot folder path.</source>
         <translation type="obsolete">スナップショットの保存先フォルダのパスを選択します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Reset</source>
         <translation type="obsolete">リセット</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Extended Features</source>
         <translation type="obsolete">拡張機能</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">ACPIを有効にする(&amp;C)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">IO APICを有効にする(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Boo&amp;t Order</source>
         <translation type="obsolete">起動順序(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Advanced</source>
         <translation type="obsolete">高度(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Description</source>
         <translation type="obsolete">コメント(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Mount Floppy Drive</source>
         <translation type="obsolete">フロッピードライブのマウント(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Host Floppy &amp;Drive</source>
         <translation type="obsolete">ホスト フロッピードライブ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="obsolete">指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
         <translation type="obsolete">指定したフロッピーイメージを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">CD/DVD ドライブのマウント(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">ホスト CD/DVDドライブ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">指定したCD/DVDドライブを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">ISO イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">指定したCD/DVDイメージを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Enable Audio</source>
         <translation type="obsolete">オーディオを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Host Audio &amp;Driver</source>
         <translation type="obsolete">ホスト オーディオ ドライバ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="obsolete">USBコントローラを有効にする(&amp;U)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>USB Device &amp;Filters</source>
         <translation type="obsolete">USBデバイス フィルタ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">VRDPサーバを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">VRDPの認証方式を指定します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">ゲスト認証のタイムアウト値をミリ秒単位で指定します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">ダイアログのヘルプを表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">無効な設定が見つかりました</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">変更を保存してダイアログを閉じます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">変更を破棄してダイアログを閉じます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
         <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDEコントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="obsolete">指定したメディアを仮想マシンのフロッピードライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
         <translation type="obsolete">指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">仮想マシンのリモートデスクトッププロトコル(RDP)サーバ機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;割り当てられていません&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> - Settings</source>
         <translation type="obsolete">- 設定</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">新規フィルタ %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Shared Clipboard</source>
         <translation type="obsolete">クリップボードの共有(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>S&amp;napshot Folder</source>
         <translation type="obsolete">スナップショットの保存先(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">スナップショットの保存先フォルダのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
         <translation type="obsolete">仮想マシンのコメントを表示します。コメントはインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">仮想ディスクマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">仮想ディスクマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;オーディオ出力ドライバを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="obsolete">この仮想マシンの仮想USBコントローラを有効にします。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="obsolete">アダプタ %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">ホスト インターフェース(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">利用可能なホスト インターフェースをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">新規ホスト インターフェースを追加します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">選択したホスト インターフェースを除去します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;適切なインターフェースがありません&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add</source>
         <translation type="obsolete">追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Remove</source>
         <translation type="obsolete">除去</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">VirtualBox ホスト インターフェース %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;選択したホスト インターフェース &quot;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&quot;を除去しますか?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Serial Ports </source>
         <translation type="obsolete">シリアルポート</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>#serialPorts</source>
         <translation type="obsolete">#serialPorts</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">VT-x/AMD-Vを有効にする(&amp;V)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation type="obsolete">仮想マシンはIntel VT-x/AMD-VのようなホストCPUの仮想化支援機能を使用します。チェックボックスがグレイのときはグローバル設定の指定値が使用されます。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Other &amp;Settings</source>
         <translation type="obsolete">その他の設定(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Remember Media Mounted at Runtime</source>
         <translation type="obsolete">実行中にマウントしたメディアを記録(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation type="obsolete">仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>O&amp;ther</source>
         <translation type="obsolete">その他(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Enable Passthrough</source>
         <translation type="obsolete">パススルーを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Server Port </source>
         <translation type="obsolete">サーバーのポート番号</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Authentication &amp;Method </source>
         <translation type="obsolete">認証方法(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Authentication &amp;Timeout </source>
         <translation type="obsolete">認証タイムアウト値(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VRDPサーバ ポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">CD/DVDイメージファイルが選択されていない</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Floppy image file is not selected</source>
         <translation type="obsolete">フロッピーイメージファイルが選択されていない</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Incorrect host network interface is selected</source>
         <translation type="obsolete">選択したホスト ネットワーク インターフェースが不正</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Duplicate port number is selected </source>
         <translation type="obsolete">選択したポート番号はすでに使用されている</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Duplicate port path is entered </source>
         <translation type="obsolete">指定したポート パスはすでに使用されている</translation>
     </message>
@@ -7314,83 +6874,67 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>&lt;b&gt;%2&lt;/b&gt;ページの%1。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation type="obsolete">ポート %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>00</source>
         <translation type="obsolete">00</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>01</source>
         <translation type="obsolete">01</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>02</source>
         <translation type="obsolete">02</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>03</source>
         <translation type="obsolete">03</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>04</source>
         <translation type="obsolete">04</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>05</source>
         <translation type="obsolete">05</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>08</source>
         <translation type="obsolete">08</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>10</source>
         <translation type="obsolete">10</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>09</source>
         <translation type="obsolete">09</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>06</source>
         <translation type="obsolete">06</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source> Parallel Ports </source>
         <translation type="obsolete">パラレルポート</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>07</source>
         <translation type="obsolete">07</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>#parallelPorts</source>
         <translation type="obsolete">#parallelPorts</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">PAE/NXを有効にする(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;When
                                                           checked, the Physical
                                                           Address Extension
@@ -7402,37 +6946,30 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;ホストCPUの物理アドレス拡張機能(PAE)を仮想マシンで有効にします。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;IDE Controller Type</source>
         <translation type="obsolete">IDEコントローラ タイプ(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Audio &amp;Controller</source>
         <translation type="obsolete">オーディオ コントローラ(&amp;C)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation type="obsolete">仮想サウンドカードのタイプを選択します。 この値により、VirtualBoxは異なったオーディオ ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Enable USB &amp;2.0 Controller</source>
         <translation type="obsolete">USB 2.0 コントローラを有効にする(&amp;2)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="obsolete">仮想マシンの仮想USB EHCIコントローラを有効にします。USB EHCIコントローラはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
                                               &lt;qt&gt;Lists all USB filters of
                                               this machine. The checkbox to the
@@ -7447,17 +6984,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 USBフィルタを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">空のフィルタを追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">空のフィルタを追加する(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -7466,17 +7000,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSBデバイスに適合します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">デバイスからフィルタを追加</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">デバイスからフィルタを追加する(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -7484,146 +7015,133 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;選択したホストPCのUSBデバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Remove Filter</source>
         <translation type="obsolete">フィルタを除去</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">フィルタを除去する(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを除去します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">フィルタを上に移動</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">フィルタを上に移動する(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを上に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">フィルタを下に移動</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">フィルタを下に移動(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを下に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">内部ネットワーク名が設定されていない</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port path is not specified </source>
         <translation type="obsolete">ポート パスが指定されていない</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation type="obsolete">ポート %1</translation>
     </message>
     <message>
-        <location filename="" line="7667817"/>
         <source>USBActionGroup</source>
         <translation type="obsolete">USBActionGroup</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="411"/>
         <source>General</source>
-        <translation type="unfinished">一般</translation>
+        <translation>一般</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="414"/>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>ストレージ</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="417"/>
         <source>Hard Disks</source>
-        <translation type="unfinished">ハードディスク</translation>
+        <translation>ハードディスク</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="420"/>
         <source>CD/DVD-ROM</source>
-        <translation type="unfinished">CD/DVD-ROM</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="423"/>
         <source>Floppy</source>
-        <translation type="unfinished">フロッピー</translation>
+        <translation>フロッピー</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="426"/>
         <source>Audio</source>
-        <translation type="unfinished">オーディオ</translation>
+        <translation>オーディオ</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="429"/>
         <source>Network</source>
-        <translation type="unfinished">ネットワーク</translation>
+        <translation>ネットワーク</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="434"/>
         <source>Ports</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="437"/>
         <source>Serial Ports</source>
-        <translation type="unfinished">シリアルポート</translation>
+        <translation>シリアルポート</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="442"/>
         <source>Parallel Ports</source>
-        <translation type="unfinished">パラレルポート</translation>
+        <translation>パラレルポート</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="447"/>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="450"/>
         <source>Shared Folders</source>
-        <translation type="unfinished">共有フォルダ</translation>
+        <translation>共有フォルダ</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="453"/>
         <source>Remote Display</source>
-        <translation type="unfinished">リモートディスプレイ</translation>
+        <translation>リモートディスプレイ</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="474"/>
         <source>%1 - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2</translation>
     </message>
 </context>
 <context>
@@ -7631,57 +7149,57 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="172"/>
         <source>Host floppy drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>ホスト フロッピードライブが選択されていない</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="174"/>
         <source>Floppy image file is not selected</source>
-        <translation type="unfinished">フロッピーイメージファイルが選択されていない</translation>
+        <translation>フロッピーイメージファイルが選択されていない</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished">指定したメディアを仮想マシンのフロッピードライブにマウントします。</translation>
+        <translation>指定したメディアを仮想マシンのフロッピードライブにマウントします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
         <source>&amp;Mount Floppy Drive</source>
-        <translation type="unfinished">フロッピードライブのマウント(&amp;M)</translation>
+        <translation>フロッピードライブのマウント(&amp;M)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="83"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="unfinished">指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
+        <translation>指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="86"/>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="unfinished">ホスト フロッピードライブ(&amp;D)</translation>
+        <translation>ホスト フロッピードライブ(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="112"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
+        <translation>仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="119"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation type="unfinished">指定したフロッピーイメージを仮想フロッピードライブにマウントします。</translation>
+        <translation>指定したフロッピーイメージを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="122"/>
         <source>&amp;Image File</source>
-        <translation type="unfinished">イメージファイル(&amp;I)</translation>
+        <translation>イメージファイル(&amp;I)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="132"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
+        <translation>仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished">仮想ディスクマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
+        <translation>仮想ディスクマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
 </context>
 <context>
@@ -7689,217 +7207,217 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="351"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="379"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished">この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
+        <translation>この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="37"/>
         <source>&amp;Basic</source>
-        <translation type="unfinished">基本(&amp;B)</translation>
+        <translation>基本(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="49"/>
         <source>Identification</source>
-        <translation type="unfinished"></translation>
+        <translation>詳細</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="74"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>名前(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="87"/>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished">仮想マシンの名前を表示します。</translation>
+        <translation>仮想マシンの名前を表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
         <source>OS &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>OSタイプ(&amp;T):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
+        <translation>仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="125"/>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">メインメモリのサイズ(&amp;M)</translation>
+        <translation>メインメモリのサイズ(&amp;M)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="251"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
+        <translation>仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="370"/>
         <source>&lt;</source>
-        <translation type="unfinished">&lt;</translation>
+        <translation>&lt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="396"/>
         <source>&gt;</source>
-        <translation type="unfinished">&gt;</translation>
+        <translation>&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="439"/>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="300"/>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished">ビデオメモリのサイズ(&amp;V)</translation>
+        <translation>ビデオメモリのサイズ(&amp;V)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="426"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
+        <translation>仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="483"/>
         <source>&amp;Advanced</source>
-        <translation type="unfinished">高度(&amp;A)</translation>
+        <translation>高度(&amp;A)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="489"/>
         <source>Boo&amp;t Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>起動順序(&amp;T):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="543"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">起動デバイスの優先順序を指定します。チェックボックスを使い各デバイスを有効または無効にできます。項目を上または下に移動してデバイスの順序を変更してください。</translation>
+        <translation>起動デバイスの優先順序を指定します。チェックボックスを使い各デバイスを有効または無効にできます。項目を上または下に移動してデバイスの順序を変更してください。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="562"/>
         <source>[device]</source>
-        <translation type="unfinished"></translation>
+        <translation>[デバイス]</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="583"/>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">上に移動(Ctrl-Up)</translation>
+        <translation>上に移動(Ctrl-Up)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="586"/>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">選択した起動デバイスを上に移動します。</translation>
+        <translation>選択した起動デバイスを上に移動します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="605"/>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">下に移動(Ctrl-Down)</translation>
+        <translation>下に移動(Ctrl-Down)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="608"/>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">選択した起動デバイスを下に移動します。</translation>
+        <translation>選択した起動デバイスを下に移動します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>拡張機能:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="666"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="669"/>
         <source>Enable A&amp;CPI</source>
-        <translation type="unfinished">ACPIを有効にする(&amp;C)</translation>
+        <translation>ACPIを有効にする(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="682"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="685"/>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished">IO APICを有効にする(&amp;P)</translation>
+        <translation>IO APICを有効にする(&amp;P)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="698"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンでホストCPUのIntel VT-xやAMD-Vなどの仮想化支援機能を有効にします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="701"/>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">VT-x/AMD-Vを有効にする(&amp;V)</translation>
+        <translation>VT-x/AMD-Vを有効にする(&amp;V)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="714"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンでホストCPUのPAE(物理アドレス拡張機能)を有効にします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="717"/>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">PAE/NXを有効にする(&amp;E)</translation>
+        <translation>PAE/NXを有効にする(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished"></translation>
+        <translation>クリップボードの共有(&amp;S):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="749"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished">ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
+        <translation>ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="762"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished">仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
+        <translation>仮想IDEコントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="789"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>IDEコントローラ タイプ(&amp;I):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="802"/>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>スナップショットの保存先(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="839"/>
         <source>&amp;Description</source>
-        <translation type="unfinished">コメント(&amp;D)</translation>
+        <translation>コメント(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="845"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished">仮想マシンのコメントを表示します。コメントはインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
+        <translation>仮想マシンのコメントを表示します。コメントはインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="856"/>
         <source>&amp;Other</source>
-        <translation type="unfinished"></translation>
+        <translation>その他(&amp;O)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation type="unfinished">仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
+        <translation>仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="894"/>
         <source>&amp;Remember Mounted Media</source>
-        <translation type="unfinished"></translation>
+        <translation>マウントしたメディアを記録(&amp;R)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>Runtime:</source>
-        <translation type="unfinished"></translation>
+        <translation>実行時:</translation>
     </message>
 </context>
 <context>
@@ -7907,62 +7425,62 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="608"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていない</translation>
+        <translation> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていない</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="620"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;%1&lt;/i&gt;はすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられている</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt;はすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられている</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="640"/>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished">割り当てを追加する(&amp;A)</translation>
+        <translation>割り当てを追加する(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="641"/>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished">割り当てを除去する(&amp;R)</translation>
+        <translation>割り当てを除去する(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="642"/>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished">ハードディスクを選択する(&amp;S)</translation>
+        <translation>ハードディスクを選択する(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="651"/>
         <source>Adds a new hard disk attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>新規ハードディスクの割り当てを追加します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="652"/>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>ハイライト表示されたハードディスクの割り当てを除去します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="655"/>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想ディスクマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="33"/>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想SATAコントローラを有効にします。注：仮想SATAコントローラが無効な場合、SATAポートにハードディスクを割り当てできません。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="36"/>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished">SATAコントローラを有効にする(&amp;E)</translation>
+        <translation>SATAコントローラを有効にする(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
         <source>&amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>割り当て(&amp;A)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="unfinished"></translation>
+        <translation>この仮想マシンに割り当てられた全てのハードディスクをリスト表示します。ハイライト表示された項目をマウスクリックするか、[&lt;tt&gt;スペース&lt;/tt&gt;]キーを使用して、ドロップダウンリストから使用するハードディスクを選択してください。コンテキストメニューか右のボタンを使って、ハードディスクの割り当ての追加または除去が行えます。</translation>
     </message>
 </context>
 <context>
@@ -7970,127 +7488,127 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="289"/>
         <source>Select TAP setup application</source>
-        <translation type="unfinished">TAP設定アプリケーションを選択</translation>
+        <translation>TAP設定アプリケーションを選択</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="298"/>
         <source>Select TAP terminate application</source>
-        <translation type="unfinished">TAP終了アプリケーションを選択</translation>
+        <translation>TAP終了アプリケーションを選択</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="33"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished">仮想ネットワーク アダプタを仮想マシンに接続します。</translation>
+        <translation>仮想ネットワーク アダプタを仮想マシンに接続します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="36"/>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">ネットワーク アダプタを有効にする(&amp;E)</translation>
+        <translation>ネットワーク アダプタを有効にする(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>アダプタ タイプ(&amp;D):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished">仮想ネットワークアダプタのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
+        <translation>仮想ネットワークアダプタのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>割り当て(&amp;A):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished">仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
+        <translation>仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>&amp;Network Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク名(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished">このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
+        <translation>このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>MACアドレス(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
+        <translation>このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="166"/>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">MACアドレスをランダムに生成します。</translation>
+        <translation>MACアドレスをランダムに生成します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="169"/>
         <source>&amp;Generate</source>
-        <translation type="unfinished">生成(&amp;G)</translation>
+        <translation>生成(&amp;G)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="176"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>
+        <translation>仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished">接続(&amp;B)</translation>
+        <translation>接続(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>インターフェース名(&amp;I):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished">TAPインターフェース名を表示します。</translation>
+        <translation>TAPインターフェース名を表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>設定アプリケーション(&amp;S):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
         <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="unfinished">TAPインターフェース設定時に実行するコマンドを表示します。</translation>
+        <translation>TAPインターフェース設定時に実行するコマンドを表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="248"/>
         <source>Selects the setup application.</source>
-        <translation type="unfinished">設定アプリケーションを選択します。</translation>
+        <translation>設定アプリケーションを選択します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="258"/>
         <source>&amp;Terminate Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>終了アプリケーション(&amp;T):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="277"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished">TAPインターフェース終了時に実行するコマンドを表示します。</translation>
+        <translation>TAPインターフェース終了時に実行するコマンドを表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="284"/>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished">終了アプリケーションを選択します。</translation>
+        <translation>終了アプリケーションを選択します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
         <source>Host Interface Settings</source>
-        <translation type="unfinished">ホスト インターフェースの設定</translation>
+        <translation>ホスト インターフェースの設定</translation>
     </message>
 </context>
 <context>
@@ -8098,12 +7616,12 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="808"/>
         <source>No host network interface is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>ホスト インターフェースが選択されていない</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="815"/>
         <source>Internal network name is not set</source>
-        <translation type="unfinished">内部ネットワーク名が設定されていない</translation>
+        <translation>内部ネットワーク名が設定されていない</translation>
     </message>
 </context>
 <context>
@@ -8112,57 +7630,57 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="113"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">ポート %1</translation>
+        <translation>ポート %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="33"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished">仮想マシンのパラレルポートを有効にします。</translation>
+        <translation>仮想マシンのパラレルポートを有効にします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="36"/>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished">パラレルポートを有効にする(&amp;E)</translation>
+        <translation>パラレルポートを有効にする(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート番号(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished">パラレルポート番号を表示します。 標準のパラレルポートか[&lt;b&gt;ユーザー定義&lt;/b&gt;]を選択し、手動でポートパラメタを指定することができます。</translation>
+        <translation>パラレルポート番号を表示します。 標準のパラレルポートか[&lt;b&gt;ユーザー定義&lt;/b&gt;]を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <translation>このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/Oポート(&amp;R):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished">このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
+        <translation>このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート パス(&amp;P):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished">ホストのパラレル デバイス名を表示します。</translation>
+        <translation>ホストのパラレル デバイス名を表示します。</translation>
     </message>
 </context>
 <context>
@@ -8170,17 +7688,17 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="223"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">選択したポート番号はすでに使用されている</translation>
+        <translation>選択したポート番号はすでに使用されている</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="239"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished">ポート パスが指定されていない</translation>
+        <translation>ポート パスが指定されていない</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="240"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">指定したポート パスはすでに使用されている</translation>
+        <translation>指定したポート パスはすでに使用されている</translation>
     </message>
 </context>
 <context>
@@ -8188,72 +7706,72 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="183"/>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>新規共有フォルダを追加(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="184"/>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した共有フォルダを編集(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="185"/>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>選択した共有フォルダを除去(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="198"/>
         <source>Adds a new shared folder definition.</source>
-        <translation type="unfinished">新規共有フォルダを追加します。</translation>
+        <translation>新規共有フォルダを追加します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="199"/>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished">選択した共有フォルダの設定を編集します。</translation>
+        <translation>選択した共有フォルダの設定を編集します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="200"/>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="unfinished">選択した共有フォルダの設定を削除します。</translation>
+        <translation>選択した共有フォルダの設定を除去します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="252"/>
         <source> Machine Folders</source>
-        <translation type="unfinished">共有フォルダ</translation>
+        <translation>共有フォルダ</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="259"/>
         <source> Transient Folders</source>
-        <translation type="unfinished">一時的な共有フォルダ</translation>
+        <translation>一時的な共有フォルダ</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="359"/>
         <source>Full</source>
-        <translation type="unfinished">完全</translation>
+        <translation>完全</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="360"/>
         <source>Read-only</source>
-        <translation type="unfinished">読み込み専用</translation>
+        <translation>読み込み専用</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>この仮想マシンでアクセス可能なすべての共有フォルダをリスト表示します。DOS/WIndows系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxsvr¥share&lt;/tt&gt; コマンドを使用してください。&lt;i&gt;share&lt;/i&gt;はアクセスしたいフォルダの名前です。 LinuxゲストOSからアクセスする場合は &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; コマンドを使用してください。本機能を使用するには Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
         <source>Name</source>
-        <translation type="unfinished">名前</translation>
+        <translation>名前</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="78"/>
         <source>Path</source>
-        <translation type="unfinished">パス</translation>
+        <translation>パス</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="83"/>
         <source>Access</source>
-        <translation type="unfinished">アクセス権</translation>
+        <translation>アクセス権</translation>
     </message>
 </context>
 <context>
@@ -8261,47 +7779,47 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="120"/>
         <source>Add Share</source>
-        <translation type="unfinished">共有フォルダの追加</translation>
+        <translation>共有フォルダの追加</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="123"/>
         <source>Edit Share</source>
-        <translation type="unfinished">設定の編集</translation>
+        <translation>設定の編集</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="30"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>ダイアログ</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>フォルダのパス:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>フォルダ名:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished">ゲストOSで使用される共有フォルダ名を表示します。</translation>
+        <translation>ゲストOSで使用される共有フォルダ名を表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="66"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished">ゲストOSから指定された共有フォルダへの書き込みを禁止します。</translation>
+        <translation>ゲストOSから指定された共有フォルダへの書き込みを禁止します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="69"/>
         <source>&amp;Read-only</source>
-        <translation type="unfinished">読み込み専用(&amp;R)</translation>
+        <translation>読み込み専用(&amp;R)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="76"/>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">永続化する(&amp;M)</translation>
+        <translation>永続化する(&amp;M)</translation>
     </message>
 </context>
 <context>
@@ -8310,77 +7828,77 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="127"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation type="unfinished">ポート %1</translation>
+        <translation>ポート %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="33"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="unfinished">仮想マシンのシリアルポートを有効にします。</translation>
+        <translation>仮想マシンのシリアルポートを有効にします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="36"/>
         <source>&amp;Enable Serial Port</source>
-        <translation type="unfinished">シリアルポートを有効にする(&amp;E)</translation>
+        <translation>シリアルポートを有効にする(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート番号(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished">シリアルポート番号を表示します。 標準のシリアルポートか[&lt;b&gt;ユーザー定義&lt;/b&gt;]を選択し、手動でポートパラメタを指定することができます。</translation>
+        <translation>シリアルポート番号を表示します。 標準のシリアルポートか[&lt;b&gt;ユーザー定義&lt;/b&gt;]を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <translation>このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/Oポート(&amp;R):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished">このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
+        <translation>このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート モード(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished">このシリアルポートの動作モードを指定します。 [&lt;b&gt;切断&lt;/b&gt;]を選択すると、ゲストOSはシリアルポートを検出しますが、それを操作することはできません。</translation>
+        <translation>このシリアルポートの動作モードを指定します。 [&lt;b&gt;切断&lt;/b&gt;]を選択すると、ゲストOSはシリアルポートを検出しますが、それを操作することはできません。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished">チェックがオンの場合、仮想マシンの起動時に [&lt;b&gt;ポート パス&lt;/b&gt;]フィールドで指定されたパイプが作成されます。そうでなければ仮想マシンは既存のパイプを使用します。</translation>
+        <translation>チェックがオンの場合、仮想マシンの起動時に [&lt;b&gt;ポート パス&lt;/b&gt;]フィールドで指定されたパイプが作成されます。そうでなければ仮想マシンは既存のパイプを使用します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="179"/>
         <source>&amp;Create Pipe</source>
-        <translation type="unfinished">パイプ作成(&amp;C)</translation>
+        <translation>パイプ作成(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート パス(&amp;P):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="unfinished">ポートが[&lt;b&gt;ホスト パイプ&lt;/b&gt;]モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが[&lt;b&gt;ホスト デバイス&lt;/b&gt;]モードで動作しているとき、ホスト シリアル デバイス名を表示します。</translation>
+        <translation>ポートが[&lt;b&gt;ホスト パイプ&lt;/b&gt;]モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが[&lt;b&gt;ホスト デバイス&lt;/b&gt;]モードで動作しているとき、ホスト シリアル デバイス名を表示します。</translation>
     </message>
 </context>
 <context>
@@ -8388,17 +7906,17 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="258"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">選択したポート番号はすでに使用されている</translation>
+        <translation>選択したポート番号はすでに使用されている</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="276"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished">ポート パスが指定されていない</translation>
+        <translation>ポート パスが指定されていない</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="277"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">指定したポート パスはすでに使用されている</translation>
+        <translation>指定したポート パスはすでに使用されている</translation>
     </message>
 </context>
 <context>
@@ -8406,103 +7924,103 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="235"/>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>空のフィルタを追加(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="236"/>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished">デバイスからフィルタを追加する(&amp;D)</translation>
+        <translation>デバイスからフィルタを追加する(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="237"/>
         <source>&amp;Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>フィルタを編集する(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="238"/>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished">フィルタを除去する(&amp;R)</translation>
+        <translation>フィルタを除去する(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished">フィルタを上に移動する(&amp;M)</translation>
+        <translation>フィルタを上に移動する(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished">フィルタを下に移動(&amp;O)</translation>
+        <translation>フィルタを下に移動(&amp;O)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="258"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSBデバイスに適合します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="261"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>ホストPCに接続された、選択したUSBデバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
         <source>Edits the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したUSBフィルタを編集します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="263"/>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したUSBフィルタを除去します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="264"/>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したUSBフィルタを上に移動します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="265"/>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したUSBフィルタを下に移動します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">新規フィルタ %1</translation>
+        <translation>新規フィルタ %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="33"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">この仮想マシンの仮想USBコントローラを有効にします。</translation>
+        <translation>この仮想マシンの仮想USBコントローラを有効にします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="36"/>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished">USBコントローラを有効にする(&amp;U)</translation>
+        <translation>USBコントローラを有効にする(&amp;U)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンの仮想USB EHCIコントローラを有効にします。USB EHCIコントローラはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 (EHCI)コントローラを有効にする(&amp;H)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="87"/>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished">USBデバイス フィルタ(&amp;F)</translation>
+        <translation>USBデバイス フィルタ(&amp;F)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシンの全てのUSBフィルタをリスト表示します。左のチェックボックスは、特定のフィルタが可能にされるかどうかを定義します。 USBフィルタを追加するか、または除去する場合はコンテキストメニューかボタンを使用してください。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
         <source>[filter]</source>
-        <translation type="unfinished"></translation>
+        <translation>[フィルター]</translation>
     </message>
 </context>
 <context>
@@ -8511,124 +8029,124 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="62"/>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished">任意</translation>
+        <translation>任意</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="63"/>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">はい</translation>
+        <translation>はい</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="64"/>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">いいえ</translation>
+        <translation>いいえ</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>名前(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
         <source>Displays the filter name.</source>
-        <translation type="unfinished">フィルタ名を表示します。</translation>
+        <translation>フィルタ名を表示します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>ベンダーID(&amp;V):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>ベンダーIDフィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>プロダクトID(&amp;P):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>プロダクトIDフィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation type="unfinished"></translation>
+        <translation>リビジョン(&amp;R):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>リビジョン番号フィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;IIFF&lt;/tt&gt;で、&lt;tt&gt;I&lt;/tt&gt;は10進数で整数部、&lt;tt&gt;F&lt;/tt&gt;は10進数で小数部です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished"></translation>
+        <translation>メーカー(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;するメーカー フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished"></translation>
+        <translation>製品名(&amp;D):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;する製品名フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished"></translation>
+        <translation>シリアル No.(&amp;S):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;するシリアル番号フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
         <source>Por&amp;t:</source>
-        <translation type="unfinished"></translation>
+        <translation>ポート(&amp;T):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;完全一致&lt;/i&gt;するホストUSBポート フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation type="unfinished"></translation>
+        <translation>リモート(&amp;E):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>ローカルに接続されたUSBデバイスにこのフィルタを適用するかどうかを定義します。ホストPC(&lt;i&gt;いいえ&lt;/i&gt;)、VRDPクライアントのコンピュータ(&lt;i&gt;はい&lt;/i&gt;)、両方((&lt;i&gt;任意&lt;/i&gt;))。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
         <source>&amp;Action:</source>
-        <translation type="unfinished"></translation>
+        <translation>動作(&amp;A):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>一致するデバイスが接続されたとき、ホストPCが実行する動作を定義します:ホストOSに譲る(&lt;i&gt;無視&lt;/i&gt;) 、仮想マシンで使用するために捕捉(&lt;i&gt;保持&lt;/i&gt;)。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>USBフィルタ詳細</translation>
     </message>
 </context>
 <context>
@@ -8636,42 +8154,42 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="33"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">仮想マシンのリモートデスクトッププロトコル(RDP)サーバ機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
+        <translation>仮想マシンのリモートデスクトッププロトコル(RDP)サーバ機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="36"/>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="unfinished">VRDPサーバを有効にする(&amp;E)</translation>
+        <translation>VRDPサーバを有効にする(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>サーバーのポート番号(&amp;P):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDPサーバのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished"></translation>
+        <translation>認証方式(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">VRDPの認証方式を指定します。</translation>
+        <translation>VRDPの認証方式を指定します。</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>認証タイムアウト値(&amp;T):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">ゲスト認証のタイムアウト値をミリ秒単位で指定します。</translation>
+        <translation>ゲスト認証のタイムアウト値をミリ秒単位で指定します。</translation>
     </message>
 </context>
 </TS>
