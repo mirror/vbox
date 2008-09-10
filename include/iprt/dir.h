@@ -155,7 +155,9 @@ typedef struct RTDIRENTRY
      * when both their values are not 0.
      * This field is 0 if the information is not available. */
     RTINODE         INodeId;
-    /** The entry type. (d_type) */
+    /** The entry type. (d_type)
+     * RTDIRENTRYTYPE_UNKNOWN is a legal return value here and
+     * should be expected by the user. */
     RTDIRENTRYTYPE  enmType;
     /** The length of the filename. */
     uint16_t        cbName;
