@@ -74,6 +74,9 @@
 
 /** Size of the send fifo queue (in bytes) */
 #ifdef RT_OS_DARWIN
+  /** @todo This is really desperate, but it seriously looks like
+   * the data is arriving way too fast for us to push over. 9600
+   * baud and zoc reports sending at 12000+ chars/sec... */
 # define CHAR_MAX_SEND_QUEUE             0x400
 # define CHAR_MAX_SEND_QUEUE_MASK        0x3ff
 #else
@@ -112,7 +115,8 @@ typedef struct DRVHOSTSERIAL
     /** the device handle */
     RTFILE                      DeviceFile;
 # ifdef RT_OS_DARWIN
-    /** The device handle used for reading. */
+    /** The device handle used for reading.
+     * Used to prevent the read selecto from blocking the writes. */
     RTFILE                      DeviceFileR;
 # endif
     /** The read end of the control pipe */
@@ -472,7 +476,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         return VINF_SUCCESS;
 
 #ifdef RT_OS_WINDOWS
-    /* Make sure that the halt event sempahore is resetted. */
+    /* Make sure that the halt event semaphore is reset. */
     DWORD dwRet = WaitForSingleObject(pThis->hHaltEventSem, 0);
 
     HANDLE haWait[2];
@@ -574,7 +578,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     rc = RTErrConvertFromWin32(dwRet);
             }
 
-#endif
+#endif /* RT_OS_WINDOWS */
             if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
@@ -689,7 +693,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         return VINF_SUCCESS;
 
 #ifdef RT_OS_WINDOWS
-    /* Make sure that the halt event sempahore is resetted. */
+    /* Make sure that the halt event semaphore is reset. */
     DWORD dwRet = WaitForSingleObject(pThis->hHaltEventSem, 0);
 
     HANDLE ahWait[2];
@@ -1006,7 +1010,6 @@ ioctl_error:
     return VINF_SUCCESS;
 }
 
-
 # ifdef RT_OS_LINUX
 /** Signal handler for SIGUSR2.
  * Used to interrupt ioctl(TIOCMIWAIT). */
@@ -1015,7 +1018,7 @@ static void drvHostSerialSignalHandler(int iSignal)
     /* Do nothing. */
     return;
 }
-# endif
+# endif /* RT_OS_LINUX */
 
 /**
  * Unblock the monitor thread so it can respond to a state change.
@@ -1424,7 +1427,7 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
 # if defined(RT_OS_DARWIN)
     if (pThis->DeviceFileR != NIL_RTFILE)
     {
-        if (pThis->DeviceFile != pThis->DeviceFileR)
+        if (pThis->DeviceFileR != pThis->DeviceFile)
         {
             int rc = RTFileClose(pThis->DeviceFileR);
             AssertRC(rc);
