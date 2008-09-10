@@ -1130,7 +1130,6 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     RTGCUINTPTR exitQualification;
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo, uInterruptState;
-    bool        fGuestStateSynced = false;
     bool        fSyncTPR = false;
     unsigned    cResume = 0;
 #ifdef VBOX_STRICT
@@ -1310,8 +1309,7 @@ ResumeExecution:
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
     }
-    fGuestStateSynced = true;
-
+    
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
     rc = VMXWriteVMCS(VMX_VMCS_GUEST_ACTIVITY_STATE,           VMX_CMS_GUEST_ACTIVITY_ACTIVE);
