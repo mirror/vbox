@@ -21,6 +21,7 @@
  */
 
 #include "VBoxGlobal.h"
+#include <VBox/VBoxHDD-new.h>
 
 #include "VBoxDefs.h"
 #include "VBoxSelectorWnd.h"
@@ -3994,6 +3995,46 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
             break;
     }
     return child;
+}
+
+/**
+ * Automatically figure out which hdd backends are currently support by vbox.
+ * Returned is a list of pairs with the form 
+ * <"Backend Name", "*.suffix1 *.suffix2 ...">.
+ */
+/* static */
+QList< QPair<QString, QString> > VBoxGlobal::HDDBackends()
+{
+     int rc;
+     VDBACKENDINFO aVDInfo[100];
+     unsigned cEntries;
+
+     QStringList all;
+     QStringList filterList;
+     QList< QPair<QString, QString> > backendPropList;
+     /* Ask for all supported backends */
+     rc = VDBackendInfo (100, aVDInfo, &cEntries);
+     if (VBOX_SUCCESS (rc))
+     {
+         for (unsigned i=0; i < cEntries; i++)
+         {
+             QStringList f;
+             /* One backend could have more than one suffix. Get them all. */
+             if (aVDInfo[i].papszFileExtensions)
+             {
+                 const char *const *papsz = aVDInfo[i].papszFileExtensions;
+                 while (*papsz != NULL)
+                 {
+                     f << QString ("*.%1").arg (*papsz);
+                     papsz++;
+                 }
+             }
+             /* Create a pair out of the backend name and all suffix's. */
+             if (!f.isEmpty())
+                 backendPropList << QPair<QString, QString> (aVDInfo[i].pszBackend, f.join(" "));
+         }
+     }
+     return backendPropList;
 }
 
 // Public slots
