@@ -38,7 +38,7 @@
 #include <iprt/file.h>
 #include <iprt/alloc.h>
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 # include <errno.h>
 # include <termios.h>
 # include <sys/types.h>
@@ -50,20 +50,22 @@
 # include <pthread.h>
 # include <sys/signal.h>
 
+# ifdef RT_OS_LINUX
 /*
  * TIOCM_LOOP is not defined in the above header files for some reason but in asm/termios.h.
  * But inclusion of this file however leads to compilation errors because of redefinition of some
  * structs. Thatswhy it is defined here until a better solution is found.
  */
-#ifndef TIOCM_LOOP
-# define TIOCM_LOOP 0x8000
-#endif
+#  ifndef TIOCM_LOOP
+#   define TIOCM_LOOP 0x8000
+#  endif
+# endif /* linux */
 
 #elif defined(RT_OS_WINDOWS)
-# include <windows.h>
+# include <Windows.h>
 #endif
 
-#include "Builtins.h"
+#include "../Builtins.h"
 
 
 /** Size of the send fifo queue (in bytes) */
@@ -97,13 +99,18 @@ typedef struct DRVHOSTSERIAL
     /** the device path */
     char                        *pszDevicePath;
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     /** the device handle */
     RTFILE                      DeviceFile;
     /** The read end of the control pipe */
     RTFILE                      WakeupPipeR;
     /** The write end of the control pipe */
     RTFILE                      WakeupPipeW;
+# ifndef RT_OS_LINUX
+    /** The current line status.
+     * Used by the polling version of drvHostSerialMonitorThread.  */
+    int                         fStatusLines;
+# endif
 #elif defined(RT_OS_WINDOWS)
     /** the device handle */
     HANDLE                      hDeviceFile;
@@ -187,7 +194,7 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
 static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
 {
     PDRVHOSTSERIAL pThis = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     struct termios *termiosSetup;
     int baud_rate;
 #elif defined(RT_OS_WINDOWS)
@@ -196,7 +203,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsign
 
     LogFlow(("%s: Bps=%u chParity=%c cDataBits=%u cStopBits=%u\n", __FUNCTION__, Bps, chParity, cDataBits, cStopBits));
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     termiosSetup = (struct termios *)RTMemTmpAllocZ(sizeof(struct termios));
 
     /* Enable receiver */
@@ -440,7 +447,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         {
             unsigned cbProcessed = 1;
 
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 
             rc = RTFileWrite(pThis->DeviceFile, &pThis->aSendQueue[pThis->iSendQueueTail], cbProcessed, NULL);
 
@@ -544,7 +551,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         {
             /* Get a block of data from the host serial device. */
 
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 
             size_t cbRead;
             struct pollfd aFDs[2];
@@ -695,7 +702,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     return RTFileWrite(pThis->WakeupPipeW, "", 1, NULL);
 #elif defined(RT_OS_WINDOWS)
     if (!SetEvent(pThis->hHaltEventSem))
@@ -706,7 +713,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMT
 #endif
 }
 
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 /* -=-=-=-=- Monitor thread -=-=-=-=- */
 
 /**
@@ -735,6 +742,7 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         uint32_t newStatusLine = 0;
         unsigned int statusLines;
 
+# ifdef RT_OS_LINUX
         /*
          * Wait for status line change.
          */
@@ -753,6 +761,24 @@ ioctl_error:
         rc = ioctl(pThis->DeviceFile, TIOCMGET, &statusLines);
         if (rc < 0)
             goto ioctl_error;
+# else  /* !RT_OS_LINUX */
+        /*
+         * Poll for the status line change.
+         */
+        rc = ioctl(pThis->DeviceFile, TIOCMGET, &statusLines);
+        if (rc < 0)
+        {
+            PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
+                                       N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
+                                       pThis->pszDevicePath, RTErrConvertFromErrno(errno));
+            break;
+        }
+        if ((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck)
+        {
+            PDMR3ThreadSleep(pThread, 1000); /* 1 sec */
+            continue;
+        }
+# endif /* !RT_OS_LINUX */
 
         if (statusLines & TIOCM_CAR)
             newStatusLine |= PDM_ICHAR_STATUS_LINES_DCD;
@@ -768,11 +794,16 @@ ioctl_error:
     return VINF_SUCCESS;
 }
 
+
+# ifdef RT_OS_LINUX
+/** Signal handler for SIGUSR2.
+ * Used to interrupt ioctl(TIOCMIWAIT). */
 static void drvHostSerialSignalHandler(int iSignal)
 {
     /* Do nothing. */
     return;
 }
+# endif
 
 /**
  * Unblock the monitor thread so it can respond to a state change.
@@ -785,13 +816,14 @@ static void drvHostSerialSignalHandler(int iSignal)
  */
 static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+# ifdef RT_OS_LINUX
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc = VINF_SUCCESS;
-#if 0
+#  if 0
      unsigned int uSerialLineFlags;
      unsigned int uSerialLineStatus;
      unsigned int uIoctl;
-#endif
+#  endif
 
     /*
      * Linux is a bit difficult as the thread is sleeping in an ioctl call.
@@ -811,7 +843,7 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
      *    We get the native thread id of the PDM thread and send a signal with pthread_kill().
      */
 
-#if 0 /* Disabled because it does not work for all. */
+#  if 0 /* Disabled because it does not work for all. */
     /* Get current status of control lines. */
     rc = ioctl(pThis->DeviceFile, TIOCMGET, &uSerialLineStatus);
     if (rc < 0)
@@ -852,9 +884,9 @@ ioctl_error:
     PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
                                 N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
                                 pThis->pszDevicePath, RTErrConvertFromErrno(errno));
-#endif
+#  endif
 
-#if 0
+#  if 0
     /* Close file to make ioctl return. */
     RTFileClose(pData->DeviceFile);
     /* Open again to make use after suspend possible again. */
@@ -865,7 +897,7 @@ ioctl_error:
         PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
                                     N_("Opening failed for serial host device '%s' (%Vrc). The device will not work"),
                                     pData->pszDevicePath, rc);
-#endif
+#  endif
 
     pthread_t        ThreadId = (pthread_t)RTThreadGetNative(pThread->Thread);
     struct sigaction SigactionThread;
@@ -890,9 +922,16 @@ ioctl_error:
     /* Restore old action handler. */
     sigaction(SIGUSR2, &SigactionThreadOld, NULL);
 
+# else  /* !RT_OS_LINUX*/
+    /* In polling mode there is nobody to wake up (PDMThread will cancel the sleep). */
+    NOREF(pDrvIns);
+    NOREF(pThread);
+
+# endif /* RT_OS_LINUX */
+
     return VINF_SUCCESS;
 }
-#endif /* RT_OS_LINUX */
+#endif /* RT_OS_LINUX || RT_OS_DARWIN */
 
 /**
  * Set the modem lines.
@@ -906,7 +945,7 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, bool R
 {
     PDRVHOSTSERIAL pThis = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     int modemStateSet = 0;
     int modemStateClear = 0;
 
@@ -962,7 +1001,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init basic data members and interfaces.
      */
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     pThis->DeviceFile  = NIL_RTFILE;
     pThis->WakeupPipeR = NIL_RTFILE;
     pThis->WakeupPipeW = NIL_RTFILE;
@@ -973,6 +1012,8 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->IChar.pfnWrite                   = drvHostSerialWrite;
     pThis->IChar.pfnSetParameters           = drvHostSerialSetParameters;
     pThis->IChar.pfnSetModemLines           = drvHostSerialSetModemLines;
+
+/** @todo Initialize all members with NIL values!! The destructor is ALWAYS called. */
 
     /*
      * Query configuration.
@@ -1033,7 +1074,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         {
             case VERR_ACCESS_DENIED:
                 return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
                                            N_("Cannot open host device '%s' for read/write access. Check the permissions "
                                               "of that device ('/bin/ls -l %s'): Most probably you need to be member "
                                               "of the device group. Make sure that you logout/login after changing "
@@ -1051,7 +1092,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     }
 
     /* Set to non blocking I/O */
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 
     fcntl(pThis->DeviceFile, F_SETFL, O_NONBLOCK);
     int aFDs[2];
@@ -1086,6 +1127,9 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     if (!pThis->pDrvCharPort)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no char port interface above"), pDrvIns->iInstance);
 
+    /*
+     * Create the receive, send and monitor threads pluss the related send semaphore.
+     */
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pRecvThread, pThis, drvHostSerialRecvThread, drvHostSerialWakeupRecvThread, 0, RTTHREADTYPE_IO, "SerRecv");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create receive thread"), pDrvIns->iInstance);
@@ -1097,13 +1141,19 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create send thread"), pDrvIns->iInstance);
 
-#if defined(RT_OS_LINUX)
-    /* Linux needs a separate thread which monitors the status lines. */
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
+    /* Linux & darwin needs a separate thread which monitors the status lines. */
+# ifndef RT_OS_LINUX
+    ioctl(pThis->DeviceFile, TIOCMGET, &pThis->fStatusLines);
+# endif
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pMonitorThread, pThis, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "SerMon");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
 #endif
 
+    /*
+     * Register release statistics.
+     */
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/HostSerial%d/Written", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/HostSerial%d/Read", pDrvIns->iInstance);
 
@@ -1131,7 +1181,7 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     RTSemEventDestroy(pThis->SendSem);
     pThis->SendSem = NIL_RTSEMEVENT;
 
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 
     if (pThis->WakeupPipeW != NIL_RTFILE)
     {
