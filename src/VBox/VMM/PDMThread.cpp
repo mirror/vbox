@@ -61,6 +61,8 @@ DECLINLINE(bool) pdmR3AtomicCmpXchgState(PPDMTHREAD pThread, PDMTHREADSTATE enmN
  */
 static DECLCALLBACK(int) pdmR3ThreadWakeUp(PPDMTHREAD pThread)
 {
+    RTSemEventMultiSignal(pThread->Internal.s.SleepEvent);
+
     int rc;
     switch (pThread->Internal.s.enmType)
     {
@@ -141,37 +143,43 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
     int rc = RTSemEventMultiCreate(&pThread->Internal.s.BlockEvent);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Create the thread and wait for it to initialize.
-         * The newly created thread will set the PDMTHREAD::Thread member.
-         */
-        RTTHREAD Thread;
-        rc = RTThreadCreate(&Thread, pdmR3ThreadMain, pThread, cbStack, enmType, RTTHREADFLAGS_WAITABLE, pszName);
+        rc = RTSemEventMultiCreate(&pThread->Internal.s.SleepEvent);
         if (RT_SUCCESS(rc))
         {
-            rc = RTThreadUserWait(Thread, 60*1000);
-            if (    RT_SUCCESS(rc)
-                &&  pThread->enmState != PDMTHREADSTATE_SUSPENDED)
-                rc = VERR_INTERNAL_ERROR;
+            /*
+             * Create the thread and wait for it to initialize.
+             * The newly created thread will set the PDMTHREAD::Thread member.
+             */
+            RTTHREAD Thread;
+            rc = RTThreadCreate(&Thread, pdmR3ThreadMain, pThread, cbStack, enmType, RTTHREADFLAGS_WAITABLE, pszName);
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Insert it into the thread list.
-                 */
-                pThread->Internal.s.pNext = NULL;
-                if (pVM->pdm.s.pThreadsTail)
-                    pVM->pdm.s.pThreadsTail->Internal.s.pNext = pThread;
-                else
-                    pVM->pdm.s.pThreads = pThread;
-                pVM->pdm.s.pThreadsTail = pThread;
+                rc = RTThreadUserWait(Thread, 60*1000);
+                if (    RT_SUCCESS(rc)
+                    &&  pThread->enmState != PDMTHREADSTATE_SUSPENDED)
+                    rc = VERR_INTERNAL_ERROR;
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Insert it into the thread list.
+                     */
+                    pThread->Internal.s.pNext = NULL;
+                    if (pVM->pdm.s.pThreadsTail)
+                        pVM->pdm.s.pThreadsTail->Internal.s.pNext = pThread;
+                    else
+                        pVM->pdm.s.pThreads = pThread;
+                    pVM->pdm.s.pThreadsTail = pThread;
 
-                rc = RTThreadUserReset(Thread);
-                AssertRC(rc);
-                return rc;
+                    rc = RTThreadUserReset(Thread);
+                    AssertRC(rc);
+                    return rc;
+                }
+
+                /* bailout */
+                RTThreadWait(Thread, 60*1000, NULL);
             }
-
-            /* bailout */
-            RTThreadWait(Thread, 60*1000, NULL);
+            RTSemEventMultiDestroy(pThread->Internal.s.SleepEvent);
+            pThread->Internal.s.SleepEvent = NIL_RTSEMEVENTMULTI;
         }
         RTSemEventMultiDestroy(pThread->Internal.s.BlockEvent);
         pThread->Internal.s.BlockEvent = NIL_RTSEMEVENTMULTI;
@@ -434,7 +442,13 @@ PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
         }
         pThread->Internal.s.pNext = NULL;
 
-        /* free it */
+        /* free the resources */
+        RTSemEventMultiDestroy(pThread->Internal.s.BlockEvent);
+        pThread->Internal.s.BlockEvent = NIL_RTSEMEVENTMULTI;
+
+        RTSemEventMultiDestroy(pThread->Internal.s.SleepEvent);
+        pThread->Internal.s.SleepEvent = NIL_RTSEMEVENTMULTI;
+
         MMR3HeapFree(pThread);
     }
     else if (RT_SUCCESS(rc))
@@ -676,6 +690,37 @@ PDMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread)
     AssertMsgFailed(("rc=%d enmState=%d\n", rc, pThread->enmState));
     pdmR3ThreadBailMeOut(pThread);
     return rc;
+}
+
+
+/**
+ * Called by the PDM thread instead of RTThreadSleep.
+ *
+ * The difference is that the sleep will be interrupted on state change. The
+ * thread must be in the running state, otherwise it will return immediately.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success or state change.
+ * @retval  VERR_INTERRUPTED on signal or APC.
+ *
+ * @param   pThread     The PDM thread.
+ * @param   cMillies    The number of milliseconds to sleep.
+ */
+PDMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies)
+{
+    /*
+     * Assert sanity.
+     */
+    AssertReturn(pThread->enmState > PDMTHREADSTATE_INVALID && pThread->enmState < PDMTHREADSTATE_TERMINATED, VERR_INTERNAL_ERROR);
+    AssertReturn(pThread->Thread == RTThreadSelf(), VERR_INTERNAL_ERROR);
+
+    /*
+     * Reset the event semaphore, check the state and sleep.
+     */
+    RTSemEventMultiReset(pThread->Internal.s.SleepEvent);
+    if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+        return VINF_SUCCESS;
+    return RTSemEventMultiWaitNoResume(pThread->Internal.s.SleepEvent, cMillies);
 }
 
 

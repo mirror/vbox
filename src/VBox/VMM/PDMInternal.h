@@ -245,8 +245,10 @@ typedef struct PDMTHREADINT
 {
     /** The VM pointer. */
     PVMR3                           pVM;
-    /** The event semaphore the thread blocks on. */
+    /** The event semaphore the thread blocks on when not running. */
     RTSEMEVENTMULTI                 BlockEvent;
+    /** The event semaphore the thread sleeps on while running. */
+    RTSEMEVENTMULTI                 SleepEvent;
     /** Pointer to the next thread. */
     R3PTRTYPE(struct PDMTHREAD *)   pNext;
     /** The thread type. */
