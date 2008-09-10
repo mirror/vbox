@@ -43,11 +43,11 @@ fi
 # we are running on is really using the VBox video driver (and RandR 1.2).
 if test "$1" = "--test"; then
   xout=`X -version 2>&1`
-  ! echo $xout | grep 1.4.99.901 > /dev/null &&
-  ! echo $xout | grep 1.4.99.902 > /dev/null &&
-  ! echo $xout | grep 1.4.99.903 > /dev/null &&
-  ! echo $xout | grep 1.4.99.904 > /dev/null &&
-  ! echo $xout | grep 1.4.99.905 > /dev/null &&
+  ! echo "$xout" | grep 1.4.99.901 > /dev/null &&
+  ! echo "$xout" | grep 1.4.99.902 > /dev/null &&
+  ! echo "$xout" | grep 1.4.99.903 > /dev/null &&
+  ! echo "$xout" | grep 1.4.99.904 > /dev/null &&
+  ! echo "$xout" | grep 1.4.99.905 > /dev/null &&
   $randrbin 2> /dev/null | grep VBOX1 > /dev/null
   exit
 fi
