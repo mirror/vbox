@@ -3,31 +3,31 @@
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2474"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2475"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Français</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2486"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2487"/>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2498"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2499"/>
         <source>English</source>
         <comment>Language name, in English</comment>
         <translation>French</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2510"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2511"/>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2522"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2523"/>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Jean-Jacques Sarton, Sun Microsystems, Inc.</translation>
@@ -1109,17 +1109,17 @@ Version %1</source>
         <translation>Choi&amp;sir</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1095"/>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1106"/>
         <source>Select a hard disk image file</source>
         <translation>Choisissez un fichier image de disque dur</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1102"/>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1113"/>
         <source>Select a CD/DVD-ROM disk image file</source>
         <translation>Choisissez un fichier image CD/DVD-ROM </translation>
     </message>
     <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1109"/>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1120"/>
         <source>Select a floppy disk image file</source>
         <translation>Choisir un fichier image de disquette</translation>
     </message>
@@ -1149,19 +1149,14 @@ Version %1</source>
         <translation>Actualiser la liste des médias</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1101"/>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1112"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
         <translation>Images CD/DVD-ROM (*.iso);;Tous les fichiers (*)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1108"/>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1119"/>
         <source>Floppy images (*.img);;All files (*)</source>
         <translation>Images disquettes (*.img);;Tous les fichiers (*)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
-        <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation>Toutes les images de disque dur (*.vdi; *.vmdk);;Images disques virtuels (*.vdi);;VMDK images (*.vmdk);;Tous les fichiers (*)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
@@ -1192,6 +1187,16 @@ Version %1</source>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Instantané&amp;nbsp;:&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1102"/>
+        <source>All hard disk images (%1)</source>
+        <translation>Tous les images disque dur (%1)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1103"/>
+        <source>All files (*)</source>
+        <translation>Tous les fichiers (*)</translation>
     </message>
 </context>
 <context>
@@ -1498,181 +1503,181 @@ Version %1</source>
         <translation>Traitement des différences</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1357"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1358"/>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
         <translation>Périphérique inconnu %1:%2</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1383"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1384"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;nobr&gt;ID Fabricant&amp;nbsp;: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;ID Produit&amp;nbsp;: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Révision&amp;nbsp;: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1389"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1390"/>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;No. de série %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1396"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1397"/>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Etat&amp;nbsp;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1509"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1510"/>
         <source>Name</source>
         <comment>details report</comment>
         <translation>Nom</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1510"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1511"/>
         <source>OS Type</source>
         <comment>details report</comment>
         <translation>Système</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1511"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1512"/>
         <source>Base Memory</source>
         <comment>details report</comment>
         <translation>Mémoire de base</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1512"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1513"/>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation>&lt;nobr&gt;%3 Mo&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1545"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1546"/>
         <source>General</source>
         <comment>details report</comment>
         <translation>Général</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1527"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1528"/>
         <source>Video Memory</source>
         <comment>details report</comment>
         <translation>Mémoire vive vidéo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1528"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1529"/>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation>&lt;nobr&gt;%4 Mo&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1529"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1530"/>
         <source>Boot Order</source>
         <comment>details report</comment>
         <translation>Ordre d&apos;amorçage</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1530"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1531"/>
         <source>ACPI</source>
         <comment>details report</comment>
         <translation>ACPI</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1531"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1532"/>
         <source>IO APIC</source>
         <comment>details report</comment>
         <translation>IO APIC</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1588"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1589"/>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
         <translation>Non attaché</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1596"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1597"/>
         <source>Hard Disks</source>
         <comment>details report</comment>
         <translation>Disque dur</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1642"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1643"/>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
         <translation>Activé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1642"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1643"/>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1647"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1648"/>
         <source>Enabled</source>
         <comment>details report (IO APIC)</comment>
         <translation>Activé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1647"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1648"/>
         <source>Disabled</source>
         <comment>details report (IO APIC)</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1718"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1719"/>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
         <translation>Non insérée</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1723"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1724"/>
         <source>Image</source>
         <comment>details report (floppy)</comment>
         <translation>Image</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1735"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1736"/>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
         <translation>Disque hôte </translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1746"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1747"/>
         <source>Floppy</source>
         <comment>details report</comment>
         <translation>Disquette</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1681"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1682"/>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
         <translation>Non inséré</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1686"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1687"/>
         <source>Image</source>
         <comment>details report (DVD)</comment>
         <translation>Image</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1698"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1699"/>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
         <translation>Disque hôte </translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1709"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1710"/>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1762"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1763"/>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1768"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1769"/>
         <source>Audio</source>
         <comment>details report</comment>
         <translation>Audio</translation>
@@ -1684,466 +1689,466 @@ Version %1</source>
         <translation>Adaptateur %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1806"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1807"/>
         <source>Disabled</source>
         <comment>details report (network)</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1814"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1815"/>
         <source>Network</source>
         <comment>details report</comment>
         <translation>Réseau</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1913"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1914"/>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
         <translation>Filtre de Périphériques</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1915"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1916"/>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
         <translation>%1 (%2 actif)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1919"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1920"/>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1959"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1960"/>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
         <translation>Port du serveur VRDP</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1961"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1962"/>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
         <translation>%1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1964"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1965"/>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1970"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1971"/>
         <source>Remote Display</source>
         <comment>details report</comment>
         <translation>Écran à distance</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4089"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4130"/>
         <source>Opening URLs is not implemented yet.</source>
         <translation>Ouverture d&apos;une URL non implémentée actuellement.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2531"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2532"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation>éteint</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2532"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2533"/>
         <source>Saved</source>
         <comment>MachineState</comment>
         <translation>enregistré</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2533"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2534"/>
         <source>Aborted</source>
         <comment>MachineState</comment>
         <translation>avorté</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2534"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2535"/>
         <source>Running</source>
         <comment>MachineState</comment>
         <translation>en fonction</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2535"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2536"/>
         <source>Paused</source>
         <comment>MachineState</comment>
         <translation>en pause</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2537"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2538"/>
         <source>Starting</source>
         <comment>MachineState</comment>
         <translation>en cours d&apos;amorçage</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2538"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2539"/>
         <source>Stopping</source>
         <comment>MachineState</comment>
         <translation>s&apos;arrête</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2539"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2540"/>
         <source>Saving</source>
         <comment>MachineState</comment>
         <translation>en enregistrement</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2540"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2541"/>
         <source>Restoring</source>
         <comment>MachineState</comment>
         <translation>en restauration</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2541"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2542"/>
         <source>Discarding</source>
         <comment>MachineState</comment>
         <translation>en rejet</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2543"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2544"/>
         <source>Closed</source>
         <comment>SessionState</comment>
         <translation>fermée</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2544"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2545"/>
         <source>Open</source>
         <comment>SessionState</comment>
         <translation>ouvert</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2545"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2546"/>
         <source>Spawning</source>
         <comment>SessionState</comment>
         <translation>génération</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2546"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2547"/>
         <source>Closing</source>
         <comment>SessionState</comment>
         <translation>en fermeture</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2548"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2549"/>
         <source>None</source>
         <comment>DeviceType</comment>
         <translation>Rien</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2549"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2550"/>
         <source>Floppy</source>
         <comment>DeviceType</comment>
         <translation>Disquette</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2550"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2551"/>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2551"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2552"/>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
         <translation>Disque dur</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2552"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2553"/>
         <source>Network</source>
         <comment>DeviceType</comment>
         <translation>Réseau</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2574"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2575"/>
         <source>Normal</source>
         <comment>DiskType</comment>
         <translation>Normal</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2576"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2577"/>
         <source>Immutable</source>
         <comment>DiskType</comment>
         <translation>Immuable</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2578"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2579"/>
         <source>Writethrough</source>
         <comment>DiskType</comment>
         <translation>Ecriture à travers</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2581"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2582"/>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
         <translation>Image disque dur virtuel</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2583"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2584"/>
         <source>iSCSI</source>
         <comment>DiskStorageType</comment>
         <translation>iSCSI</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2585"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2586"/>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
         <translation>image VMDK</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2592"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2593"/>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
         <translation>Null</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2594"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2595"/>
         <source>External</source>
         <comment>VRDPAuthType</comment>
         <translation>Externe</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2596"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2597"/>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
         <translation>Client</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2606"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2607"/>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
         <translation>Ignorer</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2608"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2609"/>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
         <translation>Retenir</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2611"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2612"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Pilote Audio null</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2613"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2614"/>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
         <translation>Windows Multimedia</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2617"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2618"/>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Pilote audio OSS</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2619"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2620"/>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Pilote audio ALSA</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2621"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2622"/>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
         <translation>Windows DirectSound</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2623"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2624"/>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
         <translation>CoreAudio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2642"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2643"/>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Non attaché</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2644"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2645"/>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
         <translation>NAT</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2646"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2647"/>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Adaptateur réseau hôte</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2648"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2649"/>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Réseau interne</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2665"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2666"/>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
         <translation>Non supporté</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2667"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2668"/>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
         <translation>Non disponible</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2669"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2670"/>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
         <translation>Occupé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2671"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2672"/>
         <source>Available</source>
         <comment>USBDeviceState</comment>
         <translation>Disponible</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2673"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2674"/>
         <source>Held</source>
         <comment>USBDeviceState</comment>
         <translation>Retenu</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2675"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2676"/>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
         <translation>Capturé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1331"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1332"/>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
         <translation>&lt;i&gt;Test...&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1338"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1339"/>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
         <translation>&lt;i&gt;Inaccessible&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2651"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2652"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2653"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2654"/>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
         <translation>Hôte vers invité</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2655"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2656"/>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
         <translation>Client vers hôte</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2657"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2658"/>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
         <translation>Bidirectionnel</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="3457"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3458"/>
         <source>Select a directory</source>
         <translation>Choisir un répertoire</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="3628"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3629"/>
         <source>Select a file</source>
         <translation>Choisir un fichier</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1840"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1841"/>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
         <translation>Interface série %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1848"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1849"/>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
         <translation>Désactivées</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1856"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1857"/>
         <source>Serial Ports</source>
         <comment>details report</comment>
         <translation>Interfaces séries</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1925"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1926"/>
         <source>USB</source>
         <comment>details report</comment>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1935"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1936"/>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation>Répertoires partagés</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1937"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1938"/>
         <source>%1</source>
         <comment>details report (shadef folders)</comment>
         <translation>%1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1941"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1942"/>
         <source>None</source>
         <comment>details report (shared folders)</comment>
         <translation>Rien</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1947"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1948"/>
         <source>Shared Folders</source>
         <comment>details report</comment>
         <translation>Répertoires partagés</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2536"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2537"/>
         <source>Stuck</source>
         <comment>MachineState</comment>
         <translation>arrêté</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2599"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2600"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
         <translation>Déconnecté</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2601"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2602"/>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
         <translation>Tuyau hôte</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2603"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2604"/>
         <source>Host Device</source>
         <comment>PortMode</comment>
         <translation>Périphérique hôte</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2677"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2678"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Définit par l&apos;utilisateur</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2587"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2588"/>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
         <translation>Disque dur personnalisé</translation>
@@ -2155,7 +2160,7 @@ Version %1</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1533"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1534"/>
         <source>PAE/NX</source>
         <comment>details report</comment>
         <translation></translation>
@@ -2173,223 +2178,223 @@ Version %1</source>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1657"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1658"/>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
         <translation>Activé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1657"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1658"/>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
         <translation>Désactivé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1755"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1756"/>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
         <translation>Pilote hôte</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1758"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1759"/>
         <source>Controller</source>
         <comment>details report (audio)</comment>
         <translation>Contrôleur</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1876"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1877"/>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
         <translation>Port %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1884"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1885"/>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
         <translation>Désactivées</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1893"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1894"/>
         <source>Parallel Ports</source>
         <comment>details report</comment>
         <translation>Interfaces parallèles</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2553"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2554"/>
         <source>USB</source>
         <comment>DeviceType</comment>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2554"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2555"/>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
         <translation>Répertoire partagé</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2557"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2558"/>
         <source>IDE</source>
         <comment>StorageBus</comment>
         <translation>IDE</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2559"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2560"/>
         <source>SATA</source>
         <comment>StorageBus</comment>
         <translation>SATA</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2563"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2564"/>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
         <translation>Primaire</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2565"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2566"/>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
         <translation>Secondaire</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2570"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2571"/>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
         <translation>Maître</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2571"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2572"/>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
         <translation>Esclave</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2567"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2568"/>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
         <translation>Port %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2589"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2590"/>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
         <translation>Image VHD</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2615"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2616"/>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
         <translation> Audio Solaris</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2625"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2626"/>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
         <translation>PulseAudio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2628"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2629"/>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
         <translation>ICH AC97</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2630"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2631"/>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
         <translation>SoundBlaster 16</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2633"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2634"/>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2635"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2636"/>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2637"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2638"/>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2660"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2661"/>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
         <translation>PIIX3</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2662"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2663"/>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
         <translation>PIIX4</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2639"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2640"/>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1413"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1414"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;ID fabricant&amp;nbsp;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1418"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1419"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;ID produit&amp;nbsp;: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1423"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1424"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Révision&amp;nbsp;: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1428"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1429"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Produit&amp;nbsp;: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1433"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1434"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Fabricant&amp;nbsp;: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1438"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1439"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;No. de série&amp;nbsp;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1443"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1444"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Port&amp;nbsp;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1450"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1451"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;État&amp;nbsp;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1789"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1790"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
         <translation>interface hôte, %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1792"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1793"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
         <translation>reseau interne, &apos;%1&apos;</translation>
@@ -4050,12 +4055,12 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4718"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4759"/>
         <source>Disable</source>
         <translation>Désactiver</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4718"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4759"/>
         <source>Enable</source>
         <translation>Activer</translation>
     </message>
@@ -4081,13 +4086,13 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4648"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4689"/>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;pas de périphériques disponibles&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4651"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4692"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Aucun périphérique supporté n&apos;est attaché à l´ordinateur</translation>
