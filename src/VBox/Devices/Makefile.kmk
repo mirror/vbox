@@ -670,7 +670,8 @@ Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHostFloppy% \
 	, $(Drivers_SOURCES)) \
 	Audio/coreaudio.c
-Drivers_SOURCES.darwin =
+Drivers_SOURCES.darwin = \
+	Serial/DrvHostSerial.cpp
 endif # darwin
 
 ifeq ($(KBUILD_TARGET),freebsd)
