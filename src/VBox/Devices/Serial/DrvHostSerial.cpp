@@ -472,7 +472,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     /*
                      * write blocked, wait ...
                      */
-                    dwRet = WaitForMultipleObjects(2, haWait, FALSE, INFINITE);
+                    dwRet = WaitForMultipleObjects(2, ahWait, FALSE, INFINITE);
                     if (dwRet != WAIT_OBJECT_0)
                     {
                         AssertMsg(pThread->enmState != PDMTHREADSTATE_RUNNING, ("The halt event sempahore is set but the thread is still in running state\n"));
@@ -555,8 +555,8 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
     DWORD dwRet = WaitForSingleObject(pThis->hHaltEventSem, 0)
 
     HANDLE ahWait[2];
-    aWait[0] = pThis->hEventRecv;
-    aWait[1] = pThis->hHaltEventSem;
+    ahWait[0] = pThis->hEventRecv;
+    ahWait[1] = pThis->hHaltEventSem;
 #endif
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
