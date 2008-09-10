@@ -90,7 +90,6 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQtGui.so.4,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg3.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
-	$(if $(VBOX_WITH_HARDENING),VirtualBox.so,) \
 	VBoxSettings.so \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
@@ -100,7 +99,7 @@ ifdef VBOX_WITH_HARDENING
 SOLARIS_STRIP_BINS += \
 	$(if $(VBOX_WITH_VBOXBFE),VBoxBFE.so) \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
-	$(if $(VBOX_WITH_QTGUI),VirtualBox3.so,)
+	$(if $(VBOX_WITH_QT4GUI),VirtualBox.so,)
 endif
 
 # Do not remove relocation information of these binaries
@@ -470,10 +469,9 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/libVBoxQtCore.so.4                        $(SOLARIS_DBG_DIR)/libVBoxQtCore.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/libVBoxQtGui.so.4                         $(SOLARIS_DBG_DIR)/libVBoxQtGui.so.4,)
 ifdef VBOX_WITH_HARDENING
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox3.so                             $(SOLARIS_DBG_DIR)/VirtualBox3.so,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox.so                             $(SOLARIS_DBG_DIR)/VirtualBox.so,)
 endif
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxPython.so                             $(SOLARIS_DBG_DIR)/VBoxPython.so,)
-	$(QUIET)$(if $(VBOX_WITH_HARDENING),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox.so                          $(SOLARIS_DBG_DIR)/VirtualBox.so,)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSettings.so                                                    $(SOLARIS_DBG_DIR)/VBoxSettings.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxC.so                                                $(SOLARIS_DBG_DIR)/components/VBoxC.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxSVCM.so                                             $(SOLARIS_DBG_DIR)/components/VBoxSVCM.so
