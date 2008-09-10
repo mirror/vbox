@@ -754,7 +754,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                         unsigned cExts, iExt;
                         for (cExts=0; pBackend->papszFileExtensions[cExts]; cExts++)
                             ;
-                        const char **paExts = (const char **)RTMemAlloc((cExts+1) * sizeof(paExts[0]));
+                        const char **paExts = (const char **)RTMemAlloc((cExts+1) * sizeof(paExts[0])); /** @todo rainy day: fix leak on error. */
                         if (!paExts)
                         {
                             rc = VERR_NO_MEMORY;
