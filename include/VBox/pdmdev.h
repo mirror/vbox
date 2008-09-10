@@ -3054,6 +3054,11 @@ typedef struct PDMDEVINS
  */
 DECLINLINE(int) PDMDeviceDBGFStop(PPDMDEVINS pDevIns, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
+    NOREF(pDevIns);
+    NOREF(pszFormat);
+    NOREF(pszFile);
+    NOREF(iLine);
+    NOREF(pszFunction);
 #ifdef VBOX_STRICT
 # ifdef IN_RING3
     int rc;
