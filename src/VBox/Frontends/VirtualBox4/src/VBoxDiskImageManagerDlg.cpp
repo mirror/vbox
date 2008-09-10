@@ -1087,11 +1087,22 @@ void VBoxDiskImageManagerDlg::addImage()
     {
         case VBoxDefs::HD:
         {
-            filter = tr ("All hard disk images (*.vdi *.vmdk *.vhd);;"
-                         "Virtual Disk images (*.vdi);;"
-                         "VMDK images (*.vmdk);;"
-                         "VHD images (*.vhd);;"
-                         "All files (*)");
+            QList < QPair<QString, QString> > filterList = vboxGlobal().HDDBackends();
+            QStringList backends;
+            QStringList allPrefix;
+            for (int i = 0; i < filterList.count(); ++i)
+            {
+                QPair <QString, QString> item = filterList.at (i);
+                /* Create one backend filter string */
+                backends << QString ("%1 (%2)").arg (item.first). arg (item.second);
+                /* Save the suffix's for the "All" entry */
+                allPrefix << item.second;
+            }
+            if (!allPrefix.isEmpty())
+                backends.insert (0, tr ("All hard disk images (%1)").arg (allPrefix.join (" ").trimmed()));
+            backends << tr ("All files (*)");
+            filter = backends.join (";;").trimmed();
+
             title = tr ("Select a hard disk image file");
             break;
         }

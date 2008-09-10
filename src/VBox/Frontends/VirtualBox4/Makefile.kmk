@@ -197,6 +197,9 @@ VirtualBox4_INCS           = \
 	./include \
 	$(PATH_VirtualBox4)/include
 
+# Necessary for the hdd backend enumeration
+VirtualBox4_LIBS = $(LIB_DDU)
+
 ifeq ($(KBUILD_TYPE),release)
  VirtualBox4_LDFLAGS.win  += /SUBSYSTEM:windows
 else
