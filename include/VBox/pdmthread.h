@@ -34,7 +34,7 @@
 #include <VBox/types.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>
-#endif 
+#endif
 
 __BEGIN_DECLS
 
@@ -285,9 +285,9 @@ typedef struct PDMTHREAD
 #ifdef IN_RING3
 /**
  * Creates a PDM thread for internal use in the VM.
- * 
+ *
  * @returns VBox status code.
- * @param   pVM         The VM handle. 
+ * @param   pVM         The VM handle.
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
@@ -302,9 +302,9 @@ PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PF
 
 /**
  * Creates a PDM thread for VM use by some external party.
- * 
+ *
  * @returns VBox status code.
- * @param   pVM         The VM handle. 
+ * @param   pVM         The VM handle.
  * @param   ppThread    Where to store the thread 'handle'.
  * @param   pvUser      The user argument to the thread function.
  * @param   pfnThread   The thread function.
@@ -357,6 +357,21 @@ PDMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread);
  * @param   pThread     The PDM thread.
  */
 PDMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread);
+
+/**
+ * Called by the PDM thread instead of RTThreadSleep.
+ *
+ * The difference is that the sleep will be interrupted on state change. The
+ * thread must be in the running state, otherwise it will return immediately.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success or state change.
+ * @retval  VERR_INTERRUPTED on signal or APC.
+ *
+ * @param   pThread     The PDM thread.
+ * @param   cMillies    The number of milliseconds to sleep.
+ */
+PDMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies);
 
 /**
  * Suspends the thread.
