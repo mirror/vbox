@@ -868,7 +868,7 @@ ioctl_error:
         }
         if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
         {
-            PDMR3ThreadSleep(pThread, 50); /* 1 sec */
+            PDMR3ThreadSleep(pThread, 1000); /* 1 sec */
             continue;
         }
         pThis->fStatusLines = statusLines;
