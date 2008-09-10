@@ -61,7 +61,7 @@
     <message>
         <location filename="../src/main.cpp" line="273"/>
         <source>Incompatible Qt Library Error</source>
-        <translation>Erreur&amp;nbsp;: librairies QT incompatibles</translation>
+        <translation>Erreur : librairies QT incompatibles</translation>
     </message>
 </context>
 <context>
@@ -422,7 +422,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="79"/>
         <source>You want to:</source>
-        <translation>Vous désirez&amp;nbsp;:</translation>
+        <translation>Vous désirez :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="107"/>
@@ -806,7 +806,7 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1645"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du support disquette&amp;nbsp;:&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du support disquette&amp;nbsp;: &lt;/nbr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1658"/>
@@ -854,7 +854,7 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1727"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque dur virtuel&amp;nbsp;:&lt;/nbr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du disque dur virtuel&amp;nbsp;: &lt;/nbr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1744"/>
@@ -1166,27 +1166,27 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Emplacement&amp;nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Emplacement&amp;nbsp;: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Type du disque&amp;nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Type du disque&amp;nbsp;: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Type de mémorisation&amp;nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Type de mémorisation&amp;nbsp;: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Attaché à&amp;nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Attaché à&amp;nbsp;: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Instantané&amp;nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Instantané&amp;nbsp;: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1102"/>
@@ -1219,7 +1219,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="226"/>
         <source>Could not locate the file on the server (response: %1).</source>
-        <translation>Le fichier n&apos;a pas été trouvé sur le Serveur (réponse&amp;nbsp;: %1).</translation>
+        <translation>Le fichier n&apos;a pas été trouvé sur le Serveur (réponse : %1).</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="271"/>
@@ -1381,7 +1381,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation>To&amp;uche hôte:</translation>
+        <translation>To&amp;uche hôte :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
@@ -1428,7 +1428,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
-        <translation>Langue&amp;nbsp;:</translation>
+        <translation>Langue : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
@@ -1463,7 +1463,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation>Auteur(s)&amp;nbsp;:</translation>
+        <translation>Auteur(s) : </translation>
     </message>
 </context>
 <context>
@@ -2601,7 +2601,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation>Vous êtes en train de créer un disque dur avec les paramètres suivants&amp;nbsp;:</translation>
+        <translation>Vous êtes en train de créer un disque dur avec les paramètres suivants :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="741"/>
@@ -3048,12 +3048,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1244"/>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Échec de l&apos;enregistrement&amp;nbsp;: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Échec de l&apos;enregistrement : %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1262"/>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Échec de désenregistrement&amp;nbsp;: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Échec de désenregistrement : %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1274"/>
@@ -3083,12 +3083,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1386"/>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Échec&amp;nbsp;: le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été attaché à la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Échec : le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été attaché à la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1412"/>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Échec&amp;nbsp;: le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été désattaché de la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Échec : le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été désattaché de la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1465"/>
@@ -3165,7 +3165,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2070"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle: La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement&amp;nbsp;:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle: La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement&amp;nbsp;: &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2082"/>
@@ -3181,7 +3181,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <location filename="../src/VBoxProblemReporter.cpp" line="2190"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>Code&amp;nbsp;de résultat&amp;nbsp;: </translation>
+        <translation>Code&amp;nbsp;de&amp;nbsp;résultat&amp;nbsp;: </translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2196"/>
@@ -3527,7 +3527,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1635"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante&amp;nbsp;:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante&amp;nbsp;: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1642"/>
@@ -3607,7 +3607,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1626"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant&amp;nbsp;:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant&amp;nbsp;: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -3655,7 +3655,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="376"/>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation>Le formulaire d&apos;inscription n&apos;a pas été trouvé sur le serveur (réponse&amp;nbsp;: %1).</translation>
+        <translation>Le formulaire d&apos;inscription n&apos;a pas été trouvé sur le serveur (réponse : %1).</translation>
     </message>
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="400"/>
@@ -4207,12 +4207,12 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant&amp;nbsp;:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant&amp;nbsp;: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante&amp;nbsp;:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante&amp;nbsp;: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
@@ -4243,7 +4243,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="189"/>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>La machine virtuelle est &lt;i&gt;inaccessible&lt;/i&gt;. Veuillez inspecter le message d&apos;erreur ci dessous et actionnez la touche &lt;b&gt;Actualiser&lt;/b&gt; si vous désirez reprendre le test d&apos;accès&amp;nbsp;:</translation>
+        <translation>La machine virtuelle est &lt;i&gt;inaccessible&lt;/i&gt;. Veuillez inspecter le message d&apos;erreur ci dessous et actionnez la touche &lt;b&gt;Actualiser&lt;/b&gt; si vous désirez reprendre le test d&apos;accès : </translation>
     </message>
 </context>
 <context>
@@ -4311,7 +4311,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="651"/>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez choisi le média de démarrage suivant&amp;nbsp;:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez choisi le média de démarrage suivant&amp;nbsp;: &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="593"/>
@@ -4351,7 +4351,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="676"/>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous avez choisis le média suivant pour amorcer un système d&apos;exploitation&amp;nbsp;:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous avez choisis le média suivant pour amorcer un système d&apos;exploitation&amp;nbsp;: &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="753"/>
@@ -4617,7 +4617,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation>Pilote au&amp;dio hôte:</translation>
+        <translation>Pilote au&amp;dio hôte :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
@@ -4627,7 +4627,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation>&amp;Contrôleur audio&amp;nbsp;:</translation>
+        <translation>&amp;Contrôleur audio : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
@@ -4864,7 +4864,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="74"/>
         <source>&amp;Name:</source>
-        <translation>&amp;Nom&amp;nbsp;:</translation>
+        <translation>&amp;Nom : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="87"/>
@@ -4874,7 +4874,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
         <source>OS &amp;Type:</source>
-        <translation>&amp;Type de système&amp;nbsp;:</translation>
+        <translation>&amp;Type de système : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
@@ -5004,7 +5004,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation>&amp;Presse-papiers partagé&amp;nbsp;:</translation>
+        <translation>&amp;Presse-papiers partagé : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="749"/>
@@ -5019,12 +5019,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="789"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation>Type du contrôleur &amp;IDE&amp;nbsp;:</translation>
+        <translation>Type du contrôleur &amp;IDE : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="802"/>
         <source>S&amp;napshot Folder:</source>
-        <translation>Répertoire i&amp;nstantanés&amp;nbsp;:</translation>
+        <translation>Répertoire i&amp;nstantanés : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="839"/>
@@ -5054,7 +5054,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>Runtime:</source>
-        <translation>Exécution&amp;nbsp;:</translation>
+        <translation>Exécution : </translation>
     </message>
 </context>
 <context>
@@ -5145,7 +5145,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation>Type d&apos;a&amp;daptateur&amp;nbsp;:</translation>
+        <translation>Type d&apos;a&amp;daptateur : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
@@ -5155,7 +5155,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation>&amp;Attaché à&amp;nbsp;:</translation>
+        <translation>&amp;Attaché à : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
@@ -5165,7 +5165,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>&amp;Network Name:</source>
-        <translation>&amp;Nom du réseau&amp;nbsp;:</translation>
+        <translation>&amp;Nom du réseau : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
@@ -5175,7 +5175,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation>Adresse &amp;MAC&amp;nbsp;:</translation>
+        <translation>Adresse &amp;MAC : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
@@ -5205,7 +5205,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
-        <translation>Nom de l&apos;&amp;interface&amp;nbsp;:</translation>
+        <translation>Nom de l&apos;&amp;interface : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
@@ -5282,7 +5282,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation>Port &amp;numéro&amp;nbsp;:</translation>
+        <translation>Port &amp;numéro : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
@@ -5292,7 +5292,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ&amp;nbsp;:</translation>
+        <translation>&amp;IRQ : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
@@ -5302,7 +5302,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation>Po&amp;rt I/O&amp;nbsp;:</translation>
+        <translation>Po&amp;rt I/O : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
@@ -5312,7 +5312,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation>Chemin du &amp;port&amp;nbsp;:</translation>
+        <translation>Chemin du &amp;port : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
@@ -5432,12 +5432,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation>Chemin du répertoire&amp;nbsp;:</translation>
+        <translation>Chemin du répertoire : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation>Nom du répertoire&amp;nbsp;:</translation>
+        <translation>Nom du répertoire : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
@@ -5481,7 +5481,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation>Port &amp;Numéro&amp;nbsp;:</translation>
+        <translation>Port &amp;Numéro : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
@@ -5491,7 +5491,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ&amp;nbsp;:</translation>
+        <translation>&amp;IRQ : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
@@ -5506,7 +5506,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation>&amp;Mode port&amp;nbsp;:</translation>
+        <translation>&amp;Mode port : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
@@ -5526,7 +5526,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation>Chemin &amp;port&amp;nbsp;:</translation>
+        <translation>Chemin &amp;port : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
@@ -5536,7 +5536,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished">Po&amp;rt I/O&amp;nbsp;:</translation>
+        <translation type="unfinished">Po&amp;rt I/O : </translation>
     </message>
 </context>
 <context>
@@ -5684,7 +5684,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
-        <translation>&amp;Nom&amp;nbsp;:</translation>
+        <translation>&amp;Nom : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
@@ -5694,7 +5694,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation>ID &amp;fabricant&amp;nbsp;:</translation>
+        <translation>ID &amp;fabricant : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
@@ -5704,7 +5704,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation>ID &amp;produit&amp;nbsp;:</translation>
+        <translation>ID &amp;produit : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
@@ -5714,7 +5714,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation>&amp;Révision&amp;nbsp;:</translation>
+        <translation>&amp;Révision : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
@@ -5724,7 +5724,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
         <source>&amp;Manufacturer:</source>
-        <translation>&amp;Fabricant&amp;nbsp;:</translation>
+        <translation>&amp;Fabricant : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
@@ -5734,7 +5734,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
         <source>Pro&amp;duct:</source>
-        <translation>Pro&amp;duit&amp;nbsp;:</translation>
+        <translation>Pro&amp;duit : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
@@ -5744,7 +5744,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation>No. de &amp;série&amp;nbsp;:</translation>
+        <translation>No. de &amp;série : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
@@ -5754,7 +5754,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
         <source>Por&amp;t:</source>
-        <translation>Por&amp;t&amp;nbsp;:</translation>
+        <translation>Por&amp;t : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
@@ -5764,7 +5764,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation>À distanc&amp;e&amp;nbsp;:</translation>
+        <translation>À distanc&amp;e : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
@@ -5774,7 +5774,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
         <source>&amp;Action:</source>
-        <translation>&amp;Action&amp;nbsp;:</translation>
+        <translation>&amp;Action : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
@@ -5802,7 +5802,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation>&amp;Port serveur&amp;nbsp;:</translation>
+        <translation>&amp;Port serveur : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
@@ -5812,7 +5812,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation>&amp;Méthode d&apos;authentification&amp;nbsp;:</translation>
+        <translation>&amp;Méthode d&apos;authentification : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
@@ -5822,7 +5822,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation>&amp;Timeout authentification&amp;nbsp;:</translation>
+        <translation>&amp;Timeout authentification : </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
