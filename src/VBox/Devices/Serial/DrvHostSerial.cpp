@@ -73,8 +73,13 @@
 
 
 /** Size of the send fifo queue (in bytes) */
-#define CHAR_MAX_SEND_QUEUE             0x80
-#define CHAR_MAX_SEND_QUEUE_MASK        0x7f
+#ifdef RT_OS_DARWIN
+# define CHAR_MAX_SEND_QUEUE             0x400
+# define CHAR_MAX_SEND_QUEUE_MASK        0x3ff
+#else
+# define CHAR_MAX_SEND_QUEUE             0x80
+# define CHAR_MAX_SEND_QUEUE_MASK        0x7f
+#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -106,6 +111,10 @@ typedef struct DRVHOSTSERIAL
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     /** the device handle */
     RTFILE                      DeviceFile;
+# ifdef RT_OS_DARWIN
+    /** The device handle used for reading. */
+    RTFILE                      DeviceFileR;
+# endif
     /** The read end of the control pipe */
     RTFILE                      WakeupPipeR;
     /** The write end of the control pipe */
@@ -523,12 +532,10 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     fd_set WrSet;
                     FD_ZERO(&WrSet);
                     FD_SET(pThis->DeviceFile, &WrSet);
-                    //FD_SET(pThis->WakeupPipeR, &WrSet);
                     fd_set XcptSet;
                     FD_ZERO(&XcptSet);
                     FD_SET(pThis->DeviceFile, &XcptSet);
-                    //FD_SET(pThis->WakeupPipeR, &XcptSet);
-                    rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, NULL, &WrSet, &XcptSet, NULL);
+                    rc = select(pThis->DeviceFile + 1, NULL, &WrSet, &XcptSet, NULL);
                     /** @todo check rc? */
 
                     /* try write more */
@@ -699,17 +706,17 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 #if defined(RT_OS_DARWIN) /* poll is broken on x86 darwin, returns POLLNVAL. */
             fd_set RdSet;
             FD_ZERO(&RdSet);
-            FD_SET(pThis->DeviceFile, &RdSet);
+            FD_SET(pThis->DeviceFileR, &RdSet);
             FD_SET(pThis->WakeupPipeR, &RdSet);
             fd_set XcptSet;
             FD_ZERO(&XcptSet);
-            FD_SET(pThis->DeviceFile, &XcptSet);
+            FD_SET(pThis->DeviceFileR, &XcptSet);
             FD_SET(pThis->WakeupPipeR, &XcptSet);
 # if 1 /* it seems like this select is blocking the write... */
-            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, &RdSet, NULL, &XcptSet, NULL);
+            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFileR) + 1, &RdSet, NULL, &XcptSet, NULL);
 # else
             struct timeval tv = { 0, 1000 };
-            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, &RdSet, NULL, &XcptSet, &tv);
+            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFileR) + 1, &RdSet, NULL, &XcptSet, &tv);
 # endif
             if (rc == -1)
             {
@@ -741,7 +748,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             }
 
             /* read data from the serial port. */
-            rc = RTFileRead(pThis->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
+            rc = RTFileRead(pThis->DeviceFileR, abBuffer, sizeof(abBuffer), &cbRead);
             if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
@@ -979,7 +986,7 @@ ioctl_error:
         }
         if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
         {
-            PDMR3ThreadSleep(pThread, 1000); /* 1 sec */
+            PDMR3ThreadSleep(pThread, 500); /* 0.5 sec */
             continue;
         }
         pThis->fStatusLines = statusLines;
@@ -1208,6 +1215,9 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     pThis->DeviceFile  = NIL_RTFILE;
+# ifdef RT_OS_DARWIN
+    pThis->DeviceFileR = NIL_RTFILE;
+# endif
     pThis->WakeupPipeR = NIL_RTFILE;
     pThis->WakeupPipeW = NIL_RTFILE;
 #endif
@@ -1269,6 +1279,11 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 #else
 
     rc = RTFileOpen(&pThis->DeviceFile, pThis->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
+# ifdef RT_OS_DARWIN
+    if (RT_SUCCESS(rc))
+        rc = RTFileOpen(&pThis->DeviceFileR, pThis->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READ);
+# endif
+
 
 #endif
 
@@ -1300,6 +1315,9 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 
     fcntl(pThis->DeviceFile, F_SETFL, O_NONBLOCK);
+# ifdef RT_OS_DARWIN
+    fcntl(pThis->DeviceFileR, F_SETFL, O_NONBLOCK);
+# endif
     int aFDs[2];
     if (pipe(aFDs) != 0)
     {
@@ -1403,6 +1421,17 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
         pThis->WakeupPipeR = NIL_RTFILE;
     }
+# if defined(RT_OS_DARWIN)
+    if (pThis->DeviceFileR != NIL_RTFILE)
+    {
+        if (pThis->DeviceFile != pThis->DeviceFileR)
+        {
+            int rc = RTFileClose(pThis->DeviceFileR);
+            AssertRC(rc);
+        }
+        pThis->DeviceFileR = NIL_RTFILE;
+    }
+# endif
     if (pThis->DeviceFile != NIL_RTFILE)
     {
         int rc = RTFileClose(pThis->DeviceFile);
