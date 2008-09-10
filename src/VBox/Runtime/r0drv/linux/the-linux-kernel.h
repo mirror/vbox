@@ -187,7 +187,12 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #if defined(RT_ARCH_AMD64)
 # define MY_PAGE_KERNEL_EXEC    PAGE_KERNEL_EXEC
 #elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
-# define MY_PAGE_KERNEL_EXEC    __pgprot(cpu_has_pge ? _PAGE_KERNEL_EXEC | _PAGE_GLOBAL : _PAGE_KERNEL_EXEC)
+# ifdef __PAGE_KERNEL_EXEC
+   /* >= 2.6.27 */
+#  define MY_PAGE_KERNEL_EXEC   __pgprot(cpu_has_pge ? __PAGE_KERNEL_EXEC | _PAGE_GLOBAL : __PAGE_KERNEL_EXEC)
+# else
+#  define MY_PAGE_KERNEL_EXEC   __pgprot(cpu_has_pge ? _PAGE_KERNEL_EXEC | _PAGE_GLOBAL : _PAGE_KERNEL_EXEC)
+# endif
 #else
 # define MY_PAGE_KERNEL_EXEC    PAGE_KERNEL
 #endif
