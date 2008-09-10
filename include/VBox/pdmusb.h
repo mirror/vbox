@@ -684,6 +684,11 @@ typedef struct PDMUSBINS
  */
 DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
+    NOREF(pUsbIns);
+    NOREF(pszFile);
+    NOREF(iLine);
+    NOREF(pszFunction);
+    NOREF(pszFormat);
 #ifdef VBOX_STRICT
     int rc;
     va_list va;
