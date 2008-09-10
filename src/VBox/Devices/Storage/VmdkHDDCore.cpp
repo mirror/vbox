@@ -2123,12 +2123,15 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         rc = vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         goto out;
     }
+/* disabled the size check again as there are too many too short vmdks out there */
+#ifdef VBOX_WITH_VMDK_STRICT_SIZE_CHECK
     if (    cbExtentSize != RT_ALIGN_64(cbExtentSize, 512)
         &&  (pExtent->enmType != VMDKETYPE_FLAT || pExtent->cNominalSectors + pExtent->uSectorOffset > VMDK_BYTE2SECTOR(cbExtentSize)))
     {
         rc = vmdkError(pExtent->pImage, VERR_VDI_INVALID_HEADER, RT_SRC_POS, N_("VMDK: file size is not a multiple of 512 in '%s', file is truncated or otherwise garbled"), pExtent->pszFullname);
         goto out;
     }
+#endif /* VBOX_WITH_VMDK_STRICT_SIZE_CHECK */
     if (pExtent->enmType != VMDKETYPE_HOSTED_SPARSE)
         goto out;
 
