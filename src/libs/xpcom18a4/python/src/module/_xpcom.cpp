@@ -71,7 +71,25 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 #endif
 
 #ifdef VBOX_PYXPCOM
-#define MODULE_NAME "VBoxPython"
+# ifdef VBOX_PYXPCOM_VERSIONED
+#  if PY_VERSION_HEX >= 0x02080000
+#   define MODULE_NAME "VBoxPython2_8"
+#  elif PY_VERSION_HEX >= 0x02070000
+#   define MODULE_NAME "VBoxPython2_7"
+#  elif PY_VERSION_HEX >= 0x02060000
+#   define MODULE_NAME "VBoxPython2_6"
+#  elif PY_VERSION_HEX >= 0x02050000
+#   define MODULE_NAME "VBoxPython2_5"
+#  elif PY_VERSION_HEX >= 0x02040000
+#   define MODULE_NAME "VBoxPython2_4"
+#  elif PY_VERSION_HEX >= 0x02030000
+#   define MODULE_NAME "VBoxPython2_3"
+#  else
+#   error "Fix module versioning.
+#  endif
+# else
+#  define MODULE_NAME "VBoxPython"
+# endif
 #else
 #define MODULE_NAME "_xpcom"
 #endif
@@ -162,7 +180,7 @@ PyXPCOMMethod_GetGlobalServiceManager(PyObject *self, PyObject *args)
 
 	return PyXPCOMMethod_GetComponentManager(self, args);
 }
-		
+
 static PyObject *
 PyXPCOMMethod_XPTI_GetInterfaceInfoManager(PyObject *self, PyObject *args)
 {
@@ -207,9 +225,9 @@ PyXPCOMMethod_XPTC_InvokeByIndex(PyObject *self, PyObject *args)
 	// back the same pointer (eg, Python, following identity rules,
 	// will return the "original" gateway when QI'd for nsISupports)
 	if (!Py_nsISupports::InterfaceFromPyObject(
-			obIS, 
-			Py_nsIID_NULL, 
-			getter_AddRefs(pis), 
+			obIS,
+			Py_nsIID_NULL,
+			getter_AddRefs(pis),
 			PR_FALSE))
 		return NULL;
 
@@ -265,9 +283,9 @@ PyXPCOMMethod_UnwrapObject(PyObject *self, PyObject *args)
 	nsISupports *uob = NULL;
 	nsIInternalPython *iob = NULL;
 	PyObject *ret = NULL;
-	if (!Py_nsISupports::InterfaceFromPyObject(ob, 
-				NS_GET_IID(nsISupports), 
-				&uob, 
+	if (!Py_nsISupports::InterfaceFromPyObject(ob,
+				NS_GET_IID(nsISupports),
+				&uob,
 				PR_FALSE))
 		goto done;
 	if (NS_FAILED(uob->QueryInterface(NS_GET_IID(nsIInternalPython), reinterpret_cast<void **>(&iob)))) {
@@ -355,7 +373,7 @@ PyXPCOMMethod_GetProxyForObject(PyObject *self, PyObject *args)
 	nsresult rv_proxy;
 	nsCOMPtr<nsISupports> presult;
 	Py_BEGIN_ALLOW_THREADS;
-	nsCOMPtr<nsIProxyObjectManager> proxyMgr = 
+	nsCOMPtr<nsIProxyObjectManager> proxyMgr =
 	         do_GetService(kProxyObjectManagerCID, &rv_proxy);
 
 	if ( NS_SUCCEEDED(rv_proxy) ) {
@@ -403,9 +421,9 @@ PyXPCOMMethod_GetVariantValue(PyObject *self, PyObject *args)
 		return NULL;
 
 	nsCOMPtr<nsIVariant> var;
-	if (!Py_nsISupports::InterfaceFromPyObject(ob, 
-				NS_GET_IID(nsISupports), 
-				getter_AddRefs(var), 
+	if (!Py_nsISupports::InterfaceFromPyObject(ob,
+				NS_GET_IID(nsISupports),
+				getter_AddRefs(var),
 				PR_FALSE))
 		return PyErr_Format(PyExc_ValueError,
 				    "Object is not an nsIVariant (got %s)",
@@ -481,7 +499,7 @@ static struct PyMethodDef xpcom_methods[]=
 	{"XPTC_InvokeByIndex", PyXPCOMMethod_XPTC_InvokeByIndex, 1},
 	{"GetServiceManager", PyXPCOMMethod_GetServiceManager, 1},
 	{"GetGlobalServiceManager", PyXPCOMMethod_GetGlobalServiceManager, 1}, // deprecated
-	{"IID", PyXPCOMMethod_IID, 1}, // IID is wrong - deprecated - not just IID, but CID, etc. 
+	{"IID", PyXPCOMMethod_IID, 1}, // IID is wrong - deprecated - not just IID, but CID, etc.
 	{"ID", PyXPCOMMethod_IID, 1}, // This is the official name.
 	{"NS_ShutdownXPCOM", PyXPCOMMethod_NS_ShutdownXPCOM, 1},
 	{"WrapObject", PyXPCOMMethod_WrapObject, 1},
@@ -516,7 +534,7 @@ static struct PyMethodDef xpcom_methods[]=
 // The module init code.
 //
 extern "C" NS_EXPORT
-void 
+void
 init_xpcom() {
 	PyObject *oModule;
 
@@ -590,8 +608,28 @@ using namespace com;
 #include <iprt/stream.h>
 
 extern "C" NS_EXPORT
-void 
+void
+# ifdef VBOX_PYXPCOM_VERSIONED
+#  if PY_VERSION_HEX >= 0x02080000
+initVBoxPython2_8() {
+#  elif PY_VERSION_HEX >= 0x02070000
+initVBoxPython2_7() {
+#  elif PY_VERSION_HEX >= 0x02060000
+initVBoxPython2_6() {
+#  elif PY_VERSION_HEX >= 0x02050000
+initVBoxPython2_5() {
+#  elif PY_VERSION_HEX >= 0x02040000
+#   error "you must test VBOX_PYXPCOM_VERSIONED on 2.4"
 initVBoxPython() {
+#  elif PY_VERSION_HEX >= 0x02030000
+#   error "you must test VBOX_PYXPCOM_VERSIONED on 2.3"
+initVBoxPython() {
+#  else
+#   error "Fix module versioning.
+#  endif
+# else
+initVBoxPython() {
+# endif
   static bool s_vboxInited = false;
   if (!s_vboxInited) {
     int rc = 0;
@@ -609,7 +647,7 @@ initVBoxPython() {
     } else {
       rc = RTR3Init();
     }
-#endif 
+#endif
 
     rc = com::Initialize();
 
