@@ -432,6 +432,9 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         return VINF_SUCCESS;
 
 #ifdef RT_OS_WINDOWS
+    /* Make sure that the halt event sempahore is resetted. */
+    DWORD dwRet = WaitForSingleObject(pThis->hHaltEventSem, 0);
+
     HANDLE haWait[2];
     haWait[0] = pThis->hEventSend;
     haWait[1] = pThis->hHaltEventSem;
@@ -463,7 +466,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
             if (!WriteFile(pThis->hDeviceFile, &pThis->aSendQueue[pThis->iSendQueueTail], cbProcessed, &cbBytesWritten, &pThis->overlappedSend))
             {
-                DWORD dwRet = GetLastError();
+                dwRet = GetLastError();
                 if (dwRet == ERROR_IO_PENDING)
                 {
                     /*
@@ -471,7 +474,10 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                      */
                     dwRet = WaitForMultipleObjects(2, haWait, FALSE, INFINITE);
                     if (dwRet != WAIT_OBJECT_0)
+                    {
+                        AssertMsg(pThread->enmState != PDMTHREADSTATE_RUNNING, ("The halt event sempahore is set but the thread is still in running state\n"));
                         break;
+                    }
                 }
                 else
                     rc = RTErrConvertFromWin32(dwRet);
@@ -545,9 +551,12 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         return VINF_SUCCESS;
 
 #ifdef RT_OS_WINDOWS
+    /* Make sure that the halt event sempahore is resetted. */
+    DWORD dwRet = WaitForSingleObject(pThis->hHaltEventSem, 0)
+
     HANDLE ahWait[2];
-    ahWait[0] = pThis->hEventRecv;
-    ahWait[1] = pThis->hHaltEventSem;
+    haWait[0] = pThis->hEventRecv;
+    haWait[1] = pThis->hHaltEventSem;
 #endif
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
@@ -653,13 +662,14 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
             if (!WaitCommEvent(pThis->hDeviceFile, &dwEventMask, &pThis->overlappedRecv))
             {
-                DWORD dwRet = GetLastError();
+                dwRet = GetLastError();
                 if (dwRet == ERROR_IO_PENDING)
                 {
                     dwRet = WaitForMultipleObjects(2, ahWait, FALSE, INFINITE);
                     if (dwRet != WAIT_OBJECT_0)
                     {
                         /* notification to terminate */
+                        AssertMsg(pThread->enmState != PDMTHREADSTATE_RUNNING, ("The halt event sempahore is set but the thread is still in running state\n"));
                         break;
                     }
                 }
