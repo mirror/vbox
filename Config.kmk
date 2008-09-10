@@ -340,7 +340,7 @@ else
 # VBOX_WITH_64_BITS_GUESTS = 1
 endif
 # Enable SMP support in guests
-VBOX_WITH_SMP_GUESTS = 0
+##VBOX_WITH_SMP_GUESTS = 1
 # Enable the host/guest information service (aka guest properties).
 VBOX_WITH_GUEST_PROPS = 1
 # Enable performance API.
@@ -952,8 +952,8 @@ endif
 ifdef VBOX_WITH_64_BITS_GUESTS
  DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
-ifdef VBOX_WITH_SMP_GUESTS
- DEFS += VBOX_WITH_SMP_GUESTS
+if VBOX_WITH_SMP_GUESTS == 1
+## DEFS += VBOX_WITH_SMP_GUESTS
 endif
 ifdef VBOX_WITH_HARDENING
  DEFS += VBOX_WITH_HARDENING
