@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="fr">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -97,7 +98,7 @@
     <message>
         <location filename="../src/main.cpp" line="265"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
-        <translation>Le programme &lt;b&gt;%1&lt;/b&gt; nécessite QT% 2.x, QT %3 à été trouvé.</translation>
+        <translation>Le programme &lt;b&gt;%1&lt;/b&gt; nécessite Qt %2.x, Qt %3 à été trouvé.</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="269"/>
@@ -599,7 +600,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="210"/>
         <source>&amp;Revert to the current snapshot</source>
-        <translation>&amp;Retour sur l&apos; instantané actuel.</translation>
+        <translation>&amp;Retour sur l&apos;instantané actuel</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -1769,27 +1770,27 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Emplacement&nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Emplacement :&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Type du disque&nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Type du disque :&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Type de mémorisation&nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Type de mémorisation :&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Attaché à&nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Attaché à :&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Instantané&nbsp;:&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Instantané :&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1860,7 +1861,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Le chemin par défaut sera affiché quand vous acceptez les modification et réouvrez cette boîte de dialogue</translation>
+        <translation>Le chemin par défaut sera affiché quand vous acceptez les modification et réouvrez cette boîte de dialogue.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="216"/>
@@ -1870,7 +1871,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation>Utilisez l&apos;entrée &lt;b&gt;Autre...&lt;/b&gt; dans la liste pour sélectionner un chemin</translation>
+        <translation>Utilisez l&apos;entrée &lt;b&gt;Autre...&lt;/b&gt; dans la liste pour sélectionner un chemin.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="230"/>
@@ -1885,22 +1886,22 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="241"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation>Ouvre une boîte de dialogue pour sélectioner un autre répertoire</translation>
+        <translation>Ouvre une boîte de dialogue pour sélectioner un autre répertoire.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="244"/>
         <source>Resets the folder path to the default value.</source>
-        <translation>Remet le chemin du répertoire à la valeur par défaut</translation>
+        <translation>Remet le chemin du répertoire à la valeur par défaut.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="249"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation>Ouvre une boîte de dialogue pour sélectioner un autre fichier</translation>
+        <translation>Ouvre une boîte de dialogue pour sélectioner un autre fichier.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="252"/>
         <source>Resets the file path to the default value.</source>
-        <translation>Remet le chemin du fichier à la valeur par défaut</translation>
+        <translation>Remet le chemin du fichier à la valeur par défaut.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="260"/>
@@ -1971,17 +1972,17 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Ré&amp;pertoire disque dur par défaut</translation>
+        <translation>Ré&amp;pertoire disque dur par défaut:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation>Répertoire &amp;machine par défaut</translation>
+        <translation>Répertoire &amp;machine par défaut:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation>Bibiotheque d&apos;authentification V&amp;RDP par défaut</translation>
+        <translation>Bibliothèque d&apos;authentification V&amp;RDP par défaut:</translation>
     </message>
 </context>
 <context>
@@ -1989,7 +1990,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation>To&amp;uche hôte</translation>
+        <translation>To&amp;uche hôte:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
@@ -2046,7 +2047,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation>Langue de l&apos;interface</translation>
+        <translation>Langue de l&apos;interface:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
@@ -2094,7 +2095,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation>Tous les</translation>
+        <translation>Tous les:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
@@ -2104,7 +2105,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation>Vérification suivante</translation>
+        <translation>Vérification suivante:</translation>
     </message>
 </context>
 <context>
@@ -2998,49 +2999,49 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="1413"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ID fabricant&nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID fabricant : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1418"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ID produit&nbsp;: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID produit : %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1423"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Révision&nbsp;: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Révision : %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1428"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Produit&nbsp;: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Produit : %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1433"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Fabricant&nbsp;: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Fabricant : %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1438"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;No. de série&nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;No. de série : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1443"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Port&nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Port : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1450"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;État&nbsp;: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;État : %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1789"/>
@@ -3890,7 +3891,7 @@ et le bouton &lt;b&gt;Précédent&lt;/b&gt; pour retourner sur la page précéde
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="63"/>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant de création de disques virtuels !</translation>
+        <translation>Bienvenue sur l&apos;assistant de création de disques virtuels:</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -4107,7 +4108,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="63"/>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant nouvelle machine virtuelle !</translation>
+        <translation>Bienvenue sur l&apos;assistant nouvelle machine virtuelle:</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -4268,12 +4269,12 @@ boîte de dialogue &lt;b&gt;Préférences&lt;/b&gt; accessible sur le menu de la
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez une image disque dur qui sera utilisée comme disque dur de démarrage pour la machine virtuelle. Vous pouvez soit créer une nouvelle image en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou bien choisir une image existant dans la liste ou en cliquant sur le bouton &lt;b&gt;Existant&lt;/b&gt; (qui invoquera la boîte de dialogue Gestionnaire de disques virtuels).&lt;/p&gt;&lt;p&gt;Si vous nécéssitez une configuration disque plus complexe, vous pouvez sauter cette étape et attacher des disques dur plus tard en utilisant la boîte de dialogue Préférences.</translation>
+        <translation>&lt;p&gt;Choisissez une image disque dur qui sera utilisée comme disque dur de démarrage pour la machine virtuelle. Vous pouvez soit créer une nouvelle image en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou bien choisir une image existant dans la liste ou en cliquant sur le bouton &lt;b&gt;Existant&lt;/b&gt; (qui invoquera la boîte de dialogue Gestionnaire de disques virtuels).&lt;/p&gt;&lt;p&gt;Si vous nécéssitez une configuration disque plus complexe, vous pouvez sauter cette étape et attacher des disques dur plus tard en utilisant la boîte de dialogue Préférences.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1070"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants&nbsp;:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants :&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
@@ -4688,7 +4689,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2069"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle ! La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement :&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une erreur fatale s&apos;est produite pendant l&apos;exécution de la machine virtuelle: La machine virtuelle sera mise hors tension. Copier le message si vous désirer examiné celui ci ultérieurement :&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2081"/>
@@ -4760,7 +4761,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="923"/>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Échec de changement du répertoire des l&apos;instantanés de la machine virtuelle &lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Échec de changement du répertoire des instantanés de la machine virtuelle &lt;b&gt;%1&lt;/b&gt; vers &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5065,7 +5066,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1634"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante&nbsp:;&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante :&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1641"/>
@@ -5075,12 +5076,12 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode fenêtre en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;b&gt;touche hôte (&quot;Host&quot;)&lt;/b&gt; est actuellement définie comme &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode plein écran. Vous pouvez y accéder en actionnant &lt;b&gt;Host+Début&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;plein écran&lt;/b&gt;. Vous pouvez revenir au mode fenêtre en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;b&gt;touche hôte (&quot;Host&quot;)&lt;/b&gt; est actuellement définie comme &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode plein écran. Vous pouvez y accéder en actionnant &lt;b&gt;Host+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1881"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;affichage intégré dans le bureau&lt;/b&gt;. Vous pouvez revenir au mode fenêtre en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;b&gt;touche hôte (&quot;Host&quot;)&lt;/b&gt; est actuellement définie comme &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode intégré. Vous pouvez y accéder en actionnant &lt;b&gt;Host+Début&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle passera en mode &lt;b&gt;affichage intégré dans le bureau&lt;/b&gt;. Vous pouvez revenir au mode fenêtre en actionnant &lt;b&gt;%1&lt;/b&gt;. La &lt;b&gt;touche hôte (&quot;Host&quot;)&lt;/b&gt; est actuellement définie comme &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notez que la barre de menu principale n&apos;est pas affichée en mode intégré. Vous pouvez y accéder en actionnant &lt;b&gt;Host+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
@@ -5145,7 +5146,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1625"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant&nbsp;:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant :&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5193,7 +5194,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="66"/>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Bienvenue sur le formulaire d&apos;inscription VirtualBox !</translation>
+        <translation>Bienvenue sur le formulaire d&apos;inscription VirtualBox:</translation>
     </message>
     <message>
         <location filename="" line="7209057"/>
@@ -5284,7 +5285,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1123"/>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation>Gestionnaire de &amp;disque virtuel</translation>
+        <translation>Gestionnaire de &amp;disque virtuel...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1170"/>
@@ -5519,8 +5520,8 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Bienvenue sur VirtualBox&amp;nbsp;!&lt;/h3&gt;&lt;p&gt;La partie gauche de cette boîte de dialogue affiche la liste des machines virtuelles de votre ordinateur. Cette liste est vide car vous n&apos;avez pas encore créé des machines virtuelles.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pour créer une nouvelle machine virtuelle, activer le bouton &lt;b&gt;Nouveau&lt;/b&gt; situé dans le haut de cette boîte de dialogue.&lt;/p&gt;&lt;p&gt;Vous pouvez actionner la touche &lt;b&gt;F1&lt;/b&gt; afin d&apos;avoir une aide immédiate ou bien visiter &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pour obtenir les informations les plus récentes.&lt;/p&gt;</translation>
+        <source>&lt;h3&gt;Welcome to VirtualBox !&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;Bienvenue sur VirtualBox!&lt;/h3&gt;&lt;p&gt;La partie gauche de cette boîte de dialogue affiche la liste des machines virtuelles de votre ordinateur. Cette liste est vide car vous n&apos;avez pas encore créé des machines virtuelles.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pour créer une nouvelle machine virtuelle, activer le bouton &lt;b&gt;Nouveau&lt;/b&gt; situé dans le haut de cette boîte de dialogue.&lt;/p&gt;&lt;p&gt;Vous pouvez actionner la touche &lt;b&gt;F1&lt;/b&gt; afin d&apos;avoir une aide immédiate ou bien visiter &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pour obtenir les informations les plus récentes.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1188"/>
@@ -6431,12 +6432,12 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant&nbsp;:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible! Version &lt;b&gt;%1&lt;/b&gt; est disponible à &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version avec le lien direct suivant :&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante&nbsp:;&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La recherche d&apos;actualisations a échoué en raison de l&apos;erreur de réseau suivante :&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
@@ -6490,7 +6491,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="63"/>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant du premier lancement !</translation>
+        <translation>Bienvenue sur l&apos;assistant du premier lancement:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="307"/>
@@ -7418,7 +7419,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation>Pilote au&amp;dio hôte</translation>
+        <translation>Pilote au&amp;dio hôte:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
@@ -7428,7 +7429,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation>&amp;Contrôleur audio&nbsp;:</translation>
+        <translation>&amp;Contrôleur audio :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
@@ -8832,7 +8833,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="74"/>
         <source>&amp;Name:</source>
-        <translation>&amp;Nom&nbsp;:</translation>
+        <translation>&amp;Nom :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="87"/>
@@ -8842,7 +8843,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
         <source>OS &amp;Type:</source>
-        <translation>&amp;Type de système&nbsp;:</translation>
+        <translation>&amp;Type de système :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
@@ -8892,7 +8893,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="489"/>
         <source>Boo&amp;t Order:</source>
-        <translation>Ordre d&apos;amorça&amp;ge</translation>
+        <translation>Ordre d&apos;amorça&amp;ge:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="543"/>
@@ -8927,12 +8928,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>Extended Features:</source>
-        <translation>Paramètres étendus</translation>
+        <translation>Paramètres étendus:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="666"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;interface avancée de gestion et de configuration de l&apos;énergie (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!</translation>
+        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;interface avancée de gestion et de configuration de l&apos;énergie (ACPI). &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas ceci après l&apos;installation d&apos;un système d&apos;exploitation Windows:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="669"/>
@@ -8942,7 +8943,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="682"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;APIC entrée/sortie (IO-APIC), ce qui peut légèrement diminuer la performance de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows&amp;nbsp;!</translation>
+        <translation>Si cette fonction est cochée, la machine virtuelle supportera l&apos;APIC entrée/sortie (IO-APIC), ce qui peut légèrement diminuer la performance de la VM. &lt;b&gt;Note : &lt;/b&gt; ne désactivez pas ce paramètre après l&apos;installation d&apos;un système d&apos;exploitation Windows:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="685"/>
@@ -8962,7 +8963,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="714"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>Quand cette case est cochée, la fonction extension d'addresses physiques (PAE) du processeur hôte sera disponible pour la machine virtuelle.</translation>
+        <translation>Quand cette case est cochée, la fonction extension d&apos;addresses physiques (PAE) du processeur hôte sera disponible pour la machine virtuelle.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="717"/>
@@ -8972,7 +8973,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation>&amp;Presse-papiers partagé&nbsp;:</translation>
+        <translation>&amp;Presse-papiers partagé :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="749"/>
@@ -8987,12 +8988,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="789"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation>Type du contrôleur &amp;IDE&nbsp;:</translation>
+        <translation>Type du contrôleur &amp;IDE :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="802"/>
         <source>S&amp;napshot Folder:</source>
-        <translation>Répertoire i&apos;nstantanés&nbsp;:</translation>
+        <translation>Répertoire i&amp;nstantanés :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="839"/>
@@ -9022,7 +9023,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>Runtime:</source>
-        <translation>Execution&nbsp;:</translation>
+        <translation>Exécution :</translation>
     </message>
 </context>
 <context>
@@ -9113,7 +9114,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation>Type d&apos;a&amp;daptateur&nbsp;:</translation>
+        <translation>Type d&apos;a&amp;daptateur :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
@@ -9123,7 +9124,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation>&amp;Attaché à&nbsp;:</translation>
+        <translation>&amp;Attaché à :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
@@ -9133,7 +9134,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>&amp;Network Name:</source>
-        <translation>&amp;Nom du réseau&nbsp;:</translation>
+        <translation>&amp;Nom du réseau :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
@@ -9143,7 +9144,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation>Adresse &amp;MAC&nbsp;:</translation>
+        <translation>Adresse &amp;MAC :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
@@ -9173,7 +9174,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
-        <translation>Nom de l&apos;&amp;interface&nbsp;:</translation>
+        <translation>Nom de l&apos;&amp;interface :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
@@ -9183,7 +9184,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
-        <translation>Application d&apos;in&amp;stallation</translation>
+        <translation>Application d&apos;in&amp;stallation:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
@@ -9198,7 +9199,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="258"/>
         <source>&amp;Terminate Application:</source>
-        <translation>Application de désins&amp;tallation</translation>
+        <translation>Application de désins&amp;tallation:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="277"/>
@@ -9250,7 +9251,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation>Port &amp;numéro&nbsp;:</translation>
+        <translation>Port &amp;numéro :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
@@ -9260,7 +9261,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ&nbsp;:</translation>
+        <translation>&amp;IRQ :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
@@ -9270,7 +9271,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation>Po&amp;rt I/O&nbsp;:</translation>
+        <translation>Po&amp;rt I/O :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
@@ -9280,7 +9281,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation>Chemin du &amp;port&nbsp;:</translation>
+        <translation>Chemin du &amp;port :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
@@ -9400,12 +9401,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation>Chemin du répertoire&nbsp;:</translation>
+        <translation>Chemin du répertoire :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation>Nom du répertoire&nbsp;:</translation>
+        <translation>Nom du répertoire :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
@@ -9449,7 +9450,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation>Port &amp;Numéro&nbsp;:</translation>
+        <translation>Port &amp;Numéro :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
@@ -9459,7 +9460,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation>&amp;IRQ&nbsp;:</translation>
+        <translation>&amp;IRQ :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
@@ -9468,8 +9469,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
-        <source>I/O Po&amp;rt:</source>
-        <translation>Po&amp;rt I/O&nbsp;:</translation>
+        <source>I/O Po&amp;rt :</source>
+        <translation>Po&amp;rt I/O:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
@@ -9479,7 +9480,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation>&amp;Mode port&nbsp;:</translation>
+        <translation>&amp;Mode port :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
@@ -9499,7 +9500,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation>Chemin &amp;port&nbsp;:</translation>
+        <translation>Chemin &amp;port :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
@@ -9652,7 +9653,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
-        <translation>&amp;Nom&nbsp;:</translation>
+        <translation>&amp;Nom :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
@@ -9662,7 +9663,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation>ID &amp;fabricant&nbsp;:</translation>
+        <translation>ID &amp;fabricant :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
@@ -9672,7 +9673,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation>ID &amp;produit&nbsp;:</translation>
+        <translation>ID &amp;produit :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
@@ -9682,7 +9683,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation>&amp;Révision&nbsp;:</translation>
+        <translation>&amp;Révision :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
@@ -9692,7 +9693,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
         <source>&amp;Manufacturer:</source>
-        <translation>&amp;Fabricant&nbsp;:</translation>
+        <translation>&amp;Fabricant :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
@@ -9702,7 +9703,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
         <source>Pro&amp;duct:</source>
-        <translation>Pro&amp;duit&nbsp;:</translation>
+        <translation>Pro&amp;duit :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
@@ -9712,7 +9713,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation>No. de &amp;série&nbsp;:</translation>
+        <translation>No. de &amp;série :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
@@ -9722,7 +9723,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
         <source>Por&amp;t:</source>
-        <translation>Por&amp;t&nbsp;:</translation>
+        <translation>Por&amp;t :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
@@ -9732,7 +9733,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation>À distanc&amp;e&nbsp;:</translation>
+        <translation>À distanc&amp;e :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
@@ -9742,7 +9743,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
         <source>&amp;Action:</source>
-        <translation>&amp;Action&nbsp;:</translation>
+        <translation>&amp;Action :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
@@ -9770,7 +9771,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation>&amp;Port serveur&nbsp;:</translation>
+        <translation>&amp;Port serveur :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
@@ -9780,7 +9781,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation>&amp;Methode d&apos;authentification&nbsp;:</translation>
+        <translation>&amp;Méthode d&apos;authentification :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
@@ -9790,7 +9791,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation>&amp;Timeout authentification&nbsp;:</translation>
+        <translation>&amp;Timeout authentification :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
