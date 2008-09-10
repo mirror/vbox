@@ -1340,7 +1340,7 @@ VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
 VBoxPython_NAME.darwin = VBoxPython2_3
 VBoxPython_CFLAGS.darwin   = $(VBOX_PYTHON_FRAMEWORK)
 VBoxPython_CXXFLAGS.darwin = $(VBOX_PYTHON_FRAMEWORK)
-VBoxPython_LDFLAGS.darwin  = $(VBOX_PYTHON_FRAMEWORK) -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+VBoxPython_LDFLAGS.darwin  = $(VBOX_PYTHON_FRAMEWORK)
 VBoxPython_INCS = \
 	python/src \
 	$(VBOX_PATH_PYTHON_INC)
