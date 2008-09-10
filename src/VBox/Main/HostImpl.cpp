@@ -572,7 +572,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         SolarisNICMap.insert(NICPair("e1000g", "Intel PRO/1000 Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("elx", "3COM EtherLink III Ethernet"));
         SolarisNICMap.insert(NICPair("elxl", "3COM Ethernet"));
-        SolarisNICMap.insert(NICPair("elxl", "eri Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("eri", "eri Fast Ethernet"));
         SolarisNICMap.insert(NICPair("ge", "GEM Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("hme", "SUNW,hme Fast-Ethernet"));
         SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
