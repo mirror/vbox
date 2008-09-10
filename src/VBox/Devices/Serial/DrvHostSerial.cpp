@@ -831,7 +831,7 @@ ioctl_error:
                                        pThis->pszDevicePath, RTErrConvertFromErrno(errno));
             break;
         }
-        if ((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck)
+        if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
         {
             PDMR3ThreadSleep(pThread, 1000); /* 1 sec */
             continue;
