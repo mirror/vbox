@@ -4013,7 +4013,7 @@ QList< QPair<QString, QString> > VBoxGlobal::HDDBackends()
      QStringList filterList;
      QList< QPair<QString, QString> > backendPropList;
      /* Ask for all supported backends */
-     rc = VDBackendInfo (100, aVDInfo, &cEntries);
+     rc = VDBackendInfo (RT_ELEMENTS(aVDInfo), aVDInfo, &cEntries);
      if (VBOX_SUCCESS (rc))
      {
          for (unsigned i=0; i < cEntries; i++)
