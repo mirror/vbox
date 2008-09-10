@@ -45,7 +45,11 @@
 # include <fcntl.h>
 # include <string.h>
 # include <unistd.h>
-# include <sys/poll.h>
+# ifdef RT_OS_DARWIN
+#  include <sys/select.h>
+# else
+#  include <sys/poll.h>
+# endif
 # include <sys/ioctl.h>
 # include <pthread.h>
 # include <sys/signal.h>
@@ -535,14 +539,15 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
     uint8_t *pbBuffer = NULL;
     size_t cbRemaining = 0; /* start by reading host data */
     int rc = VINF_SUCCESS;
+    int rcThread = VINF_SUCCESS;
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
 #ifdef RT_OS_WINDOWS
-    HANDLE haWait[2];
-    haWait[0] = pThis->hEventRecv;
-    haWait[1] = pThis->hHaltEventSem;
+    HANDLE ahWait[2];
+    ahWait[0] = pThis->hEventRecv;
+    ahWait[1] = pThis->hHaltEventSem;
 #endif
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
@@ -551,7 +556,55 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         {
             /* Get a block of data from the host serial device. */
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) /* poll is broken on x86 darwin, returns POLLNVAL. */
+            fdset RdSet;
+            FDSET_ZERO(&RdSet);
+            FDSET_SET(pThis->DeviceFile, &RdSet);
+            FDSET_SET(pThis->WakeupPipeR, &RdSet);
+            fdset XcptSet;
+            FDSET_ZERO(&XcptSet);
+            FDSET_SET(pThis->DeviceFile, &XcptSet);
+            FDSET_SET(pThis->WakeupPipeR, &XcptSet);
+            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, &RdSet, NULL, &XcptSet, NULL);
+            if (rc == -1)
+            {
+                int err = errno;
+                rcThread = RTErrConvertFromErrno(err);
+                LogRel(("HostSerial#%d: select failed with errno=%d / %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, err, rcThread));
+                break;
+            }
+
+            /* this might have changed in the meantime */
+            if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+                break;
+            if (rc == 0)
+                continue;
+
+            /* drain the wakeup pipe */
+            if (   FDSET_ISSET(pThis->WakeupPipeR, &RdSet)
+                || FDSET_ISSET(pThis->WakeupPipeR, &XcptSet))
+            {
+                rc = RTFileRead(pThis->WakeupPipeR, abBuffer, 1, &cbRead);
+                if (RT_FAILURE(rc))
+                {
+                    LogRel(("HostSerial#%d: draining the wakekup pipe failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                    rcThread = rc;
+                    break;
+                }
+                continue;
+            }
+
+            /* read data from the serial port. */
+            rc = RTFileRead(pThis->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("HostSerial#%d: Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                rcThread = rc;
+                break;
+            }
+            cbRemaining = cbRead;
+
+#elif defined(RT_OS_LINUX)
 
             size_t cbRead;
             struct pollfd aFDs[2];
@@ -564,7 +617,9 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             rc = poll(aFDs, RT_ELEMENTS(aFDs), -1);
             if (rc < 0)
             {
-                /* poll failed for whatever reason */
+                int err = errno;
+                rcThread = RTErrConvertFromErrno(err);
+                LogRel(("HostSerial#%d: poll failed with errno=%d / %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, err, rcThread));
                 break;
             }
             /* this might have changed in the meantime */
@@ -575,15 +630,14 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 if (aFDs[1].revents & (POLLHUP | POLLERR | POLLNVAL))
                     break;
                 /* notification to terminate -- drain the pipe */
-                char ch;
-                size_t cbRead;
-                RTFileRead(pThis->WakeupPipeR, &ch, 1, &cbRead);
+                RTFileRead(pThis->WakeupPipeR, &abBuffer, 1, &cbRead);
                 continue;
             }
             rc = RTFileRead(pThis->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
             if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                rcThread = rc;
                 break;
             }
             cbRemaining = cbRead;
@@ -601,7 +655,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 DWORD dwRet = GetLastError();
                 if (dwRet == ERROR_IO_PENDING)
                 {
-                    dwRet = WaitForMultipleObjects(2, haWait, FALSE, INFINITE);
+                    dwRet = WaitForMultipleObjects(2, ahWait, FALSE, INFINITE);
                     if (dwRet != WAIT_OBJECT_0)
                     {
                         /* notification to terminate */
@@ -610,7 +664,8 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 }
                 else
                 {
-                    LogRel(("HostSerial#%d: Wait failed with error %Rrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(dwRet)));
+                    rcThread = RTErrConvertFromWin32(dwRet);
+                    LogRel(("HostSerial#%d: Wait failed with error %Rrc; terminating the worker thread.\n", pDrvIns->iInstance, rcThread));
                     break;
                 }
             }
@@ -623,7 +678,8 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             {
                 if (!ReadFile(pThis->hDeviceFile, abBuffer, sizeof(abBuffer), &dwNumberOfBytesTransferred, &pThis->overlappedRecv))
                 {
-                    LogRel(("HostSerial#%d: Read failed with error %Rrc; terminating the worker thread.\n", pDrvIns->iInstance, RTErrConvertFromWin32(GetLastError())));
+                    rcThread = RTErrConvertFromWin32(GetLastError());
+                    LogRel(("HostSerial#%d: Read failed with error %Rrc; terminating the worker thread.\n", pDrvIns->iInstance, rcThread));
                     break;
                 }
                 cbRemaining = dwNumberOfBytesTransferred;
@@ -684,12 +740,13 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             else
             {
                 LogRel(("HostSerial#%d: NotifyRead failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
+                rcThread = rc;
                 break;
             }
         }
     }
 
-    return VINF_SUCCESS;
+    return rcThread;
 }
 
 /**
