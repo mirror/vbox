@@ -778,6 +778,7 @@ ioctl_error:
             PDMR3ThreadSleep(pThread, 1000); /* 1 sec */
             continue;
         }
+        pThis->fStatusLines = statusLines;
 # endif /* !RT_OS_LINUX */
 
         if (statusLines & TIOCM_CAR)
