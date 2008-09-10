@@ -180,7 +180,7 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
         char szSharedLibPath[RTPATH_MAX];
         char *pszPluginName;
 
-        rc = RTPathSharedLibs(szSharedLibPath, sizeof(szSharedLibPath));
+        rc = RTPathAppPrivateArch(szSharedLibPath, sizeof(szSharedLibPath));
         if (RT_FAILURE(rc))
             return rc;
 
@@ -666,7 +666,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
 
         /* Then enumerate plugin backends. */
         char szPath[RTPATH_MAX];
-        rc = RTPathSharedLibs(szPath, sizeof(szPath));
+        rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
         if (RT_FAILURE(rc))
             break;
 
@@ -685,16 +685,16 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
         if (RT_FAILURE(rc))
             break;
 
-        PRTDIRENTRY pPluginDirEntry = NULL;
+        PRTDIRENTRYEX pPluginDirEntry = NULL;
         unsigned cbPluginDirEntry = sizeof(RTDIRENTRY);
-        pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(sizeof(RTDIRENTRY));
+        pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRY));
         if (!pPluginDirEntry)
         {
             rc = VERR_NO_MEMORY;
             break;
         }
 
-        while ((rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry)) != VERR_NO_MORE_FILES)
+        while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING)) != VERR_NO_MORE_FILES)
         {
             RTLDRMOD hPlugin = NIL_RTLDRMOD;
             PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
@@ -705,9 +705,9 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
             {
                 /* allocate new buffer. */
                 RTMemFree(pPluginDirEntry);
-                pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(cbPluginDirEntry);
+                pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
                 /* Retry. */
-                rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry);
+                rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -715,7 +715,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                 break;
 
             /* We got the new entry. */
-            if (pPluginDirEntry->enmType != RTDIRENTRYTYPE_FILE)
+            if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
                 continue;
 
             /* Prepend the path to the libraries. */
@@ -951,7 +951,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
 
         /* Then check if plugin backends support this file format. */
         char szPath[RTPATH_MAX];
-        rc = RTPathSharedLibs(szPath, sizeof(szPath));
+        rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
         if (RT_FAILURE(rc))
             break;
 
@@ -970,16 +970,16 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
         if (RT_FAILURE(rc))
             break;
 
-        PRTDIRENTRY pPluginDirEntry = NULL;
+        PRTDIRENTRYEX pPluginDirEntry = NULL;
         unsigned cbPluginDirEntry = sizeof(RTDIRENTRY);
-        pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(sizeof(RTDIRENTRY));
+        pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRY));
         if (!pPluginDirEntry)
         {
             rc = VERR_NO_MEMORY;
             break;
         }
 
-        while ((rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry)) != VERR_NO_MORE_FILES)
+        while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING)) != VERR_NO_MORE_FILES)
         {
             RTLDRMOD hPlugin = NIL_RTLDRMOD;
             PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
@@ -990,9 +990,9 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
             {
                 /* allocate new buffer. */
                 RTMemFree(pPluginDirEntry);
-                pPluginDirEntry = (PRTDIRENTRY)RTMemAllocZ(cbPluginDirEntry);
+                pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
                 /* Retry. */
-                rc = RTDirRead(pPluginDir, pPluginDirEntry, &cbPluginDirEntry);
+                rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -1000,7 +1000,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                 break;
 
             /* We got the new entry. */
-            if (pPluginDirEntry->enmType != RTDIRENTRYTYPE_FILE)
+            if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
                 continue;
 
             /* Prepend the path to the libraries. */
