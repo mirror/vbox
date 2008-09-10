@@ -1391,6 +1391,7 @@ DLLS += VBoxPython2_5
 VBoxPython2_5_EXTENDS = VBoxPython
 VBoxPython2_5_TEMPLATE = XPCOMOSX105
 VBoxPython2_5_NAME.darwin = VBoxPython2_5
+VBoxPython2_5_DEFS = VBOX_PYXPCOM_VERSIONED $(VBoxPython_DEFS)
 VBoxPython2_5_INCS = \
 	python/src \
 	$(VBOX_PATH_MACOSX_SDK_10_5)/System/Library/Frameworks/Python.framework/Headers
