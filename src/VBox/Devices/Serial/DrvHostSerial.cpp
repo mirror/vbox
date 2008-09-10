@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * VBox stream I/O devices: Host serial driver
  *
@@ -557,14 +557,14 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             /* Get a block of data from the host serial device. */
 
 #if defined(RT_OS_DARWIN) /* poll is broken on x86 darwin, returns POLLNVAL. */
-            fdset RdSet;
-            FDSET_ZERO(&RdSet);
-            FDSET_SET(pThis->DeviceFile, &RdSet);
-            FDSET_SET(pThis->WakeupPipeR, &RdSet);
-            fdset XcptSet;
-            FDSET_ZERO(&XcptSet);
-            FDSET_SET(pThis->DeviceFile, &XcptSet);
-            FDSET_SET(pThis->WakeupPipeR, &XcptSet);
+            fd_set RdSet;
+            FD_ZERO(&RdSet);
+            FD_SET(pThis->DeviceFile, &RdSet);
+            FD_SET(pThis->WakeupPipeR, &RdSet);
+            fd_set XcptSet;
+            FD_ZERO(&XcptSet);
+            FD_SET(pThis->DeviceFile, &XcptSet);
+            FD_SET(pThis->WakeupPipeR, &XcptSet);
             rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, &RdSet, NULL, &XcptSet, NULL);
             if (rc == -1)
             {
@@ -581,8 +581,9 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 continue;
 
             /* drain the wakeup pipe */
-            if (   FDSET_ISSET(pThis->WakeupPipeR, &RdSet)
-                || FDSET_ISSET(pThis->WakeupPipeR, &XcptSet))
+            size_t cbRead;
+            if (   FD_ISSET(pThis->WakeupPipeR, &RdSet)
+                || FD_ISSET(pThis->WakeupPipeR, &XcptSet))
             {
                 rc = RTFileRead(pThis->WakeupPipeR, abBuffer, 1, &cbRead);
                 if (RT_FAILURE(rc))
