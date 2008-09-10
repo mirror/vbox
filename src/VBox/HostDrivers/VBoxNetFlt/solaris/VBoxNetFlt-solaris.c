@@ -80,7 +80,6 @@
 
 /** Dynamic module binding specific oddities. */
 #define VBOXNETFLT_IFNAME_LEN           LIFNAMSIZ + 1
-#define VBOXNETFLT_MODE_REQ_MAGIC       0xacce55ed
 
 
 /*******************************************************************************
@@ -323,6 +322,7 @@ static int vboxNetFltSolarisPhysAddrReq(queue_t *pQueue);
 static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pPhysAddrAckMsg);
 
 static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mblk_t **ppRawMsg);
+static int vboxNetFltSolarisRawToUnitData(mblk_t *pMsg, mblk_t **ppDlpiMsg);
 
 static mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst);
 static unsigned vboxNetFltSolarisMBlkCalcSGSegs(PVBOXNETFLTINS pThis, mblk_t *pMsg);
@@ -859,17 +859,9 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                     struct iocblk *pIOC = (struct iocblk *)pMsg->b_rptr;
                     if (pIOC->ioc_id == pStream->ModeReqId)
                     {
-                        pStream->ModeReqId = VBOXNETFLT_MODE_REQ_MAGIC;
                         pStream->fRawMode = !pStream->fRawMode;
-
-                        /*
-                         * Somehow raw mode is turned off?? This should never really happen...
-                         */
-                        if (pStream->fRawMode == false)
-                        {
-                            LogFlow((DEVICE_NAME ":re-requesting raw mode!\n"));
-                            vboxNetFltSolarisSetRawMode(pQueue);
-                        }
+                        LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Mode acknowledgement. RawMode is %s\n",
+                                pStream->fRawMode ? "ON" : "OFF"));
 
                         freemsg(pMsg);
                         fSendUpstream = false;
@@ -1047,7 +1039,6 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
                              */
                             miocack(pQueue, pMsg, msgsize(pMsg->b_cont), EINVAL);
                             LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: Fast path request acknowledged.\n"));
-                            LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut: ============================================\n"));
                         }
                     }
                     break;
@@ -1706,44 +1697,18 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                         rc = vboxNetFltSolarisRelink(pVNodeUDP, &Interface, IpMuxFd, ArpMuxFd);
                                         if (RT_SUCCESS(rc))
                                         {
-                                            bool fRawModeOk = true;
-#if 0
-                                            bool fRawModeOk = !fAttach;   /* Raw mode check is always ok during the detach case */
-                                            if (fAttach)
-                                            {
-                                                /*
-                                                 * Check if our raw mode request was successful (only in the IP stream).
-                                                 */
-                                                vboxnetflt_stream_t *pStream = pThis->u.s.pvStream;
-                                                if (RT_LIKELY(pStream))
-                                                {
-                                                    if (   pStream->fRawMode == true
-                                                        && pStream->ModeReqId == VBOXNETFLT_MODE_REQ_MAGIC)
-                                                    {
-                                                        pStream->ModeReqId = 0;
-                                                        fRawModeOk = true;
-                                                    }
-                                                }
-                                            }
-#endif
+                                            /*
+                                             * Close the devices ONLY during the return from function case; otherwise
+                                             * we end up close twice which is an instant kernel panic.
+                                             */
+                                            vboxNetFltSolarisCloseDev(pVNodeUDPHeld, pUserUDP);
+                                            ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
+                                            ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
 
-                                            if (fRawModeOk)
-                                            {
-                                                /*
-                                                 * Close the devices ONLY during the return from function case; otherwise
-                                                 * we end up close twice which is an instant kernel panic.
-                                                 */
-                                                vboxNetFltSolarisCloseDev(pVNodeUDPHeld, pUserUDP);
-                                                ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
-                                                ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
-
-                                                LogFlow((DEVICE_NAME ":vboxNetFltSolarisModSetup: Success! %s %s@(Ip:%d Arp:%d) "
-                                                        "%s interface %s\n", fAttach ? "Injected" : "Ejected", StrMod.mod_name,
-                                                        StrMod.pos, ArpStrMod.pos, fAttach ? "to" : "from", pThis->szName));
-                                                return VINF_SUCCESS;
-                                            }
-                                            else
-                                                LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: Raw mode request failed.\n"));
+                                            LogFlow((DEVICE_NAME ":vboxNetFltSolarisModSetup: Success! %s %s@(Ip:%d Arp:%d) "
+                                                    "%s interface %s\n", fAttach ? "Injected" : "Ejected", StrMod.mod_name,
+                                                    StrMod.pos, ArpStrMod.pos, fAttach ? "to" : "from", pThis->szName));
+                                            return VINF_SUCCESS;
                                         }
                                         else
                                         {
