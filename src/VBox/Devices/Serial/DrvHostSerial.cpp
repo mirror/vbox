@@ -131,9 +131,9 @@ typedef struct DRVHOSTSERIAL
 #endif
 
     /** Internal send FIFO queue */
-    uint8_t                     aSendQueue[CHAR_MAX_SEND_QUEUE];
-    uint32_t                    iSendQueueHead;
-    uint32_t                    iSendQueueTail;
+    uint8_t volatile            aSendQueue[CHAR_MAX_SEND_QUEUE];
+    uint32_t volatile           iSendQueueHead;
+    uint32_t volatile           iSendQueueTail;
 
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
@@ -181,15 +181,37 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
-    for (uint32_t i=0;i<cbWrite;i++)
+    for (uint32_t i = 0; i < cbWrite; i++)
     {
-        uint32_t idx = pThis->iSendQueueHead;
+#ifdef RT_OS_DARWIN /* don't wanna break the others here. */
+        uint32_t iHead = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
+        uint32_t iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail);
+        int32_t  cbAvail = iTail > iHead
+                         ? iHead + CHAR_MAX_SEND_QUEUE - iTail - 1
+                         : CHAR_MAX_SEND_QUEUE - (iHead - iTail) - 1;
+        if (cbAvail <= 0)
+        {
+            Log(("%s: dropping %d chars (cbAvail=%d iHead=%d iTail=%d)\n", __FUNCTION__, cbWrite - i , cbAvial, iHead, iTail));
+            break;
+        }
+
+        pThis->aSendQueue[iHead] = pbBuffer[i];
+        STAM_COUNTER_INC(&pThis->StatBytesWritten);
+        ASMAtomicWriteU32(&pThis->iSendQueueHead, (iHead + 1) & CHAR_MAX_SEND_QUEUE_MASK);
+        if (cbAvail < CHAR_MAX_SEND_QUEUE / 4)
+        {
+            RTSemEventSignal(pThis->SendSem);
+            RTThreadYield();
+        }
+#else
+        uint32_t idx = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
 
         pThis->aSendQueue[idx] = pbBuffer[i];
         idx = (idx + 1) & CHAR_MAX_SEND_QUEUE_MASK;
 
         STAM_COUNTER_INC(&pThis->StatBytesWritten);
-        ASMAtomicXchgU32(&pThis->iSendQueueHead, idx);
+        ASMAtomicWriteU32(&pThis->iSendQueueHead, idx);
+#endif
     }
     RTSemEventSignal(pThis->SendSem);
     return VINF_SUCCESS;
@@ -449,14 +471,18 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         /*
          * Write the character to the host device.
          */
+        uint32_t iTail;
         while (   pThread->enmState == PDMTHREADSTATE_RUNNING
-               && pThis->iSendQueueTail != pThis->iSendQueueHead)
+               && (iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail)) != ASMAtomicUoReadU32(&pThis->iSendQueueHead))
         {
+            /** @todo process more than one byte? */
             unsigned cbProcessed = 1;
+            uint8_t abBuf[1];
+            abBuf[0] = pThis->aSendQueue[iTail];
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 
-            rc = RTFileWrite(pThis->DeviceFile, &pThis->aSendQueue[pThis->iSendQueueTail], cbProcessed, NULL);
+            rc = RTFileWrite(pThis->DeviceFile, abBuf, cbProcessed, NULL);
 
 #elif defined(RT_OS_WINDOWS)
 
@@ -464,7 +490,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             memset(&pThis->overlappedSend, 0, sizeof(pThis->overlappedSend));
             pThis->overlappedSend.hEvent = pThis->hEventSend;
 
-            if (!WriteFile(pThis->hDeviceFile, &pThis->aSendQueue[pThis->iSendQueueTail], cbProcessed, &cbBytesWritten, &pThis->overlappedSend))
+            if (!WriteFile(pThis->hDeviceFile, abBuf, cbProcessed, &cbBytesWritten, &pThis->overlappedSend))
             {
                 dwRet = GetLastError();
                 if (dwRet == ERROR_IO_PENDING)
@@ -487,14 +513,13 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
             if (RT_SUCCESS(rc))
             {
-                Assert(cbProcessed);
-                pThis->iSendQueueTail++;
-                pThis->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
+                Assert(cbProcessed == 1);
+                ASMAtomicWriteU32(&pThis->iSendQueueTail, (iTail + 1) & CHAR_MAX_SEND_QUEUE_MASK);
             }
             else if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
-                return VINF_SUCCESS;
+                return rc;
             }
         }
     }
