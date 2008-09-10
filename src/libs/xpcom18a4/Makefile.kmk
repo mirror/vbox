@@ -1351,7 +1351,10 @@ VBoxPython_TEMPLATE = XPCOM
 VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
                   VBOX_PYXPCOM VBOX_WITH_XPCOM
 VBoxPython_NAME.darwin = VBoxPython2_3
-VBoxPython_DLLSUFF.darwin = .so
+ifeq ($(KBUILD_TARGET),darwin)
+ ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
+ VBoxPython_DLLSUFF = .so
+endif
 VBoxPython_CFLAGS.darwin   = $(VBOX_PYTHON_FRAMEWORK)
 VBoxPython_CXXFLAGS.darwin = $(VBOX_PYTHON_FRAMEWORK)
 VBoxPython_LDFLAGS.darwin  = $(VBOX_PYTHON_FRAMEWORK)
