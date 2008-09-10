@@ -138,6 +138,11 @@ typedef struct DRVHOSTSERIAL
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
     STAMCOUNTER                 StatBytesWritten;
+#ifdef RT_OS_DARWIN
+    /** The number of bytes we've dropped because the send queue
+     * was full. */
+    STAMCOUNTER                 StatSendOverflows;
+#endif
 } DRVHOSTSERIAL, *PDRVHOSTSERIAL;
 
 
@@ -187,11 +192,15 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
         uint32_t iHead = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
         uint32_t iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail);
         int32_t  cbAvail = iTail > iHead
-                         ? iHead + CHAR_MAX_SEND_QUEUE - iTail - 1
+                         ? iTail - iHead - 1
                          : CHAR_MAX_SEND_QUEUE - (iHead - iTail) - 1;
         if (cbAvail <= 0)
         {
+#ifdef DEBUG
+            uint64_t volatile u64Now = RTTimeNanoTS(); NOREF(u64Now);
+#endif
             Log(("%s: dropping %d chars (cbAvail=%d iHead=%d iTail=%d)\n", __FUNCTION__, cbWrite - i , cbAvail, iHead, iTail));
+            STAM_COUNTER_INC(&pThis->StatSendOverflows);
             break;
         }
 
@@ -203,7 +212,7 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
             RTSemEventSignal(pThis->SendSem);
             RTThreadYield();
         }
-#else
+#else /* old code */
         uint32_t idx = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
 
         pThis->aSendQueue[idx] = pbBuffer[i];
@@ -211,7 +220,7 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
 
         STAM_COUNTER_INC(&pThis->StatBytesWritten);
         ASMAtomicWriteU32(&pThis->iSendQueueHead, idx);
-#endif
+#endif /* old code */
     }
     RTSemEventSignal(pThis->SendSem);
     return VINF_SUCCESS;
@@ -471,6 +480,102 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         /*
          * Write the character to the host device.
          */
+#ifdef RT_OS_DARWIN
+        while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+        {
+            /* copy the send queue so we get a linear buffer with the maximal size. */
+            uint8_t  abBuf[sizeof(pThis->aSendQueue)];
+            uint32_t cb = 0;
+            uint32_t iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail);
+            uint32_t iHead = ASMAtomicUoReadU32(&pThis->iSendQueueHead);
+            if (iTail == iHead)
+                break;
+            do
+            {
+                abBuf[cb++] = pThis->aSendQueue[iTail];
+                iTail = (iTail + 1) & CHAR_MAX_SEND_QUEUE_MASK;
+            } while (iTail != iHead);
+
+            ASMAtomicWriteU32(&pThis->iSendQueueTail, iTail);
+
+            /* write it. */
+#ifdef DEBUG
+            uint64_t volatile u64Now = RTTimeNanoTS(); NOREF(u64Now);
+#endif
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
+
+            size_t cbWritten;
+            rc = RTFileWrite(pThis->DeviceFile, abBuf, cb, &cbWritten);
+            if (rc == VERR_TRY_AGAIN)
+                cbWritten = 0;
+            if (cbWritten < cb && (RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN))
+            {
+                /* ok, block till the device is ready for more (O_NONBLOCK) effect. */
+                rc = VINF_SUCCESS;
+                uint8_t const *pbSrc = &abBuf[0];
+                while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+                {
+                    /* advance */
+                    cb -= cbWritten;
+                    pbSrc += cbWritten;
+
+                    /* wait */
+                    fd_set WrSet;
+                    FD_ZERO(&WrSet);
+                    FD_SET(pThis->DeviceFile, &WrSet);
+                    //FD_SET(pThis->WakeupPipeR, &WrSet);
+                    fd_set XcptSet;
+                    FD_ZERO(&XcptSet);
+                    FD_SET(pThis->DeviceFile, &XcptSet);
+                    //FD_SET(pThis->WakeupPipeR, &XcptSet);
+                    rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, NULL, &WrSet, &XcptSet, NULL);
+                    /** @todo check rc? */
+
+                    /* try write more */
+                    rc = RTFileWrite(pThis->DeviceFile, pbSrc, cb, &cbWritten);
+                    if (rc == VERR_TRY_AGAIN)
+                        cbWritten = 0;
+                    else if (RT_FAILURE(rc))
+                        break;
+                    else if (cbWritten >= cb)
+                        break;
+                    rc = VINF_SUCCESS;
+                } /* wait/write loop */
+            }
+
+#elif defined(RT_OS_WINDOWS)
+            /* perform an overlapped write operation. */
+            DWORD cbWritten;
+            memset(&pThis->overlappedSend, 0, sizeof(pThis->overlappedSend));
+            pThis->overlappedSend.hEvent = pThis->hEventSend;
+            if (!WriteFile(pThis->hDeviceFile, abBuf, cb, &cbWritten, &pThis->overlappedSend))
+            {
+                dwRet = GetLastError();
+                if (dwRet == ERROR_IO_PENDING)
+                {
+                    /*
+                     * write blocked, wait for completion or wakeup...
+                     */
+                    dwRet = WaitForMultipleObjects(2, haWait, FALSE, INFINITE);
+                    if (dwRet != WAIT_OBJECT_0)
+                    {
+                        AssertMsg(pThread->enmState != PDMTHREADSTATE_RUNNING, ("The halt event sempahore is set but the thread is still in running state\n"));
+                        break;
+                    }
+                }
+                else
+                    rc = RTErrConvertFromWin32(dwRet);
+            }
+
+#endif
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
+                return rc;
+            }
+        } /* write loop */
+
+#else /* old code */
         uint32_t iTail;
         while (   pThread->enmState == PDMTHREADSTATE_RUNNING
                && (iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail)) != ASMAtomicUoReadU32(&pThis->iSendQueueHead))
@@ -522,6 +627,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 return rc;
             }
         }
+#endif /* old code */
     }
 
     return VINF_SUCCESS;
@@ -599,7 +705,12 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             FD_ZERO(&XcptSet);
             FD_SET(pThis->DeviceFile, &XcptSet);
             FD_SET(pThis->WakeupPipeR, &XcptSet);
+# if 1 /* it seems like this select is blocking the write... */
             rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, &RdSet, NULL, &XcptSet, NULL);
+# else
+            struct timeval tv = { 0, 1000 };
+            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFile) + 1, &RdSet, NULL, &XcptSet, &tv);
+# endif
             if (rc == -1)
             {
                 int err = errno;
@@ -1250,6 +1361,9 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes written",         "/Devices/HostSerial%d/Written", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes read",            "/Devices/HostSerial%d/Read", pDrvIns->iInstance);
+#ifdef RT_OS_DARWIN /* new Write code, not darwin specific. */
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatSendOverflows,   STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES, "Nr of bytes overflowed",      "/Devices/HostSerial%d/SendOverflow", pDrvIns->iInstance);
+#endif
 
     return VINF_SUCCESS;
 }
