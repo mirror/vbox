@@ -109,10 +109,10 @@ tstVBoxDbg3_LIBS         = \
 	$(LIB_RUNTIME)
   ifeq ($(KBUILD_TARGET),win)
 tstVBoxDbg3_LIBS        += \
-	$(PATH_LIB)/VBoxDbg.lib
+	$(PATH_LIB)/VBoxDbg3.lib
   else
 tstVBoxDbg3_LIBS        += \
-	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
+	$(PATH_BIN)/VBoxDbg3$(VBOX_SUFF_DLL)
   endif
  endif
 endif # QTGUI
