@@ -213,7 +213,7 @@ endif
 # r=bird: what is -lz doing here? it belongs in LIBS.
 VirtualBox4_LDFLAGS.darwin = -lz \
 	-framework IOKit -framework AppKit -framework ApplicationServices -framework Foundation -framework Carbon -framework QuickTime \
-	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox.dylib)
+	$(if $(VBOX_WITH_HARDENING),-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VirtualBox.dylib) -v -Wl,-v -Wl,-whatsloaded -Wl,-whyload 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox4_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
