@@ -7611,7 +7611,7 @@ void Machine::copyFrom (Machine *aThat)
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
 {
-    pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
+    pm::CollectorHAL *hal = aCollector->getHAL();
     /* Create sub metrics */
     pm::SubMetric *cpuLoadUser = new pm::SubMetric ("CPU/Load/User",
         "Percentage of processor time spent in user mode by VM process.");
@@ -7624,12 +7624,11 @@ void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachi
 
     ComObjPtr<Machine> tmp = aMachine;
     tmp.queryInterfaceTo (&objptr);
-    pm::BaseMetric *cpuLoad =
-        metricFactory->createMachineCpuLoad (objptr, pid,
+    pm::BaseMetric *cpuLoad = new pm::MachineCpuLoadRaw (hal, objptr, pid,
                                              cpuLoadUser, cpuLoadKernel);
     aCollector->registerBaseMetric (cpuLoad);
-    pm::BaseMetric *ramUsage =
-        metricFactory->createMachineRamUsage (objptr, pid, ramUsageUsed);
+    pm::BaseMetric *ramUsage = new pm::MachineRamUsage (hal, objptr, pid,
+                                                           ramUsageUsed);
     aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser, 0));

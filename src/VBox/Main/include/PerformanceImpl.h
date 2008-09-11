@@ -33,7 +33,7 @@
 //#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #include <list>
-#include <set>
+//#include <set>
 
 #include "Performance.h"
 
@@ -107,68 +107,6 @@ private:
 };
 
 
-#if 0
-class ATL_NO_VTABLE PerformanceData :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportTranslation <PerformanceData>,
-    public IPerformanceData
-{
-private:
-
-    struct Data
-    {
-        /* Constructor. */
-        Data() { }
-
-        bool operator== (const Data &that) const
-        {
-            return this == &that;
-        }
-    };
-
-public:
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (PerformanceData)
-
-    DECLARE_NOT_AGGREGATABLE (PerformanceData)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(PerformanceData)
-        COM_INTERFACE_ENTRY (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY (IPerformanceData)
-    END_COM_MAP()
-
-    NS_DECL_ISUPPORTS
-
-    DECLARE_EMPTY_CTOR_DTOR (PerformanceData)
-
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
-    // public initializer/uninitializer for internal purposes only
-    HRESULT init (cosnt BSTR aMetricName, IUnknown *anObject,
-                  ULONG *data, ULONG aLength);
-    void uninit();
-
-    // IPerformanceData properties
-    STDMETHOD(COMGETTER(MetricName)) (BSTR *aMetricName);
-    STDMETHOD(COMGETTER(Object)) (IUnknown **anObject);
-    STDMETHOD(COMGETTER(Values)) (ComSafeArrayOut (LONG, values));
-
-    // IPerformanceData methods
-
-    // public methods only for internal purposes
-
-private:
-
-    Bstr mMetricName;
-    IUnknown *mObject;
-    ULONG *mData;
-    ULONG mLength;
-};
-#endif
-
 class ATL_NO_VTABLE PerformanceCollector :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <PerformanceCollector, IPerformanceCollector>,
@@ -231,7 +169,7 @@ public:
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
-    pm::MetricFactory *getMetricFactory() { return m.factory; };
+    pm::CollectorHAL *getHAL() { return m.hal; };
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"PerformanceCollector"; }
@@ -253,12 +191,12 @@ private:
 
     struct Data
     {
-        Data() : factory(0) {};
+        Data() : hal(0) {};
 
         BaseMetricList     baseMetrics;
         MetricList         metrics;
         RTTIMERLR          sampler;
-        pm::MetricFactory *factory;
+        pm::CollectorHAL  *hal;
     };
 
     Data m;

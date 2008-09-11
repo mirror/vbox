@@ -42,12 +42,9 @@ private:
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
 };
 
-// Linux Metric factory
-
-MetricFactoryLinux::MetricFactoryLinux()
+CollectorHAL *createHAL()
 {
-    mHAL = new CollectorLinux();
-    Assert(mHAL);
+    return new CollectorLinux();
 }
 
 // Collector HAL for Linux

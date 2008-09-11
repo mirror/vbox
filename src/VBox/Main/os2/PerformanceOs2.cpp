@@ -36,10 +36,9 @@ public:
 };
 
 
-MetricFactoryOS2::MetricFactoryOS2()
+CollectorHAL *createHAL()
 {
-    mHAL = new CollectorOS2();
-    Assert(mHAL);
+    return new CollectorOS2();
 }
 
 int CollectorOS2::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)

@@ -2878,7 +2878,7 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 void Host::registerMetrics (PerformanceCollector *aCollector)
 {
-    pm::MetricFactory *metricFactory = aCollector->getMetricFactory();
+    pm::CollectorHAL *hal = aCollector->getHAL();
     /* Create sub metrics */
     pm::SubMetric *cpuLoadUser   = new pm::SubMetric ("CPU/Load/User",
         "Percentage of processor time spent in user mode.");
@@ -2898,15 +2898,12 @@ void Host::registerMetrics (PerformanceCollector *aCollector)
     IUnknown *objptr;
     ComObjPtr <Host> tmp = this;
     tmp.queryInterfaceTo (&objptr);
-    pm::BaseMetric *cpuLoad =
-        metricFactory->createHostCpuLoad (objptr, cpuLoadUser, cpuLoadKernel,
+    pm::BaseMetric *cpuLoad = new pm::HostCpuLoadRaw (hal, objptr, cpuLoadUser, cpuLoadKernel,
                                           cpuLoadIdle);
     aCollector->registerBaseMetric (cpuLoad);
-    pm::BaseMetric *cpuMhz =
-        metricFactory->createHostCpuMHz (objptr, cpuMhzSM);
+    pm::BaseMetric *cpuMhz = new pm::HostCpuMhz (hal, objptr, cpuMhzSM);
     aCollector->registerBaseMetric (cpuMhz);
-    pm::BaseMetric *ramUsage =
-        metricFactory->createHostRamUsage (objptr, ramUsageTotal, ramUsageUsed,
+    pm::BaseMetric *ramUsage = new pm::HostRamUsage (hal, objptr, ramUsageTotal, ramUsageUsed,
                                            ramUsageFree);
     aCollector->registerBaseMetric (ramUsage);
 

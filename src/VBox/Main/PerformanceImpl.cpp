@@ -107,22 +107,7 @@ HRESULT PerformanceCollector::init()
 
     HRESULT rc = S_OK;
 
-    /* @todo Obviously other platforms must be added as well. */
-#ifdef RT_OS_SOLARIS
-    m.factory = new pm::MetricFactorySolaris();
-#endif
-#ifdef RT_OS_LINUX
-    m.factory = new pm::MetricFactoryLinux();
-#endif
-#ifdef RT_OS_WINDOWS
-    m.factory = new pm::MetricFactoryWin();
-#endif
-#ifdef RT_OS_OS2
-    m.factory = new pm::MetricFactoryOS2();
-#endif
-#ifdef RT_OS_DARWIN
-    m.factory = new pm::MetricFactoryDarwin();
-#endif
+    m.hal = pm::createHAL();
 
     /* Let the sampler know it gets a valid collector.  */
     mMagic = MAGIC;
@@ -169,8 +154,11 @@ void PerformanceCollector::uninit()
                        "sampling timer (%Rra)\n", vrc));
     m.sampler = NULL;
 
-    delete m.factory;
-    m.factory = NULL;
+    //delete m.factory;
+    //m.factory = NULL;
+
+    delete m.hal;
+    m.hal = NULL;
 
     LogFlowThisFuncLeave();
 }
@@ -468,10 +456,24 @@ void PerformanceCollector::samplerCallback()
     Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
     AutoWriteLock alock (this);
 
+    pm::CollectorHints hints;
     uint64_t timestamp = RTTimeMilliTS();
+    BaseMetricList toBeCollected;
+    BaseMetricList::iterator it;
+    /* Compose the list of metrics being collected at this moment */
+    for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); it++)
+        if ((*it)->collectorBeat(timestamp))
+        {
+            (*it)->preCollect(hints);
+            toBeCollected.push_back(*it);
+        }
+
+    /* Let know the platform specific code what is being collected */
+    m.hal->preCollect(hints);
+
+    /* Finally, collect the data */
     std::for_each (m.baseMetrics.begin(), m.baseMetrics.end(),
-                   std::bind2nd (std::mem_fun (&pm::BaseMetric::collectorBeat),
-                                 timestamp));
+                   std::mem_fun (&pm::BaseMetric::collect));
     Log4(("{%p} " LOG_FN_FMT ": LEAVE\n", this, __PRETTY_FUNCTION__));
 }
 

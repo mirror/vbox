@@ -54,12 +54,9 @@ private:
     kstat_t     *mSysPages;
 };
 
-// Solaris Metric factory
-
-MetricFactorySolaris::MetricFactorySolaris()
+CollectorHAL *createHAL()
 {
-    mHAL = new CollectorSolaris();
-    Assert(mHAL);
+    return new CollectorSolaris();
 }
 
 // Collector HAL for Solaris
