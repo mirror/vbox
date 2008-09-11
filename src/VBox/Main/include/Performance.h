@@ -25,8 +25,10 @@
 #include <iprt/types.h>
 #include <VBox/com/defs.h>
 #include <VBox/com/ptr.h>
+#include <algorithm>
 #include <list>
 #include <string>
+#include <vector>
 
 namespace pm
 {
@@ -64,9 +66,77 @@ namespace pm
 
 
     /* Collector Hardware Abstraction Layer *********************************/
+    enum {
+        COLLECT_NONE      = 0x0,
+        COLLECT_CPU_LOAD  = 0x1,
+        COLLECT_RAM_USAGE = 0x2
+    };
+    typedef int HintFlags;
+    typedef std::pair<RTPROCESS, HintFlags> ProcessFlagsPair;
+
+    inline bool processEqual(ProcessFlagsPair pair, RTPROCESS process)
+    {
+        return pair.first == process;
+    }
+
+    class CollectorHints
+    {
+        typedef std::list<ProcessFlagsPair> ProcessList;
+
+        HintFlags   mHostFlags;
+        ProcessList mProcesses;
+
+        ProcessFlagsPair& findProcess(RTPROCESS process)
+        {
+            ProcessList::iterator it;
+
+            it = std::find_if(mProcesses.begin(),
+                              mProcesses.end(),
+                              std::bind2nd(std::ptr_fun(processEqual), process));
+
+            if (it != mProcesses.end())
+                return *it;
+
+            /* Not found -- add new */
+            mProcesses.push_back(ProcessFlagsPair(process, COLLECT_NONE));
+            return mProcesses.back();
+        }
+
+    public:
+        CollectorHints() : mHostFlags(COLLECT_NONE) {}
+        void collectHostCpuLoad() { mHostFlags |= COLLECT_CPU_LOAD; }
+        void collectHostRamUsage() { mHostFlags |= COLLECT_RAM_USAGE; }
+        void collectProcessCpuLoad(RTPROCESS process)
+        {
+            findProcess(process).second |= COLLECT_CPU_LOAD;
+        }
+        void collectProcessRamUsage(RTPROCESS process)
+        {
+            findProcess(process).second |= COLLECT_RAM_USAGE;
+        }
+        bool isHostCpuLoadCollected() { return (mHostFlags & COLLECT_CPU_LOAD) != 0; }
+        bool isHostRamUsageCollected() { return (mHostFlags & COLLECT_RAM_USAGE) != 0; }
+        bool isProcessCpuLoadCollected(RTPROCESS process)
+        {
+            return (findProcess(process).second & COLLECT_CPU_LOAD) != 0;
+        }
+        bool isProcessRamUsageCollected(RTPROCESS process)
+        {
+            return (findProcess(process).second & COLLECT_RAM_USAGE) != 0;
+        }
+        void getProcesses(std::vector<RTPROCESS>& processes) const
+        {
+            processes.clear();
+            processes.reserve(mProcesses.size());
+            for (ProcessList::const_iterator it = mProcesses.begin(); it != mProcesses.end(); it++)
+                processes.push_back(it->first);
+        }
+    };
+
     class CollectorHAL
     {
     public:
+        virtual int preCollect(const CollectorHints& hints) { return VINF_SUCCESS; }
         virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
         virtual int getHostCpuMHz(ULONG *mhz);
         virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available) = 0;
@@ -77,6 +147,8 @@ namespace pm
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     };
 
+    extern CollectorHAL *createHAL();
+
     /* Base Metrics *********************************************************/
     class BaseMetric
     {
@@ -85,12 +157,13 @@ namespace pm
             : mHAL(hal), mPeriod(0), mLength(0), mName(name), mObject(object), mLastSampleTaken(0), mEnabled(false) {};
 
         virtual void init(ULONG period, ULONG length) = 0;
+        virtual void preCollect(CollectorHints& hints) = 0;
         virtual void collect() = 0;
         virtual const char *getUnit() = 0;
         virtual ULONG getMinValue() = 0;
         virtual ULONG getMaxValue() = 0;
 
-        void collectorBeat(uint64_t nowAt);
+        bool collectorBeat(uint64_t nowAt);
 
         void enable() { mEnabled = true; };
         void disable() { mEnabled = false; };
@@ -136,6 +209,7 @@ namespace pm
         HostCpuLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
         : HostCpuLoad(hal, object, user, kernel, idle), mUserPrev(0), mKernelPrev(0), mIdlePrev(0) {};
 
+        void preCollect(CollectorHints& hints);
         void collect();
     private:
         uint64_t mUserPrev;
@@ -150,6 +224,7 @@ namespace pm
         : BaseMetric(hal, "CPU/MHz", object), mMHz(mhz) {};
 
         void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints) {}
         void collect();
         const char *getUnit() { return "MHz"; };
         ULONG getMinValue() { return 0; };
@@ -165,6 +240,7 @@ namespace pm
         : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
 
         void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints);
         void collect();
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
@@ -198,6 +274,7 @@ namespace pm
         MachineCpuLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
         : MachineCpuLoad(hal, object, process, user, kernel), mHostTotalPrev(0), mProcessUserPrev(0), mProcessKernelPrev(0) {};
 
+        void preCollect(CollectorHints& hints);
         void collect();
     private:
         uint64_t mHostTotalPrev;
@@ -212,6 +289,7 @@ namespace pm
         : BaseMetric(hal, "RAM/Usage", object), mProcess(process), mUsed(used) {};
 
         void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints);
         void collect();
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
@@ -289,56 +367,7 @@ namespace pm
         Aggregate  *mAggregate;
     };
 
-    /* Metric Factories *****************************************************/
-    class MetricFactory
-    {
-    public:
-        MetricFactory() : mHAL(0) {};
-        ~MetricFactory() { delete mHAL; };
-
-        virtual BaseMetric   *createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle);
-        virtual BaseMetric   *createHostCpuMHz(ComPtr<IUnknown> object, SubMetric *mhz);
-        virtual BaseMetric   *createHostRamUsage(ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available);
-        virtual BaseMetric   *createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel);
-        virtual BaseMetric   *createMachineRamUsage(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *used);
-    protected:
-        CollectorHAL *mHAL;
-    };
-
-    class MetricFactorySolaris : public MetricFactory
-    {
-    public:
-        MetricFactorySolaris();
-        // Nothing else to do here (yet)
-    };
-
-    class MetricFactoryLinux : public MetricFactory
-    {
-    public:
-        MetricFactoryLinux();
-        // Nothing else to do here (yet)
-    };
-
-    class MetricFactoryWin : public MetricFactory
-    {
-    public:
-        MetricFactoryWin();
-        // Nothing else to do here (yet)
-    };
-
-    class MetricFactoryOS2 : public MetricFactory
-    {
-    public:
-        MetricFactoryOS2();
-        // Nothing else to do here (yet)
-    };
-
-    class MetricFactoryDarwin : public MetricFactory
-    {
-    public:
-        MetricFactoryDarwin();
-        // Nothing else to do here (yet)
-    };
+    /* Filter Class *********************************************************/
 
     class Filter
     {

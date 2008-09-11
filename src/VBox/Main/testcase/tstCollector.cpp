@@ -23,6 +23,7 @@
 
 #include <iprt/runtime.h>
 #include <iprt/stream.h>
+#include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/process.h>
 
@@ -65,20 +66,97 @@ pm::CollectorHAL *createCollector()
     return 0;
 }
 
-#define CALLS_PER_SECOND(n,fn) \
+#define RUN_TIME_MS        1000
+
+#define N_CALLS(n, fn) \
+    for (int call = 0; call < n; ++call) \
+        rc = collector->fn; \
+    if (RT_FAILURE(rc)) \
+        RTPrintf("tstCollector: "#fn" -> %Vrc\n", rc)
+
+#define CALLS_PER_SECOND(fn) \
     nCalls = 0; \
     start = RTTimeMilliTS(); \
     do { \
         rc = collector->fn; \
         ++nCalls; \
-    } while(RTTimeMilliTS() - start < 1000); \
+    } while(RTTimeMilliTS() - start < RUN_TIME_MS); \
     if (RT_FAILURE(rc)) \
     { \
         RTPrintf("tstCollector: "#fn" -> %Vrc\n", rc); \
     } \
     else \
-        RTPrintf("%50s -- %u calls per second\n", #fn, nCalls); \
-    totalTime += n * 1000000 / nCalls
+        RTPrintf("%70s -- %u calls per second\n", #fn, nCalls)
+
+void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cVMs)
+{
+
+    static const char * const args[] = { pszName, "-child", NULL };
+    pm::CollectorHints hints;
+    std::vector<RTPROCESS> processes;
+
+    hints.collectHostCpuLoad();
+    hints.collectHostRamUsage();
+    /* Start fake VMs */
+    for (int i = 0; i < cVMs; ++i)
+    {
+        RTPROCESS pid;
+        int rc = RTProcCreate(pszName, args, RTENV_DEFAULT, 0, &pid);
+        if (RT_FAILURE(rc))
+        {
+            hints.getProcesses(processes);
+            std::for_each(processes.begin(), processes.end(), std::ptr_fun(RTProcTerminate));
+            RTPrintf("tstCollector: RTProcCreate() -> %Vrc\n", rc);
+            return;
+        }
+        hints.collectProcessCpuLoad(pid);
+        hints.collectProcessRamUsage(pid);
+    }
+
+    hints.getProcesses(processes);
+    RTThreadSleep(30000); // Let children settle for half a minute
+
+    int rc;
+    ULONG tmp;
+    uint64_t tmp64;
+    uint64_t start;
+    unsigned int nCalls;
+    uint32_t totalTime = 0;
+    /* Pre-collect */
+    CALLS_PER_SECOND(preCollect(hints));
+    /* Host CPU load */
+    CALLS_PER_SECOND(getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
+    /* Process CPU load */
+    CALLS_PER_SECOND(getRawProcessCpuLoad(processes[nCalls%cVMs], &tmp64, &tmp64, &tmp64));
+    /* Host CPU speed */
+    CALLS_PER_SECOND(getHostCpuMHz(&tmp));
+    /* Host RAM usage */
+    CALLS_PER_SECOND(getHostMemoryUsage(&tmp, &tmp, &tmp));
+    /* Process RAM usage */
+    CALLS_PER_SECOND(getProcessMemoryUsage(processes[nCalls%cVMs], &tmp));
+
+    start = RTTimeNanoTS();
+
+    for (int times = 0; times < 100; times++)
+    {
+        /* Pre-collect */
+        N_CALLS(1, preCollect(hints));
+        /* Host CPU load */
+        N_CALLS(1, getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
+        /* Host CPU speed */
+        N_CALLS(1, getHostCpuMHz(&tmp));
+        /* Host RAM usage */
+        N_CALLS(1, getHostMemoryUsage(&tmp, &tmp, &tmp));
+        /* Process CPU load */
+        N_CALLS(cVMs, getRawProcessCpuLoad(processes[call], &tmp64, &tmp64, &tmp64));
+        /* Process RAM usage */
+        N_CALLS(cVMs, getProcessMemoryUsage(processes[call], &tmp));
+    }
+    printf("\n%u VMs -- %.2f%% of CPU time\n", cVMs, (RTTimeNanoTS() - start) / 10000000. / times);
+
+    /* Shut down fake VMs */
+    std::for_each(processes.begin(), processes.end(), std::ptr_fun(RTProcTerminate));
+}
 
 int main(int argc, char *argv[])
 {
@@ -90,6 +168,12 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: RTR3Init() -> %d\n", rc);
+        return 1;
+    }
+    if (argc > 1 && !strcmp(argv[1], "-child"))
+    {
+        /* We have spawned ourselves as a child process -- scratch the leg */
+        RTThreadSleep(1000000);
         return 1;
     }
 #ifdef RT_OS_WINDOWS
@@ -107,15 +191,15 @@ int main(int argc, char *argv[])
         NULL, EOAC_NONE, 0);
 #endif
 
-    uint64_t start;
-
     pm::CollectorHAL *collector = createCollector();
     if (!collector)
     {
         RTPrintf("tstCollector: createMetricFactory() failed\n", rc);
         return 1;
     }
-#if 1
+#if 0
+    uint64_t start;
+
     uint64_t hostUserStart, hostKernelStart, hostIdleStart;
     uint64_t hostUserStop, hostKernelStop, hostIdleStop, hostTotal;
 
@@ -218,23 +302,8 @@ int main(int argc, char *argv[])
     RTPrintf("tstCollector: process mem used   = %lu kB\n", processUsed);
 #endif
     RTPrintf("\ntstCollector: TESTING - Performance\n\n");
-    unsigned nCalls;
-    ULONG tmp;
-    uint64_t tmp64;
-    uint32_t totalTime = 0;
-    RTPROCESS pid = RTProcSelf();
-    /* Host CPU load */
-    CALLS_PER_SECOND(1, getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
-    /* Process CPU load */
-    CALLS_PER_SECOND(100, getRawProcessCpuLoad(pid, &tmp64, &tmp64, &tmp64));
-    /* Host CPU speed */
-    CALLS_PER_SECOND(1, getHostCpuMHz(&tmp));
-    /* Host RAM usage */
-    CALLS_PER_SECOND(1, getHostMemoryUsage(&tmp, &tmp, &tmp));
-    /* Process RAM usage */
-    CALLS_PER_SECOND(100, getProcessMemoryUsage(pid, &tmp));
-    
-    printf("%.2f%% of CPU time\n", totalTime / 10000.);
+
+    measurePerformance(collector, argv[0], 100);
     
     delete collector;
 

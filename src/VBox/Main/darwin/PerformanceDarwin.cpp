@@ -73,10 +73,9 @@ private:
     ULONG totalRAM;
 };
 
-MetricFactoryDarwin::MetricFactoryDarwin()
+CollectorHAL *createHAL()
 {
-    mHAL = new CollectorDarwin();
-    Assert(mHAL);
+    return new CollectorDarwin();
 }
 
 CollectorDarwin::CollectorDarwin()

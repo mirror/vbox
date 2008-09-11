@@ -35,38 +35,12 @@
 #include <iprt/mem.h>
 #include <iprt/cpuset.h>
 
+#include <algorithm>
+
 #include "Logging.h"
 #include "Performance.h"
 
 using namespace pm;
-
-// Default factory
-
-BaseMetric *MetricFactory::createHostCpuLoad(ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
-{
-    Assert(mHAL);
-    return new HostCpuLoadRaw(mHAL, object, user, kernel, idle);
-}
-BaseMetric *MetricFactory::createHostCpuMHz(ComPtr<IUnknown> object, SubMetric *mhz)
-{
-    Assert(mHAL);
-    return new HostCpuMhz(mHAL, object, mhz);
-}
-BaseMetric *MetricFactory::createHostRamUsage(ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
-{
-    Assert(mHAL);
-    return new HostRamUsage(mHAL, object, total, used, available);
-}
-BaseMetric *MetricFactory::createMachineCpuLoad(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
-{
-    Assert(mHAL);
-    return new MachineCpuLoadRaw(mHAL, object, process, user, kernel);
-}
-BaseMetric *MetricFactory::createMachineRamUsage(ComPtr<IUnknown> object, RTPROCESS process, SubMetric *used)
-{
-    Assert(mHAL);
-    return new MachineRamUsage(mHAL, object, process, used);
-}
 
 // Stubs for non-pure virtual methods
 
@@ -125,7 +99,7 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
     return VINF_SUCCESS;
 }
 
-void BaseMetric::collectorBeat(uint64_t nowAt)
+bool BaseMetric::collectorBeat(uint64_t nowAt)
 {
     if (isEnabled())
     {
@@ -134,9 +108,10 @@ void BaseMetric::collectorBeat(uint64_t nowAt)
             mLastSampleTaken = nowAt;
             Log4(("{%p} " LOG_FN_FMT ": Collecting %s for obj(%p)...\n",
                         this, __PRETTY_FUNCTION__, getName(), (void *)mObject));
-            collect();
+            return true;
         }
     }
+    return false;
 }
 
 /*bool BaseMetric::associatedWith(ComPtr<IUnknown> object)
@@ -164,6 +139,11 @@ void HostCpuLoad::collect()
         mKernel->put(kernel);
         mIdle->put(idle);
     }
+}
+
+void HostCpuLoadRaw::preCollect(CollectorHints& hints)
+{
+    hints.collectHostCpuLoad();
 }
 
 void HostCpuLoadRaw::collect()
@@ -225,6 +205,11 @@ void HostRamUsage::init(ULONG period, ULONG length)
     mAvailable->init(mLength);
 }
 
+void HostRamUsage::preCollect(CollectorHints& hints)
+{
+    hints.collectHostRamUsage();
+}
+
 void HostRamUsage::collect()
 {
     ULONG total, used, available;
@@ -258,6 +243,11 @@ void MachineCpuLoad::collect()
     }
 }
 
+void MachineCpuLoadRaw::preCollect(CollectorHints& hints)
+{
+    hints.collectProcessCpuLoad(mProcess);
+}
+
 void MachineCpuLoadRaw::collect()
 {
     uint64_t processUser, processKernel, hostTotal;
@@ -288,6 +278,11 @@ void MachineRamUsage::init(ULONG period, ULONG length)
     mPeriod = period;
     mLength = length;
     mUsed->init(mLength);
+}
+
+void MachineRamUsage::preCollect(CollectorHints& hints)
+{
+    hints.collectProcessRamUsage(mProcess);
 }
 
 void MachineRamUsage::collect()
