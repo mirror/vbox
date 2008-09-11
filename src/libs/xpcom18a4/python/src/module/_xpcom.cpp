@@ -72,7 +72,7 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 
 #ifdef VBOX_PYXPCOM
 # ifdef VBOX_PYXPCOM_VERSIONED
-#  if PY_VERSION_HEX >= 0x02080000
+#  if   PY_VERSION_HEX >= 0x02080000
 #   define MODULE_NAME "VBoxPython2_8"
 #  elif PY_VERSION_HEX >= 0x02070000
 #   define MODULE_NAME "VBoxPython2_7"
@@ -610,7 +610,7 @@ using namespace com;
 extern "C" NS_EXPORT
 void
 # ifdef VBOX_PYXPCOM_VERSIONED
-#  if PY_VERSION_HEX >= 0x02080000
+#  if   PY_VERSION_HEX >= 0x02080000
 initVBoxPython2_8() {
 #  elif PY_VERSION_HEX >= 0x02070000
 initVBoxPython2_7() {
@@ -619,11 +619,9 @@ initVBoxPython2_6() {
 #  elif PY_VERSION_HEX >= 0x02050000
 initVBoxPython2_5() {
 #  elif PY_VERSION_HEX >= 0x02040000
-#   error "you must test VBOX_PYXPCOM_VERSIONED on 2.4"
-initVBoxPython() {
+initVBoxPython2_4() {
 #  elif PY_VERSION_HEX >= 0x02030000
-#   error "you must test VBOX_PYXPCOM_VERSIONED on 2.3"
-initVBoxPython() {
+initVBoxPython2_3() {
 #  else
 #   error "Fix module versioning.
 #  endif
