@@ -518,7 +518,7 @@ $$(PATH_VirtualBox4.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		$< > $@
 
-INSTALLS += VirtualBoxVM.app
+INSTALLS += VirtualBox4VM.app
 VirtualBox4VM.app_INST = $(VirtualBox4.app_INST)Resources/VirtualBoxVM.app/Contents/
 VirtualBox4VM.app_MODE = 644
 VirtualBox4VM.app_SOURCES = \
