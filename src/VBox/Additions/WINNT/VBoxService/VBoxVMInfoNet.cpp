@@ -16,8 +16,6 @@
 
 int vboxVMInfoNet(VBOXINFORMATIONCONTEXT* a_pCtx)
 {
-    DWORD dwCurIface = 0;
-
     SOCKET sd = WSASocket(AF_INET, SOCK_DGRAM, 0, 0, 0, 0);
     if (sd == SOCKET_ERROR)
     {
@@ -38,11 +36,10 @@ int vboxVMInfoNet(VBOXINFORMATIONCONTEXT* a_pCtx)
     char szPropPath [_MAX_PATH+1] = {0};
     char szTemp [_MAX_PATH+1] = {0};
     int nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
+    int iCurIface = 0;
 
     RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/Count");
     vboxVMInfoWritePropInt(a_pCtx, szPropPath, (nNumInterfaces > 1 ? nNumInterfaces-1 : 0));
-
-    dwCurIface = 0;
 
     for (int i = 0; i < nNumInterfaces; ++i)
     {
@@ -51,15 +48,15 @@ int vboxVMInfoNet(VBOXINFORMATIONCONTEXT* a_pCtx)
 
         sockaddr_in *pAddress;
         pAddress = (sockaddr_in *) & (InterfaceList[i].iiAddress);
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/IP", i);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/IP", iCurIface);
         vboxVMInfoWriteProp(a_pCtx, szPropPath, inet_ntoa(pAddress->sin_addr));
 
         pAddress = (sockaddr_in *) & (InterfaceList[i].iiBroadcastAddress);
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Broadcast", i);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Broadcast", iCurIface);
         vboxVMInfoWriteProp(a_pCtx, szPropPath, inet_ntoa(pAddress->sin_addr));
 
         pAddress = (sockaddr_in *) & (InterfaceList[i].iiNetmask);
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Netmask", i);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/V4/Netmask", iCurIface);
         vboxVMInfoWriteProp(a_pCtx, szPropPath, inet_ntoa(pAddress->sin_addr));
 
         u_long nFlags = InterfaceList[i].iiFlags;
@@ -68,8 +65,10 @@ int vboxVMInfoNet(VBOXINFORMATIONCONTEXT* a_pCtx)
         else
             RTStrPrintf(szTemp, sizeof(szTemp), "Down");
 
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/Status", i);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/%d/Status", iCurIface);
         vboxVMInfoWriteProp(a_pCtx, szPropPath, szTemp);
+
+        iCurIface++;
     }
 
     closesocket(sd);
