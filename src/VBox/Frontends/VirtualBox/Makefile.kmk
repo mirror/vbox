@@ -455,10 +455,11 @@ VirtualBox_CLEAN.win += $(PATH_VirtualBox)/VirtualBox.rc
 endif # win
 
 
-ifeq ($(KBUILD_TARGET),darwin)
+if "$(KBUILD_TARGET)" == "darwin" && !defined(VBOX_WITH_QT4GUI) # don't conflict the qt4 gui
 #
 # On Mac OS X (darwin) we need to install icon resources and compulsory bundle contents.
 #
+$(warning The qt3 gui will not work right on it own after we renamed it to *3..)
 INSTALLS.darwin += VirtualBox3.app
 VirtualBox3.app_INST = $(INST_VIRTUALBOX)Contents/
 VirtualBox3.app_MODE = 644
@@ -497,7 +498,7 @@ $$(PATH_VirtualBoxVM3.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		--output $@ \
 		$<
-endif # darwin
+endif # darwin && !qt4gui
 
 
 ifdef VBOX_WITH_TESTCASES
