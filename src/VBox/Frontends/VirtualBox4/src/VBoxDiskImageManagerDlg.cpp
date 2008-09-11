@@ -1032,7 +1032,9 @@ void VBoxDiskImageManagerDlg::mediaEnumerated (const VBoxMedia &aMedia,
     if (aMedia.status != VBoxMedia::Unknown)
     {
         mProgressBar->setValue (aIndex + 1);
+#ifndef Q_WS_WIN /* runs out of stack with big lists */
         qApp->processEvents();
+#endif
     }
 }
 
