@@ -261,6 +261,12 @@ typedef enum PGMMODE
     PGMMODE_32BIT_HACK = 0x7fffffff
 } PGMMODE;
 
+/** Macro for checking if the guest is using paging.
+ * @param uType     PGMMODE_*
+ * @remark  ASSUMES certain order of the PGMMODE_* values.
+ */
+#define PGMMODE_WITH_PAGING(enmMode) (enmMode >= PGMMODE_32_BIT)
+
 /**
  * The current ROM page protection.
  */
