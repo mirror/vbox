@@ -126,7 +126,9 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, 
             return Addr;    /* base 0 */
         }
     }
-    return (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
+    /* AMD64 manual: compatibility mode ignores the high 32 bits when calculating an effective address. */
+    Assert(pHiddenSel->u64Base <= 0xffffffff);
+    return ((pHiddenSel->u64Base + (RTGCUINTPTR)Addr) & 0xffffffff);
 }
 
 
@@ -207,7 +209,11 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, R
             }
         }
         else
-            pvFlat = (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
+        {
+            /* AMD64 manual: compatibility mode ignores the high 32 bits when calculating an effective address. */
+            Assert(pHiddenSel->u64Base <= 0xffffffff);
+            pvFlat = (RTGCPTR)((pHiddenSel->u64Base + (RTGCUINTPTR)Addr) & 0xffffffff);
+        }
 
         /*
         * Check if present.
@@ -488,6 +494,13 @@ SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Ad
 
         u32Limit      = pHiddenSel->u32Limit;
         pvFlat        = (RTGCPTR)(pHiddenSel->u64Base + (RTGCUINTPTR)Addr);
+
+        if (   !CPUMIsGuestInLongMode(pVM)
+            || !pHiddenSel->Attr.n.u1Long)
+        {
+            /* AMD64 manual: compatibility mode ignores the high 32 bits when calculating an effective address. */
+            pvFlat &= 0xffffffff;
+        }
     }
     else
     {
