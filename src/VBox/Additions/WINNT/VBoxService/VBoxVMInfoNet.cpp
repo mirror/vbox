@@ -41,6 +41,8 @@ int vboxVMInfoNet(VBOXINFORMATIONCONTEXT* a_pCtx)
     RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestInfo/Net/Count");
     vboxVMInfoWritePropInt(a_pCtx, szPropPath, (nNumInterfaces > 1 ? nNumInterfaces-1 : 0));
 
+    /* Later: Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
+
     for (int i = 0; i < nNumInterfaces; ++i)
     {
         if (InterfaceList[i].iiFlags & IFF_LOOPBACK)    /* Skip loopback device. */
