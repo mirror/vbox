@@ -358,18 +358,23 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
     }
     if (pVBox->vmmDevInfo)
     {
-        if (!pci_device_probe(pVBox->vmmDevInfo))
+        if (pci_device_probe(pVBox->vmmDevInfo) != 0)
         {
             xf86DrvMsg (scrnIndex, X_ERROR,
                         "Failed to probe VMM device (vendor=%04x, devid=%04x)\n",
                         pVBox->vmmDevInfo->vendor_id,
                         pVBox->vmmDevInfo->device_id);
         }
-        pci_device_map_range(pVBox->vmmDevInfo,
-                             pVBox->vmmDevInfo->regions[1].base_addr,
-                             pVBox->vmmDevInfo->regions[1].size,
-                             PCI_DEV_MAP_FLAG_WRITABLE,
-                             (void **)&pVBox->pVMMDevMemory);
+        else
+        {
+            if (pci_device_map_range(pVBox->vmmDevInfo,
+                                     pVBox->vmmDevInfo->regions[1].base_addr,
+                                     pVBox->vmmDevInfo->regions[1].size,
+                                     PCI_DEV_MAP_FLAG_WRITABLE,
+                                     (void **)&pVBox->pVMMDevMemory) != 0)
+                xf86DrvMsg (scrnIndex, X_ERROR,
+                            "Failed to map VMM device range\n");
+        }
     }
 #else
     PCITAG pciTag;
