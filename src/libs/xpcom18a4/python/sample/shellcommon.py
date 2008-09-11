@@ -96,7 +96,7 @@ def asState(var):
     else:
         return 'off'
 
-def guestStats(ctx,guest):
+def guestStats2(ctx,guest):
     stats = {
         'Guest statistics for sample': ctx['ifaces'].GuestStatisticType.SampleNumber,
         'CPU Load Idle': ctx['ifaces'].GuestStatisticType.CPULoad_Idle,
@@ -114,6 +114,18 @@ def guestStats(ctx,guest):
             print "Cannot get value for '%s'"  %(k)
             pass
 
+def guestStats(ctx,mach):
+    collector = ctx['vb'].performanceCollector
+    collector.setupMetrics(['*'], [mach], 1, 15)
+
+    (vals, names, objs, idxs, lens) = collector.queryMetricsData(["*"], [mach])
+    for i in range(0,len(names)):
+        valsStr = '['
+        for j in range(0, lens[i]):
+            valsStr += str(vals[idxs[i]])+' '
+        valsStr += ']'
+        print "Name:",names[i],"Vals:",valsStr
+
 def cmdExistingVm(ctx,mach,cmd):
     mgr=ctx['mgr']
     vb=ctx['vb']
@@ -130,14 +142,16 @@ def cmdExistingVm(ctx,mach,cmd):
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
         return
     # unfortunately IGuest is suppressed, thus WebServices knows not about it
-    if ctx['remote'] and cmd == 'stats':
+    if ctx['remote'] and cmd == 'stats2':
         print 'Trying to use local only functionality, ignored'
         return        
     console=session.console
     ops={'pause' :     lambda: console.pause(),
          'resume':     lambda: console.resume(),
          'powerdown':  lambda: console.powerDown(),
-         'stats':      lambda: guestStats(ctx, console.guest),
+# Guest stats not yet implemented
+#         'stats2':      lambda: guestStats2(ctx, console.guest),
+#         'stats':      lambda: guestStats(ctx, mach),
          }
     ops[cmd]()
     session.close()
@@ -263,7 +277,6 @@ def setvarCmd(ctx, args):
     expr = 'mach.'+args[2]+' = '+args[3]
     print "Executing",expr
     try:
-        #mach.BIOSSettings.IOAPICEnabled = True
         exec expr
     except Exception, e:
         print 'failed: ',e
@@ -296,8 +309,12 @@ def hostCmd(ctx, args):
    collector = ctx['vb'].performanceCollector
   
    (vals, names, objs, idxs, lens) = collector.queryMetricsData(["*"], [host])
-   for i in range(0,len(vals)):
-      print "for name:",names[i]," val:",vals[i]
+   for i in range(0,len(names)):
+       valsStr = '['
+       for j in range(0, lens[i]):
+           valsStr += str(vals[idxs[i]])+' '
+       valsStr += ']'
+       print "Name:",names[i],"Vals:",valsStr
 
    return 0
 
@@ -313,6 +330,7 @@ commands = {'help':['Prints help information', helpCmd],
             'start':['Start virtual machine by name or uuid', startCmd],
             'pause':['Pause virtual machine', pauseCmd],
             'resume':['Resume virtual machine', resumeCmd],
+# stats not yet well implemented
             'stats':['Stats for virtual machine', statsCmd],
             'powerdown':['Power down virtual machine', powerdownCmd],
             'list':['Shows known virtual machines', listCmd],
@@ -337,10 +355,15 @@ def runCommand(ctx, cmd):
 
 
 def interpret(ctx):
-    print "Running VirtualBox version %s" %(ctx['vb'].version)
+    vbox = ctx['vb']
+    print "Running VirtualBox version %s" %(vbox.version)
 
     autoCompletion(commands, ctx)
 
+    # to allow to print actual host information, we collect infor for
+    # last 150 secs maximum, (sample every 10 secs and keep up to 15 samples)
+    vbox.performanceCollector.setupMetrics(['*'], [vbox.host], 10, 15)
+   
     while True:
         try:
             cmd = raw_input("vbox> ")
@@ -356,3 +379,4 @@ def interpret(ctx):
             if g_verbose:
                 traceback.print_exc()
 
+    vbox.performanceCollector.disableMetrics(['*'], [vbox.host])
