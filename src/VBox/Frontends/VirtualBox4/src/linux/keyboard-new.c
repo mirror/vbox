@@ -334,7 +334,8 @@ X11DRV_InitKeyboardByLayout(Display *display)
 	      if (0 != found) {
 		/* got it */
 		scan = main_key_scan[keyn - 1];
-		++matches;
+		if (keyn != 48) /* don't count the 102nd key */
+		    ++matches;
 	      }
               if (0 == scan) {
                 /* print spaces instead of \0's */
@@ -363,10 +364,13 @@ X11DRV_InitKeyboardByLayout(Display *display)
         }
         keyc2scan[keyc] = scan;
     } /* for */
-    /* Did we find a match for all keys in the layout?  Count them first. */
+    /* Did we find a match for all keys in the layout?  Count them first.
+     * Note that we skip the 102nd key, so that owners of 101 key keyboards
+     * don't get bogus messages about bad matches. */
     for (entries = 0, keyn = 0; keyn < MAIN_LEN; ++keyn) {
         if (   (0 != (*lkey)[keyn][0])
             && (0 != (*lkey)[keyn][1])
+            && (keyn != 48) /* don't count the 102nd key */
            ) {
             ++entries;
         }
