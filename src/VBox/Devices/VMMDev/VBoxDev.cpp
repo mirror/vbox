@@ -2379,6 +2379,9 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* disabled statistics updating */
     pThis->u32LastStatIntervalSize = 0;
 
+    /* Clear the "HGCM event enabled" flag so the event can be automatically reenabled.  */
+    pThis->u32HGCMEnabled = 0;
+
     /*
      * Clear the event variables.
      *
