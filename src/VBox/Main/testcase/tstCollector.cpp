@@ -137,7 +137,8 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
 
     start = RTTimeNanoTS();
 
-    for (int times = 0; times < 100; times++)
+    int times;
+    for (times = 0; times < 100; times++)
     {
         /* Pre-collect */
         N_CALLS(1, preCollect(hints));
