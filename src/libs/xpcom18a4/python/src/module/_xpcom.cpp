@@ -85,7 +85,7 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 #  elif PY_VERSION_HEX >= 0x02030000
 #   define MODULE_NAME "VBoxPython2_3"
 #  else
-#   error "Fix module versioning.
+#   error "Fix module versioning."
 #  endif
 # else
 #  define MODULE_NAME "VBoxPython"
@@ -623,7 +623,7 @@ initVBoxPython2_4() {
 #  elif PY_VERSION_HEX >= 0x02030000
 initVBoxPython2_3() {
 #  else
-#   error "Fix module versioning.
+#   error "Fix module versioning."
 #  endif
 # else
 initVBoxPython() {
