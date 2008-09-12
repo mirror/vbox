@@ -965,6 +965,11 @@ static void do_interrupt64(int intno, int is_int, int error_code,
     uint32_t e1, e2, e3, ss;
     target_ulong old_eip, esp, offset;
 
+#ifdef VBOX
+    if (remR3NotifyTrap(env, intno, error_code, next_eip) != VINF_SUCCESS)
+        cpu_loop_exit();
+#endif
+
     has_error_code = 0;
     if (!is_int && !is_hw) {
         switch(intno) {
