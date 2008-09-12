@@ -98,7 +98,7 @@ CollectorWin::CollectorWin() : mRefresher(0), mNameSpace(0), mEnumProcessor(0), 
     BSTR                    bstrNameSpace = NULL;
 
     if (SUCCEEDED (hr = CoCreateInstance(
-        CLSID_WbemLocator, 
+        CLSID_WbemLocator,
         NULL,
         CLSCTX_INPROC_SERVER,
         IID_IWbemLocator,
@@ -131,7 +131,7 @@ CollectorWin::CollectorWin() : mRefresher(0), mNameSpace(0), mEnumProcessor(0), 
         CLSID_WbemRefresher,
         NULL,
         CLSCTX_INPROC_SERVER,
-        IID_IWbemRefresher, 
+        IID_IWbemRefresher,
         (void**) &mRefresher)))
     {
         if (SUCCEEDED (hr = mRefresher->QueryInterface(
@@ -140,19 +140,19 @@ CollectorWin::CollectorWin() : mRefresher(0), mNameSpace(0), mEnumProcessor(0), 
         {
             // Add an enumerator to the refresher.
             if (SUCCEEDED (hr = pConfig->AddEnum(
-                mNameSpace, 
-                L"Win32_PerfRawData_PerfOS_Processor", 
-                0, 
-                NULL, 
-                &mEnumProcessor, 
+                mNameSpace,
+                L"Win32_PerfRawData_PerfOS_Processor",
+                0,
+                NULL,
+                &mEnumProcessor,
                 &mEnumProcessorID)))
             {
                 hr = pConfig->AddEnum(
                     mNameSpace,
-                    L"Win32_PerfRawData_PerfProc_Process", 
-                    0, 
-                    NULL, 
-                    &mEnumProcess, 
+                    L"Win32_PerfRawData_PerfProc_Process",
+                    0,
+                    NULL,
+                    &mEnumProcess,
                     &mEnumProcessID);
             }
             pConfig->Release();
@@ -238,40 +238,36 @@ long CollectorWin::getPropertyHandle(IWbemObjectAccess *objAccess, LPCWSTR name)
 
 int CollectorWin::getObjects(IWbemHiPerfEnum *mEnum, IWbemObjectAccess ***objArray, DWORD *numReturned)
 {
-    HRESULT hr;
-    DWORD   dwNumObjects = 0;
-
+    /*
+     * Get the number of objects.
+     * Note that the caller ASSUMES that at least one object is returned, so fail if there are none.
+     */
     *objArray    = NULL;
     *numReturned = 0;
-    hr = mEnum->GetObjects(0L, dwNumObjects, *objArray, numReturned);
-
-    // If the buffer was not big enough,
-    // allocate a bigger buffer and retry.
-    if (hr == WBEM_E_BUFFER_TOO_SMALL 
-        && *numReturned > dwNumObjects)
+    HRESULT hr = mEnum->GetObjects(0L, 0, *objArray, numReturned);
+    if (hr != WBEM_E_BUFFER_TOO_SMALL)
     {
-        *objArray = new IWbemObjectAccess*[*numReturned];
-        if (NULL == *objArray)
-        {
-            Log (("Could not allocate enumerator access objects\n"));
-            return VERR_NO_MEMORY;
-        }
-
-        SecureZeroMemory(*objArray,
-            *numReturned*sizeof(IWbemObjectAccess*));
-        dwNumObjects = *numReturned;
-
-        if (FAILED (hr = mEnum->GetObjects(0L, 
-            dwNumObjects, *objArray, numReturned)))
-        {
-            delete [] objArray;
-            Log (("Failed to get objects from enumerator. HR = %x\n", hr));
-            return VERR_INTERNAL_ERROR;
-        }
+        Log (("Failed to get the object count from the enumerator. HR = %x *numReturned=%d\n", hr, *numReturned));
+        return VERR_INTERNAL_ERROR;
     }
-    else if (FAILED (hr))
+
+    /*
+     * Allocate an array with the right lenght and get the actual objects.
+     */
+    DWORD cObjects = *numReturned;
+    *objArray = new IWbemObjectAccess*[cObjects];
+    if (!*objArray)
     {
-        Log (("Failed to get objects from enumerator. HR = %x\n", hr));
+        Log (("Could not allocate enumerator access objects\n"));
+        return VERR_NO_MEMORY;
+    }
+    SecureZeroMemory(*objArray, cObjects * sizeof(IWbemObjectAccess*));
+    hr = mEnum->GetObjects(0L, cObjects, *objArray, numReturned);
+    if (FAILED(hr) || *numReturned == 0)
+    {
+        delete [] *objArray;
+        *objArray = NULL;
+        Log (("Failed to get the objects from the enumerator. HR = %x *numReturned=%d cObjects=%d\n", hr, *numReturned, cObjects));
         return VERR_INTERNAL_ERROR;
     }
 
@@ -465,7 +461,7 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
 int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     MEMORYSTATUSEX mstat;
-    
+
     mstat.dwLength = sizeof(mstat);
     if (GlobalMemoryStatusEx(&mstat))
     {
