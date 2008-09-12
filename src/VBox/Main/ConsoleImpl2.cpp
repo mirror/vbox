@@ -16,7 +16,7 @@
  * General Public License (GPL) as published by the Free Software
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * hope that it will be useful, but WITHOUT ANY WARRAN  TY of any kind.
  *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
@@ -134,10 +134,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
 
 #ifdef VBOX_WITH_SMP_GUESTS
-    /* @todo: r=nike: Testing code, should use actual getter when ready */
-    uint16_t cNumCpus = 2;
+    /* @todo nike: Testing code, should use actual getter when ready */
+    uint16_t cCpus = 2;
 #else
-    uint16_t cNumCpus = 1;
+    uint16_t cCpus = 1;
 #endif
 
     /*
@@ -156,7 +156,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     STR_FREE();
     rc = CFGMR3InsertBytes(pRoot,   "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cRamMBs * _1M);         RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cNumCpus);              RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
@@ -278,7 +278,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pBiosCfg);                           RC_CHECK();
     rc = CFGMR3InsertInteger(pBiosCfg,  "RamSize",              cRamMBs * _1M);     RC_CHECK();
-    rc = CFGMR3InsertInteger(pBiosCfg,  "NumCPUs",              cNumCpus);          RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "NumCPUs",              cCpus);             RC_CHECK();
     rc = CFGMR3InsertString(pBiosCfg,   "HardDiskDevice",       "piix3ide");        RC_CHECK();
     rc = CFGMR3InsertString(pBiosCfg,   "FloppyDevice",         "i82078");          RC_CHECK();
     rc = CFGMR3InsertInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
@@ -464,7 +464,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cRamMBs * _1M);         RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cNumCpus);              RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
 
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
@@ -1203,8 +1203,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
 
 #elif defined(VBOX_WITH_NETFLT) && !defined(RT_OS_WINDOWS) /** @todo merge in the windows stuff too */
-                    /* 
-                     * This is the new VBoxNetFlt+IntNet stuff. 
+                    /*
+                     * This is the new VBoxNetFlt+IntNet stuff.
                      */
                     if (fSniffer)
                     {
@@ -1235,12 +1235,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     *pszColon = '\0';
                     const char *pszTrunk = szTrunk;
 
-# elif defined(RT_OS_SOLARIS) 
+# elif defined(RT_OS_SOLARIS)
                     /* The name is on the form format 'ifX - long name, chop it off at space. */
                     char szTrunk[8];
                     strncpy(szTrunk, pszHifName, sizeof(szTrunk));
                     char *pszSpace = (char *)memchr(szTrunk, ' ', sizeof(szTrunk));
-                    
+
                     /*
                      * Currently don't bother about malformed names here for the sake of people using
                      * VBoxManage and setting only the NIC name from there. If there is a space we
@@ -1249,7 +1249,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     if (pszSpace)
                         *pszSpace = '\0';
                     const char *pszTrunk = szTrunk;
-# else 
+# else
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
 
@@ -1268,7 +1268,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     {
                         rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);    RC_CHECK();
                     }
-# else 
+# else
                     /** @todo PORTME: wireless detection */
 # endif
 
