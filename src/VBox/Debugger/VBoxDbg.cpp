@@ -19,7 +19,9 @@
  * additional information or have any questions.
  */
 
-
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define VBOX_COM_NO_ATL
 #include <VBox/dbggui.h>
 #include <VBox/vm.h>
@@ -30,6 +32,9 @@
 #include "VBoxDbgGui.h"
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /**
  * Debugger GUI instance data.
  */
@@ -41,8 +46,26 @@ typedef struct DBGGUI
     VBoxDbgGui *pVBoxDbgGui;
 } DBGGUI;
 
-/** DBGGUI magic value (Elizabeth Kostova). */
-#define DBGGUI_MAGIC    0x19640804
+/** DBGGUI magic value (Werner Heisenberg). */
+#define DBGGUI_MAGIC        0x19011205
+/** Invalid DBGGUI magic value. */
+#define DBGGUI_MAGIC_DEAD   0x19760201
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Virtual method table for simplifying dynamic linking. */
+static const DBGGUIVT g_dbgGuiVT =
+{
+    DBGGUIVT_VERSION,
+    DBGGuiDestroy,
+    DBGGuiAdjustRelativePos,
+    DBGGuiShowStatistics,
+    DBGGuiShowCommandLine,
+    DBGGUIVT_VERSION
+};
+
 
 
 /**
@@ -51,8 +74,10 @@ typedef struct DBGGUI
  * @returns VBox status code.
  * @param   pSession    The Virtual Box session.
  * @param   ppGui       Where to store the pointer to the debugger instance.
+ * @param   ppGuiVT     Where to store the virtual method table pointer.
+ *                      Optional.
  */
-DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui)
+DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
     PDBGGUI pGui = (PDBGGUI)RTMemAlloc(sizeof(*pGui));
     if (!pGui)
@@ -64,12 +89,16 @@ DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui)
     if (VBOX_SUCCESS(rc))
     {
         *ppGui = pGui;
+        if (ppGuiVT)
+            *ppGuiVT = &g_dbgGuiVT;
         return rc;
     }
 
     delete pGui->pVBoxDbgGui;
     RTMemFree(pGui);
     *ppGui = NULL;
+    if (ppGuiVT)
+        *ppGuiVT = NULL;
     return rc;
 }
 
@@ -92,7 +121,7 @@ DBGDECL(int) DBGGuiDestroy(PDBGGUI pGui)
     /*
      * Do the job.
      */
-    pGui->u32Magic++;
+    pGui->u32Magic = DBGGUI_MAGIC_DEAD;
     delete pGui->pVBoxDbgGui;
     RTMemFree(pGui);
 

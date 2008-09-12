@@ -2186,7 +2186,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     /* Toggle qt full-screen mode */
     setWindowState (windowState() ^ WindowFullScreen);
 
-#ifdef Q_WS_MAC 
+#ifdef Q_WS_MAC
     if (aOn && aSeamless)
     {
         /* Please note: All the stuff below has to be done after the window has
@@ -3447,7 +3447,7 @@ bool VBoxConsoleWnd::dbgCreated()
 {
     if (dbg_gui)
         return true;
-    int rc = DBGGuiCreate (csession.iface(), &dbg_gui);
+    int rc = DBGGuiCreate (csession.iface(), &dbg_gui, NULL);
     if (VBOX_SUCCESS (rc))
     {
         dbgAdjustRelativePos();

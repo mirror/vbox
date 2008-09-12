@@ -62,8 +62,9 @@
 #include <QPainter>
 #endif
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-#include <VBox/err.h>
+#ifdef VBOX_WITH_DEBUGGER_GUI
+# include <VBox/err.h>
+# include <iprt/ldr.h>
 #endif
 
 #include <iprt/param.h>
@@ -114,9 +115,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
                 Qt::WindowFlags aFlags /* = Qt::Window */)
     : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
     , mMainMenu (0)
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     , dbgStatisticsAction (NULL)
     , dbgCommandLineAction (NULL)
+    , dbgLoggingAction (NULL)
     , mDbgMenu (NULL)
 #endif
     , console (0)
@@ -132,8 +134,9 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     , mIsOpenViewFinished (false)
     , mIsFirstTimeStarted (false)
     , mIsAutoSaveMedia (true)
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-    , dbg_gui (NULL)
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    , mDbgGui (NULL)
+    , mDbgGuiVT (NULL)
 #endif
 #ifdef Q_WS_MAC
     , dockImgStatePaused (NULL)
@@ -261,16 +264,20 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     devicesInstallGuestToolsAction->setIcon (VBoxGlobal::iconSet (":/guesttools_16px.png",
                                                                      ":/guesttools_disabled_16px.png"));
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
     {
         dbgStatisticsAction = new QAction (this);
         dbgCommandLineAction = new QAction (this);
+        dbgLoggingAction = new QAction (this);
+        dbgLoggingAction->setCheckable (true);
+        dbgLoggingAction->setIcon (VBoxGlobal::iconSet (":/start_16px.png")); /// @todo find the default check boxes.
     }
     else
     {
         dbgStatisticsAction = NULL;
         dbgCommandLineAction = NULL;
+        dbgLoggingAction = NULL;
     }
 #endif
 
@@ -354,7 +361,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mDevicesMountDVDMenu->menuAction()->setData (false);
     mDevicesUSBMenu->menuAction()->setData (false);
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug popup menu */
     if (vboxGlobal().isDebuggerEnabled())
     {
@@ -362,6 +369,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
         mMainMenu->addMenu (mDbgMenu);
         mDbgMenu->addAction (dbgStatisticsAction);
         mDbgMenu->addAction (dbgCommandLineAction);
+        mDbgMenu->addAction (dbgLoggingAction);
     }
     else
         mDbgMenu = NULL;
@@ -554,13 +562,16 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     connect (&vboxGlobal().settings(), SIGNAL (propertyChanged (const char *, const char *)),
              this, SLOT (processGlobalSettingChange (const char *, const char *)));
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     if (dbgStatisticsAction)
         connect (dbgStatisticsAction, SIGNAL (triggered()),
                  this, SLOT (dbgShowStatistics()));
     if (dbgCommandLineAction)
         connect (dbgCommandLineAction, SIGNAL (triggered()),
                  this, SLOT (dbgShowCommandLine()));
+    if (dbgLoggingAction)
+        connect (dbgLoggingAction, SIGNAL (toggled (bool)),
+                 this, SLOT (dbgLoggingToggled (bool)));
 #endif
 
 #ifdef Q_WS_MAC
@@ -851,6 +862,16 @@ void VBoxConsoleWnd::finalizeOpenView()
     /* Notify the console scroll-view about the console-window is opened. */
     console->onViewOpened();
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* open debugger windows if requested */
+    if (vboxGlobal().isDebuggerAutoShowEnabled())
+    {
+        move (QPoint (0, 0));
+        dbgShowStatistics();
+        dbgShowCommandLine();
+    }
+#endif
+
     bool saved = machine_state == KMachineState_Saved;
 
     CMachine cmachine = csession.GetMachine();
@@ -917,16 +938,6 @@ void VBoxConsoleWnd::finalizeOpenView()
         LogFlowFuncLeave();
         return;
     }
-
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-    /* open debugger windows if requested */
-    if (vboxGlobal().isDebuggerVisibleAtStartup())
-    {
-        move (QPoint (0, 0));
-        dbgShowStatistics();
-        dbgShowCommandLine();
-    }
-#endif
 
     /* Currently the machine is started and the guest API could be used...
      * Checking if the fullscreen mode should be activated */
@@ -1099,7 +1110,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
                 !isTrueFullscreen() && !isTrueSeamless())
             {
                 mNormalGeo.setSize (re->size());
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
                 dbgAdjustRelativePos();
 #endif
             }
@@ -1119,7 +1130,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
             if (!isMaximized() && !isTrueFullscreen() && !isTrueSeamless())
             {
                 mNormalGeo.moveTo (geometry().x(), geometry().y());
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
                 dbgAdjustRelativePos();
 #endif
             }
@@ -1538,13 +1549,15 @@ void VBoxConsoleWnd::retranslateUi()
     devicesInstallGuestToolsAction->setStatusTip (
         tr ("Mount the Guest Additions installation image"));
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug actions */
 
     if (dbgStatisticsAction)
         dbgStatisticsAction->setText (tr ("&Statistics...", "debug action"));
     if (dbgCommandLineAction)
         dbgCommandLineAction->setText (tr ("&Command Line...", "debug action"));
+    if (dbgLoggingAction)
+        dbgLoggingAction->setText (tr ("&Logging...", "debug action"));
 #endif
 
     /* Help actions */
@@ -1566,7 +1579,7 @@ void VBoxConsoleWnd::retranslateUi()
     mDevicesMenu->setTitle (tr ("&Devices"));
 //    mDevicesMenu->setIcon (VBoxGlobal::iconSet (":/settings_16px.png"));
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
         mDbgMenu->setTitle (tr ("De&bug"));
 #endif
@@ -3390,9 +3403,9 @@ void VBoxConsoleWnd::processGlobalSettingChange (const char * /*publicName*/,
  */
 void VBoxConsoleWnd::dbgShowStatistics()
 {
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     if (dbgCreated())
-        DBGGuiShowStatistics (dbg_gui);
+        mDbgGuiVT->pfnShowStatistics (mDbgGui);
 #endif
 }
 
@@ -3401,13 +3414,30 @@ void VBoxConsoleWnd::dbgShowStatistics()
  */
 void VBoxConsoleWnd::dbgShowCommandLine()
 {
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     if (dbgCreated())
-        DBGGuiShowCommandLine (dbg_gui);
+        mDbgGuiVT->pfnShowCommandLine (mDbgGui);
 #endif
 }
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+/**
+ * Called when the Debug->Logging menu item is selected.
+ */
+void VBoxConsoleWnd::dbgLoggingToggled(bool aState)
+{
+    NOREF(aState);
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    CConsole cconsole = csession.GetConsole();
+    if (cconsole.isOk())
+    {
+        CMachineDebugger cdebugger = cconsole.GetDebugger();
+        if (cconsole.isOk())
+            cdebugger.SetLogEnabled(aState);
+    }
+#endif
+}
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
 
 /**
  * Ensures that the debugger GUI instance is ready.
@@ -3417,14 +3447,30 @@ void VBoxConsoleWnd::dbgShowCommandLine()
  */
 bool VBoxConsoleWnd::dbgCreated()
 {
-    if (dbg_gui)
+    if (mDbgGui)
         return true;
-    int rc = DBGGuiCreate (csession.iface(), &dbg_gui);
-    if (VBOX_SUCCESS (rc))
+
+    RTLDRMOD hLdrMod = vboxGlobal().getDebuggerModule();
+    if (hLdrMod == NIL_RTLDRMOD)
+        return false;
+
+    PFNDBGGUICREATE pfnGuiCreate;
+    int rc = RTLdrGetSymbol (hLdrMod, "DBGGuiCreate", (void **)&pfnGuiCreate);
+    if (RT_SUCCESS (rc))
     {
-        dbgAdjustRelativePos();
-        return true;
+        rc = pfnGuiCreate (csession.iface(), &mDbgGui, &mDbgGuiVT);
+        if (RT_SUCCESS (rc))
+        {
+            dbgAdjustRelativePos();
+            return true;
+        }
+        LogRel(("DBGGuiCreate failed, rc=%Rrc\n", rc));
     }
+    else
+        LogRel(("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
+
+    mDbgGui = NULL;
+    mDbgGuiVT = NULL;
     return false;
 }
 
@@ -3433,10 +3479,11 @@ bool VBoxConsoleWnd::dbgCreated()
  */
 void VBoxConsoleWnd::dbgDestroy()
 {
-    if (dbg_gui)
+    if (mDbgGui)
     {
-        DBGGuiDestroy (dbg_gui);
-        dbg_gui = NULL;
+        mDbgGuiVT->pfnDestroy (mDbgGui);
+        mDbgGui = NULL;
+        mDbgGuiVT = NULL;
     }
 }
 
@@ -3445,14 +3492,14 @@ void VBoxConsoleWnd::dbgDestroy()
  */
 void VBoxConsoleWnd::dbgAdjustRelativePos()
 {
-    if (dbg_gui)
+    if (mDbgGui)
     {
         QRect rct = frameGeometry();
-        DBGGuiAdjustRelativePos (dbg_gui, rct.x(), rct.y(), rct.width(), rct.height());
+        mDbgGuiVT->pfnAdjustRelativePos (mDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
 }
 
-#endif
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
     : QIWithRetranslateUI<QDialog> (aParent)

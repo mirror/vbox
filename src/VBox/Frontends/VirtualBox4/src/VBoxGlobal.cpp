@@ -84,6 +84,7 @@
 #include <iprt/path.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/ldr.h>
 
 #if defined (Q_WS_X11)
 #include <iprt/mem.h>
@@ -3999,7 +4000,7 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
 
 /**
  * Automatically figure out which hdd backends are currently support by vbox.
- * Returned is a list of pairs with the form 
+ * Returned is a list of pairs with the form
  * <"Backend Name", "*.suffix1 *.suffix2 ...">.
  */
 /* static */
@@ -4509,13 +4510,13 @@ void VBoxGlobal::init()
     /* process command line */
 
     vm_render_mode_str = 0;
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-#ifdef VBOX_WITH_DEBUGGER_GUI_MENU
-    dbg_enabled = true;
-#else
-    dbg_enabled = false;
-#endif
-    dbg_visible_at_startup = false;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+# ifdef VBOX_WITH_DEBUGGER_GUI_MENU
+    mDbgEnabled = true;
+# else
+    mDbgEnabled = RTEnvExist("VBOX_GUI_DBG_ENABLED");
+# endif
+    mDbgAutoShow = RTEnvExist("VBOX_GUI_DBG_AUTO_SHOW");
 #endif
 
     int argc = qApp->argc();
@@ -4554,25 +4555,23 @@ void VBoxGlobal::init()
             if (++i < argc)
                 vm_render_mode_str = qApp->argv() [i];
         }
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-        else if (!::strcmp (arg, "-dbg"))
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        else if (!::strcmp (arg, "-dbg") || !::strcmp (arg, "--dbg"))
         {
-            dbg_enabled = true;
+            mDbgEnabled = true;
         }
-#ifdef DEBUG
-        else if (!::strcmp (arg, "-nodebug"))
+        else if (!::strcmp( arg, "-debug") || !::strcmp( arg, "--debug"))
         {
-            dbg_enabled = false;
-            dbg_visible_at_startup = false;
+            mDbgEnabled = true;
+            mDbgAutoShow = true;
         }
-#else
-        else if (!::strcmp( arg, "-debug"))
+        else if (!::strcmp (arg, "-no-debug") || !::strcmp (arg, "--no-debug"))
         {
-            dbg_enabled = true;
-            dbg_visible_at_startup = true;
+            mDbgEnabled = false;
+            mDbgAutoShow = false;
         }
 #endif
-#endif
+        /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
         i++;
     }
 
@@ -4584,6 +4583,22 @@ void VBoxGlobal::init()
     AssertWrapperOk (mVBox);
     if (!mVBox.isOk())
         return;
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* setup the debugger gui. */
+    if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
+        mDbgEnabled = mDbgAutoShow = false;
+    if (mDbgEnabled)
+    {
+        int rc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &mhVBoxDbg);
+        if (RT_FAILURE(rc))
+        {
+            mhVBoxDbg = NIL_RTLDRMOD;
+            mDbgAutoShow = false;
+            LogRel(("Failed to load VBoxDbg, rc=%Rrc\n", rc));
+        }
+    }
+#endif
 
     mValid = true;
 }
