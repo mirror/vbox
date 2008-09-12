@@ -308,7 +308,7 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u3
      * String table containg pairs of variable and value string.
      * Terminated by two empty strings.
      */
-    LogRel(("SSM: Saved state info:\n", szVar, szValue));
+    LogRel(("SSM: Saved state info:\n"));
     for (;;)
     {
         char szVar[128];
