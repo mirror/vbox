@@ -178,7 +178,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         /* Create a subimage of the current view.
          * Currently this subimage is the whole screen. */
         CGImageRef subImage;
-        if (mView->isPaused())
+        if (!mView->pauseShot().isNull())
             subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
         else
             subImage = CGImageCreateWithImageInRect (mImage, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
@@ -225,7 +225,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         QRect ir = aEvent->rect();
         QRect is = QRect (ir.x() + mView->contentsX(), ir.y() + mView->contentsY(), ir.width(), ir.height());
         CGImageRef subImage;
-        if (mView->isPaused())
+        if (!mView->pauseShot().isNull())
             subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), ::darwinToHIRect (is));
         else
             subImage = CGImageCreateWithImageInRect (mImage, ::darwinToHIRect (is));
