@@ -98,6 +98,23 @@ public:
     STDMETHOD(RemoveHostNetworkInterface) (INPTR GUIDPARAM aId,
                                            IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
+# ifdef VBOX_WITH_NETFLT
+    /*
+     * increments the reference to the netflt - to - aHostNetworkInterface binding reference count
+     * the exec flow:
+     * 1. if netflt is NOT installed currently - install it
+     * 2. if the NetFlt is not bound to the specified adapter - bind it
+     * 3. increase the binding reference count -
+     */
+    STDMETHOD(NetFltAcquire) (IHostNetworkInterface *aHostNetworkInterface,
+                                           IProgress **aProgress);
+
+    /*
+     * decrements the reference to the netflt - to - aHostNetworkInterface binding reference count
+     */
+    STDMETHOD(NetFltRelease) (IHostNetworkInterface *aHostNetworkInterface,
+                                           IProgress **aProgress);
+# endif /*VBOX_WITH_NETFLT*/
 #endif
     STDMETHOD(CreateUSBDeviceFilter) (INPTR BSTR aName, IHostUSBDeviceFilter **aFilter);
     STDMETHOD(InsertUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter *aFilter);
