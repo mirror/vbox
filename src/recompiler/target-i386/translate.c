@@ -1561,10 +1561,7 @@ static void gen_lea_modrm(DisasContext *s, int modrm, int *reg_ptr, int *offset_
             if (s->aflag == 2) {
                 gen_op_movq_A0_reg[base]();
                 if (disp != 0) {
-                    if ((int32_t)disp == disp)
-                        gen_op_addq_A0_im(disp);
-                    else
-                        gen_op_addq_A0_im64(disp >> 32, disp);
+                    gen_op_addq_A0_im(disp);
                 }
             } else
 #endif
@@ -1576,10 +1573,7 @@ static void gen_lea_modrm(DisasContext *s, int modrm, int *reg_ptr, int *offset_
         } else {
 #ifdef TARGET_X86_64
             if (s->aflag == 2) {
-                if ((int32_t)disp == disp)
-                    gen_op_movq_A0_im(disp);
-                else
-                    gen_op_movq_A0_im64(disp >> 32, disp);
+                gen_op_movq_A0_im(disp);
             } else
 #endif
             {
