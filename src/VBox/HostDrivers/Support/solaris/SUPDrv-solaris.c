@@ -320,7 +320,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
              */
 #ifdef VBOX_WITH_HARDENING
             rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
-                                            0, "none", "none", 0600);
+                                            0, NULL, NULL, 0600);
 #else
             rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO,
                                             0, "none", "none", 0666);
