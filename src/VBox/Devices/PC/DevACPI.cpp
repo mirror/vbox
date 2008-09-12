@@ -188,7 +188,7 @@ struct ACPIState
     uint8_t             u8UseIOApic;
     uint8_t             u8UseFdc;
     bool                fPowerButtonHandled;
-   
+
     /** ACPI port base interface. */
     PDMIBASE            IBase;
     /** ACPI port interface. */
@@ -398,37 +398,39 @@ struct ACPITBLIOAPIC
 };
 AssertCompileSize(ACPITBLIOAPIC, 12);
 
-/** Multiple APIC Description Table */
 #ifdef VBOX_WITH_SMP_GUESTS
+#ifdef IN_RING3 /**@todo r=bird: Move this down to where it's used. */
 
-#define PCAT_COMPAT     0x1                     /**< system has also a dual-8259 setup */
+# define PCAT_COMPAT     0x1                     /**< system has also a dual-8259 setup */
 
-/*
+/**
+ * Multiple APIC Description Table.
+ *
  * This structure looks somewhat convoluted due layout of MADT table in MP case.
- * There extpected to be multiple LAPIC records for each CPU, thus we cannot 
+ * There extpected to be multiple LAPIC records for each CPU, thus we cannot
  * use regular C structure and proxy to raw memory instead.
  */
-class ACPITBLMADT
+class AcpiTableMADT
 {
-    /*
+    /**
      * All actual data stored in dynamically allocated memory pointed by this field.
      */
     uint8_t*            pData;
-    /*
+    /**
      * Number of CPU entries in this MADT.
      */
     uint32_t            cCpus;
-    
+
  public:
-    /*
+    /**
      * Address of ACPI header
      */
     inline ACPITBLHEADER* header_addr() const
     {
         return (ACPITBLHEADER*)pData;
     }
-    
-    /*
+
+    /**
      * Address of local APIC for each CPU. Note that different CPUs address different LAPICs,
      * although address is the same for all of them.
      */
@@ -436,16 +438,16 @@ class ACPITBLMADT
     {
         return  (uint32_t*)(header_addr() + 1);
     }
-    
-    /*
+
+    /**
      * Address of APIC flags
      */
     inline uint32_t* u32Flags_addr() const
     {
         return (uint32_t*)(u32LAPIC_addr() + 1);
     }
-    
-    /*
+
+    /**
      * Address of per-CPU LAPIC descriptions
      */
     inline ACPITBLLAPIC* LApics_addr() const
@@ -453,7 +455,7 @@ class ACPITBLMADT
         return (ACPITBLLAPIC*)(u32Flags_addr() + 1);
     }
 
-    /*
+    /**
      * Address of IO APIC description
      */
     inline ACPITBLIOAPIC* IOApic_addr() const
@@ -461,7 +463,7 @@ class ACPITBLMADT
         return (ACPITBLIOAPIC*)(LApics_addr() + cCpus);
     }
 
-    /*
+    /**
      * Size of MADT.
      * Note that this function assumes IOApic to be the last field in structure.
      */
@@ -470,7 +472,7 @@ class ACPITBLMADT
         return (uint8_t*)(IOApic_addr() + 1)-(uint8_t*)header_addr();
     }
 
-    /*
+    /**
      * Raw data of MADT.
      */
     inline const uint8_t* data() const
@@ -478,39 +480,34 @@ class ACPITBLMADT
         return pData;
     }
 
-    /*
+    /**
      * Size of MADT for given ACPI config, useful to compute layout.
      */
     static uint32_t sizeFor(ACPIState *s)
     {
-        return ACPITBLMADT(s->cCpus).size();
+        return AcpiTableMADT(s->cCpus).size();
     }
 
     /*
      * Constructor, only works in Ring 3, doesn't look like a big deal.
      */
-    ACPITBLMADT(uint16_t cpus)
+    AcpiTableMADT(uint16_t cpus)
     {
         cCpus = cpus;
         pData = 0;
-#ifdef IN_RING3
         uint32_t sSize = size();
         pData = (uint8_t*)RTMemAllocZ(sSize);
-#else
-        AssertMsgFailed(("cannot use in inner rings"));
-#endif
     }
 
-    ~ACPITBLMADT()
+    ~AcpiTableMADT()
     {
-#ifdef IN_RING3
         RTMemFree(pData);
-#else
-        AssertMsgFailed(("cannot use in inner rings"));
-#endif
     }
 };
-#else 
+#endif /* IN_RING3 */
+
+#else  /* !VBOX_WITH_SMP_GUESTS */
+/** Multiple APIC Description Table */
 struct ACPITBLMADT
 {
     ACPITBLHEADER       header;
@@ -521,7 +518,7 @@ struct ACPITBLMADT
     ACPITBLIOAPIC       IOApic;
 };
 AssertCompileSize(ACPITBLMADT, 64);
-#endif
+#endif /* !VBOX_WITH_SMP_GUESTS */
 
 #pragma pack()
 
@@ -753,15 +750,15 @@ static void acpiSetupRSDP (ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_
 /** @note APIC without IO-APIC hangs Windows Vista therefore we setup both */
 static void acpiSetupMADT (ACPIState *s, RTGCPHYS32 addr)
 {
-#if VBOX_WITH_SMP_GUESTS
+#ifdef VBOX_WITH_SMP_GUESTS
     uint16_t cpus = s->cCpus;
-    ACPITBLMADT madt(cpus);
+    AcpiTableMADT madt(cpus);
 
     acpiPrepareHeader(madt.header_addr(), "APIC", madt.size(), 2);
-    
+
     *madt.u32LAPIC_addr()          = RT_H2LE_U32(0xfee00000);
     *madt.u32Flags_addr()          = RT_H2LE_U32(PCAT_COMPAT);
-    
+
     ACPITBLLAPIC* lapic = madt.LApics_addr();
     for (uint16_t i = 0; i < cpus; i++)
     {
@@ -785,7 +782,7 @@ static void acpiSetupMADT (ACPIState *s, RTGCPHYS32 addr)
     madt.header_addr()->u8Checksum = acpiChecksum (madt.data(), madt.size());
     acpiPhyscpy (s, addr, madt.data(), madt.size());
 
-#else
+#else  /* !VBOX_WITH_SMP_GUESTS */
     ACPITBLMADT madt;
 
     /* Don't call this function if u8UseIOApic==false! */
@@ -812,7 +809,7 @@ static void acpiSetupMADT (ACPIState *s, RTGCPHYS32 addr)
 
     madt.header.u8Checksum = acpiChecksum ((uint8_t*)&madt, sizeof(madt));
     acpiPhyscpy (s, addr, &madt, sizeof(madt));
-#endif
+#endif /* !VBOX_WITH_SMP_GUESTS */
 }
 
 /* SCI IRQ */
@@ -1663,11 +1660,11 @@ static int acpiPlantTables (ACPIState *s)
     {
         apic_addr = RT_ALIGN_32 (facs_addr + sizeof(ACPITBLFACS), 16);
 #ifdef VBOX_WITH_SMP_GUESTS
-        /* 
-         * @todo r=nike maybe some refactoring needed to compute tables layout, 
+        /**
+         * @todo nike: maybe some refactoring needed to compute tables layout,
          * but as this code is executed only once it doesn't make sense to optimize much
          */
-        dsdt_addr = RT_ALIGN_32 (apic_addr + ACPITBLMADT::sizeFor(s), 16);
+        dsdt_addr = RT_ALIGN_32 (apic_addr + AcpiTableMADT::sizeFor(s), 16);
 #else
         dsdt_addr = RT_ALIGN_32 (apic_addr + sizeof(ACPITBLMADT), 16);
 #endif
@@ -1728,7 +1725,7 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
     bool fR0Enabled;
 
     /* Validate and read the configuration. */
-    if (!CFGMR3AreValuesValid (pCfgHandle, 
+    if (!CFGMR3AreValuesValid (pCfgHandle,
                                "RamSize\0"
                                "IOAPIC\0"
                                "NumCPUs\0"
