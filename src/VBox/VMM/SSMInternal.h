@@ -158,28 +158,16 @@ typedef struct SSMUNIT
 
 
 
-
-/**
- * Converts a SSM pointer into a VM pointer.
- * @returns Pointer to the VM structure the SSM is part of.
- * @param   pSSM   Pointer to SSM instance data.
- */
-#define SSM2VM(pSSM)  ( (PVM)((char*)pSSM - pSSM->offVM) )
-
-
 /**
  * SSM VM Instance data.
  * Changes to this must checked against the padding of the cfgm union in VM!
  */
 typedef struct SSM
 {
-    /** Offset to the VM structure.
-     * See SSM2VM(). */
-    RTUINT                  offVM;
-
     /** FIFO of data entity descriptors. */
     R3PTRTYPE(PSSMUNIT)     pHead;
-
+    /** For lazy init. */
+    bool                    fInitialized;
 } SSM;
 /** Pointer to SSM VM instance data. */
 typedef SSM *PSSM;
