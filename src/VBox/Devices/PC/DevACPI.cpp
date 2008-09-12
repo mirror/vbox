@@ -158,7 +158,8 @@ struct ACPIState
     uint16_t            pm1a_en;
     uint16_t            pm1a_sts;
     uint16_t            pm1a_ctl;
-    uint16_t            Alignment0;
+    /** Number of logical CPUs in guest */
+    uint16_t            cCpus;
     int64_t             pm_timer_initial;
     PTMTIMERR3          tsR3;
     PTMTIMERR0          tsR0;
@@ -198,10 +199,6 @@ struct ACPIState
     R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** Pointer to the driver connector interface */
     R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
-#if 0
-  /** Number of logical CPUs in guest */
-    uint16_t             cCpus;
-#endif
 };
 
 #pragma pack(1)
@@ -402,6 +399,118 @@ struct ACPITBLIOAPIC
 AssertCompileSize(ACPITBLIOAPIC, 12);
 
 /** Multiple APIC Description Table */
+#ifdef VBOX_WITH_SMP_GUESTS
+
+#define PCAT_COMPAT     0x1                     /**< system has also a dual-8259 setup */
+
+/*
+ * This structure looks somewhat convoluted due layout of MADT table in MP case.
+ * There extpected to be multiple LAPIC records for each CPU, thus we cannot 
+ * use regular C structure and proxy to raw memory instead.
+ */
+class ACPITBLMADT
+{
+    /*
+     * All actual data stored in dynamically allocated memory pointed by this field.
+     */
+    uint8_t*            pData;
+    /*
+     * Number of CPU entries in this MADT.
+     */
+    uint32_t            cCpus;
+    
+ public:
+    /*
+     * Address of ACPI header
+     */
+    inline ACPITBLHEADER* header_addr() const
+    {
+        return (ACPITBLHEADER*)pData;
+    }
+    
+    /*
+     * Address of local APIC for each CPU. Note that different CPUs address different LAPICs,
+     * although address is the same for all of them.
+     */
+    inline uint32_t* u32LAPIC_addr() const
+    {
+        return  (uint32_t*)(header_addr() + 1);
+    }
+    
+    /*
+     * Address of APIC flags
+     */
+    inline uint32_t* u32Flags_addr() const
+    {
+        return (uint32_t*)(u32LAPIC_addr() + 1);
+    }
+    
+    /*
+     * Address of per-CPU LAPIC descriptions
+     */
+    inline ACPITBLLAPIC* LApics_addr() const
+    {
+        return (ACPITBLLAPIC*)(u32Flags_addr() + 1);
+    }
+
+    /*
+     * Address of IO APIC description
+     */
+    inline ACPITBLIOAPIC* IOApic_addr() const
+    {
+        return (ACPITBLIOAPIC*)(LApics_addr() + cCpus);
+    }
+
+    /*
+     * Size of MADT.
+     * Note that this function assumes IOApic to be the last field in structure.
+     */
+    inline uint32_t size() const
+    {
+        return (uint8_t*)(IOApic_addr() + 1)-(uint8_t*)header_addr();
+    }
+
+    /*
+     * Raw data of MADT.
+     */
+    inline const uint8_t* data() const
+    {
+        return pData;
+    }
+
+    /*
+     * Size of MADT for given ACPI config, useful to compute layout.
+     */
+    static uint32_t sizeFor(ACPIState *s)
+    {
+        return ACPITBLMADT(s->cCpus).size();
+    }
+
+    /*
+     * Constructor, only works in Ring 3, doesn't look like a big deal.
+     */
+    ACPITBLMADT(uint16_t cpus)
+    {
+        cCpus = cpus;
+        pData = 0;
+#ifdef IN_RING3
+        uint32_t sSize = size();
+        pData = (uint8_t*)RTMemAllocZ(sSize);
+#else
+        AssertMsgFailed(("cannot use in inner rings"));
+#endif
+    }
+
+    ~ACPITBLMADT()
+    {
+#ifdef IN_RING3
+        RTMemFree(pData);
+#else
+        AssertMsgFailed(("cannot use in inner rings"));
+#endif
+    }
+};
+#else 
 struct ACPITBLMADT
 {
     ACPITBLHEADER       header;
@@ -412,6 +521,7 @@ struct ACPITBLMADT
     ACPITBLIOAPIC       IOApic;
 };
 AssertCompileSize(ACPITBLMADT, 64);
+#endif
 
 #pragma pack()
 
@@ -643,6 +753,39 @@ static void acpiSetupRSDP (ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_
 /** @note APIC without IO-APIC hangs Windows Vista therefore we setup both */
 static void acpiSetupMADT (ACPIState *s, RTGCPHYS32 addr)
 {
+#if VBOX_WITH_SMP_GUESTS
+    uint16_t cpus = s->cCpus;
+    ACPITBLMADT madt(cpus);
+
+    acpiPrepareHeader(madt.header_addr(), "APIC", madt.size(), 2);
+    
+    *madt.u32LAPIC_addr()          = RT_H2LE_U32(0xfee00000);
+    *madt.u32Flags_addr()          = RT_H2LE_U32(PCAT_COMPAT);
+    
+    ACPITBLLAPIC* lapic = madt.LApics_addr();
+    for (uint16_t i = 0; i < cpus; i++)
+    {
+        lapic->u8Type      = 0;
+        lapic->u8Length    = sizeof(ACPITBLLAPIC);
+        lapic->u8ProcId    = i;
+        lapic->u8ApicId    = i;
+        lapic->u32Flags    = RT_H2LE_U32(LAPIC_ENABLED);
+        lapic++;
+    }
+
+    ACPITBLIOAPIC* ioapic = madt.IOApic_addr();
+
+    ioapic->u8Type     = 1;
+    ioapic->u8Length   = sizeof(ACPITBLIOAPIC);
+    ioapic->u8IOApicId = cpus;
+    ioapic->u8Reserved = 0;
+    ioapic->u32Address = RT_H2LE_U32(0xfec00000);
+    ioapic->u32GSIB    = RT_H2LE_U32(0);
+
+    madt.header_addr()->u8Checksum = acpiChecksum (madt.data(), madt.size());
+    acpiPhyscpy (s, addr, madt.data(), madt.size());
+
+#else
     ACPITBLMADT madt;
 
     /* Don't call this function if u8UseIOApic==false! */
@@ -669,6 +812,7 @@ static void acpiSetupMADT (ACPIState *s, RTGCPHYS32 addr)
 
     madt.header.u8Checksum = acpiChecksum ((uint8_t*)&madt, sizeof(madt));
     acpiPhyscpy (s, addr, &madt, sizeof(madt));
+#endif
 }
 
 /* SCI IRQ */
@@ -1511,7 +1655,6 @@ static int acpiPlantTables (ACPIState *s)
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_OUT_OF_RANGE,
                                 N_("Configuration error: Invalid \"RamSize\", maximum allowed "
                                    "value is 4095MB"));
-
     rsdt_addr = 0;
     xsdt_addr = RT_ALIGN_32 (rsdt_addr + rsdt_tbl_len, 16);
     fadt_addr = RT_ALIGN_32 (xsdt_addr + xsdt_tbl_len, 16);
@@ -1519,7 +1662,15 @@ static int acpiPlantTables (ACPIState *s)
     if (s->u8UseIOApic)
     {
         apic_addr = RT_ALIGN_32 (facs_addr + sizeof(ACPITBLFACS), 16);
+#ifdef VBOX_WITH_SMP_GUESTS
+        /* 
+         * @todo r=nike maybe some refactoring needed to compute tables layout, 
+         * but as this code is executed only once it doesn't make sense to optimize much
+         */
+        dsdt_addr = RT_ALIGN_32 (apic_addr + ACPITBLMADT::sizeFor(s), 16);
+#else
         dsdt_addr = RT_ALIGN_32 (apic_addr + sizeof(ACPITBLMADT), 16);
+#endif
     }
     else
     {
@@ -1597,12 +1748,10 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
-#if 0
     rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &s->cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
-#endif
 
     /* query whether we are supposed to present an FDC controller */
     rc = CFGMR3QueryU8 (pCfgHandle, "FdcEnabled", &s->u8UseFdc);

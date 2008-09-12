@@ -133,6 +133,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cRamMBs;
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
 
+#ifdef VBOX_WITH_SMP_GUESTS
+    /* @todo: r=nike: Testing code, should use actual getter when ready */
+    uint16_t cNumCpus = 2;
+#else
+    uint16_t cNumCpus = 1;
+#endif
 
     /*
      * Get root node first.
@@ -150,6 +156,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     STR_FREE();
     rc = CFGMR3InsertBytes(pRoot,   "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cRamMBs * _1M);         RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cNumCpus);              RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
@@ -271,6 +278,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertNode(pInst,    "Config", &pBiosCfg);                           RC_CHECK();
     rc = CFGMR3InsertInteger(pBiosCfg,  "RamSize",              cRamMBs * _1M);     RC_CHECK();
+    rc = CFGMR3InsertInteger(pBiosCfg,  "NumCPUs",              cNumCpus);          RC_CHECK();
     rc = CFGMR3InsertString(pBiosCfg,   "HardDiskDevice",       "piix3ide");        RC_CHECK();
     rc = CFGMR3InsertString(pBiosCfg,   "FloppyDevice",         "i82078");          RC_CHECK();
     rc = CFGMR3InsertInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);           RC_CHECK();
@@ -456,6 +464,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cRamMBs * _1M);         RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cNumCpus);              RC_CHECK();
+
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();

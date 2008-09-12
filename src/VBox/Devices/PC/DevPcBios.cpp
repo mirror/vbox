@@ -1396,8 +1396,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
 #ifdef VBOX_WITH_SMP_GUESTS
-    pThis->cCpus = 2;
-    LogRel(("Running with %d CPUs\n", pThis->cCpus));
+    LogRel(("[SMP] BIOS with %d CPUs\n", pThis->cCpus));
 #else
     if (pThis->cCpus != 1)
     {
