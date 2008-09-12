@@ -130,7 +130,7 @@ class HGCMService
 
         static DECLCALLBACK(void) svcHlpCallComplete (VBOXHGCMCALLHANDLE callHandle, int32_t rc);
         static DECLCALLBACK(void) svcHlpDisconnectClient (void *pvInstance, uint32_t u32ClientId);
-        
+
     public:
 
         /*
@@ -252,7 +252,7 @@ int HGCMService::loadServiceDLL (void)
         return VERR_INVALID_PARAMETER;
     }
 
-    int rc = RTLdrLoadAppSharedLib (m_pszSvcLibrary, &m_hLdrMod);
+    int rc = SUPR3HardenedLdrLoadAppPriv (m_pszSvcLibrary, &m_hLdrMod);
 
     if (VBOX_SUCCESS(rc))
     {
@@ -715,7 +715,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 /* static */ DECLCALLBACK(void) HGCMService::svcHlpDisconnectClient (void *pvInstance, uint32_t u32ClientId)
 {
      HGCMService *pService = static_cast <HGCMService *> (pvInstance);
-     
+
      if (pService)
      {
          pService->DisconnectClient (u32ClientId, true);

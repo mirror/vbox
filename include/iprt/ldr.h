@@ -68,19 +68,16 @@ RTDECL(const char *) RTLdrGetSuff(void);
 RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod);
 
 /**
- * Loads a dynamic load library (/shared object) image file using native
- * OS facilities.
+ * Loads a dynamic load library (/shared object) image file residing in the
+ * RTPathAppPrivateArch() directory.
  *
- * If the path is specified in the filename, only this path is used.
- * If only the image file name is specified, then try to load it from:
- *   - RTPathAppPrivateArch
- *   - RTPathSharedLibs (legacy)
+ * Suffix is not required.
  *
  * @returns iprt status code.
- * @param   pszFilename Image filename.
+ * @param   pszFilename Image filename. No path.
  * @param   phLdrMod    Where to store the handle to the loaded module.
  */
-RTDECL(int) RTLdrLoadAppSharedLib(const char *pszFilename, PRTLDRMOD phLdrMod);
+RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod);
 
 /**
  * Open a binary image file.

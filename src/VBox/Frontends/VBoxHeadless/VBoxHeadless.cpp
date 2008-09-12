@@ -50,6 +50,7 @@ using namespace com;
 #include <iprt/env.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
+#include <VBox/sup.h>
 #endif
 
 //#define VBOX_WITH_SAVESTATE_ON_SIGNAL
@@ -689,7 +690,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
             int rrc = VINF_SUCCESS, rcc = S_OK;
 
             Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
-            rrc = RTLdrLoad("VBoxFFmpegFB", &hLdrFFmpegFB);
+            rrc = SUPR3HardenedLdrLoad("VBoxFFmpegFB", &hLdrFFmpegFB);
 
             if (RT_SUCCESS(rrc))
             {

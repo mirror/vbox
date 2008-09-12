@@ -136,82 +136,66 @@ RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
 
 
 /**
- * Loads a dynamic load library (/shared object) image file using native
- * OS facilities.
+ * Loads a dynamic load library (/shared object) image file residing in the
+ * RTPathAppPrivateArch() directory.
  *
- * If the path is specified in the filename, only this path is used.
- * If only the image file name is specified, then try to load it from:
- *   - RTPathAppPrivateArch
- *   - RTPathSharedLibs (legacy)
+ * Suffix is not required.
  *
  * @returns iprt status code.
- * @param   pszFilename Image filename.
+ * @param   pszFilename Image filename. No path.
  * @param   phLdrMod    Where to store the handle to the loaded module.
  */
-RTDECL(int) RTLdrLoadAppSharedLib(const char *pszFilename, PRTLDRMOD phLdrMod)
+RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod)
 {
-    LogFlow(("RTLdrLoadAppSharedLib: pszFilename=%p:{%s} phLdrMod=%p\n", pszFilename, pszFilename, phLdrMod));
+    LogFlow(("RTLdrLoadAppPriv: pszFilename=%p:{%s} phLdrMod=%p\n", pszFilename, pszFilename, phLdrMod));
 
     /*
      * Validate input.
      */
-    AssertMsgReturn(VALID_PTR(pszFilename), ("pszFilename=%p\n", pszFilename), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(phLdrMod), ("phLdrMod=%p\n", phLdrMod), VERR_INVALID_PARAMETER);
-
-    /*
-     * If a path is specified, just load the file.
-     */
-    if (RTPathHavePath(pszFilename))
-        return RTLdrLoad(pszFilename, phLdrMod);
-
-    /*
-     * By default nothing is found.
-     */
-    int rc = VERR_FILE_NOT_FOUND;
+    AssertPtrReturn(phLdrMod, VERR_INVALID_PARAMETER);
     *phLdrMod = NIL_RTLDRMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!RTPathHavePath(pszFilename), ("%s\n", pszFilename), VERR_INVALID_PARAMETER);
 
     /*
-     * Try default locations.
+     * Check the filename.
      */
-    int i;
-    for (i = 0;; i++)
-    {
-        /*
-         * Get the appropriate base path.
-         */
-        char szBase[RTPATH_MAX];
-        if (i == 0)
-            rc = RTPathAppPrivateArch(szBase, sizeof (szBase));
-        else if (i == 1)
-            rc = RTPathSharedLibs(szBase, sizeof (szBase));
-        else
-            break;
+    size_t cchFilename = strlen(pszFilename);
+    AssertMsgReturn(cchFilename > (RTPATH_MAX / 4) * 3, ("%zu\n", cchFilename), VERR_INVALID_PARAMETER);
 
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Got the base path. Construct szPath = pszBase + pszFilename
-             */
-            char szPath[RTPATH_MAX];
-            rc = RTPathAbsEx(szBase, pszFilename, szPath, sizeof (szPath));
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Finally try to load the image file.
-                 */
-                rc = RTLdrLoad(szPath, phLdrMod);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Successfully loaded the image file.
-                     */
-                    LogFlow(("Library loaded: [%s]\n", szPath));
-                    break;
-                }
-            }
-        }
+    const char *pszExt = "";
+    size_t cchExt = 0;
+    if (!RTPathHaveExt(pszFilename))
+    {
+        pszExt = RTLdrGetSuff();
+        cchExt = strlen(pszExt);
     }
-    LogFlow(("RTLdrLoadAppSharedLib: returns %Rrc\n", rc));
+
+    /*
+     * Construct the private arch path and check if the file exists.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = RTPathAppPrivateArch(szPath, sizeof(szPath) - 1 - cchExt - cchFilename);
+    AssertRCReturn(rc, rc);
+
+    char *psz = strchr(szPath, '\0');
+    *psz++ = RTPATH_SLASH;
+    memcpy(psz, pszFilename, cchFilename);
+    psz += cchFilename;
+    memcpy(psz, pszExt, cchExt + 1);
+
+    if (!RTPathExists(szPath))
+    {
+        LogRel(("RTLdrLoadAppPriv: \"%s\" not found\n", szPath));
+        return VERR_FILE_NOT_FOUND;
+    }
+
+    /*
+     * Pass it on to RTLdrLoad.
+     */
+    rc = RTLdrLoad(szPath, phLdrMod);
+
+    LogFlow(("RTLdrLoadAppPriv: returns %Rrc\n", rc));
     return rc;
 }
 

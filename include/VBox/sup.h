@@ -565,26 +565,9 @@ SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, 
 SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages);
 
 /**
- * Verifies the integrity of a file, and optionally opens it. 
- *  
- * The integrity check is for whether the file is suitable for loading into 
- * the hypervisor or VM process. The integrity check may include verifying 
- * the authenticode/elfsign/whatever signature of the file, which can take 
- * a little while. 
- * 
- * @returns VBox status code. On failure it will have printed a LogRel message.
- * 
- * @param   pszFilename     The file.
- * @param   pszWhat         For the LogRel on failure. 
- * @param   phFile          Where to store the handle to the opened file. This is optional, pass NULL 
- *                          if the file should not be opened. 
- */
-SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszWhat, PRTFILE phFile);
-
-/**
- * Load a module into R0 HC. 
- *  
- * This will verify the file integrity in a similar manner as 
+ * Load a module into R0 HC.
+ *
+ * This will verify the file integrity in a similar manner as
  * SUPR3HardenedVerifyFile before loading it.
  *
  * @returns VBox status code.
@@ -636,6 +619,47 @@ SUPR3DECL(int) SUPUnloadVMM(void);
  * @param   pHCPhys     Where to store the physical address of the GIP.
  */
 SUPR3DECL(int) SUPGipGetPhys(PRTHCPHYS pHCPhys);
+
+/**
+ * Verifies the integrity of a file, and optionally opens it.
+ *
+ * The integrity check is for whether the file is suitable for loading into
+ * the hypervisor or VM process. The integrity check may include verifying
+ * the authenticode/elfsign/whatever signature of the file, which can take
+ * a little while.
+ *
+ * @returns VBox status code. On failure it will have printed a LogRel message.
+ *
+ * @param   pszFilename     The file.
+ * @param   pszWhat         For the LogRel on failure.
+ * @param   phFile          Where to store the handle to the opened file. This is optional, pass NULL
+ *                          if the file should not be opened.
+ */
+SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszWhat, PRTFILE phFile);
+
+/**
+ * Same as RTLdrLoad() but will verify the files it loads (hardened builds).
+ *
+ * Will add dll suffix if missing and try load the file.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename. This must have a path.
+ * @param   phLdrMod    Where to store the handle to the loaded module.
+ */
+SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod);
+
+/**
+ * Same as RTLdrLoadAppPriv() but it will verify the files it loads (hardened
+ * builds).
+ *
+ * Will add dll suffix to the file if missing, then look for it in the
+ * architecture dependent application directory.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename.
+ * @param   phLdrMod    Where to store the handle to the loaded module.
+ */
+SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod);
 
 /** @} */
 #endif /* IN_RING3 */

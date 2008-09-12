@@ -25,8 +25,9 @@
 #define LOG_GROUP LOG_GROUP_VD
 #include <VBox/VBoxHDD-new.h>
 #include <VBox/err.h>
-
+#include <VBox/sup.h>
 #include <VBox/log.h>
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
@@ -194,7 +195,7 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
         }
 
         /* Try to load the plugin (RTLdrLoad takes care of the suffix). */
-        rc = RTLdrLoad(pszPluginName, &hPlugin);
+        rc = SUPR3HardenedLdrLoad(pszPluginName, &hPlugin);
         if (RT_SUCCESS(rc))
         {
             PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad;
@@ -729,7 +730,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                 break;
             }
 
-            rc = RTLdrLoad(pszPluginPath, &hPlugin);
+            rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
             if (RT_SUCCESS(rc))
             {
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
@@ -1014,7 +1015,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                 break;
             }
 
-            rc = RTLdrLoad(pszPluginPath, &hPlugin);
+            rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
             if (RT_SUCCESS(rc))
             {
                 rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
