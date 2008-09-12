@@ -482,6 +482,27 @@ VirtualBox4_CLEAN.win += $$(PATH_VirtualBox4)/VirtualBox4.rc
 endif # win
 
 
+# If there is the accessible plugin & we are using our home-made qt put it to
+# the output dir
+# @todo: fix this &| add it to the qt4 unit
+# note: it seems that $(PATH_SDK_QT4) isn't defined if this makefile is called
+# from the root VBox directory.
+if1of ($(KBUILD_TARGET),)
+#if1of ($(KBUILD_TARGET),darwin win)
+# Where are the plugins located
+PREFIX=lib
+SUFFIX=
+ifeq ($(KBUILD_TARGET),win)
+PREFIX=
+SUFFIX=4
+endif
+PATH_SDK_QT4_PLUGINS=$(PATH_SDK_QT4)/plugins
+# Generate the target dir
+BLDDIRS=$(PATH_BIN)/accessible/
+OTHERS += \
+      $(PATH_BIN)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL)
+endif 
+      
 ifeq ($(KBUILD_TARGET),darwin)
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
@@ -575,6 +596,16 @@ IMAGES :=
 # (note: before custom rules that make usage of generated variables!).
 include $(KBUILD_PATH)/subfooter.kmk
 
+$(PATH_BIN)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL): $(PATH_SDK_QT4_PLUGINS)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL) | $$(dir $$@)
+	$(INSTALL) -m 0644 $< ${@}
+ifeq ($(KBUILD_TARGET), darwin)
+	install_name_tool \
+       -change           QtCore.framework/Versions/4/QtCore \
+	   @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
+       -change           QtGui.framework/Versions/4/QtGui \
+	   @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
+	${@}
+endif
 
 #
 # Update all known NLS translation (.ts) files in the nls/ subdirectory.
