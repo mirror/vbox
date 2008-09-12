@@ -3249,6 +3249,7 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
      * @todo A20 setting
      */
     if (   pVM->pgm.s.CTXSUFF(pPool)
+        && !HWACCMIsNestedPagingActive(pVM)
         && PGMMODE_WITH_PAGING(pVM->pgm.s.enmGuestMode) != PGMMODE_WITH_PAGING(enmGuestMode))
     {
         Log(("PGMR3ChangeMode: changing guest paging mode -> flush pgm pool cache!\n"));
