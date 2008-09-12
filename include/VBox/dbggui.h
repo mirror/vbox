@@ -47,14 +47,44 @@ __BEGIN_DECLS
 /** Pointer to the debugger GUI instance structure. */
 typedef struct DBGGUI *PDBGGUI;
 
+/** Virtual method table for the debugger GUI. */
+typedef struct DBGGUIVT
+{
+    /** The version. (DBGGUIVT_VERSION) */
+    uint32_t u32Version;
+    /** @copydoc DBGGuiDestroy */
+    DECLCALLBACKMEMBER(int,  pfnDestroy)(PDBGGUI pGui);
+    /** @copydoc DBGGuiAdjustRelativePos */
+    DECLCALLBACKMEMBER(void, pfnAdjustRelativePos)(PDBGGUI pGui, int x, int y, unsigned cx, unsigned cy);
+    /** @copydoc DBGGuiShowStatistics */
+    DECLCALLBACKMEMBER(int,  pfnShowStatistics)(PDBGGUI pGui);
+    /** @copydoc DBGGuiShowCommandLine */
+    DECLCALLBACKMEMBER(int,  pfnShowCommandLine)(PDBGGUI pGui);
+    /** The end version. (DBGGUIVT_VERSION) */
+    uint32_t u32EndVersion;
+} DBGGUIVT;
+/** Pointer to the virtual method table for the debugger GUI. */
+typedef DBGGUIVT const *PCDBGGUIVT;
+/** The u32Version value.
+ * The first byte is the minor version, the 2nd byte is major version number.
+ * The high 16-bit word is a magic.  */
+#define DBGGUIVT_VERSION 0xbead0100
+
+
 /**
  * Creates the debugger GUI.
  *
  * @returns VBox status code.
  * @param   pSession    The VirtualBox session.
  * @param   ppGui       Where to store the pointer to the debugger instance.
+ * @param   ppGuiVT     Where to store the virtual method table pointer.
+ *                      Optional.
  */
-DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui);
+DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
+/** @copydoc DBGGuiCreate. */
+typedef DECLCALLBACK(int) FNDBGGUICREATE(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
+/** Pointer to DBGGuiCreate. */
+typedef FNDBGGUICREATE *PFNDBGGUICREATE;
 
 /**
  * Destroys the debugger GUI.

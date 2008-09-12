@@ -236,9 +236,10 @@ public:
     VBoxDefs::RenderMode vmRenderMode() const { return vm_render_mode; }
     const char *vmRenderModeStr() const { return vm_render_mode_str; }
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-    bool isDebuggerEnabled() const { return dbg_enabled; }
-    bool isDebuggerVisibleAtStartup() const { return dbg_visible_at_startup; }
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    bool isDebuggerEnabled() const { return mDbgEnabled; }
+    bool isDebuggerAutoShowEnabled() const { return mDbgAutoShow; }
+    RTLDRMOD getDebuggerModule() const { return mhVBoxDbg; }
 #endif
 
     /* VBox enum to/from string/icon/color convertors */
@@ -715,9 +716,16 @@ private:
     VBoxDefs::RenderMode vm_render_mode;
     const char * vm_render_mode_str;
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-    bool dbg_enabled;
-    bool dbg_visible_at_startup;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** Whether the debugger should be accessible or not.
+     * Use --dbg, the env.var. VBOX_GUI_DBG_ENABLED, --debug or the env.var.
+     * VBOX_GUI_DBG_AUTO_SHOW to enable. */
+    bool mDbgEnabled;
+    /** Whether to show the debugger automatically with the console.
+     * Use --debug or the env.var. VBOX_GUI_DBG_AUTO_SHOW to enable. */
+    bool mDbgAutoShow;
+    /** VBoxDbg module handle. */
+    RTLDRMOD mhVBoxDbg;
 #endif
 
 #if defined (Q_WS_WIN32)

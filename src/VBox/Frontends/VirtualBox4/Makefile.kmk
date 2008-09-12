@@ -151,10 +151,8 @@ VirtualBox4_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox4_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
 VirtualBox4_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
 VirtualBox4_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
-#ifndef VBOX_OSE
 ## @todo VBOX_WITH_HACKED_QT doesn't apply to Qt4, so why is this still here?
- VirtualBox4_DEFS.darwin  += VBOX_WITH_HACKED_QT
-#endif
+VirtualBox4_DEFS.darwin  += VBOX_WITH_HACKED_QT
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox4_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
 endif
@@ -224,17 +222,6 @@ VirtualBox4_LIBS.win       = \
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
-
-if "$(USER)" == "bird"
-ifdef VBOX_WITH_DEBUGGER_GUI ## @todo make this dynamically loadable and ship with release builds too.
- ifeq ($(KBUILD_TARGET),win)
-  VirtualBox4_LIBS        += $(PATH_LIB)/VBoxDbg$(VBOX_SUFF_LIB)
- else
-  VirtualBox4_LIBS        += $(PATH_DLL)/VBoxDbg$(VBOX_SUFF_DLL)
- endif
-endif
-endif
-
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 VirtualBox4_QT_MOCHDRS = \

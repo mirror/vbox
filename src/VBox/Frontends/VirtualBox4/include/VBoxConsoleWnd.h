@@ -35,7 +35,7 @@
 #include <QColor>
 #include <QDialog>
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
 #endif
 #ifdef Q_WS_MAC
@@ -103,7 +103,7 @@ protected:
 
     void retranslateUi();
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     bool dbgCreated();
     void dbgDestroy();
     void dbgAdjustRelativePos();
@@ -192,6 +192,7 @@ private slots:
 
     void dbgShowStatistics();
     void dbgShowCommandLine();
+    void dbgLoggingToggled(bool aBool);
 
     void onExitFullscreen();
     void unlockActionsSwitch();
@@ -233,10 +234,11 @@ private:
     QAction *devicesSFDialogAction;
     QAction *devicesInstallGuestToolsAction;
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger actions
     QAction *dbgStatisticsAction;
     QAction *dbgCommandLineAction;
+    QAction *dbgLoggingAction;
 #endif
 
     // Help actions
@@ -263,7 +265,7 @@ private:
     QMenu *mDevicesNetworkMenu;
     VBoxUSBMenu *mDevicesUSBMenu;
     /* VBoxSwitchMenu *mDevicesVRDPMenu; */
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
+#ifdef VBOX_WITH_DEBUGGER_GUI
     // Debugger popup menu
     QMenu *mDbgMenu;
 #endif
@@ -323,9 +325,11 @@ private:
     bool mIsFirstTimeStarted : 1;
     bool mIsAutoSaveMedia : 1;
 
-#if defined(VBOX_WITH_DEBUGGER_GUI) && 0
-    // Debugger GUI
-    PDBGGUI dbg_gui;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** The handle to the debugger gui. */
+    PDBGGUI mDbgGui;
+    /** The virtual method table for the debugger GUI. */
+    PCDBGGUIVT mDbgGuiVT;
 #endif
 
 #ifdef Q_WS_MAC
