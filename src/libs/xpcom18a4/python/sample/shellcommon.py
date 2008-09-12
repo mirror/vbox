@@ -85,6 +85,8 @@ def startVm(mgr,vb,mach,type):
     completed = progress.completed
     rc = progress.resultCode
     print "Completed:", completed, "rc:",rc
+    if rc == 0:
+        vb.performanceCollector.setupMetrics(['*'], [mach], 10, 15)
     session.close()
 
 def getMachines(ctx):
@@ -96,35 +98,15 @@ def asState(var):
     else:
         return 'off'
 
-def guestStats2(ctx,guest):
-    stats = {
-        'Guest statistics for sample': ctx['ifaces'].GuestStatisticType.SampleNumber,
-        'CPU Load Idle': ctx['ifaces'].GuestStatisticType.CPULoad_Idle,
-        'CPU Load User': ctx['ifaces'].GuestStatisticType.CPULoad_User,
-        'CPU Load Kernel': ctx['ifaces'].GuestStatisticType.CPULoad_Kernel,
-        'Threads': ctx['ifaces'].GuestStatisticType.Threads,
-        'Processes': ctx['ifaces'].GuestStatisticType.Processes,
-        'Handles': ctx['ifaces'].GuestStatisticType.Handles,
-        }
-    for (k,v) in stats.items(): 
-        try:
-            val = guest.getStatistic(0, v)
-            print "'%s' = '%s'" %(k,str(v))
-        except:
-            print "Cannot get value for '%s'"  %(k)
-            pass
-
 def guestStats(ctx,mach):
     collector = ctx['vb'].performanceCollector
-    collector.setupMetrics(['*'], [mach], 1, 15)
-
     (vals, names, objs, idxs, lens) = collector.queryMetricsData(["*"], [mach])
     for i in range(0,len(names)):
-        valsStr = '['
+        valsStr = '[ '
         for j in range(0, lens[i]):
             valsStr += str(vals[idxs[i]])+' '
         valsStr += ']'
-        print "Name:",names[i],"Vals:",valsStr
+        print names[i],valsStr
 
 def cmdExistingVm(ctx,mach,cmd):
     mgr=ctx['mgr']
@@ -142,6 +124,7 @@ def cmdExistingVm(ctx,mach,cmd):
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
         return
     # unfortunately IGuest is suppressed, thus WebServices knows not about it
+    # this is an example how to handle local only functionality
     if ctx['remote'] and cmd == 'stats2':
         print 'Trying to use local only functionality, ignored'
         return        
@@ -149,9 +132,7 @@ def cmdExistingVm(ctx,mach,cmd):
     ops={'pause' :     lambda: console.pause(),
          'resume':     lambda: console.resume(),
          'powerdown':  lambda: console.powerDown(),
-# Guest stats not yet implemented
-#         'stats2':      lambda: guestStats2(ctx, console.guest),
-#         'stats':      lambda: guestStats(ctx, mach),
+         'stats':      lambda: guestStats(ctx, mach),
          }
     ops[cmd]()
     session.close()
@@ -310,11 +291,11 @@ def hostCmd(ctx, args):
   
    (vals, names, objs, idxs, lens) = collector.queryMetricsData(["*"], [host])
    for i in range(0,len(names)):
-       valsStr = '['
+       valsStr = '[ '
        for j in range(0, lens[i]):
            valsStr += str(vals[idxs[i]])+' '
        valsStr += ']'
-       print "Name:",names[i],"Vals:",valsStr
+       print names[i],valsStr
 
    return 0
 
@@ -330,7 +311,6 @@ commands = {'help':['Prints help information', helpCmd],
             'start':['Start virtual machine by name or uuid', startCmd],
             'pause':['Pause virtual machine', pauseCmd],
             'resume':['Resume virtual machine', resumeCmd],
-# stats not yet well implemented
             'stats':['Stats for virtual machine', statsCmd],
             'powerdown':['Power down virtual machine', powerdownCmd],
             'list':['Shows known virtual machines', listCmd],
@@ -360,7 +340,7 @@ def interpret(ctx):
 
     autoCompletion(commands, ctx)
 
-    # to allow to print actual host information, we collect infor for
+    # to allow to print actual host information, we collect info for
     # last 150 secs maximum, (sample every 10 secs and keep up to 15 samples)
     vbox.performanceCollector.setupMetrics(['*'], [vbox.host], 10, 15)
    
