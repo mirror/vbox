@@ -1948,7 +1948,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 
     if (!mVRDPLibrary)
     {
-        rc = RTLdrLoadAppSharedLib ("VBoxVRDP", &mVRDPLibrary);
+        rc = SUPR3HardenedLdrLoadAppPriv ("VBoxVRDP", &mVRDPLibrary);
 
         if (VBOX_SUCCESS(rc))
         {

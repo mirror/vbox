@@ -46,7 +46,6 @@
  * See @ref grp_sup "SUP - Support APIs" for API details.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -67,6 +66,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/thread.h>
 #include <iprt/process.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/env.h>
 #include <iprt/rand.h>
@@ -737,7 +737,7 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
     if (RT_UNLIKELY(g_u32FakeMode))
     {
         RTHCPHYS    Phys = (uintptr_t)pvStart + PAGE_SIZE * 1024;
-        unsigned    iPage = cPages;
+        size_t      iPage = cPages;
         while (iPage-- > 0)
             paPages[iPage].Phys = Phys + (iPage << PAGE_SHIFT);
         return VINF_SUCCESS;
@@ -757,7 +757,7 @@ SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages)
         pReq->Hdr.fFlags = SUPREQHDR_FLAGS_MAGIC | SUPREQHDR_FLAGS_EXTRA_OUT;
         pReq->Hdr.rc = VERR_INTERNAL_ERROR;
         pReq->u.In.pvR3 = pvStart;
-        pReq->u.In.cPages = cPages; AssertRelease(pReq->u.In.cPages == cPages);
+        pReq->u.In.cPages = (uint32_t)cPages; AssertRelease(pReq->u.In.cPages == cPages);
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_LOCK, pReq, SUP_IOCTL_PAGE_LOCK_SIZE(cPages));
         if (RT_SUCCESS(rc))
             rc = pReq->Hdr.rc;
@@ -875,7 +875,7 @@ SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paP
         pReq->Hdr.cbOut = SUP_IOCTL_PAGE_ALLOC_SIZE_OUT(cPages);
         pReq->Hdr.fFlags = SUPREQHDR_FLAGS_MAGIC | SUPREQHDR_FLAGS_EXTRA_OUT;
         pReq->Hdr.rc = VERR_INTERNAL_ERROR;
-        pReq->u.In.cPages = cPages; AssertRelease(pReq->u.In.cPages == cPages);
+        pReq->u.In.cPages = (uint32_t)cPages; AssertRelease(pReq->u.In.cPages == cPages);
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_ALLOC, pReq, SUP_IOCTL_PAGE_ALLOC_SIZE(cPages));
         if (RT_SUCCESS(rc))
         {
@@ -990,7 +990,7 @@ SUPR3DECL(void *) SUPContAlloc2(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPhy
     Req.Hdr.cbOut = SUP_IOCTL_CONT_ALLOC_SIZE_OUT;
     Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
     Req.Hdr.rc = VERR_INTERNAL_ERROR;
-    Req.u.In.cPages = cPages;
+    Req.u.In.cPages = (uint32_t)cPages;
     int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_CONT_ALLOC, &Req, SUP_IOCTL_CONT_ALLOC_SIZE);
     if (    RT_SUCCESS(rc)
         &&  RT_SUCCESS(Req.Hdr.rc))
@@ -1059,7 +1059,7 @@ SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, 
 
         /* fake physical addresses. */
         RTHCPHYS    Phys = (uintptr_t)*ppvPages + PAGE_SIZE * 1024;
-        unsigned    iPage = cPages;
+        size_t      iPage = cPages;
         while (iPage-- > 0)
             paPages[iPage].Phys = Phys + (iPage << PAGE_SHIFT);
         return VINF_SUCCESS;
@@ -1078,7 +1078,7 @@ SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, 
         pReq->Hdr.cbOut = SUP_IOCTL_LOW_ALLOC_SIZE_OUT(cPages);
         pReq->Hdr.fFlags = SUPREQHDR_FLAGS_MAGIC | SUPREQHDR_FLAGS_EXTRA_OUT;
         pReq->Hdr.rc = VERR_INTERNAL_ERROR;
-        pReq->u.In.cPages = cPages; AssertRelease(pReq->u.In.cPages == cPages);
+        pReq->u.In.cPages = (uint32_t)cPages; AssertRelease(pReq->u.In.cPages == cPages);
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_LOW_ALLOC, pReq, SUP_IOCTL_LOW_ALLOC_SIZE(cPages));
         if (RT_SUCCESS(rc))
             rc = pReq->Hdr.rc;
@@ -1147,7 +1147,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszM
      */
     AssertPtr(pszFilename);
     AssertPtr(pszMsg);
-    AssertReturn(!phFile, VERR_NOT_IMPLEMENTED); /** @todo Implement this. The deal is that we make sure the 
+    AssertReturn(!phFile, VERR_NOT_IMPLEMENTED); /** @todo Implement this. The deal is that we make sure the
                                                      file is the same we verified after opening it. */
 
     /*
@@ -1191,7 +1191,7 @@ SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, voi
 #endif /* VBOX_WITH_IDT_PATCHING */
     }
     else
-        LogRel(("SUPLoadModule: Verification of \"%s\" failed, rc=%Rrc\n", rc)); 
+        LogRel(("SUPLoadModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1887,5 +1887,120 @@ SUPR3DECL(int) SUPGipGetPhys(PRTHCPHYS pHCPhys)
     }
     *pHCPhys = NIL_RTHCPHYS;
     return VERR_WRONG_ORDER;
+}
+
+
+/**
+ * Worker for SUPR3HardenedLdrLoad and SUPR3HardenedLdrLoadAppPriv.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename     The full file name.
+ * @param   phLdrMod        Where to store the handle to the loaded module.
+ */
+static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod)
+{
+#ifdef VBOX_WITH_HARDENING
+    /*
+     * Verify the image file.
+     */
+    rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("supR3HardenedLdrLoadIt: Verification of \"%s\" failed, rc=%Rrc\n", rc));
+        return rc;
+    }
+#endif
+
+    /*
+     * Try load it.
+     */
+    return RTLdrLoad(pszFilename, phLdrMod);
+}
+
+
+SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phLdrMod, VERR_INVALID_PARAMETER);
+    *phLdrMod = NIL_RTLDRMOD;
+    AssertReturn(RTPathHavePath(pszFilename), VERR_INVALID_PARAMETER);
+
+    /*
+     * Add the default extension if it's missing.
+     */
+    if (!RTPathHaveExt(pszFilename))
+    {
+        const char *pszSuff = RTLdrGetSuff();
+        size_t      cchSuff = strlen(pszSuff);
+        size_t      cchFilename = strlen(pszFilename);
+        char       *psz = (char *)alloca(cchFilename + cchSuff + 1);
+        AssertReturn(psz, VERR_NO_TMP_MEMORY);
+        memcpy(psz, pszFilename, cchFilename);
+        memcpy(psz + cchFilename, pszSuff, cchSuff + 1);
+        pszFilename = psz;
+    }
+
+    /*
+     * Pass it on to the common library loader.
+     */
+    return supR3HardenedLdrLoadIt(pszFilename, phLdrMod);
+}
+
+
+SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod)
+{
+    LogFlow(("SUPR3HardenedLdrLoadAppPriv: pszFilename=%p:{%s} phLdrMod=%p\n", pszFilename, pszFilename, phLdrMod));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(phLdrMod, VERR_INVALID_PARAMETER);
+    *phLdrMod = NIL_RTLDRMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!RTPathHavePath(pszFilename), ("%s\n", pszFilename), VERR_INVALID_PARAMETER);
+
+    /*
+     * Check the filename.
+     */
+    size_t cchFilename = strlen(pszFilename);
+    AssertMsgReturn(cchFilename < (RTPATH_MAX / 4) * 3, ("%zu\n", cchFilename), VERR_INVALID_PARAMETER);
+
+    const char *pszExt = "";
+    size_t cchExt = 0;
+    if (!RTPathHaveExt(pszFilename))
+    {
+        pszExt = RTLdrGetSuff();
+        cchExt = strlen(pszExt);
+    }
+
+    /*
+     * Construct the private arch path and check if the file exists.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = RTPathAppPrivateArch(szPath, sizeof(szPath) - 1 - cchExt - cchFilename);
+    AssertRCReturn(rc, rc);
+
+    char *psz = strchr(szPath, '\0');
+    *psz++ = RTPATH_SLASH;
+    memcpy(psz, pszFilename, cchFilename);
+    psz += cchFilename;
+    memcpy(psz, pszExt, cchExt + 1);
+
+    if (!RTPathExists(szPath))
+    {
+        LogRel(("SUPR3HardenedLdrLoadAppPriv: \"%s\" not found\n", szPath));
+        return VERR_FILE_NOT_FOUND;
+    }
+
+    /*
+     * Pass it on to SUPR3HardenedLdrLoad.
+     */
+    rc = SUPR3HardenedLdrLoad(szPath, phLdrMod);
+
+    LogFlow(("SUPR3HardenedLdrLoadAppPriv: returns %Rrc\n", rc));
+    return rc;
 }
 
