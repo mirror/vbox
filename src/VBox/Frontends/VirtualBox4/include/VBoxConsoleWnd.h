@@ -190,6 +190,7 @@ private slots:
 
     void processGlobalSettingChange (const char *publicName, const char *name);
 
+    void dbgPrepareDebugMenu();
     void dbgShowStatistics();
     void dbgShowCommandLine();
     void dbgLoggingToggled(bool aBool);

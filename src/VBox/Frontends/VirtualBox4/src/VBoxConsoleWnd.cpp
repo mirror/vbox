@@ -567,15 +567,14 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
              this, SLOT (processGlobalSettingChange (const char *, const char *)));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
+    if (mDbgMenu)
+        connect (mDbgMenu, SIGNAL (aboutToShow()), this, SLOT (dbgPrepareDebugMenu()));
     if (dbgStatisticsAction)
-        connect (dbgStatisticsAction, SIGNAL (triggered()),
-                 this, SLOT (dbgShowStatistics()));
+        connect (dbgStatisticsAction, SIGNAL (triggered()), this, SLOT (dbgShowStatistics()));
     if (dbgCommandLineAction)
-        connect (dbgCommandLineAction, SIGNAL (triggered()),
-                 this, SLOT (dbgShowCommandLine()));
+        connect (dbgCommandLineAction, SIGNAL (triggered()), this, SLOT (dbgShowCommandLine()));
     if (dbgLoggingAction)
-        connect (dbgLoggingAction, SIGNAL (toggled (bool)),
-                 this, SLOT (dbgLoggingToggled (bool)));
+        connect (dbgLoggingAction, SIGNAL (toggled (bool)), this, SLOT (dbgLoggingToggled (bool)));
 #endif
 
 #ifdef Q_WS_MAC
@@ -3400,6 +3399,32 @@ void VBoxConsoleWnd::processGlobalSettingChange (const char * /*publicName*/,
                                                  const char * /*name*/)
 {
     hostkey_name->setText (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()));
+}
+
+/**
+ * Prepare the Debug menu.
+ */
+void VBoxConsoleWnd::dbgPrepareDebugMenu()
+{
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* The "Logging" item. */
+    bool fEnabled = false;
+    bool fChecked = false;
+    CConsole cconsole = csession.GetConsole();
+    if (cconsole.isOk())
+    {
+        CMachineDebugger cdebugger = cconsole.GetDebugger();
+        if (cconsole.isOk())
+        {
+            fEnabled = true;
+            fChecked = cdebugger.GetLogEnabled() != FALSE;
+        }
+    }
+    if (fEnabled != dbgLoggingAction->isEnabled())
+        dbgLoggingAction->setEnabled (fEnabled);
+    if (fChecked != dbgLoggingAction->isChecked())
+        dbgLoggingAction->setChecked (fChecked);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 }
 
 /**
