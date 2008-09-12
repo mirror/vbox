@@ -269,9 +269,13 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     {
         dbgStatisticsAction = new QAction (this);
         dbgCommandLineAction = new QAction (this);
+        if (vboxGlobal().getDebuggerModule()== NIL_RTLDRMOD)
+        {
+            dbgStatisticsAction->setEnabled (false);
+            dbgCommandLineAction->setEnabled (false);
+        }
         dbgLoggingAction = new QAction (this);
         dbgLoggingAction->setCheckable (true);
-        dbgLoggingAction->setIcon (VBoxGlobal::iconSet (":/start_16px.png")); /// @todo find the default check boxes.
     }
     else
     {
@@ -3461,10 +3465,18 @@ bool VBoxConsoleWnd::dbgCreated()
         rc = pfnGuiCreate (csession.iface(), &mDbgGui, &mDbgGuiVT);
         if (RT_SUCCESS (rc))
         {
-            dbgAdjustRelativePos();
-            return true;
+            if (    DBGGUIVT_ARE_VERSIONS_COMPATIBLE(mDbgGuiVT->u32Version, DBGGUIVT_VERSION)
+                ||  mDbgGuiVT->u32EndVersion != mDbgGuiVT->u32Version)
+            {
+                dbgAdjustRelativePos();
+                return true;
+            }
+
+            LogRel(("DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
+                    mDbgGuiVT->u32Version, mDbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
         }
-        LogRel(("DBGGuiCreate failed, rc=%Rrc\n", rc));
+        else
+            LogRel(("DBGGuiCreate failed, rc=%Rrc\n", rc));
     }
     else
         LogRel(("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
