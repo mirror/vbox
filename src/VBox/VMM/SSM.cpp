@@ -48,6 +48,7 @@
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/version.h>
 
 #include <iprt/assert.h>
 #include <iprt/file.h>
@@ -218,6 +219,9 @@ typedef struct SSMFILEUNITHDR
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static int                  ssmR3LazyInit(PVM pVM);
+static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit);
 static int ssmr3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
 static void ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
@@ -229,6 +233,96 @@ static DECLCALLBACK(int) ssmr3WriteOut(void *pvSSM, const void *pvBuf, size_t cb
 static void ssmr3ReadFinish(PSSMHANDLE pSSM);
 static int ssmr3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf);
 static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, size_t *pcbRead);
+
+
+/**
+ * Performs lazy initialization of the SSM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM.
+ */
+static int ssmR3LazyInit(PVM pVM)
+{
+#if 1 /* if we want 2.0.2 to remain forward compatible with 2.0.x, disable this. */
+    /*
+     * Register a saved state unit which we use to put the VirtualBox version,
+     * revision and similar stuff in.
+     */
+    pVM->ssm.s.fInitialized = true;
+    int rc = SSMR3RegisterInternal(pVM, "SSM", 0 /*u32Instance*/, 1/*u32Version*/, 64 /*cbGuess*/,
+                                   NULL /*pfnSavePrep*/, ssmR3SelfSaveExec, NULL /*pfnSaveDone*/,
+                                   NULL /*pfnSavePrep*/, ssmR3SelfLoadExec, NULL /*pfnSaveDone*/);
+    pVM->ssm.s.fInitialized = RT_SUCCESS(rc);
+    return rc;
+#else
+    pVM->ssm.s.fInitialized = true;
+    return VINF_SUCCESS;
+#endif
+}
+
+
+/**
+ * For saving the version + revision and stuff.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pSSM            The SSM handle.
+ */
+static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
+{
+    char szTmp[128];
+
+    /*
+     * String table containg pairs of variable and value string.
+     * Terminated by two empty strings.
+     */
+    SSMR3PutStrZ(pSSM, "VBox Version");
+    SSMR3PutStrZ(pSSM, VBOX_VERSION_STRING);
+    SSMR3PutStrZ(pSSM, "VBox Revision");
+    RTStrPrintf(szTmp, sizeof(szTmp), "%d", VMMGetSvnRev());
+    SSMR3PutStrZ(pSSM, szTmp);
+#ifdef VBOX_OSE
+    SSMR3PutStrZ(pSSM, "OSE");
+    SSMR3PutStrZ(pSSM, "true");
+#endif
+
+    /* terminator */
+    SSMR3PutStrZ(pSSM, "");
+    return SSMR3PutStrZ(pSSM, "");
+}
+
+
+/**
+ * For load the version + revision and stuff.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pSSM            The SSM handle.
+ * @param   u32Version      The version (1).
+ */
+static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    AssertLogRelMsgReturn(u32Version == 1, ("%d", u32Version), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    /*
+     * String table containg pairs of variable and value string.
+     * Terminated by two empty strings.
+     */
+    LogRel(("SSM: Saved state info:\n", szVar, szValue));
+    for (;;)
+    {
+        char szVar[128];
+        char szValue[1024];
+        int rc = SSMR3GetStrZ(pSSM, szVar, sizeof(szVar));
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetStrZ(pSSM, szValue, sizeof(szValue));
+        AssertRCReturn(rc, rc);
+        if (!szVar[0] && !szValue[0])
+            break;
+        LogRel(("SSM:   %s: %s\n", szVar, szValue));
+    }
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -245,6 +339,15 @@ static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, siz
  */
 static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit)
 {
+    /*
+     * Lazy init.
+     */
+    if (!pVM->ssm.s.fInitialized)
+    {
+        int rc = ssmR3LazyInit(pVM);
+        AssertRCReturn(rc, rc);
+    }
+
     /*
      * Walk to the end of the list checking for duplicates as we go.
      */
@@ -2900,7 +3003,7 @@ SSMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
  * Loads a GC virtual address item from the current data unit.
  *
  * Note: only applies to:
- * - SSMR3GetGCPtr 
+ * - SSMR3GetGCPtr
  * - SSMR3GetGCUIntPtr
  * - SSMR3GetGCSInt
  * - SSMR3GetGCUInt
