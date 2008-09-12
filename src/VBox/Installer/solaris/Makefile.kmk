@@ -155,10 +155,8 @@ SOLARIS_NLS = \
 	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
 
 ifdef VBOX_WITH_DOCS
- ifndef $(VBOX_OSE)
   SOLARIS_NO_STRIP += \
 	UserManual.pdf
- endif
 endif
 
 ifdef VBOX_WITH_VRDP
@@ -360,7 +358,7 @@ endif
 		$(PATH_CURRENT)/vbox.pkginfo
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARIS_INST_DIR)/vboxdrv.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf            $(SOLARIS_INST_DIR)/vboxflt.conf
-	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_DOCS)),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf  $(SOLARIS_INST_DIR)/UserManual.pdf,)
+	$(QUIET)$(if $(VBOX_WITH_DOCS),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf                            $(SOLARIS_INST_DIR)/UserManual.pdf,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
 	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html  $(SOLARIS_INST_DIR)/License-$(VBOX_LICENSE_VER).html,)
