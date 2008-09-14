@@ -1489,9 +1489,9 @@ ifdef VBOX_SIGNING_MODE
   ifeq ($(strip $(VBOX_SIGNING_MODE)),release)
    ## Commands for signing an executable or a dll image after link.
    VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_FILE_FN,$(out)))
-   ## Enable signing of the additions.
-   VBOX_SIGN_ADDITIONS   ?= 1
   endif
+  ## Enable signing of the additions.
+  VBOX_SIGN_ADDITIONS   ?= 1
  else
   # Not windows build platform, ignore.
   VBOX_SIGNING_MODE :=
