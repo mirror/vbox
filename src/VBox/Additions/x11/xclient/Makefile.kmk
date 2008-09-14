@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-DEPTH    ?= ../../../../..
-SUB_DEPTH = ../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -74,10 +69,10 @@ endif
 #
 # Actually, this is darn annoying and will *NOT* be tolerated for any new code!
 #
-VBoxClient_LIBPATH  += $(PATH_TARGET)/VBoxClient
-VBoxClient_ORDERDEPS = $(PATH_TARGET)/VBoxClient/libstdc++.a
-VBoxClient_CLEAN     = $(PATH_TARGET)/VBoxClient/libstdc++.a
-$(PATH_TARGET)/VBoxClient/libstdc++.a:
+VBoxClient_LIBPATH  += $(PATH_VBoxClient)
+VBoxClient_ORDERDEPS = $(PATH_VBoxClient)/libstdc++.a
+VBoxClient_CLEAN     = $(PATH_VBoxClient)/libstdc++.a
+$$(PATH_VBoxClient)/libstdc++.a:
 	$(call MSG_L1,Forcing static libstdc++)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(LN_EXT) -sf `$(TOOL_$(VBOX_GCC_TOOL)_CXX) $(TEMPLATE_VBOXGUESTR3CPPEXE_CXXFLAGS.$(KBUILD_TARGET_ARCH)) -print-file-name=libstdc++.a` $@ \

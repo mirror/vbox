@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-DEPTH    ?= ../../../../..
-SUB_DEPTH = ../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 ifneq ($(KBUILD_HOST),solaris)
@@ -38,8 +33,7 @@ SYSMODS.solaris      += vboxvfs
 vboxvfs_TEMPLATE      = VBOXGUESTR0
 vboxvfs_DEFS          = VBOX_WITH_HGCM
 vboxvfs_INCS         := \
-       $(PATH_SUB_CURRENT) \
-       $(PATH_TARGET)
+	.
 vboxvfs_SOURCES       = \
 	vboxvfs_vfsops.c \
 	vboxvfs_vnops.c \

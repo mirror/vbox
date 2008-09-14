@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../../../..
-else
-SUB_DEPTH = ../../../..
-DEPTH    ?= ../../../../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += vrdpvd
@@ -42,7 +37,7 @@ vrdpvd_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
-$(error Fix inf editing and dirver signing)
+$(error Fix inf editing and driver signing)
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
