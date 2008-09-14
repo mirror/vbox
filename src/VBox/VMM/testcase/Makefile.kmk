@@ -208,7 +208,9 @@ include	$(KBUILD_PATH)/subfooter.kmk
 #
 
 ifeq ($(KBUILD_HOST),win)
- include $(KBUILD_PATH)/tools/MINGW32.kmk
+ ifndef TOOL_MINGW32
+  include $(KBUILD_PATH)/tools/MINGW32.kmk
+ endif
  VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
 else
  VBOX_NM ?= nm -p
