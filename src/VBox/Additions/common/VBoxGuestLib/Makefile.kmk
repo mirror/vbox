@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-DEPTH    ?= ../../../../..
-SUB_DEPTH = ../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
@@ -102,7 +97,7 @@ ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all i
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestR3LibGuestProp.cpp,) \
-	VBoxGuestR3LibMisc.cpp	
+	VBoxGuestR3LibMisc.cpp
 endif
 
 

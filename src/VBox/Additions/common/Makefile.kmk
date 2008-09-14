@@ -19,20 +19,15 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-DEPTH    ?= ../../../..
-SUB_DEPTH = ..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile.
 include $(PATH_SUB_CURRENT)/VBoxGuestLib/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
 if1of ($(KBUILD_TARGET), freebsd os2 solaris)
-include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
-include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk

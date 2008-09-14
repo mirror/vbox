@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-DEPTH    ?= ../../../../..
-SUB_DEPTH = ../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += VBoxTray
@@ -58,10 +53,10 @@ VBoxTray.rc_INCS = $(PATH_VBoxTray)
 VBoxTray.rc_DEPS = $(PATH_VBoxTray)/VBoxTray-icon.rc
 VBoxTray.rc_CLEAN = $(PATH_VBoxTray)/VBoxTray-icon.rc
 
-include	$(KBUILD_PATH)/subfooter.kmk
-
 # Icon include file.
-$(PATH_VBoxTray)/VBoxTray-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $(VBoxTray_PATH)/Makefile.kmk | $$(call DIRDEP,$$(@D))
+$$(PATH_VBoxTray)/VBoxTray-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxTray_PATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+
+include	$(KBUILD_PATH)/subfooter.kmk
 

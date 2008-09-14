@@ -19,8 +19,7 @@
 # additional information or have any questions.
 #
 
-DEPTH ?= ../../../../..
-SUB_DEPTH = ../..
+SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 # PORTME: OSes using mixed case driver names join OS/2, the others join Solaris below.
@@ -35,7 +34,7 @@ if1of ($(KBUILD_TARGET), os2)
  endif
  VBoxGuest_TEMPLATE      = VBOXGUESTR0
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
- VBoxGuest_INCS         := $(PATH_SUB_CURRENT)
+ VBoxGuest_INCS          = .
  ifneq ($(KBUILD_TARGET),os2)
   VBoxGuest_SOURCES    = \
   	VBoxGuest-$(KBUILD_TARGET).cpp \
@@ -62,9 +61,8 @@ if1of ($(KBUILD_TARGET), os2)
   VBoxGuestLibOs2Hack_TEMPLATE   = VBOXGUESTR0LIB
   VBoxGuestLibOs2Hack_NOINST     = 1
   VBoxGuestLibOs2Hack_DEFS       = $(VBoxGuest_DEFS)
-  VBoxGuestLibOs2Hack_INCS      := \
-  	$(PATH_SUB_CURRENT) \
-  	$(PATH_TARGET) \
+  VBoxGuestLibOs2Hack_INCS       = \
+  	. \
   	$(PATH_ROOT)/src/VBox/Runtime/include # for the os2ddk
   VBoxGuestLibOs2Hack_SOURCES    = \
   	VBoxGuest-os2.cpp \
@@ -79,10 +77,10 @@ else if1of ($(KBUILD_TARGET), freebsd solaris)
  SYSMODS.freebsd += vboxguest
  vboxguest_TEMPLATE      = VBOXGUESTR0
  vboxguest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
- vboxguest_INCS         := \
-	$(PATH_SUB_CURRENT)
+ vboxguest_INCS          = \
+	.
  vboxguest_INCS.freebsd  = \
-	$(PATH_TARGET)
+	$(PATH_vboxguest)
  vboxguest_SOURCES       = \
  	VBoxGuest-$(KBUILD_TARGET).c \
  	VBoxGuest.cpp
@@ -90,9 +88,9 @@ else if1of ($(KBUILD_TARGET), freebsd solaris)
  	$(VBOX_LIB_VBGL_R0BASE) \
  	$(VBOX_LIB_IPRT_GUEST_R0)
  vboxguest_DEPS.freebsd  = \
-	$(PATH_TARGET)/pci_if.h \
-	$(PATH_TARGET)/bus_if.h \
-	$(PATH_TARGET)/device_if.h
+	$(PATH_vboxguest)/pci_if.h \
+	$(PATH_vboxguest)/bus_if.h \
+	$(PATH_vboxguest)/device_if.h
  vboxguest_CLEAN.freebsd = $(vboxguest_DEPS.freebsd)
 
  #
@@ -103,23 +101,23 @@ else if1of ($(KBUILD_TARGET), freebsd solaris)
  # source file to the destination direction for it to work out correctly.
  #
  VBOX_AWK := /usr/bin/awk
- $(PATH_TARGET)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m
+ $$(PATH_vboxguest)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_TARGET)/bus_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/bus_if.m -h -p
-	$(QUIET)$(RM) $(PATH_TARGET)/bus_if.m
+	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_vboxguest)/bus_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_vboxguest)/bus_if.m -h -p
+	$(QUIET)$(RM) $(PATH_vboxguest)/bus_if.m
 
- $(PATH_TARGET)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m
+ $$(PATH_vboxguest)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_TARGET)/device_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/device_if.m -h -p
-	$(QUIET)$(RM) $(PATH_TARGET)/device_if.m
+	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_vboxguest)/device_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_vboxguest)/device_if.m -h -p
+	$(QUIET)$(RM) $(PATH_vboxguest)/device_if.m
 
- $(PATH_TARGET)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m
+ $$(PATH_vboxguest)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m $(PATH_TARGET)/pci_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_TARGET)/pci_if.m -h -p
-	$(QUIET)$(RM) $(PATH_TARGET)/pci_if.m
+	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m $(PATH_vboxguest)/pci_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_vboxguest)/pci_if.m -h -p
+	$(QUIET)$(RM) $(PATH_vboxguest)/pci_if.m
 
 endif
 

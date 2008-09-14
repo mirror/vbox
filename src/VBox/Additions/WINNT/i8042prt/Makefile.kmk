@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-DEPTH    ?= ../../../../..
-SUB_DEPTH = ../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 
@@ -59,14 +54,14 @@ VBoxMouseNT_CLEAN       = \
 	$(PATH_VBoxMouseNT)/i8042log.rc \
 	$(PATH_VBoxMouseNT)/MSG00001.bin
 
-
-include	$(KBUILD_PATH)/subfooter.kmk
-
-$(PATH_VBoxMouseNT)/i8042log.rc: $(VBoxMouseNT_PATH)/i8042log.mc | $(call DIRDEP,$(PATH_VBoxMouseNT))
+$$(PATH_VBoxMouseNT)/i8042log.rc: $(PATH_SUB_CURRENT)/i8042log.mc | $$(dir $$@)
 	$(call MSG_COMPILE,VBoxMouseNT,$<,$@,RC)
 	$(QUIET)$(WIN32_MC) \
 		-r $(PATH_VBoxMouseNT)/ \
 		-x $(PATH_VBoxMouseNT)/ \
 		-h $(PATH_VBoxMouseNT)/ \
 		$(subst /,\\,$<)
+
+
+include	$(KBUILD_PATH)/subfooter.kmk
 

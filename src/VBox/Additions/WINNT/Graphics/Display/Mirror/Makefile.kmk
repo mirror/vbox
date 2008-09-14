@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../../../..
-else
-SUB_DEPTH = ../../../..
-DEPTH    ?= ../../../../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 SYSMODS += vrdpdd
@@ -44,7 +39,6 @@ vrdpdd_LIBS        = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib \
 	$(PATH_SDK_W2K3DDKX86_LIB)/win32k.lib \
 	$(PATH_LIB)/additions/RuntimeW32GuestR0$(VBOXW32GUEST_SUFF_LIB)
-
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

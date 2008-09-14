@@ -19,18 +19,19 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-SUB_DEPTH = ..
-DEPTH    ?= ../../../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
+#
+# Include sub-makefiles.
+#
 include $(PATH_SUB_CURRENT)/module/Makefile.kmk
 include $(PATH_SUB_CURRENT)/daemon/Makefile.kmk
 include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
 
+#
+# Targets
+#
 ifndef VBOX_OSE
  PACKING     += $(PATH_BIN)/additions/VBoxLinuxAdditions.run
  OTHER_CLEAN += $(PACKING)
@@ -38,18 +39,24 @@ ifndef VBOX_OSE
  VBOX_SELINUX_CMPLD := $(PATH_SUB_CURRENT)/selinux-fedora/vbox_x11.pp
 endif
 
+#
+# Globals
+#
+VBOX_LNX_ADD_INS_OUT_DIR           := $(PATH_TARGET)/Additions/Installer/linux
+BLDDIRS                            += $(VBOX_LNX_ADD_INS_OUT_DIR)
 VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
 VBOX_PATH_X11_ADDITION_INSTALLER   := $(PATH_ROOT)/src/VBox/Additions/x11/installer
 
+ifeq ($(KBUILD_TYPE),debug)
+ VBOX_LNX_ADD_BIN_COPY              = $(CP) -f
+ VBOX_LNX_ADD_BIN_COPY_SYMBOLS      = $(CP) -f
+else
+ VBOX_LNX_ADD_BIN_COPY              = objcopy -S -R .comment
+ VBOX_LNX_ADD_BIN_COPY_SYMBOLS      = objcopy -g -R .comment
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
-ifeq ($(KBUILD_TYPE),debug)
- BIN_COPY         = $(CP) -f
- BIN_COPY_SYMBOLS = $(CP) -f
-else
- BIN_COPY         = objcopy -S -R .comment
- BIN_COPY_SYMBOLS = objcopy -g -R .comment
-endif
 
 #
 # Build the Linux Guest Additions self extracting installer.
@@ -98,52 +105,53 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(wildcard $(PATH_BIN)/additions/src/*/*/*/*) \
 		$(VBOX_VERSION_STAMP)
 	$(call MSG_L1,Creating $@)
-	$(QUIET)$(MKDIR) -p $(PATH_TARGET)/install
+	$(QUIET)$(MKDIR) -p $(VBOX_LNX_ADD_INS_OUT_DIR)
 # Remove target directory first, otherwise the behaviour of cp will not be
 # what we want if it already exists. See the cp manual page for more details.
-	$(QUIET)rm -rf $(PATH_TARGET)/install/module
-	$(QUIET)cp -af $(PATH_BIN)/additions/src $(PATH_TARGET)/install/module
-	$(QUIET)$(MKDIR) -p $(PATH_TARGET)/install/module/test
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test  $(PATH_TARGET)/install/module/test/Makefile
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c         $(PATH_TARGET)/install/module/test/
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxadd-timesync           $(PATH_TARGET)/install/vboxadd-timesync
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxClient                 $(PATH_TARGET)/install/VBoxClient
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/VBoxControl                $(PATH_TARGET)/install/VBoxControl
+	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_INS_OUT_DIR)/module
+	$(QUIET)cp -af $(PATH_BIN)/additions/src $(VBOX_LNX_ADD_INS_OUT_DIR)/module
+	$(QUIET)$(MKDIR) -p $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test/Makefile
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c         $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test/
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxadd-timesync           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxadd-timesync
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxClient                 $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxClient
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxControl                $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxControl
 	$(QUIET)$(SED) \
 	    -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 	    -e "s;_BUILD_;$(shell date);g" \
 	    -e "s;_OSE_;$(VBOX_OSE);g" \
 	    -e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 	    -e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
-	    < $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh > $(PATH_TARGET)/install/install_.sh
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_TARGET)/install/install_.sh $(PATH_TARGET)/install/install.sh
-	$(QUIET)$(RM) $(PATH_TARGET)/install/install_.sh
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh          $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-timesync.sh $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient     $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop    $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh          $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Installer/linux/routines.sh         $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids         $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl          $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl        $(PATH_TARGET)/install
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/90-vboxguest.fdi    $(PATH_TARGET)/install
-	$(QUIET)$(BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxmouse_drv.o        $(PATH_TARGET)/install/vboxmouse_drv.o
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so    $(PATH_TARGET)/install/vboxmouse_drv_70.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so    $(PATH_TARGET)/install/vboxmouse_drv_71.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so    $(PATH_TARGET)/install/vboxmouse_drv_14.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_15.so    $(PATH_TARGET)/install/vboxmouse_drv_15.so
-	$(QUIET)$(BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxvideo_drv.o        $(PATH_TARGET)/install/vboxvideo_drv.o
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so    $(PATH_TARGET)/install/vboxvideo_drv_70.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_71.so    $(PATH_TARGET)/install/vboxvideo_drv_71.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so    $(PATH_TARGET)/install/vboxvideo_drv_13.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so    $(PATH_TARGET)/install/vboxvideo_drv_14.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_15.so    $(PATH_TARGET)/install/vboxvideo_drv_15.so
-	$(QUIET)$(BIN_COPY) $(PATH_BIN)/additions/mountvboxsf            $(PATH_TARGET)/install/mount.vboxsf
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxvfs.sh $(PATH_TARGET)/install
+	    --output $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh \
+	    $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh $(VBOX_LNX_ADD_INS_OUT_DIR)/install.sh
+	$(QUIET)$(RM) $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh          $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd-timesync.sh $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient     $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop    $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh          $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Installer/linux/routines.sh         $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids         $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl          $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl        $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/90-vboxguest.fdi    $(VBOX_LNX_ADD_INS_OUT_DIR)
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxmouse_drv.o       $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxmouse_drv.o
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_70.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxmouse_drv_70.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_71.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxmouse_drv_71.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_14.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxmouse_drv_14.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxmouse_drv_15.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxmouse_drv_15.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY_SYMBOLS) $(PATH_BIN)/additions/vboxvideo_drv.o       $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv.o
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_70.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_70.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_71.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_71.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_13.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_13.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_14.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_15.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_15.so
+	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/mountvboxsf                   $(VBOX_LNX_ADD_INS_OUT_DIR)/mount.vboxsf
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxvfs.sh          $(VBOX_LNX_ADD_INS_OUT_DIR)
 ifdef VBOX_SELINUX_CMPLD
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_SELINUX_CMPLD)                            $(PATH_TARGET)/install
+	$(QUIET)$(INSTALL) -m 0755 $(VBOX_SELINUX_CMPLD)                                     $(VBOX_LNX_ADD_INS_OUT_DIR)
 endif
-	$(QUIET)$(VBOX_MAKESELF) $(PATH_TARGET)/install $@ \
+	$(QUIET)$(VBOX_MAKESELF) $(VBOX_LNX_ADD_INS_OUT_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
 

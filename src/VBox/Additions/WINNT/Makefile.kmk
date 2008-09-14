@@ -18,12 +18,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../..
-else
-SUB_DEPTH = ..
-DEPTH    ?= ../../../..
-endif
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include Sub-Makefiles.

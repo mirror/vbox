@@ -19,12 +19,7 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../../../../..
-else
-DEPTH    ?= ../../../../..
-SUB_DEPTH = ../..
-endif
 include	$(KBUILD_PATH)/subheader.kmk
 
 ifneq ($(KBUILD_HOST),freebsd)
@@ -37,9 +32,9 @@ endif
 SYSMODS.freebsd      += vboxvfs
 vboxvfs_TEMPLATE      = VBOXGUESTR0
 vboxvfs_DEFS          = VBOX_WITH_HGCM
-vboxvfs_INCS         := \
-       $(PATH_SUB_CURRENT) \
-       $(PATH_TARGET)
+vboxvfs_INCS          = \
+        . \
+       $(PATH_vboxfs)
 vboxvfs_SOURCES       = \
 	vboxvfs_vfsops.c \
 	vboxvfs_vnops.c
@@ -47,27 +42,27 @@ vboxvfs_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 vboxvfs_DEPS          = \
-       $(PATH_TARGET)/vnode_if.h \
-       $(PATH_TARGET)/vnode_if_newproto.h \
-       $(PATH_TARGET)/vnode_if_typedef.h
+       $$(PATH_vboxvfs)/vnode_if.h \
+       $$(PATH_vboxvfs)/vnode_if_newproto.h \
+       $$(PATH_vboxvfs)/vnode_if_typedef.h
 vboxvfs_CLEAN        += $(vboxvfs_DEPS)
 
 VBOX_AWK := /usr/bin/awk
 
-$(PATH_TARGET)/vnode_if.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
+$$(PATH_vboxvfs)/vnode_if.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -h
-	$(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if.h $(PATH_TARGET)/vnode_if.h
+	$(QUIET)$(MV) $(PATH_vboxvfs)/vnode_if.h $(PATH_vboxvfs)/vnode_if.h
 
-$(PATH_TARGET)/vnode_if_newproto.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
+$$(PATH_vboxvfs)/vnode_if_newproto.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -p
-	$(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_newproto.h $(PATH_TARGET)/vnode_if_newproto.h
+	$(QUIET)$(MV) $(PATH_vboxvfs)/vnode_if_newproto.h $(PATH_vboxvfs)/vnode_if_newproto.h
 
-$(PATH_TARGET)/vnode_if_typedef.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
+$$(PATH_vboxvfs)/vnode_if_typedef.h: $(VBOX_FREEBSD_SRC)/kern/vnode_if.src
 	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/vnode_if.awk $(VBOX_FREEBSD_SRC)/kern/vnode_if.src -q
-	$(QUIET)$(MV) $(PATH_SUB_CURRENT)/vnode_if_typedef.h $(PATH_TARGET)/vnode_if_typedef.h
+	$(QUIET)$(MV) $(PATH_vboxvfs)/vnode_if_typedef.h $(PATH_vboxvfs)/vnode_if_typedef.h
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
