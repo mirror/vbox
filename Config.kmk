@@ -187,6 +187,8 @@ VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS = 1
 VBOX_WITH_OS2_ADDITIONS_BIN = 1
 # Use additions from the build server.
 #VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER = 1
+# Include additions in the package
+VBOX_WITH_ADDITIONS_PACKING = 1
 # Don't bother with additions, overrides VBOX_WITH_ADDITIONS.
 # This is not used by makefiles, only Config.kmk, see below.
 #VBOX_WITHOUT_ADDITIONS = 1
@@ -209,6 +211,8 @@ endif
 VBOX_WITH_DOCS = 1
 # Use documentation from the build server.
 #VBOX_WITH_DOCS_FROM_BUILD_SERVER = 1
+# Include documentation in the package
+VBOX_WITH_DOCS_PACKING = 1
 # Don't bother with documentation, overrides VBOX_WITH_DOCS.
 # This is not used by makefiles, only Config.kmk, see below.
 #VBOX_WITHOUT_DOCS = 1
@@ -553,11 +557,13 @@ ifdef VBOX_OSE
  endif
  VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS=
+ VBOX_WITH_ADDITIONS_PACKING=
  VBOX_WITHOUT_ADDITIONS_ISO=1
  VBOX_WITH_OS2_ADDITIONS_BIN=
  VBOX_WITH_SECURELABEL=
  VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_DOCS=
+ VBOX_WITH_DOCS_PACKING=
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_INTEL_PXE=
  VBOX_WITH_FFMPEG=

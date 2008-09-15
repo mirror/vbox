@@ -154,9 +154,9 @@ SOLARIS_NLS = \
 		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
 	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
 
-ifdef VBOX_WITH_DOCS
-  SOLARIS_NO_STRIP += \
-	UserManual.pdf
+ifdef VBOX_WITH_DOCS_PACKING
+ SOLARIS_NO_STRIP += \
+ 	UserManual.pdf
 endif
 
 ifdef VBOX_WITH_VRDP
@@ -187,8 +187,10 @@ ifdef VBOX_WITH_WEBSERVICES
 endif
 
 # Guest Additions
-SOLARIS_NO_STRIP += \
-	$(if $(VBOX_OSE),,additions/VBoxGuestAdditions.iso)
+ifdef VBOX_WITH_ADDITIONS_PACKING
+ SOLARIS_NO_STRIP += \
+ 	additions/VBoxGuestAdditions.iso
+endif
 
 SOLARIS_ARCH_FILES := \
 	$(SOLARIS_STRIP_BINS) \
@@ -241,7 +243,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST),)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(and $(VBOX_WITH_QT4GUI), $(not $(VBOX_WITH_SEPARATE_SDK))),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/VBoxGuestAdditions.iso)
+	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/)
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/vboxdrv                                                          $(SOLARIS_INST_DIR)/vboxdrv
 	$(QUIET)$(if $(VBOX_WITH_NETFLT),$(INSTALL) -m 0644 $(PATH_BIN)/vboxflt                                 $(SOLARIS_INST_DIR)/vboxflt,)
@@ -358,7 +360,7 @@ endif
 		$(PATH_CURRENT)/vbox.pkginfo
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARIS_INST_DIR)/vboxdrv.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf            $(SOLARIS_INST_DIR)/vboxflt.conf
-	$(QUIET)$(if $(VBOX_WITH_DOCS),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf                            $(SOLARIS_INST_DIR)/UserManual.pdf,)
+	$(QUIET)$(if $(VBOX_WITH_DOCS_PACKING)),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf  $(SOLARIS_INST_DIR)/)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
 	$(QUIET)$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html  $(SOLARIS_INST_DIR)/License-$(VBOX_LICENSE_VER).html,)
