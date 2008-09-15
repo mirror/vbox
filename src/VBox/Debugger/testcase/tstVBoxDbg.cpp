@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <qapplication.h>
-#include <VBox/dbg.h>
+#include <VBox/dbggui.h>
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <iprt/runtime.h>
@@ -56,8 +56,37 @@ int main(int argc, char **argv)
          * Instantiate the debugger GUI bits and run them.
          */
         QApplication App(argc, argv);
-//        DBGGuiCreate(pVM, true, NULL);
-        App.exec();
+        PDBGGUI pGui;
+        PCDBGGUIVT pGuiVT;
+        rc = DBGGuiCreateForVM(pVM, &pGui, &pGuiVT);
+        if (RT_SUCCESS(rc))
+        {
+            RTPrintf(TESTCASE ": calling pfnShowCommandLine...\n");
+            rc = pGuiVT->pfnShowCommandLine(pGui);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf(TESTCASE ": error: pfnShowCommandLine failed! rc=%Rrc\n", rc);
+                cErrors++;
+            }
+
+#if 0
+            RTPrintf(TESTCASE ": calling pfnShowStatistics...\n");
+            pGuiVT->pfnShowStatistics(pGui);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf(TESTCASE ": error: pfnShowStatistics failed! rc=%Rrc\n", rc);
+                cErrors++;
+            }
+#endif
+
+            RTPrintf(TESTCASE ": calling App.exec()...\n");
+            App.exec();
+        }
+        else
+        {
+            RTPrintf(TESTCASE ": error: DBGGuiCreateForVM failed! rc=%Rrc\n", rc);
+            cErrors++;
+        }
 
         /*
          * Cleanup.
@@ -65,13 +94,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!VBOX_SUCCESS(rc))
         {
-            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
+            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Rrc\n", rc);
             cErrors++;
         }
     }
     else
     {
-        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%d\n", rc);
+        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%Rrc\n", rc);
         cErrors++;
     }
 

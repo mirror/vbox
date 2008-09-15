@@ -94,6 +94,21 @@ typedef DECLCALLBACK(int) FNDBGGUICREATE(ISession *pSession, PDBGGUI *ppGui, PCD
 typedef FNDBGGUICREATE *PFNDBGGUICREATE;
 
 /**
+ * Creates the debugger GUI given a VM handle.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   ppGui       Where to store the pointer to the debugger instance.
+ * @param   ppGuiVT     Where to store the virtual method table pointer.
+ *                      Optional.
+ */
+DBGDECL(int) DBGGuiCreateForVM(PVM pVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
+/** @copydoc DBGGuiCreateForVM. */
+typedef DECLCALLBACK(int) FNDBGGUICREATEFORVM(PVM pVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
+/** Pointer to DBGGuiCreateForVM. */
+typedef FNDBGGUICREATEFORVM *PFNDBGGUICREATEFORVM;
+
+/**
  * Destroys the debugger GUI.
  *
  * @returns VBox status code.
