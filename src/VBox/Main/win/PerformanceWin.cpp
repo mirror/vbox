@@ -331,7 +331,8 @@ int CollectorWin::preCollect(const CollectorHints& hints)
             &dwIDProcess)))
         {
             Log (("Failed to read 'IDProcess' property. HR = %x\n", hr));
-            return VERR_INTERNAL_ERROR;
+            rc = VERR_INTERNAL_ERROR;
+            break;
         }
         LogFlowThisFunc (("Matching process %x against the list of machines...\n", dwIDProcess));
         if (std::find(processes.begin(), processes.end(), dwIDProcess) != processes.end())
@@ -344,34 +345,42 @@ int CollectorWin::preCollect(const CollectorHints& hints)
                 &vmStats.cpuUser)))
             {
                 Log (("Failed to read 'PercentUserTime' property. HR = %x\n", hr));
-                    return VERR_INTERNAL_ERROR;
+                rc = VERR_INTERNAL_ERROR;
+                break;
             }
             if (FAILED (hr = apEnumAccess[i]->ReadQWORD(
                 mProcessCpuLoadKernelHandle,
                 &vmStats.cpuKernel)))
             {
                 Log (("Failed to read 'PercentPrivilegedTime' property. HR = %x\n", hr));
-                    return VERR_INTERNAL_ERROR;
+                rc = VERR_INTERNAL_ERROR;
+                break;
             }
             if (FAILED (hr = apEnumAccess[i]->ReadQWORD(
                 mProcessCpuLoadTimestampHandle,
                 &vmStats.cpuTotal)))
             {
                 Log (("Failed to read 'Timestamp_Sys100NS' property. HR = %x\n", hr));
-                    return VERR_INTERNAL_ERROR;
+                rc = VERR_INTERNAL_ERROR;
+                break;
             }
             if (FAILED (hr = apEnumAccess[i]->ReadQWORD(
                 mProcessMemoryUsedHandle,
                 &vmStats.ramUsed)))
             {
                 Log (("Failed to read 'WorkingSet' property. HR = %x\n", hr));
-                    return VERR_INTERNAL_ERROR;
+                rc = VERR_INTERNAL_ERROR;
+                break;
             }
 
             mProcessStats[dwIDProcess] = vmStats;
             LogFlowThisFunc(("process=%x user=%lu kernel=%lu total=%lu\n", dwIDProcess, vmStats.cpuUser, vmStats.cpuKernel, vmStats.cpuTotal));
             rc = VINF_SUCCESS;
         }
+    }
+
+    for (unsigned i = 0; i < dwNumReturned; i++)
+    {
         apEnumAccess[i]->Release();
         apEnumAccess[i] = NULL;
     }
@@ -411,7 +420,8 @@ int CollectorWin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *
             (byte*)tmpBuf)))
         {
             Log (("Failed to read 'Name' property. HR = %x\n", hr));
-            return VERR_INTERNAL_ERROR;
+            rc = VERR_INTERNAL_ERROR;
+            break;
         }
         if (wcscmp(tmpBuf, L"_Total") == 0)
         {
@@ -419,25 +429,31 @@ int CollectorWin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *
                 mHostCpuLoadUserHandle,
                 user)))
             {
-            Log (("Failed to read 'PercentUserTime' property. HR = %x\n", hr));
-                return VERR_INTERNAL_ERROR;
+                Log (("Failed to read 'PercentUserTime' property. HR = %x\n", hr));
+                rc = VERR_INTERNAL_ERROR;
+                break;
             }
             if (FAILED (hr = apEnumAccess[i]->ReadQWORD(
                 mHostCpuLoadKernelHandle,
                 kernel)))
             {
-            Log (("Failed to read 'PercentPrivilegedTime' property. HR = %x\n", hr));
-                return VERR_INTERNAL_ERROR;
+                Log (("Failed to read 'PercentPrivilegedTime' property. HR = %x\n", hr));
+                rc = VERR_INTERNAL_ERROR;
+                break;
             }
             if (FAILED (hr = apEnumAccess[i]->ReadQWORD(
                 mHostCpuLoadIdleHandle,
                 idle)))
             {
-            Log (("Failed to read 'PercentProcessorTime' property. HR = %x\n", hr));
-                return VERR_INTERNAL_ERROR;
+                Log (("Failed to read 'PercentProcessorTime' property. HR = %x\n", hr));
+                rc = VERR_INTERNAL_ERROR;
+                break;
             }
             rc = VINF_SUCCESS;
         }
+    }
+    for (unsigned i = 0; i < dwNumReturned; i++)
+    {
         apEnumAccess[i]->Release();
         apEnumAccess[i] = NULL;
     }
