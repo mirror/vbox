@@ -472,7 +472,7 @@ void PerformanceCollector::samplerCallback()
     m.hal->preCollect(hints);
 
     /* Finally, collect the data */
-    std::for_each (m.baseMetrics.begin(), m.baseMetrics.end(),
+    std::for_each (toBeCollected.begin(), toBeCollected.end(),
                    std::mem_fun (&pm::BaseMetric::collect));
     Log4(("{%p} " LOG_FN_FMT ": LEAVE\n", this, __PRETTY_FUNCTION__));
 }
