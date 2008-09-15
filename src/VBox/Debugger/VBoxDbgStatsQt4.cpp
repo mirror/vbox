@@ -38,6 +38,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/string.h>
+#include <iprt/mem.h>
 #include <iprt/assert.h>
 
 
@@ -53,120 +54,6 @@ const char *getNodeName(const char *pszName)
 {
     const char *pszRet = strrchr(pszName, '/');
     return pszRet && pszName[1] ? pszRet + 1 : pszName;
-}
-
-
-
-
-
-
-/*
- *
- *      V B o x D b g S t a t s I t e m
- *      V B o x D b g S t a t s I t e m
- *      V B o x D b g S t a t s I t e m
- *
- */
-
-
-VBoxDbgStatsItem::VBoxDbgStatsItem(const char *pszName, VBoxDbgStatsItem *pParent, bool fBranch /*= true*/)
-#ifdef VBOXDBG_USE_QT4
-    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))),
-#else
-    : QListViewItem(pParent, QString(getNodeName(pszName))),
-#endif
-    m_pszName(RTStrDup(pszName)), m_fBranch(fBranch), m_pParent(pParent)
-
-{
-}
-
-VBoxDbgStatsItem::VBoxDbgStatsItem(const char *pszName, QListView *pParent, bool fBranch/* = true*/)
-#ifdef VBOXDBG_USE_QT4
-    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))),
-#else
-    : QListViewItem(pParent, QString(getNodeName(pszName))),
-#endif
-    m_pszName(RTStrDup(pszName)), m_fBranch(fBranch), m_pParent(NULL)
-{
-}
-
-VBoxDbgStatsItem::~VBoxDbgStatsItem()
-{
-    RTStrFree(m_pszName);
-    m_pszName = NULL;
-}
-
-void VBoxDbgStatsItem::logTree(bool fReleaseLog) const
-{
-    /* Iterate and print our children. */
-#ifdef VBOXDBG_USE_QT4
-    int cChildren = childCount();
-    for (int i = 0; i < cChildren; i++)
-    {
-        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)child(i);
-        pMyItem->logTree(fReleaseLog);
-    }
-#else
-    for (QListViewItem *pItem = firstChild(); pItem; pItem = pItem->nextSibling())
-    {
-        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)pItem;
-        pMyItem->logTree(fReleaseLog);
-    }
-#endif
-}
-
-void VBoxDbgStatsItem::stringifyTree(QString &String) const
-{
-    /* Iterate and stringify our children. */
-#ifdef VBOXDBG_USE_QT4
-    int cChildren = childCount();
-    for (int i = 0; i < cChildren; i++)
-    {
-        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)child(i);
-        pMyItem->stringifyTree(String);
-    }
-#else
-    for (QListViewItem *pItem = firstChild(); pItem; pItem = pItem->nextSibling())
-    {
-        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)pItem;
-        pMyItem->stringifyTree(String);
-    }
-#endif
-}
-
-void VBoxDbgStatsItem::copyTreeToClipboard(void) const
-{
-    QString String;
-    stringifyTree(String);
-
-    QClipboard *pClipboard = QApplication::clipboard();
-    if (pClipboard)
-        pClipboard->setText(String, QClipboard::Clipboard);
-}
-
-
-
-
-/*
- *
- *      V B o x D b g S t a t s L e a f I t e m
- *      V B o x D b g S t a t s L e a f I t e m
- *      V B o x D b g S t a t s L e a f I t e m
- *
- */
-
-
-VBoxDbgStatsLeafItem::VBoxDbgStatsLeafItem(const char *pszName, VBoxDbgStatsItem *pParent)
-    : VBoxDbgStatsItem(pszName, pParent, false),
-      m_pNext(NULL), m_pPrev(NULL), m_enmType(STAMTYPE_INVALID),
-      m_enmUnit(STAMUNIT_INVALID), m_DescStr()
-{
-    memset(&m_Data, 0, sizeof(m_Data));
-}
-
-
-VBoxDbgStatsLeafItem::~VBoxDbgStatsLeafItem()
-{
 }
 
 
@@ -311,6 +198,431 @@ static void formatSortKeySigned(char *psz, int64_t i64)
     }
 }
 #endif
+
+
+
+/** Pointer to a statistics sample. */
+typedef struct DBGGUISTATSNODE *PDBGGUISTATSNODE;
+
+/**
+ * A tree node representing a statistic sample.
+ *
+ * The nodes carry a reference to the parent and to its position among its
+ * siblings. Both of these need updating when the grand parent or parent adds a
+ * new child. This will hopefully not be too expensive but rather pay off when
+ * we need to create a parent index.
+ */
+typedef struct DBGGUISTATSNODE
+{
+    /** Pointer to the parent. */
+    PDBGGUISTATSNODE    pParent;
+    /** Array of children. */
+    PDBGGUISTATSNODE    paChildren;
+    /** The number of children. */
+    uint32_t            cChildren;
+    /** Our index among the parent's children. */
+    uint32_t            iSelf;
+    /** The unit. */
+    STAMUNIT            enmUnit;
+    /** The data type. */
+    STAMTYPE            enmType;
+    /** The data at last update. */
+    union
+    {
+        /** STAMTYPE_COUNTER. */
+        STAMCOUNTER     Counter;
+        /** STAMTYPE_PROFILE. */
+        STAMPROFILE     Profile;
+        /** STAMTYPE_PROFILE_ADV. */
+        STAMPROFILEADV  ProfileAdv;
+        /** STAMTYPE_RATIO_U32. */
+        STAMRATIOU32    RatioU32;
+        /** STAMTYPE_U8 & STAMTYPE_U8_RESET. */
+        uint8_t         u8;
+        /** STAMTYPE_U16 & STAMTYPE_U16_RESET. */
+        uint16_t        u16;
+        /** STAMTYPE_U32 & STAMTYPE_U32_RESET. */
+        uint32_t        u32;
+        /** STAMTYPE_U64 & STAMTYPE_U64_RESET. */
+        uint64_t        u64;
+    } Data;
+    /** The description string. */
+    QString            *pDescStr;
+} DBGGUISTATSNODE;
+
+
+class VBoxDbgStatsModel : public QAbstractItemModel
+{
+private:
+    /** The root of the sample tree. */
+    PDBGGUISTATSNODE m_pRoot;
+
+public:
+    /**
+     * Constructor.
+     *
+     * @param   a_pParent       The parent object. See QAbstractItemModel in the Qt
+     *                          docs for details.
+     */
+    VBoxDbgStatsModel(QObject *a_pParent);
+
+    /**
+     * Destructor.
+     *
+     * This will free all the the data the model holds.
+     */
+    ~VBoxDbgStatsModel();
+
+    /**
+     * Set the root node.
+     *
+     * This will free all the current data before taking the ownership of the new
+     * root node and its children.
+     *
+     * @param   a_pRoot         The new root node.
+     */
+    void setRootNode(PDBGGUISTATSNODE a_pRoot);
+
+    /**
+     * Constructs a new statistics tree by query data from the VM.
+     *
+     * @returns Pointer to the root of the tree we've constructed. This will be NULL
+     *          if the STAM API throws an error or we run out of memory.
+     *
+     * @param   a_pVM           The VM handle.
+     */
+    static PDBGGUISTATSNODE createNewTree(PVM a_pVM);
+
+    /**
+     * Destroys a statistics tree.
+     *
+     * @param   a_pRoot         The root of the tree. NULL is fine.
+     */
+    static void destroyTree(PDBGGUISTATSNODE a_pRoot);
+
+protected:
+    /**
+     * Destroys a node and all its children.
+     *
+     * @param   a_pNode         The node to destroy.
+     */
+    static void destroyNode(PDBGGUISTATSNODE a_pNode);
+
+    /**
+     * Converts an index to a node pointer.
+     *
+     * @returns Pointer to the node, NULL if empty tree.
+     * @param   a_rIndex        Reference to the index
+     */
+    inline PDBGGUISTATSNODE nodeFromIndex(const QModelIndex &a_rIndex) const
+    {
+        if (RT_LIKELY(a_rIndex.isValid()))
+            return (PDBGGUISTATSNODE)a_rIndex.internalPointer();
+        return m_pRoot;
+    }
+
+public:
+
+    /** @name Methods we override
+     * @{ */
+    virtual int columnCount(const QModelIndex &parent) const;
+    virtual QVariant data(const QModelIndex &index, int role) const;
+    virtual bool hasChildren(const QModelIndex &parent) const;
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    virtual QModelIndex index(int row, int column, const QModelIndex &parent) const;
+    virtual QModelIndex parent(const QModelIndex &child) const;
+    virtual int rowCount(const QModelIndex &parent) const;
+    /** @}  */
+};
+
+
+VBoxDbgStatsModel::VBoxDbgStatsModel(QObject *a_pParent)
+    : QAbstractItemModel(a_pParent), m_pRoot(NULL)
+{
+}
+
+
+
+VBoxDbgStatsModel::~VBoxDbgStatsModel()
+{
+    destroyTree(m_pRoot);
+    m_pRoot = NULL;
+}
+
+
+/*static*/ void
+VBoxDbgStatsModel::destroyTree(PDBGGUISTATSNODE a_pRoot)
+{
+    if (!a_pRoot)
+        return;
+    Assert(!a_pRoot->pParent);
+    Assert(!a_pRoot->iSelf);
+
+    destroyNode(a_pRoot);
+}
+
+
+/* static*/ void
+VBoxDbgStatsModel::destroyNode(PDBGGUISTATSNODE a_pNode)
+{
+    /* destroy all our children */
+    uint32_t i = a_pNode->cChildren;
+    while (i-- > 0)
+        destroyNode(&a_pNode->paChildren[i]);
+
+    /* free the resources we're using */
+    a_pNode->pParent = NULL;
+
+    RTMemFree(a_pNode->paChildren);
+    a_pNode->paChildren = NULL;
+
+    a_pNode->cChildren = 0;
+    a_pNode->iSelf = UINT32_MAX;
+    a_pNode->enmUnit = STAMUNIT_INVALID;
+    a_pNode->enmType = STAMTYPE_INVALID;
+
+    if (a_pNode->pDescStr)
+    {
+        delete a_pNode->pDescStr;
+        a_pNode->pDescStr = NULL;
+    }
+}
+
+
+/*static*/ PDBGGUISTATSNODE
+VBoxDbgStatsModel::createNewTree(PVM a_pVM)
+{
+    /** @todo  */
+    return NULL;
+}
+
+
+#if 0
+/*static*/ PDBGGUISTATSNODE
+VBoxDbgStatsModel::createNewTree(IMachineDebugger *a_pIMachineDebugger)
+{
+    /** @todo  */
+    return NULL;
+}
+#endif
+
+
+#if 0
+/*static*/ PDBGGUISTATSNODE
+VBoxDbgStatsModel::createNewTree(const char *pszFilename)
+{
+    /** @todo  */
+    return NULL;
+}
+#endif
+
+
+#if 0
+/*static*/ PDBGGUISTATSNODE
+VBoxDbgStatsModel::createDiffTree(PDBGGUISTATSNODE pTree1, PDBGGUISTATSNODE pTree2)
+{
+    /** @todo  */
+    return NULL;
+}
+#endif
+
+
+int
+VBoxDbgStatsModel::columnCount(const QModelIndex &parent) const
+{
+    return 9; /* fixed */
+}
+
+
+int
+VBoxDbgStatsModel::rowCount(const QModelIndex &a_rParent) const
+{
+    PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
+    return pParent ? pParent->cChildren : 0;
+}
+
+
+bool
+VBoxDbgStatsModel::hasChildren(const QModelIndex &a_rParent) const
+{
+    PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
+    return pParent
+        && pParent->cChildren > 0;
+}
+
+
+QModelIndex
+VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &r_pParent) const
+{
+    PDBGGUISTATSNODE pParent = nodeFromIndex(r_pParent);
+    if (!pParent)
+        return QModelIndex(); /* bug? */
+    if ((unsigned)iRow >= pParent->cChildren)
+        return QModelIndex(); /* bug? */
+    if ((unsigned)iColumn >= 9)
+        return QModelIndex(); /* bug? */
+
+    return createIndex(iRow, iColumn, &pParent->paChildren[iRow]);
+}
+
+
+QModelIndex
+VBoxDbgStatsModel::parent(const QModelIndex &a_rChild) const
+{
+    PDBGGUISTATSNODE pChild = nodeFromIndex(a_rChild);
+    if (!pChild)
+        return QModelIndex(); /* bug */
+    PDBGGUISTATSNODE pParent = pChild->pParent;
+    if (!pParent)
+        return QModelIndex(); /* root child */
+
+    return createIndex(pParent->iSelf, a_rChild.column(), pParent);
+}
+
+
+QVariant
+VBoxDbgStatsModel::headerData(int a_iSection, Qt::Orientation a_eOrientation, int a_eRole) const
+{
+    if (    a_eOrientation != Qt::Horizontal
+        ||  a_eRole != Qt::DisplayRole)
+        return QVariant();
+    switch (a_iSection)
+    {
+        case 0: return tr("Name");
+        case 1: return tr("Unit");
+        case 2: return tr("Value/Times");
+        case 3: return tr("Min");
+        case 4: return tr("Average");
+        case 5: return tr("Max");
+        case 6: return tr("Total");
+        case 7: return tr("dInt");
+        case 8: return tr("Description");
+        default:
+            return QVariant(); /* bug */
+    }
+}
+
+
+QVariant
+VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int role) const
+{
+    /** @todo data formatting... */
+    return QVariant();
+}
+
+
+
+
+/*
+ *
+ *      V B o x D b g S t a t s I t e m
+ *      V B o x D b g S t a t s I t e m
+ *      V B o x D b g S t a t s I t e m
+ *
+ */
+
+
+VBoxDbgStatsItem::VBoxDbgStatsItem(const char *pszName, VBoxDbgStatsItem *pParent, bool fBranch /*= true*/)
+#ifdef VBOXDBG_USE_QT4
+    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))),
+#else
+    : QListViewItem(pParent, QString(getNodeName(pszName))),
+#endif
+    m_pszName(RTStrDup(pszName)), m_fBranch(fBranch), m_pParent(pParent)
+
+{
+}
+
+VBoxDbgStatsItem::VBoxDbgStatsItem(const char *pszName, QListView *pParent, bool fBranch/* = true*/)
+#ifdef VBOXDBG_USE_QT4
+    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))),
+#else
+    : QListViewItem(pParent, QString(getNodeName(pszName))),
+#endif
+    m_pszName(RTStrDup(pszName)), m_fBranch(fBranch), m_pParent(NULL)
+{
+}
+
+VBoxDbgStatsItem::~VBoxDbgStatsItem()
+{
+    RTStrFree(m_pszName);
+    m_pszName = NULL;
+}
+
+void VBoxDbgStatsItem::logTree(bool fReleaseLog) const
+{
+    /* Iterate and print our children. */
+#ifdef VBOXDBG_USE_QT4
+    int cChildren = childCount();
+    for (int i = 0; i < cChildren; i++)
+    {
+        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)child(i);
+        pMyItem->logTree(fReleaseLog);
+    }
+#else
+    for (QListViewItem *pItem = firstChild(); pItem; pItem = pItem->nextSibling())
+    {
+        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)pItem;
+        pMyItem->logTree(fReleaseLog);
+    }
+#endif
+}
+
+void VBoxDbgStatsItem::stringifyTree(QString &String) const
+{
+    /* Iterate and stringify our children. */
+#ifdef VBOXDBG_USE_QT4
+    int cChildren = childCount();
+    for (int i = 0; i < cChildren; i++)
+    {
+        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)child(i);
+        pMyItem->stringifyTree(String);
+    }
+#else
+    for (QListViewItem *pItem = firstChild(); pItem; pItem = pItem->nextSibling())
+    {
+        VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)pItem;
+        pMyItem->stringifyTree(String);
+    }
+#endif
+}
+
+void VBoxDbgStatsItem::copyTreeToClipboard(void) const
+{
+    QString String;
+    stringifyTree(String);
+
+    QClipboard *pClipboard = QApplication::clipboard();
+    if (pClipboard)
+        pClipboard->setText(String, QClipboard::Clipboard);
+}
+
+
+
+
+/*
+ *
+ *      V B o x D b g S t a t s L e a f I t e m
+ *      V B o x D b g S t a t s L e a f I t e m
+ *      V B o x D b g S t a t s L e a f I t e m
+ *
+ */
+
+
+VBoxDbgStatsLeafItem::VBoxDbgStatsLeafItem(const char *pszName, VBoxDbgStatsItem *pParent)
+    : VBoxDbgStatsItem(pszName, pParent, false),
+      m_pNext(NULL), m_pPrev(NULL), m_enmType(STAMTYPE_INVALID),
+      m_enmUnit(STAMUNIT_INVALID), m_DescStr()
+{
+    memset(&m_Data, 0, sizeof(m_Data));
+}
+
+
+VBoxDbgStatsLeafItem::~VBoxDbgStatsLeafItem()
+{
+}
+
+
 
 
 void VBoxDbgStatsLeafItem::update(STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, STAMVISIBILITY enmVisibility, const char *pszDesc)
