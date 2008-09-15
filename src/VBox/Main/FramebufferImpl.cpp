@@ -130,6 +130,13 @@ STDMETHODIMP InternalFramebuffer::COMGETTER(Overlay) (IFramebufferOverlay **aOve
     return S_OK;
 }
 
+STDMETHODIMP InternalFramebuffer::COMGETTER(WinId) (ULONG64 *winId)
+{
+    if (!winId)
+        return E_POINTER;
+    *winId = 0;
+    return S_OK;
+}
 
 // IFramebuffer methods
 /////////////////////////////////////////////////////////////////////////////

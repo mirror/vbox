@@ -43,7 +43,6 @@ void VBoxOGLSetThreadCtx(PVBOX_OGL_THREAD_CTX pCtx)
     Assert(ret);
 }
 
-
 /**
  * Return the thread local OpenGL context
  *

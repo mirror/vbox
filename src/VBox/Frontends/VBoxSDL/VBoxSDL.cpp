@@ -1056,7 +1056,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     uint32_t u32WarpDrive = 0;
 #endif
 #ifdef VBOX_WIN32_UI
-    bool fWin32UI = false;
+    bool fWin32UI = true;
+    uint64_t winId = 0;
 #endif
     bool fShowSDLConfig    = false;
     uint32_t fixedWidth    = ~(uint32_t)0;
@@ -1919,7 +1920,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (fWin32UI)
     {
         /* initialize the Win32 user interface inside which SDL will be embedded */
-        if (initUI(fResizable))
+        if (initUI(fResizable, winId))
             return 1;
     }
 #endif
@@ -1933,6 +1934,11 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         RTPrintf("Error: could not create framebuffer object!\n");
         goto leave;
     }
+
+#ifdef VBOX_WIN32_UI
+    gpFrameBuffer->setWinId(winId);
+#endif
+
     if (!gpFrameBuffer->initialized())
         goto leave;
     gpFrameBuffer->AddRef();

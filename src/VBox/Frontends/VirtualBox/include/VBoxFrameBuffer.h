@@ -204,6 +204,7 @@ public:
     STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *aUsesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *aHeightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
+    STDMETHOD(COMGETTER(WinId)) (ULONG64 *winId);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();
