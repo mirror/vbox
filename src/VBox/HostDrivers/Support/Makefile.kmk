@@ -209,7 +209,7 @@ $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(TARGET_VBoxDrv) | $$(call DIRDEP,$
 
 $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
 		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf \
-		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
+		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys
 	$(call MSG_TOOL,Inf2Cat,VBoxDrv-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # signing
