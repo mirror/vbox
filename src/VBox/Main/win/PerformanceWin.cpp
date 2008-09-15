@@ -39,7 +39,7 @@ class CollectorWin : public CollectorHAL
 {
 public:
     CollectorWin();
-    ~CollectorWin();
+    virtual ~CollectorWin();
 
     virtual int preCollect(const CollectorHints& hints);
     virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
@@ -184,6 +184,9 @@ CollectorWin::CollectorWin() : mRefresher(0), mNameSpace(0), mEnumProcessor(0), 
     mHostCpuLoadKernelHandle = getPropertyHandle(apEnumAccess[0], L"PercentPrivilegedTime");
     mHostCpuLoadIdleHandle   = getPropertyHandle(apEnumAccess[0], L"PercentProcessorTime");
 
+    for (unsigned i=0;i<dwNumReturned;i++)
+        apEnumAccess[i]->Release();
+
     delete [] apEnumAccess;
 
     if (RT_FAILURE(getObjects(mEnumProcess, &apEnumAccess, &dwNumReturned)))
@@ -195,14 +198,35 @@ CollectorWin::CollectorWin() : mRefresher(0), mNameSpace(0), mEnumProcessor(0), 
     mProcessCpuLoadTimestampHandle = getPropertyHandle(apEnumAccess[0], L"Timestamp_Sys100NS");
     mProcessMemoryUsedHandle       = getPropertyHandle(apEnumAccess[0], L"WorkingSet");
 
+    for (unsigned i=0;i<dwNumReturned;i++)
+        apEnumAccess[i]->Release();
+
     delete [] apEnumAccess;
 }
 
 CollectorWin::~CollectorWin()
 {
+    IWbemConfigureRefresher *pConfig = NULL;
+    HRESULT                 hr = S_OK;
+
     if (NULL != mNameSpace)
     {
         mNameSpace->Release();
+    }
+    if (NULL != mRefresher)
+    {
+        if (SUCCEEDED (hr = mRefresher->QueryInterface(
+            IID_IWbemConfigureRefresher,
+            (void **)&pConfig)))
+        {
+            // Remove the enumerators from the refresher.
+            hr = pConfig->Remove(mEnumProcessorID, 0);
+            Assert(SUCCEEDED(hr));
+            hr = pConfig->Remove(mEnumProcessID, 0);
+            Assert(SUCCEEDED(hr));
+
+            pConfig->Release();
+        }
     }
     if (NULL != mEnumProcessor)
     {

@@ -43,7 +43,7 @@ class CollectorSolaris : public CollectorHAL
 {
 public:
     CollectorSolaris();
-    ~CollectorSolaris();
+    virtual ~CollectorSolaris();
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 

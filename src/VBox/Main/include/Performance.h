@@ -136,6 +136,7 @@ namespace pm
     class CollectorHAL
     {
     public:
+        virtual ~CollectorHAL() { };
         virtual int preCollect(const CollectorHints& hints) { return VINF_SUCCESS; }
         virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
         virtual int getHostCpuMHz(ULONG *mhz);
