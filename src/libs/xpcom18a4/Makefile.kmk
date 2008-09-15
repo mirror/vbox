@@ -1351,7 +1351,7 @@ VBoxPython_TEMPLATE = XPCOM
 VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
                   VBOX_PYXPCOM VBOX_WITH_XPCOM
 VBoxPython_DEFS.darwin = VBOX_PYXPCOM_VERSIONED
-VBoxPython_NAME.darwin = VBoxPython
+VBoxPython_NAME.darwin = VBoxPython2_3
 ifeq ($(KBUILD_TARGET),darwin)
  ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
  VBoxPython_DLLSUFF = .so
