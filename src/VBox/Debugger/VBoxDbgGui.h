@@ -29,7 +29,11 @@
 # include <VirtualBox.h>
 #endif
 
-#include "VBoxDbgStats.h"
+#ifdef VBOXDBG_USE_QT4
+# include "VBoxDbgStatsQt4.h"
+#else
+# include "VBoxDbgStats.h"
+#endif
 #include "VBoxDbgConsole.h"
 
 
