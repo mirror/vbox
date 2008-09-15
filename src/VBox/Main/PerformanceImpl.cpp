@@ -468,6 +468,9 @@ void PerformanceCollector::samplerCallback()
             toBeCollected.push_back(*it);
         }
 
+    if (toBeCollected.size() == 0)
+        return;
+
     /* Let know the platform specific code what is being collected */
     m.hal->preCollect(hints);
 
