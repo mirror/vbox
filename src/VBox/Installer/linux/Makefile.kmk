@@ -124,8 +124,10 @@ ifdef VBOX_WITH_QT4GUI
 endif
 
 # Guest Additions
-LINUXNOSTRIP += \
-	$(if $(VBOX_OSE),,additions/VBoxGuestAdditions.iso)
+ifdef VBOX_WITH_ADDITIONS_PACKING
+ LINUXNOSTRIP += \
+ 	$(if $(VBOX_OSE),,additions/VBoxGuestAdditions.iso)
+endif
 
 # Shared Folders
 LINUXSTRIPBIN += \
@@ -141,7 +143,7 @@ LINUXSTRIPBIN += \
 LINUXSTRIPBIN += \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so)
 
-ifdef VBOX_WITH_DOCS
+ifdef VBOX_WITH_DOCS_PACKING
  LINUXNOSTRIP += \
 	UserManual.pdf
  LINUXSTRIPBIN += \
