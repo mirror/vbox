@@ -218,6 +218,10 @@
 #    error VBOX requires enabling the ATA/ATAPI driver
 #endif
 
+#if defined(VBOX) && (defined(VBOX_WITH_BUSLOGIC) || defined(VBOX_WITH_LSILOGIC))
+#    define BX_MAX_SCSI_DEVICES 16
+#endif
+
 #ifndef VBOX
 #define PANIC_PORT  0x400
 #define PANIC_PORT2 0x401
@@ -693,7 +697,7 @@ typedef struct {
     } ata_channel_t;
 
   typedef struct {
-    Bit8u  type;         // Detected type of ata (ata/atapi/none/unknown)
+    Bit8u  type;         // Detected type of ata (ata/atapi/none/unknown/scsi)
     Bit8u  device;       // Detected type of attached devices (hd/cd/none)
     Bit8u  removable;    // Removable device flag
     Bit8u  lock;         // Locks for removable devices
@@ -748,6 +752,26 @@ typedef struct {
     } cdemu_t;
 #endif // BX_ELTORITO_BOOT
 
+#ifdef VBOX
+# if defined(VBOX_WITH_BUSLOGIC) || defined(VBOX_WITH_LSILOGIC)
+  typedef struct {
+    // I/O port this device is attached to.
+    Bit16u        io_base;
+    // Target Id.
+    Bit8u         target_id;
+    // SCSI devices info
+    ata_device_t  device_info;
+    } scsi_device_t;
+
+  typedef struct {
+    // SCSi device info
+    scsi_device_t   devices[BX_MAX_SCSI_DEVICES];
+    // map between (bios hd id - 0x80) and scsi devices
+    Bit8u  hdcount, hdidmap[BX_MAX_SCSI_DEVICES];
+    } scsi_t;
+# endif
+#endif
+
   // for access to EBDA area
   //     The EBDA structure should conform to
   //     http://www.frontiernet.net/~fys/rombios.htm document
@@ -769,6 +793,11 @@ typedef struct {
     cdemu_t cdemu;
 #endif // BX_ELTORITO_BOOT
 #ifdef VBOX
+# if defined(VBOX_WITH_BUSLOGIC) || defined(VBOX_WITH_LSILOGIC)
+    // SCSI Driver data
+    //scsi_t scsi;
+# endif
+
     unsigned char uForceBootDrive;
     unsigned char uForceBootDevice;
 #endif /* VBOX */
@@ -2109,6 +2138,12 @@ debugger_off()
   outb(0xfedc, 0x00);
 }
 
+#if VBOX
+# if VBOX_WITH_BUSLOGIC || VBOX_WITH_LSILOGIC
+#  include "scsi.c"
+# endif
+#endif
+
 #if BX_USE_ATADRV
 
 // ---------------------------------------------------------------------------
@@ -2235,6 +2270,7 @@ debugger_off()
 #define ATA_TYPE_UNKNOWN  0x01
 #define ATA_TYPE_ATA      0x02
 #define ATA_TYPE_ATAPI    0x03
+#define ATA_TYPE_SCSI     0x04 // SCSI disk
 
 #define ATA_DEVICE_NONE  0x00
 #define ATA_DEVICE_HD    0xFF
@@ -11003,6 +11039,14 @@ post_default_ints:
   ;;
   call _ata_init
   call _ata_detect
+  ;;
+#endif
+
+#if defined(VBOX) && (defined(VBOX_WITH_BUSLOGIC) || defined(VBX_WITH_LSILOGIC))
+  ;;
+  ;; SCSI driver setup
+  ;;
+  call _scsi_init
   ;;
 #endif
 
