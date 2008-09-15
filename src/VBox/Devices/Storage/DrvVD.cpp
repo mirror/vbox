@@ -827,6 +827,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             MMR3HeapFree(pszName);
         if (VALID_PTR(pszFormat))
             MMR3HeapFree(pszFormat);
+
+        return rc;
     }
 
     /*
