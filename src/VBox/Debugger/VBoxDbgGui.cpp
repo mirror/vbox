@@ -32,7 +32,7 @@
 #else
 # include <qdesktopwidget.h>
 # include <qapplication.h>
-#endif 
+#endif
 
 
 VBoxDbgGui::VBoxDbgGui() :
@@ -44,12 +44,21 @@ VBoxDbgGui::VBoxDbgGui() :
 }
 
 
-int VBoxDbgGui::init(ISession *pSession)
+int VBoxDbgGui::init(PVM pVM)
 {
     /*
-     * Update the desktop size first.
+     * Set the VM handle and update the desktop size.
      */
+    m_pVM = pVM;
     updateDesktopSize();
+
+    return VINF_SUCCESS;
+}
+
+
+int VBoxDbgGui::init(ISession *pSession)
+{
+    int rc = VERR_GENERAL_FAILURE;
 
     /*
      * Query the Virtual Box interfaces.
@@ -73,8 +82,9 @@ int VBoxDbgGui::init(ISession *pSession)
                 hrc = m_pMachineDebugger->COMGETTER(VM)(&ullVM);
                 if (SUCCEEDED(hrc))
                 {
-                    m_pVM = (PVM)(uintptr_t)ullVM;
-                    return VINF_SUCCESS;
+                    rc = init((PVM)(uintptr_t)ullVM);
+                    if (RT_SUCCESS(rc))
+                        return rc;
                 }
 
                 /* damn, failure! */
@@ -85,7 +95,7 @@ int VBoxDbgGui::init(ISession *pSession)
         m_pMachine->Release();
     }
 
-    return VERR_GENERAL_FAILURE;
+    return rc;
 }
 
 
@@ -142,7 +152,7 @@ int VBoxDbgGui::showStatistics()
         m_pDbgStats = new VBoxDbgStats(m_pVM, "*x*"); /// @todo the QTreeWidget/QTreeView sucks big time. it freezes the app for 30+ seconds. Need to write a new item model I fear. 'ing crap!!!
 #else
         m_pDbgStats = new VBoxDbgStats(m_pVM);
-#endif 
+#endif
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionStatistics();
     }
@@ -184,7 +194,7 @@ void VBoxDbgGui::repositionConsole(bool fResize/* = true*/)
         m_pDbgConsole->move(m_x, m_y + m_cy);
         if (fResize)
             /* Resize it to cover the space down to the bottom of the desktop. */
-            resizeWidget(m_pDbgConsole, m_cx, m_cyDesktop - m_cy - m_y + m_yDesktop);
+            resizeWidget(m_pDbgConsole, RT_MAX(m_cx, 32), m_cyDesktop - m_cy - m_y + m_yDesktop);
     }
 }
 

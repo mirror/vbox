@@ -67,6 +67,53 @@ static const DBGGUIVT g_dbgGuiVT =
 };
 
 
+/**
+ * Internal worker for DBGGuiCreate and DBGGuiCreateForVM.
+ *
+ * @returns VBox status code.
+ * @param   pSession    The ISession interface. (DBGGuiCreate)
+ * @param   pVM         The VM handle. (DBGGuiCreateForVM)
+ * @param   ppGui       See DBGGuiCreate.
+ * @param   ppGuiVT     See DBGGuiCreate.
+ */
+static int dbgGuiCreate(ISession *pSession, PVM pVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
+{
+    /*
+     * Allocate and initialize the Debugger GUI handle.
+     */
+    PDBGGUI pGui = (PDBGGUI)RTMemAlloc(sizeof(*pGui));
+    if (!pGui)
+        return VERR_NO_MEMORY;
+    pGui->u32Magic = DBGGUI_MAGIC;
+    pGui->pVBoxDbgGui = new VBoxDbgGui();
+
+    int rc;
+    if (pSession)
+        rc = pGui->pVBoxDbgGui->init(pSession);
+    else
+        rc = pGui->pVBoxDbgGui->init(pVM);
+    if (VBOX_SUCCESS(rc))
+    {
+        /*
+         * Successfully initialized.
+         */
+        *ppGui = pGui;
+        if (ppGuiVT)
+            *ppGuiVT = &g_dbgGuiVT;
+        return rc;
+    }
+
+    /*
+     * Failed, cleanup.
+     */
+    delete pGui->pVBoxDbgGui;
+    RTMemFree(pGui);
+    *ppGui = NULL;
+    if (ppGuiVT)
+        *ppGuiVT = NULL;
+    return rc;
+}
+
 
 /**
  * Creates the debugger GUI.
@@ -79,27 +126,24 @@ static const DBGGUIVT g_dbgGuiVT =
  */
 DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
-    PDBGGUI pGui = (PDBGGUI)RTMemAlloc(sizeof(*pGui));
-    if (!pGui)
-        return VERR_NO_MEMORY;
-    pGui->u32Magic = DBGGUI_MAGIC;
-    pGui->pVBoxDbgGui = new VBoxDbgGui();
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    return dbgGuiCreate(pSession, NULL, ppGui, ppGuiVT);
+}
 
-    int rc = pGui->pVBoxDbgGui->init(pSession);
-    if (VBOX_SUCCESS(rc))
-    {
-        *ppGui = pGui;
-        if (ppGuiVT)
-            *ppGuiVT = &g_dbgGuiVT;
-        return rc;
-    }
 
-    delete pGui->pVBoxDbgGui;
-    RTMemFree(pGui);
-    *ppGui = NULL;
-    if (ppGuiVT)
-        *ppGuiVT = NULL;
-    return rc;
+/**
+ * Creates the debugger GUI given a VM handle.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   ppGui       Where to store the pointer to the debugger instance.
+ * @param   ppGuiVT     Where to store the virtual method table pointer.
+ *                      Optional.
+ */
+DBGDECL(int) DBGGuiCreateForVM(PVM pVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
+{
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    return dbgGuiCreate(NULL, pVM, ppGui, ppGuiVT);
 }
 
 

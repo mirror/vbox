@@ -50,12 +50,20 @@ public:
     VBoxDbgGui();
 
     /**
-     * Initializes a VBoxDbgGui object.
+     * Initializes a VBoxDbgGui object by ISession.
      *
      * @returns VBox status code.
      * @param   pSession    VBox Session object.
      */
     int init(ISession *pSession);
+
+    /**
+     * Initializes a VBoxDbgGui object by VM handle.
+     *
+     * @returns VBox status code.
+     * @param   pVM         The VM handle.
+     */
+    int init(PVM pVM);
 
     /**
      * Destroys the VBoxDbgGui object.
