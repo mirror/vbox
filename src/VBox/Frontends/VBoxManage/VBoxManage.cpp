@@ -3090,7 +3090,7 @@ static int handleList(int argc, char *argv[],
         systemProperties->COMGETTER(MaxVDISize)(&ul64Value);
         RTPrintf("Maximum VDI size:            %lu Megabytes\n", ul64Value);
         systemProperties->COMGETTER(DefaultVDIFolder)(str.asOutParam());
-        RTPrintf("Default VDI filder:          %lS\n", str.raw());
+        RTPrintf("Default VDI folder:          %lS\n", str.raw());
         systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
         RTPrintf("Default machine folder:      %lS\n", str.raw());
         systemProperties->COMGETTER(RemoteDisplayAuthLibrary)(str.asOutParam());
@@ -7856,7 +7856,7 @@ static int handleMetricsList(int argc, char *argv[],
             getObjectName(aVirtualBox, object).raw(), metricName.raw(), unit.raw(),
             minimum, maximum, period, count, description.raw());
     }
-    
+
     return 0;
 }
 
@@ -7900,7 +7900,7 @@ static int handleMetricsSetup(int argc, char *argv[],
         /*else if (strcmp(argv[i], "-list") == 0)
             listMatches = true;*/
     }
-    
+
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
                                ComSafeArrayAsOutParam(baseMetrics),
@@ -7913,7 +7913,7 @@ static int handleMetricsSetup(int argc, char *argv[],
                              ComSafeArrayAsInParam(objects),
                              listMatches) == 0)
         return 1;*/
-        
+
     CHECK_ERROR(performanceCollector,
         SetupMetrics(ComSafeArrayAsInParam(metrics),
                      ComSafeArrayAsInParam(objects), period, samples));
@@ -7987,7 +7987,7 @@ static int handleMetricsQuery(int argc, char *argv[],
         }
         RTPrintf("\n");
     }
-    
+
     return 0;
 }
 
@@ -8006,7 +8006,7 @@ static void getTimestamp(char *pts, size_t tsSize)
     *pts++ = '.';
     pts += RTStrFormatNumber(pts, Time.u32Nanosecond / 1000000, 10, 3, 0, RTSTR_F_ZEROPAD);
     *pts = 0;
-}    
+}
 
 /*********************************************************************
 * collect                                                            *
@@ -8049,7 +8049,7 @@ static int handleMetricsCollect(int argc, char *argv[],
         else
             break; /* The rest of params should define the filter */
     }
-    
+
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
                                ComSafeArrayAsOutParam(baseMetrics),
@@ -8063,7 +8063,7 @@ static int handleMetricsCollect(int argc, char *argv[],
                              ComSafeArrayAsInParam(objects),
                              listMatches) == 0)
         return 1;
-    
+
     CHECK_ERROR(performanceCollector,
         SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
                      ComSafeArrayAsInParam(objects), period, samples));
@@ -8074,15 +8074,15 @@ static int handleMetricsCollect(int argc, char *argv[],
                  "in few seconds, discarding all collected data and parameters.\n");
         return 0;
     }
-    
+
     RTPrintf("Time stamp   Object     Metric               Value\n");
-    
+
     for (;;)
     {
         RTPrintf("------------ ---------- -------------------- --------------------\n");
         RTThreadSleep(period * 1000); // Sleep for 'period' seconds
         char ts[15];
-        
+
         getTimestamp(ts, sizeof(ts));
         com::SafeArray<BSTR>          retNames;
         com::SafeIfaceArray<IUnknown> retObjects;
@@ -8130,7 +8130,7 @@ static int handleMetricsCollect(int argc, char *argv[],
             RTPrintf("\n");
         }
     }
-    
+
     return 0;
 }
 
