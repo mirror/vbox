@@ -20,8 +20,8 @@
  */
 
 
-#ifndef __VBoxDbgBase_h__
-#define __VBoxDbgBase_h__
+#ifndef ___Debugger_VBoxDbgBase_h
+#define ___Debugger_VBoxDbgBase_h
 
 
 #include <VBox/stam.h>
@@ -32,7 +32,7 @@
 # include <QString>
 #else
 # include <qstring.h>
-#endif 
+#endif
 
 
 /**

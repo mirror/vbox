@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxDbgConsole_h__
-#define __VBoxDbgConsole_h__
+#ifndef ___Debugger_VBoxDbgConsole_h
+#define ___Debugger_VBoxDbgConsole_h
 
 #include "VBoxDbgBase.h"
 
@@ -34,7 +34,7 @@
 # include <qcombobox.h>
 # include <qvbox.h>
 # include <qtimer.h>
-#endif 
+#endif
 
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
@@ -135,7 +135,7 @@ protected:
 /**
  * The Debugger Console.
  */
-class VBoxDbgConsole : 
+class VBoxDbgConsole :
 #ifdef VBOXDBG_USE_QT4
     public QWidget,
 #else

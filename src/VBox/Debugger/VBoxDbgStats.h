@@ -20,8 +20,8 @@
  */
 
 
-#ifndef __VBoxDbgStats_h__
-#define __VBoxDbgStats_h__
+#ifndef ___Debugger_VBoxDbgStats_h
+#define ___Debugger_VBoxDbgStats_h
 
 #include "VBoxDbgBase.h"
 
@@ -433,3 +433,4 @@ protected:
 
 
 #endif
+
