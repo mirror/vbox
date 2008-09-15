@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ___DBGCInternal_h
-#define ___DBGCInternal_h
+#ifndef ___Debugger_DBGCInternal_h
+#define ___Debugger_DBGCInternal_h
 
 
 /*******************************************************************************

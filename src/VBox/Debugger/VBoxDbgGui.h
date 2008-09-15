@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxDbgGui_h__
-#define __VBoxDbgGui_h__
+#ifndef ___Debugger_VBoxDbgGui_h
+#define ___Debugger_VBoxDbgGui_h
 
 // VirtualBox COM interfaces declarations (generated header)
 #ifdef VBOX_WITH_XPCOM

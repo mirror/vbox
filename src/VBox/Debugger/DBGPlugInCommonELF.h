@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ___DBGPlugInCommonELF_h
-#define ___DBGPlugInCommonELF_h
+#ifndef ___Debugger_DBGPlugInCommonELF_h
+#define ___Debugger_DBGPlugInCommonELF_h
 
 #include <VBox/types.h>
 #include "../Runtime/include/internal/ldrELF32.h"

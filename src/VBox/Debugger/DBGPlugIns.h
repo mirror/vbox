@@ -22,8 +22,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ___DBGPlugIns_h
-#define ___DBGPlugIns_h
+#ifndef ___Debugger_DBGPlugIns_h
+#define ___Debugger_DBGPlugIns_h
 
 #include <VBox/dbgf.h>
 
