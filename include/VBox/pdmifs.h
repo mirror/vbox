@@ -2490,12 +2490,25 @@ typedef struct PDMIHGCMCONNECTOR
 #endif
 
 /**
+ * Data direction.
+ */
+typedef enum PDMSCSIREQUESTTXDIR
+{
+    PDMSCSIREQUESTTXDIR_UNKNOWN = 0,
+    PDMSCSIREQUESTTXDIR_FROM_DEVICE,
+    PDMSCSIREQUESTTXDIR_TO_DEVICE,
+    PDMSCSIREQUESTTXDIR_NONE
+} PDMSCSIREQUESTTXDIR;
+
+/**
  * SCSI request structure.
  */
 typedef struct PDMSCSIREQUEST
 {
     /** The logical unit. */
     uint32_t    uLogicalUnit;
+    /** Direction of the data flow. */
+    uint32_t    uDataDirection;
     /** Size of the SCSI CDB. */
     uint32_t    cbCDB;
     /** Pointer to the SCSI CDB. */
