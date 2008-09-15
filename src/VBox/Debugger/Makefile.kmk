@@ -137,7 +137,7 @@ VBoxDbg_SOURCES = \
 	VBoxDbgGui.cpp \
 	VBoxDbgBase.cpp \
 	VBoxDbgConsole.cpp \
-	VBoxDbgStats.cpp
+	VBoxDbgStatsQt4.cpp
 VBoxDbg_LIBS = \
 	$(LIB_VMM)
 VBoxDbg_LDFLAGS.darwin = \
