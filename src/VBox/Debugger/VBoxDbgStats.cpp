@@ -41,7 +41,7 @@
 # include <qlabel.h>
 # include <qclipboard.h>
 # include <qapplication.h>
-#endif 
+#endif
 
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -79,10 +79,10 @@ const char *getNodeName(const char *pszName)
 
 VBoxDbgStatsItem::VBoxDbgStatsItem(const char *pszName, VBoxDbgStatsItem *pParent, bool fBranch /*= true*/)
 #ifdef VBOXDBG_USE_QT4
-    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))), 
+    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))),
 #else
-    : QListViewItem(pParent, QString(getNodeName(pszName))), 
-#endif 
+    : QListViewItem(pParent, QString(getNodeName(pszName))),
+#endif
     m_pszName(RTStrDup(pszName)), m_fBranch(fBranch), m_pParent(pParent)
 
 {
@@ -90,10 +90,10 @@ VBoxDbgStatsItem::VBoxDbgStatsItem(const char *pszName, VBoxDbgStatsItem *pParen
 
 VBoxDbgStatsItem::VBoxDbgStatsItem(const char *pszName, QListView *pParent, bool fBranch/* = true*/)
 #ifdef VBOXDBG_USE_QT4
-    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))), 
+    : QTreeWidgetItem(pParent, QStringList(QString(getNodeName(pszName)))),
 #else
-    : QListViewItem(pParent, QString(getNodeName(pszName))), 
-#endif 
+    : QListViewItem(pParent, QString(getNodeName(pszName))),
+#endif
     m_pszName(RTStrDup(pszName)), m_fBranch(fBranch), m_pParent(NULL)
 {
 }
@@ -120,7 +120,7 @@ void VBoxDbgStatsItem::logTree(bool fReleaseLog) const
         VBoxDbgStatsItem *pMyItem = (VBoxDbgStatsItem *)pItem;
         pMyItem->logTree(fReleaseLog);
     }
-#endif 
+#endif
 }
 
 void VBoxDbgStatsItem::stringifyTree(QString &String) const
@@ -662,7 +662,7 @@ void VBoxDbgStatsLeafItem::logTree(bool fReleaseLog) const
                         getName(), (const char *)text(1), (const char *)text(2), (const char *)text(3),
                         (const char *)text(4), (const char *)text(5), (const char *)text(7), (const char *)text(8));
     }
-#endif 
+#endif
 
     /*
      * Let the super class to do the rest.
@@ -701,7 +701,7 @@ void VBoxDbgStatsLeafItem::stringifyTree(QString &String) const
                            (const char *)text(4), (const char *)text(5), (const char *)text(7), (const char *)text(8));
         String += ItemString;
     }
-#endif 
+#endif
 
     /*
      * Let the super class to do the rest.
@@ -724,7 +724,7 @@ void VBoxDbgStatsLeafItem::stringifyTree(QString &String) const
 
 
 VBoxDbgStatsView::VBoxDbgStatsView(PVM pVM, VBoxDbgStats *pParent/* = NULL*/)
-    : QListView(pParent),  
+    : QListView(pParent),
     VBoxDbgBase(pVM),
     m_pParent(pParent), m_pHead(NULL), m_pTail(NULL), m_pCur(NULL), m_pRoot(NULL),
     m_pLeafMenu(NULL), m_pBranchMenu(NULL), m_pViewMenu(NULL), m_pContextMenuItem(NULL)
@@ -771,7 +771,7 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM pVM, VBoxDbgStats *pParent/* = NULL*/)
     m_pRoot->setExpanded(true);
 #else
     m_pRoot->setOpen(true);
-#endif 
+#endif
 
     /*
      * We've got three menus to populate and link up.
@@ -839,7 +839,7 @@ VBoxDbgStatsView::~VBoxDbgStatsView()
 static void hideParentBranches(VBoxDbgStatsLeafItem *pItem)
 {
 #ifdef VBOXDBG_USE_QT4
-    /// @todo 
+    /// @todo
     NOREF(pItem);
 #else
     for (VBoxDbgStatsItem *pParent = pItem->getParent(); pParent; pParent = pParent->getParent())
@@ -897,7 +897,7 @@ static void setOpenTree(QListViewItem *pItem, bool f)
     pItem->setOpen(f);
     for (pItem = pItem->firstChild(); pItem; pItem = pItem->nextSibling())
         setOpenTree(pItem, f);
-#endif 
+#endif
 }
 
 #ifndef VBOXDBG_USE_QT4
@@ -1042,7 +1042,7 @@ VBoxDbgStatsItem *VBoxDbgStatsView::createPath(const char *pszName)
         QListViewItem *pChild = pParent->firstChild();
         while (pChild && pChild->text(0) != NameStr)
             pChild = pChild->nextSibling();
-#endif 
+#endif
 
         if (pChild)
             pParent = (VBoxDbgStatsItem *)pChild;
@@ -1055,7 +1055,7 @@ VBoxDbgStatsItem *VBoxDbgStatsView::createPath(const char *pszName)
             pParent = new VBoxDbgStatsItem(NameArray.constData(), pParent);
 #else
             pParent = new VBoxDbgStatsItem(NameStr, pParent);
-#endif 
+#endif
         }
         pParent->setVisible(true);
     }
@@ -1072,7 +1072,7 @@ void VBoxDbgStatsView::contextMenuReq(QListViewItem *pItem, const QPoint &rPoint
 #else
             m_pLeafMenu->setItemEnabled(eReset, isVMOk());
             m_pLeafMenu->setItemEnabled(eRefresh, isVMOk());
-#endif 
+#endif
             m_pLeafMenu->popup(rPoint);
         }
         else
@@ -1081,7 +1081,7 @@ void VBoxDbgStatsView::contextMenuReq(QListViewItem *pItem, const QPoint &rPoint
 #else
             m_pBranchMenu->setItemEnabled(eReset, isVMOk());
             m_pBranchMenu->setItemEnabled(eRefresh, isVMOk());
-#endif 
+#endif
             m_pBranchMenu->popup(rPoint);
         }
     }
@@ -1249,9 +1249,9 @@ void VBoxDbgStatsView::viewMenuActivated(int iId)
 
 VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
 #ifdef VBOXDBG_USE_QT4
-    : QWidget(pParent), 
+    : QWidget(pParent),
 #else
-    : QVBox(pParent), 
+    : QVBox(pParent),
 #endif
     VBoxDbgBase(pVM), m_PatStr(pszPat), m_uRefreshRate(0)
 {
@@ -1259,7 +1259,7 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     setWindowTitle("VBoxDbg - Statistics");
 #else
     setCaption("VBoxDbg - Statistics");
-#endif 
+#endif
 
     /*
      * On top, a horizontal box with the pattern field, buttons and refresh interval.
@@ -1294,7 +1294,7 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     pHLayout->addWidget(pSB);
     pSB->setMinimum(0);
     pSB->setMaximum(60);
-    pSB->setSingleStep(1.0); 
+    pSB->setSingleStep(1.0);
     /* The reset of the spinbox setup is identical - bet they forgot to change something ;-) */
 #else
 
@@ -1343,7 +1343,7 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     this->setLayout(pVLayout);
 #else
     m_pView = new VBoxDbgStatsView(pVM, this);
-#endif 
+#endif
 
     /*
      * Perform the first refresh to get a good window size.
@@ -1369,7 +1369,7 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     refresh();
     m_pView->setSortColumn(iColumn);
     m_pView->sort();
-#endif 
+#endif
 
     /*
      * Create a refresh timer and start it.
@@ -1412,7 +1412,7 @@ void VBoxDbgStats::setRefresh(int iRefresh)
             m_pTimer->start(iRefresh * 1000);
         else if (iRefresh)
             m_pTimer->changeInterval(iRefresh * 1000);
-#endif 
+#endif
         else
             m_pTimer->stop();
         m_uRefreshRate = iRefresh;
