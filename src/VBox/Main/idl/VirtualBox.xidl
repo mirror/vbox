@@ -8000,6 +8000,13 @@
       </desc>
     </attribute>
 
+    <attribute name="winId" type="unsigned long long" readonly="yes">
+      <desc>
+        Platform-dependent identifier of the window where context of this
+        framebuffer is drawn, or zero if there's no such window.
+      </desc>
+    </attribute>
+
     <method name="lock">
       <desc>
         Locks the framebuffer.

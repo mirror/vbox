@@ -98,6 +98,7 @@ public:
     STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
+    STDMETHOD(COMGETTER(WinId)) (uint64_t *winId);
 
     STDMETHOD(NotifyUpdate)(ULONG x, ULONG y,
                             ULONG w, ULONG h, BOOL *finished);
@@ -134,6 +135,7 @@ public:
     void paintSecureLabel(int x, int y, int w, int h, bool fForce);
 #endif
     void uninit();
+    void setWinId(uint64_t winId) { mWinId = winId; }
 
 private:
     /** the sdl thread */
@@ -175,6 +177,8 @@ private:
     bool mfResizable;
     /** flag whether we print out SDL information */
     bool mfShowSDLConfig;
+    /** handle to window where framebuffer context is being drawn*/
+    uint64_t mWinId;
 #ifdef VBOX_SECURELABEL
     /** current secure label text */
     Utf8Str mSecureLabelText;
@@ -262,6 +266,7 @@ public:
     STDMETHOD(COMGETTER(UsesGuestVRAM)) (BOOL *usesGuestVRAM);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
+    STDMETHOD(COMGETTER(WinId)) (ULONG64 *winId);
 
     STDMETHOD(Lock)();
     STDMETHOD(Unlock)();

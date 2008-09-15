@@ -378,6 +378,20 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(Overlay)(IFramebufferOverlay **aOverlay)
 }
 
 /**
+ * Returns handle of window where framebuffer context is being drawn
+ *
+ * @returns COM status code.
+ * @param   winId Handle of associated window.
+ */
+STDMETHODIMP VBoxSDLFB::COMGETTER(WinId)(uint64_t *winId)
+{
+    if (!winId)
+        return E_POINTER;
+    *winId = mWinId;
+    return S_OK;
+}
+
+/**
  * Notify framebuffer of an update.
  *
  * @returns COM status code
@@ -1400,6 +1414,22 @@ STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(Overlay)(IFramebufferOverlay **aOverlay
     *aOverlay = 0;
     return S_OK;
 }
+
+/**
+ * Returns associated window handle. We return NULL here.
+ *
+ * @returns COM status code
+ * @param   winId Address of result buffer.
+ */
+STDMETHODIMP VBoxSDLFBOverlay::COMGETTER(WinId)(ULONG64 *winId)
+{
+    LogFlow(("VBoxSDLFBOverlay::GetWinId\n"));
+    if (!winId)
+        return E_INVALIDARG;
+    *winId = 0;
+    return S_OK;
+}
+
 
 /**
  * Lock the overlay.  This should not be used - lock the parent IFramebuffer instead.

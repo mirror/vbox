@@ -267,6 +267,8 @@ typedef enum LOGGROUP
     LOG_GROUP_REM_RUN,
     /** SELM group. */
     LOG_GROUP_SELM,
+    /** Chromium OpenGL host service group. */
+    LOG_GROUP_SHARED_CROPENGL,
     /** Shared folders host service group. */
     LOG_GROUP_SHARED_FOLDERS,
     /** OpenGL host service group. */
@@ -430,6 +432,7 @@ typedef enum LOGGROUP
     "REM_PRINTF",   \
     "REM_RUN",      \
     "SELM",         \
+    "SHARED_CROPENGL",\
     "SHARED_FOLDERS",\
     "SHARED_OPENGL",\
     "SRV_INTNET",   \

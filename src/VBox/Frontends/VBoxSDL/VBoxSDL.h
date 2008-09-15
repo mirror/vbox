@@ -65,7 +65,7 @@ void ResetVM(void);
 void SaveState(void);
 
 #ifdef VBOX_WIN32_UI
-int initUI(bool fResizable);
+int initUI(bool fResizable, uint64_t &winId);
 int uninitUI(void);
 int resizeUI(uint16_t width, uint16_t height);
 int setUITitle(char *title);

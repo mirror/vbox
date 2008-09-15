@@ -136,6 +136,14 @@ STDMETHODIMP VBoxFrameBuffer::COMGETTER(Overlay) (IFramebufferOverlay **aOverlay
     return S_OK;
 }
 
+STDMETHODIMP VBoxFrameBuffer::COMGETTER(WinId) (ULONG64 *winId)
+{
+    if (!winId)
+        return E_POINTER;
+    *winId = (mView && mView->viewport()) ? (ULONG64) mView->viewport()->winId() : 0;	
+    return S_OK;
+}
+
 STDMETHODIMP VBoxFrameBuffer::Lock()
 {
     this->lock();
