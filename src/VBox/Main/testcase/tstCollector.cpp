@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: createMetricFactory() failed\n", rc);
         return 1;
     }
-#if 0
+#if 1
     uint64_t start;
 
     uint64_t hostUserStart, hostKernelStart, hostIdleStart;
