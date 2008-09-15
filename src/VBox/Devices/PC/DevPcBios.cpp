@@ -516,7 +516,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Memory sizes.
      */
-#if VBOX_WITH_SMP_GUESTS
+#ifdef VBOX_WITH_MORE_THAN_4GB
     uint64_t cKBRam = pThis->cbRam / _1K;
     uint64_t cKBAbove4GB = 0;
     uint32_t cKBBelow4GB = cKBRam;
