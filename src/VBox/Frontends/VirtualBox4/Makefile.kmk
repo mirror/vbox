@@ -160,33 +160,16 @@ ifneq ($(KBUILD_TYPE),release)
  # non-release builds has some extra features.
  VirtualBox4_DEFS.win     += VBOX_GUI_USE_DDRAW
 endif
-ifdef VBOX_WITH_REGISTRATION
- VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION
-endif
-ifdef VBOX_WITH_REGISTRATION_REQUEST
- VirtualBox4_DEFS         += VBOX_WITH_REGISTRATION_REQUEST
-endif
-ifdef VBOX_WITH_UPDATE_REQUEST
- VirtualBox4_DEFS         += VBOX_WITH_UPDATE_REQUEST
-endif
-ifdef VBOX_WITH_ALSA
- VirtualBox4_DEFS         += VBOX_WITH_ALSA
-endif
-ifdef VBOX_WITH_PULSE
- VirtualBox4_DEFS         += VBOX_WITH_PULSE
-endif
-ifdef VBOX_WITH_E1000
- VirtualBox4_DEFS         += VBOX_WITH_E1000
-endif
-ifdef VBOX_OSE
- VirtualBox4_DEFS         += VBOX_OSE
-endif
-ifdef VBOX_WITH_DEBUGGER_GUI
- VirtualBox4_DEFS         += VBOX_WITH_DEBUGGER_GUI_MENU
-endif
-ifdef VBOX_WITH_NETFLT
- VirtualBox4_DEFS         += VBOX_WITH_NETFLT
-endif
+VirtualBox4_DEFS          += \
+	$(if $(VBOX_WITH_REGISTRATION),VBOX_WITH_REGISTRATION) \
+	$(if $(VBOX_WITH_REGISTRATION_REQUEST),VBOX_WITH_REGISTRATION_REQUEST) \
+	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
+	$(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA) \
+	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE) \
+	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
+	$(if $(VBOX_OSE),VBOX_OSE) \
+	$(if $(VBOX_WITH_DEBUGGER_GUI),VBOX_WITH_DEBUGGER_GUI_MENU) \
+	$(if $(VBOX_WITH_NETFLT),VBOX_WITH_NETFLT)
 
 src/main.cpp_DEFS         += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
 src/main.cpp_DEPS         += $(VBOX_VERSION_MK)
