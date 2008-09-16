@@ -29,6 +29,16 @@
 # so that we can make any fiddly adjustments to the call which may be needed.
 #
 
+xorgbin=Xorg
+found=`which Xorg | grep "no Xorg"`
+if test ! -z "$found"; then
+    if test -f "/usr/X11/bin/Xorg"; then
+        xorgbin=/usr/X11/bin/Xorg
+    else
+        exit 1
+    fi
+fi
+
 randrbin=xrandr
 found=`which xrandr | grep "no xrandr"`
 if test ! -z "$found"; then
@@ -50,23 +60,24 @@ if test ! -z "$found"; then
 fi
 
 # If we were called with the --test parameter, we check whether the display
-# we are running on is really using the VBox video driver (and RandR 1.2).
+# we are running on is really using the VBox video driver (and RandR 1.2),
+# and whether we are running on a buggy version of X.org which might crash
+# when we resize.
 if test "$1" = "--test"; then
-    # @otodo to be fixed properly
-    osname=`uname -s`
-    if test "$osname" = "SunOS"; then
-        $randrbin 2> /dev/null | grep VBOX1 > /dev/null
-        exit
-    else
-        xout=`X -version 2>&1`
-        ! echo "$xout" | grep 1.4.99.901 > /dev/null &&
-        ! echo "$xout" | grep 1.4.99.902 > /dev/null &&
-        ! echo "$xout" | grep 1.4.99.903 > /dev/null &&
-        ! echo "$xout" | grep 1.4.99.904 > /dev/null &&
-        ! echo "$xout" | grep 1.4.99.905 > /dev/null &&
-        $randrbin 2> /dev/null | grep VBOX1 > /dev/null
-        exit
+    xout=`$xorgbin -version 2>&1`
+    if echo "$xout" | grep 1.4.99.901 > /dev/null; then
+        exit 1
+    elif echo "$xout" | grep 1.4.99.902 > /dev/null; then
+        exit 1
+    elif echo "$xout" | grep 1.4.99.903 > /dev/null; then
+        exit 1
+    elif echo "$xout" | grep 1.4.99.904 > /dev/null; then
+        exit 1
+    elif echo "$xout" | grep 1.4.99.905 > /dev/null; then
+        exit 1
     fi
+    $randrbin 2> /dev/null | grep VBOX1 > /dev/null
+    exit
 fi
 
 # Otherwise we just switch the guest display into its preferred resolution,
