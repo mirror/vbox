@@ -418,7 +418,6 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
 #elif defined(RT_OS_LINUX)
     int direction;
     struct cdrom_generic_command cgc;
-    request_sense sense;
 
     switch (enmTxDir)
     {
