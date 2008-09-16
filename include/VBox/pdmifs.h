@@ -2498,6 +2498,7 @@ typedef enum PDMSCSIREQUESTTXDIR
     PDMSCSIREQUESTTXDIR_FROM_DEVICE,
     PDMSCSIREQUESTTXDIR_TO_DEVICE,
     PDMSCSIREQUESTTXDIR_NONE
+    /** @todo r=bird: 32-bit type size blowup? */
 } PDMSCSIREQUESTTXDIR;
 
 /**
@@ -2508,11 +2509,11 @@ typedef struct PDMSCSIREQUEST
     /** The logical unit. */
     uint32_t    uLogicalUnit;
     /** Direction of the data flow. */
-    uint32_t    uDataDirection;
+    uint32_t    uDataDirection;         /**< @todo r=bird: why isn't this PDMSCSIREQUESTTXDIR? */
     /** Size of the SCSI CDB. */
     uint32_t    cbCDB;
     /** Pointer to the SCSI CDB. */
-    uint8_t    *paCDB;
+    uint8_t    *paCDB;                  /**< @todo r=bird: array what? pbCDB perhaps? */
     /** Overall size of all scatter gather list elements
      *  for data transfer if any. */
     uint32_t    cbScatterGather;
@@ -2524,7 +2525,7 @@ typedef struct PDMSCSIREQUEST
     uint32_t    cbSenseBuffer;
     /** Pointer to the sense buffer. *
      * Current assumption that the sense buffer is not scattered. */
-    uint8_t    *pu8SenseBuffer;
+    uint8_t    *pu8SenseBuffer;         /**< @todo r=bird: pbSenseBuffer is simpler */
     /** Opaque user data for use by the device. Left untouched by everything else! */
     void       *pvUser;
 } PDMSCSIREQUEST, *PPDMSCSIREQUEST;
