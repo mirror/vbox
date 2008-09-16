@@ -120,10 +120,10 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
         else if ((keysym >> 8) == 0x1005FF) /* Sun keys */
             scan = sun_key_scan[keysym & 0xff];
         else if (keysym == 0x20)            /* Spacebar */
-	    scan = 0x39;
+            scan = 0x39;
         else if (keysym == 0xFE03)          /* ISO level3 shift, aka AltGr */
-	    scan = 0x138;
-	else if (use_builtin_table != 0)
+            scan = 0x138;
+        else if (use_builtin_table != 0)
             scan = main_keyboard_type_scans[builtin_table_number][code];
         else
             scan = keyc2scan[code];
@@ -203,34 +203,34 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
         int key;
         /** Does this key match? */
         int ok = 0;
-	/* search for a match in layout table */
-	for (key = 0; (key < MAIN_LEN) && (0 == ok); key++) {
-	  if (   ((*lkey)[key][0] == ckey[keyc][0])
-	      && ((*lkey)[key][1] == ckey[keyc][1])
+        /* search for a match in layout table */
+        for (key = 0; (key < MAIN_LEN) && (0 == ok); key++) {
+          if (   ((*lkey)[key][0] == ckey[keyc][0])
+              && ((*lkey)[key][1] == ckey[keyc][1])
              ) {
               ok = 1;
-	  }
-	}
-	/* count the matches and mismatches */
-	if (0 != ok) {
-	  match++;
+          }
+        }
+        /* count the matches and mismatches */
+        if (0 != ok) {
+          match++;
           /* How well in sequence are the keys?  For dvorak layouts. */
-	  if (key > pkey) {
-	    if (1 == direction) {
-	      ++seq;
+          if (key > pkey) {
+            if (1 == direction) {
+              ++seq;
             } else {
-	      direction = -1;
+              direction = -1;
             }
-	  }
-	  if (key < pkey) {
-	    if (1 != direction) {
-	      ++seq;
+          }
+          if (key < pkey) {
+            if (1 != direction) {
+              ++seq;
             } else {
-	      direction = 1;
+              direction = 1;
             }
-	  }
-	  pkey = key;
-	} else {
+          }
+          pkey = key;
+        } else {
 #ifdef DEBUG
           /* print spaces instead of \0's */
           char str[3] = "  ";
@@ -243,12 +243,12 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
           LOG_KB_2(("Mismatch for keycode %d, keysym \"%s\" (0x%.2hx 0x%.2hx)\n",
                        keyc, str, ckey[keyc][0], ckey[keyc][1]));
 #endif /* DEBUG defined */
-	}
+        }
       }
     }
     LOG_KB_2(("Matches=%d, seq=%d\n", match, seq));
     if (   (match > max_score)
-	|| ((match == max_score) && (seq > max_seq))
+        || ((match == max_score) && (seq > max_seq))
        ) {
       /* best match so far */
       kbd_layout = current;
@@ -329,29 +329,29 @@ X11DRV_InitKeyboardByLayout(Display *display)
               && (0x20 != keysym)            /* Spacebar */
               && (0xFE03 != keysym)          /* ISO level3 shift, aka AltGr */
              ) {
-	      unsigned found = 0;
+              unsigned found = 0;
 
-	      /* we seem to need to search the layout-dependent scancodes */
+              /* we seem to need to search the layout-dependent scancodes */
               char unshifted = keysym & 0xFF;
               char shifted = XKeycodeToKeysym(display, keyc, 1) & 0xFF;
-	      /* find a key which matches */
-	      for (keyn = 0; (0 == found) && (keyn<MAIN_LEN); keyn++) {
+              /* find a key which matches */
+              for (keyn = 0; (0 == found) && (keyn<MAIN_LEN); keyn++) {
                 if (   ((*lkey)[keyn][0] == unshifted)
                     && ((*lkey)[keyn][1] == shifted)
                    ) {
                    found = 1;
                 }
-	      }
-	      if (0 != found) {
-		/* got it */
-		scan = main_key_scan[keyn - 1];
-		/* We keep track of the number of keys that we found a
-		 * match for to see if the layout is optimal or not.
-		 * We ignore the 102nd key though (key number 48), since
-		 * not all keyboards have it. */
-		if (keyn != 48)
-		    ++matches;
-	      }
+              }
+              if (0 != found) {
+                /* got it */
+                scan = main_key_scan[keyn - 1];
+                /* We keep track of the number of keys that we found a
+                 * match for to see if the layout is optimal or not.
+                 * We ignore the 102nd key though (key number 48), since
+                 * not all keyboards have it. */
+                if (keyn != 48)
+                    ++matches;
+              }
               if (0 == scan) {
                 /* print spaces instead of \0's */
                 char str[3] = "  ";
@@ -375,7 +375,7 @@ X11DRV_InitKeyboardByLayout(Display *display)
                 LOG_KB_1(("Warning - keycode %d, keysym \"%s\" (0x%x 0x%x) was matched to scancode %d\n",
                              keyc, str, unshifted, shifted, scan));
               }
-	    }
+            }
         }
         keyc2scan[keyc] = scan;
     } /* for */
