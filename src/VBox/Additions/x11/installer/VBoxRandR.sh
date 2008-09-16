@@ -58,7 +58,7 @@ if test "$1" = "--test"; then
         $randrbin 2> /dev/null | grep VBOX1 > /dev/null
         exit
     else
-        xout=`$xorgbin -version 2>&1`
+        xout=`X -version 2>&1`
         ! echo "$xout" | grep 1.4.99.901 > /dev/null &&
         ! echo "$xout" | grep 1.4.99.902 > /dev/null &&
         ! echo "$xout" | grep 1.4.99.903 > /dev/null &&
