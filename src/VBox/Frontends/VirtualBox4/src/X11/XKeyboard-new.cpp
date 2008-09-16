@@ -84,7 +84,8 @@ static void dumpLayout(Display *display)
 {
     LogRel(("Your keyboard layout does not appear to fully supported by\n"
             "VirtualBox. If you would like to help us improve the product,\n"
-            "please submit a bug report and attach this logfile.\n\n"
+            "please submit a bug report and attach this logfile.\n"
+            "(Note: please ignore this if you are using a custom layout.)\n\n"
             "The correct table for your layout is:\n"));
     /* First, build up a table of scan-to-key code mappings */
     unsigned scanToKeycode[512] = { 0 };
