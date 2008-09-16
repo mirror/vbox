@@ -9563,6 +9563,34 @@ int76_handler:
   pop   ax
   iret
 
+;--------------------
+#ifdef VBOX
+init_pic:
+  ;; init PIC
+  mov al, #0x11 ; send initialisation commands
+  out 0x20, al
+  out 0xa0, al
+  mov al, #0x08
+  out 0x21, al
+  mov al, #0x70
+  out 0xa1, al
+  mov al, #0x04
+  out 0x21, al
+  mov al, #0x02
+  out 0xa1, al
+  mov al, #0x01
+  out 0x21, al
+  out 0xa1, al
+  mov  al, #0xb8
+  out  0x21, AL ;master pic: unmask IRQ 0, 1, 2, 6
+#if BX_USE_PS2_MOUSE
+  mov  al, #0x8f
+#else
+  mov  al, #0x9f
+#endif
+  out  0xa1, AL ;slave  pic: unmask IRQ 12, 13, 14
+  ret
+#endif /* VBOX */
 
 ;--------------------
 #if BX_APM
@@ -11001,6 +11029,12 @@ post_default_ints:
   ;; Video setup
   SET_INT_VECTOR(0x10, #0xF000, #int10_handler)
 
+#ifdef VBOX
+  ;; moved the PIC initialization to another place as we need
+  ;; some space for additions init calls. Otherwise this code
+  ;; overlaps with the NMI handler at 0xe2c3 (fixed BIOS entry)
+  call init_pic
+#else /* !VBOX */
   ;; PIC
   mov al, #0x11 ; send initialisation commands
   out 0x20, al
@@ -11024,6 +11058,7 @@ post_default_ints:
   mov  al, #0x9f
 #endif
   out  0xa1, AL ;slave  pic: unmask IRQ 12, 13, 14
+#endif /* !VBOX */
 
 #if BX_ROMBIOS32
   call rombios32_init
