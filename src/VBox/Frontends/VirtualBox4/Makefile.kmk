@@ -26,6 +26,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Globals.
 #
 VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
+VBOX_VIRTUALBOX4_OUT_DIR := $(PATH_TARGET)/VirtualBox4/misc
 
 VBOX_WITH_REGISTRATION := 1
 
@@ -55,6 +56,7 @@ ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X1
  CLEAN += $(PATH_BIN)/vboxkeyboard.tar.gz
 endif
 INSTALLS += VirtualBox4.nls
+
 
 #
 # VBoxKeyboard - keyboard library for X11.
@@ -388,20 +390,19 @@ VirtualBox4_QT_MODULES = Core Gui
 ifndef VBOX_WITH_REGISTRATION
  FORMS := $(filter-out ui/VBoxRegistrationDlg.ui,$(FORMS))
 endif
-VirtualBox4_SOURCES := \
-       $(VirtualBox4_SOURCES) \
-       $(FORMS) \
-       ui/VBoxAboutDlg.ui
+$(eval VirtualBox4_SOURCES += \
+	$(FORMS) \
+	ui/VBoxAboutDlg.ui )
 
-# Resource files with some OSE differences.
+# Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
 VirtualBox4_SOURCES += VirtualBox.qrc
-VirtualBox4_SOURCES += $(PATH_TARGET)/VirtualBoxBrand.qrc
+VirtualBox4_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 ifdef VBOX_OSE
- $(PATH_TARGET)/VirtualBoxBrand.qrc_RCCFLAGS = -name OSE
+ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name OSE
 else
  VirtualBox4_SOURCES += src/VBoxAboutNonOSEDlg.cpp
  VirtualBox4_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
- $(PATH_TARGET)/VirtualBoxBrand.qrc_RCCFLAGS = -name NonOSE
+ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name NonOSE
 endif
 
 
@@ -436,10 +437,8 @@ endif
 # Generate the COM wrappers.
 #
 VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include
-VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h \
-			     $(PATH_TARGET)/VirtualBoxBrand.qrc
-VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h \
-			     $(PATH_TARGET)/VirtualBoxBrand.qrc
+VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h
+VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h
 
 $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
@@ -451,24 +450,27 @@ $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 #
 # Generate qrc file with branded icons.
 #
+VirtualBox4_BLDDIRS       += $(VBOX_VIRTUALBOX4_OUT_DIR)
+VirtualBox4_CLEAN         += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 if "$(KBUILD_HOST)" == "win" ## @todo remove when kBuild ticket #52 has been fixed and deployed.
-VBOX_DRIVE_HACK := $(firstword $(subst :, ,$(PATH_ROOT))):
+ VBOX_DRIVE_HACK := $(firstword $(subst :, ,$(PATH_ROOT))):
 else
-VBOX_DRIVE_HACK :=
+ VBOX_DRIVE_HACK :=
 endif
-$(PATH_TARGET)/VirtualBoxBrand.qrc: \
-		$(VBOX_VIRTUALBOX4_SRC)/VirtualBoxBrand.qrc
+$(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
+		$(VBOX_VIRTUALBOX4_SRC)/VirtualBoxBrand.qrc \
+		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox4,$<,$@)
 	$(QUIET)$(SED) \
-		-e 's;@VBOX_ABOUT_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_ABOUT_PNG));g' \
-		-e 's;@VBOX_ABOUT_16PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_ABOUT_16PX_PNG));g' \
-		-e 's;@VBOX_VBOX_16PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_16PX_PNG));g' \
-		-e 's;@VBOX_VBOX_20PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_20PX_PNG));g' \
-		-e 's;@VBOX_VBOX_32PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_32PX_PNG));g' \
-		-e 's;@VBOX_VBOX_40PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_40PX_PNG));g' \
-		-e 's;@VBOX_VBOX_48PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_48PX_PNG));g' \
-		-e 's;@VBOX_VBOX_64PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_64PX_PNG));g' \
-		-e 's;@VBOX_CUBE_42PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_CUBE_42PX_PNG));g' \
+		-e 's;@VBOX_ABOUT_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_ABOUT_PNG));g' \
+		-e 's;@VBOX_ABOUT_16PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_ABOUT_16PX_PNG));g' \
+		-e 's;@VBOX_VBOX_16PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_VBOX_16PX_PNG));g' \
+		-e 's;@VBOX_VBOX_20PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_VBOX_20PX_PNG));g' \
+		-e 's;@VBOX_VBOX_32PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_VBOX_32PX_PNG));g' \
+		-e 's;@VBOX_VBOX_40PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_VBOX_40PX_PNG));g' \
+		-e 's;@VBOX_VBOX_48PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_VBOX_48PX_PNG));g' \
+		-e 's;@VBOX_VBOX_64PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_VBOX_64PX_PNG));g' \
+		-e 's;@VBOX_CUBE_42PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_CUBE_42PX_PNG));g' \
 		--output $@ \
 		$<
 
