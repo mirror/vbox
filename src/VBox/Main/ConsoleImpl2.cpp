@@ -498,27 +498,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /*
      * Advanced Programmable Interrupt Controller.
+     * SMP: Each CPU has a LAPIC (cross-calls).
      */
-#ifdef VBOX_WITH_SMP_GUESTS
     rc = CFGMR3InsertNode(pDevices, "apic", &pDev);                                 RC_CHECK();
-    /* We need LAPIC per-CPU, as it allows cross-calls */
-    for (ULONG ulInstance = 0; ulInstance < cCpus; ulInstance++)
+    for (unsigned iCpu = 0; iCpu < cCpus; iCpu++)
     {
-        char szInstance[4]; Assert(ulInstance <= 999);
-        RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
-        rc = CFGMR3InsertNode(pDev, szInstance, &pInst); 
-        RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", iCpu);                           RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */   RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
     }
-#else
-    rc = CFGMR3InsertNode(pDevices, "apic", &pDev);                                 RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
-#endif
 
     if (fIOAPIC)
     {
