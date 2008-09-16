@@ -19,240 +19,23 @@
  * additional information or have any questions.
  */
 
-
 #ifndef ___Debugger_VBoxDbgStats_h
 #define ___Debugger_VBoxDbgStats_h
 
 #include "VBoxDbgBase.h"
 
-#ifdef VBOXDBG_USE_QT4
-# include <QTreeWidget>
-# include <QTimer>
-# include <QComboBox>
-# include <QMenu>
-  typedef QMenu QPopupMenu;
-  typedef QTreeWidget QListView;
-  typedef QTreeWidgetItem QListViewItem;
-#else
-# include <qlistview.h>
-# include <qvbox.h>
-# include <qtimer.h>
-# include <qcombobox.h>
-# include <qpopupmenu.h>
-#endif
+#include <QTreeView>
+#include <QTimer>
+#include <QComboBox>
+#include <QMenu>
 
 class VBoxDbgStats;
+class VBoxDbgStatsModel;
 
-/**
- * A statistics item.
- *
- * This class represent can be both a leaf and a branch item.
- */
-class VBoxDbgStatsItem : public QListViewItem
-{
-public:
-    /**
-     * Constructor.
-     *
-     * @param   pszName     The name of this item.
-     * @param   pParent     The parent view item.
-     * @param   fBranch     Set if this is a branch.
-     */
-    VBoxDbgStatsItem(const char *pszName, VBoxDbgStatsItem *pParent, bool fBranch = true);
-
-    /**
-     * Constructor.
-     *
-     * @param   pszName     The name of this item.
-     * @param   pParent     The parent list view.
-     * @param   fBranch     Set if this is a branch.
-     */
-    VBoxDbgStatsItem(const char *pszName, QListView *pParent, bool fBranch = true);
-
-    /** Destructor. */
-    virtual ~VBoxDbgStatsItem();
-
-    /**
-     * Gets the STAM name of the item.
-     * @returns STAM Name.
-     */
-    const char *getName() const
-    {
-        return m_pszName;
-    }
-
-    /**
-     * Branch item?
-     * @returns true if branch, false if leaf.
-     */
-    bool isBranch() const
-    {
-        return m_fBranch;
-    }
-
-    /**
-     * Leaf item?
-     * @returns true if leaf, false if branch.
-     */
-    bool isLeaf() const
-    {
-        return !m_fBranch;
-    }
-
-    /**
-     * Gets the parent item.
-     * @returns Pointer to parent item, NULL if this is the root item.
-     */
-    VBoxDbgStatsItem *getParent()
-    {
-        return m_pParent;
-    }
-
-#ifdef VBOXDBG_USE_QT4
-    ///virtual bool operator<(const QTreeWidgetItem &other) const;
-#else
-    /**
-     * Get sort key.
-     *
-     * @returns The sort key.
-     * @param   iColumn         The column to sort.
-     * @param   fAscending      The sorting direction.
-     */
-    virtual QString key(int iColumn, bool fAscending) const
-    {
-        return QListViewItem::key(iColumn, fAscending);
-    }
-#endif
-
-    /**
-     * Logs the tree starting at this item to one of the default logs.
-     * @param   fReleaseLog     If set use RTLogRelPrintf instead of RTLogPrintf.
-     */
-    virtual void logTree(bool fReleaseLog) const;
-
-    /**
-     * Converts the tree starting at this item into a string and adds it to
-     * the specified string object.
-     * @param   String          The string to append the stringified tree to.
-     */
-    virtual void stringifyTree(QString &String) const;
-
-    /**
-     * Copies the stringified tree onto the clipboard.
-     */
-    void copyTreeToClipboard(void) const;
-
-#ifdef VBOXDBG_USE_QT4
-    void setVisible(bool fVisible)
-    {
-        setHidden(!fVisible);
-    }
-
-    bool isVisible()
-    {
-        return !isHidden();
-    }
-#endif
-
-protected:
-    /** The name of this item. */
-    char       *m_pszName;
-    /** Branch (true) / Leaf (false) indicator */
-    bool        m_fBranch;
-    /** Parent item.
-     * This is NULL for the root item. */
-    VBoxDbgStatsItem *m_pParent;
-};
-
-
-/**
- * A statistics item.
- *
- * This class represent one statistical item from STAM.
- */
-class VBoxDbgStatsLeafItem : public VBoxDbgStatsItem
-{
-public:
-    /**
-     * Constructor.
-     *
-     * @param   pszName     The name of this item.
-     * @param   pParent     The parent view item.
-     */
-    VBoxDbgStatsLeafItem(const char *pszName, VBoxDbgStatsItem *pParent);
-
-    /** Destructor. */
-    virtual ~VBoxDbgStatsLeafItem();
-
-    /**
-     * Updates the item when current data.
-     *
-     * @param   enmType         The current type of the object.
-     * @param   pvSample        Pointer to the sample (may change).
-     * @param   enmUnit         The current unit.
-     * @param   enmVisibility   The current visibility settings.
-     * @param   pszDesc         The current description.
-     */
-    void update(STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, STAMVISIBILITY enmVisibility, const char *pszDesc);
-
-    /**
-     * Get sort key.
-     *
-     * @returns The sort key.
-     * @param   iColumn         The column to sort.
-     * @param   fAscending      The sorting direction.
-     */
-    virtual QString key(int iColumn, bool fAscending) const;
-
-    /**
-     * Logs the tree starting at this item to one of the default logs.
-     * @param   fReleaseLog     If set use RTLogRelPrintf instead of RTLogPrintf.
-     */
-    virtual void logTree(bool fReleaseLog) const;
-
-    /**
-     * Converts the tree starting at this item into a string and adds it to
-     * the specified string object.
-     * @param   String          The string to append the stringified tree to.
-     */
-    virtual void stringifyTree(QString &String) const;
-
-    /** Pointer to the next item in the list.
-     * The list is maintained by the creator of the object, not the object it self. */
-    VBoxDbgStatsLeafItem *m_pNext;
-    /** Pointer to the previous item in the list. */
-    VBoxDbgStatsLeafItem *m_pPrev;
-
-
-protected:
-
-    /** The data type. */
-    STAMTYPE    m_enmType;
-    /** The data at last update. */
-    union
-    {
-        /** STAMTYPE_COUNTER. */
-        STAMCOUNTER     Counter;
-        /** STAMTYPE_PROFILE. */
-        STAMPROFILE     Profile;
-        /** STAMTYPE_PROFILE_ADV. */
-        STAMPROFILEADV  ProfileAdv;
-        /** STAMTYPE_RATIO_U32. */
-        STAMRATIOU32    RatioU32;
-        /** STAMTYPE_U8 & STAMTYPE_U8_RESET. */
-        uint8_t         u8;
-        /** STAMTYPE_U16 & STAMTYPE_U16_RESET. */
-        uint16_t        u16;
-        /** STAMTYPE_U32 & STAMTYPE_U32_RESET. */
-        uint32_t        u32;
-        /** STAMTYPE_U64 & STAMTYPE_U64_RESET. */
-        uint64_t        u64;
-    }           m_Data;
-    /** The unit. */
-    STAMUNIT    m_enmUnit;
-    /** The description string. */
-    QString     m_DescStr;
-};
+/** Pointer to a statistics sample. */
+typedef struct DBGGUISTATSNODE *PDBGGUISTATSNODE;
+/** Pointer to a const statistics sample. */
+typedef struct DBGGUISTATSNODE const *PCDBGGUISTATSNODE;
 
 
 /**
@@ -260,7 +43,7 @@ protected:
  *
  * A tree represenation of the STAM statistics.
  */
-class VBoxDbgStatsView : public QListView, public VBoxDbgBase
+class VBoxDbgStatsView : public QTreeView, public VBoxDbgBase
 {
     Q_OBJECT;
 
@@ -268,10 +51,12 @@ public:
     /**
      * Creates a VM statistics list view widget.
      *
-     * @param   pVM         The VM which STAM data is being viewed.
-     * @param   pParent     Parent widget.
+     * @param   a_pVM       The VM which STAM data is being viewed.
+     * @param   a_pModel    The model. Will take ownership of this and delete it together
+     *                      with the view later
+     * @param   a_pParent   Parent widget.
      */
-    VBoxDbgStatsView(PVM pVM, VBoxDbgStats *pParent = NULL);
+    VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxDbgStats *a_pParent = NULL);
 
     /** Destructor. */
     virtual ~VBoxDbgStatsView();
@@ -292,18 +77,6 @@ public:
      */
     void reset(const QString &rPatStr);
 
-#ifndef VBOXDBG_USE_QT4
-    /**
-     * Expand all items in the view.
-     */
-    void expandAll();
-
-    /**
-     * Collaps all items in the view.
-     */
-    void collapsAll();
-#endif /* QT3 */
-
 private:
     /**
      * Callback function for the STAMR3Enum() made by update().
@@ -318,8 +91,8 @@ private:
      * @param   pszDesc         The description.
      * @param   pvUser          Pointer to the VBoxDbgStatsView object.
      */
-    static DECLCALLBACK(int) updateCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                            STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser);
+//later:    static DECLCALLBACK(int) updateCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
+//later:                                            STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser);
 
 protected:
     /**
@@ -328,45 +101,36 @@ protected:
      * @returns Parent node.
      * @param   pszName     Path to a stats item.
      */
-    VBoxDbgStatsItem *createPath(const char *pszName);
+//    VBoxDbgStatsItem *createPath(const char *pszName);
 
 protected slots:
-    /** Context menu. */
-    void contextMenuReq(QListViewItem *pItem, const QPoint &rPoint, int iColumn);
-    /** Leaf context. */
-    void leafMenuActivated(int iId);
-    /** Branch context. */
-    void branchMenuActivated(int iId);
-    /** View context. */
-    void viewMenuActivated(int iId);
+//later:    /** Context menu. */
+//later:    void contextMenuReq(QListViewItem *pItem, const QPoint &rPoint, int iColumn);
+//later:    /** Leaf context. */
+//later:    void leafMenuActivated(int iId);
+//later:    /** Branch context. */
+//later:    void branchMenuActivated(int iId);
+//later:    /** View context. */
+//later:    void viewMenuActivated(int iId);
 
 protected:
     typedef enum { eRefresh = 1, eReset, eExpand, eCollaps, eCopy, eLog, eLogRel } MenuId;
 
 protected:
+    /** Pointer to the data model. */
+    VBoxDbgStatsModel *m_pModel;
     /** The current selection pattern. */
     QString m_PatStr;
     /** The parent widget. */
     VBoxDbgStats *m_pParent;
-    /** Head of the items list.
-     * This list is in the order that STAMR3Enum() uses.
-     * Access seralization should not be required, and is therefore omitted. */
-    VBoxDbgStatsLeafItem *m_pHead;
-    /** Tail of the items list (see m_pHead). */
-    VBoxDbgStatsLeafItem *m_pTail;
-    /** The current position in the enumeration.
-     * If NULL we've reached the end of the list and are adding elements. */
-    VBoxDbgStatsLeafItem *m_pCur;
-    /** The root item. */
-    VBoxDbgStatsItem *m_pRoot;
     /** Leaf item menu. */
-    QPopupMenu *m_pLeafMenu;
+    QMenu *m_pLeafMenu;
     /** Branch item menu. */
-    QPopupMenu *m_pBranchMenu;
+    QMenu *m_pBranchMenu;
     /** View menu. */
-    QPopupMenu *m_pViewMenu;
-    /** The pointer to the context menu item which is the focus of a context menu. */
-    VBoxDbgStatsItem *m_pContextMenuItem;
+    QMenu *m_pViewMenu;
+    /** The pointer to the node which is the current focus of a context menu. */
+    PDBGGUISTATSNODE m_pContextNode;
 };
 
 

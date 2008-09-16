@@ -58,7 +58,6 @@ public:
     virtual ~VBoxDbgBase();
 
 
-protected:
     /**
      * Checks if the VM is OK for normal operations.
      * @returns true if ok, false if not.
