@@ -131,7 +131,7 @@ VBoxDbg_QT_MODULES = Core Gui
 VBoxDbg_QT_MOCHDRS = \
 	VBoxDbgGui.h \
 	VBoxDbgConsole.h \
-	VBoxDbgStats.h
+	VBoxDbgStatsQt4.h
 VBoxDbg_SOURCES = \
 	VBoxDbg.cpp \
 	VBoxDbgGui.cpp \

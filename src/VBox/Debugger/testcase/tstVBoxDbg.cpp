@@ -69,7 +69,7 @@ int main(int argc, char **argv)
                 cErrors++;
             }
 
-#if 0
+#if 1
             RTPrintf(TESTCASE ": calling pfnShowStatistics...\n");
             pGuiVT->pfnShowStatistics(pGui);
             if (RT_FAILURE(rc))
@@ -79,6 +79,7 @@ int main(int argc, char **argv)
             }
 #endif
 
+            pGuiVT->pfnAdjustRelativePos(pGui, 64, 64, 128, 64);
             RTPrintf(TESTCASE ": calling App.exec()...\n");
             App.exec();
         }
