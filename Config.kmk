@@ -428,6 +428,21 @@ if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_NETFLT = 1
 endif
 
+#
+# Branding
+#
+VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/sun_logo.bmp
+VBOX_BRAND_GUI_LICENSE        := $(PATH_ROOT)/doc/License.html
+VBOX_BRAND_GUI_ABOUT          := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about.png
+VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about.png
+VBOX_BRAND_GUI_ABOUT_16PX_PNG := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about_16px.png
+VBOX_BRAND_GUI_VBOX_16PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_16px.png
+VBOX_BRAND_GUI_VBOX_20PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_20px.png
+VBOX_BRAND_GUI_VBOX_32PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_32px.png
+VBOX_BRAND_GUI_VBOX_40PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_40px.png
+VBOX_BRAND_GUI_VBOX_48PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_48px.png
+VBOX_BRAND_GUI_VBOX_64PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_64px.png
+VBOX_BRAND_GUI_CUBE_42PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_cube_42px.png
 
 #
 # Skip stuff.
@@ -579,6 +594,17 @@ ifdef VBOX_OSE
  endif
  VBOX_WITH_AHCI=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
+ # branding
+ VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Grapics/BIOS/ose_logo.bmp
+ VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/about.png
+ VBOX_BRAND_GUI_ABOUT_16PX_PNG := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/about_16px.png
+ VBOX_BRAND_GUI_VBOX_16PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_16px.png
+ VBOX_BRAND_GUI_VBOX_20PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_20px.png
+ VBOX_BRAND_GUI_VBOX_32PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_32px.png
+ VBOX_BRAND_GUI_VBOX_40PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_40px.png
+ VBOX_BRAND_GUI_VBOX_48PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_48px.png
+ VBOX_BRAND_GUI_VBOX_64PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_64px.png
+ VBOX_BRAND_GUI_CUBE_42_PNG    := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/VirtualBox_cube_42px.png
 endif
 
 #
@@ -3461,12 +3487,11 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 ifndef VBOX_OSE
 if1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
 # VBOX_LICENSE_VER is used in several Makefiles
-VBOX_LICENSE_SRC    := $(PATH_ROOT)/doc/License.html
 VBOX_LICENSE_VER_KMK = $(PATH_OUT)/license-version.kmk
-$(VBOX_LICENSE_VER_KMK): $(VBOX_LICENSE_SRC)
+$(VBOX_LICENSE_VER_KMK): $(VBOX_GUI_LICENSE_SRC)
 	$(call MSG_GENERATE,,$(VBOX_LICENSE_VER_KMK))
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(SED) -e "s/.*License version \([0-9.]*\),.*/VBOX_LICENSE_VER=\1/;t;d" --output $@ $(VBOX_LICENSE_SRC)
+	$(QUIET)$(SED) -e "s/.*License version \([0-9.]*\),.*/VBOX_LICENSE_VER=\1/;t;d" --output $@ $(VBOX_GUI_LICENSE_SRC)
 -include $(VBOX_LICENSE_VER_KMK)
 VBOX_LICENSE_BIN = $(PATH_BIN)/License-$(VBOX_LICENSE_VER).html
 endif

@@ -56,7 +56,6 @@ ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X1
 endif
 INSTALLS += VirtualBox4.nls
 
-
 #
 # VBoxKeyboard - keyboard library for X11.
 #
@@ -396,15 +395,14 @@ VirtualBox4_SOURCES := \
 
 # Resource files with some OSE differences.
 VirtualBox4_SOURCES += VirtualBox.qrc
+VirtualBox4_SOURCES += $(PATH_TARGET)/VirtualBoxBrand.qrc
 ifdef VBOX_OSE
- VirtualBox4_SOURCES += VirtualBox_OSE.qrc
+ $(PATH_TARGET)/VirtualBoxBrand.qrc_RCCFLAGS = -name OSE
 else
- VirtualBox4_SOURCES += VirtualBox_NonOSE.qrc
  VirtualBox4_SOURCES += src/VBoxAboutNonOSEDlg.cpp
  VirtualBox4_QT_MOCHDRS += include/VBoxAboutNonOSEDlg.h
+ $(PATH_TARGET)/VirtualBoxBrand.qrc_RCCFLAGS = -name NonOSE
 endif
-VirtualBox_OSE.qrc_RCCFLAGS = -name OSE
-VirtualBox_NonOSE.qrc_RCCFLAGS = -name NonOSE
 
 
 # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
@@ -438,8 +436,10 @@ endif
 # Generate the COM wrappers.
 #
 VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include
-VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h
-VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h
+VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h \
+			     $(PATH_TARGET)/VirtualBoxBrand.qrc
+VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h \
+			     $(PATH_TARGET)/VirtualBoxBrand.qrc
 
 $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
@@ -447,6 +447,21 @@ $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox4,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
+
+$(PATH_TARGET)/VirtualBoxBrand.qrc: \
+		$(VBOX_VIRTUALBOX4_SRC)/VirtualBoxBrand.qrc
+	$(call MSG_GENERATE,VirtualBox4,$<,$@)
+	$(QUIET)$(SED) \
+		-e 's;@VBOX_ABOUT_PNG@;$(VBOX_BRAND_GUI_ABOUT_PNG);g' \
+		-e 's;@VBOX_ABOUT_16PX_PNG@;$(VBOX_BRAND_GUI_ABOUT_16PX_PNG);g' \
+		-e 's;@VBOX_VBOX_16PX_PNG@;$(VBOX_BRAND_GUI_VBOX_16PX_PNG);g' \
+		-e 's;@VBOX_VBOX_20PX_PNG@;$(VBOX_BRAND_GUI_VBOX_20PX_PNG);g' \
+		-e 's;@VBOX_VBOX_32PX_PNG@;$(VBOX_BRAND_GUI_VBOX_32PX_PNG);g' \
+		-e 's;@VBOX_VBOX_40PX_PNG@;$(VBOX_BRAND_GUI_VBOX_40PX_PNG);g' \
+		-e 's;@VBOX_VBOX_48PX_PNG@;$(VBOX_BRAND_GUI_VBOX_48PX_PNG);g' \
+		-e 's;@VBOX_VBOX_64PX_PNG@;$(VBOX_BRAND_GUI_VBOX_64PX_PNG);g' \
+		-e 's;@VBOX_CUBE_42PX_PNG@;$(VBOX_BRAND_GUI_CUBE_42PX_PNG);g' \
+		$< > $@
 
 # alias for generating the COM Wrappers file.
 testwrappers:: $(VBOX_WRAPPERS_FILE4)
