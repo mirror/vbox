@@ -571,7 +571,7 @@ endif
 #
 ifndef VBOX_OSE
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),)
-$(VBOX_LICENSE_BIN): $(VBOX_LICENSE_SRC)
+$(VBOX_LICENSE_BIN): $(VBOX_BRAND_LICENSE_HTML)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(CP) $< $@
 
