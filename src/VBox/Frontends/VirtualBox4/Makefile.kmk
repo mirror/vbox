@@ -451,7 +451,7 @@ $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 #
 # Generate qrc file with branded icons.
 #
-if "$(KBUILD_HOST)" == "win"
+if "$(KBUILD_HOST)" == "win" ## @todo remove when kBuild ticket #52 has been fixed and deployed.
 VBOX_DRIVE_HACK := $(firstword $(subst :, ,$(PATH_ROOT))):
 else
 VBOX_DRIVE_HACK :=
