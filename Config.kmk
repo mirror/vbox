@@ -445,6 +445,7 @@ VBOX_BRAND_GUI_VBOX_40PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/ima
 VBOX_BRAND_GUI_VBOX_48PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_48px.png
 VBOX_BRAND_GUI_VBOX_64PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_64px.png
 VBOX_BRAND_GUI_CUBE_42PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_cube_42px.png
+VBOX_BRAND_WIN_INST_DLGBMP    := $(PATH_ROOT)/src/VBox/Installer/win/Binary/Dialog.bmp
 
 #
 # Skip stuff.
