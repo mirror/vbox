@@ -510,7 +510,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
             AssertMsgFailedReturn(("%d\n", enmTxDir), VERR_INTERNAL_ERROR);
     }
     usc.uscsi_flags |= USCSI_RQENABLE;
-    usc.uscsi_rqbuf = pabSense;
+    usc.uscsi_rqbuf = (char *)pabSense;
     usc.uscsi_rqlen = cbSense;
     usc.uscsi_cdb = (caddr_t)&scdb;
     usc.uscsi_cdblen = 12;
