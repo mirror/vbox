@@ -3611,7 +3611,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
         {
             size_t iFlags = strlen(pszBuffer) + 1;
             Utf8Str(pszBuffer).cloneTo (aValue);
-            *aTimestamp = parm[2].u.uint32;
+            *aTimestamp = parm[2].u.uint64;
             Utf8Str(pszBuffer + iFlags).cloneTo (aFlags);
         }
         else
