@@ -448,20 +448,29 @@ $$(PATH_VirtualBox4)/include/COMWrappers.h: \
 	$(call MSG_GENERATE,VirtualBox4,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
 
+#
+# Generate qrc file with branded icons.
+#
+if "$(KBUILD_HOST)" == "win"
+VBOX_DRIVE_HACK := $(firstword $(subst :, ,$(PATH_ROOT))):
+else
+VBOX_DRIVE_HACK :=
+endif
 $(PATH_TARGET)/VirtualBoxBrand.qrc: \
 		$(VBOX_VIRTUALBOX4_SRC)/VirtualBoxBrand.qrc
 	$(call MSG_GENERATE,VirtualBox4,$<,$@)
 	$(QUIET)$(SED) \
-		-e 's;@VBOX_ABOUT_PNG@;$(VBOX_BRAND_GUI_ABOUT_PNG);g' \
-		-e 's;@VBOX_ABOUT_16PX_PNG@;$(VBOX_BRAND_GUI_ABOUT_16PX_PNG);g' \
-		-e 's;@VBOX_VBOX_16PX_PNG@;$(VBOX_BRAND_GUI_VBOX_16PX_PNG);g' \
-		-e 's;@VBOX_VBOX_20PX_PNG@;$(VBOX_BRAND_GUI_VBOX_20PX_PNG);g' \
-		-e 's;@VBOX_VBOX_32PX_PNG@;$(VBOX_BRAND_GUI_VBOX_32PX_PNG);g' \
-		-e 's;@VBOX_VBOX_40PX_PNG@;$(VBOX_BRAND_GUI_VBOX_40PX_PNG);g' \
-		-e 's;@VBOX_VBOX_48PX_PNG@;$(VBOX_BRAND_GUI_VBOX_48PX_PNG);g' \
-		-e 's;@VBOX_VBOX_64PX_PNG@;$(VBOX_BRAND_GUI_VBOX_64PX_PNG);g' \
-		-e 's;@VBOX_CUBE_42PX_PNG@;$(VBOX_BRAND_GUI_CUBE_42PX_PNG);g' \
-		$< > $@
+		-e 's;@VBOX_ABOUT_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_ABOUT_PNG));g' \
+		-e 's;@VBOX_ABOUT_16PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_ABOUT_16PX_PNG));g' \
+		-e 's;@VBOX_VBOX_16PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_16PX_PNG));g' \
+		-e 's;@VBOX_VBOX_20PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_20PX_PNG));g' \
+		-e 's;@VBOX_VBOX_32PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_32PX_PNG));g' \
+		-e 's;@VBOX_VBOX_40PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_40PX_PNG));g' \
+		-e 's;@VBOX_VBOX_48PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_48PX_PNG));g' \
+		-e 's;@VBOX_VBOX_64PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_VBOX_64PX_PNG));g' \
+		-e 's;@VBOX_CUBE_42PX_PNG@;$(subst $(VBOX_DRIVE_HACK)/,/,$(VBOX_BRAND_GUI_CUBE_42PX_PNG));g' \
+		--output $@ \
+		$<
 
 # alias for generating the COM Wrappers file.
 testwrappers:: $(VBOX_WRAPPERS_FILE4)
@@ -499,8 +508,8 @@ PATH_SDK_QT4_PLUGINS=$(PATH_SDK_QT4)/plugins
 BLDDIRS=$(PATH_BIN)/accessible/
 OTHERS += \
       $(PATH_BIN)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL)
-endif 
-      
+endif
+
 ifeq ($(KBUILD_TARGET),darwin)
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
