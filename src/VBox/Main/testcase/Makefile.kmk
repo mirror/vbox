@@ -117,7 +117,7 @@ tstCollector_SOURCES  = \
 tstCollector_INCS     = ../include
 tstCollector_LDFLAGS.darwin  += -lproc
 tstCollector_LDFLAGS.solaris += -lkstat
-tstCollector_LDFLAGS.win     += wbemuuid.lib powrprof.lib
+tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 
 
 # generate rules.

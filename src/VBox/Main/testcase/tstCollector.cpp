@@ -34,6 +34,10 @@
 #include "../linux/PerformanceLinux.cpp"
 #endif
 #ifdef RT_OS_WINDOWS
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
+#endif
+
 #define _WIN32_DCOM
 #include <objidl.h>
 #include <objbase.h>
@@ -79,6 +83,8 @@ pm::CollectorHAL *createCollector()
     start = RTTimeMilliTS(); \
     do { \
         rc = collector->fn; \
+        if (RT_FAILURE(rc)) \
+            break; \
         ++nCalls; \
     } while(RTTimeMilliTS() - start < RUN_TIME_MS); \
     if (RT_FAILURE(rc)) \
@@ -198,7 +204,13 @@ int main(int argc, char *argv[])
         RTPrintf("tstCollector: createMetricFactory() failed\n", rc);
         return 1;
     }
-#if 0
+#if 1
+    pm::CollectorHints hints;
+    hints.collectHostCpuLoad();
+    hints.collectHostRamUsage();
+    hints.collectProcessCpuLoad(RTProcSelf());
+    hints.collectProcessRamUsage(RTProcSelf());
+
     uint64_t start;
 
     uint64_t hostUserStart, hostKernelStart, hostIdleStart;
@@ -209,6 +221,12 @@ int main(int argc, char *argv[])
 
     RTPrintf("tstCollector: TESTING - CPU load, sleeping for 5 sec\n");
 
+    rc = collector->preCollect(hints);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        return 1;
+    }
     rc = collector->getRawHostCpuLoad(&hostUserStart, &hostKernelStart, &hostIdleStart);
     if (RT_FAILURE(rc))
     {
@@ -224,6 +242,12 @@ int main(int argc, char *argv[])
 
     RTThreadSleep(5000); // Sleep for 5 seconds
 
+    rc = collector->preCollect(hints);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        return 1;
+    }
     rc = collector->getRawHostCpuLoad(&hostUserStop, &hostKernelStop, &hostIdleStop);
     if (RT_FAILURE(rc))
     {
@@ -239,6 +263,10 @@ int main(int argc, char *argv[])
     hostTotal = hostUserStop - hostUserStart
         + hostKernelStop - hostKernelStart
         + hostIdleStop - hostIdleStart;
+    /*printf("tstCollector: host cpu user      = %f sec\n", (hostUserStop - hostUserStart) / 10000000.);
+    printf("tstCollector: host cpu kernel    = %f sec\n", (hostKernelStop - hostKernelStart) / 10000000.);
+    printf("tstCollector: host cpu idle      = %f sec\n", (hostIdleStop - hostIdleStart) / 10000000.);
+    printf("tstCollector: host cpu total     = %f sec\n", hostTotal / 10000000.);*/
     RTPrintf("tstCollector: host cpu user      = %llu %%\n", (hostUserStop - hostUserStart) * 100 / hostTotal);
     RTPrintf("tstCollector: host cpu kernel    = %llu %%\n", (hostKernelStop - hostKernelStart) * 100 / hostTotal);
     RTPrintf("tstCollector: host cpu idle      = %llu %%\n", (hostIdleStop - hostIdleStart) * 100 / hostTotal);
@@ -246,6 +274,12 @@ int main(int argc, char *argv[])
     RTPrintf("tstCollector: process cpu kernel = %llu %%\n\n", (processKernelStop - processKernelStart) * 100 / (processTotalStop - processTotalStart));
 
     RTPrintf("tstCollector: TESTING - CPU load, looping for 5 sec\n");
+    rc = collector->preCollect(hints);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        return 1;
+    }
     rc = collector->getRawHostCpuLoad(&hostUserStart, &hostKernelStart, &hostIdleStart);
     if (RT_FAILURE(rc))
     {
@@ -260,6 +294,12 @@ int main(int argc, char *argv[])
     }
     start = RTTimeMilliTS();
     while(RTTimeMilliTS() - start < 5000); // Loop for 5 seconds
+    rc = collector->preCollect(hints);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        return 1;
+    }
     rc = collector->getRawHostCpuLoad(&hostUserStop, &hostKernelStop, &hostIdleStop);
     if (RT_FAILURE(rc))
     {
