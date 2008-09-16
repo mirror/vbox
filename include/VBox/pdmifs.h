@@ -642,7 +642,7 @@ typedef struct PDMIBLOCK
      * @param   cTimeoutMillies Command timeout in milliseconds.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSendCmd,(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLOCKTXDIR enmTxDir, void *pvBuf, size_t *pcbBuf, uint8_t *pbSenseKey, uint32_t cTimeoutMillies));
+    DECLR3CALLBACKMEMBER(int, pfnSendCmd,(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLOCKTXDIR enmTxDir, void *pvBuf, size_t *pcbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies));
 
     /**
      * Check if the media is readonly or not.
