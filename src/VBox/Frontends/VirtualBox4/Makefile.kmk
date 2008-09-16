@@ -61,7 +61,7 @@ INSTALLS += VirtualBox4.nls
 #
 VBoxKeyboard_TEMPLATE = VBOXR3
 VBoxKeyboard_SOURCES  = \
-	src/linux/keyboard-new.c
+	src/X11/keyboard-new.c
 VBoxKeyboard_LIBS     = X11
 VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
 
@@ -70,7 +70,7 @@ VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
 # vboxkeyboard.tar.gz - the LGPLed keyboard library must always be
 # redistributed with usable sources.
 #
-# This rule will link create a temporary symlink to src/linux/ and tar
+# This rule will link create a temporary symlink to src/X11/ and tar
 # up the selected files into a tarball that is installed into the
 # bin directory (probably belongs in /usr/shared/somewhere really,
 # but wtf, it's not like we're even trying to be FHS compliant).
@@ -78,17 +78,17 @@ VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
 ## @todo this should be tar'ed down into the output directory and installed using an install target.
 $(PATH_BIN)/vboxkeyboard.tar.gz: $(abspathex \
 		$(VBoxKeyboard_SOURCES) \
-		src/linux/COPYING.LIB \
-		src/linux/keyboard.h \
-		src/linux/keyboard-layouts.h \
-		src/linux/keyboard-list.h \
-		src/linux/keyboard-tables.h \
-		src/linux/keyboard-types.h \
-		src/linux/Makefile \
+		src/X11/COPYING.LIB \
+		src/X11/keyboard.h \
+		src/X11/keyboard-layouts.h \
+		src/X11/keyboard-list.h \
+		src/X11/keyboard-tables.h \
+		src/X11/keyboard-types.h \
+		src/X11/Makefile \
 		,$(PATH_SUB_CURRENT))
 	$(call MSG_TOOL,tar/gzip,,$@)
 	$(QUIET2)$(RM) -f $(PATH_TARGET)/vboxkeyboard $@
-	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/linux/ $(PATH_TARGET)/vboxkeyboard
+	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/X11/ $(PATH_TARGET)/vboxkeyboard
 	$(QUIET)cd $(PATH_TARGET) \
 		&& tar -chvf - $(addprefix vboxkeyboard/,$(notdir $^)) \
 		   | gzip - > $@
@@ -356,7 +356,7 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
   	src/VBoxLicenseViewer.cpp
  endif
  VirtualBox4_SOURCES += \
- 	src/linux/XKeyboard-new.cpp \
+ 	src/X11/XKeyboard-new.cpp \
 	src/VBoxX11Helper.cpp
 else
  VirtualBox4_VBOX_EXTRA_NLS_SOURCES += \
