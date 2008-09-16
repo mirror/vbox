@@ -179,9 +179,11 @@ typedef struct APICState {
     int64_t initial_count_load_time, next_time;
 #ifndef VBOX
     QEMUTimer *timer;
-
     struct APICState *next_apic;
 #else /* VBOX */
+#ifdef VBOX_WITH_SMP_GUESTS
+    //struct APICState *next_apic;
+#endif
     /** The device instance - R3 Ptr. */
     PPDMDEVINSR3    pDevInsR3;
     /** The APIC helpers - R3 Ptr. */
@@ -1542,6 +1544,10 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 {
     APICState *s = PDMINS_2_DATA(pDevIns, APICState *);
 
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogRel(("[SMP] apicMMIORead %p at %ullx\n", pDevIns, (uint64_t)GCPhysAddr));
+#endif
+
     STAM_COUNTER_INC(&CTXSUFF(s->StatMMIORead));
     switch (cb)
     {
@@ -1673,7 +1679,12 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     bool            fIOAPIC;
     bool            fGCEnabled;
     bool            fR0Enabled;
+
+#ifndef VBOX_WITH_SMP_GUESTS
     Assert(iInstance == 0);
+#else
+    LogRel(("[SMP] apicConstruct: %d %p\n", iInstance, pDevIns));
+#endif
 
     /*
      * Validate configuration.
@@ -1707,6 +1718,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     for (i = 0; i < APIC_LVT_NB; i++)
         pThis->lvt[i] = 1 << 16; /* mask LVT */
     pThis->spurious_vec = 0xff;
+
 
     /*
      * Register the APIC.
@@ -1770,12 +1782,12 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (u32Eax >= 1)
     {
         if (   fIOAPIC                       /* If IOAPIC is enabled, enable Local APIC in any case */
-            || (   u32Ebx == X86_CPUID_VENDOR_INTEL_EBX
-                && u32Ecx == X86_CPUID_VENDOR_INTEL_ECX
-                && u32Edx == X86_CPUID_VENDOR_INTEL_EDX /* GenuineIntel */)
-            || (   u32Ebx == X86_CPUID_VENDOR_AMD_EBX
-                && u32Ecx == X86_CPUID_VENDOR_AMD_ECX
-                && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */))
+               || (   u32Ebx == X86_CPUID_VENDOR_INTEL_EBX
+                      && u32Ecx == X86_CPUID_VENDOR_INTEL_ECX
+                      && u32Edx == X86_CPUID_VENDOR_INTEL_EDX /* GenuineIntel */)
+               || (   u32Ebx == X86_CPUID_VENDOR_AMD_EBX
+                      && u32Ecx == X86_CPUID_VENDOR_AMD_ECX
+                      && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */))
         {
             LogRel(("Activating Local APIC\n"));
             pThis->pApicHlpR3->pfnChangeFeature(pDevIns, true);
@@ -1861,7 +1873,11 @@ const PDMDEVREG g_DeviceAPIC =
     /* fClass */
     PDM_DEVREG_CLASS_PIC,
     /* cMaxInstances */
+#ifdef VBOX_WITH_SMP_GUESTS
+    8,
+#else
     1,
+#endif
     /* cbInstance */
     sizeof(APICState),
     /* pfnConstruct */
