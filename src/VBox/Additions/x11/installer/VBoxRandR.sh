@@ -39,20 +39,37 @@ if test ! -z "$found"; then
     fi
 fi
 
+refreshbin=xrefresh
+found=`which xrefresh | grep "no xrefresh"`
+if test ! -z "$found"; then
+    if test -f "/usr/X11/bin/xrefresh"; then
+        refreshbin=/usr/X11/bin/xrefresh
+    else
+        exit 1
+    fi
+fi
+
 # If we were called with the --test parameter, we check whether the display
 # we are running on is really using the VBox video driver (and RandR 1.2).
 if test "$1" = "--test"; then
-  xout=`X -version 2>&1`
-  ! echo "$xout" | grep 1.4.99.901 > /dev/null &&
-  ! echo "$xout" | grep 1.4.99.902 > /dev/null &&
-  ! echo "$xout" | grep 1.4.99.903 > /dev/null &&
-  ! echo "$xout" | grep 1.4.99.904 > /dev/null &&
-  ! echo "$xout" | grep 1.4.99.905 > /dev/null &&
-  $randrbin 2> /dev/null | grep VBOX1 > /dev/null
-  exit
+    # @otodo to be fixed properly
+    osname=`uname -s`
+    if test "$osname" = "SunOS"; then
+        $randrbin 2> /dev/null | grep VBOX1 > /dev/null
+        exit
+    else
+        xout=`$xorgbin -version 2>&1`
+        ! echo "$xout" | grep 1.4.99.901 > /dev/null &&
+        ! echo "$xout" | grep 1.4.99.902 > /dev/null &&
+        ! echo "$xout" | grep 1.4.99.903 > /dev/null &&
+        ! echo "$xout" | grep 1.4.99.904 > /dev/null &&
+        ! echo "$xout" | grep 1.4.99.905 > /dev/null &&
+        $randrbin 2> /dev/null | grep VBOX1 > /dev/null
+        exit
+    fi
 fi
 
 # Otherwise we just switch the guest display into its preferred resolution,
 # which is the one corresponding to the last video mode hint sent by the host.
 $randrbin --output VBOX1 --preferred
-xrefresh 2>&1 > /dev/null
+$refreshbin 2>&1 > /dev/null
