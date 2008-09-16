@@ -589,7 +589,7 @@ public:
         {
 #if !defined (VBOX_WITH_XPCOM)
 
-            B::mRC = CoCreateInstance (clsid, NULL, CLSCTX_ALL,
+            B::mRC = CoCreateInstance (clsid, NULL, CLSCTX_INPROC_SERVER|CLSCTX_LOCAL_SERVER,
                                        _ATL_IIDOF (I), (void **) &mIface);
 
 #else /* !defined (VBOX_WITH_XPCOM) */
