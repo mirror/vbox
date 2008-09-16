@@ -385,12 +385,12 @@ X11DRV_InitKeyboardByLayout(Display *display)
     for (entries = 0, keyn = 0; keyn < MAIN_LEN; ++keyn) {
         if (   (0 != (*lkey)[keyn][0])
             && (0 != (*lkey)[keyn][1])
-            && (keyn != 48) /* don't count the 102nd key */
+            && (keyn != 47) /* don't count the 102nd key */
            ) {
             ++entries;
         }
     }
-    LOG_KB_1(("Finished mapping keyboard, matches=%d, entries=%d\n", matches, entries));
+    LOG_KB_1(("Finished mapping keyboard, matches=%d, entries=%d (excluding 102nd key)\n", matches, entries));
     if (matches != entries)
     {
         return 0;
