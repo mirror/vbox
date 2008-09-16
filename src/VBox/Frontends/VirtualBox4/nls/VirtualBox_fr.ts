@@ -287,12 +287,12 @@
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="327"/>
         <source>Forward</source>
-        <translation>suivant</translation>
+        <translation>Suivant</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="328"/>
         <source>Back</source>
-        <translation>précédent</translation>
+        <translation>Précédent</translation>
     </message>
 </context>
 <context>
@@ -442,7 +442,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="204"/>
         <source>Revert the machine state to the state stored in the current snapshot</source>
-        <translation>Retour sur l´état de la machine sauvegardé dans l&apos;instantané actuel</translation>
+        <translation>Retour sur l&apos;état de la machine sauvegardé dans l&apos;instantané actuel</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="133"/>
@@ -452,22 +452,22 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si la case est cochée, l&apos;état enregistré dans l&apos;instantané sera utilisé. Ceci est utile si on désire revenir à &apos;état saisie par l&apos;instantané actuel précédent.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Si la case est cochée, l&apos;état enregistré dans l&apos;instantané sera utilisé. Ceci est utile si on désire revenir à l&apos;état saisie par l&apos;instantané actuel précédent.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sauvegarde l&apos;état d&apos;exécution actuel de la machine virtuelle sur le disque dur réel de l&apos;ordinateur.&lt;/p&gt;&lt;p&gt;Au prochain lancement de cette machine. il sera lut et l&apos;exécution reprendra à l&apos;endroit exact de la sauvegarde, ce qui permet de continuer les travaux immédiatement.&lt;/p&gt;&lt;p&gt;Noter que la sauvegarde de l&apos;état de la machine peu prendre du temps et dépend du système d&apos;exploitation invité et de la quantité de mémoire vive assignée a la machine virtuelle.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sauvegarde l&apos;état d&apos;exécution actuel de la machine virtuelle sur le disque dur réel de l&apos;ordinateur.&lt;/p&gt;&lt;p&gt;Au prochain lancement de cette machine, il sera lut et l&apos;exécution reprendra à l&apos;endroit exact de la sauvegarde, ce qui permet de continuer les travaux immédiatement.&lt;/p&gt;&lt;p&gt;Notez que la sauvegarde de l&apos;état de la machine peut prendre du temps et dépend du système d&apos;exploitation invité et de la quantité de mémoire vive assignée à la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Envoie le signal ACPI Touche d&apos;arrêt à la machine virtuelle.&lt;/p&gt;&lt;p&gt;Normalement, le système d&apos;exploitation invité fonctionnant sous la machine virtuelle détecte ce signal et appelle une procédure d&apos;extinction contrôlée.  Ces la procédure recommandée car cela permet  aux logiciels de sauvegarder leurs données et état.&lt;/p&gt;&lt;p&gt;Si la machine virtuelle ne traite cette signalisation, il est possible que le système d&apos;exploitation invité ne soit pas configuré correctement ou que le traitement de cette signalisation ne soit pas implémentée sur celui ci. Dans ce cas sélectionner &lt;b&gt;Eteindre la machine&lt;/b&gt; afin s_arrêter la machine virtuelle.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Envoie le signal ACPI Touche d&apos;Arrêt à la machine virtuelle.&lt;/p&gt;&lt;p&gt;Normalement, le système d&apos;exploitation invité fonctionnant sous la machine virtuelle détecte cet événement et appelle une procédure d&apos;extinction contrôlée.  C&apos;est la procédure recommandée car cela permet aux logiciels de sauvegarder leurs données et état.&lt;/p&gt;&lt;p&gt;Si la machine virtuelle ne traite pas cette action, il est possible que le système d&apos;exploitation invité ne soit pas configuré correctement ou que le traitement de cette action ne soit pas implémenté sur celui-ci. Dans ce cas sélectionnez &lt;b&gt;Eteindre la machine&lt;/b&gt; afin d&apos;arrêter la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Éteindre la machine virtuelle&lt;/p&gt;&lt;p&gt;Noter que cette action arrêtera immédiatement la machine virtuelle et que de ce fait le système d&apos;exploitation invité ne sera pas en mesure d&apos;effectuer la procédure d&apos;arrêt contrôlée. Ceci peu entrainer  la &lt;i&gt;perte de données&lt;/i&gt;. Choisissez cette action seulement si  la machine virtuelle ne répond pas à l&apos;action &lt;b&gt;Envoie du signal d&apos;extinction&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Éteindre la machine virtuelle&lt;/p&gt;&lt;p&gt;Notez que cette action arrêtera immédiatement la machine virtuelle et que de ce fait le système d&apos;exploitation invité ne sera pas en mesure d&apos;effectuer la procédure d&apos;arrêt contrôlée. Ceci peut entrainer la &lt;i&gt;perte de données&lt;/i&gt;. Choisissez cette action seulement si la machine virtuelle ne répond pas à l&apos;action &lt;b&gt;Envoie du signal d&apos;extinction&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -485,7 +485,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1453"/>
         <source>Switch to fullscreen mode</source>
-        <translation>sélection du mode plein écran</translation>
+        <translation>Sélection du mode plein écran</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1459"/>
@@ -507,7 +507,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1466"/>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Ajustement automatique de la taille de l&apos;écran de l&apos;invité si la taille de la fenêtre modifiée (exige les additions invité)</translation>
+        <translation>Ajustement automatique de la taille de l&apos;écran de l&apos;invité si la taille de la fenêtre est modifiée (exige les additions invité)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1468"/>
@@ -935,7 +935,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1504"/>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Boite de dialogue I&amp;nformations session </translation>
+        <translation>Boîte de dialogue I&amp;nformations session </translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1506"/>
@@ -1037,7 +1037,7 @@ Version %1</source>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="588"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;test de l&apos;accès ...</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Test de l&apos;accès ...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="596"/>
@@ -1234,7 +1234,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="191"/>
         <source>Connection timed out.</source>
-        <translation>Timeout pour la Connextion.</translation>
+        <translation>Timeout pour la Connexion.</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="198"/>
@@ -1252,7 +1252,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="213"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>Le chemin par défaut sera affiché quand vous acceptez les modification et réouvrez cette boîte de dialogue.</translation>
+        <translation>Le chemin par défaut sera affiché quand vous acceptez les modifications et réouvrez cette boîte de dialogue.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="217"/>
@@ -1325,7 +1325,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
         <source>Update</source>
-        <translation>Mis à jour</translation>
+        <translation>Mise à jour</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
@@ -1363,17 +1363,17 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Ré&amp;pertoire disque dur par défaut:</translation>
+        <translation>Ré&amp;pertoire disque dur par défaut :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation>Répertoire &amp;machine par défaut:</translation>
+        <translation>Répertoire &amp;machine par défaut :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation>Bibliothèque d&apos;authentification V&amp;RDP par défaut:</translation>
+        <translation>Bibliothèque d&apos;authentification V&amp;RDP par défaut :</translation>
     </message>
 </context>
 <context>
@@ -1438,7 +1438,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>Liste de toutes les langues disponibles pour l&apos;interface utilisateur. La langue en utilisation es affiché en &lt;b&gt;gras&lt;/b&gt;. Choisissez &lt;i&gt;Par défaut&lt;/i&gt; pour revenir à la langue système par défaut.</translation>
+        <translation>Liste de toutes les langues disponibles pour l&apos;interface utilisateur. La langue en cours d&apos;utilisation est affiché en &lt;b&gt;gras&lt;/b&gt;. Choisissez &lt;i&gt;Par défaut&lt;/i&gt; pour revenir à la langue système par défaut.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
@@ -1481,17 +1481,17 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation>Tous les:</translation>
+        <translation>Tous les :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Détermine la fréquence des vérifications pour une version actualisée. Si vous voulez déactiver completement les vérifications déselectionnez la case à cocher.</translation>
+        <translation>Détermine la fréquence des vérifications pour une version actualisée. Si vous voulez déactiver complétement les vérifications déselectionnez la case à cocher.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation>Vérification suivante:</translation>
+        <translation>Vérification suivante :</translation>
     </message>
 </context>
 <context>
@@ -2452,12 +2452,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="422"/>
         <source>Find </source>
-        <translation>Sercher</translation>
+        <translation>Chercher</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="423"/>
         <source>Enter a search string here</source>
-        <translation>Entrer, ici, la chaîne de caractères a rechercher</translation>
+        <translation>Entrer, ici, la chaîne de caractères à rechercher</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="425"/>
@@ -2467,7 +2467,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="427"/>
         <source>Search for the previous occurrence of the string</source>
-        <translation>Rechercher L&apos;occurence précédente de la chaîne de caractères</translation>
+        <translation>Rechercher l&apos;occurence précédente de la chaîne de caractères</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="429"/>
@@ -2477,7 +2477,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="431"/>
         <source>Search for the next occurrence of the string</source>
-        <translation>Rechercher L&apos;occurence suivante de la chaîne de caractères</translation>
+        <translation>Rechercher l&apos;occurence suivante de la chaîne de caractères</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="433"/>
@@ -2518,7 +2518,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="624"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Désirez-vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note; cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines virtuelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionnerons plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Désirez-vous enlever l&apos;adaptateur réseau sélectionné &lt;nobr&gt;&lt;b&gt;%1&lt;b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note : cet adaptateur est éventuellement utilisé par cette ou d&apos;autres machines virtuelles. Si vous éliminez cet adaptateur, les adapteurs virtuels ne fonctionneront plus. Vous pouvez corriger le paramétrage des adaptateurs affectés en conséquence.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
@@ -2543,7 +2543,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="663"/>
         <source>Adds a new host interface.</source>
-        <translation>Ajoute un nouveau interface hôte.</translation>
+        <translation>Ajoute une nouvelle interface hôte.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="664"/>
@@ -2561,7 +2561,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="63"/>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Bienvenue sur l&apos;assistant de création de disques virtuels:</translation>
+        <translation>Bienvenue sur l&apos;assistant de création de disques virtuels !</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
@@ -2606,7 +2606,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="741"/>
         <source>Summary</source>
-        <translation>Sommaire </translation>
+        <translation>Récapitulatif </translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="366"/>
@@ -2763,7 +2763,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1012"/>
         <source>Summary</source>
-        <translation>Sommaire </translation>
+        <translation>Récapitulatif </translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="152"/>
@@ -2803,7 +2803,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1070"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants&amp;nbsp;:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants :&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
@@ -2843,7 +2843,7 @@ Version %1</source>
         <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation></translation>
+        <translation>Disque dur d&apos;amorçage</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
@@ -3532,7 +3532,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1642"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation>Vous utilisez déjà la version la plus récente de VirtualBox. Vous pouvez la recherche d&apos;actualisations plus tard.</translation>
+        <translation>Vous utilisez déjà la version la plus récente de VirtualBox. Veuillez répéter la vérification de version plus tard.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1860"/>
@@ -3615,7 +3615,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="30"/>
         <source>VirtualBox Registration Dialog</source>
-        <translation>Boite de dialogue d&apos;inscription VirtualBox</translation>
+        <translation>Boîte de dialogue d&apos;inscription VirtualBox</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="143"/>
@@ -3630,7 +3630,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="160"/>
         <source>&amp;E-mail</source>
-        <translation>&amp;courri&amp;el</translation>
+        <translation>&amp;Courri&amp;el</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="170"/>
@@ -3660,17 +3660,17 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="400"/>
         <source>Could not perform connection handshake.</source>
-        <translation>Ne peu pas exécuter la &quot;poignée de main de connexion&quot;.</translation>
+        <translation>Ne peut pas exécuter la &quot;poignée de main de connexion&quot;.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="115"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt; Remplissez, s&apos;il vous plaît, cette forme d&apos;enregistrement pour nous permettre de savoir que vous utilisez VirtualBox et, en option, vous informer sur les nouveautés VirtualBox et les mises à jour. &lt;/p&gt; &lt;p&gt; Entrez votre nom complet en utilisant des caractères latins et votre adresse e-mail dans champs ci-dessous. Notez que Sun Microsystems n&apos;utilise ces renseignements qu&apos;à des fins statistiques et pour vous envoyer des circulaires concernants VirtualBox. Particulièrement Sun Microsystems ne transmettra jamais vos données à des tierces. Des renseignements détaillés sur l&apos;utilisation de vos informations personnelles peuvent être trouvées dans la section &lt;b&gt;Privacy Policy&lt;/b&gt; du Manuel VirtualBox ou sur le &lt;un href=http: // www.virtualbox.org/wiki/PrivacyPolicy&gt; Privacy Policy &lt;/a&gt; de la page du site Internet VirtualBox. &lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Veuillez remplir, s&apos;il vous plaît, ce formulaire d&apos;enregistrement pour nous permettre de savoir que vous utilisez VirtualBox et éventuellement vous informer sur les nouveautés VirtualBox et les mises à jour.&lt;/p&gt;&lt;p&gt;Entrez votre nom complet en utilisant des caractères latins et votre adresse e-mail dans les champs ci-dessous. Notez que Sun Microsystems n&apos;utilise ces renseignements qu&apos;à des fins statistiques, et pour vous envoyer des circulaires concernants VirtualBox. Sun Microsystems ne transmettra jamais vos données à des tierces. Des renseignements détaillés sur l&apos;utilisation de vos informations personnelles peuvent être trouvées dans la section &lt;b&gt;Privacy Policy&lt;/b&gt; du Manuel VirtualBox ou sur la page &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; du site Internet VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="177"/>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation>Cochez la case si vous désirez recevoir, à l&apos;adresse spécifiée ci dessus, des courriels em provenance de Sun Microsystems.</translation>
+        <translation>Cochez la case si vous désirez recevoir, à l&apos;adresse spécifiée ci dessus, des courriels en provenance de Sun Microsystems.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
@@ -4095,7 +4095,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <location filename="../src/VBoxGlobal.cpp" line="4692"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation>Aucun périphérique supporté n&apos;est attaché à l´ordinateur</translation>
+        <translation>Aucun périphérique supporté n&apos;est attaché à l&apos;ordinateur</translation>
     </message>
 </context>
 <context>
@@ -4202,7 +4202,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
         <source>Summary</source>
-        <translation>Sommaire </translation>
+        <translation>Récapitulatif</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
@@ -4217,7 +4217,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation>Vous utilisez déjà la version la plus récente de VirtualBox. Vous pouvez la recherche d&apos;actualisations plus tard.</translation>
+        <translation>Vous utilisez déjà la version la plus récente de VirtualBox. Veuillez répéter la vérification de version plus tard.</translation>
     </message>
 </context>
 <context>
@@ -4316,7 +4316,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="593"/>
         <source>Summary</source>
-        <translation>Sommaire </translation>
+        <translation>Récapitulatif</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="94"/>
@@ -4959,7 +4959,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>Extended Features:</source>
-        <translation>Paramètres étendus:</translation>
+        <translation>Paramètres étendus :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="666"/>
@@ -5215,7 +5215,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
-        <translation>Application d&apos;in&amp;stallation:</translation>
+        <translation>Application d&apos;in&amp;stallation :</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
@@ -5258,7 +5258,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="817"/>
         <source>Internal network name is not set</source>
-        <translation>Le nom du réseau interne n*est pas spécifié</translation>
+        <translation>Le nom du réseau interne n&apos;est pas spécifié</translation>
     </message>
 </context>
 <context>
