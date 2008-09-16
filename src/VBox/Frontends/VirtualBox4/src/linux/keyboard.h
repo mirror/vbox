@@ -44,10 +44,10 @@
 #endif
 #ifdef VBOX_HAVE_VISIBILITY_HIDDEN
 extern CCALL __attribute__((visibility("default"))) unsigned X11DRV_InitKeyboard(Display *dpy, unsigned *byLayoutOK, unsigned *byTypeOK);
-extern CCALL __attribute__((visibility("default"))) unsigned X11DRV_KeyEvent(KeyCode code);
+extern CCALL __attribute__((visibility("default"))) unsigned X11DRV_KeyEvent(Display *dpy, KeyCode code);
 #else
 extern CCALL unsigned X11DRV_InitKeyboard(Display *dpy, unsigned *byLayoutOK, unsigned *byTypeOK);
-extern CCALL unsigned X11DRV_KeyEvent(KeyCode code);
+extern CCALL unsigned X11DRV_KeyEvent(Display *dpy, KeyCode code);
 #endif
 
 #endif /* __H_KEYBOARD */

@@ -94,22 +94,41 @@ do { \
 #include "keyboard-types.h"
 
 /**
-  * Translate a keycode in a key event to a scan code, using the lookup table
-  * which we constructed earlier or a well-known mapping from our mapping
-  * table.
+  * Translate a keycode in a key event to a scan code.  If the keycode maps
+  * to a key symbol which is in the same place on all PC keyboards, look it
+  * up by symbol in one of our hard-coded translation tables.  It it maps to
+  * a symbol which can be in a different place on different PC keyboards, look
+  * it up by keycode using either the lookup table which we constructed
+  * earlier, or using a hard-coded table if we know what type of keyboard is
+  * in use.
   *
   * @returns the scan code number, with 0x100 added for extended scan codes
   * @param code the X11 key code to be looked up
   */
 
-unsigned X11DRV_KeyEvent(KeyCode code)
+unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
 {
-    unsigned key;
-    if (use_builtin_table != 0)
-        key = main_keyboard_type_scans[builtin_table_number][code];
-    else
-        key = keyc2scan[code];
-    return key;
+    unsigned scan;
+    KeySym keysym = XKeycodeToKeysym(display, code, 0);
+    scan = 0;
+    if (keysym)  /* otherwise, keycode not used */
+    {
+        if ((keysym >> 8) == 0xFF)          /* non-character key */
+            scan = nonchar_key_scan[keysym & 0xff];
+        else if ((keysym >> 8) == 0x1008FF) /* XFree86 vendor keys */
+            scan = xfree86_vendor_key_scan[keysym & 0xff];
+        else if ((keysym >> 8) == 0x1005FF) /* Sun keys */
+            scan = sun_key_scan[keysym & 0xff];
+        else if (keysym == 0x20)            /* Spacebar */
+	    scan = 0x39;
+        else if (keysym == 0xFE03)          /* ISO level3 shift, aka AltGr */
+	    scan = 0x138;
+	else if (use_builtin_table != 0)
+            scan = main_keyboard_type_scans[builtin_table_number][code];
+        else
+            scan = keyc2scan[code];
+    }
+    return scan;
 }
 
 /**
@@ -303,21 +322,13 @@ X11DRV_InitKeyboardByLayout(Display *display)
         scan = 0;
         if (keysym)  /* otherwise, keycode not used */
         {
-            if ((keysym >> 8) == 0xFF)         /* non-character key */
-            {
-                scan = nonchar_key_scan[keysym & 0xff];
-		/* set extended bit when necessary */
-            } else if ((keysym >> 8) == 0x1008FF) { /* XFree86 vendor keys */
-/* VirtualBox FIX - multimedia/internet keys */
-                scan = xfree86_vendor_key_scan[keysym & 0xff];
-            } else if ((keysym >> 8) == 0x1005FF) { /* Sun keys */
-                scan = sun_key_scan[keysym & 0xff];
-            } else if (keysym == 0x20) {                 /* Spacebar */
-		scan = 0x39;
-/* VirtualBox FIX - AltGr support */
-            } else if (keysym == 0xFE03) {               /* ISO level3 shift, aka AltGr */
-		scan = 0x138;
-	    } else {
+          /* Skip over keysyms which we look up on the fly */
+          if (   (0xFF != (keysym >> 8))     /* Non-character key */
+              && (0x1008FF != (keysym >> 8)) /* XFree86 vendor keys */
+              && (0x1005FF != (keysym >> 8)) /* Sun keys */
+              && (0x20 != keysym)            /* Spacebar */
+              && (0xFE03 != keysym)          /* ISO level3 shift, aka AltGr */
+             ) {
 	      unsigned found = 0;
 
 	      /* we seem to need to search the layout-dependent scancodes */
@@ -334,7 +345,11 @@ X11DRV_InitKeyboardByLayout(Display *display)
 	      if (0 != found) {
 		/* got it */
 		scan = main_key_scan[keyn - 1];
-		if (keyn != 48) /* don't count the 102nd key */
+		/* We keep track of the number of keys that we found a
+		 * match for to see if the layout is optimal or not.
+		 * We ignore the 102nd key though (key number 48), since
+		 * not all keyboards have it. */
+		if (keyn != 48)
 		    ++matches;
 	      }
               if (0 == scan) {

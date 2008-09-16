@@ -91,7 +91,7 @@ static void dumpLayout(Display *display)
     int minKey, maxKey;
     XDisplayKeycodes(display, &minKey, &maxKey);
     for (int i = minKey; i < maxKey; ++i)
-        scanToKeycode[X11DRV_KeyEvent(i)] = i;
+        scanToKeycode[X11DRV_KeyEvent(display, i)] = i;
     LogRel(("\""));
     printKey(display, scanToKeycode[0x29]); /* `~ */
     for (int i = 2; i <= 0xd; ++i) /* 1! - =+ */
@@ -148,7 +148,7 @@ static void dumpType(Display *display)
             "The tables for your keyboard are:\n"));
     for (unsigned i = 0; i < 256; ++i)
     {
-        LogRel(("0x%x", X11DRV_KeyEvent(i)));
+        LogRel(("0x%x", X11DRV_KeyEvent(display, i)));
         if (i < 255)
             LogRel((", "));
         if (15 == (i % 16))
@@ -217,7 +217,7 @@ void doXKeyboardLogging(Display *dpy)
 unsigned handleXKeyEvent(XEvent *event)
 {
     // call the WINE event handler
-    return X11DRV_KeyEvent(event->xkey.keycode);
+    return X11DRV_KeyEvent(event->xkey.display, event->xkey.keycode);
 }
 
 /**
