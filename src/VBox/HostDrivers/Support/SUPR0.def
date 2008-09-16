@@ -114,6 +114,9 @@ EXPORTS
     RTLogPrintfV
     AssertMsg1
     AssertMsg2
+    RTStrPrintf
+    RTStrPrintfV
+    
 
     ; data
     g_SUPGlobalInfoPage DATA

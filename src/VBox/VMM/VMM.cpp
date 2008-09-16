@@ -2274,6 +2274,8 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
 #else
             pVM->vmm.s.CallHostR0JmpBuf.rip = 0;
 #endif
+            LogRel((pVM->vmm.s.szRing0AssertMsg1));
+            LogRel((pVM->vmm.s.szRing0AssertMsg2));
             return VINF_EM_DBG_HYPER_ASSERTION;
 
         default:

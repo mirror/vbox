@@ -44,6 +44,7 @@
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/mp.h>
+#include <iprt/string.h>
 
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
 #  pragma intrinsic(_AddressOfReturnAddress)
@@ -1154,6 +1155,14 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
                "Expression: %s\n"
                "Location  : %s(%d) %s\n",
                pszExpr, pszFile, uLine, pszFunction));
+
+    PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
+    if (pVM)
+        RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1), 
+                    "\n!!R0-Assertion Failed!!\n"
+                    "Expression: %s\n"
+                    "Location  : %s(%d) %s\n",
+                    pszExpr, pszFile, uLine, pszFunction);
 }
 
 
@@ -1184,6 +1193,9 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
 
         va_start(args, pszFormat);
         RTLogFormatV(rtLogOutput, pLog, pszFormat, args);
+        PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
+        if (pVM)
+            RTStrPrintfV(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2), pszFormat, args);
         va_end(args);
     }
 }
