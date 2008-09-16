@@ -434,7 +434,6 @@ endif
 VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/sun_logo.bmp
 VBOX_BRAND_LICENSE_HTML       := $(PATH_ROOT)/doc/License.html
 VBOX_BRAND_LICENSE_RTF        := $(PATH_ROOT)/doc/License.rtf
-VBOX_BRAND_GUI_ABOUT          := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about.png
 VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about.png
 VBOX_BRAND_GUI_ABOUT_16PX_PNG := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about_16px.png
 VBOX_BRAND_GUI_VBOX_16PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_16px.png
