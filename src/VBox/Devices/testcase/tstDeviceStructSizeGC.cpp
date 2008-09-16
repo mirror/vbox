@@ -648,8 +648,8 @@ int main()
     GEN_CHECK_OFF(ATADevState, cbATAPISector);
     GEN_CHECK_OFF(ATADevState, aATAPICmd);
     GEN_CHECK_OFF(ATADevState, aATAPICmd[ATAPI_PACKET_SIZE - 1]);
-    GEN_CHECK_OFF(ATADevState, uATAPISenseKey);
-    GEN_CHECK_OFF(ATADevState, uATAPIASC);
+    GEN_CHECK_OFF(ATADevState, abATAPISense);
+    GEN_CHECK_OFF(ATADevState, abATAPISense[ATAPI_SENSE_SIZE - 1]);
     GEN_CHECK_OFF(ATADevState, cNotifiedMediaChange);
     GEN_CHECK_OFF(ATADevState, Led);
     GEN_CHECK_OFF(ATADevState, cbIOBuffer);
