@@ -57,7 +57,7 @@ OTHER_CLEAN      = $(addprefix $(SOLARIS_INST_DIR)/,\
 solaris-doc_INST = bin/
 solaris-doc_MODE = a+r,u+w
 solaris-doc_SOURCES = \
-	$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt=>LICENSE) \
+	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_64px.png=>VBox.png
 
 #
