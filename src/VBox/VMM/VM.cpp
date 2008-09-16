@@ -234,7 +234,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                     pszError = N_("VirtualBox can't operate in VMX root mode. "
                                   "Please disable the KVM kernel extension, recompile your kernel and reboot");
 #else
-                    pszError = N_("VirtualBox can't operate in VMX root mode");
+                    pszError = N_("VirtualBox can't operate in VMX root mode. Please close all other virtualization programs.");
 #endif
                     break;
 
