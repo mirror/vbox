@@ -320,7 +320,7 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
  VBoxSVC_SOURCES.win     +=     win/PerformanceWin.cpp
  VBoxSVC_LDFLAGS.darwin  += -lproc
  VBoxSVC_LDFLAGS.solaris += -lkstat
- VBoxSVC_LDFLAGS.win     += wbemuuid.lib powrprof.lib
+ VBoxSVC_LDFLAGS.win     += psapi.lib powrprof.lib
 endif
 
 win/VBoxSVC.rc_INCS  = $(PATH_VBoxSVC)
