@@ -58,7 +58,7 @@ linux-bin_SOURCES = \
 linux-doc_INST = bin/
 linux-doc_MODE = a+r,u+w
 linux-doc_SOURCES = \
-	$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt=>LICENSE) \
+	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png
 
 # Strip these binaries
