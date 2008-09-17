@@ -20,7 +20,7 @@
  */
 
 
-/** @page pg_dbgf_addr_space     Address Space Management
+/** @page pg_dbgf_addr_space     DBGFAddrSpace - Address Space Management
  *
  * What's an address space? It's mainly a convenient way of stuffing
  * module segments and ad-hoc symbols together. It will also help out
