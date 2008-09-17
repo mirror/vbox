@@ -488,7 +488,7 @@ typedef struct VM
 #ifdef ___PATMInternal_h
         struct PATM s;
 #endif
-        char        padding[800];       /* multiple of 32 */
+        char        padding[768];       /* multiple of 32 */
     } patm;
 
     /** CSAM part. */
