@@ -437,6 +437,10 @@ typedef struct PATM
     /* Counter for disabled IDT gates (in order not to overflow the release log).*/
     uint32_t                cGateDisabled;
 
+#if HC_ARCH_BITS == 64
+    uint32_t                Alignment0;
+#endif
+
     /* Temporary information for pending MMIO patch. Set in GC or R0 context. */
     struct
     {
@@ -512,7 +516,7 @@ typedef struct PATM
     STAMCOUNTER             StatFunctionLookupReplace;
     STAMCOUNTER             StatFunctionLookupInsert;
     uint32_t                StatU32FunctionMaxSlotsUsed;
-    uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundrary. */
+    uint32_t                Alignment1; /**< Align the structure size on a 8-byte boundrary. */
 } PATM, *PPATM;
 
 
