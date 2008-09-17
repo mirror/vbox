@@ -482,7 +482,7 @@ static const REMPARMDESC g_aArgsCPUMGetGuestCpuId[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
 };
 
-static const REMPARMDESC g_aArgsCPUMSetChangedFlags[] = 
+static const REMPARMDESC g_aArgsCPUMSetChangedFlags[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
@@ -962,7 +962,7 @@ static const REMPARMDESC g_aArgsmemset[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
 };
-static const REMPARMDESC g_aArgsState[] = 
+static const REMPARMDESC g_aArgsState[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
@@ -1100,6 +1100,8 @@ static REMFNDESC g_aVMMImports[] =
     { "TMCpuTickGet",                           (void *)(uintptr_t)&TMCpuTickGet,                   &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint64_t),   NULL },
     { "TMCpuTickPause",                         (void *)(uintptr_t)&TMCpuTickPause,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "TMCpuTickResume",                        (void *)(uintptr_t)&TMCpuTickResume,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "TMNotifyEndOfExecution",                 (void *)(uintptr_t)&TMNotifyEndOfExecution,         &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
+    { "TMNotifyStartOfExecution",               (void *)(uintptr_t)&TMNotifyStartOfExecution,       &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "TMTimerPoll",                            (void *)(uintptr_t)&TMTimerPoll,                    &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint64_t),   NULL },
     { "TMR3TimerQueuesDo",                      (void *)(uintptr_t)&TMR3TimerQueuesDo,              &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "TMVirtualPause",                         (void *)(uintptr_t)&TMVirtualPause,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },

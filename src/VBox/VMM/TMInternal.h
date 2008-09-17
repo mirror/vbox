@@ -286,9 +286,6 @@ typedef struct TM
      * See TM2VM(). */
     RTUINT                      offVM;
 
-    /** Flag indicating that the host TSC is suitable for use in AMD-V and VT-x mode.
-     * Config variable: MaybeUseOffsettedHostTSC (boolean) */
-    bool                        fMaybeUseOffsettedHostTSC;
     /** CPU timestamp ticking enabled indicator (bool). (RDTSC) */
     bool                        fTSCTicking;
     /** Set if we fully virtualize the TSC, i.e. intercept all rdtsc instructions.
@@ -299,6 +296,16 @@ typedef struct TM
      * ticking. fTSCVirtualized = false implies fTSCUseRealTSC = true.
      * Config variable: TSCUseRealTSC (bool) */
     bool                        fTSCUseRealTSC;
+    /** Flag indicating that the host TSC is suitable for use in AMD-V and VT-x mode.
+     * Config variable: MaybeUseOffsettedHostTSC (boolean) */
+    bool                        fMaybeUseOffsettedHostTSC;
+    /** Whether the TSC is tied to the execution of code.
+     * Config variable: TSCTiedToExecution (bool) */
+    bool                        fTSCTiedToExecution;
+    /** Modifier for fTSCTiedToExecution which pauses the TSC while halting if true.
+     * Config variable: TSCNotTiedToHalt (bool) */
+    bool                        fTSCNotTiedToHalt;
+    bool                        afAlignment0[2]; /**< alignment padding */
     /** The offset between the host TSC and the Guest TSC.
      * Only valid if fTicking is set and and fTSCUseRealTSC is clear. */
     uint64_t                    u64TSCOffset;
@@ -491,8 +498,12 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
 void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
 #endif
 
+int tmCpuTickPause(PVM pVM);
+int tmCpuTickResume(PVM pVM);
+
 DECLEXPORT(void) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
+
 
 /** @} */
 

@@ -588,8 +588,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
             {
                 RTCCUINTREG uFlags = ASMIntDisableFlags();
 
+                TMNotifyStartOfExecution(pVM);
                 int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
                 pVM->vmm.s.iLastGCRc = rc;
+                TMNotifyEndOfExecution(pVM);
 
                 if (    rc == VINF_EM_RAW_INTERRUPT
                     ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
@@ -747,7 +749,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         case VMMR0_DO_GVMM_SCHED_POLL:
             if (pReqHdr || u64Arg > 1)
                 return VERR_INVALID_PARAMETER;
-            return GVMMR0SchedPoll(pVM, (bool)u64Arg);
+            return GVMMR0SchedPoll(pVM, !!u64Arg);
 
         case VMMR0_DO_GVMM_QUERY_STATISTICS:
             if (u64Arg)
@@ -1158,7 +1160,7 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
 
     PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
-        RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1), 
+        RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1),
                     "\n!!R0-Assertion Failed!!\n"
                     "Expression: %s\n"
                     "Location  : %s(%d) %s\n",

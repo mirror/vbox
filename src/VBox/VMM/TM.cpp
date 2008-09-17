@@ -298,7 +298,10 @@ TMR3DECL(int) TMR3Init(PVM pVM)
             pVM->tm.s.fMaybeUseOffsettedHostTSC = true;
     }
 
-    /* frequency */
+    /** @cfgm{TM/TSCTicksPerSecond, uint32_t, Current TSC frequency from GIP}
+     * The number of TSC ticks per second (i.e. the TSC frequency). This will
+     * override TSCUseRealTSC, TSCVirtualized and MaybeUseOffsettedHostTSC.
+     */
     rc = CFGMR3QueryU64(pCfgHandle, "TSCTicksPerSecond", &pVM->tm.s.cTSCTicksPerSecond);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
@@ -324,14 +327,42 @@ TMR3DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.fTSCVirtualized = true;
     }
 
+    /** @cfgm{TM/TSCTiedToExecution, bool, false}
+     * Whether the TSC should be tied to execution. This will exclude most of the
+     * virtualization overhead, but will by default include the time spend in the
+     * halt state (see TM/TSCNotTiedToHalt). This setting will override all other
+     * TSC settings except for TSCTicksPerSecond and TSCNotTiedToHalt, which should
+     * be used avoided or used with great care. Note that this will only work right
+     * together with VT-x or AMD-V, and with a single virtual CPU. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "TSCTiedToExecution", &pVM->tm.s.fTSCTiedToExecution, false);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying bool value \"TSCTiedToExecution\""));
+    if (pVM->tm.s.fTSCTiedToExecution)
+    {
+        /* tied to execution, override all other settings. */
+        pVM->tm.s.fTSCVirtualized = true;
+        pVM->tm.s.fTSCUseRealTSC = true;
+        pVM->tm.s.fMaybeUseOffsettedHostTSC = false;
+    }
+
+    /** @cfgm{TM/TSCNotTiedToHalt, bool, true}
+     * For overriding the default of TM/TSCTiedToExecution, i.e. set this to false
+     * to make the TSC freeze during HLT. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "TSCNotTiedToHalt", &pVM->tm.s.fTSCNotTiedToHalt, false);
+    if (RT_FAILURE(rc))
+        return VMSetError(pVM, rc, RT_SRC_POS,
+                          N_("Configuration error: Failed to querying bool value \"TSCNotTiedToHalt\""));
+
     /* setup and report */
     if (pVM->tm.s.fTSCVirtualized)
         CPUMR3SetCR4Feature(pVM, X86_CR4_TSD, ~X86_CR4_TSD);
     else
         CPUMR3SetCR4Feature(pVM, 0, ~X86_CR4_TSD);
-    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool fMaybeUseOffsettedHostTSC=%RTbool\n",
-            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized,
-            pVM->tm.s.fTSCUseRealTSC, pVM->tm.s.fMaybeUseOffsettedHostTSC));
+    LogRel(("TM: cTSCTicksPerSecond=%#RX64 (%RU64) fTSCVirtualized=%RTbool fTSCUseRealTSC=%RTbool\n"
+            "TM: fMaybeUseOffsettedHostTSC=%RTbool TSCTiedToExecution=%RTbool TSCNotTiedToHalt=%RTbool\n",
+            pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.fTSCVirtualized, pVM->tm.s.fTSCUseRealTSC,
+            pVM->tm.s.fMaybeUseOffsettedHostTSC, pVM->tm.s.fTSCTiedToExecution, pVM->tm.s.fTSCNotTiedToHalt));
 
     /*
      * Configure the timer synchronous virtual time.

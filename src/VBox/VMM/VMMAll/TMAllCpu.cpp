@@ -25,7 +25,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/tm.h>
-#include "TMInternal.h"
+#include "../TMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/sup.h>
 
@@ -53,8 +53,9 @@ DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @internal
  */
-TMDECL(int) TMCpuTickResume(PVM pVM)
+int tmCpuTickResume(PVM pVM)
 {
     if (!pVM->tm.s.fTSCTicking)
     {
@@ -75,12 +76,29 @@ TMDECL(int) TMCpuTickResume(PVM pVM)
 
 
 /**
+ * Resumes the CPU timestamp counter ticking.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @todo replace this with TMNotifyResume
+ */
+TMDECL(int) TMCpuTickResume(PVM pVM)
+{
+    if (!pVM->tm.s.fTSCTiedToExecution)
+        return tmCpuTickResume(pVM);
+    /* ignored */
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Pauses the CPU timestamp counter ticking.
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @internal
  */
-TMDECL(int) TMCpuTickPause(PVM pVM)
+int tmCpuTickPause(PVM pVM)
 {
     if (pVM->tm.s.fTSCTicking)
     {
@@ -90,6 +108,22 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
     }
     AssertFailed();
     return VERR_INTERNAL_ERROR;
+}
+
+
+/**
+ * Pauses the CPU timestamp counter ticking.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @todo replace this with TMNotifySuspend
+ */
+TMDECL(int) TMCpuTickPause(PVM pVM)
+{
+    if (!pVM->tm.s.fTSCTiedToExecution)
+        return tmCpuTickPause(pVM);
+    /* ignored */
+    return VINF_SUCCESS;
 }
 
 
@@ -109,9 +143,9 @@ TMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
      *     1. A fixed TSC, this is checked at init time.
      *     2. That the TSC is ticking (we shouldn't be here if it isn't)
      *     3. Either that we're using the real TSC as time source or
-     *          a) We don't have any lag to catch up.
-     *          b) The virtual sync clock hasn't been halted by an expired timer.
-     *          c) We're not using warp drive (accelerated virtual guest time).
+     *          a) we don't have any lag to catch up, and
+     *          b) the virtual sync clock hasn't been halted by an expired timer, and
+     *          c) we're not using warp drive (accelerated virtual guest time).
      */
     if (    pVM->tm.s.fMaybeUseOffsettedHostTSC
         &&  RT_LIKELY(pVM->tm.s.fTSCTicking)
