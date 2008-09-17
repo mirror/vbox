@@ -193,11 +193,16 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
     uint64_t uTotalMhz   = 0;
     RTCPUID  nProcessors = RTMpGetCount();
     PPROCESSOR_POWER_INFORMATION ppi = new PROCESSOR_POWER_INFORMATION[nProcessors];
+
+    if (!ppi)
+        return VERR_NO_MEMORY;
+
     LONG ns = CallNtPowerInformation(ProcessorInformation, NULL, 0, ppi,
         nProcessors * sizeof(PROCESSOR_POWER_INFORMATION));
     if (ns)
     {
         Log(("CallNtPowerInformation() -> %x\n", ns));
+        delete ppi;
         return VERR_INTERNAL_ERROR;
     }
 
