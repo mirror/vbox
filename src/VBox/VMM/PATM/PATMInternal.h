@@ -434,6 +434,9 @@ typedef struct PATM
     // GC address of fault in monitored page (set by PATMGCMonitorPage, used by PATMR3HandleMonitoredPage)
     RTRCPTR                 pvFaultMonitor;
 
+    /* Counter for disabled IDT gates (in order not to overflow the release log).*/
+    uint32_t                cGateDisabled;
+
     /* Temporary information for pending MMIO patch. Set in GC or R0 context. */
     struct
     {
