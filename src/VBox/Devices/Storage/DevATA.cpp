@@ -1222,7 +1222,8 @@ static void atapiCmdOK(ATADevState *s)
 
 static void atapiCmdError(ATADevState *s, const uint8_t *pabATAPISense, size_t cbATAPISense)
 {
-    Log(("%s: sense=%#x asc=%#x\n", __FUNCTION__, pabATAPISense[2] & 0x0f, pabATAPISense[12]));
+    Log(("%s: sense=%#x (%s) asc=%#x ascq=%#x (%s)\n", __FUNCTION__, pabATAPISense[2] & 0x0f, SCSISenseText(pabATAPISense[2] & 0x0f),
+             pabATAPISense[12], pabATAPISense[13], SCSISenseExtText(pabATAPISense[12], pabATAPISense[13])));
     s->uATARegError = pabATAPISense[2] << 4;
     ataSetStatusValue(s, ATA_STAT_READY | ATA_STAT_ERR);
     s->uATARegNSector = (s->uATARegNSector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
@@ -1596,7 +1597,8 @@ static bool atapiPassthroughSS(ATADevState *s)
                         || u8Cmd == SCSI_READ_TOC_PMA_ATIP))
                     break;
                 s->cErrors++;
-                LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command (%#04x) error %d %Rrc\n", s->iLUN, u8Cmd, abATAPISense[2] & 0x0f, rc));
+                LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough cmd=%#04x sense=%d ASC=%#02x ASCQ=%#02x %Rrc\n",
+                            s->iLUN, u8Cmd, abATAPISense[2] & 0x0f, abATAPISense[12], abATAPISense[13], rc));
             } while (0);
         }
         atapiCmdError(s, abATAPISense, sizeof(abATAPISense));
@@ -2669,7 +2671,7 @@ static void atapiParseCmd(ATADevState *s)
 
     pbPacket = s->aATAPICmd;
 #ifdef DEBUG
-    Log(("%s: LUN#%d DMA=%d CMD=%#04x \"%s\"\n", __FUNCTION__, s->iLUN, s->fDMA, pbPacket[0], g_apszSCSICmdNames[pbPacket[0]]));
+    Log(("%s: LUN#%d DMA=%d CMD=%#04x \"%s\"\n", __FUNCTION__, s->iLUN, s->fDMA, pbPacket[0], SCSICmdText(pbPacket[0])));
 #else /* !DEBUG */
     Log(("%s: LUN#%d DMA=%d CMD=%#04x\n", __FUNCTION__, s->iLUN, s->fDMA, pbPacket[0]));
 #endif /* !DEBUG */
@@ -2783,7 +2785,7 @@ static bool ataExecuteDeviceDiagnosticSS(ATADevState *s)
 static void ataParseCmd(ATADevState *s, uint8_t cmd)
 {
 #ifdef DEBUG
-    Log(("%s: LUN#%d CMD=%#04x \"%s\"\n", __FUNCTION__, s->iLUN, cmd, g_apszATACmdNames[cmd]));
+    Log(("%s: LUN#%d CMD=%#04x \"%s\"\n", __FUNCTION__, s->iLUN, cmd, ATACmdText(cmd)));
 #else /* !DEBUG */
     Log(("%s: LUN#%d CMD=%#04x\n", __FUNCTION__, s->iLUN, cmd));
 #endif /* !DEBUG */
