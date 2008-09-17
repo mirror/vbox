@@ -562,6 +562,12 @@ ifneq ($(LOCALCFG),)
  include $(LOCALCFG)
 endif
 
+#
+# Allow to overwrite the branding information from an external file
+#
+ifdef VBOX_BRANDING_CFG
+ include ($(VBOX_BRANDING_CFG))
+endif
 
 #
 # Disable components that are not open sourced.
