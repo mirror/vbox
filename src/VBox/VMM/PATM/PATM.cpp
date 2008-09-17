@@ -96,6 +96,9 @@ static const DBGCCMD    g_aCmds[] =
 };
 #endif
 
+/* Don't want to break saved states, so put it here as a global variable. */
+static int cIDTHandlersDisabled = 0;
+
 /**
  * Initializes the PATM.
  *
@@ -4962,7 +4965,7 @@ PATMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
             if (iGate != (uint32_t)~0)
             {
                 TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
-                if (++pVM->patm.s.cGateDisabled < 256)
+                if (++cIDTHandlersDisabled < 256)
                     LogRel(("PATM: Disabling IDT %x patch handler %VRv\n", iGate, pInstrGC));
             }
         }
