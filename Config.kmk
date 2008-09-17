@@ -448,6 +448,7 @@ VBOX_BRAND_GUI_CUBE_42PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/im
 VBOX_BRAND_WIN_INST_DLGBMP     := $(PATH_ROOT)/src/VBox/Installer/win/Binary/Dialog.bmp
 VBOX_BRAND_WIN_ADD_INST_DLGBMP := $(PATH_ROOT)/src/VBox/Additions/WINNT/Installer/welcome.bmp
 VBOX_BRAND_DARWIN_DISKIMAGE_BG := $(PATH_ROOT)/src/VBox/Installer/darwin/DiskImage/vbox_folder.tiff
+VBOX_BRAND_DARWIN_INSTALLER_BG := $(PATH_ROOT)/src/VBox/Installer/darwin/VirtualBox_mpkg/background.tif
 
 #
 # Skip stuff.
