@@ -566,7 +566,7 @@ endif
 # Allow to overwrite the branding information from an external file
 #
 ifdef VBOX_BRANDING_CFG
- include ($(VBOX_BRANDING_CFG))
+ include $(VBOX_BRANDING_CFG)
 endif
 
 #
