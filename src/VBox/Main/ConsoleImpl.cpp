@@ -52,6 +52,7 @@
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
 #include "Version.h"
+#include "package-generated.h"
 
 // generated header
 #include "SchemaDefs.h"
