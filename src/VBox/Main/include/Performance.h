@@ -85,26 +85,22 @@ namespace pm
         typedef std::list<ProcessFlagsPair> ProcessList;
 
         CollectorHints() : mHostFlags(COLLECT_NONE) {}
-        void collectHostCpuLoad() { mHostFlags |= COLLECT_CPU_LOAD; }
-        void collectHostRamUsage() { mHostFlags |= COLLECT_RAM_USAGE; }
+        void collectHostCpuLoad()
+            { mHostFlags |= COLLECT_CPU_LOAD; }
+        void collectHostRamUsage()
+            { mHostFlags |= COLLECT_RAM_USAGE; }
         void collectProcessCpuLoad(RTPROCESS process)
-        {
-            findProcess(process).second |= COLLECT_CPU_LOAD;
-        }
+            { findProcess(process).second |= COLLECT_CPU_LOAD; }
         void collectProcessRamUsage(RTPROCESS process)
-        {
-            findProcess(process).second |= COLLECT_RAM_USAGE;
-        }
-        bool isHostCpuLoadCollected() { return (mHostFlags & COLLECT_CPU_LOAD) != 0; }
-        bool isHostRamUsageCollected() { return (mHostFlags & COLLECT_RAM_USAGE) != 0; }
+            { findProcess(process).second |= COLLECT_RAM_USAGE; }
+        bool isHostCpuLoadCollected() const
+            { return (mHostFlags & COLLECT_CPU_LOAD) != 0; }
+        bool isHostRamUsageCollected() const
+            { return (mHostFlags & COLLECT_RAM_USAGE) != 0; }
         bool isProcessCpuLoadCollected(RTPROCESS process)
-        {
-            return (findProcess(process).second & COLLECT_CPU_LOAD) != 0;
-        }
+            { return (findProcess(process).second & COLLECT_CPU_LOAD) != 0; }
         bool isProcessRamUsageCollected(RTPROCESS process)
-        {
-            return (findProcess(process).second & COLLECT_RAM_USAGE) != 0;
-        }
+            { return (findProcess(process).second & COLLECT_RAM_USAGE) != 0; }
         void getProcesses(std::vector<RTPROCESS>& processes) const
         {
             processes.clear();

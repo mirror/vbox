@@ -26,6 +26,11 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+
+#include <map>
+#include <vector>
+
+#include "Logging.h"
 #include "Performance.h"
 
 namespace pm {
@@ -33,13 +38,27 @@ namespace pm {
 class CollectorLinux : public CollectorHAL
 {
 public:
+    virtual int preCollect(const CollectorHints& hints);
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
     virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
 private:
+    virtual int _getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
+
+    struct VMProcessStats
+    {
+        uint64_t cpuUser;
+        uint64_t cpuKernel;
+        ULONG    pagesUsed;
+    };
+
+    typedef std::map<RTPROCESS, VMProcessStats> VMProcessMap;
+
+    VMProcessMap mProcessStats;
+    uint64_t     mUser, mKernel, mIdle;
 };
 
 CollectorHAL *createHAL()
@@ -49,7 +68,28 @@ CollectorHAL *createHAL()
 
 // Collector HAL for Linux
 
-int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
+int CollectorLinux::preCollect(const CollectorHints& hints)
+{
+    std::vector<RTPROCESS> processes;
+    hints.getProcesses(processes);
+
+    std::vector<RTPROCESS>::iterator it;
+    for(it = processes.begin(); it != processes.end(); it++)
+    {
+        VMProcessStats vmStats;
+        int rc = getRawProcessStats(*it, &vmStats.cpuUser, &vmStats.cpuKernel, &vmStats.pagesUsed);
+        if (RT_FAILURE(rc))
+            return rc;
+        mProcessStats[*it] = vmStats;
+    }
+    if (hints.isHostCpuLoadCollected() || mProcessStats.size())
+    {
+        _getRawHostCpuLoad(&mUser, &mKernel, &mIdle);
+    }
+    return VINF_SUCCESS;
+}
+
+int CollectorLinux::_getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
 {
     int rc = VINF_SUCCESS;
     ULONG u32user, u32nice, u32kernel, u32idle;
@@ -73,20 +113,27 @@ int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t
     return rc;
 }
 
+int CollectorLinux::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
+{
+    *user   = mUser;
+    *kernel = mKernel;
+    *idle   = mIdle;
+    return VINF_SUCCESS;
+}
+
 int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total)
 {
-    int rc = VINF_SUCCESS;
-    uint64_t uHostUser, uHostKernel, uHostIdle;
+    VMProcessMap::const_iterator it = mProcessStats.find(process);
 
-    rc = getRawHostCpuLoad(&uHostUser, &uHostKernel, &uHostIdle);
-    if (RT_SUCCESS(rc))
+    if (it == mProcessStats.end())
     {
-        ULONG ulTmp;
-        *total = (uint64_t)uHostUser + uHostKernel + uHostIdle;
-        rc = getRawProcessStats(process, user, kernel, &ulTmp);
+        Log (("No stats pre-collected for process %x\n", process));
+        return VERR_INTERNAL_ERROR;
     }
-
-    return rc;
+    *user   = it->second.cpuUser;
+    *kernel = it->second.cpuKernel;
+    *total  = mUser + mKernel + mIdle;
+    return VINF_SUCCESS;
 }
 
 int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
@@ -118,15 +165,15 @@ int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availab
 
 int CollectorLinux::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
-    uint64_t u64Tmp;
-    ULONG nPagesUsed;
-    int rc = getRawProcessStats(process, &u64Tmp, &u64Tmp, &nPagesUsed);
-    if (RT_SUCCESS(rc))
+    VMProcessMap::const_iterator it = mProcessStats.find(process);
+
+    if (it == mProcessStats.end())
     {
-        Assert(PAGE_SIZE >= 1024);
-        *used = nPagesUsed * (PAGE_SIZE / 1024);
+        Log (("No stats pre-collected for process %x\n", process));
+        return VERR_INTERNAL_ERROR;
     }
-    return rc;
+    *used = it->second.pagesUsed * (PAGE_SIZE / 1024);
+    return VINF_SUCCESS;
 }
 
 int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed)

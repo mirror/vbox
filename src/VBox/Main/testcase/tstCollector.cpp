@@ -50,26 +50,6 @@
 #include "../darwin/PerformanceDarwin.cpp"
 #endif
 
-pm::CollectorHAL *createCollector()
-{
-#ifdef RT_OS_SOLARIS
-    return new pm::CollectorSolaris();
-#endif
-#ifdef RT_OS_LINUX
-    return new pm::CollectorLinux();
-#endif
-#ifdef RT_OS_WINDOWS
-    return new pm::CollectorWin();
-#endif
-#ifdef RT_OS_OS2
-    return new pm::CollectorOS2();
-#endif
-#ifdef RT_OS_DARWIN
-    return new pm::CollectorDarwin();
-#endif
-    return 0;
-}
-
 #define RUN_TIME_MS        1000
 
 #define N_CALLS(n, fn) \
@@ -127,7 +107,6 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
     uint64_t tmp64;
     uint64_t start;
     unsigned int nCalls;
-    uint32_t totalTime = 0;
     /* Pre-collect */
     CALLS_PER_SECOND(preCollect(hints));
     /* Host CPU load */
@@ -198,7 +177,7 @@ int main(int argc, char *argv[])
         NULL, EOAC_NONE, 0);
 #endif
 
-    pm::CollectorHAL *collector = createCollector();
+    pm::CollectorHAL *collector = pm::createHAL();
     if (!collector)
     {
         RTPrintf("tstCollector: createMetricFactory() failed\n", rc);
