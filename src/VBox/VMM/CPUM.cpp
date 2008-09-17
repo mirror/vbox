@@ -19,7 +19,8 @@
  * additional information or have any questions.
  */
 
-/** @page pg_cpum
+/** @page pg_cpum CPUM - CPU Monitor / Manager
+ *
  * The CPU Monitor / Manager keeps track of all the CPU registers. It is
  * also responsible for lazy FPU handling and some of the context loading
  * in raw mode.
@@ -718,8 +719,8 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     /* Init PAT MSR */
     pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
 
-    /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State 
-     * The Intel docs don't mention it. 
+    /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State
+     * The Intel docs don't mention it.
      */
     pCtx->msrEFER                   = 0;
 }
@@ -891,7 +892,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         CPUMCTX_VER1_6 cpumctx16;
         memset(&pVM->cpum.s.Guest, 0, sizeof(pVM->cpum.s.Guest));
         SSMR3GetMem(pSSM, &cpumctx16, sizeof(cpumctx16));
-        
+
         /* Save the old cpumctx state into the new one. */
         cpumR3LoadCPUM1_6(pVM, &cpumctx16);
     }
