@@ -42,6 +42,7 @@ extern "C" {
 }
 #include <iprt/err.h>
 #include <iprt/mp.h>
+#include <iprt/mem.h>
 
 #include <map>
 
@@ -192,7 +193,7 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
 {
     uint64_t uTotalMhz   = 0;
     RTCPUID  nProcessors = RTMpGetCount();
-    PPROCESSOR_POWER_INFORMATION ppi = new PROCESSOR_POWER_INFORMATION[nProcessors];
+    PPROCESSOR_POWER_INFORMATION ppi = (PPROCESSOR_POWER_INFORMATION)RTMemAllocZ(nProcessors * sizeof(PROCESSOR_POWER_INFORMATION));
 
     if (!ppi)
         return VERR_NO_MEMORY;
@@ -202,7 +203,7 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
     if (ns)
     {
         Log(("CallNtPowerInformation() -> %x\n", ns));
-        delete ppi;
+        RTMemFree(ppi);
         return VERR_INTERNAL_ERROR;
     }
 
@@ -211,7 +212,7 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
         uTotalMhz += ppi[i].CurrentMhz;
     *mhz = (ULONG)(uTotalMhz / nProcessors);
 
-    delete ppi;
+    RTMemFree(ppi);
     LogFlowThisFunc(("mhz=%u\n", *mhz));
     LogFlowThisFuncLeave();
 
