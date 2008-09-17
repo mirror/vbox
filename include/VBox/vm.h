@@ -286,8 +286,12 @@ typedef struct VM
 
     /** The GVM VM handle. Only the GVM should modify this field. */
     uint32_t                    hSelf;
-    /** Reserved / padding. */
-    uint32_t                    u32Reserved;
+    /** Number of virtual CPUs. */
+    uint32_t                    cCPUs;
+    /** Current CPU id; @todo move to per CPU structure. */
+    uint32_t                    idCPU;
+    /** Reserved; alignment. */
+    uint32_t                    u32Reserved[7];
 
     /** @name Public VMM Switcher APIs
      * @{ */

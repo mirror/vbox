@@ -83,9 +83,12 @@ DECLINLINE(int) iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFau
     Assert(pStats);
 #endif
 
+    unsigned idCPU = (pRange->enmCtx == MMIO_REGCTX_GLOBAL) ? 0 : pVM->idCPU;
+    Assert(pRange->u[idCPU].CTXALLSUFF(pDevIns));
+
     int rc;
     if (RT_LIKELY(pRange->CTXALLSUFF(pfnWriteCallback)))
-        rc = pRange->CTXALLSUFF(pfnWriteCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhysFault, (void *)pvData, cb); /* @todo fix const!! */
+        rc = pRange->CTXALLSUFF(pfnWriteCallback)(pRange->u[idCPU].CTXALLSUFF(pDevIns), pRange->u[idCPU].CTXALLSUFF(pvUser), GCPhysFault, (void *)pvData, cb); /* @todo fix const!! */
     else
         rc = VINF_SUCCESS;
     if (rc != VINF_IOM_HC_MMIO_WRITE)
@@ -103,9 +106,12 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFaul
     Assert(pStats);
 #endif
 
+    unsigned idCPU = (pRange->enmCtx == MMIO_REGCTX_GLOBAL) ? 0 : pVM->idCPU;
+    Assert(pRange->u[idCPU].CTXALLSUFF(pDevIns));
+
     int rc;
     if (RT_LIKELY(pRange->CTXALLSUFF(pfnReadCallback)))
-        rc = pRange->CTXALLSUFF(pfnReadCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhysFault, pvData, cb);
+        rc = pRange->CTXALLSUFF(pfnReadCallback)(pRange->u[idCPU].CTXALLSUFF(pDevIns), pRange->u[idCPU].CTXALLSUFF(pvUser), GCPhysFault, pvData, cb);
     else
     {
         switch (cb)
@@ -582,6 +588,9 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     int rc;
     if (pRange->CTXALLSUFF(pfnFillCallback))
     {
+        unsigned idCPU = (pRange->enmCtx == MMIO_REGCTX_GLOBAL) ? 0 : pVM->idCPU;
+        Assert(pRange->u[idCPU].CTXALLSUFF(pDevIns));
+
         /*
          * Use the fill callback.
          */
@@ -589,7 +598,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         if (offIncrement > 0)
         {
             /* addr++ variant. */
-            rc = pRange->CTXALLSUFF(pfnFillCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), Phys, u32Data, cb, cTransfers);
+            rc = pRange->CTXALLSUFF(pfnFillCallback)(pRange->u[idCPU].CTXALLSUFF(pDevIns), pRange->u[idCPU].CTXALLSUFF(pvUser), Phys, u32Data, cb, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
@@ -601,7 +610,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         else
         {
             /* addr-- variant. */
-            rc = pRange->CTXALLSUFF(pfnFillCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), (Phys - (cTransfers - 1)) << SIZE_2_SHIFT(cb), u32Data, cb, cTransfers);
+            rc = pRange->CTXALLSUFF(pfnFillCallback)(pRange->u[idCPU].CTXALLSUFF(pDevIns), pRange->u[idCPU].CTXALLSUFF(pvUser), (Phys - (cTransfers - 1)) << SIZE_2_SHIFT(cb), u32Data, cb, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
@@ -1267,11 +1276,14 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
         /*
          * Perform the read and deal with the result.
          */
+        unsigned idCPU = (pRange->enmCtx == MMIO_REGCTX_GLOBAL) ? 0 : pVM->idCPU;
+        Assert(pRange->u[idCPU].CTXALLSUFF(pDevIns));
+
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
             STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfRead), a);
 #endif
-        int rc = pRange->CTXALLSUFF(pfnReadCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhys, pu32Value, cbValue);
+        int rc = pRange->CTXALLSUFF(pfnReadCallback)(pRange->u[idCPU].CTXALLSUFF(pDevIns), pRange->u[idCPU].CTXALLSUFF(pvUser), GCPhys, pu32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
             STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfRead), a);
@@ -1374,11 +1386,14 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
      */
     if (pRange->CTXALLSUFF(pfnWriteCallback))
     {
+        unsigned idCPU = (pRange->enmCtx == MMIO_REGCTX_GLOBAL) ? 0 : pVM->idCPU;
+        Assert(pRange->u[idCPU].CTXALLSUFF(pDevIns));
+
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
             STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfWrite), a);
 #endif
-        int rc = pRange->CTXALLSUFF(pfnWriteCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhys, &u32Value, cbValue);
+        int rc = pRange->CTXALLSUFF(pfnWriteCallback)(pRange->u[idCPU].CTXALLSUFF(pDevIns), pRange->u[idCPU].CTXALLSUFF(pvUser), GCPhys, &u32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
             STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfWrite), a);

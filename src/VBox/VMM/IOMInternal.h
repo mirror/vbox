@@ -52,12 +52,9 @@ typedef struct IOMMMIORANGE
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
     uint32_t                    cb;
-    uint32_t                    u32Alignment; /**< Alignment padding. */
+    /** MMIO registration context; CPU id or MMIO_REGCTX_GLOBAL if it's a global registration (applies to all CPUs). */
+    MMIO_REGISTRATION_CTX       enmCtx;
 
-    /** Pointer to user argument. */
-    RTR3PTR                     pvUserR3;
-    /** Pointer to device instance. */
-    PPDMDEVINSR3                pDevInsR3;
     /** Pointer to write callback function. */
     R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR3;
     /** Pointer to read callback function. */
@@ -65,10 +62,6 @@ typedef struct IOMMMIORANGE
     /** Pointer to fill (memset) callback function. */
     R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR3;
 
-    /** Pointer to user argument. */
-    RTR0PTR                     pvUserR0;
-    /** Pointer to device instance. */
-    PPDMDEVINSR0                pDevInsR0;
     /** Pointer to write callback function. */
     R0PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR0;
     /** Pointer to read callback function. */
@@ -76,10 +69,6 @@ typedef struct IOMMMIORANGE
     /** Pointer to fill (memset) callback function. */
     R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR0;
 
-    /** Pointer to user argument. */
-    RCPTRTYPE(void *)           pvUserGC;
-    /** Pointer to device instance. */
-    PPDMDEVINSRC                pDevInsGC;
     /** Pointer to write callback function. */
     RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackGC;
     /** Pointer to read callback function. */
@@ -91,6 +80,22 @@ typedef struct IOMMMIORANGE
 
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
+
+    struct
+    {
+        /** Pointer to user argument. */
+        RTR3PTR                     pvUserR3;
+        /** Pointer to device instance. */
+        PPDMDEVINSR3                pDevInsR3;
+        /** Pointer to user argument. */
+        RTR0PTR                     pvUserR0;
+        /** Pointer to device instance. */
+        PPDMDEVINSR0                pDevInsR0;
+        /** Pointer to user argument. */
+        RCPTRTYPE(void *)           pvUserGC;
+        /** Pointer to device instance. */
+        PPDMDEVINSRC                pDevInsGC;
+    } u[1];
 } IOMMMIORANGE;
 /** Pointer to a MMIO range descriptor, R3 version. */
 typedef struct IOMMMIORANGE *PIOMMMIORANGE;
