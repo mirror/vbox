@@ -50,6 +50,7 @@
 # include <iprt/file.h>
 # include <iprt/fs.h>
 #endif
+#include <iprt/getopt.h>
 #include <iprt/ldr.h>
 #include <iprt/log.h>
 #include <iprt/md5.h>
