@@ -177,7 +177,7 @@ CPUWriteMemoryFunc *g_apfnHandlerWrite[3] =
 };
 
 
-#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDWS) && defined(RT_ARCH_AMD64))
+#if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64))
 /*
  * Debugger commands.
  */
@@ -748,8 +748,10 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         /*
          * Now we set the execute single instruction flag and enter the cpu_exec loop.
          */
+        TMNotifyStartOfExecution(pVM);
         pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
         rc = cpu_exec(&pVM->rem.s.Env);
+        TMNotifyEndOfExecution(pVM);
         switch (rc)
         {
             /*
@@ -858,6 +860,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
 # ifdef DEBUG_bird
         remR3DisasInstr(&pVM->rem.s.Env, 1, "REMR3EmulateInstruction");
 # endif
+        TMNotifyStartOfExecution(pVM);
         int cTimesMax = 16384;
         uint32_t eip = pVM->rem.s.Env.eip;
         do
@@ -867,6 +870,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         } while (   eip == pVM->rem.s.Env.eip
                  && (rc == EXCP_DEBUG || rc == EXCP_EXECUTE_RAW)
                  && --cTimesMax > 0);
+        TMNotifyEndOfExecution(pVM);
         switch (rc)
         {
             /*
@@ -972,7 +976,9 @@ REMR3DECL(int) REMR3Run(PVM pVM)
     Log2(("REMR3Run: (cs:eip=%04x:%08x)\n", pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     Assert(pVM->rem.s.fInREM);
 
+    TMNotifyStartOfExecution(pVM);
     int rc = cpu_exec(&pVM->rem.s.Env);
+    TMNotifyEndOfExecution(pVM);
     switch (rc)
     {
         /*
@@ -2591,13 +2597,13 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
  */
 REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
 {
+#ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
     int      rc;
     RTGCPHYS PhysGC;
     uint64_t flags;
 
     VM_ASSERT_EMT(pVM);
 
-#ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
     /*
      * Get the physical page address.
      */
@@ -3509,7 +3515,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
 
     /* Doesn't work in long mode. */
     if (env->hflags & HF_LMA_MASK)
-        return false; 
+        return false;
 
     /*
      * Determin 16/32 bit mode.

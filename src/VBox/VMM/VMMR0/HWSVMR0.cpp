@@ -773,7 +773,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         pVM->hwaccm.s.svm.pfnVMRun = SVMVMRun;
     }
 
-    /** TSC offset. */
+    /* TSC offset. */
     if (TMCpuTickCanUseRealTSC(pVM, &pVMCB->ctrl.u64TSCOffset))
     {
         pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
@@ -918,7 +918,7 @@ ResumeExecution:
             pVMCB->ctrl.u16InterceptWrCRx |= RT_BIT(8);
         }
         else
-            /* No interrupts are pending, so we don't need to be explicitely notified. 
+            /* No interrupts are pending, so we don't need to be explicitely notified.
              * There are enough world switches for detecting pending interrupts.
              */
             pVMCB->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
@@ -962,7 +962,7 @@ ResumeExecution:
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
     }
-    
+
     pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
@@ -1043,10 +1043,12 @@ ResumeExecution:
 #ifdef VBOX_STRICT
     Assert(idCpuCheck == RTMpCpuId());
 #endif
+    TMNotifyStartOfExecution(pVM);
     pVM->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVM->hwaccm.s.svm.pVMCBPhys, pCtx);
+    TMNotifyEndOfExecution(pVM);
     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatInGC, x);
 
-    /**
+    /*
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      * IMPORTANT: WE CAN'T DO ANY LOGGING OR OPERATIONS THAT CAN DO A LONGJMP BACK TO RING 3 *BEFORE* WE'VE SYNCED BACK (MOST OF) THE GUEST STATE
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

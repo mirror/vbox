@@ -1049,7 +1049,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           eflags.u32);
     AssertRC(rc);
 
-    /** TSC offset. */
+    /* TSC offset. */
     uint64_t u64TSCOffset;
 
     if (TMCpuTickCanUseRealTSC(pVM, &u64TSCOffset))
@@ -1309,7 +1309,7 @@ ResumeExecution:
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
     }
-    
+
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
     rc = VMXWriteVMCS(VMX_VMCS_GUEST_ACTIVITY_STATE,           VMX_CMS_GUEST_ACTIVITY_ACTIVE);
@@ -1334,12 +1334,14 @@ ResumeExecution:
 #ifdef VBOX_STRICT
     Assert(idCpuCheck == RTMpCpuId());
 #endif
+    TMNotifyStartOfExecution(pVM);
     rc = pVM->hwaccm.s.vmx.pfnStartVM(pVM->hwaccm.s.vmx.fResumeVM, pCtx);
+    TMNotifyEndOfExecution(pVM);
 
     /* In case we execute a goto ResumeExecution later on. */
     pVM->hwaccm.s.vmx.fResumeVM = true;
 
-    /**
+    /*
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      * IMPORTANT: WE CAN'T DO ANY LOGGING OR OPERATIONS THAT CAN DO A LONGJMP BACK TO RING 3 *BEFORE* WE'VE SYNCED BACK (MOST OF) THE GUEST STATE
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -72,6 +72,12 @@ typedef enum TMCLOCK
 } TMCLOCK;
 
 
+TMDECL(void) TMNotifyStartOfExecution(PVM pVM);
+TMDECL(void) TMNotifyEndOfExecution(PVM pVM);
+TMDECL(void) TMNotifyStartOfHalt(PVM pVM);
+TMDECL(void) TMNotifyEndOfHalt(PVM pVM);
+
+
 /** @name Real Clock Methods
  * @{
  */
