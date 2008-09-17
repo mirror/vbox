@@ -172,18 +172,6 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
     HRESULT hRes = CoInitialize(NULL);
 #endif
     _ASSERTE(SUCCEEDED(hRes));
-    /*
-     * Need to initialize security to access performance enumerators.
-     */
-    hRes = CoInitializeSecurity(
-        NULL,
-        -1,
-        NULL,
-        NULL,
-        RPC_C_AUTHN_LEVEL_NONE,
-        RPC_C_IMP_LEVEL_IMPERSONATE,
-        NULL, EOAC_NONE, 0);
-    _ASSERTE(SUCCEEDED(hRes));
     _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
     _Module.dwThreadID = GetCurrentThreadId();
     TCHAR szTokens[] = _T("-/");
