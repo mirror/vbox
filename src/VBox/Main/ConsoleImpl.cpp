@@ -4287,6 +4287,13 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
             RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
+        /* the package type is interesting for Linux distributions */
+        RTLogRelLogger    (loggerRelease, 0, ~0U, "Package type: %s"
+#ifdef VBOX_OSE
+                       " (OSE)"
+#endif
+                       "\n",
+                       VBOX_PACKAGE_STRING);
 
         /* register this logger as the release logger */
         RTLogRelSetDefaultInstance(loggerRelease);
