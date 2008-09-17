@@ -20,7 +20,7 @@
  */
 
 
-/** @page pg_dbgf_module    Module & Segment Management
+/** @page pg_dbgf_module    DBGFModule - Module & Segment Management
  *
  * A module is our representation of an executable binary. It's main purpose
  * is to provide segments that can be mapped into address spaces and thereby
