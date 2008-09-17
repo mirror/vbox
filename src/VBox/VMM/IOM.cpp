@@ -85,6 +85,15 @@ static DECLCALLBACK(int) iomR3IOPortDummyOutStr(PPDMDEVINS pDevIns, void *pvUser
 static const char *iomr3IOPortGetStandardName(RTIOPORT Port);
 #endif
 
+/**
+ * pvUser argument of the iomr3RelocateMMIOCallback callback.
+ */
+typedef struct IOMMMIOCALLBACKARGS
+{
+    RTGCINTPTR              offset;
+    PVM                     pVM;
+} IOMMMIOCALLBACKARGS, *PIOMMMIOCALLBACKARGS;
+
 
 /**
  * Initializes the IOM.
@@ -218,14 +227,20 @@ IOMR3DECL(void) IOMR3Reset(PVM pVM)
  */
 IOMR3DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
+    IOMMMIOCALLBACKARGS args;
+
     LogFlow(("IOMR3Relocate: offDelta=%d\n", offDelta));
 
     /*
      * Apply relocations to the GC callbacks.
      */
     pVM->iom.s.pTreesGC = MMHyperHC2GC(pVM, pVM->iom.s.pTreesHC);
+
+    args.offset = offDelta;
+    args.pVM    = pVM;
+
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesHC->IOPortTreeGC, true, iomr3RelocateIOPortCallback, &offDelta);
-    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTree, true, iomr3RelocateMMIOCallback, &offDelta);
+    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesHC->MMIOTree, true, iomr3RelocateMMIOCallback, &args);
 
     if (pVM->iom.s.pfnMMIOHandlerGC)
         pVM->iom.s.pfnMMIOHandlerGC += offDelta;
@@ -287,19 +302,24 @@ static DECLCALLBACK(int) iomr3RelocateIOPortCallback(PAVLROIOPORTNODECORE pNode,
  */
 static DECLCALLBACK(int) iomr3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, void *pvUser)
 {
-    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pNode;
-    RTGCINTPTR    offDelta = *(PRTGCINTPTR)pvUser;
+    PIOMMMIORANGE        pRange     = (PIOMMMIORANGE)pNode;
+    PIOMMMIOCALLBACKARGS pArgs      = (PIOMMMIOCALLBACKARGS)pvUser;
+    PVM                  pVM        = pArgs->pVM;
+    RTGCINTPTR           offDelta   = pArgs->offset;
 
-    if (pRange->pDevInsGC)
-        pRange->pDevInsGC           += offDelta;
+    for(unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        if (pRange->u[i].pDevInsGC)
+            pRange->u[i].pDevInsGC  += offDelta;
+        if (pRange->u[i].pvUserGC > _64K)
+            pRange->u[i].pvUserGC   += offDelta;
+    }
     if (pRange->pfnWriteCallbackGC)
         pRange->pfnWriteCallbackGC  += offDelta;
     if (pRange->pfnReadCallbackGC)
         pRange->pfnReadCallbackGC   += offDelta;
     if (pRange->pfnFillCallbackGC)
         pRange->pfnFillCallbackGC   += offDelta;
-    if (pRange->pvUserGC > _64K)
-        pRange->pvUserGC            += offDelta;
 
     return 0;
 }
@@ -1387,6 +1407,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  *
  * @param   pVM                 VM handle.
  * @param   pDevIns             PDM device instance owning the MMIO range.
+ * @param   enmCtx              CPU id or MMIO_REGCTX_GLOBAL if it's a global registration (applies to all CPUs)
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
  * @param   pvUser              User argument for the callbacks.
@@ -1395,12 +1416,12 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
-             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
+    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p CPU=%d GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
+             pDevIns, enmCtx, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
     int rc;
 
     /*
@@ -1411,6 +1432,8 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         AssertMsgFailed(("Wrapped! %VGp %#x bytes\n", GCPhysStart, cbRange));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
+
+    AssertReturn(enmCtx == MMIO_REGCTX_GLOBAL || (unsigned)enmCtx < pVM->cCPUs, VERR_INVALID_PARAMETER);
 
     /*
      * Resolve the GC/R0 handler addresses lazily because of init order.
@@ -1427,50 +1450,64 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Allocate new range record and initialize it.
      */
     PIOMMMIORANGE pRange;
-    rc = MMHyperAlloc(pVM, sizeof(*pRange), 0, MM_TAG_IOM, (void **)&pRange);
-    if (VBOX_SUCCESS(rc))
+
+    if (    enmCtx == MMIO_REGCTX_CPU0
+        ||  enmCtx == MMIO_REGCTX_GLOBAL)
     {
-        pRange->Core.Key            = GCPhysStart;
-        pRange->Core.KeyLast        = GCPhysStart + (cbRange - 1);
-        pRange->GCPhys              = GCPhysStart;
-        pRange->cb                  = cbRange;
-        pRange->pszDesc             = pszDesc;
+        unsigned size= 0;
 
-        pRange->pvUserR3            = pvUser;
-        pRange->pDevInsR3           = pDevIns;
-        pRange->pfnReadCallbackR3   = pfnReadCallback;
-        pRange->pfnWriteCallbackR3  = pfnWriteCallback;
-        pRange->pfnFillCallbackR3   = pfnFillCallback;
+        if (enmCtx == MMIO_REGCTX_CPU0)
+            size = (pVM->cCPUs - 1) * (sizeof(pRange->u));
 
-        //pRange->pvUserR0            = NIL_RTR0PTR;
-        //pRange->pDevInsR0           = NIL_RTR0PTR;
-        //pRange->pfnReadCallbackR0   = NIL_RTR0PTR;
-        //pRange->pfnWriteCallbackR0  = NIL_RTR0PTR;
-        //pRange->pfnFillCallbackR0   = NIL_RTR0PTR;
-
-        //pRange->pvUserGC            = NIL_RTGCPTR;
-        //pRange->pDevInsGC           = NIL_RTGCPTR;
-        //pRange->pfnReadCallbackGC   = NIL_RTGCPTR;
-        //pRange->pfnWriteCallbackGC  = NIL_RTGCPTR;
-        //pRange->pfnFillCallbackGC   = NIL_RTGCPTR;
-
-        /*
-         * Try register it with PGM and then insert it into the tree.
-         */
-        rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
-                                   IOMR3MMIOHandler, pRange,
-                                   pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
-                                   pVM->iom.s.pfnMMIOHandlerGC, MMHyperR3ToRC(pVM, pRange), pszDesc);
-        if (RT_SUCCESS(rc))
+        rc = MMHyperAlloc(pVM, sizeof(*pRange) + size, 0, MM_TAG_IOM, (void **)&pRange);
+        if (VBOX_SUCCESS(rc))
         {
-            if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesHC->MMIOTree, &pRange->Core))
-                return VINF_SUCCESS;
+            pRange->Core.Key            = GCPhysStart;
+            pRange->Core.KeyLast        = GCPhysStart + (cbRange - 1);
+            pRange->GCPhys              = GCPhysStart;
+            pRange->cb                  = cbRange;
+            pRange->pszDesc             = pszDesc;
+            pRange->enmCtx              = enmCtx;
 
-            DBGFR3Info(pVM, "mmio", NULL, NULL);
-            AssertMsgFailed(("This cannot happen!\n"));
-            rc = VERR_INTERNAL_ERROR;
+            pRange->u[0].pvUserR3       = pvUser;
+            pRange->u[0].pDevInsR3      = pDevIns;
+            pRange->pfnReadCallbackR3   = pfnReadCallback;
+            pRange->pfnWriteCallbackR3  = pfnWriteCallback;
+            pRange->pfnFillCallbackR3   = pfnFillCallback;
+
+            /*
+             * Try register it with PGM and then insert it into the tree.
+             */
+            rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
+                                       IOMR3MMIOHandler, pRange,
+                                       pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
+                                       pVM->iom.s.pfnMMIOHandlerGC, MMHyperR3ToRC(pVM, pRange), pszDesc);
+            if (RT_SUCCESS(rc))
+            {
+                if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesHC->MMIOTree, &pRange->Core))
+                    return VINF_SUCCESS;
+
+                DBGFR3Info(pVM, "mmio", NULL, NULL);
+                AssertMsgFailed(("This cannot happen!\n"));
+                rc = VERR_INTERNAL_ERROR;
+            }
+            MMHyperFree(pVM, pRange);
         }
-        MMHyperFree(pVM, pRange);
+    }
+    else
+    {
+        /* Local MMIO registration for CPU > 0. */
+        PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
+        AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
+        AssertReturn(pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
+        AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
+        AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
+        AssertReturn(pRange->enmCtx == 0, VERR_IOM_INVALID_MMIO_RANGE);
+
+        pRange->u[enmCtx].pvUserR3  = pvUser;
+        pRange->u[enmCtx].pDevInsR3 = pDevIns;
+
+        rc = VINF_SUCCESS;
     }
 
     return rc;
@@ -1488,6 +1525,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  *
  * @param   pVM                 VM handle.
  * @param   pDevIns             PDM device instance owning the MMIO range.
+ * @param   enmCtx              CPU id or MMIO_REGCTX_GLOBAL if it's a global registration (applies to all CPUs)
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
  * @param   pvUser              User argument for the callbacks.
@@ -1495,12 +1533,12 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  */
-IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                     RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, RCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     RCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterGC: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
-             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
+    LogFlow(("IOMR3MMIORegisterGC: pDevIns=%p CPU=%d GCPhysStart=%VGp cbRange=%#x pvUser=%VGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+             pDevIns, enmCtx, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
      * Validate input.
@@ -1511,20 +1549,26 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         return VERR_INVALID_PARAMETER;
     }
 
+    AssertReturn(enmCtx == MMIO_REGCTX_GLOBAL || (unsigned)enmCtx < pVM->cCPUs, VERR_INVALID_PARAMETER);
+
     /*
      * Find the MMIO range and check that the input matches.
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
     AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
-    AssertReturn(pRange->pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturn(pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
     AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturn(pRange->enmCtx == MMIO_REGCTX_CPU0 || pRange->enmCtx == MMIO_REGCTX_GLOBAL, VERR_IOM_INVALID_MMIO_RANGE);
 
-    pRange->pvUserGC          = pvUser;
-    pRange->pfnReadCallbackGC = pfnReadCallback;
-    pRange->pfnWriteCallbackGC= pfnWriteCallback;
-    pRange->pfnFillCallbackGC = pfnFillCallback;
-    pRange->pDevInsGC         = MMHyperCCToRC(pVM, pDevIns);
+    if (enmCtx == MMIO_REGCTX_GLOBAL)
+        enmCtx = MMIO_REGCTX_CPU0;
+
+    pRange->u[enmCtx].pvUserGC  = pvUser;
+    pRange->pfnReadCallbackGC   = pfnReadCallback;
+    pRange->pfnWriteCallbackGC  = pfnWriteCallback;
+    pRange->pfnFillCallbackGC   = pfnFillCallback;
+    pRange->u[enmCtx].pDevInsGC = MMHyperCCToRC(pVM, pDevIns);
 
     return VINF_SUCCESS;
 }
@@ -1541,6 +1585,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  *
  * @param   pVM                 VM handle.
  * @param   pDevIns             PDM device instance owning the MMIO range.
+ * @param   enmCtx              CPU id or MMIO_REGCTX_GLOBAL if it's a global registration (applies to all CPUs)
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
  * @param   pvUser              User argument for the callbacks.
@@ -1548,13 +1593,13 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  */
-IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                     R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                     R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
-             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
+    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p CPU=%d GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+             pDevIns, enmCtx, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
      * Validate input.
@@ -1565,20 +1610,26 @@ IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         return VERR_INVALID_PARAMETER;
     }
 
+    AssertReturn(enmCtx == MMIO_REGCTX_GLOBAL || (unsigned)enmCtx < pVM->cCPUs, VERR_INVALID_PARAMETER);
+
     /*
      * Find the MMIO range and check that the input matches.
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
     AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
-    AssertReturn(pRange->pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturn(pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
     AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
+    AssertReturn(pRange->enmCtx == MMIO_REGCTX_CPU0 || pRange->enmCtx == MMIO_REGCTX_GLOBAL, VERR_IOM_INVALID_MMIO_RANGE);
 
-    pRange->pvUserR0          = pvUser;
-    pRange->pfnReadCallbackR0 = pfnReadCallback;
-    pRange->pfnWriteCallbackR0= pfnWriteCallback;
-    pRange->pfnFillCallbackR0 = pfnFillCallback;
-    pRange->pDevInsR0         = MMHyperCCToR0(pVM, pDevIns);
+    if (enmCtx == MMIO_REGCTX_GLOBAL)
+        enmCtx = MMIO_REGCTX_CPU0;
+
+    pRange->u[enmCtx].pvUserR0  = pvUser;
+    pRange->pfnReadCallbackR0   = pfnReadCallback;
+    pRange->pfnWriteCallbackR0  = pfnWriteCallback;
+    pRange->pfnFillCallbackR0   = pfnFillCallback;
+    pRange->u[enmCtx].pDevInsR0 = MMHyperCCToR0(pVM, pDevIns);
 
     return VINF_SUCCESS;
 }
@@ -1593,15 +1644,16 @@ IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  *
  * @param   pVM                 The virtual machine.
  * @param   pDevIns             Device instance which the MMIO region is registered.
+ * @param   enmCtx              CPU id or MMIO_REGCTX_GLOBAL if it's a global registration (applies to all CPUs)
  * @param   GCPhysStart         First physical address (GC) in the range.
  * @param   cbRange             Number of bytes to deregister.
  *
  * @remark  This function mainly for PCI PnP Config and will not do
  *          all the checks you might expect it to do.
  */
-IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange)
 {
-    LogFlow(("IOMR3MMIODeregister: pDevIns=%p GCPhysStart=%VGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
+    LogFlow(("IOMR3MMIODeregister: pDevIns=%p CPU=%d GCPhysStart=%VGp cbRange=%#x\n", pDevIns, enmCtx, GCPhysStart, cbRange));
 
     /*
      * Validate input.
@@ -1613,6 +1665,11 @@ IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
 
+    /* Ignore local registrations. This assumes all instances will get unregistered! */
+    if (    enmCtx != MMIO_REGCTX_GLOBAL
+        &&  enmCtx != MMIO_REGCTX_CPU0)
+        return VINF_SUCCESS;
+
     /*
      * Check ownership and such for the entire area.
      */
@@ -1622,7 +1679,7 @@ IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
         if (!pRange)
             return VERR_IOM_MMIO_RANGE_NOT_FOUND;
-        AssertMsgReturn(pRange->pDevInsR3 == pDevIns,
+        AssertMsgReturn(pRange->u[0].pDevInsR3 == pDevIns,
                         ("Not owner! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
                         VERR_IOM_NOT_MMIO_RANGE_OWNER);
         AssertMsgReturn(pRange->Core.KeyLast <= GCPhysLast,
@@ -1673,28 +1730,28 @@ static DECLCALLBACK(int) iomR3MMIOInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUs
                     "%VGp-%VGp %VHv %VHv %VHv %VHv %VHv %s\n",
                     pRange->Core.Key,
                     pRange->Core.KeyLast,
-                    pRange->pDevInsR3,
+                    pRange->u[0].pDevInsR3,
                     pRange->pfnReadCallbackR3,
                     pRange->pfnWriteCallbackR3,
                     pRange->pfnFillCallbackR3,
-                    pRange->pvUserR3,
+                    pRange->u[0].pvUserR3,
                     pRange->pszDesc);
     pHlp->pfnPrintf(pHlp,
                     "%*s %VHv %VHv %VHv %VHv %VHv\n",
                     sizeof(RTGCPHYS) * 2 * 2 + 1, "R0",
-                    pRange->pDevInsR0,
+                    pRange->u[0].pDevInsR0,
                     pRange->pfnReadCallbackR0,
                     pRange->pfnWriteCallbackR0,
                     pRange->pfnFillCallbackR0,
-                    pRange->pvUserR0);
+                    pRange->u[0].pvUserR0);
     pHlp->pfnPrintf(pHlp,
                     "%*s %VRv %VRv %VRv %VRv %VRv\n",
                     sizeof(RTGCPHYS) * 2 * 2 + 1, "GC",
-                    pRange->pDevInsGC,
+                    pRange->u[0].pDevInsGC,
                     pRange->pfnReadCallbackGC,
                     pRange->pfnWriteCallbackGC,
                     pRange->pfnFillCallbackGC,
-                    pRange->pvUserGC);
+                    pRange->u[0].pvUserGC);
     return 0;
 }
 
