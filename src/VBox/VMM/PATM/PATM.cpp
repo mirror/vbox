@@ -97,7 +97,7 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 
 /* Don't want to break saved states, so put it here as a global variable. */
-static int cIDTHandlersDisabled = 0;
+static unsigned int cIDTHandlersDisabled = 0;
 
 /**
  * Initializes the PATM.
