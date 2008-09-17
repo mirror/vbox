@@ -31,7 +31,14 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/runtime.h>
+#include <iprt/asm.h>
+#include <iprt/getopt.h>
+#include <iprt/initterm.h>
+#include <iprt/mp.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
 
 
 /*******************************************************************************
@@ -151,11 +158,8 @@ static DECLCALLBACK(int) ThreadFunction(RTTHREAD Thread, void *pvUser)
     return VINF_SUCCESS;
 }
 
-
-int main()
+static int tstTSCCalcDrift(void)
 {
-    RTR3Init();
-
     /*
      * This is only relevant to on SMP systems.
      */
@@ -368,3 +372,79 @@ int main()
 
     return g_cFailed != 0 || g_cRead != cCpus;
 }
+
+
+static int tstTSCCalcFrequency(uint32_t cMsDuration)
+{
+    /*
+     * Sample the TSC and time, sleep the requested time and calc the deltas.
+     */
+    uint64_t uNanoTS = RTTimeSystemNanoTS();
+    uint64_t uTSC    = ASMReadTSC();
+    RTThreadSleep(cMsDuration);
+    uNanoTS = RTTimeSystemNanoTS() - uNanoTS;
+    uTSC    = ASMReadTSC() - uTSC;
+
+    /*
+     * Calc the frequency.
+     */
+    RTPrintf("tstTSC: %RU64 ticks in %RU64 ns\n", uTSC, uNanoTS);
+    uint64_t cHz = uTSC / ((long double)uNanoTS / (long double)1000000000);
+    RTPrintf("tstTSC: Frequency %RU64 Hz", cHz);
+    if (cHz > _1G)
+    {
+        cHz += _1G / 20;
+        RTPrintf("  %RU64.%RU64 GHz", cHz / _1G, (cHz % _1G) / (_1G / 10));
+    }
+    else if (cHz > _1M)
+    {
+        cHz += _1M / 20;
+        RTPrintf("  %RU64.%RU64 MHz", cHz / _1M, (cHz % _1M) / (_1M / 10));
+    }
+    RTPrintf("\n");
+    return 0;
+}
+
+
+int main(int argc, char **argv)
+{
+    RTR3Init();
+
+    /*
+     * Parse arguments.
+     */
+    bool fCalcFrequency = false;
+    uint32_t cMsDuration = 1000; /* 1 sec */
+    static const RTOPTIONDEF s_aOptions[] =
+    {
+        { "--duration",         'd', RTGETOPT_REQ_UINT32 },
+        { "--calc-frequency",   'f', RTGETOPT_REQ_NOTHING },
+        { "--help",             'h', RTGETOPT_REQ_NOTHING }
+    };
+    int iArg = 1;
+    int ch;
+    RTOPTIONUNION Value;
+    while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &iArg, &Value)))
+        switch (ch)
+        {
+            case 'd':   cMsDuration = Value.u32; break;
+            case 'f':   fCalcFrequency = true; break;
+            case 'h':
+                RTPrintf("usage: tstTSC\n"
+                         "   or: tstTSC <-f|--calc-frequency> [--duration|-d ms]\n");
+                return 1;
+            default:
+                RTStrmPrintf(g_pStdErr, "tstTSC: Unknown arg or error (ch=%d)\n", ch);
+                return 1;
+        }
+    if (iArg != argc)
+    {
+        RTStrmPrintf(g_pStdErr, "tstTSC: too many arguments\n");
+        return 1;
+    }
+
+    if (fCalcFrequency)
+        return tstTSCCalcFrequency(cMsDuration);
+    return tstTSCCalcDrift();
+}
+
