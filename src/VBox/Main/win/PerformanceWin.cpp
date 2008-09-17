@@ -53,9 +53,6 @@ namespace pm {
 class CollectorWin : public CollectorHAL
 {
 public:
-    CollectorWin();
-    virtual ~CollectorWin();
-
     virtual int preCollect(const CollectorHints& hints);
     virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
     virtual int getHostCpuMHz(ULONG *mhz);
@@ -83,16 +80,6 @@ CollectorHAL *createHAL()
 {
     return new CollectorWin();
 }
-
-CollectorWin::CollectorWin()
-{
-}
-
-CollectorWin::~CollectorWin()
-{
-
-}
-
 
 #define FILETTIME_TO_100NS(ft) (((uint64_t)ft.dwHighDateTime << 32) + ft.dwLowDateTime)
 
@@ -219,6 +206,7 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
         uTotalMhz += ppi[i].CurrentMhz;
     *mhz = (ULONG)(uTotalMhz / nProcessors);
 
+    delete ppi;
     LogFlowThisFunc(("mhz=%u\n", *mhz));
     LogFlowThisFuncLeave();
 
