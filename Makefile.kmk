@@ -618,7 +618,7 @@ endif
 #
 up update up2 update2::
 ifndef VBOX_OSE
-	$(MAKE) -C tools fetch
+	+$(MAKE) -C tools fetch
 else
 	$(MAKE) -C tools -f Makefile-ose.kmk fetch
 endif
@@ -676,10 +676,8 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
 	rsync -av --no-perms --no-owner --no-group --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/c/vbox
-	ssh vbox@192.168.27.5 c:/psexec/psexec.exe \\\\\\\\addvm -u vbox -p $(WIN64PASSWORD) c:\\\\cygwin\\\\bin\\\\bash.exe -c \''PATH=/usr/bin:/bin c:/vbox/tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) > c:/build.log 2>&1'\'
+	ssh vbox@192.168.27.5 c:/psexec/psexec.exe \\\\\\\\addvm -u vbox -p $(WIN64PASSWORD) c:\\\\cygwin\\\\bin\\\\bash.exe -c \''PATH=/usr/bin:/bin c:/vbox/tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) > c:/build.log 2>&1'\'; rc=$?; rsync -a --delete 192.168.27.5:/cygdrive/c/build.log out/win.amd64; cat out/win.amd64/build.log; exit $rc
 	rsync -av --delete 192.168.27.5:/cygdrive/c/vbox/out/win.amd64/ out/win.amd64
-	rsync -a --delete 192.168.27.5:/cygdrive/c/build.log out/win.amd64
-	cat out/win.amd64/build.log
 endif
 
 additions-build-win.x86:
