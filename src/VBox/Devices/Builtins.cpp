@@ -265,6 +265,10 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvSCSI);
     if (VBOX_FAILURE(rc))
         return rc;
+
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvSCSIHost);
+    if (VBOX_FAILURE(rc))
+        return rc;
 #endif
 
     return VINF_SUCCESS;
