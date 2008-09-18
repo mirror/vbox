@@ -55,8 +55,9 @@ HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pCtx        CPU context
  */
-HWACCMR0DECL(int) SVMR0Leave(PVM pVM);
+HWACCMR0DECL(int) SVMR0Leave(PVM pVM, PCPUMCTX pCtx);
 
 /**
  * Sets up and activates AMD-V on the current CPU

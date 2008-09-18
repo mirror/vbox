@@ -379,7 +379,8 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
      *
      * @note only possible if the current state is actually ours (X86_CR0_TS flag)
      */
-    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, HWACCM_VMX_TRAP_MASK);
+    pVM->hwaccm.s.vmx.u32TrapMask = HWACCM_VMX_TRAP_MASK;
+    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
     AssertRC(rc);
 
     /* Don't filter page faults; all of them should cause a switch. */
@@ -865,7 +866,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
                 if (!pVM->hwaccm.s.fFPUOldStyleOverride)
                 {
-                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, HWACCM_VMX_TRAP_MASK | RT_BIT(X86_XCPT_MF));
+                    pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_MF); 
+                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
                     AssertRC(rc);
                     pVM->hwaccm.s.fFPUOldStyleOverride = true;
                 }
@@ -965,62 +967,33 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Debug registers. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_DEBUG)
     {
-        pCtx->dr7 &= 0xffffffff;                                              /* upper 32 bits reserved */
-        pCtx->dr7 &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
-        pCtx->dr7 |= 0x400;                                                   /* must be one */
-#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DR7,  pCtx->dr7);
-#else
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DR7,  0x400);
-#endif
+        pCtx->dr6 |= X86_DR6_INIT_VAL;                                          /* set all reserved bits to 1. */
+        pCtx->dr6 &= ~RT_BIT(12);                                               /* must be zero. */
+
+        pCtx->dr7 &= 0xffffffff;                                                /* upper 32 bits reserved */
+        pCtx->dr7 &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));      /* must be zero */
+        pCtx->dr7 |= 0x400;                                                     /* must be one */
+
+        /* Resync DR7 */
+        rc = VMXWriteVMCS(VMX_VMCS_GUEST_DR7, pCtx->dr7);
         AssertRC(rc);
 
-#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
-        /* Any guest breakpoints enabled? */
-        if (    (pCtx->dr7 & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
-            &&  !pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved)
+        /* Sync the debug state now if any breakpoint is armed. */
+        if (    (pCtx->dr7 & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
+            &&  !CPUMIsGuestDebugStateActive(pVM)
+            &&  !DBGFIsStepping(pVM))
         {
-            /* Save the host debug register; a bit paranoid if the host has no active breakpoints set in dr7, but we
-             * do not want anything from the guest to leak into the host!
-             */
-            pVM->hwaccm.s.savedhoststate.dr0 = ASMGetDR0();
-            pVM->hwaccm.s.savedhoststate.dr1 = ASMGetDR1();
-            pVM->hwaccm.s.savedhoststate.dr2 = ASMGetDR2();
-            pVM->hwaccm.s.savedhoststate.dr3 = ASMGetDR3();
-            pVM->hwaccm.s.savedhoststate.dr6 = ASMGetDR6();
-            pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved = true;
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxArmed);
 
-            /* Make sure DR7 is harmless or else we could trigger breakpoints when restoring dr0-3 (!) */
-            ASMSetDR7(0x400);
-        }
+            /* Disable drx move intercepts. */
+            pVM->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
 
-        if (pCtx->dr7 & (X86_DR7_L0|X86_DR7_G0))
-        {
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDR0Armed);
-            ASMSetDR0(pCtx->dr0);
-            Assert(pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved);
+            /* Save the host and load the guest debug state. */
+            rc = CPUMR0LoadGuestDebugState(pVM, pCtx, true /* include DR6 */);
+            AssertRC(rc);
         }
-        if (pCtx->dr7 & (X86_DR7_L1|X86_DR7_G1))
-        {
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDR1Armed);
-            ASMSetDR1(pCtx->dr1);
-            Assert(pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved);
-        }
-        if (pCtx->dr7 & (X86_DR7_L2|X86_DR7_G2))
-        {
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDR2Armed);
-            ASMSetDR2(pCtx->dr2);
-            Assert(pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved);
-        }
-        if (pCtx->dr7 & (X86_DR7_L3|X86_DR7_G3))
-        {
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDR3Armed);
-            ASMSetDR3(pCtx->dr3);
-            Assert(pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved);
-        }
-
-        /* No need to sync DR6; all DR6 reads are intercepted. */
-#endif /* VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT */
 
         /* IA32_DEBUGCTL MSR. */
         rc  = VMXWriteVMCS(VMX_VMCS_GUEST_DEBUGCTL_FULL,    0);
@@ -1112,6 +1085,16 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     {
         pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM32;
     }
+
+#ifdef DEBUG
+    /* Intercept X86_XCPT_DB if stepping is enabled */
+    if (DBGFIsStepping(pVM))
+        pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_DB); 
+    else
+        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_DB); 
+
+    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
+#endif
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
@@ -1563,7 +1546,9 @@ ResumeExecution:
 
     CPUMSetGuestCR2(pVM, ASMGetCR2());
 
-    /* No need to sync back DR7 here; it can only be changed by DR7 writes and debug exceptions. Both are intercepted. */
+    /* Sync back DR7 here. */
+    VMXReadVMCS(VMX_VMCS_GUEST_DR7, &val);
+    pCtx->dr7 = val;
 
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     VMX_READ_SELREG(ES, es);
@@ -1772,6 +1757,8 @@ ResumeExecution:
 
             case X86_XCPT_DB:   /* Debug exception. */
             {
+                uint64_t uDR6;
+
                 /* DR6, DR7.GD and IA32_DEBUGCTL.LBR are not updated yet.
                  *
                  * Exit qualification bits:
@@ -1781,32 +1768,40 @@ ResumeExecution:
                  * 14       BS - single step execution or branch taken
                  * 63:15    Reserved (0)
                  */
-
-#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
-                /* Update DR6 here. */
-                pCtx->dr6  = X86_DR6_INIT_VAL;
-                pCtx->dr6 |= (exitQualification & (X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3|X86_DR6_BD|X86_DR6_BS));
-
-                /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
-                pCtx->dr7 &= ~X86_DR7_GD;
-
-                /* Paranoia. */
-                pCtx->dr7 &= 0xffffffff;                                              /* upper 32 bits reserved */
-                pCtx->dr7 &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
-                pCtx->dr7 |= 0x400;                                                   /* must be one */
-
-                /* Resync DR7 */
-                rc = VMXWriteVMCS(VMX_VMCS_GUEST_DR7, pCtx->dr7);
-                AssertRC(rc);
-#endif /* VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT */
-
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestDB);
-                Log(("Trap %x (debug) at %VGv exit qualification %VX64\n", vector, pCtx->rip, exitQualification));
-                rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
-                AssertRC(rc);
 
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-                goto ResumeExecution;
+                /* Note that we don't support guest and host-initiated debugging at the same time. */
+                Assert(DBGFIsStepping(pVM));
+
+                uDR6  = X86_DR6_INIT_VAL;
+                uDR6 |= (exitQualification & (X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3|X86_DR6_BD|X86_DR6_BS));
+                rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), uDR6);
+                if (rc == VINF_EM_RAW_GUEST_TRAP)
+                {
+                    /* Update DR6 here. */
+                    pCtx->dr6  = uDR6;
+
+                    /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
+                    pCtx->dr7 &= ~X86_DR7_GD;
+
+                    /* Paranoia. */
+                    pCtx->dr7 &= 0xffffffff;                                              /* upper 32 bits reserved */
+                    pCtx->dr7 &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
+                    pCtx->dr7 |= 0x400;                                                   /* must be one */
+
+                    /* Resync DR7 */
+                    rc = VMXWriteVMCS(VMX_VMCS_GUEST_DR7, pCtx->dr7);
+                    AssertRC(rc);
+
+                    Log(("Trap %x (debug) at %VGv exit qualification %VX64\n", vector, pCtx->rip, exitQualification));
+                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    AssertRC(rc);
+
+                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    goto ResumeExecution;
+                }
+                /* Return to ring 3 to deal with the debug exit code. */
+                break;
             }
 
 #ifdef VBOX_STRICT
@@ -2035,6 +2030,29 @@ ResumeExecution:
 
     case VMX_EXIT_DRX_MOVE:             /* 29 Debug-register accesses. */
     {
+        if (!DBGFIsStepping(pVM))
+        {
+            /* Disable drx move intercepts. */
+            pVM->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+
+            /* Save the host and load the guest debug state. */
+            rc = CPUMR0LoadGuestDebugState(pVM, pCtx, true /* include DR6 */);
+            AssertRC(rc);
+
+#ifdef VBOX_WITH_STATISTICS
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxContextSwitch);
+            if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitDRxWrite);
+            else
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitDRxRead);
+#endif
+
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+
         /** @todo clear VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT after the first time and restore drx registers afterwards */
         if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
         {
@@ -2385,10 +2403,27 @@ HWACCMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pCtx        CPU context
  */
-HWACCMR0DECL(int) VMXR0Leave(PVM pVM)
+HWACCMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
+
+    /* Save the guest debug state if necessary. */
+    if (CPUMIsGuestDebugStateActive(pVM))
+    {
+        CPUMR0SaveGuestDebugState(pVM, pCtx, true /* save DR6 */);
+
+        /* Enable drx move intercepts again. */
+        pVM->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
+        int rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+        AssertRC(rc);
+
+        /* Resync the debug registers the next time. */
+        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
+    }
+    else
+        Assert(pVM->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
     int rc = VMXClearVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);

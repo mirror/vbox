@@ -111,10 +111,10 @@ __BEGIN_DECLS
  *  Currently #NM and #PF only
  */
 #ifdef VBOX_STRICT
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #else
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #define HWACCM_SVM_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #endif
 /** @} */
@@ -284,6 +284,9 @@ typedef struct HWACCM
         /* Last instruction error */
         uint32_t                    ulLastInstrError;
 
+        /** Current trap mask. */
+        uint32_t                    u32TrapMask;
+
         struct
         {
             uint64_t                u64VMCSPhys;
@@ -377,17 +380,6 @@ typedef struct HWACCM
     /** Currenty shadow paging mode. */
     PGMMODE                 enmShadowMode;
 
-
-#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
-    struct
-    {
-        /* Saved host debug registers. */
-        uint64_t                dr0, dr1, dr2, dr3, dr6, dr7;
-        bool                    fHostDR7Saved;
-        bool                    fHostDebugRegsSaved;
-    } savedhoststate;
-#endif
-
 #ifdef VBOX_STRICT
     /** The CPU ID of the CPU currently owning the VMCS. Set in
      * HWACCMR0Enter and cleared in HWACCMR0Leave. */
@@ -449,10 +441,7 @@ typedef struct HWACCM
     STAMCOUNTER             StatTSCIntercept;
 
     STAMCOUNTER             StatExitReasonNPF;
-    STAMCOUNTER             StatDR0Armed;
-    STAMCOUNTER             StatDR1Armed;
-    STAMCOUNTER             StatDR2Armed;
-    STAMCOUNTER             StatDR3Armed;
+    STAMCOUNTER             StatDRxArmed;
     STAMCOUNTER             StatDRxContextSwitch;
 
 
@@ -483,7 +472,7 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const cha
 
 /* Dummy callback handlers. */
 HWACCMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu);
-HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM);
+HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, CPUMCTX *pCtx);
 HWACCMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 HWACCMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 HWACCMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);

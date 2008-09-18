@@ -162,10 +162,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->hwaccm.s.StatTSCOffset,             STAMTYPE_COUNTER, "/HWACCM/TSC/Offset",        STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatTSCIntercept,          STAMTYPE_COUNTER, "/HWACCM/TSC/Intercept",     STAMUNIT_OCCURENCES,    "Nr of occurances");
 
-    STAM_REG(pVM, &pVM->hwaccm.s.StatDR0Armed,              STAMTYPE_COUNTER, "/HWACCM/Debug/Armed/DR0",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-    STAM_REG(pVM, &pVM->hwaccm.s.StatDR1Armed,              STAMTYPE_COUNTER, "/HWACCM/Debug/Armed/DR1",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-    STAM_REG(pVM, &pVM->hwaccm.s.StatDR2Armed,              STAMTYPE_COUNTER, "/HWACCM/Debug/Armed/DR2",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-    STAM_REG(pVM, &pVM->hwaccm.s.StatDR3Armed,              STAMTYPE_COUNTER, "/HWACCM/Debug/Armed/DR3",   STAMUNIT_OCCURENCES,    "Nr of occurances");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatDRxArmed,              STAMTYPE_COUNTER, "/HWACCM/Debug/Armed",           STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatDRxContextSwitch,      STAMTYPE_COUNTER, "/HWACCM/Debug/ContextSwitch",   STAMUNIT_OCCURENCES,    "Nr of occurances");
 
     pVM->hwaccm.s.pStatExitReason = 0;

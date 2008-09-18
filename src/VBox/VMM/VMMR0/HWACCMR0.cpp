@@ -63,7 +63,7 @@ static struct
 
     /** Ring 0 handlers for VT-x and AMD-V. */
     DECLR0CALLBACKMEMBER(int, pfnEnterSession,(PVM pVM, PHWACCM_CPUINFO pCpu));
-    DECLR0CALLBACKMEMBER(int, pfnLeaveSession,(PVM pVM));
+    DECLR0CALLBACKMEMBER(int, pfnLeaveSession,(PVM pVM, CPUMCTX *pCtx));
     DECLR0CALLBACKMEMBER(int, pfnSaveHostState,(PVM pVM));
     DECLR0CALLBACKMEMBER(int, pfnLoadGuestState,(PVM pVM, CPUMCTX *pCtx));
     DECLR0CALLBACKMEMBER(int, pfnRunGuestCode,(PVM pVM, CPUMCTX *pCtx));
@@ -746,19 +746,8 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
     /* Always load the guest's FPU/XMM state on-demand. */
     CPUMDeactivateGuestFPUState(pVM);
 
-#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
-    /*
-     * Check if host debug registers are armed. All context switches set DR7 back to 0x400.
-     */
-    uint64_t u64DR7 = ASMGetDR7();
-    if (u64DR7 & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
-    {
-        pVM->hwaccm.s.savedhoststate.dr7  = u64DR7;
-        pVM->hwaccm.s.savedhoststate.fHostDR7Saved = true;
-    }
-    else
-        pVM->hwaccm.s.savedhoststate.fHostDR7Saved = false;
-#endif
+    /* Always load the guest's debug state on-demand. */
+    CPUMDeactivateGuestDebugtate(pVM);
 
     /* Always reload the host context and the guest's CR0 register. (!!!!) */
     pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_HOST_CONTEXT;
@@ -817,29 +806,7 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
     }
 
-#ifdef VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
-    /* Restore the host debug registers. First dr0-3, then dr6 and only then dr7! */
-    if (pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved)
-    {
-        ASMSetDR0(pVM->hwaccm.s.savedhoststate.dr0);
-        ASMSetDR1(pVM->hwaccm.s.savedhoststate.dr1);
-        ASMSetDR2(pVM->hwaccm.s.savedhoststate.dr2);
-        ASMSetDR3(pVM->hwaccm.s.savedhoststate.dr3);
-        ASMSetDR6(pVM->hwaccm.s.savedhoststate.dr6);
-        pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved = false;
-
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxContextSwitch);
-    }
-    if (pVM->hwaccm.s.savedhoststate.fHostDR7Saved)
-    {
-        ASMSetDR7(pVM->hwaccm.s.savedhoststate.dr7);
-        pVM->hwaccm.s.savedhoststate.fHostDR7Saved = false;
-    }
-#endif
-
-    /* Resync the debug register on the next entry. */
-    pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
-    rc = HWACCMR0Globals.pfnLeaveSession(pVM);
+    rc = HWACCMR0Globals.pfnLeaveSession(pVM, pCtx);
 
 #ifdef VBOX_STRICT
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
@@ -1164,7 +1131,7 @@ HWACCMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu)
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM)
+HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, PCPUMCTX pCtx)
 {
     return VINF_SUCCESS;
 }

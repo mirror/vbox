@@ -1805,6 +1805,30 @@ CPUMDECL(void) CPUMDeactivateGuestFPUState(PVM pVM)
 }
 
 
+
+/**
+ * Checks if the guest debug state is active
+ *
+ * @returns boolean
+ * @param   pVM         VM handle.
+ */
+CPUMDECL(bool) CPUMIsGuestDebugStateActive(PVM pVM)
+{
+    return (pVM->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS) != 0;
+}
+
+/**
+ * Mark the guest's debug state as inactive
+ *
+ * @returns boolean
+ * @param   pVM         VM handle.
+ */
+CPUMDECL(void) CPUMDeactivateGuestDebugtate(PVM pVM)
+{
+    pVM->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
+}
+
+
 /**
  * Checks if the hidden selector registers are valid
  * @returns true if they are.
