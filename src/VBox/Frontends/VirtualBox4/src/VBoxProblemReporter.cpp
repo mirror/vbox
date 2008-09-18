@@ -26,11 +26,7 @@
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
 
-#ifdef VBOX_OSE
-# include "VBoxAboutDlg.h"
-#else
-# include "VBoxAboutNonOSEDlg.h"
-#endif
+#include "VBoxAboutNonOSEDlg.h"
 
 #include "QIHotKeyEdit.h"
 
@@ -2246,11 +2242,7 @@ void VBoxProblemReporter::showHelpAboutDialog()
     AssertWrapperOk (vbox);
 
     // this (QWidget*) cast is necessary to work around a gcc-3.2 bug */
-#if VBOX_OSE
-    VBoxAboutDlg ((QWidget*)mainWindowShown(), COMVersion).exec();
-#else
     VBoxAboutNonOSEDlg ((QWidget*)mainWindowShown(), COMVersion).exec();
-#endif
 }
 
 void VBoxProblemReporter::showHelpHelpDialog()
