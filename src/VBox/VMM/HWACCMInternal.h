@@ -449,6 +449,13 @@ typedef struct HWACCM
     STAMCOUNTER             StatTSCIntercept;
 
     STAMCOUNTER             StatExitReasonNPF;
+    STAMCOUNTER             StatDR0Armed;
+    STAMCOUNTER             StatDR1Armed;
+    STAMCOUNTER             StatDR2Armed;
+    STAMCOUNTER             StatDR3Armed;
+    STAMCOUNTER             StatDRxContextSwitch;
+
+
     R3PTRTYPE(PSTAMCOUNTER) pStatExitReason;
     R0PTRTYPE(PSTAMCOUNTER) pStatExitReasonR0;
 } HWACCM;

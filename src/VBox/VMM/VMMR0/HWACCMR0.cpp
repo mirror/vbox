@@ -827,6 +827,8 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
         ASMSetDR3(pVM->hwaccm.s.savedhoststate.dr3);
         ASMSetDR6(pVM->hwaccm.s.savedhoststate.dr6);
         pVM->hwaccm.s.savedhoststate.fHostDebugRegsSaved = false;
+
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxContextSwitch);
     }
     if (pVM->hwaccm.s.savedhoststate.fHostDR7Saved)
     {
