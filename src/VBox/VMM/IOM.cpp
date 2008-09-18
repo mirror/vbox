@@ -1499,10 +1499,9 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, MMIO_REGISTRATI
         /* Local MMIO registration for CPU > 0. */
         PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
         AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
-        AssertReturn(pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
         AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
         AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
-        AssertReturn(pRange->enmCtx == 0, VERR_IOM_INVALID_MMIO_RANGE);
+        AssertReturn(pRange->enmCtx == MMIO_REGCTX_CPU0, VERR_IOM_INVALID_MMIO_RANGE);
 
         pRange->u[enmCtx].pvUserR3  = pvUser;
         pRange->u[enmCtx].pDevInsR3 = pDevIns;
@@ -1556,7 +1555,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, MMIO_REGISTRATI
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
     AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
-    AssertReturn(pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturn(enmCtx != MMIO_REGCTX_GLOBAL || pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
     AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
     AssertReturn(pRange->enmCtx == MMIO_REGCTX_CPU0 || pRange->enmCtx == MMIO_REGCTX_GLOBAL, VERR_IOM_INVALID_MMIO_RANGE);
@@ -1617,7 +1616,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, MMIO_REGISTRATI
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
     AssertReturn(pRange, VERR_IOM_MMIO_RANGE_NOT_FOUND);
-    AssertReturn(pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
+    AssertReturn(enmCtx != MMIO_REGCTX_GLOBAL || pRange->u[0].pDevInsR3 == pDevIns, VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturn(pRange->GCPhys == GCPhysStart, VERR_IOM_INVALID_MMIO_RANGE);
     AssertReturn(pRange->cb == cbRange, VERR_IOM_INVALID_MMIO_RANGE);
     AssertReturn(pRange->enmCtx == MMIO_REGCTX_CPU0 || pRange->enmCtx == MMIO_REGCTX_GLOBAL, VERR_IOM_INVALID_MMIO_RANGE);
