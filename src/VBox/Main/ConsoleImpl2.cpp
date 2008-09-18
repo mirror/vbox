@@ -498,17 +498,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /*
      * Advanced Programmable Interrupt Controller.
-     * SMP: Each CPU has a LAPIC (cross-calls).
+     * SMP: Each CPU has a LAPIC, but we have a single device representing all LAPICs states,
+     *      thus only single insert
      */
     rc = CFGMR3InsertNode(pDevices, "apic", &pDev);                                 RC_CHECK();
-    for (unsigned iCpu = 0; iCpu < cCpus; iCpu++)
-    {
-        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", iCpu);                           RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
-    }
+    rc = CFGMR3InsertNode(pDev, "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "NumCPUs", cCpus);                              RC_CHECK();
 
+    /* SMP: @todo: IOAPIC may be required for SMP configs */
     if (fIOAPIC)
     {
         /*
