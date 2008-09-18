@@ -2915,6 +2915,37 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     }
 }
 
+QString VBoxGlobal::helpFile() const
+{
+#if defined (Q_WS_WIN32) || defined (Q_WS_X11)
+    const QString name = "VirtualBox";
+    const QString suffix = "chm";
+#elif defined (Q_WS_MAC)
+    const QString name = "UserManual";
+    const QString suffix = "pdf";
+#endif 
+    /* Where are the docs located? */
+    char szDocsPath[RTPATH_MAX];
+    int rc = RTPathAppDocs (szDocsPath, sizeof (szDocsPath));
+    Assert (RT_SUCCESS (rc));
+
+    /* Construct the path and the filename */
+    QString manual = QString ("%1/%2_%3.%4").arg (szDocsPath)
+                                            .arg (name)
+                                            .arg (vboxGlobal().languageId())
+                                            .arg (suffix);
+    /* Check if a help file with that name exists */
+    QFileInfo fi (manual);
+    if (fi.exists())
+        return manual;
+
+    /* Fall back to the standard */
+    manual = QString ("%1/%2.%4").arg (szDocsPath)
+                                 .arg (name)
+                                 .arg (suffix);
+    return manual;
+}
+
 /* static */
 QIcon VBoxGlobal::iconSet (const char *aNormal,
                            const char *aDisabled /* = NULL */,

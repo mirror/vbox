@@ -565,6 +565,7 @@ public:
 
     static QString languageId();
     static void loadLanguage (const QString &aLangId = QString::null);
+    QString helpFile() const;
 
     static QIcon iconSet (const char *aNormal,
                           const char *aDisabled = NULL,
