@@ -1667,11 +1667,11 @@ static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pThis->pTimerRC   = TMTimerRCPtr(pThis->CTX_SUFF(pTimer));
 }
 
-static inline int registerAPIC(APICState *pThis, PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, bool fR0Enabled, bool fGCEnabled)
+DECLINLINE(int) registerAPIC(APICState *pThis, PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, bool fR0Enabled, bool fGCEnabled)
 {
     PDMAPICREG      ApicReg;
     int             rc;
-    
+
     /*
      * Register the APIC.
      */
@@ -1725,7 +1725,7 @@ static inline int registerAPIC(APICState *pThis, PPDMDEVINS pDevIns, PCFGMNODE p
         AssertLogRelMsgFailed(("APICRegister -> %Rrc\n", rc));
         return rc;
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -1749,12 +1749,12 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, 
+    if (!CFGMR3AreValuesValid(pCfgHandle,
                               "IOAPIC\0"
                               "GCEnabled\0"
                               "R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-    
+
     rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fIOAPIC, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
