@@ -218,8 +218,8 @@
 #    error VBOX requires enabling the ATA/ATAPI driver
 #endif
 
-#if defined(VBOX) && (defined(VBOX_WITH_BUSLOGIC) || defined(VBOX_WITH_LSILOGIC))
-#    define BX_MAX_SCSI_DEVICES 16
+#ifdef VBOX_WITH_SCSI
+#    define BX_MAX_SCSI_DEVICES 1
 #endif
 
 #ifndef VBOX
@@ -719,8 +719,12 @@ typedef struct {
     // ATA devices info
     ata_device_t  devices[BX_MAX_ATA_DEVICES];
     //
-    // map between (bios hd id - 0x80) and ata channels
+    // map between (bios hd id - 0x80) and ata channels and scsi disks.
+#ifdef VBOX_WITH_SCSI
+    Bit8u  hdcount, hdidmap[BX_MAX_ATA_DEVICES+BX_MAX_SCSI_DEVICES];
+#else
     Bit8u  hdcount, hdidmap[BX_MAX_ATA_DEVICES];
+#endif
 
     // map between (bios cd id - 0xE0) and ata channels
     Bit8u  cdcount, cdidmap[BX_MAX_ATA_DEVICES];
@@ -752,8 +756,7 @@ typedef struct {
     } cdemu_t;
 #endif // BX_ELTORITO_BOOT
 
-#ifdef VBOX
-# if defined(VBOX_WITH_BUSLOGIC) || defined(VBOX_WITH_LSILOGIC)
+#ifdef VBOX_WITH_SCSI
   typedef struct {
     // I/O port this device is attached to.
     Bit16u        io_base;
@@ -766,10 +769,9 @@ typedef struct {
   typedef struct {
     // SCSi device info
     scsi_device_t   devices[BX_MAX_SCSI_DEVICES];
-    // map between (bios hd id - 0x80) and scsi devices
-    Bit8u  hdcount, hdidmap[BX_MAX_SCSI_DEVICES];
+    // Number of scsi disks.
+    Bit8u  hdcount;
     } scsi_t;
-# endif
 #endif
 
   // for access to EBDA area
@@ -792,10 +794,12 @@ typedef struct {
     // El Torito Emulation data
     cdemu_t cdemu;
 #endif // BX_ELTORITO_BOOT
+
 #ifdef VBOX
-# if defined(VBOX_WITH_BUSLOGIC) || defined(VBOX_WITH_LSILOGIC)
+
+#ifdef VBOX_WITH_SCSI
     // SCSI Driver data
-    //scsi_t scsi;
+    scsi_t scsi;
 # endif
 
     unsigned char uForceBootDrive;
@@ -2137,12 +2141,6 @@ debugger_off()
 {
   outb(0xfedc, 0x00);
 }
-
-#if VBOX
-# if VBOX_WITH_BUSLOGIC || VBOX_WITH_LSILOGIC
-#  include "scsi.c"
-# endif
-#endif
 
 #if BX_USE_ATADRV
 
@@ -3777,6 +3775,10 @@ cdrom_boot()
 // ---------------------------------------------------------------------------
 #endif // BX_ELTORITO_BOOT
 
+#ifdef VBOX_WITH_SCSI
+#  include "scsi.c"
+#endif
+
   void
 int14_function(regs, ds, iret_addr)
   pusha_regs_t regs; // regs pushed from PUSHA instruction
@@ -5370,25 +5372,45 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
 
   write_byte(0x0040, 0x008e, 0);  // clear completion flag
 
+#ifdef VBOX_WITH_SCSI
+  // basic check : device has to be defined
+  if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES) ) {
+    BX_INFO("int13_harddisk: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
+    goto int13_fail;
+    }
+#else
   // basic check : device has to be defined
   if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_ATA_DEVICES) ) {
     BX_INFO("int13_harddisk: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
+#endif
 
   // Get the ata channel
   device=read_byte(ebda_seg,&EbdaData->ata.hdidmap[GET_ELDL()-0x80]);
 
+#ifdef VBOX_WITH_SCSI
+  // basic check : device has to be valid
+  if (device >= BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES) {
+    BX_INFO("int13_harddisk: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
+    goto int13_fail;
+    }
+#else
   // basic check : device has to be valid
   if (device >= BX_MAX_ATA_DEVICES) {
     BX_INFO("int13_harddisk: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
+#endif
 
   switch (GET_AH()) {
 
     case 0x00: /* disk controller reset */
-      ata_reset (device);
+#ifdef VBOX_WITH_SCSI
+      /* SCSI controller does not need a reset. */
+      if (!VBOX_IS_SCSI_DEVICE(device))
+#endif
+        ata_reset (device);
       goto int13_success;
       break;
 
@@ -5419,9 +5441,24 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
         goto int13_fail;
         }
 
-      nlc   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.cylinders);
-      nlh   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.heads);
-      nlspt = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.spt);
+#ifdef VBOX_WITH_SCSI
+      if (!VBOX_IS_SCSI_DEVICE(device))
+#endif
+      {
+        nlc   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.cylinders);
+        nlh   = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.heads);
+        nlspt = read_word(ebda_seg, &EbdaData->ata.devices[device].lchs.spt);
+      }
+#ifdef VBOX_WITH_SCSI
+      else
+      {
+        Bit8u scsi_device = VBOX_GET_SCSI_DEVICE(device);
+
+        nlc   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.lchs.cylinders);
+        nlh   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.lchs.heads);
+        nlspt = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.lchs.spt);
+      }
+#endif
 
       // sanity check on cyl heads, sec
       if( (cylinder >= nlc) || (head >= nlh) || (sector > nlspt )) {
@@ -5432,19 +5469,53 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       // FIXME verify
       if ( GET_AH() == 0x04 ) goto int13_success;
 
-      nph   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.heads);
-      npspt = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.spt);
+#ifdef VBOX_WITH_SCSI
+      if (!VBOX_IS_SCSI_DEVICE(device))
+#endif
+      {
+        nph   = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.heads);
+        npspt = read_word(ebda_seg, &EbdaData->ata.devices[device].pchs.spt);
+      }
+#ifdef VBOX_WITH_SCSI
+      else
+      {
+        Bit8u scsi_device = VBOX_GET_SCSI_DEVICE(device);
+        nph   = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.heads);
+        npspt = read_word(ebda_seg, &EbdaData->scsi.devices[scsi_device].device_info.pchs.spt);
+      }
+#endif
 
       // if needed, translate lchs to lba, and execute command
-      if ( (nph != nlh) || (npspt != nlspt)) {
+#ifdef VBOX_WITH_SCSI
+      if (( (nph != nlh) || (npspt != nlspt)) || VBOX_IS_SCSI_DEVICE(device)) {
         lba = ((((Bit32u)cylinder * (Bit32u)nlh) + (Bit32u)head) * (Bit32u)nlspt) + (Bit32u)sector - 1;
         sector = 0; // this forces the command to be lba
         }
+#else
+      if (( (nph != nlh) || (npspt != nlspt)) ) {
+        lba = ((((Bit32u)cylinder * (Bit32u)nlh) + (Bit32u)head) * (Bit32u)nlspt) + (Bit32u)sector - 1;
+        sector = 0; // this forces the command to be lba
+        }
+#endif
 
       if ( GET_AH() == 0x02 )
-        status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS, count, cylinder, head, sector, lba, segment, offset);
+      {
+#ifdef VBOX_WITH_SCSI
+        if (VBOX_IS_SCSI_DEVICE(device))
+          status=scsi_read_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, segment, offset);
+        else
+#endif
+          status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS, count, cylinder, head, sector, lba, segment, offset);
+      }
       else
-        status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, cylinder, head, sector, lba, segment, offset);
+      {
+#ifdef VBOX_WITH_SCSI
+        if (VBOX_IS_SCSI_DEVICE(device))
+          BX_PANIC("Write to scsi devices not supported\n");
+        else
+#endif
+          status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, cylinder, head, sector, lba, segment, offset);
+      }
 
       // Set nb of sector transferred
       SET_AL(read_word(ebda_seg, &EbdaData->ata.trsfsectors));
@@ -5550,10 +5621,22 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
 
       // Get 32 bits lba and check
       lba=read_dword(DS, SI+(Bit16u)&Int13Ext->lba1);
-      if (lba >= read_dword(ebda_seg, &EbdaData->ata.devices[device].sectors) ) {
-        BX_INFO("int13_harddisk: function %02x. LBA out of range\n",GET_AH());
-        goto int13_fail;
-        }
+
+#ifdef VBOX_WITH_SCSI
+      if (VBOX_IS_SCSI_DEVICE(device))
+      {
+        if (lba >= read_dword(ebda_seg, &EbdaData->scsi.devices[VBOX_GET_SCSI_DEVICE(device)].device_info.sectors) ) {
+          BX_INFO("int13_harddisk: function %02x. LBA out of range\n",GET_AH());
+          goto int13_fail;
+          }
+      }
+      else
+#endif
+        if (lba >= read_dword(ebda_seg, &EbdaData->ata.devices[device].sectors) ) {
+          BX_INFO("int13_harddisk: function %02x. LBA out of range\n",GET_AH());
+          goto int13_fail;
+          }
+
 
       // If verify or seek
       if (( GET_AH() == 0x44 ) || ( GET_AH() == 0x47 ))
@@ -5563,10 +5646,17 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       if ( GET_AH() == 0x42 )
 #ifdef VBOX
       {
-        if (count >= 256 || lba + count >= 268435456)
-          status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
+#ifdef VBOX_WITH_SCSI
+        if (VBOX_IS_SCSI_DEVICE(device))
+          status=scsi_read_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, segment, offset);
         else
-          status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS, count, 0, 0, 0, lba, segment, offset);
+#endif
+        {
+          if (count >= 256 || lba + count >= 268435456)
+            status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
+          else
+            status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS, count, 0, 0, 0, lba, segment, offset);
+        }
       }
 #else /* !VBOX */
         status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS, count, 0, 0, 0, lba, segment, offset);
@@ -5574,10 +5664,17 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       else
 #ifdef VBOX
       {
-        if (count >= 256 || lba + count >= 268435456)
-          status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
+#ifdef VBOX_WITH_SCSI
+        if (VBOX_IS_SCSI_DEVICE(device))
+          BX_PANIC("Writes not supported for SCSI devices\n");
         else
-          status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
+#endif
+        {
+          if (count >= 256 || lba + count >= 268435456)
+            status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
+          else
+            status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
+        }
       }
 #else /* !VBOX */
         status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
@@ -8203,6 +8300,7 @@ Bit8u bseqnr;
 #ifdef VBOX
   bootlan=0;
 #endif /* VBOX */
+
   switch(bootseq & 0x0f) {
     case 0x01:
         bootdrv=0x00;
@@ -11077,7 +11175,7 @@ post_default_ints:
   ;;
 #endif
 
-#if defined(VBOX) && (defined(VBOX_WITH_BUSLOGIC) || defined(VBX_WITH_LSILOGIC))
+#ifdef VBOX_WITH_SCSI
   ;;
   ;; SCSI driver setup
   ;;
