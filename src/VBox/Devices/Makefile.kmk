@@ -837,13 +837,13 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 	Storage/DrvTransportAsync.cpp
 endif #VBOX_WITH_PDM_ASYNC_COMPLETION
 
-ifdef VBOX_WITH_BUSLOGIC
- Drivers_DEFS += VBOX_WITH_BUSLOGIC
+ifdef VBOX_WITH_SCSI
+ Drivers_DEFS += VBOX_WITH_SCSI
  Drivers_SOURCES += \
 	Storage/DrvSCSI.cpp
  Drivers_SOURCES.linux += \
 	Storage/DrvSCSIHost.cpp
-endif # VBOX_WITH_BUSLOGIC
+endif # VBOX_WITH_SCSI
 
 #
 # Ring-0 Services (library, linked into VMMR0.r0)

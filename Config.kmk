@@ -354,6 +354,10 @@ VBOX_WITH_GUEST_PROPS = 1
 VBOX_WITH_RESOURCE_USAGE_API = 1
 # Enables all the doxgen bits.
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
+# Enable BusLogic SCSI host adapter
+VBOX_WITH_BUSLOGIC = 1
+# Enable SCSI drivers
+VBOX_WITH_SCSI = 1
 # Enables the Python<->XPCOM and later Python<->COM bindings.
 # (Current not enabled by default because all the build servers has
 # different Python versions installed and would start burning.)
@@ -607,6 +611,8 @@ ifdef VBOX_OSE
  endif
  VBOX_WITH_AHCI=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
+ VBOX_WITH_BUSLOGIC=
+ VBOX_WITH_SCSI=
  # branding
  VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo.bmp
  VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/OSE/about.png
@@ -1020,6 +1026,9 @@ ifdef VBOX_PATH_SHARED_LIBS
 endif
 ifdef VBOX_PATH_APP_DOCS
  DEFS += RTPATH_APP_DOCS=\"$(VBOX_PATH_APP_DOCS)\"
+endif
+ifdef VBOX_WITH_SCSI # Needed to compile the BIOS if SCSI is enabled
+ DEFS += VBOX_WITH_SCSI
 endif
 ## @todo eliminate these guys.
 ifdef VBOX_WITH_INTERNAL_NETWORKING

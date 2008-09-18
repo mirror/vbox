@@ -99,7 +99,7 @@ extern const PDMDRVREG g_DrvRawImageAsync;
 extern const PDMDRVREG g_DrvTransportAsync;
 #endif
 
-#ifdef VBOX_WITH_BUSLOGIC
+#ifdef VBOX_WITH_SCSI
 extern const PDMDRVREG g_DrvSCSI;
 extern const PDMDRVREG g_DrvSCSIHost;
 #endif
