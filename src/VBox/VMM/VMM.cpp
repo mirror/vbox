@@ -374,18 +374,22 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     /* GC switchers are enabled by default. Turned off by HWACCM. */
     pVM->vmm.s.fSwitcherDisabled = false;
 
-    /* we use 32-bit for CPU count internally for alignment purposes, 
-     * but config counter is 16-bit */
-    uint16_t cpus;
-    rc = CFGMR3QueryU16Def(CFGMR3GetRoot(pVM), "NumCPUs", &cpus, 1);
-    if (RT_FAILURE(rc))
-        AssertMsgRCReturn(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Vrc\n", rc), rc);
-    pVM->cCPUs = cpus;
+    /* Get the CPU count.*/
+    rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &pVM->cCPUs, 1);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Vrc\n", rc), rc);
 #ifdef VBOX_WITH_SMP_GUESTS
-    LogRel(("[SMP] VMM with %d CPUs\n", pVM->cCPUs));
+    AssertLogRelMsgReturn(pVM->cCPUs > 0 && pVM->cCPUs <= 256,
+                          ("Configuration error: \"NumCPUs\"=%RU32 is out of range [1..256]\n", pVM->cCPUs), VERR_INVALID_PARAMETER);
+#else
+    AssertLogRelMsgReturn(pVM->cCPUs != 0,
+                          ("Configuration error: \"NumCPUs\"=%RU32, expected 1\n", pVM->cCPUs), VERR_INVALID_PARAMETER);
 #endif
 
-    /** Current CPU id; @todo move to per CPU structure. */
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogRel(("[SMP] VMM with %RU32 CPUs\n", pVM->cCPUs));
+#endif
+
+    /* Current CPU id */ /** @todo move to per CPU structure. */
     pVM->idCPU = 0;
 
     /*
