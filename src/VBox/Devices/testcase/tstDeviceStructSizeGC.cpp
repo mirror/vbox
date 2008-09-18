@@ -566,19 +566,21 @@ int main()
     GEN_CHECK_OFF(APICState, initial_count);
     GEN_CHECK_OFF(APICState, initial_count_load_time);
     GEN_CHECK_OFF(APICState, next_time);
-    GEN_CHECK_OFF(APICState, pDevInsR3);
-    GEN_CHECK_OFF(APICState, pApicHlpR3);
-    GEN_CHECK_OFF(APICState, pTimerR3);
-    GEN_CHECK_OFF(APICState, pDevInsR0);
-    GEN_CHECK_OFF(APICState, pApicHlpR0);
-    GEN_CHECK_OFF(APICState, pTimerR0);
-    GEN_CHECK_OFF(APICState, pDevInsRC);
-    GEN_CHECK_OFF(APICState, pApicHlpRC);
-    GEN_CHECK_OFF(APICState, pTimerRC);
-    GEN_CHECK_OFF(APICState, ulTPRPatchAttempts);
+
+    GEN_CHECK_SIZE(APICDeviceInfo);
+    GEN_CHECK_OFF(APICDeviceInfo, pDevInsR3);
+    GEN_CHECK_OFF(APICDeviceInfo, pApicHlpR3);
+    GEN_CHECK_OFF(APICDeviceInfo, pTimerR3);
+    GEN_CHECK_OFF(APICDeviceInfo, pDevInsR0);
+    GEN_CHECK_OFF(APICDeviceInfo, pApicHlpR0);
+    GEN_CHECK_OFF(APICDeviceInfo, pTimerR0);
+    GEN_CHECK_OFF(APICDeviceInfo, pDevInsRC);
+    GEN_CHECK_OFF(APICDeviceInfo, pApicHlpRC);
+    GEN_CHECK_OFF(APICDeviceInfo, pTimerRC);
+    GEN_CHECK_OFF(APICDeviceInfo, ulTPRPatchAttempts);
 #ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(APICState, StatMMIOReadGC);
-    GEN_CHECK_OFF(APICState, StatMMIOWriteHC);
+    GEN_CHECK_OFF(APICDeviceInfo, StatMMIOReadGC);
+    GEN_CHECK_OFF(APICDeviceInfo, StatMMIOWriteHC);
 #endif
 
     GEN_CHECK_SIZE(IOAPICState);
