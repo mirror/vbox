@@ -40,6 +40,22 @@ endif
 
 ifndef VBOX_ONLY_DOCS
 ifndef VBOX_ONLY_ADDITIONS
+
+ifndef VBOX_OSE
+ #
+ # Install the license (and misc non-executable stuff).
+ #
+ INSTALLS += nobin
+ nobin_INST = $(INST_BIN)
+ nobin_MODE = 0644
+ nobin_SOURCES = 
+ ifdef VBOX_LICENSE_FILE
+  nobin_SOURCES += \
+  	$(VBOX_BRAND_LICENSE_HTML)=>$(VBOX_LICENSE_FILE)
+ endif
+endif # !OSE 
+
+
 #
 # Install external binaries (mostly redistributable parts of tools we use).
 # This must be done *before* we build the manual.
