@@ -772,7 +772,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
 #endif /* VBOX */
     int intno;
 
-    /* if the APIC is not installed or enabled, we let the 8259 handle the
+    /* if the APIC is installed or enabled, we let the 8259 handle the
        IRQs */
     if (!s) {
         Log(("apic_get_interrupt: returns -1 (!s)\n"));
@@ -1667,10 +1667,58 @@ static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pThis->pTimerRC   = TMTimerRCPtr(pThis->CTX_SUFF(pTimer));
 }
 
-DECLINLINE(int) registerAPIC(APICState *pThis, PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, bool fR0Enabled, bool fGCEnabled)
+/**
+ * @copydoc FNPDMDEVCONSTRUCT
+ */
+static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
+    APICState      *pThis = PDMINS_2_DATA(pDevIns, APICState *);
     PDMAPICREG      ApicReg;
     int             rc;
+    int             i;
+    bool            fIOAPIC;
+    bool            fGCEnabled;
+    bool            fR0Enabled;
+
+#ifndef VBOX_WITH_SMP_GUESTS
+    Assert(iInstance == 0);
+#else
+    LogRel(("[SMP] apicConstruct: %d %p\n", iInstance, pDevIns));
+#endif
+
+    /*
+     * Validate configuration.
+     */
+    if (!CFGMR3AreValuesValid(pCfgHandle, "IOAPIC\0" "GCEnabled\0" "R0Enabled\0"))
+        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fIOAPIC, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"IOAPIC\""));
+
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
+
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
+    Log(("APIC: fR0Enabled=%RTbool fGCEnabled=%RTbool fIOAPIC=%RTbool\n", fR0Enabled, fGCEnabled, fIOAPIC));
+
+    /*
+     * Init the data.
+     */
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->apicbase  = UINT32_C(0xfee00000) | MSR_IA32_APICBASE_BSP | MSR_IA32_APICBASE_ENABLE;
+    for (i = 0; i < APIC_LVT_NB; i++)
+        pThis->lvt[i] = 1 << 16; /* mask LVT */
+    pThis->spurious_vec = 0xff;
+
 
     /*
      * Register the APIC.
@@ -1726,106 +1774,39 @@ DECLINLINE(int) registerAPIC(APICState *pThis, PPDMDEVINS pDevIns, PCFGMNODE pCf
         return rc;
     }
 
-    return VINF_SUCCESS;
-}
-
-/**
- * @copydoc FNPDMDEVCONSTRUCT
- */
-static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
-{
-    APICState      *pThis = PDMINS_2_DATA(pDevIns, APICState *);
-    int             i;
-    int             rc;
-    bool            fGCEnabled;
-    bool            fR0Enabled;
-    bool            fIOAPIC;
-
-#ifndef VBOX_WITH_SMP_GUESTS
-    Assert(iInstance == 0);
-#else
-    LogRel(("[SMP] apicConstruct: %d %p\n", iInstance, pDevIns));
-#endif
     /*
-     * Validate configuration.
+     * The the CPUID feature bit.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
-                              "IOAPIC\0"
-                              "GCEnabled\0"
-                              "R0Enabled\0"))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fIOAPIC, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"IOAPIC\""));
-
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
-
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
-    Log(("APIC: fR0Enabled=%RTbool fGCEnabled=%RTbool fIOAPIC=%RTbool\n", fR0Enabled, fGCEnabled, fIOAPIC));
-
-    /*
-     * Init the data.
-     */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->apicbase  = UINT32_C(0xfee00000) | MSR_IA32_APICBASE_BSP | MSR_IA32_APICBASE_ENABLE;
-    for (i = 0; i < APIC_LVT_NB; i++)
-        pThis->lvt[i] = 1 << 16; /* mask LVT */
-    pThis->spurious_vec = 0xff;
-    pThis->id = iInstance;
-
-    /* we need to register APIC only for the first instance */
-    if (iInstance == 0)
+    uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
+    PDMDevHlpGetCpuId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
+    if (u32Eax >= 1)
     {
-        rc = registerAPIC(pThis, pDevIns, pCfgHandle, fR0Enabled, fGCEnabled);
-        if (RT_FAILURE(rc))
-            return rc;
-        /*
-         * The the CPUID feature bit.
-         * @todo: should we keep CPUID per vCPU, or per-VM? In first case we need to modify CPUID for all vCPUs
-         */
-        uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
-        PDMDevHlpGetCpuId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
-        if (u32Eax >= 1)
+        if (   fIOAPIC                       /* If IOAPIC is enabled, enable Local APIC in any case */
+               || (   u32Ebx == X86_CPUID_VENDOR_INTEL_EBX
+                      && u32Ecx == X86_CPUID_VENDOR_INTEL_ECX
+                      && u32Edx == X86_CPUID_VENDOR_INTEL_EDX /* GenuineIntel */)
+               || (   u32Ebx == X86_CPUID_VENDOR_AMD_EBX
+                      && u32Ecx == X86_CPUID_VENDOR_AMD_ECX
+                      && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */))
         {
-            if (   fIOAPIC                       /* If IOAPIC is enabled, enable Local APIC in any case */
-                   || (   u32Ebx == X86_CPUID_VENDOR_INTEL_EBX
-                          && u32Ecx == X86_CPUID_VENDOR_INTEL_ECX
-                          && u32Edx == X86_CPUID_VENDOR_INTEL_EDX /* GenuineIntel */)
-                   || (   u32Ebx == X86_CPUID_VENDOR_AMD_EBX
-                          && u32Ecx == X86_CPUID_VENDOR_AMD_ECX
-                          && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */))
-            {
-                LogRel(("Activating Local APIC\n"));
-                pThis->pApicHlpR3->pfnChangeFeature(pDevIns, true);
-            }
+            LogRel(("Activating Local APIC\n"));
+            pThis->pApicHlpR3->pfnChangeFeature(pDevIns, true);
         }
     }
 
     /*
-     * Register the MMIO range, for all instances.
+     * Register the MMIO range.
      */
-    rc = PDMDevHlpMMIORegisterPerCPU(pDevIns, /* APIC id == CPU number */ pThis->id,
-                                     pThis->apicbase & ~0xfff, 0x1000, pThis,
-                                     apicMMIOWrite, apicMMIORead, NULL, "APIC Memory");
+    rc = PDMDevHlpMMIORegister(pDevIns, pThis->apicbase & ~0xfff, 0x1000, pThis,
+                               apicMMIOWrite, apicMMIORead, NULL, "APIC Memory");
     if (RT_FAILURE(rc))
         return rc;
 
     if (fGCEnabled) {
         pThis->pApicHlpRC = pThis->pApicHlpR3->pfnGetRCHelpers(pDevIns);
 
-        rc = PDMDevHlpMMIORegisterPerCPUGC(pDevIns, /* APIC id == CPU number */ pThis->id,
-                                           pThis->apicbase & ~0xfff, 0x1000, 0,
-                                           "apicMMIOWrite", "apicMMIORead", NULL);
+        rc = PDMDevHlpMMIORegisterGC(pDevIns, pThis->apicbase & ~0xfff, 0x1000, 0,
+                                     "apicMMIOWrite", "apicMMIORead", NULL);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1833,9 +1814,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (fR0Enabled) {
         pThis->pApicHlpR0 = pThis->pApicHlpR3->pfnGetR0Helpers(pDevIns);
 
-        rc = PDMDevHlpMMIORegisterPerCPUR0(pDevIns, /* APIC id == CPU number */ pThis->id,
-                                           pThis->apicbase & ~0xfff, 0x1000, 0,
-                                           "apicMMIOWrite", "apicMMIORead", NULL);
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, pThis->apicbase & ~0xfff, 0x1000, 0,
+                                     "apicMMIOWrite", "apicMMIORead", NULL);
         if (RT_FAILURE(rc))
             return rc;
     }
