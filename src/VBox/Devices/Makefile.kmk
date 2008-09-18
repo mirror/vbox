@@ -144,6 +144,9 @@ endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  VBoxDD_DEFS           += VBOX_WITH_PDM_ASYNC_COMPLETION
 endif
+ifdef VBOX_WITH_SCSI
+ VBoxDD_DEFS           += VBOX_WITH_SCSI
+endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
