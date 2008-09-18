@@ -75,7 +75,6 @@ static int
 VBoxInit(DeviceIntPtr device)
 {
     InputInfoPtr pInfo;
-    int xrc;
 
     pInfo = device->public.devicePrivate;
 
