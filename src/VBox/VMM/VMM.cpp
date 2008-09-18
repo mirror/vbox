@@ -374,8 +374,17 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     /* GC switchers are enabled by default. Turned off by HWACCM. */
     pVM->vmm.s.fSwitcherDisabled = false;
 
-    /** @todo fetch the configured number of VCPUs. */
-    pVM->cCPUs = 1;
+    /* we use 32-bit for CPU count internally for alignment purposes, 
+     * but config counter is 16-bit */
+    uint16_t cpus;
+    rc = CFGMR3QueryU16Def(CFGMR3GetRoot(pVM), "NumCPUs", &cpus, 1);
+    if (RT_FAILURE(rc))
+        AssertMsgRCReturn(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Vrc\n", rc), rc);
+    pVM->cCPUs = cpus;
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogRel(("[SMP] VMM with %d CPUs\n", pVM->cCPUs));
+#endif
+
     /** Current CPU id; @todo move to per CPU structure. */
     pVM->idCPU = 0;
 
