@@ -209,8 +209,7 @@ buildserver-docs_CLEANS = $(PATH_TARGET)/VBoxDocumentation.zip $(PATH_TARGET)/VB
 # is simply too tempting. Could all go away once we have plain unzip targets.
 include $(KBUILD_PATH)/tools/ZIP.kmk
 
-# Make this a pattern rule to handle multiple targets correctly.
-$(PATH_TARGET)/VirtualBox.chm $(PATH_TARGET)/UserManua%.pdf: $(PATH_TARGET)/VBoxDocumentation.zip
+$(PATH_TARGET)/VirtualBox.chm + $(PATH_TARGET)/UserManual.pdf: $(PATH_TARGET)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
 
