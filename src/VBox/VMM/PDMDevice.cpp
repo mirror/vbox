@@ -89,16 +89,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                          PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                          const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                            const char *pszWrite, const char *pszRead, const char *pszFill,
                                            const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                            const char *pszWrite, const char *pszRead, const char *pszFill,
                                            const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange);
+static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange);
 static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
                                         PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
@@ -1355,7 +1355,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPO
 
 
 /** @copydoc PDMDEVHLP::pfnMMIORegister */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                                   PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                                   const char *pszDesc)
 {
@@ -1372,7 +1372,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, MMIO_REGIS
 
 
 /** @copydoc PDMDEVHLP::pfnMMIORegisterGC */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                                     const char *pszWrite, const char *pszRead, const char *pszFill,
                                                     const char *pszDesc)
 {
@@ -1424,7 +1424,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, MMIO_REG
 }
 
 /** @copydoc PDMDEVHLP::pfnMMIORegisterR0 */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                                     const char *pszWrite, const char *pszRead, const char *pszFill,
                                                     const char *pszDesc)
 {
@@ -1477,7 +1477,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, MMIO_REG
 
 
 /** @copydoc PDMDEVHLP::pfnMMIODeregister */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, MMIO_REGISTRATION_CTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange)
+static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMHC);
