@@ -82,6 +82,9 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
 #ifndef IN_GC
 static unsigned rtlogGroupFlags(const char *psz);
 #endif
+#ifdef IN_RING0
+static void rtR0LogLoggerExFallback(uint32_t fDestFlags, const char *pszFormat, va_list va);
+#endif
 static void rtlogFlush(PRTLOGGER pLogger);
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars);
 static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars, size_t cbChars);
@@ -564,8 +567,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
      * Acquire logger instance sem and disable all logging. (paranoia)
      */
     rc = rtlogLock(pLogger);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     pLogger->fFlags |= RTLOGFLAGS_DISABLED;
     iGroup = pLogger->cGroups;
@@ -1584,7 +1586,13 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
      */
     rc = rtlogLock(pLogger);
     if (RT_FAILURE(rc))
+    {
+#ifdef IN_RING0
+        if (pLogger->fDestFlags & ~RTLOGDEST_FILE)
+            rtR0LogLoggerExFallback(pLogger->fDestFlags, pszFormat, args);
+#endif
         return;
+    }
 
     /*
      * Format the message and perhaps flush it.
@@ -1608,6 +1616,128 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
      */
     rtlogUnlock(pLogger);
 }
+
+#ifdef IN_RING0
+/**
+ * For rtR0LogLoggerExFallbackOutput and rtR0LogLoggerExFallbackFlush.
+ */
+typedef struct RTR0LOGLOGGERFALLBACK
+{
+    /** The current scratch buffer offset. */
+    uint32_t offScratch;
+    /** The destination flags. */
+    uint32_t fDestFlags;
+    /** The scratch buffer. */
+    char achScratch[80];
+} RTR0LOGLOGGERFALLBACK;
+/** Pointer to RTR0LOGLOGGERFALLBACK which is used by
+ * rtR0LogLoggerExFallbackOutput. */
+typedef RTR0LOGLOGGERFALLBACK *PRTR0LOGLOGGERFALLBACK;
+
+
+/**
+ * Flushes the fallback buffer.
+ *
+ * @param   pThis       The scratch buffer.
+ */
+static void rtR0LogLoggerExFallbackFlush(PRTR0LOGLOGGERFALLBACK pThis)
+{
+    if (!pThis->offScratch)
+        return;
+
+    if (pThis->fDestFlags & RTLOGDEST_USER)
+        RTLogWriteUser(pThis->achScratch, pThis->offScratch);
+
+    if (pThis->fDestFlags & RTLOGDEST_DEBUGGER)
+        RTLogWriteDebugger(pThis->achScratch, pThis->offScratch);
+
+    if (pThis->fDestFlags & RTLOGDEST_STDOUT)
+        RTLogWriteStdOut(pThis->achScratch, pThis->offScratch);
+
+    if (pThis->fDestFlags & RTLOGDEST_STDERR)
+        RTLogWriteStdErr(pThis->achScratch, pThis->offScratch);
+
+#ifndef LOG_NO_COM
+    if (pThis->fDestFlags & RTLOGDEST_COM)
+        RTLogWriteCom(pThis->achScratch, pThis->offScratch);
+#endif
+
+    /* empty the buffer. */
+    pThis->offScratch = 0;
+}
+
+
+/**
+ * Callback for RTLogFormatV used by rtR0LogLoggerExFallback.
+ * See PFNLOGOUTPUT() for details.
+ */
+static DECLCALLBACK(size_t) rtR0LogLoggerExFallbackOutput(void *pv, const char *pachChars, size_t cbChars)
+{
+    PRTR0LOGLOGGERFALLBACK pThis = (PRTR0LOGLOGGERFALLBACK)pv;
+    if (cbChars)
+    {
+        size_t cbRet = 0;
+        for (;;)
+        {
+            /* how much */
+            uint32_t cb = sizeof(pThis->achScratch) - pThis->offScratch - 1; /* minus 1 - for the string terminator. */
+            if (cb > cbChars)
+                cb = cbChars;
+
+            /* copy */
+            memcpy(&pThis->achScratch[pThis->offScratch], pachChars, cb);
+
+            /* advance */
+            pThis->offScratch += cb;
+            cbRet += cb;
+            cbChars -= cb;
+
+            /* done? */
+            if (cbChars <= 0)
+                return cbRet;
+
+            pachChars += cb;
+
+            /* flush */
+            pThis->achScratch[pThis->offScratch] = '\0';
+            rtR0LogLoggerExFallbackFlush(pThis);
+        }
+
+        /* won't ever get here! */
+    }
+    else
+    {
+        /*
+         * Termination call, flush the log.
+         */
+        pThis->achScratch[pThis->offScratch] = '\0';
+        rtR0LogLoggerExFallbackFlush(pThis);
+        return 0;
+    }
+}
+
+
+/**
+ * Ring-0 fallback for cases where we're unable to grab the lock.
+ *
+ * This will happen when we're at a too high IRQL on Windows for instance and
+ * needs to be dealt with or we'll drop a lot of log output. This fallback will
+ * only output to some of the log destinations as a few of them may be doing
+ * dangerouse things. We won't be doing any prefixing here either, at least not
+ * for the present, because it's too much hazzle.
+ *
+ * @param   pLogger     The destination flags.
+ * @param   pszFormat   The format string.
+ * @param   va          The format arguments.
+ */
+static void rtR0LogLoggerExFallback(uint32_t fDestFlags, const char *pszFormat, va_list va)
+{
+    RTR0LOGLOGGERFALLBACK This;
+    This.fDestFlags = fDestFlags;
+    This.offScratch = 0;
+    RTLogFormatV(rtR0LogLoggerExFallbackOutput, &This, pszFormat, va);
+}
+#endif /* IN_RING0 */
 
 
 /**
