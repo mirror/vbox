@@ -48,9 +48,7 @@
 QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                             Icon aIcon, int aButton0, int aButton1, int aButton2,
                             QWidget *aParent, const char *aName, bool aModal)
-    : QIDialog (aParent,
-                Qt::Window | 
-                Qt::MSWindowsFixedSizeDialogHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint)
+    : QIDialog (aParent)
 {
 #ifdef Q_WS_MAC
     /* Sheets are broken if the window is in fullscreen mode. So make it a
@@ -59,7 +57,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     if (cwnd == NULL ||
         (!cwnd->isTrueFullscreen() &&
          !cwnd->isTrueSeamless()))
-        setWindowFlags (windowFlags() | Qt::Sheet);
+        setWindowFlags (Qt::Sheet);
 #endif /* Q_WS_MAC */
 
 
