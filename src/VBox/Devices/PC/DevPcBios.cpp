@@ -1398,6 +1398,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 #ifdef VBOX_WITH_SMP_GUESTS
     LogRel(("[SMP] BIOS with %d CPUs\n", pThis->cCpus));
 #else
+    /* @todo: move this check up in configuration chain */
     if (pThis->cCpus != 1)
     {
         LogRel(("WARNING: guest SMP not supported in this build, going UP\n"));
