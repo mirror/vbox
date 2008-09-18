@@ -101,6 +101,7 @@ extern const PDMDRVREG g_DrvTransportAsync;
 
 #ifdef VBOX_WITH_BUSLOGIC
 extern const PDMDRVREG g_DrvSCSI;
+extern const PDMDRVREG g_DrvSCSIHost;
 #endif
 
 __END_DECLS
