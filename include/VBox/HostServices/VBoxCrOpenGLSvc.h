@@ -36,9 +36,46 @@
 #include <VBox/hgcmsvc.h>
 
 /* crOpenGL host functions */
-#define VBOX_SHARED_CROPENGL_HOST_FN_SET_FRAMEBUFFER (1)
+#define SHCRGL_HOST_FN_SET_FRAMEBUFFER (1)
+/* crOpenGL guest functions */
+#define SHCRGL_GUEST_FN_WRITE (2)
+#define SHCRGL_GUEST_FN_READ (3)
 
 /* Parameters count */
-#define SHCRGL_CPARMS_SET_SET_FRAMEBUFFER (1)
+#define SHCRGL_CPARMS_SET_FRAMEBUFFER (1)
+#define SHCRGL_CPARMS_WRITE (1)
+#define SHCRGL_CPARMS_READ (2)
+
+/**
+ * SHCRGL_GUEST_FN_WRITE
+ */
+
+/** GUEST_FN_READ Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** pointer, in
+     *  Data buffer
+     */
+    HGCMFunctionParameter   pBuffer;
+} CRVBOXHGCMWRITE;
+
+/** GUEST_FN_WRITE Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** pointer, in/out
+     *  Data buffer
+     */
+    HGCMFunctionParameter   pBuffer;
+
+    /** 32bit, out
+     * Count of bytes written to buffer
+     */
+    HGCMFunctionParameter   cbBuffer;
+
+} CRVBOXHGCMREAD;
 
 #endif
