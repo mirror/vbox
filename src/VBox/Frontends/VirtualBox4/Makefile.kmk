@@ -389,8 +389,7 @@ VirtualBox4_QT_MODULES = Core Gui
 ifndef VBOX_WITH_REGISTRATION
  FORMS := $(filter-out ui/VBoxRegistrationDlg.ui,$(FORMS))
 endif
-$(eval VirtualBox4_SOURCES += \ 
-	$(FORMS)) 
+$(eval VirtualBox4_SOURCES += $(FORMS)) 
 
 # Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
 VirtualBox4_SOURCES += VirtualBox.qrc
