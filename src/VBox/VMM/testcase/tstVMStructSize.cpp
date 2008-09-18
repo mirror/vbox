@@ -168,6 +168,11 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, StatTotalQemuToGC, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.Env, 32);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus, 64);
+
+    /* vmcpu */
+    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum, 64);
+    CHECK_SIZE_ALIGNMENT(VMCPU, 64);
 
     /* cpumctx */
     CHECK_MEMBER_ALIGNMENT(CPUMCTX, fpu, 32);

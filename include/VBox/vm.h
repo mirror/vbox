@@ -42,6 +42,78 @@
  * @{
  */
 
+
+/**
+ * The state of a virtual CPU.
+ *
+ * The VM running states are a sub-states of the VMSTATE_RUNNING state. While
+ * VMCPUSTATE_NOT_RUNNING is a place holder for the other VM states.
+ */
+typedef enum VMCPUSTATE
+{
+    /** The customary invalid zero. */
+    VMCPUSTATE_INVALID = 0,
+
+    /** Running guest code (VM running). */
+    VMCPUSTATE_RUN_EXEC,
+    /** Running guest code in the recompiler (VM running). */
+    VMCPUSTATE_RUN_EXEC_REM,
+    /** Halted (VM running). */
+    VMCPUSTATE_RUN_HALTED,
+    /** All the other bits we do while running a VM (VM running). */
+    VMCPUSTATE_RUN_MISC,
+    /** VM not running, we're servicing requests or whatever. */
+    VMCPUSTATE_NOT_RUNNING,
+    /** The end of valid virtual CPU states. */
+    VMCPUSTATE_END,
+
+    /** Ensure 32-bit type. */
+    VMCPUSTATE_32BIT_HACK = 0x7fffffff
+} VMCPUSTATE;
+
+
+/**
+ * Per virtual CPU data.
+ */
+typedef struct VMCPU
+{
+    /** Per CPU forced action.
+     * See the VMCPU_FF_* \#defines. Updated atomically. */
+    uint32_t volatile   fForcedActions;
+    /** The CPU state. */
+    VMCPUSTATE volatile enmState;
+
+    /** Ring-3 Host Context VM Pointer. */
+    PVMR3               pVMR3;
+    /** Ring-0 Host Context VM Pointer. */
+    PVMR0               pVMR0;
+    /** Raw-mode Context VM Pointer. */
+    PVMRC               pVMRC;
+    /** The CPU ID.
+     * This is the index into the VM::aCpus array. */
+    uint32_t            idCpu;
+    /** The ring-3 thread handle of the emulation thread for this CPU.
+     * @todo Use the VM_IS_EMT() macro to check if executing in EMT? */
+    RTTHREAD            hThreadR3;
+    /** The native ring-3 handle. */
+    RTNATIVETHREAD      hNativeThreadR3;
+    /** The native ring-0 handle. */
+    RTNATIVETHREAD      hNativeThreadR0;
+
+    /** Align the next bit on a 64-byte boundrary. */
+    uint32_t            au32Alignment[HC_ARCH_BITS == 32 ? 7 : 2];
+
+    /** CPUM part. */
+    union
+    {
+#if 0 /*def ___CPUMInternal_h */
+        struct VMCPUCPUM    s;
+#endif
+        char                padding[64];
+    } cpum;
+} VMCPU;
+
+
 /** The name of the Guest Context VMM Core module. */
 #define VMMGC_MAIN_MODULE_NAME          "VMMGC.gc"
 /** The name of the Ring 0 Context VMM Core module. */
@@ -561,6 +633,16 @@ typedef struct VM
         char        padding[HC_ARCH_BITS == 32 ? 0x9f00 : 0xdf00];    /* multiple of 32 */
 #endif
     } rem;
+
+#if HC_ARCH_BITS == 64
+    /** Padding for aligning the cpu array on a 64 byte boundrary. */
+    uint32_t u32Reserved2[HC_ARCH_BITS == 32 ? 0 : 8];
+#endif
+
+    /**
+     * Per virtual CPU state.
+     */
+    VMCPU aCpus[1];
 } VM;
 
 /** Pointer to a VM. */

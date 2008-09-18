@@ -292,7 +292,7 @@ VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCON
                     pszError = N_("VirtualBox kernel module is not accessible, permission problem. "
                                   "If you have built VirtualBox yourself, make sure that you do "
                                   "not have the vboxdrv kernel module from a different install loaded.");
-# endif 
+# endif
 #endif
                     break;
                 case VERR_INVALID_HANDLE: /** @todo track down and fix this error. */
@@ -437,8 +437,8 @@ static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *p
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
-        pVM->ThreadEMT = pUVM->vm.s.ThreadEMT;
-        pVM->NativeThreadEMT = pUVM->vm.s.NativeThreadEMT;
+        pVM->ThreadEMT = pVM->aCpus[0].hThreadR3 = pUVM->vm.s.ThreadEMT;
+        pVM->NativeThreadEMT = pVM->aCpus[0].hNativeThreadR3 = pUVM->vm.s.NativeThreadEMT;
 
         pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
 
