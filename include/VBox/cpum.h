@@ -1067,6 +1067,22 @@ CPUMDECL(bool) CPUMIsGuestFPUStateActive(PVM pVM);
  */
 CPUMDECL(void) CPUMDeactivateGuestFPUState(PVM pVM);
 
+/**
+ * Checks if the guest debug state is active
+ *
+ * @returns boolean
+ * @param   pVM         VM handle.
+ */
+CPUMDECL(bool) CPUMIsGuestDebugStateActive(PVM pVM);
+
+/**
+ * Mark the guest's debug state as inactive
+ *
+ * @returns boolean
+ * @param   pVM         VM handle.
+ */
+CPUMDECL(void) CPUMDeactivateGuestDebugtate(PVM pVM);
+
 
 /**
  * Checks if the hidden selector registers are valid
@@ -1265,6 +1281,26 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx);
  * @param   pCtx        CPU context
  */
 CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx);
+
+/**
+ * Save guest debug state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ * @param   fDR6        Include DR6 or not
+ */
+CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
+
+/**
+ * Lazily sync in the debug state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ * @param   fDR6        Include DR6 or not
+ */
+CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
 
 /** @} */
 #endif

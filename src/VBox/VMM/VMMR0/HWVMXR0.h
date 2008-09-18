@@ -55,8 +55,9 @@ HWACCMR0DECL(int) VMXR0Enter(PVM pVMm, PHWACCM_CPUINFO pCpu);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pCtx        CPU context
  */
-HWACCMR0DECL(int) VMXR0Leave(PVM pVM);
+HWACCMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx);
 
 
 /**

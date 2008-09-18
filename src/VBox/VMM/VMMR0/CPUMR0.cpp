@@ -166,7 +166,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
 
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
     uint64_t oldMsrEFERHost;
- 	uint32_t oldCR0 = ASMGetCR0();
+    uint32_t oldCR0 = ASMGetCR0();
 
     /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
     if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
@@ -193,7 +193,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
  	/* CPUMHandleLazyFPU could have changed CR0; restore it. */
     ASMSetCR0(oldCR0);
 #else
-    /* Save the FPU control word and MXCSR, so we can restore the properly afterwards.
+    /* Save the FPU control word and MXCSR, so we can restore the state properly afterwards.
      * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
      */
     pVM->cpum.s.Host.fpu.FCW = CPUMGetFCW();
@@ -269,5 +269,71 @@ CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
 #endif
 
     pVM->cpum.s.fUseFlags &= ~(CPUM_USED_FPU|CPUM_MANUAL_XMM_RESTORE);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Save guest debug state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ * @param   fDR6        Include DR6 or not
+ */
+CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
+{
+    Assert(pVM->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS);
+
+    /* Save the guest's debug state. The caller is responsible for DR7. */
+    pCtx->dr0 = ASMGetDR0();
+    pCtx->dr1 = ASMGetDR1();
+    pCtx->dr2 = ASMGetDR2();
+    pCtx->dr3 = ASMGetDR3();
+    if (fDR6)
+        pCtx->dr6 = ASMGetDR6();
+
+    /* Restore the host's debug state. DR0-3, DR6 and only then DR7! */
+    ASMSetDR0(pVM->cpum.s.Host.dr0);
+    ASMSetDR1(pVM->cpum.s.Host.dr1);
+    ASMSetDR2(pVM->cpum.s.Host.dr2);
+    ASMSetDR3(pVM->cpum.s.Host.dr3);
+    ASMSetDR6(pVM->cpum.s.Host.dr6);
+    ASMSetDR7(pVM->cpum.s.Host.dr7);
+
+    pVM->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Lazily sync in the debug state
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pCtx        CPU context
+ * @param   fDR6        Include DR6 or not
+ */
+CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
+{
+    /* Save the host state. */
+    pVM->cpum.s.Host.dr0 = ASMGetDR0();
+    pVM->cpum.s.Host.dr1 = ASMGetDR1();
+    pVM->cpum.s.Host.dr2 = ASMGetDR2();
+    pVM->cpum.s.Host.dr3 = ASMGetDR3();
+    pVM->cpum.s.Host.dr6 = ASMGetDR6();
+    pVM->cpum.s.Host.dr7 = ASMGetDR7();
+    /* Make sure DR7 is harmless or else we could trigger breakpoints when restoring dr0-3 (!) */
+    ASMSetDR7(X86_DR7_INIT_VAL);
+
+    /* Activate the guest state DR0-3; DR7 is left to the caller. */
+    ASMSetDR0(pCtx->dr0);
+    ASMSetDR1(pCtx->dr1);
+    ASMSetDR2(pCtx->dr2);
+    ASMSetDR3(pCtx->dr3);
+    if (fDR6)
+        ASMSetDR6(pCtx->dr6);
+
+    pVM->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
     return VINF_SUCCESS;
 }
