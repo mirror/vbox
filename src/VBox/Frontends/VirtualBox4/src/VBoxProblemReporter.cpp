@@ -2256,26 +2256,22 @@ void VBoxProblemReporter::showHelpAboutDialog()
 void VBoxProblemReporter::showHelpHelpDialog()
 {
 #ifndef VBOX_OSE
+    QString manual = vboxGlobal().helpFile();
 #if defined (Q_WS_WIN32)
-    QString fullHelpFilePath = qApp->applicationDirPath() + "/VirtualBox.chm";
-
-    HtmlHelp (GetDesktopWindow(), fullHelpFilePath.utf16(),
+    HtmlHelp (GetDesktopWindow(), manual.utf16(),
               HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
-    char szDocsPath[RTPATH_MAX];
     char szViewerPath[RTPATH_MAX];
     int rc;
 
-    rc = RTPathAppDocs (szDocsPath, sizeof (szDocsPath));
-    Assert(RT_SUCCESS(rc));
     rc = RTPathAppPrivateArch (szViewerPath, sizeof (szViewerPath));
     Assert(RT_SUCCESS(rc));
 
     QProcess::startDetached (QString(szViewerPath) + "/kchmviewer",
-                             QStringList (QString(szDocsPath) + "/VirtualBox.chm"));
+                             QStringList (manual));
 #elif defined (Q_WS_MAC)
     QProcess::startDetached ("/usr/bin/open",
-                             QStringList (qApp->applicationDirPath() + "/UserManual.pdf"));
+                             QStringList (manual));
 #endif
 #endif /* VBOX_OSE */
 }
