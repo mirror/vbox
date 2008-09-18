@@ -101,7 +101,7 @@ extern const PDMDRVREG g_DrvTransportAsync;
 
 #ifdef VBOX_WITH_SCSI
 extern const PDMDRVREG g_DrvSCSI;
-#if def(RT_OS_LINUX)
+#if defined(RT_OS_LINUX)
 extern const PDMDRVREG g_DrvSCSIHost;
 #endif
 #endif
