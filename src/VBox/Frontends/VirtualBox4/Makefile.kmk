@@ -235,7 +235,7 @@ VirtualBox4_QT_MOCHDRS = \
 	include/VBoxProblemReporter.h \
 	include/VBoxDownloaderWgt.h \
 	include/VBoxNetworkFramework.h \
-	include/VBoxAboutNonOSEDlg.h \
+	include/VBoxAboutDlg.h \
 	include/VBoxCloseVMDlg.h \
 	include/VBoxNewVMWzd.h \
 	include/VBoxNewHDWzd.h \
@@ -312,7 +312,7 @@ VirtualBox4_SOURCES = \
 	src/VBoxFrameBuffer.cpp \
 	src/HappyHttp.cpp \
 	src/VBoxNetworkFramework.cpp \
-	src/VBoxAboutNonOSEDlg.cpp \
+	src/VBoxAboutDlg.cpp \
 	src/VBoxCloseVMDlg.cpp \
 	src/VBoxNewVMWzd.cpp \
 	src/VBoxNewHDWzd.cpp \
@@ -389,6 +389,8 @@ VirtualBox4_QT_MODULES = Core Gui
 ifndef VBOX_WITH_REGISTRATION
  FORMS := $(filter-out ui/VBoxRegistrationDlg.ui,$(FORMS))
 endif
+$(eval VirtualBox4_SOURCES += \ 
+	$(FORMS)) 
 
 # Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
 VirtualBox4_SOURCES += VirtualBox.qrc
