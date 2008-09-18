@@ -52,8 +52,10 @@ typedef struct IOMMMIORANGE
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
     uint32_t                    cb;
-    /** MMIO registration context; CPU id or MMIO_REGCTX_GLOBAL if it's a global registration (applies to all CPUs). */
-    MMIO_REGISTRATION_CTX       enmCtx;
+    /** MMIO registration context.
+     * Used as a boolean with the values IOMMMIOCTX_GLOBAL or !IOMMMIOCTX_GLOBAL
+     * for determing which entry in IOMMMIORANGE::a to access. */
+    IOMMMIOCTX                  enmCtx;
 
     /** Pointer to write callback function. */
     R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR3;
@@ -81,7 +83,14 @@ typedef struct IOMMMIORANGE
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
 
-    struct
+    /** Array of per CPU context data.
+     * When enmCtx is IOMMMIOCTX_GLOBAL the first entry will be used.
+     * When enmCtx is not IOMMMIOCTX_GLOBAL entries will be allocated for all CPUs
+     * and the range will be reference counted.
+     * @todo reference counting the range in directly or indirectly (document it
+     *       here).
+     */
+    struct IOMMMIORANGECTX
     {
         /** Pointer to user argument. */
         RTR3PTR                     pvUserR3;
@@ -95,7 +104,7 @@ typedef struct IOMMMIORANGE
         RCPTRTYPE(void *)           pvUserGC;
         /** Pointer to device instance. */
         PPDMDEVINSRC                pDevInsGC;
-    } u[1];
+    } a[1];
 } IOMMMIORANGE;
 /** Pointer to a MMIO range descriptor, R3 version. */
 typedef struct IOMMMIORANGE *PIOMMMIORANGE;
