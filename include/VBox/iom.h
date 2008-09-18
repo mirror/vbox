@@ -47,28 +47,6 @@ __BEGIN_DECLS
  */
 #define IOM_NO_PDMINS_CHECKS
 
-
-/**
- * MMIO CPU context.
- */
-typedef enum IOMMMIOCTX
-{
-    /** Base of the CPU specific registrations.
-     * Preferrably this should be used like this IOMMMIOCTX_CPU_BASE + idCpu,
-     * but it's prefectly fine to just pass the idCpu. */
-    IOMMMIOCTX_CPU_BASE     = 0,
-    /** CPU0 is (currently) special. */
-    IOMMMIOCTX_CPU0         = IOMMMIOCTX_CPU_BASE,
-    /* ...  */
-    /** CPU ID mask.  */
-    IOMMMIOCTX_CPU_MASK     = 0x000000ff,
-    /** MMIO mapping for all CPUs. */
-    IOMMMIOCTX_GLOBAL       = 0x00100000,
-    /** 32bit hackishness. */
-    IOMMMIOCTX_32BIT_HACK   = 0x7fffffff
-} IOMMMIOCTX;
-
-
 /**
  * Macro for checking if an I/O or MMIO emulation call succeeded.
  *
@@ -270,19 +248,19 @@ IOMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                                       const char *pszDesc);
 IOMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts);
 
-IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                     R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback, const char *pszDesc);
-IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                     R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                     R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                     RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                     RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange);
+IOMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
 /** @} */
 #endif /* IN_RING3 */
 

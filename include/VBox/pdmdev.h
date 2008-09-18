@@ -1725,8 +1725,6 @@ typedef struct PDMDEVHLP
      * @returns VBox status.
      * @param   pDevIns             The device instance to register the MMIO with.
      * @param   GCPhysStart         First physical address in the range.
-     * @param   enmCtx              CPU id or IOMMMIOCTX_GLOBAL if it's a global
-     *                              registration (applies to all CPUs).
      * @param   cbRange             The size of the range (in bytes).
      * @param   pvUser              User argument.
      * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
@@ -1734,7 +1732,7 @@ typedef struct PDMDEVHLP
      * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                                PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                                const char *pszDesc));
 
@@ -1747,8 +1745,6 @@ typedef struct PDMDEVHLP
      *
      * @returns VBox status.
      * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   enmCtx              CPU id or IOMMMIOCTX_GLOBAL if it's a global
-     *                              registration (applies to all CPUs).
      * @param   GCPhysStart         First physical address in the range.
      * @param   cbRange             The size of the range (in bytes).
      * @param   pvUser              User argument.
@@ -1758,7 +1754,7 @@ typedef struct PDMDEVHLP
      * @param   pszDesc             Obsolete. NULL is fine.
      * @todo    Remove pszDesc in the next major revision of PDMDEVHLP.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterGC,(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterGC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill,
                                                  const char *pszDesc));
 
@@ -1770,8 +1766,6 @@ typedef struct PDMDEVHLP
      *
      * @returns VBox status.
      * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   enmCtx              CPU id or IOMMMIOCTX_GLOBAL if it's a global
-     *                              registration (applies to all CPUs).
      * @param   GCPhysStart         First physical address in the range.
      * @param   cbRange             The size of the range (in bytes).
      * @param   pvUser              User argument. (if pointer, then it must be in locked memory!)
@@ -1781,7 +1775,7 @@ typedef struct PDMDEVHLP
      * @param   pszDesc             Obsolete. NULL is fine.
      * @todo    Remove pszDesc in the next major revision of PDMDEVHLP.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill,
                                                  const char *pszDesc));
 
@@ -1792,11 +1786,10 @@ typedef struct PDMDEVHLP
      *
      * @returns VBox status.
      * @param   pDevIns             The device instance owning the MMIO region(s).
-     * @param   enmCtx              CPU id or IOMMMIOCTX_GLOBAL if it's a global registration (applies to all CPUs)
      * @param   GCPhysStart         First physical address in the range.
      * @param   cbRange             The size of the range (in bytes).
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, IOMMMIOCTX enmCtx, RTGCPHYS GCPhysStart, RTUINT cbRange));
+    DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange));
 
     /**
      * Register a ROM (BIOS) region.
@@ -3116,7 +3109,7 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
                                       PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                       const char *pszDesc)
 {
-    return pDevIns->pDevHlp->pfnMMIORegister(pDevIns, IOMMMIOCTX_GLOBAL, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
+    return pDevIns->pDevHlp->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 }
 
 /**
@@ -3125,7 +3118,7 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
 DECLINLINE(int) PDMDevHlpMMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pDevHlp->pfnMMIORegisterGC(pDevIns, IOMMMIOCTX_GLOBAL, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
+    return pDevIns->pDevHlp->pfnMMIORegisterGC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
 }
 
 /**
@@ -3134,35 +3127,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pDevHlp->pfnMMIORegisterR0(pDevIns, IOMMMIOCTX_GLOBAL, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
-}
-
-/**
- * @copydoc PDMDEVHLP::pfnMMIORegisterPerCPU
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterPerCPU(PPDMDEVINS pDevIns, int idCPU, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                      PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                      const char *pszDesc)
-{
-    return pDevIns->pDevHlp->pfnMMIORegister(pDevIns, (IOMMMIOCTX)(IOMMMIOCTX_CPU_BASE + idCPU), GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLP::pfnMMIORegisterPerCPUGC
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterPerCPUGC(PPDMDEVINS pDevIns, int idCPU, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
-                                        const char *pszWrite, const char *pszRead, const char *pszFill)
-{
-    return pDevIns->pDevHlp->pfnMMIORegisterGC(pDevIns, (IOMMMIOCTX)(IOMMMIOCTX_CPU_BASE + idCPU), GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
-}
-
-/**
- * @copydoc PDMDEVHLP::pfnMMIORegisterPerCPUR0
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterPerCPUR0(PPDMDEVINS pDevIns, int idCPU, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
-                                        const char *pszWrite, const char *pszRead, const char *pszFill)
-{
-    return pDevIns->pDevHlp->pfnMMIORegisterR0(pDevIns, (IOMMMIOCTX)(IOMMMIOCTX_CPU_BASE + idCPU), GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
+    return pDevIns->pDevHlp->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
 }
 
 /**

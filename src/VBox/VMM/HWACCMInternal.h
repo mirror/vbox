@@ -33,7 +33,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 
-////#define VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
+#define VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
 
 #if HC_ARCH_BITS == 64
 /* Enable 64 bits guest support. */
