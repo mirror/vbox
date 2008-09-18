@@ -103,6 +103,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
 static DECLCALLBACK(int) pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns);
+static DECLCALLBACK(uint32_t) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
 /** @} */
 
 
@@ -175,6 +176,7 @@ extern DECLEXPORT(const PDMAPICHLPR0) g_pdmR0ApicHlp =
     pdmR0ApicHlp_ChangeFeature,
     pdmR0ApicHlp_Lock,
     pdmR0ApicHlp_Unlock,
+    pdmR0ApicHlp_GetCpuId,
     PDM_APICHLPR0_VERSION
 };
 
@@ -438,6 +440,14 @@ static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     pdmUnlock(pDevIns->Internal.s.pVMHC);
+}
+
+
+/** @copydoc PDMAPICHLPR0::pfnGetCpuId */
+static DECLCALLBACK(uint32_t) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return VMMGetCpuId(pDevIns->Internal.s.pVMHC);
 }
 
 

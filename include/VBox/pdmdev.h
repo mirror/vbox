@@ -1089,6 +1089,13 @@ typedef struct PDMAPICHLPRC
      */
     DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Get the virtual CPU id corresponding to the current EMT.
+     *
+     * @param   pDevIns         The APIC device instance.
+     */
+    DECLRCCALLBACKMEMBER(uint32_t, pfnGetCpuId,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMAPICHLPRC;
@@ -1148,6 +1155,13 @@ typedef struct PDMAPICHLPR0
      */
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Get the virtual CPU id corresponding to the current EMT.
+     *
+     * @param   pDevIns         The APIC device instance.
+     */
+    DECLR0CALLBACKMEMBER(uint32_t, pfnGetCpuId,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMAPICHLPR0;
@@ -1205,6 +1219,13 @@ typedef struct PDMAPICHLPR3
      * @param   pDevIns         The APIC device instance.
      */
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the virtual CPU id corresponding to the current EMT.
+     *
+     * @param   pDevIns         The APIC device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetCpuId,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the address of the RC APIC helpers.
