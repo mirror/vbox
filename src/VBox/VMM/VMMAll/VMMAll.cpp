@@ -59,6 +59,36 @@ RTHCPTR VMMGetHCStack(PVM pVM)
 
 #endif /* !IN_RING0 */
 
+/**
+ * Gets the current virtual CPU ID.
+ *
+ * @returns The CPU ID.
+ * @param   pVM         Pointer to the shared VM handle.
+ * @thread  EMT
+ */
+uint32_t VMMGetCpuId(PVM pVM)
+{
+#ifdef VBOX_WITH_GUEST_SMPT
+# if defined(IN_GC)
+    /* There is only one CPU if we're in GC. */
+    return 0;
+
+# elif defined(IN_RING3)
+    /** @todo SMP: Use TLS. */
+    return 0; /** @todo SMP */
+
+# else  /* IN_RING0 */
+    /** @todo SMP: Get the real CPU ID and use a table in the VM structure to
+     *  translate it. */
+    return 0;
+# endif /* IN_RING0 */
+
+#else
+    VM_ASSERT_EMT(pVM);
+    return 0;
+#endif
+}
+
 
 /**
  * Gets the VBOX_SVN_REV.
@@ -72,3 +102,4 @@ VMMDECL(uint32_t) VMMGetSvnRev(void)
 {
     return VBOX_SVN_REV;
 }
+
