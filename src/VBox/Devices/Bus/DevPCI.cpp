@@ -291,7 +291,7 @@ static void pci_update_mappings(PCIDevice *d)
                             rc = PDMDevHlpMMIO2Unmap(d->pDevIns, i, GCPhysBase);
                         }
                         else
-                            rc = d->pDevIns->pDevHlp->pfnMMIODeregister(d->pDevIns, IOMMMIOCTX_GLOBAL, GCPhysBase, r->size);
+                            rc = d->pDevIns->pDevHlp->pfnMMIODeregister(d->pDevIns, GCPhysBase, r->size);
                         AssertMsgRC(rc, ("rc=%Rrc d=%s i=%d GCPhysBase=%RGp size=%#x\n", rc, d->name, i, GCPhysBase, r->size));
                     }
                 }
