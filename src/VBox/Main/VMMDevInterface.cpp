@@ -830,12 +830,12 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
             parm.type = VBOX_HGCM_SVC_PARM_PTR;
 
             //parm.u.pointer.addr = static_cast <IConsole *> (pData->pVMMDev->getParent());
-			parm.u.pointer.addr = pData->pVMMDev->getParent()->getDisplay()->getFramebuffer();
+            parm.u.pointer.addr = pData->pVMMDev->getParent()->getDisplay()->getFramebuffer();
             parm.u.pointer.size = sizeof(IFramebuffer *);
-	
-            rc = HGCMHostCall("VBoxSharedCrOpenGL", VBOX_SHARED_CROPENGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
+    
+            rc = HGCMHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
             if (!VBOX_SUCCESS(rc))
-                AssertMsgFailed(("VBOX_SHARED_CROPENGL_HOST_FN_SET_FRAMEBUFFER failed with %Vrc\n", rc));
+                AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Vrc\n", rc));
         }
         else
         {
