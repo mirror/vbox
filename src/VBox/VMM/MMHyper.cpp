@@ -104,6 +104,8 @@ int mmR3HyperInit(PVM pVM)
         if (VBOX_SUCCESS(rc))
         {
             pVM->pVMGC = (RTGCPTR32)GCPtr;
+            for (uint32_t i = 0; i < pVM->cCPUs; i++)
+                pVM->aCpus[i].pVMRC = pVM->pVMGC;
 
             /* Reserve a page for fencing. */
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
@@ -281,6 +283,8 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
             pVM->mm.s.pHyperHeapGC              += offDelta;
             pVM->mm.s.pHyperHeapHC->pbHeapGC    += offDelta;
             pVM->mm.s.pHyperHeapHC->pVMGC       += pVM->pVMGC;
+            for (uint32_t i = 0; i < pVM->cCPUs; i++)
+                pVM->aCpus[i].pVMRC = pVM->pVMGC;
 
             /* relocate the rest. */
             VMR3Relocate(pVM, offDelta);
