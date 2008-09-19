@@ -51,7 +51,7 @@ typedef struct CPUMSELREGHID
      *  Long mode remarks:
      *  - Unused in long mode for CS, DS, ES, SS
      *  - 32 bits for FS & GS; FS(GS)_BASE msr used for the base address
-     *  - 64 bits for TR & LDTR 
+     *  - 64 bits for TR & LDTR
      */
     uint64_t    u64Base;
     /** Limit (expanded). */
@@ -305,9 +305,12 @@ typedef struct CPUMCTX
     /** @} */
 
     /** Debug registers.
+     * @remarks DR4 and DR5 should not be used since they are aliases for
+     *          DR6 and DR7 respectively on both AMD and Intel CPUs.
+     * @remarks DR8-15 are currently not supported by AMD or Intel, so
+     *          neither do we.
      * @{ */
     uint64_t        dr[8];
-    /* DR8-15 are currently not supported */
     /** @} */
 
     /** Global Descriptor Table register. */
@@ -786,7 +789,7 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
 }
 
 /**
- * Gets the CPU vendor 
+ * Gets the CPU vendor
  *
  * @returns CPU vendor
  * @param   pVM     The VM handle.
