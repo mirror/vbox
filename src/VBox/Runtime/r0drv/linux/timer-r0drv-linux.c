@@ -399,7 +399,7 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
             pSubTimer->ulNextJiffies += pTimer->cJiffies;
             /* Prevent overflows when the jiffies counter wraps around.
              * Special thanks to Ken Preslan for helping debugging! */
-            while (jiffies - pSubTimer->ulNextJiffies < 3600*HZ)
+            while (time_before(pSubTimer->ulNextJiffies, jiffies))
             {
                 pSubTimer->ulNextJiffies += pTimer->cJiffies;
                 pSubTimer->u64NextTS += pTimer->u64NanoInterval;
