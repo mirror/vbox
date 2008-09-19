@@ -413,18 +413,18 @@ htg_debug_regs_guest:
     mov     eax, dr3
     mov     [edx + CPUM.Host.dr3], eax
     ; load hyper DR0-7
-    mov     ebx, [edx + CPUM.Hyper.dr0]
+    mov     ebx, [edx + CPUM.Hyper.dr]
     mov     dr0, ebx
-    mov     ecx, [edx + CPUM.Hyper.dr1]
+    mov     ecx, [edx + CPUM.Hyper.dr + 4*1]
     mov     dr1, ecx
-    mov     eax, [edx + CPUM.Hyper.dr2]
+    mov     eax, [edx + CPUM.Hyper.dr + 4*2]
     mov     dr2, eax
-    mov     ebx, [edx + CPUM.Hyper.dr3]
+    mov     ebx, [edx + CPUM.Hyper.dr + 4*3]
     mov     dr3, ebx
-    ;mov     eax, [edx + CPUM.Hyper.dr6]
+    ;mov     eax, [edx + CPUM.Hyper.dr + 4*6]
     mov     ecx, 0ffff0ff0h
     mov     dr6, ecx
-    mov     eax, [edx + CPUM.Hyper.dr7]
+    mov     eax, [edx + CPUM.Hyper.dr + 4*7]
     mov     dr7, eax
     jmp     htg_debug_regs_guest_no
 

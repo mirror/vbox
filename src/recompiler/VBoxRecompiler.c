@@ -1611,6 +1611,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
     register const CPUMCTX *pCtx = pVM->rem.s.pCtx;
     register unsigned       fFlags;
     bool                    fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVM);
+    unsigned                i;
 
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
@@ -1679,14 +1680,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
     pVM->rem.s.Env.cr[2]        = pCtx->cr2;
 
     /** @todo we could probably benefit from using a CPUM_CHANGED_DRx flag too! */
-    pVM->rem.s.Env.dr[0]        = pCtx->dr0;
-    pVM->rem.s.Env.dr[1]        = pCtx->dr1;
-    pVM->rem.s.Env.dr[2]        = pCtx->dr2;
-    pVM->rem.s.Env.dr[3]        = pCtx->dr3;
-    pVM->rem.s.Env.dr[4]        = pCtx->dr4;
-    pVM->rem.s.Env.dr[5]        = pCtx->dr5;
-    pVM->rem.s.Env.dr[6]        = pCtx->dr6;
-    pVM->rem.s.Env.dr[7]        = pCtx->dr7;
+    for (i=0;i<8;i++)
+        pVM->rem.s.Env.dr[i] = pCtx->dr[i];
 
     /*
      * Clear the halted hidden flag (the interrupt waking up the CPU can
@@ -2063,6 +2058,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     Assert(pVM->rem.s.fInREM);
     STAM_PROFILE_START(&pVM->rem.s.StatsStateBack, a);
     register PCPUMCTX pCtx = pVM->rem.s.pCtx;
+    unsigned          i;
 
     /*
      * Copy back the registers.
@@ -2161,14 +2157,8 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
-    pCtx->dr0           = pVM->rem.s.Env.dr[0];
-    pCtx->dr1           = pVM->rem.s.Env.dr[1];
-    pCtx->dr2           = pVM->rem.s.Env.dr[2];
-    pCtx->dr3           = pVM->rem.s.Env.dr[3];
-    pCtx->dr4           = pVM->rem.s.Env.dr[4];
-    pCtx->dr5           = pVM->rem.s.Env.dr[5];
-    pCtx->dr6           = pVM->rem.s.Env.dr[6];
-    pCtx->dr7           = pVM->rem.s.Env.dr[7];
+    for (i=0;i<8;i++)
+        pCtx->dr[i] = pVM->rem.s.Env.dr[i];
 
     pCtx->gdtr.cbGdt    = pVM->rem.s.Env.gdt.limit;
     if (pCtx->gdtr.pGdt != pVM->rem.s.Env.gdt.base)
@@ -2291,6 +2281,7 @@ static void remR3StateUpdate(PVM pVM)
 {
     Assert(pVM->rem.s.fInREM);
     register PCPUMCTX pCtx = pVM->rem.s.pCtx;
+    unsigned          i;
 
     /*
      * Copy back the registers.
@@ -2361,14 +2352,8 @@ static void remR3StateUpdate(PVM pVM)
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
-    pCtx->dr0           = pVM->rem.s.Env.dr[0];
-    pCtx->dr1           = pVM->rem.s.Env.dr[1];
-    pCtx->dr2           = pVM->rem.s.Env.dr[2];
-    pCtx->dr3           = pVM->rem.s.Env.dr[3];
-    pCtx->dr4           = pVM->rem.s.Env.dr[4];
-    pCtx->dr5           = pVM->rem.s.Env.dr[5];
-    pCtx->dr6           = pVM->rem.s.Env.dr[6];
-    pCtx->dr7           = pVM->rem.s.Env.dr[7];
+    for (i=0;i<8;i++)
+        pCtx->dr[i] = pVM->rem.s.Env.dr[i];
 
     pCtx->gdtr.cbGdt    = pVM->rem.s.Env.gdt.limit;
     if (pCtx->gdtr.pGdt != (uint32_t)pVM->rem.s.Env.gdt.base)

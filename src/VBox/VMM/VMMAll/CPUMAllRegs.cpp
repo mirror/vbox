@@ -181,37 +181,37 @@ CPUMDECL(void) CPUMSetHyperLDTR(PVM pVM, RTSEL SelLDTR)
 
 CPUMDECL(void) CPUMSetHyperDR0(PVM pVM, RTGCUINTREG uDr0)
 {
-    pVM->cpum.s.Hyper.dr0 = uDr0;
+    pVM->cpum.s.Hyper.dr[0] = uDr0;
     /** @todo in GC we must load it! */
 }
 
 CPUMDECL(void) CPUMSetHyperDR1(PVM pVM, RTGCUINTREG uDr1)
 {
-    pVM->cpum.s.Hyper.dr1 = uDr1;
+    pVM->cpum.s.Hyper.dr[1] = uDr1;
     /** @todo in GC we must load it! */
 }
 
 CPUMDECL(void) CPUMSetHyperDR2(PVM pVM, RTGCUINTREG uDr2)
 {
-    pVM->cpum.s.Hyper.dr2 = uDr2;
+    pVM->cpum.s.Hyper.dr[2] = uDr2;
     /** @todo in GC we must load it! */
 }
 
 CPUMDECL(void) CPUMSetHyperDR3(PVM pVM, RTGCUINTREG uDr3)
 {
-    pVM->cpum.s.Hyper.dr3 = uDr3;
+    pVM->cpum.s.Hyper.dr[3] = uDr3;
     /** @todo in GC we must load it! */
 }
 
 CPUMDECL(void) CPUMSetHyperDR6(PVM pVM, RTGCUINTREG uDr6)
 {
-    pVM->cpum.s.Hyper.dr6 = uDr6;
+    pVM->cpum.s.Hyper.dr[6] = uDr6;
     /** @todo in GC we must load it! */
 }
 
 CPUMDECL(void) CPUMSetHyperDR7(PVM pVM, RTGCUINTREG uDr7)
 {
-    pVM->cpum.s.Hyper.dr7 = uDr7;
+    pVM->cpum.s.Hyper.dr[7] = uDr7;
     /** @todo in GC we must load it! */
 }
 
@@ -346,32 +346,32 @@ CPUMDECL(RTSEL) CPUMGetHyperLDTR(PVM pVM)
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR0(PVM pVM)
 {
-    return pVM->cpum.s.Hyper.dr0;
+    return pVM->cpum.s.Hyper.dr[0];
 }
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR1(PVM pVM)
 {
-    return pVM->cpum.s.Hyper.dr1;
+    return pVM->cpum.s.Hyper.dr[1];
 }
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR2(PVM pVM)
 {
-    return pVM->cpum.s.Hyper.dr2;
+    return pVM->cpum.s.Hyper.dr[2];
 }
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR3(PVM pVM)
 {
-    return pVM->cpum.s.Hyper.dr3;
+    return pVM->cpum.s.Hyper.dr[3];
 }
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR6(PVM pVM)
 {
-    return pVM->cpum.s.Hyper.dr6;
+    return pVM->cpum.s.Hyper.dr[6];
 }
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVM pVM)
 {
-    return pVM->cpum.s.Hyper.dr7;
+    return pVM->cpum.s.Hyper.dr[7];
 }
 
 
@@ -887,63 +887,38 @@ CPUMDECL(int) CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue)
 
 CPUMDECL(uint64_t) CPUMGetGuestDR0(PVM pVM)
 {
-    return pVM->cpum.s.Guest.dr0;
+    return pVM->cpum.s.Guest.dr[0];
 }
 
 CPUMDECL(uint64_t) CPUMGetGuestDR1(PVM pVM)
 {
-    return pVM->cpum.s.Guest.dr1;
+    return pVM->cpum.s.Guest.dr[1];
 }
 
 CPUMDECL(uint64_t) CPUMGetGuestDR2(PVM pVM)
 {
-    return pVM->cpum.s.Guest.dr2;
+    return pVM->cpum.s.Guest.dr[2];
 }
 
 CPUMDECL(uint64_t) CPUMGetGuestDR3(PVM pVM)
 {
-    return pVM->cpum.s.Guest.dr3;
+    return pVM->cpum.s.Guest.dr[3];
 }
 
 CPUMDECL(uint64_t) CPUMGetGuestDR6(PVM pVM)
 {
-    return pVM->cpum.s.Guest.dr6;
+    return pVM->cpum.s.Guest.dr[6];
 }
 
 CPUMDECL(uint64_t) CPUMGetGuestDR7(PVM pVM)
 {
-    return pVM->cpum.s.Guest.dr7;
+    return pVM->cpum.s.Guest.dr[7];
 }
 
-/** @todo drx should be an array */
 CPUMDECL(int) CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint64_t *pValue)
 {
-    switch (iReg)
-    {
-        case USE_REG_DR0:
-            *pValue = pVM->cpum.s.Guest.dr0;
-            break;
-        case USE_REG_DR1:
-            *pValue = pVM->cpum.s.Guest.dr1;
-            break;
-        case USE_REG_DR2:
-            *pValue = pVM->cpum.s.Guest.dr2;
-            break;
-        case USE_REG_DR3:
-            *pValue = pVM->cpum.s.Guest.dr3;
-            break;
-        case USE_REG_DR4:
-        case USE_REG_DR6:
-            *pValue = pVM->cpum.s.Guest.dr6;
-            break;
-        case USE_REG_DR5:
-        case USE_REG_DR7:
-            *pValue = pVM->cpum.s.Guest.dr7;
-            break;
-
-        default:
-            return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    *pValue = pVM->cpum.s.Guest.dr[iReg];
     return VINF_SUCCESS;
 }
 
@@ -1310,69 +1285,44 @@ CPUMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM)
 
 CPUMDECL(int) CPUMSetGuestDR0(PVM pVM, uint64_t uDr0)
 {
-    pVM->cpum.s.Guest.dr0 = uDr0;
+    pVM->cpum.s.Guest.dr[0] = uDr0;
     return CPUMRecalcHyperDRx(pVM);
 }
 
 CPUMDECL(int) CPUMSetGuestDR1(PVM pVM, uint64_t uDr1)
 {
-    pVM->cpum.s.Guest.dr1 = uDr1;
+    pVM->cpum.s.Guest.dr[1] = uDr1;
     return CPUMRecalcHyperDRx(pVM);
 }
 
 CPUMDECL(int) CPUMSetGuestDR2(PVM pVM, uint64_t uDr2)
 {
-    pVM->cpum.s.Guest.dr2 = uDr2;
+    pVM->cpum.s.Guest.dr[2] = uDr2;
     return CPUMRecalcHyperDRx(pVM);
 }
 
 CPUMDECL(int) CPUMSetGuestDR3(PVM pVM, uint64_t uDr3)
 {
-    pVM->cpum.s.Guest.dr3 = uDr3;
+    pVM->cpum.s.Guest.dr[3] = uDr3;
     return CPUMRecalcHyperDRx(pVM);
 }
 
 CPUMDECL(int) CPUMSetGuestDR6(PVM pVM, uint64_t uDr6)
 {
-    pVM->cpum.s.Guest.dr6 = uDr6;
+    pVM->cpum.s.Guest.dr[6] = uDr6;
     return CPUMRecalcHyperDRx(pVM);
 }
 
 CPUMDECL(int) CPUMSetGuestDR7(PVM pVM, uint64_t uDr7)
 {
-    pVM->cpum.s.Guest.dr7 = uDr7;
+    pVM->cpum.s.Guest.dr[7] = uDr7;
     return CPUMRecalcHyperDRx(pVM);
 }
 
-/** @todo drx should be an array */
 CPUMDECL(int) CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint64_t Value)
 {
-    switch (iReg)
-    {
-        case USE_REG_DR0:
-            pVM->cpum.s.Guest.dr0 = Value;
-            break;
-        case USE_REG_DR1:
-            pVM->cpum.s.Guest.dr1 = Value;
-            break;
-        case USE_REG_DR2:
-            pVM->cpum.s.Guest.dr2 = Value;
-            break;
-        case USE_REG_DR3:
-            pVM->cpum.s.Guest.dr3 = Value;
-            break;
-        case USE_REG_DR4:
-        case USE_REG_DR6:
-            pVM->cpum.s.Guest.dr6 = Value;
-            break;
-        case USE_REG_DR5:
-        case USE_REG_DR7:
-            pVM->cpum.s.Guest.dr7 = Value;
-            break;
-
-        default:
-            return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    pVM->cpum.s.Guest.dr[iReg] = Value;
     return CPUMRecalcHyperDRx(pVM);
 }
 
@@ -1424,7 +1374,7 @@ CPUMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
             uNewDr0 = CPUMGetGuestDR0(pVM);
         }
         else
-            uNewDr0 = pVM->cpum.s.Hyper.dr0;
+            uNewDr0 = pVM->cpum.s.Hyper.dr[0];
 
         /* bp 1 */
         RTGCUINTREG uNewDr1;
@@ -1439,7 +1389,7 @@ CPUMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
             uNewDr1 = CPUMGetGuestDR1(pVM);
         }
         else
-            uNewDr1 = pVM->cpum.s.Hyper.dr1;
+            uNewDr1 = pVM->cpum.s.Hyper.dr[1];
 
         /* bp 2 */
         RTGCUINTREG uNewDr2;
@@ -1454,7 +1404,7 @@ CPUMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
             uNewDr2 = CPUMGetGuestDR2(pVM);
         }
         else
-            uNewDr2 = pVM->cpum.s.Hyper.dr2;
+            uNewDr2 = pVM->cpum.s.Hyper.dr[2];
 
         /* bp 3 */
         RTGCUINTREG uNewDr3;
@@ -1469,7 +1419,7 @@ CPUMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
             uNewDr3 = CPUMGetGuestDR3(pVM);
         }
         else
-            uNewDr3 = pVM->cpum.s.Hyper.dr3;
+            uNewDr3 = pVM->cpum.s.Hyper.dr[3];
 
         /*
          * Apply the updates.
@@ -1481,15 +1431,15 @@ CPUMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
         }
 #endif
         pVM->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
-        if (uNewDr3 != pVM->cpum.s.Hyper.dr3)
+        if (uNewDr3 != pVM->cpum.s.Hyper.dr[3])
             CPUMSetHyperDR3(pVM, uNewDr3);
-        if (uNewDr2 != pVM->cpum.s.Hyper.dr2)
+        if (uNewDr2 != pVM->cpum.s.Hyper.dr[2])
             CPUMSetHyperDR2(pVM, uNewDr2);
-        if (uNewDr1 != pVM->cpum.s.Hyper.dr1)
+        if (uNewDr1 != pVM->cpum.s.Hyper.dr[1])
             CPUMSetHyperDR1(pVM, uNewDr1);
-        if (uNewDr0 != pVM->cpum.s.Hyper.dr0)
+        if (uNewDr0 != pVM->cpum.s.Hyper.dr[0])
             CPUMSetHyperDR0(pVM, uNewDr0);
-        if (uNewDr7 != pVM->cpum.s.Hyper.dr7)
+        if (uNewDr7 != pVM->cpum.s.Hyper.dr[7])
             CPUMSetHyperDR7(pVM, uNewDr7);
     }
     else
@@ -1503,9 +1453,9 @@ CPUMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
         pVM->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
     }
     Log2(("CPUMRecalcHyperDRx: fUseFlags=%#x %RGr %RGr %RGr %RGr  %RGr %RGr\n",
-          pVM->cpum.s.fUseFlags, pVM->cpum.s.Hyper.dr0, pVM->cpum.s.Hyper.dr1,
-         pVM->cpum.s.Hyper.dr2, pVM->cpum.s.Hyper.dr3, pVM->cpum.s.Hyper.dr6,
-         pVM->cpum.s.Hyper.dr7));
+          pVM->cpum.s.fUseFlags, pVM->cpum.s.Hyper.dr[0], pVM->cpum.s.Hyper.dr[1],
+         pVM->cpum.s.Hyper.dr[2], pVM->cpum.s.Hyper.dr[3], pVM->cpum.s.Hyper.dr[6],
+         pVM->cpum.s.Hyper.dr[7]));
 
     return VINF_SUCCESS;
 }

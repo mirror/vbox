@@ -1189,38 +1189,9 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
     pPB[1] = MAKE_MODRM(mod, reg, rm);
 
-    /// @todo: make this an array in the context structure
-    switch (dbgreg)
-    {
-    case USE_REG_DR0:
-        offset = RT_OFFSETOF(CPUMCTX, dr0);
-        break;
-    case USE_REG_DR1:
-        offset = RT_OFFSETOF(CPUMCTX, dr1);
-        break;
-    case USE_REG_DR2:
-        offset = RT_OFFSETOF(CPUMCTX, dr2);
-        break;
-    case USE_REG_DR3:
-        offset = RT_OFFSETOF(CPUMCTX, dr3);
-        break;
-    case USE_REG_DR4:
-        offset = RT_OFFSETOF(CPUMCTX, dr4);
-        break;
-    case USE_REG_DR5:
-        offset = RT_OFFSETOF(CPUMCTX, dr5);
-        break;
-    case USE_REG_DR6:
-        offset = RT_OFFSETOF(CPUMCTX, dr6);
-        break;
-    case USE_REG_DR7:
-        offset = RT_OFFSETOF(CPUMCTX, dr7);
-        break;
-    default: /* Shut up compiler warning. */
-        AssertFailed();
-        offset = 0;
-        break;
-    }
+    AssertReturn(dbgreg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    offset = RT_OFFSETOF(CPUMCTX, dr[dbgreg]);
+
     *(RTRCPTR *)&pPB[2] = pVM->patm.s.pCPUMCtxGC + offset;
     patmPatchAddReloc32(pVM, pPatch, &pPB[2], FIXUP_ABSOLUTE);
 
