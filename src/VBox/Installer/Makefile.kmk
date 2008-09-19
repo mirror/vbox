@@ -25,25 +25,39 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Include Sub-Makefiles.
 #
-if "$(KBUILD_TARGET)" == "darwin" && "$(KBUILD_HOST)" == "darwin"
- include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
-endif
-if "$(KBUILD_TARGET)" == "solaris" && "$(KBUILD_HOST)" == "solaris"
- include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
-endif
-if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" == "win"
- include $(PATH_SUB_CURRENT)/win/Makefile.kmk
-endif
-ifndef VBOX_OSE
- include $(PATH_SUB_CURRENT)/common/Makefile.kmk
+ifndef VBOX_ONLY_SDK
+ if "$(KBUILD_TARGET)" == "darwin" && "$(KBUILD_HOST)" == "darwin"
+  include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
+ endif
+ if "$(KBUILD_TARGET)" == "linux" && "$(KBUILD_HOST)" == "linux"
+  include $(PATH_SUB_CURRENT)/linux/Makefile.kmk
+ endif
+ if "$(KBUILD_TARGET)" == "solaris" && "$(KBUILD_HOST)" == "solaris"
+  include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
+ endif
+ if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" == "win"
+  include $(PATH_SUB_CURRENT)/win/Makefile.kmk
+ endif
+ ifndef VBOX_OSE
+  include $(PATH_SUB_CURRENT)/common/Makefile.kmk
+ endif
 endif
 
-#
-# To be converted to sub-makefiles.
-#
-ifeq ($(KBUILD_HOST),linux)
- SUBDIRS.linux = linux
+if defined(VBOX_ONLY_SDK) ## @todo || defined(VBOX_WITH_SDK)
+ #
+ # Package the VirtualBox SDK.
+ #
+ VBOX_SDK_ZIP  = $(PATH_BIN)/VirtualBoxSDK-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).zip
+ PACKING      += $(VBOX_SDK_ZIP)
+ OTHER_CLEANS += $(VBOX_SDK_ZIP) \
+                 $(wildcard $(PATH_BIN)/VirtualBoxSDK-*-r*.zip)
+$(VBOX_SDK_ZIP): \
+		$(PATH_BIN)/sdk \
+		$(VBOX_VERSION_STAMP)
+	$(call MSG_L1,Making SDK delivery $@)
+	$(QUIET)$(REDIRECT) -C $(PATH_BIN) -- zip -r9 $@ sdk > /dev/null
 endif
+
 
 include $(KBUILD_PATH)/subfooter.kmk
 
