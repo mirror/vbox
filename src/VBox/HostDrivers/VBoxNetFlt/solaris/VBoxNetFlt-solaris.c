@@ -2313,7 +2313,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     if (vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
         fSrc = INTNETTRUNKDIR_HOST;
 
-#if 0
+#if 1
     if (fSrc & INTNETTRUNKDIR_HOST)
     {
         mblk_t *pCorrectedMsg = vboxNetFltSolarisFixChecksums(pMsg);
