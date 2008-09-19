@@ -1,9 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: VBoxManage (command-line interface)
- *
- * VBoxManage is VirtualBox's command-line interface. This is its rather
- * long source.
+ * VBoxManage - VirtualBox's command-line interface.
  */
 
 /*
@@ -7809,9 +7806,9 @@ static int countMatchingMetrics(ComPtr<IVirtualBox> aVirtualBox,
     return metricInfo.size();
 }
 
-/*********************************************************************
-* list                                                               *
-*********************************************************************/
+/**
+ * list                                                               *
+ */
 static int handleMetricsList(int argc, char *argv[],
                              ComPtr<IVirtualBox> aVirtualBox,
                              ComPtr<IPerformanceCollector> performanceCollector)
@@ -7860,9 +7857,9 @@ static int handleMetricsList(int argc, char *argv[],
     return 0;
 }
 
-/*********************************************************************
-* setup                                                              *
-*********************************************************************/
+/**
+ * Metics setup
+ */
 static int handleMetricsSetup(int argc, char *argv[],
                               ComPtr<IVirtualBox> aVirtualBox,
                               ComPtr<IPerformanceCollector> performanceCollector)
@@ -7872,7 +7869,7 @@ static int handleMetricsSetup(int argc, char *argv[],
     com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
     ULONG period = 1, samples = 1;
-    bool listMatches = false;
+    /*bool listMatches = false;*/
     int i;
 
     for (i = 1; i < argc; i++)
@@ -7921,9 +7918,9 @@ static int handleMetricsSetup(int argc, char *argv[],
     return 0;
 }
 
-/*********************************************************************
-* query                                                              *
-*********************************************************************/
+/**
+ * metrics query
+ */
 static int handleMetricsQuery(int argc, char *argv[],
                               ComPtr<IVirtualBox> aVirtualBox,
                               ComPtr<IPerformanceCollector> performanceCollector)
@@ -8008,29 +8005,39 @@ static void getTimestamp(char *pts, size_t tsSize)
     *pts = 0;
 }
 
-static bool fKeepGoing = true;
+/** Used by the handleMetricsCollect loop. */
+static bool volatile g_fKeepGoing = true;
 
 #ifdef RT_OS_WINDOWS
-static bool ctrlHandler(DWORD fdwCtrlType)
-{ 
-    switch( fdwCtrlType ) 
-    { 
+/**
+ * Handler routine for catching Ctrl-C, Ctrl-Break and closing of
+ * the console.
+ *
+ * @returns true if handled, false if not handled.
+ * @param   dwCtrlType      The type of control signal.
+ *
+ * @remarks This is called on a new thread.
+ */
+static BOOL WINAPI ctrlHandler(DWORD dwCtrlType)
+{
+    switch (dwCtrlType)
+    {
         /* Ctrl-C or Ctrl-Break or Close */
         case CTRL_C_EVENT:
         case CTRL_BREAK_EVENT:
-        case CTRL_CLOSE_EVENT: 
+        case CTRL_CLOSE_EVENT:
             /* Let's shut down gracefully. */
-            fKeepGoing = false;
+            ASMAtomicWriteBool(&g_fKeepGoing, true);
             return true;
     }
     /* Don't care about the rest -- let it die a horrible death. */
     return false;
-} 
+}
 #endif /* RT_OS_WINDOWS */
 
-/*********************************************************************
-* collect                                                            *
-*********************************************************************/
+/**
+ * collect
+ */
 static int handleMetricsCollect(int argc, char *argv[],
                                 ComPtr<IVirtualBox> aVirtualBox,
                                 ComPtr<IPerformanceCollector> performanceCollector)
@@ -8096,12 +8103,12 @@ static int handleMetricsCollect(int argc, char *argv[],
     }
 
 #ifdef RT_OS_WINDOWS
-    SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrlHandler, true);
+    SetConsoleCtrlHandler(ctrlHandler, true);
 #endif /* RT_OS_WINDOWS */
 
     RTPrintf("Time stamp   Object     Metric               Value\n");
 
-    while (fKeepGoing)
+    while (g_fKeepGoing)
     {
         RTPrintf("------------ ---------- -------------------- --------------------\n");
         RTThreadSleep(period * 1000); // Sleep for 'period' seconds
@@ -8156,7 +8163,7 @@ static int handleMetricsCollect(int argc, char *argv[],
     }
 
 #ifdef RT_OS_WINDOWS
-    SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrlHandler, false);
+    SetConsoleCtrlHandler(ctrlHandler, false);
 #endif /* RT_OS_WINDOWS */
 
     return 0;
