@@ -306,14 +306,7 @@ typedef struct CPUMCTX
 
     /** Debug registers.
      * @{ */
-    uint64_t        dr0;
-    uint64_t        dr1;
-    uint64_t        dr2;
-    uint64_t        dr3;
-    uint64_t        dr4; /**< @todo remove dr4 and dr5. */
-    uint64_t        dr5;
-    uint64_t        dr6;
-    uint64_t        dr7;
+    uint64_t        dr[8];
     /* DR8-15 are currently not supported */
     /** @} */
 

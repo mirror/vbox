@@ -707,8 +707,8 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     pCtx->trHid.Attr.n.u1Present    = 1;
     pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
-    pCtx->dr6                       = X86_DR6_INIT_VAL;
-    pCtx->dr7                       = X86_DR7_INIT_VAL;
+    pCtx->dr[6]                     = X86_DR6_INIT_VAL;
+    pCtx->dr[7]                     = X86_DR7_INIT_VAL;
 
     pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
     pCtx->fpu.FCW                   = 0x37f;
@@ -775,6 +775,8 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
 {
 #define CPUMCTX16_LOADREG(regname)      pVM->cpum.s.Guest.regname = pCpumctx16->regname;
 
+#define CPUMCTX16_LOADDRXREG(regname)   pVM->cpum.s.Guest.dr[regname] = pCpumctx16->dr##regname;
+
 #define CPUMCTX16_LOADHIDREG(regname)                                                   \
     pVM->cpum.s.Guest.regname##Hid.u64Base      = pCpumctx16->regname##Hid.u32Base;     \
     pVM->cpum.s.Guest.regname##Hid.u32Limit     = pCpumctx16->regname##Hid.u32Limit;    \
@@ -818,14 +820,14 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
     CPUMCTX16_LOADREG(cr3);
     CPUMCTX16_LOADREG(cr4);
 
-    CPUMCTX16_LOADREG(dr0);
-    CPUMCTX16_LOADREG(dr1);
-    CPUMCTX16_LOADREG(dr2);
-    CPUMCTX16_LOADREG(dr3);
-    CPUMCTX16_LOADREG(dr4);
-    CPUMCTX16_LOADREG(dr5);
-    CPUMCTX16_LOADREG(dr6);
-    CPUMCTX16_LOADREG(dr7);
+    CPUMCTX16_LOADDRXREG(0);
+    CPUMCTX16_LOADDRXREG(1);
+    CPUMCTX16_LOADDRXREG(2);
+    CPUMCTX16_LOADDRXREG(3);
+    CPUMCTX16_LOADDRXREG(4);
+    CPUMCTX16_LOADDRXREG(5);
+    CPUMCTX16_LOADDRXREG(6);
+    CPUMCTX16_LOADDRXREG(7);
 
     pVM->cpum.s.Guest.gdtr.cbGdt   = pCpumctx16->gdtr.cbGdt;
     pVM->cpum.s.Guest.gdtr.pGdt    = pCpumctx16->gdtr.pGdt;
@@ -1114,8 +1116,8 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%sgs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
                     "%sss={%04x base=%016RX64 limit=%08x flags=%08x}\n"
                     "%scr0=%016RX64 %scr2=%016RX64 %scr3=%016RX64 %scr4=%016RX64\n"
-                    "%sdr0=%016RX64 %sdr1=%016RX64 %sdr2=%016RX64 %sdr3=%016RX64\n"
-                    "%sdr4=%016RX64 %sdr5=%016RX64 %sdr6=%016RX64 %sdr7=%016RX64\n"
+                    "%sdr[0]=%016RX64 %sdr[1]=%016RX64 %sdr[2]=%016RX64 %sdr[3]=%016RX64\n"
+                    "%sdr4=%016RX64 %sdr5=%016RX64 %sdr[6]=%016RX64 %sdr[7]=%016RX64\n"
                     "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
                     "%sldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
                     "%str  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
@@ -1132,8 +1134,8 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u,
                     pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u,
                     pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
-                    pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
-                    pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
+                    pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1], pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
+                    pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5], pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
                     pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
                     pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
@@ -1143,10 +1145,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 pHlp->pfnPrintf(pHlp,
                     "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
                     "%seip=%08x %sesp=%08x %sebp=%08x %siopl=%d %*s\n"
-                    "%scs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr0=%08RX64 %sdr1=%08RX64\n"
-                    "%sds={%04x base=%016RX64 limit=%08x flags=%08x} %sdr2=%08RX64 %sdr3=%08RX64\n"
+                    "%scs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr[0]=%08RX64 %sdr[1]=%08RX64\n"
+                    "%sds={%04x base=%016RX64 limit=%08x flags=%08x} %sdr[2]=%08RX64 %sdr[3]=%08RX64\n"
                     "%ses={%04x base=%016RX64 limit=%08x flags=%08x} %sdr4=%08RX64 %sdr5=%08RX64\n"
-                    "%sfs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr6=%08RX64 %sdr7=%08RX64\n"
+                    "%sfs={%04x base=%016RX64 limit=%08x flags=%08x} %sdr[6]=%08RX64 %sdr[7]=%08RX64\n"
                     "%sgs={%04x base=%016RX64 limit=%08x flags=%08x} %scr0=%08RX64 %scr2=%08RX64\n"
                     "%sss={%04x base=%016RX64 limit=%08x flags=%08x} %scr3=%08RX64 %scr4=%08RX64\n"
                     "%sgdtr=%016RX64:%04x  %sidtr=%016RX64:%04x  %seflags=%08x\n"
@@ -1156,10 +1158,10 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     ,
                     pszPrefix, pCtxCore->eax, pszPrefix, pCtxCore->ebx, pszPrefix, pCtxCore->ecx, pszPrefix, pCtxCore->edx, pszPrefix, pCtxCore->esi, pszPrefix, pCtxCore->edi,
                     pszPrefix, pCtxCore->eip, pszPrefix, pCtxCore->esp, pszPrefix, pCtxCore->ebp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
-                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr0,  pszPrefix, pCtx->dr1,
-                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr2,  pszPrefix, pCtx->dr3,
-                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr4,  pszPrefix, pCtx->dr5,
-                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr6,  pszPrefix, pCtx->dr7,
+                    pszPrefix, (RTSEL)pCtxCore->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, pCtx->csHid.Attr.u, pszPrefix, pCtx->dr[0],  pszPrefix, pCtx->dr[1],
+                    pszPrefix, (RTSEL)pCtxCore->ds, pCtx->dsHid.u64Base, pCtx->dsHid.u32Limit, pCtx->dsHid.Attr.u, pszPrefix, pCtx->dr[2],  pszPrefix, pCtx->dr[3],
+                    pszPrefix, (RTSEL)pCtxCore->es, pCtx->esHid.u64Base, pCtx->esHid.u32Limit, pCtx->esHid.Attr.u, pszPrefix, pCtx->dr[4],  pszPrefix, pCtx->dr[5],
+                    pszPrefix, (RTSEL)pCtxCore->fs, pCtx->fsHid.u64Base, pCtx->fsHid.u32Limit, pCtx->fsHid.Attr.u, pszPrefix, pCtx->dr[6],  pszPrefix, pCtx->dr[7],
                     pszPrefix, (RTSEL)pCtxCore->gs, pCtx->gsHid.u64Base, pCtx->gsHid.u32Limit, pCtx->gsHid.Attr.u, pszPrefix, pCtx->cr0,  pszPrefix, pCtx->cr2,
                     pszPrefix, (RTSEL)pCtxCore->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, pCtx->ssHid.Attr.u, pszPrefix, pCtx->cr3,  pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, pszPrefix, efl,
@@ -1347,7 +1349,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             "eip=xxxxxxxx esp=%08x ebp=%08x iopl=%d %31s\n"
             "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n"
             "cr0=%08RX64 cr2=xxxxxxxx cr3=%08RX64 cr4=%08RX64 gdtr=%08x:%04x ldtr=%04x\n"
-            "dr0=%08RX64 dr1=%08RX64x dr2=%08RX64 dr3=%08RX64x dr6=%08RX64 dr7=%08RX64\n"
+            "dr[0]=%08RX64 dr[1]=%08RX64x dr[2]=%08RX64 dr[3]=%08RX64x dr[6]=%08RX64 dr[7]=%08RX64\n"
             "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
             ,
             /*pCtx->eax,*/ pCtx->ebx, /*pCtx->ecx, pCtx->edx,*/ pCtx->esi, pCtx->edi,
@@ -1375,8 +1377,8 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             "cs=%04x  ds=%04x  es=%04x  fs=%04x  gs=%04x                   eflags=%08RX64\n"
             "cr0=%016RX64 cr2=xxxxxxxxxxxxxxxx cr3=%016RX64\n"
             "cr4=%016RX64 ldtr=%04x tr=%04x\n"
-            "dr0=%016RX64 dr1=%016RX64 dr2=%016RX64\n"
-            "dr3=%016RX64 dr6=%016RX64 dr7=%016RX64\n"
+            "dr[0]=%016RX64 dr[1]=%016RX64 dr[2]=%016RX64\n"
+            "dr[3]=%016RX64 dr[6]=%016RX64 dr[7]=%016RX64\n"
             "gdtr=%016RX64:%04x  idtr=%016RX64:%04x\n"
             "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
             "FSbase=%016RX64 GSbase=%016RX64 efer=%08RX64\n"

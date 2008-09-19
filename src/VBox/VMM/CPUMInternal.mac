@@ -234,14 +234,7 @@ struc CPUM
     .Hyper.cr3            resq    1
     .Hyper.cr4            resq    1
 
-    .Hyper.dr0            resq    1
-    .Hyper.dr1            resq    1
-    .Hyper.dr2            resq    1
-    .Hyper.dr3            resq    1
-    .Hyper.dr4            resq    1
-    .Hyper.dr5            resq    1
-    .Hyper.dr6            resq    1
-    .Hyper.dr7            resq    1
+    .Hyper.dr             resq    8
 
     .Hyper.gdtr           resb    10          ; GDT limit + linear address
     .Hyper.gdtrPadding    resw    1
@@ -345,14 +338,7 @@ struc CPUM
     .Guest.cr3            resq    1
     .Guest.cr4            resq    1
 
-    .Guest.dr0            resq    1
-    .Guest.dr1            resq    1
-    .Guest.dr2            resq    1
-    .Guest.dr3            resq    1
-    .Guest.dr4            resq    1
-    .Guest.dr5            resq    1
-    .Guest.dr6            resq    1
-    .Guest.dr7            resq    1
+    .Guest.dr             resq    8
 
     .Guest.gdtr           resb    10          ; GDT limit + linear address
     .Guest.gdtrPadding    resw    1

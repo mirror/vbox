@@ -163,14 +163,7 @@ struc CPUMCTX
     .cr3            resq    1
     .cr4            resq    1
 
-    .dr0            resq    1
-    .dr1            resq    1
-    .dr2            resq    1
-    .dr3            resq    1
-    .dr4            resq    1
-    .dr5            resq    1
-    .dr6            resq    1
-    .dr7            resq    1
+    .dr             resq    8
 
     .gdtr           resb    10          ; GDT limit + linear address
     .gdtrPadding    resw    1

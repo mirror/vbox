@@ -286,12 +286,12 @@ CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
     Assert(pVM->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS);
 
     /* Save the guest's debug state. The caller is responsible for DR7. */
-    pCtx->dr0 = ASMGetDR0();
-    pCtx->dr1 = ASMGetDR1();
-    pCtx->dr2 = ASMGetDR2();
-    pCtx->dr3 = ASMGetDR3();
+    pCtx->dr[0] = ASMGetDR0();
+    pCtx->dr[1] = ASMGetDR1();
+    pCtx->dr[2] = ASMGetDR2();
+    pCtx->dr[3] = ASMGetDR3();
     if (fDR6)
-        pCtx->dr6 = ASMGetDR6();
+        pCtx->dr[6] = ASMGetDR6();
 
     /* Restore the host's debug state. DR0-3, DR6 and only then DR7! 
      * DR7 contains 0x400 right now.
@@ -330,12 +330,12 @@ CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
     ASMSetDR7(X86_DR7_INIT_VAL);
 
     /* Activate the guest state DR0-3; DR7 is left to the caller. */
-    ASMSetDR0(pCtx->dr0);
-    ASMSetDR1(pCtx->dr1);
-    ASMSetDR2(pCtx->dr2);
-    ASMSetDR3(pCtx->dr3);
+    ASMSetDR0(pCtx->dr[0]);
+    ASMSetDR1(pCtx->dr[1]);
+    ASMSetDR2(pCtx->dr[2]);
+    ASMSetDR3(pCtx->dr[3]);
     if (fDR6)
-        ASMSetDR6(pCtx->dr6);
+        ASMSetDR6(pCtx->dr[6]);
 
     pVM->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
     return VINF_SUCCESS;

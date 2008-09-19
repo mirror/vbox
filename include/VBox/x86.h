@@ -720,6 +720,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Mask used to check if any breakpoints are enabled. */
 #define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7))
 
+/** Mask used to check if any io breakpoints are set. */
+#define X86_DR7_IO_ENABLED_MASK             (X86_DR7_RW(0, X86_DR7_RW_IO) | X86_DR7_RW(1, X86_DR7_RW_IO) | X86_DR7_RW(2, X86_DR7_RW_IO) | X86_DR7_RW(3, X86_DR7_RW_IO))
+
 /** Value of DR7 after powerup/reset. */
 #define X86_DR7_INIT_VAL                    0x400
 /** @} */

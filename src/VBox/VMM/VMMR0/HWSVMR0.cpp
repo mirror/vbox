@@ -685,18 +685,18 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Debug registers. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_DEBUG)
     {
-        pCtx->dr6 |= X86_DR6_INIT_VAL;                                          /* set all reserved bits to 1. */
-        pCtx->dr6 &= ~RT_BIT(12);                                               /* must be zero. */
+        pCtx->dr[6] |= X86_DR6_INIT_VAL;                                          /* set all reserved bits to 1. */
+        pCtx->dr[6] &= ~RT_BIT(12);                                               /* must be zero. */
 
-        pCtx->dr7 &= 0xffffffff;                                                /* upper 32 bits reserved */
-        pCtx->dr7 &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));      /* must be zero */
-        pCtx->dr7 |= 0x400;                                                     /* must be one */
+        pCtx->dr[7] &= 0xffffffff;                                                /* upper 32 bits reserved */
+        pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));      /* must be zero */
+        pCtx->dr[7] |= 0x400;                                                     /* must be one */
 
-        pVMCB->guest.u64DR7 = pCtx->dr7;
-        pVMCB->guest.u64DR6 = pCtx->dr6;
+        pVMCB->guest.u64DR7 = pCtx->dr[7];
+        pVMCB->guest.u64DR6 = pCtx->dr[6];
 
         /* Sync the debug state now if any breakpoint is armed. */
-        if (    (pCtx->dr7 & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
+        if (    (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_GD))
             &&  !CPUMIsGuestDebugStateActive(pVM)
             &&  !DBGFIsStepping(pVM))
         {
@@ -1216,9 +1216,9 @@ ResumeExecution:
     Log2(("exitCode = %x\n", exitCode));
 
     /* Sync back DR6 as it could have been changed by hitting breakpoints. */
-    pCtx->dr6 = pVMCB->guest.u64DR6;
+    pCtx->dr[6] = pVMCB->guest.u64DR6;
     /* DR7.GD can be cleared by debug exceptions, so sync it back as well. */
-    pCtx->dr7 = pVMCB->guest.u64DR7;
+    pCtx->dr[7] = pVMCB->guest.u64DR7;
 
     /* Check if an injected event was interrupted prematurely. */
     pVM->hwaccm.s.Event.intInfo = pVMCB->ctrl.ExitIntInfo.au64[0];
@@ -1286,7 +1286,7 @@ ResumeExecution:
             /* Note that we don't support guest and host-initiated debugging at the same time. */
             Assert(DBGFIsStepping(pVM));
 
-            rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), pCtx->dr6);
+            rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
             if (rc == VINF_EM_RAW_GUEST_TRAP)
             {
                 Log(("Trap %x (debug) at %VGv\n", vector, pCtx->rip));
