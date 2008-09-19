@@ -163,7 +163,7 @@ endif
 # Guest Additions
 ifdef VBOX_WITH_ADDITIONS_PACKING
  VBOX_LNX_NO_STRIP += \
- 	$(if $(VBOX_OSE),,additions/VBoxGuestAdditions.iso)
+ 	additions/VBoxGuestAdditions.iso
 endif
 
 # Shared Folders
