@@ -8010,6 +8010,7 @@ static void getTimestamp(char *pts, size_t tsSize)
 
 static bool fKeepGoing = true;
 
+#ifdef RT_OS_WINDOWS
 static bool ctrlHandler(DWORD fdwCtrlType)
 { 
     switch( fdwCtrlType ) 
@@ -8025,6 +8026,7 @@ static bool ctrlHandler(DWORD fdwCtrlType)
     /* Don't care about the rest -- let it die a horrible death. */
     return false;
 } 
+#endif /* RT_OS_WINDOWS */
 
 /*********************************************************************
 * collect                                                            *
