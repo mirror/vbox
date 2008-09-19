@@ -164,6 +164,7 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->hwaccm.s.StatDRxArmed,              STAMTYPE_COUNTER, "/HWACCM/Debug/Armed",           STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatDRxContextSwitch,      STAMTYPE_COUNTER, "/HWACCM/Debug/ContextSwitch",   STAMUNIT_OCCURENCES,    "Nr of occurances");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatDRxIOCheck,            STAMTYPE_COUNTER, "/HWACCM/Debug/IOCheck",         STAMUNIT_OCCURENCES,    "Nr of occurances");
 
     pVM->hwaccm.s.pStatExitReason = 0;
 

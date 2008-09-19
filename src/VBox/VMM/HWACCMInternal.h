@@ -33,8 +33,6 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 
-#define VBOX_WITH_HWACCM_DEBUG_REGISTER_SUPPORT
-
 #if HC_ARCH_BITS == 64
 /* Enable 64 bits guest support. */
 # define VBOX_ENABLE_64_BITS_GUESTS
@@ -443,6 +441,7 @@ typedef struct HWACCM
     STAMCOUNTER             StatExitReasonNPF;
     STAMCOUNTER             StatDRxArmed;
     STAMCOUNTER             StatDRxContextSwitch;
+    STAMCOUNTER             StatDRxIOCheck;
 
 
     R3PTRTYPE(PSTAMCOUNTER) pStatExitReason;

@@ -1777,6 +1777,7 @@ ResumeExecution:
         /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
         if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
         {
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxIOCheck);
             for (unsigned i=0;i<4;i++)
             {
                 if (    pCtx->dr[i] == IoExitInfo.n.u16Port
