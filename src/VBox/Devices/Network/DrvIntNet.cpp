@@ -989,27 +989,15 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return rc;
     }
 
-    char szStatName[64];
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Bytes/Received", pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->pBuf->cbStatRecv,        STAMTYPE_COUNTER, szStatName,   STAMUNIT_BYTES,         "Number of received bytes.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Bytes/Sent",     pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->pBuf->cbStatSend,        STAMTYPE_COUNTER, szStatName,   STAMUNIT_BYTES,         "Number of sent bytes.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->pBuf->cStatRecvs,        STAMTYPE_COUNTER, szStatName,   STAMUNIT_OCCURENCES,    "Number of received packets.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Packets/Sent",   pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->pBuf->cStatSends,        STAMTYPE_COUNTER, szStatName,   STAMUNIT_OCCURENCES,    "Number of sent packets.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Packets/Lost",   pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->pBuf->cStatLost,         STAMTYPE_COUNTER, szStatName,   STAMUNIT_OCCURENCES,    "Number of lost packets.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/YieldOk",        pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->pBuf->cStatYieldsOk,     STAMTYPE_COUNTER, szStatName,   STAMUNIT_OCCURENCES,    "Number of times yielding fixed an overflow.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/YieldNok",       pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->pBuf->cStatYieldsNok,    STAMTYPE_COUNTER, szStatName,   STAMUNIT_OCCURENCES,    "Number of times yielding didn't help fix an overflow.");
-
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cbStatRecv,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of received bytes.",    "/Net/IntNet%d/Bytes/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cbStatSend,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent bytes.",        "/Net/IntNet%d/Bytes/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatRecvs,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of received packets.",  "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatSends,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent packets.",      "/Net/IntNet%d/Packets/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatLost,        STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatYieldsNok,   STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of times yielding didn't help fix an overflow.",  "/Net/IntNet%d/YieldNok", pDrvIns->iInstance);
 #ifdef VBOX_WITH_STATISTICS
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Receive",        pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatReceive,             STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.");
-    RTStrPrintf(szStatName, sizeof(szStatName), "/Net/IntNet%d/Transmit",       pDrvIns->iInstance);
-    pDrvIns->pDrvHlp->pfnSTAMRegister(pDrvIns, &pThis->StatTransmit,            STAMTYPE_PROFILE, szStatName,   STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,            STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Net/IntNet%d/Receive", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,           STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Net/IntNet%d/Transmit", pDrvIns->iInstance);
 #endif
 
     /*
