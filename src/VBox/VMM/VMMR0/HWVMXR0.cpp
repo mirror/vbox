@@ -1778,6 +1778,8 @@ ResumeExecution:
                 rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), uDR6);
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
+                    /* @todo this isn't working, but we'll never get here normally. */
+
                     /* Update DR6 here. */
                     pCtx->dr[6]  = uDR6;
 
@@ -2109,12 +2111,54 @@ ResumeExecution:
         }
 
         /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
-        if ( (pCtx->dr[7] & (X86_DR7_ENABLED_MASK|X86_DR7_IO_ENABLED_MASK)) & X86_DR7_IO_ENABLED_MASK)
+        if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
         {
-            if (    (pCtx->dr[7] & (X86_DR7_L0|X86_DR7_G0))
-                &&  (pCtx->dr[7] & X86_DR7_RW(0, X86_DR7_RW_IO))
-                &&  pCtx->dr[0] == uPort)
+            for (unsigned i=0;i<4;i++)
             {
+                if (    pCtx->dr[i] == uPort
+                    &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
+                    &&  (pCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
+                {
+                    uint64_t uDR6;
+
+                    Assert(CPUMIsGuestDebugStateActive(pVM));
+
+                    uDR6 = ASMGetDR6();
+
+                    /* Clear all breakpoint status flags and set the one we just hit. */
+                    uDR6 &= ~(X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3);
+                    uDR6 |= RT_BIT(i);
+
+                    /* Note: AMD64 Architecture Programmer's Manual 13.1:
+                     * Bits 15:13 of the DR6 register is never cleared by the processor and must be cleared by software after
+                     * the contents have been read.
+                     */
+                    ASMSetDR6(uDR6);
+
+                    /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
+                    pCtx->dr[7] &= ~X86_DR7_GD;
+
+                    /* Paranoia. */
+                    pCtx->dr[7] &= 0xffffffff;                                              /* upper 32 bits reserved */
+                    pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
+                    pCtx->dr[7] |= 0x400;                                                   /* must be one */
+
+                    /* Resync DR7 */
+                    rc = VMXWriteVMCS(VMX_VMCS_GUEST_DR7, pCtx->dr[7]);
+                    AssertRC(rc);
+
+                    /* Construct inject info. */
+                    intInfo  = X86_XCPT_DB;
+                    intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+                    intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+                    Log(("Inject IO debug trap at %VGv\n", pCtx->rip));
+                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), 0, 0);
+                    AssertRC(rc);
+
+                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    goto ResumeExecution;
+                }
             }
         }
 
