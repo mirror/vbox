@@ -172,8 +172,8 @@ VirtualBox4_DEFS          += \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBOX_WITH_DEBUGGER_GUI_MENU) \
 	$(if $(VBOX_WITH_NETFLT),VBOX_WITH_NETFLT)
 
-src/main.cpp_DEFS         += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
-src/main.cpp_DEPS         += $(VBOX_VERSION_MK)
+VirtualBox4_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
+VirtualBox4_src/main.cpp_DEPS += $(VBOX_VERSION_MK)
 
 VirtualBox4_INCS           = \
 	./include \
@@ -389,7 +389,7 @@ VirtualBox4_QT_MODULES = Core Gui
 ifndef VBOX_WITH_REGISTRATION
  FORMS := $(filter-out ui/VBoxRegistrationDlg.ui,$(FORMS))
 endif
-$(eval VirtualBox4_SOURCES += $(FORMS)) 
+$(eval VirtualBox4_SOURCES += $(FORMS))
 
 # Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
 VirtualBox4_SOURCES += VirtualBox.qrc
