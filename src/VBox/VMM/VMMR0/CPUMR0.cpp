@@ -293,7 +293,9 @@ CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
     if (fDR6)
         pCtx->dr6 = ASMGetDR6();
 
-    /* Restore the host's debug state. DR0-3, DR6 and only then DR7! */
+    /* Restore the host's debug state. DR0-3, DR6 and only then DR7! 
+     * DR7 contains 0x400 right now.
+     */
     ASMSetDR0(pVM->cpum.s.Host.dr0);
     ASMSetDR1(pVM->cpum.s.Host.dr1);
     ASMSetDR2(pVM->cpum.s.Host.dr2);
@@ -322,6 +324,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
     pVM->cpum.s.Host.dr2 = ASMGetDR2();
     pVM->cpum.s.Host.dr3 = ASMGetDR3();
     pVM->cpum.s.Host.dr6 = ASMGetDR6();
+    /* @todo dr7 might already have been changed to 0x400; don't care right now as it's harmless. */
     pVM->cpum.s.Host.dr7 = ASMGetDR7();
     /* Make sure DR7 is harmless or else we could trigger breakpoints when restoring dr0-3 (!) */
     ASMSetDR7(X86_DR7_INIT_VAL);
