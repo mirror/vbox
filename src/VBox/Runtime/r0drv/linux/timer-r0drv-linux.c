@@ -397,7 +397,9 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
         if (pTimer->cJiffies)
         {
             pSubTimer->ulNextJiffies += pTimer->cJiffies;
-            while (pSubTimer->ulNextJiffies < jiffies)
+            /* Prevent overflows when the jiffies counter wraps around.
+             * Special thanks to Ken Preslan for helping debugging! */
+            while (jiffies - pSubTimer->ulNextJiffies < 3600*HZ)
             {
                 pSubTimer->ulNextJiffies += pTimer->cJiffies;
                 pSubTimer->u64NextTS += pTimer->u64NanoInterval;
