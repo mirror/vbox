@@ -38,6 +38,9 @@ VBoxVMSettingsVRDP::VBoxVMSettingsVRDP()
     mCbVRDPMethod->insertItem (1, ""); /* KVRDPAuthType_External */
     mCbVRDPMethod->insertItem (2, ""); /* KVRDPAuthType_Guest */
 
+    /* Initial disabled */
+    mGbVRDP->setChecked (false);
+
     /* Applying language settings */
     retranslateUi();
 }
@@ -47,20 +50,26 @@ void VBoxVMSettingsVRDP::getFrom (const CMachine &aMachine)
     mMachine = aMachine;
 
     CVRDPServer vrdp = aMachine.GetVRDPServer();
-    mGbVRDP->setChecked (vrdp.GetEnabled());
-    mLeVRDPPort->setText (QString::number (vrdp.GetPort()));
-    mCbVRDPMethod->setCurrentIndex (mCbVRDPMethod->
-        findText (vboxGlobal().toString (vrdp.GetAuthType())));
-    mLeVRDPTimeout->setText (QString::number (vrdp.GetAuthTimeout()));
+    if (!vrdp.isNull())
+    {
+        mGbVRDP->setChecked (vrdp.GetEnabled());
+        mLeVRDPPort->setText (QString::number (vrdp.GetPort()));
+        mCbVRDPMethod->setCurrentIndex (mCbVRDPMethod->
+                                        findText (vboxGlobal().toString (vrdp.GetAuthType())));
+        mLeVRDPTimeout->setText (QString::number (vrdp.GetAuthTimeout()));
+    }
 }
 
 void VBoxVMSettingsVRDP::putBackTo()
 {
     CVRDPServer vrdp = mMachine.GetVRDPServer();
-    vrdp.SetEnabled (mGbVRDP->isChecked());
-    vrdp.SetPort (mLeVRDPPort->text().toULong());
-    vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (mCbVRDPMethod->currentText()));
-    vrdp.SetAuthTimeout (mLeVRDPTimeout->text().toULong());
+    if (!vrdp.isNull())
+    {
+        vrdp.SetEnabled (mGbVRDP->isChecked());
+        vrdp.SetPort (mLeVRDPPort->text().toULong());
+        vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (mCbVRDPMethod->currentText()));
+        vrdp.SetAuthTimeout (mLeVRDPTimeout->text().toULong());
+    }
 }
 
 void VBoxVMSettingsVRDP::setValidator (QIWidgetValidator *aVal)
