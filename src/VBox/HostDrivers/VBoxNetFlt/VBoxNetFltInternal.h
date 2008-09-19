@@ -153,9 +153,13 @@ typedef struct VBOXNETFLTINS
             /** @name Solaris instance data.
              * @{ */
             /** Pointer to the bound IP stream. */
-            void *pvStream;
+            void *pvIpStream;
             /** Pointer to the bound ARP stream. */
             void *pvArpStream;
+            /** Pointer to the unbound promiscuous stream. */
+            void *pvPromiscStream;
+            /** Layered device handle to the interface. */
+            ldi_handle_t hIface;
             /** The MAC address of the interface. */
             RTMAC Mac;
 # elif defined(RT_OS_WINDOWS)
@@ -167,7 +171,7 @@ typedef struct VBOXNETFLTINS
         } s;
 #endif
         /** Padding. */
-        uint8_t abPadding[32];
+        uint8_t abPadding[64];
     } u;
 
     /** The interface name. */
