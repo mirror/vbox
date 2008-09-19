@@ -34,10 +34,6 @@
 #include "../linux/PerformanceLinux.cpp"
 #endif
 #ifdef RT_OS_WINDOWS
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
-#endif
-
 #define _WIN32_DCOM
 #include <objidl.h>
 #include <objbase.h>
