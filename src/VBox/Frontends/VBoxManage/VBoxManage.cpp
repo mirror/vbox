@@ -8027,7 +8027,7 @@ static BOOL WINAPI ctrlHandler(DWORD dwCtrlType)
         case CTRL_BREAK_EVENT:
         case CTRL_CLOSE_EVENT:
             /* Let's shut down gracefully. */
-            ASMAtomicWriteBool(&g_fKeepGoing, FALSE);
+            ASMAtomicWriteBool(&g_fKeepGoing, false);
             return TRUE;
     }
     /* Don't care about the rest -- let it die a horrible death. */
