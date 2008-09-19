@@ -8008,6 +8008,24 @@ static void getTimestamp(char *pts, size_t tsSize)
     *pts = 0;
 }
 
+static bool fKeepGoing = true;
+
+static bool ctrlHandler(DWORD fdwCtrlType)
+{ 
+    switch( fdwCtrlType ) 
+    { 
+        /* Ctrl-C or Ctrl-Break or Close */
+        case CTRL_C_EVENT:
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT: 
+            /* Let's shut down gracefully. */
+            fKeepGoing = false;
+            return true;
+    }
+    /* Don't care about the rest -- let it die a horrible death. */
+    return false;
+} 
+
 /*********************************************************************
 * collect                                                            *
 *********************************************************************/
@@ -8075,9 +8093,13 @@ static int handleMetricsCollect(int argc, char *argv[],
         return 0;
     }
 
+#ifdef RT_OS_WINDOWS
+    SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrlHandler, true);
+#endif /* RT_OS_WINDOWS */
+
     RTPrintf("Time stamp   Object     Metric               Value\n");
 
-    for (;;)
+    while (fKeepGoing)
     {
         RTPrintf("------------ ---------- -------------------- --------------------\n");
         RTThreadSleep(period * 1000); // Sleep for 'period' seconds
@@ -8130,6 +8152,10 @@ static int handleMetricsCollect(int argc, char *argv[],
             RTPrintf("\n");
         }
     }
+
+#ifdef RT_OS_WINDOWS
+    SetConsoleCtrlHandler((PHANDLER_ROUTINE)ctrlHandler, false);
+#endif /* RT_OS_WINDOWS */
 
     return 0;
 }

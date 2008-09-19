@@ -21,25 +21,21 @@
  * additional information or have any questions.
  */
 
-/* @todo Replace the following _WIN32_WINNT override with proper diagnostic:
-#if (_WIN32_WINNT < 0x0501)
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0500
+#else /* !_WIN32_WINNT */
+#if (_WIN32_WINNT < 0x0500)
 #error Win XP or later required!
-#endif
-*/
-#ifdef _WIN32_WINNT
-#if (_WIN32_WINNT < 0x0501)
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
-#endif
-#else
-#define _WIN32_WINNT 0x0501
-#endif
-#include <windows.h>
+#endif /* _WIN32_WINNT < 0x0500 */
+#endif /* !_WIN32_WINNT */
 
+#include <windows.h>
+#include <winternl.h>
 #include <psapi.h>
 extern "C" {
 #include <powrprof.h>
 }
+
 #include <iprt/err.h>
 #include <iprt/mp.h>
 #include <iprt/mem.h>
@@ -49,11 +45,17 @@ extern "C" {
 #include "Logging.h"
 #include "Performance.h"
 
+#ifndef NT_ERROR
+#define NT_ERROR(Status) ((ULONG)(Status) >> 30 == 3)
+#endif
+
 namespace pm {
 
 class CollectorWin : public CollectorHAL
 {
 public:
+    CollectorWin();
+    virtual ~CollectorWin();
     virtual int preCollect(const CollectorHints& hints);
     virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
     virtual int getHostCpuMHz(ULONG *mhz);
@@ -75,11 +77,56 @@ private:
     typedef std::map<RTPROCESS, VMProcessStats> VMProcessMap;
 
     VMProcessMap       mProcessStats;
+
+    typedef BOOL (WINAPI *PFNGST)(
+        LPFILETIME lpIdleTime,
+        LPFILETIME lpKernelTime,
+        LPFILETIME lpUserTime);
+    typedef NTSTATUS (WINAPI *PFNNQSI)(
+        SYSTEM_INFORMATION_CLASS SystemInformationClass,
+        PVOID SystemInformation,
+        ULONG SystemInformationLength,
+        PULONG ReturnLength);
+
+    PFNGST  mpfnGetSystemTimes;
+    PFNNQSI mpfnNtQuerySystemInformation;
+    HMODULE mhNtDll;
 };
 
 CollectorHAL *createHAL()
 {
     return new CollectorWin();
+}
+
+CollectorWin::CollectorWin() : mhNtDll(0)
+{
+    mpfnGetSystemTimes = (PFNGST)GetProcAddress(
+        GetModuleHandle(TEXT("kernel32.dll")),
+        "GetSystemTimes");
+    if (!mpfnGetSystemTimes)
+    {
+        /* Fall back to deprecated NtQuerySystemInformation */
+        if (!(mhNtDll = LoadLibrary(TEXT("ntdll.dll"))))
+        {
+            LogRel(("Failed to load NTDLL.DLL with error 0x%x. GetSystemTimes() is"
+                    " not available either. CPU and VM metrics will not be collected.\n",
+                    GetLastError()));
+            mpfnNtQuerySystemInformation = 0;
+        }
+        else if (!(mpfnNtQuerySystemInformation = (PFNNQSI)GetProcAddress(mhNtDll,
+            "NtQuerySystemInformation")))
+        {
+            LogRel(("Neither GetSystemTimes() nor NtQuerySystemInformation() is"
+                    " not available. CPU and VM metrics will not be collected.\n"));
+            mpfnNtQuerySystemInformation = 0;
+        }
+    }
+}
+
+CollectorWin::~CollectorWin()
+{
+    if (mhNtDll)
+        FreeLibrary(mhNtDll);
 }
 
 #define FILETTIME_TO_100NS(ft) (((uint64_t)ft.dwHighDateTime << 32) + ft.dwLowDateTime)
@@ -157,22 +204,58 @@ int CollectorWin::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
     return VERR_NOT_IMPLEMENTED;
 }
 
+typedef struct _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION
+{
+    LARGE_INTEGER IdleTime;
+    LARGE_INTEGER KernelTime;
+    LARGE_INTEGER UserTime;
+    LARGE_INTEGER Reserved1[2];
+    ULONG Reserved2;
+} SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION;
+
 int CollectorWin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle)
 {
     LogFlowThisFuncEnter();
 
     FILETIME ftIdle, ftKernel, ftUser;
 
-    if (!GetSystemTimes(&ftIdle, &ftKernel, &ftUser))
+    if (mpfnGetSystemTimes)
     {
-        DWORD dwError = GetLastError();
-        Log (("GetSystemTimes() -> 0x%x\n", dwError));
-        return RTErrConvertFromWin32(dwError);
+        if (!mpfnGetSystemTimes(&ftIdle, &ftKernel, &ftUser))
+        {
+            DWORD dwError = GetLastError();
+            Log (("GetSystemTimes() -> 0x%x\n", dwError));
+            return RTErrConvertFromWin32(dwError);
+        }
+    
+        *user   = FILETTIME_TO_100NS(ftUser);
+        *idle   = FILETTIME_TO_100NS(ftIdle);
+        *kernel = FILETTIME_TO_100NS(ftKernel) - *idle;
     }
+    else
+    {
+        /* GetSystemTimes is not available, fall back to NtQuerySystemInformation */
+        if (!mpfnNtQuerySystemInformation)
+            return VERR_NOT_IMPLEMENTED;
 
-    *user   = FILETTIME_TO_100NS(ftUser);
-    *idle   = FILETTIME_TO_100NS(ftIdle);
-    *kernel = FILETTIME_TO_100NS(ftKernel) - *idle;
+        SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION sppi[MAXIMUM_PROCESSORS];
+        ULONG ulReturned;
+        NTSTATUS status = mpfnNtQuerySystemInformation(
+            SystemProcessorPerformanceInformation, &sppi, sizeof(sppi), &ulReturned);
+        if (NT_ERROR(status))
+        {
+            Log(("NtQuerySystemInformation() -> 0x%x\n", status));
+            return RTErrConvertFromNtStatus(status);
+        }
+        /* Sum up values accross all processors */
+        *user = *kernel = *idle = 0;
+        for (unsigned i = 0; i < ulReturned / sizeof(sppi[0]); ++i)
+        {
+            *idle   += sppi[i].IdleTime.QuadPart;
+            *kernel += sppi[i].KernelTime.QuadPart - sppi[i].IdleTime.QuadPart;
+            *user   += sppi[i].UserTime.QuadPart;
+        }
+    }
 
     LogFlowThisFunc(("user=%lu kernel=%lu idle=%lu\n", *user, *kernel, *idle));
     LogFlowThisFuncLeave();
