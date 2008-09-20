@@ -61,13 +61,19 @@
  * Acquires the PDM lock. This is a NOP if locking is disabled. */
 /** @def IOAPIC_UNLOCK
  * Releases the PDM lock. This is a NOP if locking is disabled. */
-#define APIC_LOCK(pThis, rc) \
-    do { \
+#define APIC_LOCK(pThis, rc)                                            \
+    do {                                                                \
         int rc2 = (pThis)->CTX_SUFF(pApicHlp)->pfnLock((pThis)->CTX_SUFF(pDevIns), rc); \
-        if (rc2 != VINF_SUCCESS) \
-            return rc2; \
+        if (rc2 != VINF_SUCCESS)                                        \
+            return rc2;                                                 \
     } while (0)
-#define APIC_UNLOCK(pThis) \
+#define APIC_LOCK_VOID(pThis, rc)                                       \
+    do {                                                                \
+        int rc2 = (pThis)->CTX_SUFF(pApicHlp)->pfnLock((pThis)->CTX_SUFF(pDevIns), rc); \
+        if (rc2 != VINF_SUCCESS)                                        \
+            return;                                                     \
+    } while (0)
+#define APIC_UNLOCK(pThis)                                              \
     (pThis)->CTX_SUFF(pApicHlp)->pfnUnlock((pThis)->CTX_SUFF(pDevIns))
 #define IOAPIC_LOCK(pThis, rc) \
     do { \
@@ -446,7 +452,9 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
     Log(("cpu_set_apic_base: %016RX64\n", val));
-
+    
+    /** @todo: do we need to lock here ? */
+    /* APIC_LOCK_VOID(dev, VERR_INTERNAL_ERROR); */
     /** @todo If this change is valid immediately, then we should change the MMIO registration! */
     s->apicbase = (val & 0xfffff000) |
         (s->apicbase & (MSR_IA32_APICBASE_BSP | MSR_IA32_APICBASE_ENABLE));
@@ -459,6 +467,7 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
         cpuClearInterrupt(dev, s->id);
         dev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, false);
     }
+    /* APIC_UNLOCK(dev); */
 }
 #endif  /* VBOX */
 #ifndef VBOX
@@ -647,12 +656,17 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns)
     if (!dev)
         return false;
     APICState *s = getLapic(dev);
-
+    
+    /*
+     * All our callbacks now come from single IOAPIC, thus locking
+     * seems to be excessive now (@todo: check) 
+     */
     irrv = get_highest_priority_int(s->irr);
     if (irrv < 0)
         return false;
 
     ppr = apic_get_ppr_zero_tpr(s);
+
     if (ppr && (irrv & 0xf0) <= (ppr & 0xf0))
         return false;
 
@@ -870,24 +884,23 @@ static void apic_deliver(APICDeviceInfo* dev, APICState *s,
 #endif /* VBOX */
 }
 
-#ifndef VBOX
-int apic_get_interrupt(CPUState *env)
-{
-    APICState *s = env->apic_state;
-#else /* VBOX */
+
 PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    APICState *s = getLapic(dev);
-#endif /* VBOX */
-    int intno;
-
     /* if the APIC is not installed or enabled, we let the 8259 handle the
        IRQs */
-    if (!s) {
+    if (!dev)
+    {
         Log(("apic_get_interrupt: returns -1 (!s)\n"));
         return -1;
     }
+
+    APIC_LOCK(dev, VERR_INTERNAL_ERROR);
+
+    APICState *s = getLapic(dev);
+    int intno;
+
     if (!(s->spurious_vec & APIC_SV_ENABLE)) {
         Log(("apic_get_interrupt: returns -1 (APIC_SV_ENABLE)\n"));
         return -1;
@@ -907,6 +920,7 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
     set_bit(s->isr, intno);
     apic_update_irq(dev, s);
     LogFlow(("apic_get_interrupt: returns %d\n", intno));
+    APIC_UNLOCK(dev);
     return intno;
 }
 
@@ -974,7 +988,8 @@ static DECLCALLBACK(void) apicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
-    dev->pApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
+
+    APIC_LOCK_VOID(dev, VERR_INTERNAL_ERROR);
 #endif /* VBOX */
 
     if (!(s->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
@@ -1771,7 +1786,7 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
     APICDeviceInfo* dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     APICState *s = getLapic(dev);
 
-    dev->pApicHlpR3->pfnLock(pDevIns, VERR_INTERNAL_ERROR);
+    APIC_LOCK_VOID(dev, VERR_INTERNAL_ERROR);
 
     TMTimerStop(s->CTX_SUFF(pTimer));
 
@@ -1793,11 +1808,16 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) apicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogRel(("[SMP]: relocate apic on %llx\n", offDelta));    
+#endif
     dev->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
     dev->pApicHlpRC = dev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
-    /** @todo: check if relocated pLapicsRC right */
-    dev->pLapicsRC  = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), dev->pLapicsR3);
+    /** @todo: write pLapicsRC relocation right */
+#if 0
+    if (dev->pLapicsRC)
+        dev->pLapicsRC  = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), dev->pLapicsR3);
+#endif
     foreach_apic(dev, 0xffffffff,
                  apic->pTimerRC = TMTimerRCPtr(apic->CTX_SUFF(pTimer)));
 }
