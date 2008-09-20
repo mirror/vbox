@@ -2008,7 +2008,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 2 /* version */,
+    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */,
                               sizeof(*pThis), NULL, apicSaveExec, NULL, NULL, apicLoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
