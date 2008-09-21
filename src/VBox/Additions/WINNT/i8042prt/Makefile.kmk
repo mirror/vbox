@@ -22,7 +22,7 @@
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-ifeq ($(KBUILD_TARGET_ARCH),x86
+ifeq ($(KBUILD_TARGET_ARCH),x86)
 SYSMODS += VBoxMouseNT
 VBoxMouseNT_TEMPLATE    = VBOXGUESTR0
 VBoxMouseNT_DEFS        = LOG_TO_BACKDOOR
