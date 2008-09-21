@@ -84,7 +84,7 @@
 #define VBOXNETFLT_IFNAME_LEN           LIFNAMSIZ + 1
 
 /** Maximum loopback packet queue size per interface */
-#define VBOXNETFLT_LOOPBACK_SIZE        64
+#define VBOXNETFLT_LOOPBACK_SIZE        32
 
 /*******************************************************************************
 *   Global Functions                                                           *
