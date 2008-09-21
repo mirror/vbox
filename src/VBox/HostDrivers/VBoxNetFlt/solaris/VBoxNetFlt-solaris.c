@@ -315,8 +315,8 @@ typedef struct vboxnetflt_promisc_stream_t
     bool fPromisc;                        /* cached promiscous value */
     bool fRawMode;                        /* whether raw mode request was successful */
     uint32_t ModeReqId;                   /* track MIOCTLs for swallowing our fake request acknowledgements */
-    PVBOXNETFLTPACKETID pLoopbackHead;    /* loopback packet identifier head */
-    PVBOXNETFLTPACKETID pLoopbackTail;    /* loopback packet identifier tail */
+    PVBOXNETFLTPACKETID pHead;            /* loopback packet identifier head */
+    PVBOXNETFLTPACKETID pTail;            /* loopback packet identifier tail */
     size_t cLoopback;                     /* loopback queue size list */
 } vboxnetflt_promisc_stream_t;
 
@@ -1773,13 +1773,13 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
-    vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pThis->u.s.pvPromiscStream;
+    vboxnetflt_promisc_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
     if (pPromiscStream)
     {
         /*
          * Free-up loopback buffers.
          */
-        PVBOXNETFLTPACKETID pCur = pPromiscStream->pLoopbackHead;
+        PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
         while (pCur)
         {
             PVBOXNETFLTPACKETID pNext = pCur->pNext;
@@ -2401,15 +2401,13 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
     PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
-    PVBOXNETFLTPACKETID pHead = pPromiscStream->pLoopbackHead;
-    PVBOXNETFLTPACKETID pTail = pPromiscStream->pLoopbackTail;
     PVBOXNETFLTPACKETID pCur = NULL;
     int rc = VINF_SUCCESS;
     if (pPromiscStream->cLoopback < VBOXNETFLT_LOOPBACK_SIZE)
     {
         do
         {
-            if (!pHead)
+            if (!pPromiscStream->pHead)
             {
                 pCur = RTMemAllocZ(sizeof(VBOXNETFLTPACKETID));
                 if (RT_UNLIKELY(!pCur))
@@ -2420,17 +2418,23 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
 
                 vboxNetFltSolarisInitPacketId(pCur, pMsg);
 
-                pHead = pCur;
-                pTail = pHead;
+                pPromiscStream->pHead = pCur;
+                pPromiscStream->pTail = pPromiscStream->pHead;
                 pPromiscStream->cLoopback++;
+
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback initialized head. checksum=%u.\n",
+                        pPromiscStream->pHead->Checksum));
                 break;
             }
 
-            if (   pTail
-                && pTail->cbPacket == 0)
+            if (   pPromiscStream->pTail
+                && pPromiscStream->pTail->cbPacket == 0)
             {
-                pCur = pTail;
+                pCur = pPromiscStream->pTail;
                 vboxNetFltSolarisInitPacketId(pCur, pMsg);
+
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback re-used tail checksum=%u cLoopback=%d.\n",
+                        pCur->Checksum, pPromiscStream->cLoopback));
                 break;
             }
 
@@ -2441,9 +2445,12 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
                 break;
             }
 
-            pTail->pNext = pCur;
+            pPromiscStream->pTail->pNext = pCur;
             vboxNetFltSolarisInitPacketId(pCur, pMsg);
             pPromiscStream->cLoopback++;
+
+            LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback added tail checksum=%u cLoopback=%d.\n", pCur->Checksum,
+                    pPromiscStream->cLoopback));
             break;
         } while (0);
     }
@@ -2452,13 +2459,15 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
         /*
          * Maximum loopback queue size reached. Re-use head as tail.
          */
-        PVBOXNETFLTPACKETID pCur = pHead;
-        pHead = pHead->pNext;
-        pTail->pNext = pCur;
-        pTail = pCur;
+        PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
+        pPromiscStream->pHead = pPromiscStream->pHead->pNext;
+        pPromiscStream->pTail->pNext = pCur;
+        pPromiscStream->pTail = pCur;
 
         pCur->pNext = NULL;
         vboxNetFltSolarisInitPacketId(pCur, pMsg);
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback recycled head!! checksum=%u cLoopback=%d\n", pCur->Checksum,
+                pPromiscStream->cLoopback));
     }
 
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);        
@@ -2493,11 +2502,15 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
     if (cbMsg < sizeof(RTNETETHERHDR))
         return false;
 
-    PVBOXNETFLTPACKETID pCur = pPromiscStream->pLoopbackHead;
+    PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
+    bool fIsOur = false;
     while (pCur)
     {
         if (pCur->cbPacket != cbMsg)
-            return false;
+        {
+            pCur = pCur->pNext;
+            continue;
+        }
 
         PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
         if (   pCur->SrcMac.au8[0] != pEthHdr->SrcMac.au8[0]
@@ -2513,19 +2526,28 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
             || pCur->DstMac.au8[4] != pEthHdr->DstMac.au8[4]
             || pCur->DstMac.au8[5] != pEthHdr->DstMac.au8[5])
         {
-            return false;
+            pCur = pCur->pNext;
+            continue;
         }
 
         uint16_t Checksum = RTCrc32(pMsg->b_rptr, cbMsg);
         if (pCur->Checksum != Checksum)
-            return false;
+        {
+            pCur = pCur->pNext;
+            continue;
+        }
 
         /*
-         * Yes, it really is our own packet.
+         * Yes, it really is our own packet, mark it as handled
+         * and return it's found.
          */
+        pCur->cbPacket = 0;
+        pPromiscStream->cLoopback--;
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p cLoopback=%d\n", pMsg, pPromiscStream->cLoopback));
         return true;
     }
 
+    NOREF(pThis);
     return false;
 }
 
@@ -2549,8 +2571,8 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     /*
      * Don't loopback packets we transmit to the wire.
      */
-    /** @todo -XXX- fix this with proper loopback handling. We must not be using unspecified flags. */
-    if (pMsg->b_flag & MSGNOLOOP)
+    vboxnetflt_promisc_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
+    if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
     {
         LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
         freemsg(pMsg);
@@ -2932,8 +2954,8 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
      */
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
-        vboxnetflt_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
-        queue_t *pPromiscWriteQueue = WR(pPromiscStream->pReadQueue);
+        vboxnetflt_promisc_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
+        queue_t *pPromiscWriteQueue = WR(pPromiscStream->Stream.pReadQueue);
 
         mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
         if (RT_UNLIKELY(!pMsg))
@@ -2942,12 +2964,9 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             return VERR_NO_MEMORY;
         }
 
-        LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_WIRE %u\n", DB_CKSUM16(pMsg)));
+        LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_WIRE\n"));
 
-        /*
-         * Flag for avoiding loopback. (Should be fixed later)
-         */
-        pMsg->b_flag |= MSGNOLOOP;
+        vboxNetFltSolarisQueueLoopback(pThis, pPromiscStream, pMsg);
         putnext(pPromiscWriteQueue, pMsg);
     }
 
