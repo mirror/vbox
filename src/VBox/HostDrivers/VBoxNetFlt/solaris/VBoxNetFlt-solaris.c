@@ -603,12 +603,18 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         return ENOENT;
     }
 
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    PVBOXNETFLTINS pThis = pState->pCurInstance;
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
     /*
      * Check VirtualBox stream type.
      */
     if (pState->CurType == kUndefined)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode.\n"));
+
+        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
         return ENOENT;
     }
 
@@ -637,6 +643,8 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         if (RT_UNLIKELY(!pPromiscStream))
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to allocate promiscuous stream data.\n"));
+
+            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             return ENOMEM;
         }
 
@@ -655,6 +663,8 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         if (RT_UNLIKELY(!pStream))
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to allocate stream data.\n"));
+    
+            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             return ENOMEM;
         }
     }
@@ -665,14 +675,19 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
      * Pick up the current global VBOXNETFLTINS instance as
      * the one that we will associate this stream with.
      */
-    pStream->pThis = pState->pCurInstance;
+    pStream->pThis = pThis;
     pStream->Type = pState->CurType;
     switch (pStream->Type)
     {
-        case kIpStream:         pState->pCurInstance->u.s.pvIpStream = pStream;         break;
-        case kArpStream:        pState->pCurInstance->u.s.pvArpStream = pStream;        break;
-        case kPromiscStream:    pState->pCurInstance->u.s.pvPromiscStream = pStream;    break;
-        default:    AssertRelease(pStream->Type);   break;
+        case kIpStream:         ASMAtomicUoWritePtr(&pThis->u.s.pvIpStream, pStream);         break;
+        case kArpStream:        ASMAtomicUoWritePtr(&pThis->u.s.pvArpStream, pStream);        break;
+        case kPromiscStream:    ASMAtomicUoWritePtr(&pThis->u.s.pvPromiscStream, pStream);    break;
+        default:    /* Heh. */
+        {
+                RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+                AssertRelease(pStream->Type);
+                break;
+        }
     }
 
     pQueue->q_ptr = pStream;
@@ -692,37 +707,37 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
 
         /*
          * Bind to SAP 0 (DL_ETHER).
-         * Note: We don't support DL_TPR (token passing ring) SAP as that is
-         * unnecessary asynchronous work to get DL_INFO_REQ acknowledgements
-         * and determine SAP based on the Mac Type etc. Besides nobody uses
-         * TPR anymore as far as I know.
+         * Note: We don't support DL_TPR (token passing ring) SAP as that is unnecessary asynchronous
+         * work to get DL_INFO_REQ acknowledgements and determine SAP based on the Mac Type etc.
+         * Besides TPR doesn't really exist anymore practically as far as I know.
          */
         int rc = vboxNetFltSolarisBindReq(pStream->pReadQueue, 0 /* SAP */);
-        if (RT_UNLIKELY(RT_FAILURE(rc)))
+        if (RT_LIKELY(RT_SUCCESS(rc)))
         {
+            /*
+             * Request the physical address (we cache the acknowledgement).
+             */
+            /** @todo take a look at DLPI notifications additionally for these things. */
+            rc = vboxNetFltSolarisPhysAddrReq(pStream->pReadQueue);
+            if (RT_LIKELY(RT_SUCCESS(rc)))
+            {
+                /*
+                 * Enable raw mode.
+                 */
+                rc = vboxNetFltSolarisSetRawMode(pPromiscStream);
+                if (RT_FAILURE(rc))
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisSetRawMode failed rc=%Vrc.\n", rc));
+            }
+            else
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisSetRawMode failed rc=%Vrc.\n", rc));
+        }
+        else        
             LogRel((DEVICE_NAME ":vboxNetFltSolarisBindReq failed rc=%Vrc.\n", rc));
-            return EPROTO;
-        }
 
-        /*
-         * Request the physical address (we cache the acknowledgement).
-         */
-        /** @todo take a look at DLPI notifications additionally for these things. */
-        rc = vboxNetFltSolarisPhysAddrReq(pStream->pReadQueue);
-        if (RT_UNLIKELY(RT_FAILURE(rc)))
+        if (RT_FAILURE(rc))
         {
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisPhysAddrReq failed rc=%Vrc.\n", rc));
+            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             return EPROTO;
-        }
-
-        /*
-         * Enable raw mode.
-         */
-        rc = vboxNetFltSolarisSetRawMode(pPromiscStream);
-        if (RT_UNLIKELY(RT_FAILURE(rc)))
-        {
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisSetRawMode failed rc=%Vrc.\n", rc));
-            return EPROTO;        
         }
     }
 
@@ -731,6 +746,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
 
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModOpen returns 0, DevMinor=%d pQueue=%p\n", DevMinor, pStream->pReadQueue));
 
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     return 0;
 }
 
@@ -763,6 +779,10 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         return ENXIO;
     }
 
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    PVBOXNETFLTINS pThis = pStream->pThis;
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
     qprocsoff(pQueue);
 
     /*
@@ -781,7 +801,12 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         case kIpStream:         ASMAtomicUoWritePtr(pStream->pThis->u.s.pvIpStream, NULL);      break;
         case kArpStream:        ASMAtomicUoWritePtr(pStream->pThis->u.s.pvArpStream, NULL);     break;
         case kPromiscStream:    ASMAtomicUoWritePtr(pStream->pThis->u.s.pvPromiscStream, NULL); break;
-        default: AssertRelease(pStream->Type); break;
+        default:    /* Heh. */
+        {
+            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+            AssertRelease(pStream->Type);
+            break;
+        }
     }
 
     RTMemFree(pStream);
@@ -790,6 +815,8 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
 
     NOREF(fOpenMode);
     NOREF(pCred);
+
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
     return 0;
 }
@@ -2313,16 +2340,21 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     if (vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
         fSrc = INTNETTRUNKDIR_HOST;
 
-#if 1
+    /*
+     * Afaik; we no longer need to worry about incorrect checksums because we now use
+     * a dedicated stream and don't intercept packets under IP/ARP which might be doing
+     * checksum offloading.
+     */
+#if 0
     if (fSrc & INTNETTRUNKDIR_HOST)
     {
         mblk_t *pCorrectedMsg = vboxNetFltSolarisFixChecksums(pMsg);
         if (pCorrectedMsg)
             pMsg = pCorrectedMsg;
     }
-#endif
 
     vboxNetFltSolarisAnalyzeMBlk(pMsg);
+#endif
 
     /*
      * Route all received packets into the internal network.
@@ -2432,51 +2464,36 @@ static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
         uint8_t *pbProtocol = (uint8_t *)(pEthHdr + 1);
         PRTNETIPV4 pIpHdr = (PRTNETIPV4)pbProtocol;
         size_t cbPayload = cbIpPacket - (pIpHdr->ip_hl << 2);
-
         bool fChecksumAdjusted = false;
-
-        /*
-         * Fix up TCP/UDP and IP checksums if they're incomplete/invalid.
-         */
-        if (pIpHdr->ip_p == RTNETIPV4_PROT_TCP)
+        if (RTNetIPv4IsHdrValid(pIpHdr, cbPayload, cbPayload))
         {
             pbProtocol += (pIpHdr->ip_hl << 2);
-            PRTNETTCP pTcpHdr = (PRTNETTCP)pbProtocol;
-            uint16_t TcpChecksum = RTNetIPv4TCPChecksum(pIpHdr, pTcpHdr, NULL);
-            if (pTcpHdr->th_sum != TcpChecksum)
-            {
-                pTcpHdr->th_sum = TcpChecksum;
-                fChecksumAdjusted = true;
-                LogFlow((DEVICE_NAME ":fixed TCP checksum.\n"));
-            }
 
-            uint16_t IpChecksum = RTNetIPv4HdrChecksum(pIpHdr);
-            if (pIpHdr->ip_sum != IpChecksum)
+            /*
+             * Fix up TCP/UDP and IP checksums if they're incomplete/invalid.
+             */
+            if (pIpHdr->ip_p == RTNETIPV4_PROT_TCP)
             {
-                pIpHdr->ip_sum = IpChecksum;
-                fChecksumAdjusted = true;
-                LogFlow((DEVICE_NAME ":fixed IP checksum.\n"));
+                PRTNETTCP pTcpHdr = (PRTNETTCP)pbProtocol;
+                uint16_t TcpChecksum = RTNetIPv4TCPChecksum(pIpHdr, pTcpHdr, NULL);
+                if (pTcpHdr->th_sum != TcpChecksum)
+                {
+                    pTcpHdr->th_sum = TcpChecksum;
+                    fChecksumAdjusted = true;
+                    LogFlow((DEVICE_NAME ":fixed TCP checksum.\n"));
+                }
             }
-        }
-        else if (pIpHdr->ip_p == RTNETIPV4_PROT_UDP)
-        {
-            pbProtocol += (pIpHdr->ip_hl << 2);
-            PRTNETUDP pUdpHdr = (PRTNETUDP)pbProtocol;
-            uint16_t UdpChecksum = RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pUdpHdr + 1);
-
-            if (pUdpHdr->uh_sum != UdpChecksum)
+            else if (pIpHdr->ip_p == RTNETIPV4_PROT_UDP)
             {
-                pUdpHdr->uh_sum = UdpChecksum;
-                fChecksumAdjusted = true;
-                LogFlow((DEVICE_NAME ":Fixed UDP checksum."));
-            }
+                PRTNETUDP pUdpHdr = (PRTNETUDP)pbProtocol;
+                uint16_t UdpChecksum = RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pUdpHdr + 1);
 
-            uint16_t IpChecksum = RTNetIPv4HdrChecksum(pIpHdr);
-            if (pIpHdr->ip_sum != IpChecksum)
-            {
-                pIpHdr->ip_sum = IpChecksum;
-                fChecksumAdjusted = true;
-                LogFlow((DEVICE_NAME ":fixed IP checksum.\n"));
+                if (pUdpHdr->uh_sum != UdpChecksum)
+                {
+                    pUdpHdr->uh_sum = UdpChecksum;
+                    fChecksumAdjusted = true;
+                    LogFlow((DEVICE_NAME ":Fixed UDP checksum."));
+                }
             }
         }
 
