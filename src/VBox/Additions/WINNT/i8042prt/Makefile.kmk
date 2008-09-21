@@ -22,8 +22,8 @@
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-
-SYSMODS.x86 += VBoxMouseNT
+ifeq ($(KBUILD_TARGET_ARCH),x86
+SYSMODS += VBoxMouseNT
 VBoxMouseNT_TEMPLATE    = VBOXGUESTR0
 VBoxMouseNT_DEFS        = LOG_TO_BACKDOOR
 VBoxMouseNT_INCS        = \
@@ -61,7 +61,7 @@ $$(PATH_VBoxMouseNT)/i8042log.rc: $(PATH_SUB_CURRENT)/i8042log.mc | $$(dir $$@)
 		-x $(PATH_VBoxMouseNT)/ \
 		-h $(PATH_VBoxMouseNT)/ \
 		$(subst /,\\,$<)
-
+endif # x86
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
