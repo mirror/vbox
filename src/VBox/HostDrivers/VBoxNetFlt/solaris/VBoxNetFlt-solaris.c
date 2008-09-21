@@ -662,10 +662,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
 
     if (pState->CurType == kPromiscStream)
     {
-        /*
-         * Careful; Use RTMemAllocZ here to zero-out uninitialized fields.
-         */
-        vboxnetflt_promisc_stream_t *pPromiscStream = RTMemAllocZ(sizeof(vboxnetflt_promisc_stream_t));
+        vboxnetflt_promisc_stream_t *pPromiscStream = RTMemAlloc(sizeof(vboxnetflt_promisc_stream_t));
         if (RT_UNLIKELY(!pPromiscStream))
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to allocate promiscuous stream data.\n"));
@@ -677,6 +674,9 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         pPromiscStream->fPromisc = false;
         pPromiscStream->fRawMode = false;
         pPromiscStream->ModeReqId = 0;
+        pPromiscStream->pHead = NULL;
+        pPromiscStream->pTail = NULL;
+        pPromiscStream->cLoopback = 0;
         pStream = (vboxnetflt_stream_t *)pPromiscStream;
     }
     else
@@ -1786,6 +1786,8 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
             RTMemFree(pCur);
             pCur = pNext;
         }
+        pPromiscStream->pHead = NULL;
+        pPromiscStream->pTail = NULL;
         pPromiscStream->cLoopback = 0;
     }
 
@@ -2419,7 +2421,7 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
                 vboxNetFltSolarisInitPacketId(pCur, pMsg);
 
                 pPromiscStream->pHead = pCur;
-                pPromiscStream->pTail = pPromiscStream->pHead;
+                pPromiscStream->pTail = pCur;
                 pPromiscStream->cLoopback++;
 
                 LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback initialized head. checksum=%u.\n",
@@ -2437,6 +2439,8 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
                         pCur->Checksum, pPromiscStream->cLoopback));
                 break;
             }
+
+            Assert(pPromiscStream->pTail);
 
             pCur = RTMemAllocZ(sizeof(VBOXNETFLTPACKETID));
             if (RT_UNLIKELY(!pCur))
@@ -2459,7 +2463,10 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
         /*
          * Maximum loopback queue size reached. Re-use head as tail.
          */
-        PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
+        Assert(pPromiscStream->pHead);
+        Assert(pPromiscStream->pTail);
+
+        pCur = pPromiscStream->pHead;
         pPromiscStream->pHead = pPromiscStream->pHead->pNext;
         pPromiscStream->pTail->pNext = pCur;
         pPromiscStream->pTail = pCur;
@@ -2542,7 +2549,6 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
          * and return it's found.
          */
         pCur->cbPacket = 0;
-        pPromiscStream->cLoopback--;
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p cLoopback=%d\n", pMsg, pPromiscStream->cLoopback));
         return true;
     }
@@ -2955,6 +2961,9 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
         vboxnetflt_promisc_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
+        if (!pPromiscStream)
+            return VERR_INVALID_POINTER;
+
         queue_t *pPromiscWriteQueue = WR(pPromiscStream->Stream.pReadQueue);
 
         mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
