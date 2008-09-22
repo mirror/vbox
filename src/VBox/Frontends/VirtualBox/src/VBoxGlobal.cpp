@@ -88,6 +88,11 @@
 
 #if defined (VBOX_GUI_DEBUG)
 uint64_t VMCPUTimer::ticks_per_msec = (uint64_t) -1LL; // declared in VBoxDefs.h
+/* don't make this function inline to not depend on iprt/asm.h in VBoxDefs.h */
+uint64_t VMCPUTimer::ticks()
+{
+        return ASMReadTSC();
+}
 #endif
 
 // VBoxEnumerateMediaEvent
