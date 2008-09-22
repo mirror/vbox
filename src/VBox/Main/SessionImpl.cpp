@@ -269,10 +269,15 @@ STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
 
     AutoReadLock alock (this);
 
-    AssertReturn (mState == SessionState_Open, E_FAIL);
+    AssertReturn (mState != SessionState_Closed, E_FAIL);
 
     AssertMsgReturn (mType == SessionType_Direct && !!mConsole,
                      ("This is not a direct session!\n"), E_FAIL);
+
+    /* return a failure if the session already transitioned to Closing
+     * but the server hasn't processed Machine::OnSessionEnd() yet. */
+    if (mState != SessionState_Open)
+        return E_UNEXPECTED;
 
     mConsole.queryInterfaceTo (aConsole);
 
