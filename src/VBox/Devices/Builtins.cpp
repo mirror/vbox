@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * Built-in drivers & devices (part 1)
  */
