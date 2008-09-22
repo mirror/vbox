@@ -60,7 +60,7 @@ check_if_installed()
         fi
     fi
 
-    abort "## VirtualBox kernel module NOT installed."
+    abort "## VirtualBox Host kernel module NOT installed."
 }
 
 module_loaded()
@@ -99,7 +99,7 @@ check_root()
 start_module()
 {
     if module_loaded; then
-        info "VirtualBox kernel module already loaded."
+        info "VirtualBox Host kernel module already loaded."
     else
         if test -n "_HARDENED_"; then
             /usr/sbin/add_drv -m'* 0600 root sys' $MODNAME
@@ -107,9 +107,9 @@ start_module()
             /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME
         fi
         if test ! module_loaded; then
-            abort "## Failed to load VirtualBox kernel module."
+            abort "## Failed to load VirtualBox Host kernel module."
         elif test -c "/devices/pseudo/$MODNAME@0:$MODNAME"; then
-            info "VirtualBox kernel module loaded."
+            info "VirtualBox Host kernel module loaded."
         else
             abort "Aborting due to attach failure."
         fi
@@ -119,10 +119,10 @@ start_module()
 stop_module()
 {
     if module_loaded; then
-        /usr/sbin/rem_drv $MODNAME || abort "## Failed to unload VirtualBox kernel module."
-        info "VirtualBox kernel module unloaded."
+        /usr/sbin/rem_drv $MODNAME || abort "## Failed to unload VirtualBox Host kernel module."
+        info "VirtualBox Host kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
-        info "VirtualBox kernel module not loaded."
+        info "VirtualBox Host kernel module not loaded."
     fi
 
     # check for vbi and force unload it

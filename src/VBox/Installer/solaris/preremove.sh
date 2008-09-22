@@ -20,19 +20,15 @@
 echo "Sun xVM VirtualBox - preremove script"
 echo "This script will unload the VirtualBox kernel module..."
 
-# vboxdrv.sh would've been installed, we just need to call it.
-/opt/VirtualBox/vboxdrv.sh stopall
-
-# remove /dev/vboxdrv
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    rm -f /dev/vboxdrv
+    # stop and unregister webservice daemon
+    /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
+    /usr/sbin/svccfg delete svc:/application/virtualbox/webservice:default
+
+    # vboxdrv.sh would've been installed, we just need to call it.
+    /opt/VirtualBox/vboxdrv.sh stopall
 fi
-
-# stop and unregister webservice daemon
-/usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
-/usr/sbin/svccfg delete svc:/application/virtualbox/webservice:default
-
 
 echo "Done."
 

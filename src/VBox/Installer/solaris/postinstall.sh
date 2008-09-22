@@ -29,12 +29,12 @@ fi
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    echo "Configuring VirtualBox kernel module..."
+    echo "Configuring VirtualBox Host kernel module..."
     /opt/VirtualBox/vboxdrv.sh stopall silentunload
     /opt/VirtualBox/vboxdrv.sh start
 
-    echo "Configuring VirtualBox NetFilter kernel module..."
     if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
+        echo "Configuring VirtualBox NetFilter kernel module..."
         /opt/VirtualBox/vboxdrv.sh fltstart
     fi
 fi
@@ -54,26 +54,23 @@ if test -f /opt/VirtualBox/VBoxHeadless; then
         /usr/sbin/installf -c none $PKGINST /usr/bin/VBoxVRDP=/opt/VirtualBox/VBox.sh s
     fi
 fi
-if test -f /var/svc/manifest/application/virtualbox/webservice.xml; then
-    /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/webservice.xml
-    /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
-fi
-/usr/sbin/removef $PKGINST /opt/VirtualBox/etc/devlink.tab 1>/dev/null
-/usr/sbin/removef $PKGINST /opt/VirtualBox/etc 1>/dev/null
-rm -rf /opt/VirtualBox/etc
-/usr/sbin/removef -f $PKGINST
 
-/usr/sbin/installf -f $PKGINST
-
-# We need to touch the desktop link in order to add it to the menu right away
 if test "$currentzone" = "global"; then
+    if test -f /var/svc/manifest/application/virtualbox/webservice.xml; then
+        /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/webservice.xml
+        /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
+    fi
+
+    # create /dev link for vboxdrv
+    /usr/sbin/installf -c none $PKGINST /dev/vboxdrv=../devices/pseudo/vboxdrv@0:vboxdrv s
+
+    # We need to touch the desktop link in order to add it to the menu right away
     if test -f "/usr/share/applications/virtualbox.desktop"; then
         touch /usr/share/applications/virtualbox.desktop
     fi
-
-    # create /dev link for vboxdrv (only possible from global zone)
-    /usr/sbin/devfsadm -i vboxdrv
 fi
+
+/usr/sbin/installf -f $PKGINST
 
 echo "Done."
 
