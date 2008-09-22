@@ -29,7 +29,7 @@
 #define VBOX_DMI_TABLE_SIZE          0x100
 
 
-/** @def MPS_TABLE_BASE
+/** @def VBOX_MPS_TABLE_BASE
  *
  * Must be located in the same page as the DMI table.
  */
@@ -40,7 +40,7 @@
 #define VBOX_SMBIOS_MAXSS            0xff   /* Not very accurate */
 
 
-/** @def VBOX_VMI_TABLE_BASE
+/** @def VBOX_VMI_BIOS_BASE
  *
  * Must be located between 0xC0000 and 0xDEFFF, otherwise it will not be
  * recognized as regular BIOS.

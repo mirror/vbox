@@ -234,6 +234,12 @@
  * @todo should go to a separate common include together with VBOXXML2_CLASS
  * once there becomes more than one header in the VBoxXML2 library.
  */
+#ifdef DOXYGEN_RUNNING
+# define IN_VBOXSETTINGS_R3
+#endif
+
+/** @def VBOXSETTINGS_CLASS
+ * Class export/import wrapper. */
 #ifdef IN_VBOXSETTINGS_R3
 # define VBOXSETTINGS_CLASS DECLEXPORT_CLASS
 #else

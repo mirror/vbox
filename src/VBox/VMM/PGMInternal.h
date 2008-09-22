@@ -125,7 +125,7 @@
 # define PGMPOOL_WITH_GCPHYS_TRACKING
 #endif
 
-/** @def PGMPOOL_WITH_USER_TRACKNG
+/** @def PGMPOOL_WITH_USER_TRACKING
  * Tracking users of shadow pages. This is required for the linking of shadow page
  * tables and physical guest addresses.
  */
@@ -1230,7 +1230,7 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  * The page mapper TLB entry pointer type for the current context. */
 /** @typedef PPGMPAGEMAPTLB
  * The page mapper TLB entry pointer pointer type for the current context. */
-/** @def PGMPAGEMAPTLB_ENTRIES
+/** @def PGM_PAGEMAPTLB_ENTRIES
  * The number of TLB entries in the page mapper TLB for the current context. */
 /** @def PGM_PAGEMAPTLB_IDX
  * Calculate the TLB index for a guest physical address.

@@ -58,9 +58,7 @@
  */
 #ifdef  __DOXYGEN__
 #define VBOX_WITH_STATISTICS
-#ifndef VBOX_STRICT
-# define VBOX_STRICT
-#endif
+#define VBOX_STRICT
 #define IN_CFGM_GC
 #define IN_CFGM_R3
 #define IN_CPUM_GC
@@ -121,6 +119,7 @@
 #define IN_USB_R0
 #define IN_USB_R3
 #define IN_USBLIB
+#define IN_VBOXDDU
 #define IN_VGADEVICE_GC
 #define IN_VGADEVICE_R3
 #define IN_VHHD_R3
@@ -1390,7 +1389,7 @@
 #endif
 
 
-/** @def NoDmik(expr)
+/** @def NOT_DMIK(expr)
  * Turns the given expression into NOOP when DEBUG_dmik is defined. Evaluates
  * the expression normally otherwise.
  * @param expr  Expression to guard.

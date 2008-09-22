@@ -341,7 +341,7 @@ static DECLCALLBACK(int) pdmGCDevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool
 }
 
 
-/** @copydoc PDMDEVHLPGC::pdmGCDevHlp_PATMSetMMIOPatchInfo */
+/** @copydoc PDMDEVHLPGC::pfnPATMSetMMIOPatchInfo */
 static DECLCALLBACK(int) pdmGCDevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -391,7 +391,7 @@ static DECLCALLBACK(void) pdmRCPicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 
-/** @copydoc PDMAPICHLPGC::pfnSetInterruptFF */
+/** @copydoc PDMAPICHLPRC::pfnSetInterruptFF */
 static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -401,7 +401,7 @@ static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMAPICHLPGC::pfnClearInterruptFF */
+/** @copydoc PDMAPICHLPRC::pfnClearInterruptFF */
 static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -411,7 +411,7 @@ static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMAPICHLPGC::pfnChangeFeature */
+/** @copydoc PDMAPICHLPRC::pfnChangeFeature */
 static DECLCALLBACK(void) pdmRCApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -423,7 +423,7 @@ static DECLCALLBACK(void) pdmRCApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fE
 }
 
 
-/** @copydoc PDMAPICHLPGC::pfnLock */
+/** @copydoc PDMAPICHLPRC::pfnLock */
 static DECLCALLBACK(int) pdmRCApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -431,7 +431,7 @@ static DECLCALLBACK(int) pdmRCApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @copydoc PDMAPICHLPGC::pfnUnlock */
+/** @copydoc PDMAPICHLPRC::pfnUnlock */
 static DECLCALLBACK(void) pdmRCApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -439,7 +439,7 @@ static DECLCALLBACK(void) pdmRCApicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMAPICHLPGC::pfnGetCpuId */
+/** @copydoc PDMAPICHLPRC::pfnGetCpuId */
 static DECLCALLBACK(uint32_t) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -449,7 +449,7 @@ static DECLCALLBACK(uint32_t) pdmRCApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 
 
 
-/** @copydoc PDMIOAPICHLPGC::pfnApicBusDeliver */
+/** @copydoc PDMIOAPICHLPRC::pfnApicBusDeliver */
 static DECLCALLBACK(void) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode)
 {
@@ -462,7 +462,7 @@ static DECLCALLBACK(void) pdmRCIoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint
 }
 
 
-/** @copydoc PDMIOAPICHLPGC::pfnLock */
+/** @copydoc PDMIOAPICHLPRC::pfnLock */
 static DECLCALLBACK(int) pdmRCIoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -470,7 +470,7 @@ static DECLCALLBACK(int) pdmRCIoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @copydoc PDMIOAPICHLPGC::pfnUnlock */
+/** @copydoc PDMIOAPICHLPRC::pfnUnlock */
 static DECLCALLBACK(void) pdmRCIoApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -480,7 +480,7 @@ static DECLCALLBACK(void) pdmRCIoApicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 
-/** @copydoc PDMPCIHLPGC::pfnIsaSetIrq */
+/** @copydoc PDMPCIHLPRC::pfnIsaSetIrq */
 static DECLCALLBACK(void) pdmRCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -489,7 +489,7 @@ static DECLCALLBACK(void) pdmRCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 }
 
 
-/** @copydoc PDMPCIHLPGC::pfnIoApicSetIrq */
+/** @copydoc PDMPCIHLPRC::pfnIoApicSetIrq */
 static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -498,7 +498,7 @@ static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 }
 
 
-/** @copydoc PDMPCIHLPGC::pfnLock */
+/** @copydoc PDMPCIHLPRC::pfnLock */
 static DECLCALLBACK(int) pdmRCPciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -506,7 +506,7 @@ static DECLCALLBACK(int) pdmRCPciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @copydoc PDMPCIHLPGC::pfnUnlock */
+/** @copydoc PDMPCIHLPRC::pfnUnlock */
 static DECLCALLBACK(void) pdmRCPciHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);

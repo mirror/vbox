@@ -203,8 +203,8 @@ static DECLCALLBACK(uint8_t) pdmR3DevHlp_Untrusted_DMAGetChannelMode(PPDMDEVINS 
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_DMASchedule(PPDMDEVINS pDevIns);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
-static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
-                                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
+static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                                         uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion);
@@ -467,7 +467,7 @@ const PDMDEVHLP g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_DMASchedule,
     pdmR3DevHlp_Untrusted_CMOSWrite,
     pdmR3DevHlp_Untrusted_CMOSRead,
-    pdmR3DevHlp_Untrusted_QueryCPUId,
+    pdmR3DevHlp_Untrusted_GetCpuId,
     pdmR3DevHlp_Untrusted_ROMProtectShadow,
     pdmR3DevHlp_Untrusted_MMIO2Register,
     pdmR3DevHlp_Untrusted_MMIO2Deregister,
@@ -3766,7 +3766,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReserve(PPDMDEVINS pDevIns, R
 }
 
 
-/** @copydoc PDMDEVHLP::pfnPhys2HCVirt */
+/** @copydoc PDMDEVHLP::pfnObsoletePhys2HCVirt */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3778,7 +3778,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt(PPDMDEVINS p
 }
 
 
-/** @copydoc PDMDEVHLP::pfnPhysGCPtr2HCPtr */
+/** @copydoc PDMDEVHLP::pfnObsoletePhysGCPtr2HCPtr */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3936,9 +3936,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsi
 }
 
 
-/** @copydoc PDMDEVHLP::pfnQueryCPUId */
-static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_QueryCPUId(PPDMDEVINS pDevIns, uint32_t iLeaf,
-                                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+/** @copydoc PDMDEVHLP::pfnGetCpuId */
+static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                                         uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));

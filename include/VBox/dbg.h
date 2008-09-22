@@ -51,6 +51,9 @@ __BEGIN_DECLS
 #  define VBOX_WITH_DEBUGGER
 # endif
 #endif
+#ifdef DOXYGEN_RUNNING
+# define VBOX_WITH_DEBUGGER
+#endif
 
 
 /**

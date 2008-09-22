@@ -1548,7 +1548,7 @@ int emR3RawRingSwitch(PVM pVM)
 }
 
 /**
- * Handle a trap (#PF or #GP) in patch code
+ * Handle a trap (\#PF or \#GP) in patch code
  *
  * @returns VBox status code suitable for EM.
  * @param   pVM     VM handle.

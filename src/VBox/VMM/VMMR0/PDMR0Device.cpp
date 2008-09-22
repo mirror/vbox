@@ -357,7 +357,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RT
 
 
 
-/** @copydoc PDMPICHLPGC::pfnSetInterruptFF */
+/** @copydoc PDMPICHLPR0::pfnSetInterruptFF */
 static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -367,7 +367,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPICHLPGC::pfnClearInterruptFF */
+/** @copydoc PDMPICHLPR0::pfnClearInterruptFF */
 static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -395,7 +395,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 
-/** @copydoc PDMAPICHLPGC::pfnSetInterruptFF */
+/** @copydoc PDMAPICHLPR0::pfnSetInterruptFF */
 static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -405,7 +405,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMAPICHLPGC::pfnClearInterruptFF */
+/** @copydoc PDMAPICHLPR0::pfnClearInterruptFF */
 static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -415,7 +415,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMAPICHLPGC::pfnChangeFeature */
+/** @copydoc PDMAPICHLPR0::pfnChangeFeature */
 static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);

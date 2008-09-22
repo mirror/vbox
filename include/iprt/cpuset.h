@@ -37,7 +37,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_rt_mp RTCpuSet - CPU Set
+/** @defgroup grp_rt_cpuset RTCpuSet - CPU Set
  * @ingroup grp_rt
  * @{
  */

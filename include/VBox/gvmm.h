@@ -45,6 +45,9 @@ __BEGIN_DECLS
  * Used to indicate whether we're inside the same link module as the ring 0
  * part of the Global VM Manager or not.
  */
+#ifdef DOXYGEN_RUNNING
+# define IN_GVMM_R0
+#endif
 /** @def GVMMR0DECL
  * Ring 0 VM export or import declaration.
  * @param   type    The return type of the function declaration.
