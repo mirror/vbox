@@ -5511,7 +5511,7 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       {
 #ifdef VBOX_WITH_SCSI
         if (VBOX_IS_SCSI_DEVICE(device))
-          BX_PANIC("Write to scsi devices not supported\n");
+          status=scsi_write_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, segment, offset);
         else
 #endif
           status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, cylinder, head, sector, lba, segment, offset);
@@ -5666,7 +5666,7 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
       {
 #ifdef VBOX_WITH_SCSI
         if (VBOX_IS_SCSI_DEVICE(device))
-          BX_PANIC("Writes not supported for SCSI devices\n");
+          status=scsi_write_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, segment, offset);
         else
 #endif
         {
