@@ -90,6 +90,18 @@ typedef R0PTRTYPE(struct GVM *)     PGVM;
 /** Pointer to a ring-3 (user mode) VM structure. */
 typedef R3PTRTYPE(struct UVM *)     PUVM;
 
+/** Virtual CPU ID. */
+typedef uint32_t VMCPUID;
+/** Pointer to a virtual CPU ID. */
+typedef VMCPUID *PVMCPUID;
+/** @name Special CPU ID values.
+ * @{ */
+/** All virtual CPUs. */
+#define VMCPUID_ALL         UINT32_C(0xffffffff)
+/** Any virtual CPU, preferrably an idle one.
+ * Intended for scheduling a VM request or some other task. */
+#define VMCPUID_ANY_IDLE    UINT32_C(0xfffffffe)
+/** @} */
 
 /** VM State
  */
