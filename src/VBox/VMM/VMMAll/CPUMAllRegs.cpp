@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * CPUM - CPU Monitor(/Manager) - Gets and Sets.
+ * CPUM - CPU Monitor(/Manager) - Getters and Setters.
  */
 
 /*
@@ -37,7 +37,6 @@
 #include <iprt/asm.h>
 
 
-
 /** Disable stack frame pointer generation here. */
 #if defined(_MSC_VER) && !defined(DEBUG)
 # pragma optimize("y", off)
@@ -57,19 +56,19 @@
  */
 CPUMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
-    LogFlow(("CPUMHyperSetCtxCore: %p/%p/%p -> %p\n", pVM->cpum.s.CTXALLSUFF(pHyperCore), pCtxCore));
+    LogFlow(("CPUMHyperSetCtxCore: %p/%p/%p -> %p\n", pVM->cpum.s.CTX_SUFF(pHyperCore), pCtxCore));
     if (!pCtxCore)
     {
         pCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
         pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))VM_R3_ADDR(pVM, pCtxCore);
         pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))VM_R0_ADDR(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreGC = (RCPTRTYPE(PCPUMCTXCORE))VM_GUEST_ADDR(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))VM_GUEST_ADDR(pVM, pCtxCore);
     }
     else
     {
         pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))MMHyperCCToR3(pVM, pCtxCore);
         pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))MMHyperCCToR0(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreGC = (RCPTRTYPE(PCPUMCTXCORE))MMHyperCCToRC(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))MMHyperCCToRC(pVM, pCtxCore);
     }
 }
 
@@ -82,7 +81,7 @@ CPUMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
  */
 CPUMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore);
+    return pVM->cpum.s.CTX_SUFF(pHyperCore);
 }
 
 
@@ -104,12 +103,14 @@ CPUMDECL(int) CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(void) CPUMSetHyperGDTR(PVM pVM, uint32_t addr, uint16_t limit)
 {
     pVM->cpum.s.Hyper.gdtr.cbGdt = limit;
     pVM->cpum.s.Hyper.gdtr.pGdt  = addr;
     pVM->cpum.s.Hyper.gdtrPadding = 0;
 }
+
 
 CPUMDECL(void) CPUMSetHyperIDTR(PVM pVM, uint32_t addr, uint16_t limit)
 {
@@ -118,66 +119,79 @@ CPUMDECL(void) CPUMSetHyperIDTR(PVM pVM, uint32_t addr, uint16_t limit)
     pVM->cpum.s.Hyper.idtrPadding = 0;
 }
 
+
 CPUMDECL(void) CPUMSetHyperCR3(PVM pVM, uint32_t cr3)
 {
     pVM->cpum.s.Hyper.cr3 = cr3;
 }
 
+
 CPUMDECL(void) CPUMSetHyperCS(PVM pVM, RTSEL SelCS)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->cs = SelCS;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->cs = SelCS;
 }
+
 
 CPUMDECL(void) CPUMSetHyperDS(PVM pVM, RTSEL SelDS)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->ds = SelDS;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->ds = SelDS;
 }
+
 
 CPUMDECL(void) CPUMSetHyperES(PVM pVM, RTSEL SelES)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->es = SelES;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->es = SelES;
 }
+
 
 CPUMDECL(void) CPUMSetHyperFS(PVM pVM, RTSEL SelFS)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->fs = SelFS;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->fs = SelFS;
 }
+
 
 CPUMDECL(void) CPUMSetHyperGS(PVM pVM, RTSEL SelGS)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->gs = SelGS;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->gs = SelGS;
 }
+
 
 CPUMDECL(void) CPUMSetHyperSS(PVM pVM, RTSEL SelSS)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->ss = SelSS;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->ss = SelSS;
 }
+
 
 CPUMDECL(void) CPUMSetHyperESP(PVM pVM, uint32_t u32ESP)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->esp = u32ESP;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->esp = u32ESP;
 }
+
 
 CPUMDECL(int) CPUMSetHyperEFlags(PVM pVM, uint32_t Efl)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->eflags.u32 = Efl;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32 = Efl;
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(void) CPUMSetHyperEIP(PVM pVM, uint32_t u32EIP)
 {
-    pVM->cpum.s.CTXALLSUFF(pHyperCore)->eip = u32EIP;
+    pVM->cpum.s.CTX_SUFF(pHyperCore)->eip = u32EIP;
 }
+
 
 CPUMDECL(void) CPUMSetHyperTR(PVM pVM, RTSEL SelTR)
 {
     pVM->cpum.s.Hyper.tr = SelTR;
 }
 
+
 CPUMDECL(void) CPUMSetHyperLDTR(PVM pVM, RTSEL SelLDTR)
 {
     pVM->cpum.s.Hyper.ldtr = SelLDTR;
 }
+
 
 CPUMDECL(void) CPUMSetHyperDR0(PVM pVM, RTGCUINTREG uDr0)
 {
@@ -185,11 +199,13 @@ CPUMDECL(void) CPUMSetHyperDR0(PVM pVM, RTGCUINTREG uDr0)
     /** @todo in GC we must load it! */
 }
 
+
 CPUMDECL(void) CPUMSetHyperDR1(PVM pVM, RTGCUINTREG uDr1)
 {
     pVM->cpum.s.Hyper.dr[1] = uDr1;
     /** @todo in GC we must load it! */
 }
+
 
 CPUMDECL(void) CPUMSetHyperDR2(PVM pVM, RTGCUINTREG uDr2)
 {
@@ -197,17 +213,20 @@ CPUMDECL(void) CPUMSetHyperDR2(PVM pVM, RTGCUINTREG uDr2)
     /** @todo in GC we must load it! */
 }
 
+
 CPUMDECL(void) CPUMSetHyperDR3(PVM pVM, RTGCUINTREG uDr3)
 {
     pVM->cpum.s.Hyper.dr[3] = uDr3;
     /** @todo in GC we must load it! */
 }
 
+
 CPUMDECL(void) CPUMSetHyperDR6(PVM pVM, RTGCUINTREG uDr6)
 {
     pVM->cpum.s.Hyper.dr[6] = uDr6;
     /** @todo in GC we must load it! */
 }
+
 
 CPUMDECL(void) CPUMSetHyperDR7(PVM pVM, RTGCUINTREG uDr7)
 {
@@ -218,112 +237,105 @@ CPUMDECL(void) CPUMSetHyperDR7(PVM pVM, RTGCUINTREG uDr7)
 
 CPUMDECL(RTSEL) CPUMGetHyperCS(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->cs;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->cs;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetHyperDS(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ds;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ds;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetHyperES(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->es;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->es;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetHyperFS(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->fs;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->fs;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetHyperGS(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->gs;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->gs;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetHyperSS(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ss;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ss;
 }
 
-#if 0 /* these are not correct. */
-
-CPUMDECL(uint32_t) CPUMGetHyperCR0(PVM pVM)
-{
-    return pVM->cpum.s.Hyper.cr0;
-}
-
-CPUMDECL(uint32_t) CPUMGetHyperCR2(PVM pVM)
-{
-    return pVM->cpum.s.Hyper.cr2;
-}
-
-CPUMDECL(uint32_t) CPUMGetHyperCR3(PVM pVM)
-{
-    return pVM->cpum.s.Hyper.cr3;
-}
-
-CPUMDECL(uint32_t) CPUMGetHyperCR4(PVM pVM)
-{
-    return pVM->cpum.s.Hyper.cr4;
-}
-
-#endif /* not correct */
 
 CPUMDECL(uint32_t) CPUMGetHyperEAX(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->eax;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->eax;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperEBX(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ebx;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ebx;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperECX(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ecx;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ecx;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperEDX(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->edx;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->edx;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperESI(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->esi;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->esi;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperEDI(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->edi;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->edi;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperEBP(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->ebp;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->ebp;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperESP(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->esp;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->esp;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperEFlags(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->eflags.u32;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->eflags.u32;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperEIP(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->eip;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->eip;
 }
+
 
 CPUMDECL(uint64_t) CPUMGetHyperRIP(PVM pVM)
 {
-    return pVM->cpum.s.CTXALLSUFF(pHyperCore)->rip;
+    return pVM->cpum.s.CTX_SUFF(pHyperCore)->rip;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetHyperIDTR(PVM pVM, uint16_t *pcbLimit)
 {
@@ -332,6 +344,7 @@ CPUMDECL(uint32_t) CPUMGetHyperIDTR(PVM pVM, uint16_t *pcbLimit)
     return pVM->cpum.s.Hyper.idtr.pIdt;
 }
 
+
 CPUMDECL(uint32_t) CPUMGetHyperGDTR(PVM pVM, uint16_t *pcbLimit)
 {
     if (pcbLimit)
@@ -339,35 +352,42 @@ CPUMDECL(uint32_t) CPUMGetHyperGDTR(PVM pVM, uint16_t *pcbLimit)
     return pVM->cpum.s.Hyper.gdtr.pGdt;
 }
 
+
 CPUMDECL(RTSEL) CPUMGetHyperLDTR(PVM pVM)
 {
     return pVM->cpum.s.Hyper.ldtr;
 }
+
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR0(PVM pVM)
 {
     return pVM->cpum.s.Hyper.dr[0];
 }
 
+
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR1(PVM pVM)
 {
     return pVM->cpum.s.Hyper.dr[1];
 }
+
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR2(PVM pVM)
 {
     return pVM->cpum.s.Hyper.dr[2];
 }
 
+
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR3(PVM pVM)
 {
     return pVM->cpum.s.Hyper.dr[3];
 }
 
+
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR6(PVM pVM)
 {
     return pVM->cpum.s.Hyper.dr[6];
 }
+
 
 CPUMDECL(RTGCUINTREG) CPUMGetHyperDR7(PVM pVM)
 {
@@ -395,7 +415,7 @@ CPUMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVM pVM)
  */
 CPUMDECL(void) CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore)
 {
-    /** @todo #1410 requires selectors to be checked. */
+    /** @todo #1410 requires selectors to be checked. (huh? 1410?) */
 
     PCPUMCTXCORE pCtxCoreDst = CPUMCTX2CORE(&pVM->cpum.s.Guest);
     *pCtxCoreDst = *pCtxCore;
@@ -510,14 +530,14 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
                 Log(("CPUM New HyperCR0=%#x\n", HyperCR0));
                 ASMSetCR0(HyperCR0);
             }
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
             else
             {
                 uint32_t HyperCR0 = ASMGetCR0();
                 AssertMsg((HyperCR0 & (X86_CR0_TS | X86_CR0_MP)) == (X86_CR0_TS | X86_CR0_MP), ("%#x\n", HyperCR0));
                 AssertMsg((HyperCR0 & X86_CR0_EM) == (pVM->cpum.s.Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
             }
-#endif
+# endif
         }
         else
         {
@@ -535,7 +555,7 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
             ASMSetCR0(HyperCR0);
         }
     }
-#endif
+#endif /* IN_GC */
 
     /*
      * Check for changes causing TLB flushes (for REM).
@@ -550,11 +570,13 @@ CPUMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestCR2(PVM pVM, uint64_t cr2)
 {
     pVM->cpum.s.Guest.cr2 = cr2;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestCR3(PVM pVM, uint64_t cr3)
 {
@@ -562,6 +584,7 @@ CPUMDECL(int) CPUMSetGuestCR3(PVM pVM, uint64_t cr3)
     pVM->cpum.s.fChanged |= CPUM_CHANGED_CR3;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestCR4(PVM pVM, uint64_t cr4)
 {
@@ -575,11 +598,13 @@ CPUMDECL(int) CPUMSetGuestCR4(PVM pVM, uint64_t cr4)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestEFlags(PVM pVM, uint32_t eflags)
 {
     pVM->cpum.s.Guest.eflags.u32 = eflags;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestEIP(PVM pVM, uint32_t eip)
 {
@@ -587,11 +612,13 @@ CPUMDECL(int) CPUMSetGuestEIP(PVM pVM, uint32_t eip)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestEAX(PVM pVM, uint32_t eax)
 {
     pVM->cpum.s.Guest.eax = eax;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestEBX(PVM pVM, uint32_t ebx)
 {
@@ -599,11 +626,13 @@ CPUMDECL(int) CPUMSetGuestEBX(PVM pVM, uint32_t ebx)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestECX(PVM pVM, uint32_t ecx)
 {
     pVM->cpum.s.Guest.ecx = ecx;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestEDX(PVM pVM, uint32_t edx)
 {
@@ -611,11 +640,13 @@ CPUMDECL(int) CPUMSetGuestEDX(PVM pVM, uint32_t edx)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestESP(PVM pVM, uint32_t esp)
 {
     pVM->cpum.s.Guest.esp = esp;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestEBP(PVM pVM, uint32_t ebp)
 {
@@ -623,11 +654,13 @@ CPUMDECL(int) CPUMSetGuestEBP(PVM pVM, uint32_t ebp)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestESI(PVM pVM, uint32_t esi)
 {
     pVM->cpum.s.Guest.esi = esi;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestEDI(PVM pVM, uint32_t edi)
 {
@@ -635,11 +668,13 @@ CPUMDECL(int) CPUMSetGuestEDI(PVM pVM, uint32_t edi)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestSS(PVM pVM, uint16_t ss)
 {
     pVM->cpum.s.Guest.ss = ss;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestCS(PVM pVM, uint16_t cs)
 {
@@ -647,11 +682,13 @@ CPUMDECL(int) CPUMSetGuestCS(PVM pVM, uint16_t cs)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestDS(PVM pVM, uint16_t ds)
 {
     pVM->cpum.s.Guest.ds = ds;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestES(PVM pVM, uint16_t es)
 {
@@ -659,11 +696,13 @@ CPUMDECL(int) CPUMSetGuestES(PVM pVM, uint16_t es)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(int) CPUMSetGuestFS(PVM pVM, uint16_t fs)
 {
     pVM->cpum.s.Guest.fs = fs;
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(int) CPUMSetGuestGS(PVM pVM, uint16_t gs)
 {
@@ -671,64 +710,67 @@ CPUMDECL(int) CPUMSetGuestGS(PVM pVM, uint16_t gs)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(void) CPUMSetGuestEFER(PVM pVM, uint64_t val)
 {
     pVM->cpum.s.Guest.msrEFER = val;
 }
 
+
 CPUMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr)
 {
-    uint64_t val = 0;
+    uint64_t u64 = 0;
 
     switch (idMsr)
     {
-    case MSR_IA32_CR_PAT:
-        val = pVM->cpum.s.Guest.msrPAT;
-        break;
+        case MSR_IA32_CR_PAT:
+            u64 = pVM->cpum.s.Guest.msrPAT;
+            break;
 
-    case MSR_IA32_SYSENTER_CS:
-        val = pVM->cpum.s.Guest.SysEnter.cs;
-        break;
+        case MSR_IA32_SYSENTER_CS:
+            u64 = pVM->cpum.s.Guest.SysEnter.cs;
+            break;
 
-    case MSR_IA32_SYSENTER_EIP:
-        val = pVM->cpum.s.Guest.SysEnter.eip;
-        break;
+        case MSR_IA32_SYSENTER_EIP:
+            u64 = pVM->cpum.s.Guest.SysEnter.eip;
+            break;
 
-    case MSR_IA32_SYSENTER_ESP:
-        val = pVM->cpum.s.Guest.SysEnter.esp;
-        break;
+        case MSR_IA32_SYSENTER_ESP:
+            u64 = pVM->cpum.s.Guest.SysEnter.esp;
+            break;
 
-    case MSR_K6_EFER:
-        val = pVM->cpum.s.Guest.msrEFER;
-        break;
+        case MSR_K6_EFER:
+            u64 = pVM->cpum.s.Guest.msrEFER;
+            break;
 
-    case MSR_K8_SF_MASK:
-        val = pVM->cpum.s.Guest.msrSFMASK;
-        break;
+        case MSR_K8_SF_MASK:
+            u64 = pVM->cpum.s.Guest.msrSFMASK;
+            break;
 
-    case MSR_K6_STAR:
-        val = pVM->cpum.s.Guest.msrSTAR;
-        break;
+        case MSR_K6_STAR:
+            u64 = pVM->cpum.s.Guest.msrSTAR;
+            break;
 
-    case MSR_K8_LSTAR:
-        val = pVM->cpum.s.Guest.msrLSTAR;
-        break;
+        case MSR_K8_LSTAR:
+            u64 = pVM->cpum.s.Guest.msrLSTAR;
+            break;
 
-    case MSR_K8_CSTAR:
-        val = pVM->cpum.s.Guest.msrCSTAR;
-        break;
+        case MSR_K8_CSTAR:
+            u64 = pVM->cpum.s.Guest.msrCSTAR;
+            break;
 
-    case MSR_K8_KERNEL_GS_BASE:
-        val = pVM->cpum.s.Guest.msrKERNELGSBASE;
-        break;
+        case MSR_K8_KERNEL_GS_BASE:
+            u64 = pVM->cpum.s.Guest.msrKERNELGSBASE;
+            break;
 
-    /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
-    default:
-        AssertFailed();
-        break;
+        /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
+        default:
+            AssertFailed();
+            break;
     }
-    return val;
+    return u64;
 }
+
 
 CPUMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
 {
@@ -737,132 +779,158 @@ CPUMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
     return pVM->cpum.s.Guest.idtr.pIdt;
 }
 
+
 CPUMDECL(RTSEL) CPUMGetGuestTR(PVM pVM)
 {
     return pVM->cpum.s.Guest.tr;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetGuestCS(PVM pVM)
 {
     return pVM->cpum.s.Guest.cs;
 }
 
+
 CPUMDECL(RTSEL) CPUMGetGuestDS(PVM pVM)
 {
     return pVM->cpum.s.Guest.ds;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetGuestES(PVM pVM)
 {
     return pVM->cpum.s.Guest.es;
 }
 
+
 CPUMDECL(RTSEL) CPUMGetGuestFS(PVM pVM)
 {
     return pVM->cpum.s.Guest.fs;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetGuestGS(PVM pVM)
 {
     return pVM->cpum.s.Guest.gs;
 }
 
+
 CPUMDECL(RTSEL) CPUMGetGuestSS(PVM pVM)
 {
     return pVM->cpum.s.Guest.ss;
 }
+
 
 CPUMDECL(RTSEL) CPUMGetGuestLDTR(PVM pVM)
 {
     return pVM->cpum.s.Guest.ldtr;
 }
 
+
 CPUMDECL(uint64_t) CPUMGetGuestCR0(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr0;
 }
+
 
 CPUMDECL(uint64_t) CPUMGetGuestCR2(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr2;
 }
 
+
 CPUMDECL(uint64_t) CPUMGetGuestCR3(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr3;
 }
+
 
 CPUMDECL(uint64_t) CPUMGetGuestCR4(PVM pVM)
 {
     return pVM->cpum.s.Guest.cr4;
 }
 
+
 CPUMDECL(void) CPUMGetGuestGDTR(PVM pVM, PVBOXGDTR pGDTR)
 {
     *pGDTR = pVM->cpum.s.Guest.gdtr;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetGuestEIP(PVM pVM)
 {
     return pVM->cpum.s.Guest.eip;
 }
 
+
 CPUMDECL(uint64_t) CPUMGetGuestRIP(PVM pVM)
 {
     return pVM->cpum.s.Guest.rip;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetGuestEAX(PVM pVM)
 {
     return pVM->cpum.s.Guest.eax;
 }
 
+
 CPUMDECL(uint32_t) CPUMGetGuestEBX(PVM pVM)
 {
     return pVM->cpum.s.Guest.ebx;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetGuestECX(PVM pVM)
 {
     return pVM->cpum.s.Guest.ecx;
 }
 
+
 CPUMDECL(uint32_t) CPUMGetGuestEDX(PVM pVM)
 {
     return pVM->cpum.s.Guest.edx;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetGuestESI(PVM pVM)
 {
     return pVM->cpum.s.Guest.esi;
 }
 
+
 CPUMDECL(uint32_t) CPUMGetGuestEDI(PVM pVM)
 {
     return pVM->cpum.s.Guest.edi;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetGuestESP(PVM pVM)
 {
     return pVM->cpum.s.Guest.esp;
 }
 
+
 CPUMDECL(uint32_t) CPUMGetGuestEBP(PVM pVM)
 {
     return pVM->cpum.s.Guest.ebp;
 }
+
 
 CPUMDECL(uint32_t) CPUMGetGuestEFlags(PVM pVM)
 {
     return pVM->cpum.s.Guest.eflags.u32;
 }
 
+
 CPUMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM)
 {
     return &pVM->cpum.s.Guest.trHid;
 }
 
-//@todo: crx should be an array
+
+///@todo: crx should be an array
 CPUMDECL(int) CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue)
 {
     switch (iReg)
@@ -885,47 +953,59 @@ CPUMDECL(int) CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue)
     return VINF_SUCCESS;
 }
 
+
 CPUMDECL(uint64_t) CPUMGetGuestDR0(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr[0];
 }
+
 
 CPUMDECL(uint64_t) CPUMGetGuestDR1(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr[1];
 }
 
+
 CPUMDECL(uint64_t) CPUMGetGuestDR2(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr[2];
 }
+
 
 CPUMDECL(uint64_t) CPUMGetGuestDR3(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr[3];
 }
 
+
 CPUMDECL(uint64_t) CPUMGetGuestDR6(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr[6];
 }
+
 
 CPUMDECL(uint64_t) CPUMGetGuestDR7(PVM pVM)
 {
     return pVM->cpum.s.Guest.dr[7];
 }
 
+
 CPUMDECL(int) CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint64_t *pValue)
 {
     AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
+    if (iReg == 4 || iReg == 5)
+        iReg += 2;
     *pValue = pVM->cpum.s.Guest.dr[iReg];
     return VINF_SUCCESS;
 }
+
 
 CPUMDECL(uint64_t) CPUMGetGuestEFER(PVM pVM)
 {
     return pVM->cpum.s.Guest.msrEFER;
 }
+
 
 /**
  * Gets a CpuId leaf.
@@ -956,6 +1036,7 @@ CPUMDECL(void) CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32
     Log2(("CPUMGetGuestCpuId: iLeaf=%#010x %RX32 %RX32 %RX32 %RX32\n", iLeaf, *pEax, *pEbx, *pEcx, *pEdx));
 }
 
+
 /**
  * Gets a pointer to the array of standard CPUID leafs.
  *
@@ -970,6 +1051,7 @@ CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM)
     return RCPTRTYPE(PCCPUMCPUID)VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdStd[0]);
 }
 
+
 /**
  * Gets a pointer to the array of extended CPUID leafs.
  *
@@ -981,8 +1063,9 @@ CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM)
  */
 CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM)
 {
-    return RCPTRTYPE(PCCPUMCPUID)VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdExt[0]);
+    return (RCPTRTYPE(PCCPUMCPUID))VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdExt[0]);
 }
+
 
 /**
  * Gets a pointer to the array of centaur CPUID leafs.
@@ -995,8 +1078,9 @@ CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM)
  */
 CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM)
 {
-    return RCPTRTYPE(PCCPUMCPUID)VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
+    return (RCPTRTYPE(PCCPUMCPUID))VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
 }
+
 
 /**
  * Gets a pointer to the default CPUID leaf.
@@ -1007,8 +1091,9 @@ CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM)
  */
 CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM)
 {
-    return RCPTRTYPE(PCCPUMCPUID)VM_GUEST_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
+    return (RCPTRTYPE(PCCPUMCPUID))VM_GUEST_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
 }
+
 
 /**
  * Gets a number of standard CPUID leafs.
@@ -1022,6 +1107,7 @@ CPUMDECL(uint32_t) CPUMGetGuestCpuIdStdMax(PVM pVM)
     return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd);
 }
 
+
 /**
  * Gets a number of extended CPUID leafs.
  *
@@ -1034,6 +1120,7 @@ CPUMDECL(uint32_t) CPUMGetGuestCpuIdExtMax(PVM pVM)
     return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt);
 }
 
+
 /**
  * Gets a number of centaur CPUID leafs.
  *
@@ -1045,6 +1132,7 @@ CPUMDECL(uint32_t) CPUMGetGuestCpuIdCentaurMax(PVM pVM)
 {
     return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur);
 }
+
 
 /**
  * Sets a CPUID feature bit.
@@ -1195,6 +1283,7 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
     pVM->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
 }
 
+
 /**
  * Queries a CPUID feature bit.
  *
@@ -1219,6 +1308,7 @@ CPUMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
     }
     return false;
 }
+
 
 /**
  * Clears a CPUID feature bit.
@@ -1271,6 +1361,7 @@ CPUMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
     pVM->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
 }
 
+
 /**
  * Gets the CPU vendor
  *
@@ -1289,11 +1380,13 @@ CPUMDECL(int) CPUMSetGuestDR0(PVM pVM, uint64_t uDr0)
     return CPUMRecalcHyperDRx(pVM);
 }
 
+
 CPUMDECL(int) CPUMSetGuestDR1(PVM pVM, uint64_t uDr1)
 {
     pVM->cpum.s.Guest.dr[1] = uDr1;
     return CPUMRecalcHyperDRx(pVM);
 }
+
 
 CPUMDECL(int) CPUMSetGuestDR2(PVM pVM, uint64_t uDr2)
 {
@@ -1301,11 +1394,13 @@ CPUMDECL(int) CPUMSetGuestDR2(PVM pVM, uint64_t uDr2)
     return CPUMRecalcHyperDRx(pVM);
 }
 
+
 CPUMDECL(int) CPUMSetGuestDR3(PVM pVM, uint64_t uDr3)
 {
     pVM->cpum.s.Guest.dr[3] = uDr3;
     return CPUMRecalcHyperDRx(pVM);
 }
+
 
 CPUMDECL(int) CPUMSetGuestDR6(PVM pVM, uint64_t uDr6)
 {
@@ -1313,15 +1408,20 @@ CPUMDECL(int) CPUMSetGuestDR6(PVM pVM, uint64_t uDr6)
     return CPUMRecalcHyperDRx(pVM);
 }
 
+
 CPUMDECL(int) CPUMSetGuestDR7(PVM pVM, uint64_t uDr7)
 {
     pVM->cpum.s.Guest.dr[7] = uDr7;
     return CPUMRecalcHyperDRx(pVM);
 }
 
+
 CPUMDECL(int) CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint64_t Value)
 {
     AssertReturn(iReg <= USE_REG_DR7, VERR_INVALID_PARAMETER);
+    /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
+    if (iReg == 4 || iReg == 5)
+        iReg += 2;
     pVM->cpum.s.Guest.dr[iReg] = Value;
     return CPUMRecalcHyperDRx(pVM);
 }
@@ -1638,8 +1738,6 @@ CPUMDECL(uint32_t) CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore)
 }
 
 
-
-
 /**
  * Gets and resets the changed flags (CPUM_CHANGED_*).
  * Only REM should call this function.
@@ -1660,6 +1758,7 @@ CPUMDECL(unsigned) CPUMGetAndClearChangedFlagsREM(PVM pVM)
     return fFlags;
 }
 
+
 /**
  * Sets the specified changed flags (CPUM_CHANGED_*).
  *
@@ -1669,6 +1768,7 @@ CPUMDECL(void) CPUMSetChangedFlags(PVM pVM, uint32_t fChangedFlags)
 {
     pVM->cpum.s.fChanged |= fChangedFlags;
 }
+
 
 /**
  * Checks if the CPU supports the FXSAVE and FXRSTOR instruction.
@@ -1705,8 +1805,8 @@ CPUMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
     return (pVM->cpum.s.fUseFlags & CPUM_USE_SYSCALL) != 0;
 }
 
-
 #ifndef IN_RING3
+
 /**
  * Lazily sync in the FPU/XMM state
  *
@@ -1730,8 +1830,8 @@ CPUMDECL(int) CPUMRestoreHostFPUState(PVM pVM)
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     return CPUMRestoreHostFPUStateAsm(&pVM->cpum.s);
 }
-#endif /* !IN_RING3 */
 
+#endif /* !IN_RING3 */
 
 /**
  * Checks if we activated the FPU/XMM state of the guest OS
@@ -1755,7 +1855,6 @@ CPUMDECL(void) CPUMDeactivateGuestFPUState(PVM pVM)
 }
 
 
-
 /**
  * Checks if the guest debug state is active
  *
@@ -1767,13 +1866,14 @@ CPUMDECL(bool) CPUMIsGuestDebugStateActive(PVM pVM)
     return (pVM->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS) != 0;
 }
 
+
 /**
  * Mark the guest's debug state as inactive
  *
  * @returns boolean
  * @param   pVM         VM handle.
  */
-CPUMDECL(void) CPUMDeactivateGuestDebugtate(PVM pVM)
+CPUMDECL(void) CPUMDeactivateGuestDebugState(PVM pVM)
 {
     pVM->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
 }
@@ -1819,7 +1919,8 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
          * The hidden CS.DPL register is always equal to the CPL, it is
          * not affected by loading a conforming coding segment.
          *
-         * This only seems to apply to AMD-V; in the VT-x case we *do* need to look at SS. (ACP2 regression during install after a far call to ring 2)
+         * This only seems to apply to AMD-V; in the VT-x case we *do* need to look
+         * at SS. (ACP2 regression during install after a far call to ring 2)
          */
         cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
     }
@@ -1861,11 +1962,11 @@ CPUMDECL(CPUMMODE) CPUMGetGuestMode(PVM pVM)
     CPUMMODE enmMode;
     if (!(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
         enmMode = CPUMMODE_REAL;
-    else
-    if (!(pVM->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA))
+    else if (!(pVM->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA))
         enmMode = CPUMMODE_PROTECTED;
     else
         enmMode = CPUMMODE_LONG;
 
     return enmMode;
 }
+

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; CPUM - Internal header file.
+; CPUM - Internal header file (asm).
 ;
 
 ;
@@ -36,9 +36,9 @@
 %define CPUM_HANDLER_TYPEMASK           0ffh
 %define CPUM_HANDLER_CTXCORE_IN_EBP     RT_BIT(31)
 
-%define VMMGCRET_USED_FPU       040000000h
+%define VMMGCRET_USED_FPU               040000000h
 
-%define FPUSTATE_SIZE           512
+%define FPUSTATE_SIZE                   512
 
 ;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) in
 ; nasm please tell / fix this hack.
@@ -49,15 +49,9 @@
 %endif
 
 struc CPUM
-    .offVM          resd           1
-    .pCPUMGC        RTGCPTR32_RES  1          ; Guest Context pointer
-    .pCPUMHC        RTHCPTR_RES    1          ; Host Context pointer
-
-
     ;
     ; Host context state
     ;
-    alignb 32
     .Host.fpu            resb    FPUSTATE_SIZE
 
 %if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBIRD_32BIT_KERNEL
@@ -168,9 +162,8 @@ struc CPUM
 
     ;
     ; Hypervisor Context.
-    ; (Identical to .Host.*)
     ;
-    alignb 32                           ; the padding
+    alignb 64                           ; the padding
     .Hyper.fpu            resb    FPUSTATE_SIZE
 
     .Hyper.edi            resq    1
@@ -265,16 +258,12 @@ struc CPUM
     .Hyper.trHid.u32Limit     resd    1
     .Hyper.trHid.Attr         resd    1
 
-    ; padding
-;;;;    .Hyper.padding            resd    6
-
-
 
     ;
     ; Guest context state
-    ; (Identical to the two above chunks)
+    ; (Identical to the .Hyper chunk above.)
     ;
-    alignb 32
+    alignb 64
     .Guest.fpu            resb    FPUSTATE_SIZE
 
     .Guest.edi            resq    1
@@ -369,19 +358,15 @@ struc CPUM
     .Guest.trHid.u32Limit     resd    1
     .Guest.trHid.Attr         resd    1
 
-    ; padding
-;;;;    .Guest.padding            resd    6
-
-
 
     ;
     ; Other stuff.
     ;
-    alignb 32
+    alignb 64
     ; hypervisor core context.
     .pHyperCoreR3         RTR3PTR_RES   1
     .pHyperCoreR0         RTR0PTR_RES   1
-    .pHyperCoreGC         RTGCPTR32_RES 1
+    .pHyperCoreRC         RTRCPTR_RES   1
     ;...
     .fUseFlags            resd    1
     .fChanged             resd    1
@@ -414,8 +399,8 @@ struc CPUM
     .aGuestCpuIdCentaur   resb    16*4
     .GuestCpuIdDef        resb    16
 
+    alignb 64
     ; CPUMCTX debug stuff...
     .GuestEntry           resb   1024
-
 endstruc
 

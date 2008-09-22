@@ -35,7 +35,6 @@
 
 
 
-
 /**
  * Does Ring-0 CPUM initialization.
  *
@@ -52,7 +51,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
     /*
      * Check CR0 & CR4 flags.
      */
-    uint32_t    u32CR0 = ASMGetCR0();
+    uint32_t u32CR0 = ASMGetCR0();
     if ((u32CR0 & (X86_CR0_PE | X86_CR0_PG)) != (X86_CR0_PE | X86_CR0_PG)) /* a bit paranoid perhaps.. */
     {
         Log(("CPUMR0Init: PE or PG not set. cr0=%#x\n", u32CR0));
@@ -98,7 +97,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
      * Check if debug registers are armed.
      * This ASSUMES that DR7.GD is not set, or that it's handled transparently!
      */
-    uint32_t    u32DR7 = ASMGetDR7();
+    uint32_t u32DR7 = ASMGetDR7();
     if (u32DR7 & X86_DR7_ENABLED_MASK)
     {
         pVM->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
@@ -154,14 +153,13 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
      *   1 |  1 |  1 | #NM      | #NM  :: Go to guest taking trap there.
      */
 
-    switch(pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
+    switch (pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
     {
-    case X86_CR0_MP | X86_CR0_TS:
-    case X86_CR0_MP | X86_CR0_EM | X86_CR0_TS:
-        return VINF_EM_RAW_GUEST_TRAP;
-
-    default:
-        break;
+        case X86_CR0_MP | X86_CR0_TS:
+        case X86_CR0_MP | X86_CR0_EM | X86_CR0_TS:
+            return VINF_EM_RAW_GUEST_TRAP;
+        default:
+            break;
     }
 
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
@@ -171,9 +169,10 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
     /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
     if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
     {
-        /* @todo Do we really need to read this every time?? The host could change this on the fly though. */
+        /** @todo Do we really need to read this every time?? The host could change this on the fly though.
+         *  bird: what about starting by skipping the ASMWrMsr below if we didn't
+         *        change anything? Ditto for the stuff in CPUMR0SaveGuestFPU. */
         oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
-
         if (oldMsrEFERHost & MSR_K6_EFER_FFXSR)
         {
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
@@ -192,8 +191,11 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
 
  	/* CPUMHandleLazyFPU could have changed CR0; restore it. */
     ASMSetCR0(oldCR0);
-#else
-    /* Save the FPU control word and MXCSR, so we can restore the state properly afterwards.
+
+#else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
+
+    /*
+     * Save the FPU control word and MXCSR, so we can restore the state properly afterwards.
      * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
      */
     pVM->cpum.s.Host.fpu.FCW = CPUMGetFCW();
@@ -202,13 +204,14 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
 
     CPUMLoadFPUAsm(pCtx);
 
-    /* The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
+    /*
+     * The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
      *
      * MSR_K6_EFER_FFXSR changes the behaviour of fxsave and fxrstore: the XMM state isn't saved/restored
      */
     if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
     {
-        /* @todo Do we really need to read this every time?? The host could change this on the fly though. */
+        /** @todo Do we really need to read this every time?? The host could change this on the fly though. */
         uint64_t msrEFERHost = ASMRdMsr(MSR_K6_EFER);
 
         if (msrEFERHost & MSR_K6_EFER_FFXSR)
@@ -218,7 +221,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
             pVM->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
         }
     }
-#endif
+#endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
 
     pVM->cpum.s.fUseFlags |= CPUM_USED_FPU;
     return VINF_SUCCESS;
@@ -253,22 +256,24 @@ CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
     if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
         ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
 
-#else
+#else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
     CPUMSaveFPUAsm(pCtx);
     if (pVM->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
     {
         /* fxsave doesn't save the XMM state! */
         CPUMSaveXMMAsm(pCtx);
     }
-    /* Restore the original FPU control word and MXCSR.
+
+    /*
+     * Restore the original FPU control word and MXCSR.
      * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
      */
     CPUMSetFCW(pVM->cpum.s.Host.fpu.FCW);
     if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
         CPUMSetMXCSR(pVM->cpum.s.Host.fpu.MXCSR);
-#endif
+#endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
 
-    pVM->cpum.s.fUseFlags &= ~(CPUM_USED_FPU|CPUM_MANUAL_XMM_RESTORE);
+    pVM->cpum.s.fUseFlags &= ~(CPUM_USED_FPU | CPUM_MANUAL_XMM_RESTORE);
     return VINF_SUCCESS;
 }
 
@@ -293,7 +298,8 @@ CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
     if (fDR6)
         pCtx->dr[6] = ASMGetDR6();
 
-    /* Restore the host's debug state. DR0-3, DR6 and only then DR7! 
+    /*
+     * Restore the host's debug state. DR0-3, DR6 and only then DR7!
      * DR7 contains 0x400 right now.
      */
     ASMSetDR0(pVM->cpum.s.Host.dr0);
@@ -324,7 +330,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
     pVM->cpum.s.Host.dr2 = ASMGetDR2();
     pVM->cpum.s.Host.dr3 = ASMGetDR3();
     pVM->cpum.s.Host.dr6 = ASMGetDR6();
-    /* @todo dr7 might already have been changed to 0x400; don't care right now as it's harmless. */
+    /** @todo dr7 might already have been changed to 0x400; don't care right now as it's harmless. */
     pVM->cpum.s.Host.dr7 = ASMGetDR7();
     /* Make sure DR7 is harmless or else we could trigger breakpoints when restoring dr0-3 (!) */
     ASMSetDR7(X86_DR7_INIT_VAL);
@@ -340,3 +346,4 @@ CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
     pVM->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
     return VINF_SUCCESS;
 }
+

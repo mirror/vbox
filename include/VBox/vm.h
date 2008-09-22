@@ -465,8 +465,10 @@ typedef struct VM
     STAMPROFILEADV      StatSwitcherLldt;
     STAMPROFILEADV      StatSwitcherTSS;
 
+/** @todo Realign everything on 64 byte boundraries to better match the
+ *        cache-line size. */
     /* padding - the unions must be aligned on 32 bytes boundraries. */
-    uint32_t            padding[HC_ARCH_BITS == 32 ? 4 : 6];
+    uint32_t            padding[HC_ARCH_BITS == 32 ? 4+8 : 6];
 
     /** CPUM part. */
     union
@@ -634,10 +636,8 @@ typedef struct VM
 #endif
     } rem;
 
-#if HC_ARCH_BITS == 64
     /** Padding for aligning the cpu array on a 64 byte boundrary. */
-    uint32_t u32Reserved2[HC_ARCH_BITS == 32 ? 0 : 8];
-#endif
+    uint32_t u32Reserved2[8];
 
     /**
      * Per virtual CPU state.

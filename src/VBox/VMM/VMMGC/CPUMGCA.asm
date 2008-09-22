@@ -1,7 +1,7 @@
 ; $Id$
 ;; @file
-;
 ; CPUM - Guest Context Assembly Routines.
+;
 
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.
 ;
@@ -186,32 +186,32 @@ BEGINPROC_EXPORTED CPUMGCCallGuestTrapHandler
 
     TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
     iret
-
 ENDPROC CPUMGCCallGuestTrapHandler
+
 
 ;;
 ; Performs an iret to V86 code
 ; Assumes a trap stack frame has already been setup on the guest's stack!
 ;
 ; @param   pRegFrame   Original trap/interrupt context
-; 
+;
 ; This function does not return!
-; 
+;
 ;CPUMGCDECL(void) CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 align 16
 BEGINPROC CPUMGCCallV86Code
     mov     ebp, [esp + 4]                  ; pRegFrame
 
     ; construct iret stack frame
-    push    dword [ebp + CPUMCTXCORE.gs] 
-    push    dword [ebp + CPUMCTXCORE.fs] 
-    push    dword [ebp + CPUMCTXCORE.ds] 
-    push    dword [ebp + CPUMCTXCORE.es] 
-    push    dword [ebp + CPUMCTXCORE.ss] 
-    push    dword [ebp + CPUMCTXCORE.esp] 
-    push    dword [ebp + CPUMCTXCORE.eflags] 
-    push    dword [ebp + CPUMCTXCORE.cs] 
-    push    dword [ebp + CPUMCTXCORE.eip] 
+    push    dword [ebp + CPUMCTXCORE.gs]
+    push    dword [ebp + CPUMCTXCORE.fs]
+    push    dword [ebp + CPUMCTXCORE.ds]
+    push    dword [ebp + CPUMCTXCORE.es]
+    push    dword [ebp + CPUMCTXCORE.ss]
+    push    dword [ebp + CPUMCTXCORE.esp]
+    push    dword [ebp + CPUMCTXCORE.eflags]
+    push    dword [ebp + CPUMCTXCORE.cs]
+    push    dword [ebp + CPUMCTXCORE.eip]
 
     ;
     ; enable WP
@@ -234,6 +234,7 @@ BEGINPROC CPUMGCCallV86Code
     TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
     iret
 ENDPROC CPUMGCCallV86Code
+
 
 ;;
 ; This is a main entry point for resuming (or starting) guest
@@ -382,7 +383,4 @@ BEGINPROC_EXPORTED CPUMGCResumeGuestV86
     TRPM_NP_GP_HANDLER NAME(cpumGCHandleNPAndGP), CPUM_HANDLER_IRET
     iretd
 ENDPROC     CPUMGCResumeGuestV86
-
-
-
 
