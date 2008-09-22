@@ -54,7 +54,7 @@ INSTALLS         = solaris-doc
 PACKING          = $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
 OTHER_CLEAN      = $(addprefix $(SOLARIS_INST_DIR)/,\
 	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
-        makepackage.sh prototype postinstall.sh preremove.sh etc/devlink.tab )
+        makepackage.sh prototype postinstall.sh preremove.sh)
 
 #
 # Solaris installs.
@@ -227,7 +227,6 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.space \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse \
-		$(VBOX_PATH_SOL_INST_SRC)/vboxdevlink.sed \
 		$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
@@ -391,7 +390,6 @@ endif
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/preremove.sh                                       $(SOLARIS_INST_DIR)/preremove.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/makepackage.sh                                     $(SOLARIS_INST_DIR)/makepackage.sh
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse                                   $(SOLARIS_INST_DIR)/autoresponse
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vboxdevlink.sed                                    $(SOLARIS_INST_DIR)/etc/devlink.tab
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.space                                         $(SOLARIS_INST_DIR)/vbox.space
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \

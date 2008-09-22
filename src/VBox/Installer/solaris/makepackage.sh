@@ -86,10 +86,9 @@ echo 'i space=./vbox.space' >> prototype
 if test -f "./vbox.copyright"; then
     echo 'i copyright=./vbox.copyright' >> prototype
 fi
-echo 'e sed /etc/devlink.tab ? ? ?' >> prototype
 find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
-# don't grok for the sed class files
+# don't grok for the class files
 filelist_fixup prototype '$2 == "none"'                                                                 '$5 = "root"; $6 = "bin"'
 filelist_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3"="$3'
 
