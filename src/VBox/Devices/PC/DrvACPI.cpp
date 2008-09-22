@@ -1,6 +1,6 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- * ACPI Host Driver.
+ * DrvACPI - ACPI Host Driver.
  */
 
 /*
