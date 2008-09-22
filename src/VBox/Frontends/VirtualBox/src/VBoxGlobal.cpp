@@ -76,6 +76,7 @@
 #define BOOL PRBool
 #endif
 
+#include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
