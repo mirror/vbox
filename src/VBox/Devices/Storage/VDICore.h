@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * Virtual Disk Image (VDI), Core Code Header (internal).
  */
