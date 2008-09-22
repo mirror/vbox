@@ -1,6 +1,6 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- * Raw Disk image, Core Code.
+ * RawHDDCore - Raw Disk image, Core Code.
  */
 
 /*
