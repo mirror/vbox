@@ -238,15 +238,6 @@
 # define CTXTYPE(GCType, R3Type, R0Type)  R0Type
 #endif
 
-/** @def GCTYPE
- * Declare a type differently in GC and HC.
- *
- * @param   GCType  The GC type.
- * @param   HCType  The HC type.
- * @remark  For pointers used only in one context use RCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
- */
-#define GCTYPE(GCType, HCType)  CTXTYPE(GCType, HCType, HCType)
-
 /** @def RCPTRTYPE
  * Declare a pointer which is used in the raw mode context but appears in structure(s) used by
  * both HC and RC. The main purpose is to make sure structures have the same
