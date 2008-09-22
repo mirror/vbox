@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * DBGC - Debugger Console, Internal Header File.
  */
