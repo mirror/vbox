@@ -235,7 +235,7 @@ typedef struct CPUMHOSTCTX
 
     /* padding to get 32byte aligned size */
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-    uint8_t         auPadding[16+32];
+    uint8_t         auPadding[16];
 # else
     uint8_t         auPadding[8+32];
 # endif
