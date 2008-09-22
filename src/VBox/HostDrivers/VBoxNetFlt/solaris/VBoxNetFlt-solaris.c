@@ -193,7 +193,7 @@ static struct cb_ops g_VBoxNetFltSolarisCbOps =
     nochpoll,                       /* c poll */
     ddi_prop_op,                    /* property ops */
     &g_VBoxNetFltSolarisStreamTab,
-    D_NEW | D_MP | D_MTPERMOD,      /* compat. flag */
+    D_NEW | D_MP | D_MTPERQ,        /* compat. flag */
     CB_REV                          /* revision */
 };
 
@@ -302,7 +302,7 @@ typedef struct vboxnetflt_stream_t
     int DevMinor;                         /* minor device no. (for clone) */
     queue_t *pReadQueue;                  /* read side queue */
     struct vboxnetflt_stream_t *pNext;    /* next stream in list */
-    PVBOXNETFLTINS pThis;                 /* the backend instance */
+    PVBOXNETFLTINS volatile pThis;        /* the backend instance */
     VBOXNETFLTSTREAMTYPE Type;            /* the type of the stream Ip/Arp */
 } vboxnetflt_stream_t;
 
@@ -700,13 +700,13 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
      * Pick up the current global VBOXNETFLTINS instance as
      * the one that we will associate this stream with.
      */
-    pStream->pThis = pThis;
+    ASMAtomicUoWritePtr((void * volatile *)&pStream->pThis, pThis);
     pStream->Type = pState->CurType;
     switch (pStream->Type)
     {
-        case kIpStream:         ASMAtomicUoWritePtr(&pThis->u.s.pvIpStream, pStream);         break;
-        case kArpStream:        ASMAtomicUoWritePtr(&pThis->u.s.pvArpStream, pStream);        break;
-        case kPromiscStream:    ASMAtomicUoWritePtr(&pThis->u.s.pvPromiscStream, pStream);    break;
+        case kIpStream:         ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvIpStream, pStream);         break;
+        case kArpStream:        ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvArpStream, pStream);        break;
+        case kPromiscStream:    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvPromiscStream, pStream);    break;
         default:    /* Heh. */
         {
                 RTSpinlockRelease(pThis->hSpinlock, &Tmp);
@@ -805,7 +805,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     }
 
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PVBOXNETFLTINS pThis = pStream->pThis;
+    PVBOXNETFLTINS pThis = ASMAtomicUoReadPtr((void * volatile *)&pStream->pThis);
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
     qprocsoff(pQueue);
@@ -870,6 +870,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
 
     bool fSendUpstream = true;
     bool fActive = false;
+    bool fRetained = false;
     vboxnetflt_stream_t *pStream = pQueue->q_ptr;
     PVBOXNETFLTINS pThis = NULL;
 
@@ -880,7 +881,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
     if (   pStream
         && pStream->Type == kPromiscStream)
     {
-        pThis = vboxNetFltSolarisFindInstance(pStream);
+        pThis = ASMAtomicUoReadPtr((void * volatile *)&pStream->pThis);
         if (RT_LIKELY(pThis))
         {
             /*
@@ -889,8 +890,8 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
             RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
             RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
             fActive = ASMAtomicUoReadBool(&pThis->fActive);
-            if (fActive)
-                vboxNetFltRetain(pThis, true);
+            vboxNetFltRetain(pThis, true);
+            fRetained = true;
             RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
             vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
@@ -1034,7 +1035,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
             putq(pQueue, pMsg);
     }
 
-    if (fActive)
+    if (fRetained)
         vboxNetFltRelease(pThis, true);
 
     return 0;
@@ -1773,7 +1774,7 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
-    vboxnetflt_promisc_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
+    vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
     if (pPromiscStream)
     {
         /*
@@ -2376,9 +2377,9 @@ static inline void vboxNetFltSolarisInitPacketId(PVBOXNETFLTPACKETID pTag, mblk_
  * Queues a packet for loopback elimination.
  *
  * @returns VBox status code.
- * @param   pThis       The instance.
+ * @param   pThis               The instance.
  * @param   pPromiscStream      Pointer to the promiscuous stream.
- * @param   pMsg        Pointer to the message.
+ * @param   pMsg                Pointer to the message.
  */
 static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promisc_stream_t *pPromiscStream, mblk_t *pMsg)
 {
@@ -2389,15 +2390,18 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
 
     LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback pThis=%p pPromiscStream=%p pMsg=%p\n", pThis, pPromiscStream, pMsg));
 
-    size_t cbMsg = MBLKL(pMsg);
-    if (cbMsg < sizeof(RTNETETHERHDR))
-        return VERR_NET_MSG_SIZE;
-
-    if (pMsg->b_cont)
+    if (RT_UNLIKELY(pMsg->b_cont))
     {
-        /* @todo -XXX- handle chained messages */
-        return VERR_NOT_IMPLEMENTED;
+        /*
+         * We don't currently make chained messages in on Xmit
+         * so this only needs to be supported when we do that.
+         */
+        return VERR_NOT_SUPPORTED;
     }
+
+    size_t cbMsg = MBLKL(pMsg);
+    if (RT_UNLIKELY(cbMsg < sizeof(RTNETETHERHDR)))
+        return VERR_NET_MSG_SIZE;
 
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
@@ -2501,7 +2505,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
 
     if (pMsg->b_cont)
     {
-        /** @todo -XXX- implement chained message handling. */
+        /** Handle this when Xmit makes chained messages */
         return false;
     }
 
@@ -2509,18 +2513,14 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
     if (cbMsg < sizeof(RTNETETHERHDR))
         return false;
 
+    PVBOXNETFLTPACKETID pPrev = NULL;
     PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
     bool fIsOur = false;
     while (pCur)
     {
-        if (pCur->cbPacket != cbMsg)
-        {
-            pCur = pCur->pNext;
-            continue;
-        }
-
         PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
-        if (   pCur->SrcMac.au8[0] != pEthHdr->SrcMac.au8[0]
+        if (   pCur->cbPacket != cbMsg
+            || pCur->SrcMac.au8[0] != pEthHdr->SrcMac.au8[0]
             || pCur->SrcMac.au8[1] != pEthHdr->SrcMac.au8[1]
             || pCur->SrcMac.au8[2] != pEthHdr->SrcMac.au8[2]
             || pCur->SrcMac.au8[3] != pEthHdr->SrcMac.au8[3]
@@ -2533,6 +2533,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
             || pCur->DstMac.au8[4] != pEthHdr->DstMac.au8[4]
             || pCur->DstMac.au8[5] != pEthHdr->DstMac.au8[5])
         {
+            pPrev = pCur;
             pCur = pCur->pNext;
             continue;
         }
@@ -2540,15 +2541,24 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
         uint16_t Checksum = RTCrc32(pMsg->b_rptr, cbMsg);
         if (pCur->Checksum != Checksum)
         {
+            pPrev = pCur;
             pCur = pCur->pNext;
             continue;
         }
 
         /*
          * Yes, it really is our own packet, mark it as handled
-         * and return it's found.
+         * and move it to the tail and return it's found.
          */
         pCur->cbPacket = 0;
+        if (pPrev)
+        {
+            pPrev->pNext = pCur->pNext;
+            pPromiscStream->pTail->pNext = pCur;
+            pPromiscStream->pTail = pCur;
+            pCur->pNext = NULL;
+        }
+
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p cLoopback=%d\n", pMsg, pPromiscStream->cLoopback));
         return true;
     }
@@ -2577,7 +2587,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     /*
      * Don't loopback packets we transmit to the wire.
      */
-    vboxnetflt_promisc_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
+    vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
     if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
     {
         LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
@@ -2888,7 +2898,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     /*
      * Enable/disable promiscuous mode.
      */
-    vboxnetflt_stream_t *pStream = pThis->u.s.pvPromiscStream;
+    vboxnetflt_stream_t *pStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
     if (pStream)
     {
         int rc = vboxNetFltSolarisPromiscReq(pStream->pReadQueue, fActive);
@@ -2960,11 +2970,12 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
      */
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
-        vboxnetflt_promisc_stream_t *pPromiscStream = pThis->u.s.pvPromiscStream;
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
         if (!pPromiscStream)
             return VERR_INVALID_POINTER;
 
         queue_t *pPromiscWriteQueue = WR(pPromiscStream->Stream.pReadQueue);
+        Assert(pPromiscWriteQueue);
 
         mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
         if (RT_UNLIKELY(!pMsg))
@@ -3014,8 +3025,10 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             /*
              * Send message up ARP stream.
              */
-            vboxnetflt_stream_t *pArpStream = pThis->u.s.pvArpStream;
+            vboxnetflt_stream_t *pArpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvArpStream);
             queue_t *pArpReadQueue = pArpStream->pReadQueue;
+            Assert(pArpReadQueue);
+
             putnext(pArpReadQueue, pMsg);
         }
         else
@@ -3025,8 +3038,10 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             /*
              * Send messages up IP stream.
              */
-            vboxnetflt_stream_t *pIpStream = pThis->u.s.pvIpStream;
+            vboxnetflt_stream_t *pIpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIpStream);
             queue_t *pIpReadQueue = pIpStream->pReadQueue;
+            Assert(pIpReadQueue);
+
             putnext(pIpReadQueue, pMsg);
         }
     }
