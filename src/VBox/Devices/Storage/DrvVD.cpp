@@ -1,8 +1,6 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * Media implementation for VBox disk container
+ * DrvVD - Generic VBox disk media driver.
  */
 
 /*
@@ -884,7 +882,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         /*
          * We know definitly if async I/O is supported now.
-         * Create cache if it is supported. 
+         * Create cache if it is supported.
          */
         if (pThis->fAsyncIOSupported)
         {
