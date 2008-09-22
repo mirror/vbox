@@ -405,6 +405,11 @@ int HGCMThread::MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool f
     {
         pMsg->m_pfnCallback = pfnCallback;
 
+        if (fWait)
+        {
+            pMsg->m_fu32Flags |= HGCM_MSG_F_WAIT;
+        }
+
         /* Insert the message to the queue tail. */
         pMsg->m_pNext = NULL;
         pMsg->m_pPrev = m_pMsgInputQueueTail;
@@ -423,11 +428,6 @@ int HGCMThread::MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool f
         Leave ();
 
         LogFlow(("HGCMThread::MsgPost: going to inform the thread %p about message, fWait = %d\n", this, fWait));
-
-        if (fWait)
-        {
-            pMsg->m_fu32Flags |= HGCM_MSG_F_WAIT;
-        }
 
         /* Inform the worker thread that there is a message. */
         RTSemEventMultiSignal (m_eventThread);
