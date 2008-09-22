@@ -1774,56 +1774,6 @@ ResumeExecution:
 
         IoExitInfo.au32[0] = pVMCB->ctrl.u64ExitInfo1;
 
-        /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
-        if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
-        {
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxIOCheck);
-            for (unsigned i=0;i<4;i++)
-            {
-                if (    pCtx->dr[i] == IoExitInfo.n.u16Port
-                    &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
-                    &&  (pCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
-                {
-                    SVM_EVENT Event;
-
-                    Assert(CPUMIsGuestDebugStateActive(pVM));
-
-                    /* Clear all breakpoint status flags and set the one we just hit. */
-                    pCtx->dr[6] &= ~(X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3);
-                    pCtx->dr[6] |= RT_BIT(i);
-
-                    /* Note: AMD64 Architecture Programmer's Manual 13.1:
-                     * Bits 15:13 of the DR6 register is never cleared by the processor and must be cleared by software after
-                     * the contents have been read.
-                     */
-                    pVMCB->guest.u64DR6 = pCtx->dr[6];
-
-                    /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
-                    pCtx->dr[7] &= ~X86_DR7_GD;
-
-                    /* Paranoia. */
-                    pCtx->dr[7] &= 0xffffffff;                                              /* upper 32 bits reserved */
-                    pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
-                    pCtx->dr[7] |= 0x400;                                                   /* must be one */
-
-                    pVMCB->guest.u64DR7 = pCtx->dr[7];
-
-                    /* Inject the exception. */
-                    Log(("Inject IO debug trap at %VGv\n", pCtx->rip));
-
-                    Event.au64[0]    = 0;
-                    Event.n.u3Type   = SVM_EVENT_EXCEPTION; /* trap or fault */
-                    Event.n.u1Valid  = 1;
-                    Event.n.u8Vector = X86_XCPT_DB;
-
-                    SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
-
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-                    goto ResumeExecution;
-                }
-            }
-        }
-
         /** @todo could use a lookup table here */
         if (IoExitInfo.n.u1OP8)
         {
@@ -1904,6 +1854,56 @@ ResumeExecution:
             pCtx->rip = pVMCB->ctrl.u64ExitInfo2;      /* RIP/EIP of the next instruction is saved in EXITINFO2. */
             if (RT_LIKELY(rc == VINF_SUCCESS))
             {
+                /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
+                if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
+                {
+                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxIOCheck);
+                    for (unsigned i=0;i<4;i++)
+                    {
+                        if (    pCtx->dr[i] == IoExitInfo.n.u16Port
+                            &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
+                            &&  (pCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
+                        {
+                            SVM_EVENT Event;
+
+                            Assert(CPUMIsGuestDebugStateActive(pVM));
+
+                            /* Clear all breakpoint status flags and set the one we just hit. */
+                            pCtx->dr[6] &= ~(X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3);
+                            pCtx->dr[6] |= RT_BIT(i);
+
+                            /* Note: AMD64 Architecture Programmer's Manual 13.1:
+                             * Bits 15:13 of the DR6 register is never cleared by the processor and must be cleared by software after
+                             * the contents have been read.
+                             */
+                            pVMCB->guest.u64DR6 = pCtx->dr[6];
+
+                            /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
+                            pCtx->dr[7] &= ~X86_DR7_GD;
+
+                            /* Paranoia. */
+                            pCtx->dr[7] &= 0xffffffff;                                              /* upper 32 bits reserved */
+                            pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
+                            pCtx->dr[7] |= 0x400;                                                   /* must be one */
+
+                            pVMCB->guest.u64DR7 = pCtx->dr[7];
+
+                            /* Inject the exception. */
+                            Log(("Inject IO debug trap at %VGv\n", pCtx->rip));
+
+                            Event.au64[0]    = 0;
+                            Event.n.u3Type   = SVM_EVENT_EXCEPTION; /* trap or fault */
+                            Event.n.u1Valid  = 1;
+                            Event.n.u8Vector = X86_XCPT_DB;
+
+                            SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
+
+                            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                            goto ResumeExecution;
+                        }
+                    }
+                }
+
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
