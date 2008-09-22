@@ -21,24 +21,25 @@
 
 /** @page pg_cfgm       CFGM - The Configuration Manager
  *
- * The configuration manager is responsible for storing the configuration
- * of the VM at run time. It is organized a bit like file hierarchy,
- * except that the values live in a separate name space, i.e. value names
- * can include path separators.
+ * The configuration manager is a directory containing the VM configuration at
+ * run time. It works in a manner similar to the windows registry - it's like a
+ * file system hierarchy, but the files (values) live in a separate name space
+ * and can include the path separators.
  *
- * The VMM user creates the configuration tree as part of the VMR3Create()
- * call via the pfnCFGMConstructor callback argument. If this isn't specified
- * a simple default tree is created by cfgmR3CreateDefaultTree(). When used
- * in the normal setup, this function is found in Main/ConsoleImpl2.cpp.
- * For the VBoxBFE case, see the VBoxBFE.cpp.
+ * The configuration is normally created via a callback passed to VMR3Create()
+ * via the pfnCFGMConstructor parameter. To make testcase writing a bit simpler,
+ * we allow the callback to be NULL, in which case a simple default
+ * configuration will be created by cfgmR3CreateDefaultTree(). The
+ * Console::configConstructor() method in Main/ConsoleImpl2.cpp creates the
+ * configuration from the XML.
  *
  * Devices, drivers, services and other PDM stuff are given their own subtree
  * where they are protected from accessing information of any parents. This is
  * is implemented via the CFGMR3SetRestrictedRoot() API.
  *
- * Validating of the data obtained, except for validation of the primitive
- * type, is left the caller. The caller is in a better position to know the
- * proper validation rules of the individual properties.
+ * Data validation out over the basic primitives is left to the caller. The
+ * caller is in a better position to know the proper validation rules of the
+ * individual properties.
  *
  *
  * @section sec_cfgm_primitives     Data Primitives
@@ -48,7 +49,7 @@
  *        small integers, and pointers are all represented using this primitive.
  *      - Zero terminated character strings. These are of course UTF-8.
  *      - Variable length byte strings. This can be used to get/put binary
- *        objects.
+ *        objects like for instance RTMAC.
  *
  */
 
@@ -92,6 +93,7 @@ static void cfgmR3FreeValue(PCFGMLEAF pLeaf);
  * @param   pfnCFGMConstructor  Pointer to callback function for constructing the VM configuration tree.
  *                              This is called in the EM.
  * @param   pvUser              The user argument passed to pfnCFGMConstructor.
+ * @thread  EMT.
  */
 CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUser)
 {
@@ -100,7 +102,6 @@ CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void 
     /*
      * Init data members.
      */
-    pVM->cfgm.s.offVM = RT_OFFSETOF(VM, cfgm);
     pVM->cfgm.s.pRoot = NULL;
 
     /*
@@ -135,7 +136,6 @@ CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void 
     {
         Log(("CFGMR3Init: Successfully constructed the configuration\n"));
         CFGMR3Dump(CFGMR3GetRoot(pVM));
-
     }
     else
         NOT_DMIK(AssertMsgFailed(("Constructor failed with rc=%Vrc pfnCFGMConstructor=%p\n", rc, pfnCFGMConstructor)));
@@ -153,6 +153,7 @@ CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void 
 CFGMR3DECL(int) CFGMR3Term(PVM pVM)
 {
     CFGMR3RemoveNode(pVM->cfgm.s.pRoot);
+    pVM->cfgm.s.pRoot = NULL;
     return 0;
 }
 

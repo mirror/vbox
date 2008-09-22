@@ -120,26 +120,12 @@ typedef struct CFGMNODE
 
 
 
-
-/**
- * Converts a CFGM pointer into a VM pointer.
- * @returns Pointer to the VM structure the CFGM is part of.
- * @param   pCFGM   Pointer to CFGM instance data.
- */
-#define CFGM2VM(pCFGM)  ( (PVM)((char*)pCFGM - pCFGM->offVM) )
-
 /**
  * CFGM VM Instance data.
  * Changes to this must checked against the padding of the cfgm union in VM!
  */
 typedef struct CFGM
 {
-    /** Offset to the VM structure.
-     * See CFGM2VM(). */
-    RTUINT                  offVM;
-    /** Alignment padding. */
-    RTUINT                  uPadding0;
-
     /** Pointer to root node. */
     R3PTRTYPE(PCFGMNODE)    pRoot;
 } CFGM;
