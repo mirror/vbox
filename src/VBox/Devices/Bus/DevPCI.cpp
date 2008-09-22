@@ -1332,7 +1332,7 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
 
 
 /**
- * @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksHC
+ * @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksR3
  */
 static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                 PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)

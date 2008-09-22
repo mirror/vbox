@@ -906,7 +906,7 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
 
 
 /**
- * @copydoc INTNETTRUNKNETFLTFACTORY::pfnCreateAndConnect
+ * @copydoc INTNETTRUNKFACTORY::pfnCreateAndConnect
  */
 static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY pIfFactory, const char *pszName,
                                                            PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort)
@@ -954,7 +954,7 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
 
 
 /**
- * @copydoc INTNETTRUNKNETFLTFACTORY::pfnRelease
+ * @copydoc INTNETTRUNKFACTORY::pfnRelease
  */
 static DECLCALLBACK(void) vboxNetFltFactoryRelease(PINTNETTRUNKFACTORY pIfFactory)
 {

@@ -2580,7 +2580,7 @@ typedef struct PDMDEVHLP
     DECLR3CALLBACKMEMBER(int, pfnCMOSRead,(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value));
 
     /**
-     * Query CPUID.
+     * Get CPUID.
      *
      * @param   pDevIns     Device instance.
      * @param   iLeaf       The CPUID leaf to get.

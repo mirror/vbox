@@ -102,7 +102,7 @@ __END_DECLS
  */
 class org_virtualbox_SupDrv : public IOService
 {
-    OSDeclareDefaultStructors(org_virtualbox_SupDrv)
+    OSDeclareDefaultStructors(org_virtualbox_SupDrv);
 
 public:
     virtual bool init(OSDictionary *pDictionary = 0);
@@ -113,7 +113,7 @@ public:
     virtual bool terminate(IOOptionBits fOptions);
 };
 
-OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService)
+OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService);
 
 
 /**
@@ -123,7 +123,7 @@ OSDefineMetaClassAndStructors(org_virtualbox_SupDrv, IOService)
  */
 class org_virtualbox_SupDrvClient : public IOUserClient
 {
-    OSDeclareDefaultStructors(org_virtualbox_SupDrvClient)
+    OSDeclareDefaultStructors(org_virtualbox_SupDrvClient);
 
 private:
     PSUPDRVSESSION          m_pSession;     /**< The session. */
@@ -141,7 +141,7 @@ public:
     virtual void stop(IOService *pProvider);
 };
 
-OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient)
+OSDefineMetaClassAndStructors(org_virtualbox_SupDrvClient, IOUserClient);
 
 
 

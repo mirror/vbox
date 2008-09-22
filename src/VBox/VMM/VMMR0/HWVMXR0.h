@@ -33,7 +33,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_vmx       Internal
+/** @defgroup grp_vmx_int   Internal
  * @ingroup grp_vmx
  * @internal
  * @{

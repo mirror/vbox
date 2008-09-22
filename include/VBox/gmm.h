@@ -44,6 +44,9 @@ __BEGIN_DECLS
  * Used to indicate whether we're inside the same link module as the ring 0
  * part of the Global Memory Manager or not.
  */
+#ifdef DOXYGEN_RUNNING
+# define IN_GMM_R0
+#endif
 /** @def GMMR0DECL
  * Ring 0 GMM export or import declaration.
  * @param   type    The return type of the function declaration.
@@ -58,6 +61,9 @@ __BEGIN_DECLS
  * Used to indicate whether we're inside the same link module as the ring 3
  * part of the Global Memory Manager or not.
  */
+#ifdef DOXYGEN_RUNNING
+# define IN_GMM_R3
+#endif
 /** @def GMMR3DECL
  * Ring 3 GMM export or import declaration.
  * @param   type    The return type of the function declaration.

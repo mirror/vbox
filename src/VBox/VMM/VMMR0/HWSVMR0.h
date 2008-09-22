@@ -33,7 +33,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_svm       Internal
+/** @defgroup grp_svm_int  Internal
  * @ingroup grp_svm
  * @internal
  * @{
