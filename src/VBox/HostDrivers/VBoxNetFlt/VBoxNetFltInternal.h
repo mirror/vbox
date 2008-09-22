@@ -153,11 +153,11 @@ typedef struct VBOXNETFLTINS
             /** @name Solaris instance data.
              * @{ */
             /** Pointer to the bound IP stream. */
-            void *pvIpStream;
+            void volatile *pvIpStream;
             /** Pointer to the bound ARP stream. */
-            void *pvArpStream;
+            void volatile *pvArpStream;
             /** Pointer to the unbound promiscuous stream. */
-            void *pvPromiscStream;
+            void volatile *pvPromiscStream;
             /** Layered device handle to the interface. */
             ldi_handle_t hIface;
             /** The MAC address of the interface. */
