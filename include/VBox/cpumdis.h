@@ -43,51 +43,18 @@ __BEGIN_DECLS
  */
 
 #ifdef IN_RING3
-
-/**
- * Disassemble an instruction and return the information in the provided structure.
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle
- * @param   pCtx        CPU context
- * @param   GCPtrPC     Program counter (relative to CS) to disassemble from.
- * @param   pCpu        Disassembly state
- * @param   pszPrefix   String prefix for logging (debug only)
- *
- */
 CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix);
 
 # ifdef DEBUG
-/**
- * Disassemble an instruction and dump it to the log
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle
- * @param   pCtx        CPU context
- * @param   pc          GC instruction pointer
- * @param   prefix      String prefix for logging
- *
- * @deprecated  Use DBGFR3DisasInstrCurrentLog().
- */
+/** @deprecated  Use DBGFR3DisasInstrCurrentLog().  */
 CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix);
-
-/**
- * Disassemble an instruction and dump it to the log
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle
- * @param   pCtx        CPU context
- * @param   pc          GC instruction pointer
- * @param   prefix      String prefix for logging
- * @param   nrInstructions
- *
- * @deprecated  Create new DBGFR3Disas function to do this.
- */
+/** @deprecated  Create new DBGFR3Disas function to do this. */
 CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix, int nrInstructions);
-
 # else
-#  define CPUMR3DisasmInstr(pVM, pCtx, pc, prefix)
-#  define CPUMR3DisasmBlock(pVM, pCtx, pc, prefix, nrInstructions)
+/** @deprecated  Use DBGFR3DisasInstrCurrentLog(). */
+#  define CPUMR3DisasmInstr(pVM, pCtx, pc, prefix)  do {} while (0)
+/** @deprecated  Create new DBGFR3Disas function to do this. */
+#  define CPUMR3DisasmBlock(pVM, pCtx, pc, prefix, nrInstructions) do {} while (0)
 # endif
 
 #endif /* IN_RING3 */

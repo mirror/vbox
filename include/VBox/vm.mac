@@ -92,7 +92,7 @@ struc VM
     .StatSwitcherLldt     resb STAMPROFILEADV_size
     .StatSwitcherTSS      resb STAMPROFILEADV_size
 
-    alignb 32
+    alignb 64
     .cpum                 resb 4416
     .vmm                  resb 1024
 

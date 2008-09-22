@@ -297,9 +297,9 @@ DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
     int rc = MMGCRamRead(pVM, pDest, (void *)GCSrc, cb);
     if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
         return rc;
-    /* 
-     * The page pool cache may end up here in some cases because it 
-     * flushed one of the shadow mappings used by the trapping 
+    /*
+     * The page pool cache may end up here in some cases because it
+     * flushed one of the shadow mappings used by the trapping
      * instruction and it either flushed the TLB or the CPU reused it.
      */
     RTGCPHYS GCPhys;
@@ -318,11 +318,11 @@ DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
     int rc = MMGCRamWrite(pVM, (void *)GCDest, pSrc, cb);
     if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
         return rc;
-    /* 
-     * The page pool cache may end up here in some cases because it 
-     * flushed one of the shadow mappings used by the trapping 
+    /*
+     * The page pool cache may end up here in some cases because it
+     * flushed one of the shadow mappings used by the trapping
      * instruction and it either flushed the TLB or the CPU reused it.
-     * We want to play safe here, verifying that we've got write 
+     * We want to play safe here, verifying that we've got write
      * access doesn't cost us much (see PGMPhysGCPtr2GCPhys()).
      */
     uint64_t fFlags;
@@ -330,7 +330,7 @@ DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
     rc = PGMGstGetPage(pVM, GCDest, &fFlags, &GCPhys);
     if (RT_FAILURE(rc))
         return rc;
-    if (    !(fFlags & X86_PTE_RW) 
+    if (    !(fFlags & X86_PTE_RW)
         &&  (CPUMGetGuestCR0(pVM) & X86_CR0_WP))
         return VERR_ACCESS_DENIED;
 
@@ -350,12 +350,12 @@ static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE
 }
 
 #if defined(VBOX_STRICT) || defined(LOG_ENABLED)
-/** 
+/**
  * Get the mnemonic for the disassembled instruction.
- *  
- * GC/R0 doesn't include the strings in the DIS tables because 
- * of limited space. 
- */ 
+ *
+ * GC/R0 doesn't include the strings in the DIS tables because
+ * of limited space.
+ */
 static const char *emGetMnemonic(PDISCPUSTATE pCpu)
 {
     switch (pCpu->pCurInstr->opcode)
@@ -802,7 +802,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
 /**
  * LOCK XOR/OR/AND Emulation.
  */
-static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, 
+static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                    uint32_t *pcbSize, PFNEMULATELOCKPARAM3 pfnEmulate)
 {
     void *pvParam1;
@@ -1096,7 +1096,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 /**
  * LOCK BTR/C/S Emulation.
  */
-static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, 
+static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                   uint32_t *pcbSize, PFNEMULATELOCKPARAM2 pfnEmulate)
 {
     void *pvParam1;
@@ -1140,8 +1140,8 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
 
 #ifdef IN_GC
     Assert(TRPMHasTrap(pVM));
-    AssertMsgReturn((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault, 
-                    ("GCPtrPar1=%VGv pvFault=%VGv\n", GCPtrPar1, pvFault), 
+    AssertMsgReturn((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault,
+                    ("GCPtrPar1=%VGv pvFault=%VGv\n", GCPtrPar1, pvFault),
                     VERR_EM_INTERPRETER);
 #endif
 
@@ -1156,7 +1156,7 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
 #endif
     if (RT_FAILURE(rc))
     {
-        Log(("emInterpretLockBitTest %s: %VGv imm%d=%RX64 -> emulation failed due to page fault!\n", 
+        Log(("emInterpretLockBitTest %s: %VGv imm%d=%RX64 -> emulation failed due to page fault!\n",
              emGetMnemonic(pCpu), GCPtrPar1, pCpu->param2.size*8, ValPar2));
         return VERR_EM_INTERPRETER;
     }
@@ -1394,8 +1394,8 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 
     }
     else
-    {    
-        if (!cTransfers) 
+    {
+        if (!cTransfers)
             return VINF_SUCCESS;
 
         LogFlow(("emInterpretStosWD dest=%04X:%VGv (%VGv) cbSize=%d cTransfers=%x DF=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize, cTransfers, pRegFrame->eflags.Bits.u1DF));
@@ -1516,7 +1516,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         eflags = EMEmulateLockCmpXchg(pvParam1, &pRegFrame->rax, valpar, pCpu->param2.size);
     else
         eflags = EMEmulateCmpXchg(pvParam1, &pRegFrame->rax, valpar, pCpu->param2.size);
-    
+
     LogFlow(("%s %VGv rax=%RX64 %RX64 ZF=%d\n", pszInstr, GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
 
     /* Update guest's eflags and finish. */
@@ -2042,7 +2042,7 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
     {
         rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
     }
-    else 
+    else
     {
         uint32_t val32;
         rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
@@ -2058,7 +2058,7 @@ EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
             oldval = CPUMGetGuestCR0(pVM);
 #ifdef IN_GC
             /* CR0.WP and CR0.AM changes require a reschedule run in ring 3. */
-            if (    (val    & (X86_CR0_WP | X86_CR0_AM)) 
+            if (    (val    & (X86_CR0_WP | X86_CR0_AM))
                 !=  (oldval & (X86_CR0_WP | X86_CR0_AM)))
                 return VERR_EM_INTERPRETER;
 #endif
@@ -2199,18 +2199,18 @@ EMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
     {
         rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
     }
-    else 
+    else
     {
         uint32_t val32;
         rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
         val = val32;
     }
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
-        /* @todo: we don't fail if illegal bits are set/cleared for e.g. dr7 */
+        /** @todo we don't fail if illegal bits are set/cleared for e.g. dr7 */
         rc = CPUMSetGuestDRx(pVM, DestRegDrx, val);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             return rc;
         AssertMsgFailed(("CPUMSetGuestDRx %d failed\n", DestRegDrx));
     }

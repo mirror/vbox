@@ -84,7 +84,7 @@
 
 
 /**
- * The save host CPU state.
+ * The saved host CPU state.
  *
  * @remark  The special VBOX_WITH_HYBIRD_32BIT_KERNEL checks here are for the 10.4.x series
  *          of Mac OS X where the OS is essentially 32-bit but the cpu mode can be 64-bit.
@@ -188,8 +188,8 @@ typedef struct CPUMHOSTCTX
      * This member is not used by the hypervisor context. */
     CPUMSYSENTER    SysEnter;
 
-    /* padding to get 32byte aligned size */
-    uint8_t         auPadding[24];
+    /* padding to get 64byte aligned size */
+    uint8_t         auPadding[24+32];
 
 #elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
 
@@ -235,83 +235,66 @@ typedef struct CPUMHOSTCTX
 
     /* padding to get 32byte aligned size */
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-    uint8_t         auPadding[16];
+    uint8_t         auPadding[16+32];
 # else
-    uint8_t         auPadding[8];
+    uint8_t         auPadding[8+32];
 # endif
 
 #else
 # error HC_ARCH_BITS not defined
 #endif
-} CPUMHOSTCTX, *PCPUMHOSTCTX;
-
-
-/**
- * Converts a CPUM pointer into a VM pointer.
- * @returns Pointer to the VM structure the CPUM is part of.
- * @param   pCPUM   Pointer to CPUM instance data.
- */
-#define CPUM2VM(pCPUM)  ( (PVM)((char*)pCPUM - pCPUM->offVM) )
+} CPUMHOSTCTX;
+/** Pointer to the saved host CPU state. */
+typedef CPUMHOSTCTX *PCPUMHOSTCTX;
 
 
 /**
  * CPUM Data (part of VM)
  */
-#pragma pack(1)
 typedef struct CPUM
 {
-    /** Offset to the VM structure. */
-    RTUINT          offVM;
-    /** Pointer to CPU structure in GC. */
-    RCPTRTYPE(struct CPUM *) pCPUMGC;
-    /** Pointer to CPU structure in HC. */
-    R3R0PTRTYPE(struct CPUM *) pCPUMHC;
-
-    /** Force 32byte alignment of the next member. */
-    uint32_t        padding[4 + (HC_ARCH_BITS == 32)];
-
     /**
      * Saved host context. Only valid while inside GC.
-     * Must be aligned on 16 byte boundrary.
+     * Aligned on a 64-byte boundrary.
      */
-    CPUMHOSTCTX     Host;
+    CPUMHOSTCTX             Host;
 
     /**
      * Hypervisor context.
-     * Must be aligned on 16 byte boundrary.
+     * Aligned on a 64-byte boundrary.
      */
-    CPUMCTX         Hyper;
+    CPUMCTX                 Hyper;
 
     /**
      * Guest context.
-     * Must be aligned on 16 byte boundrary.
+     * Aligned on a 64-byte boundrary.
      */
-    CPUMCTX         Guest;
+    CPUMCTX                 Guest;
 
 
     /** Pointer to the current hypervisor core context - R3Ptr. */
     R3PTRTYPE(PCPUMCTXCORE) pHyperCoreR3;
     /** Pointer to the current hypervisor core context - R3Ptr. */
     R0PTRTYPE(PCPUMCTXCORE) pHyperCoreR0;
-    /** Pointer to the current hypervisor core context - GCPtr. */
-    RCPTRTYPE(PCPUMCTXCORE) pHyperCoreGC;
+    /** Pointer to the current hypervisor core context - RCPtr. */
+    RCPTRTYPE(PCPUMCTXCORE) pHyperCoreRC;
 
     /** Use flags.
      * These flags indicates both what is to be used and what have been used.
      */
-    uint32_t        fUseFlags;
+    uint32_t                fUseFlags;
 
     /** Changed flags.
      * These flags indicates to REM (and others) which important guest
      * registers which has been changed since last time the flags were cleared.
      * See the CPUM_CHANGED_* defines for what we keep track of.
      */
-    uint32_t        fChanged;
+    uint32_t                fChanged;
 
     /** Hidden selector registers state.
      *  Valid (hw accelerated raw mode) or not (normal raw mode)
      */
-    uint32_t        fValidHiddenSelRegs;
+    uint32_t                fValidHiddenSelRegs;
 
     /** Host CPU Features - ECX */
     struct
@@ -320,15 +303,15 @@ typedef struct CPUM
         X86CPUIDFEATEDX     edx;
         /** ecx part */
         X86CPUIDFEATECX     ecx;
-    }   CPUFeatures;
+    } CPUFeatures;
     /** Host extended CPU features. */
     struct
     {
         /** edx part */
-        uint32_t     edx;
+        uint32_t            edx;
         /** ecx part */
-        uint32_t     ecx;
-    }   CPUFeaturesExt;
+        uint32_t            ecx;
+    } CPUFeaturesExt;
 
     /* CPU manufacturer. */
     CPUMCPUVENDOR           enmCPUVendor;
@@ -336,8 +319,8 @@ typedef struct CPUM
     /** CR4 mask */
     struct
     {
-        uint32_t AndMask;
-        uint32_t OrMask;
+        uint32_t            AndMask;
+        uint32_t            OrMask;
     } CR4;
 
     /** Have we entered rawmode? */
@@ -353,17 +336,17 @@ typedef struct CPUM
     /** The default set of CpuId leafs. */
     CPUMCPUID               GuestCpuIdDef;
 
+    /** Align the next member, and thereby the structure, on a 64-byte boundrary. */
+    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 56 : 44];
+
     /**
      * Guest context on raw mode entry.
-     * This a debug feature.
+     * This a debug feature, see CPUMR3SaveEntryCtx.
      */
-    CPUMCTX         GuestEntry;
-} CPUM, *PCPUM;
-#pragma pack()
-
-#ifdef IN_RING3
-
-#endif
+    CPUMCTX                 GuestEntry;
+} CPUM;
+/** Pointer to the CPUM instance data residing in the shared VM structure. */
+typedef CPUM *PCPUM;
 
 __BEGIN_DECLS
 
@@ -383,3 +366,4 @@ __END_DECLS
 /** @} */
 
 #endif
+

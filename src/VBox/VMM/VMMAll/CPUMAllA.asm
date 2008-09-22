@@ -265,6 +265,7 @@ BEGINPROC   CPUMLoadFPUAsm
     ret
 ENDPROC     CPUMLoadFPUAsm
 
+
 ;;
 ; Restores the guest's FPU/XMM state
 ;
@@ -284,6 +285,7 @@ BEGINPROC   CPUMSaveFPUAsm
     fxsave  [xDX + CPUMCTX.fpu]
     ret
 ENDPROC CPUMSaveFPUAsm
+
 
 ;;
 ; Restores the guest's XMM state
@@ -309,11 +311,11 @@ BEGINPROC   CPUMLoadXMMAsm
     movdqa  xmm5, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*5]
     movdqa  xmm6, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*6]
     movdqa  xmm7, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*7]
-    
+
 %ifdef RT_ARCH_AMD64
     test qword [xDX + CPUMCTX.msrEFER], MSR_K6_EFER_LMA
     jz CPUMLoadXMMAsm_done
-    
+
     movdqa  xmm8, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*8]
     movdqa  xmm9, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*9]
     movdqa  xmm10, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*10]
@@ -353,7 +355,7 @@ BEGINPROC   CPUMSaveXMMAsm
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*5], xmm5
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*6], xmm6
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*7], xmm7
-    
+
 %ifdef RT_ARCH_AMD64
     test qword [xDX + CPUMCTX.msrEFER], MSR_K6_EFER_LMA
     jz CPUMSaveXMMAsm_done
@@ -366,7 +368,7 @@ BEGINPROC   CPUMSaveXMMAsm
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*13], xmm13
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*14], xmm14
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*15], xmm15
-    
+
 CPUMSaveXMMAsm_done:
 %endif
     ret
@@ -395,6 +397,7 @@ BEGINPROC CPUMSetFCW
     ret
 ENDPROC   CPUMSetFCW
 
+
 ;;
 ; Get the FPU control word
 ;
@@ -407,7 +410,7 @@ ENDPROC   CPUMGetFCW
 
 
 ;;
-; Set the MXCSR; 
+; Set the MXCSR;
 ;
 ; @param  u32MXCSR    x86:[esp+4] GCC:rdi MSC:rcx     New MXCSR
 align 16
@@ -426,6 +429,7 @@ BEGINPROC CPUMSetMXCSR
     pop     xAX
     ret
 ENDPROC   CPUMSetMXCSR
+
 
 ;;
 ; Get the MXCSR

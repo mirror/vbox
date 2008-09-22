@@ -349,8 +349,10 @@ typedef struct CPUMCTX
     CPUMSELREGHID   trHid;
     /** @} */
 
-    /* padding to get 32byte aligned size */
-////    uint32_t        padding[6];
+#if 0
+    /*& Padding to align the size on a 64 byte boundrary. */
+    uint32_t        padding[6];
+#endif
 } CPUMCTX;
 #pragma pack()
 
@@ -362,6 +364,7 @@ typedef struct CPUMCTX
 
 /**
  * Selector hidden registers. (version 1.6)
+ * @todo move to CPUMInteral.h
  */
 typedef struct CPUMSELREGHID_VER1_6
 {
@@ -377,6 +380,7 @@ typedef struct CPUMSELREGHID_VER1_6
 
 /**
  * CPU context. (Version 1.6)
+ * @todo move to CPUMInteral.h
  */
 #pragma pack(1)
 typedef struct CPUMCTX_VER1_6
@@ -581,7 +585,7 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;
 
-/*
+/**
  * CPU Vendor.
  */
 typedef enum CPUMCPUVENDOR
@@ -687,6 +691,11 @@ CPUMDECL(void)      CPUMSetGuestCtx(PVM pVM, const PCPUMCTX pCtx);
 /** @name Misc Guest Predicate Functions.
  * @{  */
 
+
+CPUMDECL(bool)      CPUMIsGuestIn16BitCode(PVM pVM);
+CPUMDECL(bool)      CPUMIsGuestIn32BitCode(PVM pVM);
+CPUMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM);
+
 /**
  * Tests if the guest is running in real mode or not.
  *
@@ -743,22 +752,6 @@ DECLINLINE(bool) CPUMIsGuestInLongModeEx(PCPUMCTX pCtx)
 }
 
 /**
- * Tests if the guest is running in 16 bits paged protected or not.
- *
- * @returns true if in paged protected mode, otherwise false.
- * @param   pVM     The VM handle.
- */
-CPUMDECL(bool) CPUMIsGuestIn16BitCode(PVM pVM);
-
-/**
- * Tests if the guest is running in 32 bits paged protected or not.
- *
- * @returns true if in paged protected mode, otherwise false.
- * @param   pVM     The VM handle.
- */
-CPUMDECL(bool) CPUMIsGuestIn32BitCode(PVM pVM);
-
-/**
  * Tests if the guest is running in 64 bits mode or not.
  *
  * @returns true if in 64 bits protected mode, otherwise false.
@@ -788,17 +781,7 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
     return pCtx->csHid.Attr.n.u1Long;
 }
 
-/**
- * Gets the CPU vendor
- *
- * @returns CPU vendor
- * @param   pVM     The VM handle.
- */
-CPUMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM);
-
-
 /** @} */
-
 
 
 /** @name Hypervisor Register Getters.
@@ -867,127 +850,19 @@ CPUMDECL(void)          CPUMSetHyperCtx(PVM pVM, const PCPUMCTX pCtx);
 CPUMDECL(int)           CPUMRecalcHyperDRx(PVM pVM);
 /** @} */
 
-CPUMDECL(void) CPUMPushHyper(PVM pVM, uint32_t u32);
-
-/**
- * Sets or resets an alternative hypervisor context core.
- *
- * This is called when we get a hypervisor trap set switch the context
- * core with the trap frame on the stack. It is called again to reset
- * back to the default context core when resuming hypervisor execution.
- *
- * @param   pVM         The VM handle.
- * @param   pCtxCore    Pointer to the alternative context core or NULL
- *                      to go back to the default context core.
- */
-CPUMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
-
-
-/**
- * Queries the pointer to the internal CPUMCTX structure
- *
- * @returns VBox status code.
- * @param   pVM         Handle to the virtual machine.
- * @param   ppCtx       Receives the CPUMCTX pointer when successful.
- */
-CPUMDECL(int) CPUMQueryGuestCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
-
-/**
- * Queries the pointer to the internal CPUMCTX structure for the hypervisor.
- *
- * @returns VBox status code.
- * @param   pVM         Handle to the virtual machine.
- * @param   ppCtx       Receives the hyper CPUMCTX pointer when successful.
- */
-CPUMDECL(int) CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
-
-
-/**
- * Gets the pointer to the internal CPUMCTXCORE structure.
- * This is only for reading in order to save a few calls.
- *
- * @param   pVM         Handle to the virtual machine.
- */
+CPUMDECL(void)      CPUMPushHyper(PVM pVM, uint32_t u32);
+CPUMDECL(void)      CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
+CPUMDECL(int)       CPUMQueryGuestCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
+CPUMDECL(int)       CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
 CPUMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVM pVM);
-
-/**
- * Gets the pointer to the internal CPUMCTXCORE structure for the hypervisor.
- * This is only for reading in order to save a few calls.
- *
- * @param   pVM         Handle to the virtual machine.
- */
 CPUMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVM pVM);
-
-/**
- * Sets the guest context core registers.
- *
- * @param   pVM         Handle to the virtual machine.
- * @param   pCtxCore    The new context core values.
- */
-CPUMDECL(void) CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore);
-
-
-/**
- * Transforms the guest CPU state to raw-ring mode.
- *
- * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
- *
- * @returns VBox status. (recompiler failure)
- * @param   pVM         VM handle.
- * @param   pCtxCore    The context core (for trap usage).
- * @see     @ref pg_raw
- */
-CPUMDECL(int) CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
-
-/**
- * Transforms the guest CPU state from raw-ring mode to correct values.
- *
- * This function will change any selector registers with DPL=1 to DPL=0.
- *
- * @returns Adjusted rc.
- * @param   pVM         VM handle.
- * @param   rc          Raw mode return code
- * @param   pCtxCore    The context core (for trap usage).
- * @see     @ref pg_raw
- */
-CPUMDECL(int) CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc);
-
-/**
- * Gets the EFLAGS while we're in raw-mode.
- *
- * @returns The eflags.
- * @param   pVM         The VM handle.
- * @param   pCtxCore    The context core.
- */
-CPUMDECL(uint32_t) CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore);
-
-/**
- * Updates the EFLAGS while we're in raw-mode.
- *
- * @param   pVM         The VM handle.
- * @param   pCtxCore    The context core.
- * @param   eflags      The new EFLAGS value.
- */
-CPUMDECL(void) CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags);
-
-/**
- * Lazily sync in the FPU/XMM state
- *
- * This function will change any selector registers with DPL=1 to DPL=0.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- */
-CPUMDECL(int) CPUMHandleLazyFPU(PVM pVM);
-
-
-/**
- * Restore host FPU/XMM state
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- */
-CPUMDECL(int) CPUMRestoreHostFPUState(PVM pVM);
+CPUMDECL(void)      CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore);
+CPUMDECL(int)       CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
+CPUMDECL(int)       CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc);
+CPUMDECL(uint32_t)  CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore);
+CPUMDECL(void)      CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags);
+CPUMDECL(int)       CPUMHandleLazyFPU(PVM pVM);
+CPUMDECL(int)       CPUMRestoreHostFPUState(PVM pVM);
 
 /** @name Changed flags
  * These flags are used to keep track of which important register that
@@ -1010,99 +885,18 @@ CPUMDECL(int) CPUMRestoreHostFPUState(PVM pVM);
 #define CPUM_CHANGED_ALL                (CPUM_CHANGED_FPU_REM|CPUM_CHANGED_CR0|CPUM_CHANGED_CR3|CPUM_CHANGED_CR4|CPUM_CHANGED_GDTR|CPUM_CHANGED_IDTR|CPUM_CHANGED_LDTR|CPUM_CHANGED_TR|CPUM_CHANGED_SYSENTER_MSR|CPUM_CHANGED_HIDDEN_SEL_REGS|CPUM_CHANGED_CPUID)
 /** @} */
 
-/**
- * Gets and resets the changed flags (CPUM_CHANGED_*).
- *
- * @returns The changed flags.
- * @param   pVM     VM handle.
- */
-CPUMDECL(unsigned) CPUMGetAndClearChangedFlagsREM(PVM pVM);
-
-/**
- * Sets the specified changed flags (CPUM_CHANGED_*).
- *
- * @param   pVM     The VM handle.
- */
-CPUMDECL(void) CPUMSetChangedFlags(PVM pVM, uint32_t fChangedFlags);
-
-/**
- * Checks if the CPU supports the FXSAVE and FXRSTOR instruction.
- * @returns true if supported.
- * @returns false if not supported.
- * @param   pVM     The VM handle.
- */
-CPUMDECL(bool) CPUMSupportsFXSR(PVM pVM);
-
-/**
- * Checks if the host OS uses the SYSENTER / SYSEXIT instructions.
- * @returns true if used.
- * @returns false if not used.
- * @param   pVM     The VM handle.
- */
-CPUMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM);
-
-/**
- * Checks if the host OS uses the SYSCALL / SYSRET instructions.
- * @returns true if used.
- * @returns false if not used.
- * @param   pVM     The VM handle.
- */
-CPUMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM);
-
-/**
- * Checks if we activated the FPU/XMM state of the guest OS
- * @returns true if we did.
- * @returns false if not.
- * @param   pVM     The VM handle.
- */
-CPUMDECL(bool) CPUMIsGuestFPUStateActive(PVM pVM);
-
-/**
- * Deactivate the FPU/XMM state of the guest OS
- * @param   pVM     The VM handle.
- */
-CPUMDECL(void) CPUMDeactivateGuestFPUState(PVM pVM);
-
-/**
- * Checks if the guest debug state is active
- *
- * @returns boolean
- * @param   pVM         VM handle.
- */
-CPUMDECL(bool) CPUMIsGuestDebugStateActive(PVM pVM);
-
-/**
- * Mark the guest's debug state as inactive
- *
- * @returns boolean
- * @param   pVM         VM handle.
- */
-CPUMDECL(void) CPUMDeactivateGuestDebugtate(PVM pVM);
-
-
-/**
- * Checks if the hidden selector registers are valid
- * @returns true if they are.
- * @returns false if not.
- * @param   pVM     The VM handle.
- */
-CPUMDECL(bool) CPUMAreHiddenSelRegsValid(PVM pVM);
-
-/**
- * Checks if the hidden selector registers are valid
- * @param   pVM     The VM handle.
- * @param   fValid  Valid or not
- */
-CPUMDECL(void) CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid);
-
-/**
- * Get the current privilege level of the guest.
- *
- * @returns cpl
- * @param   pVM         VM Handle.
- * @param   pRegFrame   Trap register frame.
- */
-CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore);
+CPUMDECL(unsigned)  CPUMGetAndClearChangedFlagsREM(PVM pVM);
+CPUMDECL(void)      CPUMSetChangedFlags(PVM pVM, uint32_t fChangedFlags);
+CPUMDECL(bool)      CPUMSupportsFXSR(PVM pVM);
+CPUMDECL(bool)      CPUMIsHostUsingSysEnter(PVM pVM);
+CPUMDECL(bool)      CPUMIsHostUsingSysCall(PVM pVM);
+CPUMDECL(bool)      CPUMIsGuestFPUStateActive(PVM pVM);
+CPUMDECL(void)      CPUMDeactivateGuestFPUState(PVM pVM);
+CPUMDECL(bool)      CPUMIsGuestDebugStateActive(PVM pVM);
+CPUMDECL(void)      CPUMDeactivateGuestDebugState(PVM pVM);
+CPUMDECL(bool)      CPUMAreHiddenSelRegsValid(PVM pVM);
+CPUMDECL(void)      CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid);
+CPUMDECL(uint32_t)  CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore);
 
 /**
  * CPU modes.
@@ -1119,15 +913,7 @@ typedef enum CPUMMODE
     CPUMMODE_LONG
 } CPUMMODE;
 
-/**
- * Gets the current guest CPU mode.
- *
- * If paging mode is what you need, check out PGMGetGuestMode().
- *
- * @returns The CPU mode.
- * @param   pVM         The VM handle.
- */
-CPUMDECL(CPUMMODE) CPUMGetGuestMode(PVM pVM);
+CPUMDECL(CPUMMODE)  CPUMGetGuestMode(PVM pVM);
 
 
 #ifdef IN_RING3
@@ -1136,77 +922,18 @@ CPUMDECL(CPUMMODE) CPUMGetGuestMode(PVM pVM);
  * @{
  */
 
-/**
- * Initializes the CPUM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-CPUMR3DECL(int) CPUMR3Init(PVM pVM);
-
-/**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
- *
- * The CPUM will update the addresses used by the switcher.
- *
- * @param   pVM     The VM.
- */
-CPUMR3DECL(void) CPUMR3Relocate(PVM pVM);
-
-/**
- * Terminates the CPUM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-CPUMR3DECL(int) CPUMR3Term(PVM pVM);
-
-/**
- * Resets the CPU.
- *
- * @param   pVM         The VM handle.
- */
-CPUMR3DECL(void) CPUMR3Reset(PVM pVM);
-
-/**
- * Queries the pointer to the internal CPUMCTX structure
- *
- * @returns VBox status code.
- * @param   pVM         Handle to the virtual machine.
- * @param   ppCtx       Receives the CPUMCTX GC pointer when successful.
- */
-CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
-
-
-#ifdef DEBUG
-/**
- * Debug helper - Saves guest context on raw mode entry (for fatal dump)
- *
- * @internal
- */
-CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM);
-#endif
-
-/**
- * API for controlling a few of the CPU features found in CR4.
- *
- * Currently only X86_CR4_TSD is accepted as input.
- *
- * @returns VBox status code.
- *
- * @param   pVM     The VM handle.
- * @param   fOr     The CR4 OR mask.
- * @param   fAnd    The CR4 AND mask.
- */
-CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
+CPUMR3DECL(int)     CPUMR3Init(PVM pVM);
+CPUMR3DECL(void)    CPUMR3Relocate(PVM pVM);
+CPUMR3DECL(int)     CPUMR3Term(PVM pVM);
+CPUMR3DECL(void)    CPUMR3Reset(PVM pVM);
+CPUMR3DECL(int)     CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
+# ifdef DEBUG
+CPUMR3DECL(void)    CPUMR3SaveEntryCtx(PVM pVM);
+# endif
+CPUMR3DECL(int)     CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
 
 /** @} */
-#endif
+#endif /* IN_RING3 */
 
 #ifdef IN_GC
 /** @defgroup grp_cpum_gc    The CPU Monitor(/Manager) API
@@ -1226,80 +953,26 @@ CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
  * @param   pEsp        Stack address for handler
  *
  * This function does not return!
- *
  */
-DECLASM(void) CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler, uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
-
-/**
- * Performs an iret to V86 code
- * Assumes a trap stack frame has already been setup on the guest's stack!
- *
- * @param   pRegFrame   Original trap/interrupt context
- *
- * This function does not return!
- */
-CPUMGCDECL(void) CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
+DECLASM(void)       CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler, uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
+CPUMGCDECL(void)    CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 
 /** @} */
-#endif
+#endif /* IN_GC */
 
 #ifdef IN_RING0
 /** @defgroup grp_cpum_r0    The CPU Monitor(/Manager) API
  * @ingroup grp_cpum
  * @{
  */
-
-/**
- * Does Ring-0 CPUM initialization.
- *
- * This is mainly to check that the Host CPU mode is compatible
- * with VBox.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
 CPUMR0DECL(int) CPUMR0Init(PVM pVM);
-
-/**
- * Lazily sync in the FPU/XMM state
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pCtx        CPU context
- */
 CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx);
-
-/**
- * Save guest FPU/XMM state
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pCtx        CPU context
- */
 CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx);
-
-/**
- * Save guest debug state
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pCtx        CPU context
- * @param   fDR6        Include DR6 or not
- */
 CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
-
-/**
- * Lazily sync in the debug state
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pCtx        CPU context
- * @param   fDR6        Include DR6 or not
- */
 CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
 
 /** @} */
-#endif
+#endif /* IN_RING0 */
 
 /** @} */
 __END_DECLS

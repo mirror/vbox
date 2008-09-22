@@ -27,10 +27,10 @@
  *
  * There are three CPU contexts, the most important one is the guest one (GC).
  * When running in raw-mode (RC) there is a special hyper context for the VMM
- * that floats around inside the guest address space. When running in raw-mode
- * or when using 64-bit guests on a 32-bit host, CPUM also maintains a host
- * context for saving and restoring registers accross world switches. This latter
- * is done in cooperation with the world switcher (@see pg_vmm).
+ * part that floats around inside the guest address space. When running in
+ * raw-mode, CPUM also maintains a host context for saving and restoring
+ * registers accross world switches. This latter is done in cooperation with the
+ * world switcher (@see pg_vmm).
  */
 
 /*******************************************************************************
@@ -64,8 +64,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION_VER1_6     6
 #define CPUM_SAVED_STATE_VERSION            8
+/** The saved state version of 1.6, used for backwards compatability. */
+#define CPUM_SAVED_STATE_VERSION_VER1_6     6
 
 
 /*******************************************************************************
@@ -84,6 +85,7 @@ typedef enum CPUMDUMPTYPE
 } CPUMDUMPTYPE;
 /** Pointer to a cpu info dump type. */
 typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -118,8 +120,6 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Setup any fixed pointers and offsets.
      */
-    pVM->cpum.s.offVM = RT_OFFSETOF(VM, cpum);
-    pVM->cpum.s.pCPUMHC = &pVM->cpum.s;
     pVM->cpum.s.pHyperCoreR3 = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
     pVM->cpum.s.pHyperCoreR0 = VM_R0_ADDR(pVM, CPUMCTX2CORE(&pVM->cpum.s.Hyper));
 
@@ -129,7 +129,6 @@ CPUMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Check that the CPU supports the minimum features we require.
      */
-    /** @todo check the contract! */
     if (!ASMHasCpuId())
     {
         Log(("The CPU doesn't support CPUID!\n"));
@@ -509,6 +508,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     /*
      * Load CPUID overrides from configuration.
      */
+    /** @cfgm{CPUM/CPUID/[000000xx|800000xx|c000000x]/[eax|ebx|ecx|edx],32-bit}
+     * Overloads the CPUID leaf values. */
     PCPUMCPUID  pCpuId = &pCPUM->aGuestCpuIdStd[0];
     uint32_t    cElements = RT_ELEMENTS(pCPUM->aGuestCpuIdStd);
     for (i=0;; )
@@ -602,9 +603,8 @@ CPUMR3DECL(void) CPUMR3Relocate(PVM pVM)
     /*
      * Switcher pointers.
      */
-    pVM->cpum.s.pCPUMGC = VM_GUEST_ADDR(pVM, &pVM->cpum.s);
-    pVM->cpum.s.pHyperCoreGC = MMHyperCCToRC(pVM, pVM->cpum.s.pHyperCoreR3);
-    Assert(pVM->cpum.s.pHyperCoreGC != NIL_RTGCPTR);
+    pVM->cpum.s.pHyperCoreRC = MMHyperCCToRC(pVM, pVM->cpum.s.pHyperCoreR3);
+    Assert(pVM->cpum.s.pHyperCoreRC != NIL_RTRCPTR);
 }
 
 
@@ -713,7 +713,7 @@ CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
     pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
     pCtx->fpu.FCW                   = 0x37f;
 
-    /* Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
+    /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
     pCtx->fpu.MXCSR                 = 0x1F80;
 
     /* Init PAT MSR */
@@ -764,6 +764,7 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
     return SSMR3PutMem(pSSM, &au32CpuId[0], sizeof(au32CpuId));
 }
 
+
 /**
  * Load a version 1.6 CPUMCTX structure.
  *
@@ -773,20 +774,22 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
 {
-#define CPUMCTX16_LOADREG(regname)      pVM->cpum.s.Guest.regname = pCpumctx16->regname;
+#define CPUMCTX16_LOADREG(RegName) \
+        pVM->cpum.s.Guest.RegName = pCpumctx16->RegName;
 
-#define CPUMCTX16_LOADDRXREG(regname)   pVM->cpum.s.Guest.dr[regname] = pCpumctx16->dr##regname;
+#define CPUMCTX16_LOADDRXREG(RegName) \
+        pVM->cpum.s.Guest.dr[RegName] = pCpumctx16->dr##RegName;
 
-#define CPUMCTX16_LOADHIDREG(regname)                                                   \
-    pVM->cpum.s.Guest.regname##Hid.u64Base      = pCpumctx16->regname##Hid.u32Base;     \
-    pVM->cpum.s.Guest.regname##Hid.u32Limit     = pCpumctx16->regname##Hid.u32Limit;    \
-    pVM->cpum.s.Guest.regname##Hid.Attr         = pCpumctx16->regname##Hid.Attr;
+#define CPUMCTX16_LOADHIDREG(RegName) \
+        pVM->cpum.s.Guest.RegName##Hid.u64Base  = pCpumctx16->RegName##Hid.u32Base; \
+        pVM->cpum.s.Guest.RegName##Hid.u32Limit = pCpumctx16->RegName##Hid.u32Limit; \
+        pVM->cpum.s.Guest.RegName##Hid.Attr     = pCpumctx16->RegName##Hid.Attr;
 
-#define CPUMCTX16_LOADSEGREG(regname)                                                   \
-    pVM->cpum.s.Guest.regname                   = pCpumctx16->regname;                  \
-    CPUMCTX16_LOADHIDREG(regname);
+#define CPUMCTX16_LOADSEGREG(RegName) \
+        pVM->cpum.s.Guest.RegName = pCpumctx16->RegName; \
+        CPUMCTX16_LOADHIDREG(RegName);
 
-    pVM->cpum.s.Guest.fpu               = pCpumctx16->fpu;
+    pVM->cpum.s.Guest.fpu = pCpumctx16->fpu;
 
     CPUMCTX16_LOADREG(rax);
     CPUMCTX16_LOADREG(rbx);
@@ -850,10 +853,12 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
     CPUMCTX16_LOADHIDREG(ldtr);
     CPUMCTX16_LOADHIDREG(tr);
 
-#undef CPUMCTX16_LOADHIDREG
 #undef CPUMCTX16_LOADSEGREG
+#undef CPUMCTX16_LOADHIDREG
+#undef CPUMCTX16_LOADDRXREG
 #undef CPUMCTX16_LOADREG
 }
+
 
 /**
  * Execute state load operation.
@@ -976,7 +981,7 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
     /*
      * Format the flags.
      */
-    static struct
+    static const struct
     {
         const char *pszSet; const char *pszClear; uint32_t fFlag;
     }   s_aFlags[] =
@@ -1038,7 +1043,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
     {
         case CPUMDUMPTYPE_TERSE:
             if (CPUMIsGuestIn64BitCode(pVM, pCtxCore))
-            {
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
                     "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
@@ -1052,7 +1056,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, pCtxCore->rip, pszPrefix, pCtxCore->rsp, pszPrefix, pCtxCore->rbp, pszPrefix, X86_EFL_GET_IOPL(efl), *pszPrefix ? 33 : 31, szEFlags,
                     pszPrefix, (RTSEL)pCtxCore->cs, pszPrefix, (RTSEL)pCtxCore->ss, pszPrefix, (RTSEL)pCtxCore->ds, pszPrefix, (RTSEL)pCtxCore->es,
                     pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, efl);
-            }
             else
                 pHlp->pfnPrintf(pHlp,
                     "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
@@ -1066,7 +1069,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
 
         case CPUMDUMPTYPE_DEFAULT:
             if (CPUMIsGuestIn64BitCode(pVM, pCtxCore))
-            {
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
                     "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
@@ -1084,7 +1086,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, (RTSEL)pCtxCore->fs, pszPrefix, (RTSEL)pCtxCore->gs, pszPrefix, (RTSEL)pCtx->tr, pszPrefix, efl,
                     pszPrefix, pCtx->cr0, pszPrefix, pCtx->cr2, pszPrefix, pCtx->cr3, pszPrefix, pCtx->cr4,
                     pszPrefix, pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pszPrefix, (RTSEL)pCtx->ldtr);
-            }
             else
                 pHlp->pfnPrintf(pHlp,
                     "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
@@ -1102,7 +1103,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
 
         case CPUMDUMPTYPE_VERBOSE:
             if (CPUMIsGuestIn64BitCode(pVM, pCtxCore))
-            {
                 pHlp->pfnPrintf(pHlp,
                     "%srax=%016RX64 %srbx=%016RX64 %srcx=%016RX64 %srdx=%016RX64\n"
                     "%srsi=%016RX64 %srdi=%016RX64 %sr8 =%016RX64 %sr9 =%016RX64\n"
@@ -1140,7 +1140,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, (RTSEL)pCtx->ldtr, pCtx->ldtrHid.u64Base, pCtx->ldtrHid.u32Limit, pCtx->ldtrHid.Attr.u,
                     pszPrefix, (RTSEL)pCtx->tr, pCtx->trHid.u64Base, pCtx->trHid.u32Limit, pCtx->trHid.Attr.u,
                     pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
-            }
             else
                 pHlp->pfnPrintf(pHlp,
                     "%seax=%08x %sebx=%08x %secx=%08x %sedx=%08x %sesi=%08x %sedi=%08x\n"
@@ -1180,7 +1179,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 pszPrefix, pCtx->fpu.FPUDP, pszPrefix, pCtx->fpu.DS, pszPrefix, pCtx->fpu.Rsrvd2,
                 pszPrefix, pCtx->fpu.MXCSR, pszPrefix, pCtx->fpu.MXCSR_MASK);
 
-
             pHlp->pfnPrintf(pHlp,
                 "MSR:\n"
                 "%sEFER         =%016RX64\n"
@@ -1197,7 +1195,6 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 pszPrefix, pCtx->msrLSTAR,
                 pszPrefix, pCtx->msrSFMASK,
                 pszPrefix, pCtx->msrKERNELGSBASE);
-
             break;
     }
 }
@@ -1275,6 +1272,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     pHlp->pfnPrintf(pHlp, "Guest CPUM state: %s\n", pszComment);
     cpumR3InfoOne(pVM, &pVM->cpum.s.Guest, CPUMCTX2CORE(&pVM->cpum.s.Guest), pHlp, enmType, "");
 }
+
 
 /**
  * Display the current guest instruction
@@ -2259,15 +2257,15 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
  * @param   pCtx        CPU context
  * @param   pc          GC instruction pointer
  * @param   prefix      String prefix for logging
- * @deprecated  Use DBGFR3DisasInstrCurrentLog().
  *
+ * @deprecated  Use DBGFR3DisasInstrCurrentLog().
  */
 CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix)
 {
-    DISCPUSTATE cpu;
-
-    CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &cpu, prefix);
+    DISCPUSTATE Cpu;
+    CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &Cpu, prefix);
 }
+
 
 /**
  * Disassemble an instruction and dump it to the log
@@ -2279,10 +2277,11 @@ CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *pre
  * @param   prefix      String prefix for logging
  * @param   nrInstructions
  *
+ * @deprecated  Create new DBGFR3Disas function to do this.
  */
 CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix, int nrInstructions)
 {
-    for(int i=0;i<nrInstructions;i++)
+    for (int i = 0; i < nrInstructions; i++)
     {
         DISCPUSTATE cpu;
 
@@ -2291,9 +2290,7 @@ CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *pre
     }
 }
 
-#endif /* DEBUG */
 
-#ifdef DEBUG
 /**
  * Debug helper - Saves guest context on raw mode entry (for fatal dump)
  *
@@ -2303,8 +2300,8 @@ CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
 {
     pVM->cpum.s.GuestEntry = pVM->cpum.s.Guest;
 }
-#endif /* DEBUG */
 
+#endif /* DEBUG */
 
 /**
  * API for controlling a few of the CPU features found in CR4.

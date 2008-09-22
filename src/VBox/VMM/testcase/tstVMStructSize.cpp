@@ -159,9 +159,10 @@ int main()
         rc++;
     }
     CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
-    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Host, 32);
-    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Guest, 32);
-    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Hyper, 32);
+    CHECK_MEMBER_ALIGNMENT(VM, cpum, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Host, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Guest, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Hyper, 64);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CritSectVMLock, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CallHostR0JmpBuf, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.StatRunGC, 8);
@@ -179,7 +180,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(CPUMCTX, edi, 32);
     CHECK_MEMBER_ALIGNMENT(CPUMCTX, idtr, 4);
     CHECK_MEMBER_ALIGNMENT(CPUMCTX, SysEnter, 8);
-    CHECK_SIZE_ALIGNMENT(CPUMCTX, 32);
     CHECK_CPUMCTXCORE(eax);
     CHECK_CPUMCTXCORE(ebx);
     CHECK_CPUMCTXCORE(ecx);
@@ -219,6 +219,8 @@ int main()
         rc++;
     }
 #endif
+    CHECK_SIZE_ALIGNMENT(CPUMCTX, 64);
+    CHECK_SIZE_ALIGNMENT(CPUMHOSTCTX, 64);
 
     /* pdm */
     CHECK_MEMBER_ALIGNMENT(PDMDEVINS, achInstanceData, 16);
