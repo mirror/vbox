@@ -90,8 +90,8 @@
              [Not preserved]
     %r9      used to pass 6th argument to functions
              [Not preserved]
-    %r10     temporary register, used for passing a function’s static chain pointer
-             [Not preserved]
+ *  %r10     temporary register, used for passing a function's static chain
+ *           pointer [Not preserved]
     %r11     temporary register
              [Not preserved]
     %r12-r15 callee-saved registers
