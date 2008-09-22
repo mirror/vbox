@@ -28,9 +28,7 @@
 #define LOG_GROUP LOG_GROUP_GUI
 #include <VBox/log.h>
 #include <iprt/assert.h>
-
 #include <iprt/alloc.h>
-#include <iprt/asm.h>
 
 #ifdef VBOX_GUI_DEBUG
 
@@ -77,9 +75,8 @@
 class VMCPUTimer : public QThread // for crossplatform msleep()
 {
 public:
-    inline static uint64_t ticks() {
-        return ASMReadTSC();
-    }
+    /* don't inline this function to not depend on iprt/asm.h here */
+    static uint64_t ticks();
     inline static uint64_t msecs( uint64_t tcks ) {
         return tcks / ticks_per_msec;
     }
