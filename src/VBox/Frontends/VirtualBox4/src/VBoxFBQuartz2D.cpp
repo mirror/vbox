@@ -21,6 +21,8 @@
 
 #if defined (VBOX_GUI_USE_QUARTZ2D)
 
+#include <iprt/asm.h>
+
 /* VBox includes */
 #include "VBoxFrameBuffer.h"
 #include "VBoxConsoleView.h"
