@@ -139,6 +139,8 @@ typedef struct DBGGUISTATSNODE
     } Data;
     /** The name. */
     char                   *pszName;
+    /** The length of the name. */
+    size_t                  cchName;
     /** The description string. */
     QString                *pDescStr;
     /** The node state. */
@@ -347,9 +349,10 @@ public:
      * Constructor.
      *
      * @param   a_pVM           The VM handle.
+     * @param   a_rPatStr       The selection pattern.
      * @param   a_pParent       The parent object. NULL is fine.
      */
-    VBoxDbgStatsModelVM(PVM a_pVM, QObject *a_pParent);
+    VBoxDbgStatsModelVM(PVM a_pVM, QString &a_rPatStr, QObject *a_pParent);
 
     /** Destructor */
     virtual ~VBoxDbgStatsModelVM();
@@ -363,7 +366,7 @@ public:
      */
     virtual void update(const QString &a_rPatStr);
 
-private:
+protected:
     /**
      * Enumeration callback used by update.
      */
@@ -386,8 +389,21 @@ private:
      *
      * @returns Pointer to the root of the tree we've constructed. This will be NULL
      *          if the STAM API throws an error or we run out of memory.
+     * @param   a_rPatStr       The selection pattern.
      */
-    PDBGGUISTATSNODE createNewTree(void);
+    PDBGGUISTATSNODE createNewTree(QString &a_rPatStr);
+
+protected:
+    /** Next update child. This is UINT32_MAX when invalid. */
+    uint32_t m_iUpdateChild;
+    /** Pointer to the node m_szUpdateParent represent and m_iUpdateChild refers to. */
+    PDBGGUISTATSNODE m_pUpdateParent;
+    /** The length of the path. */
+    size_t m_cchUpdateParent;
+    /** The path to the current update parent, including a trailing slash. */
+    char m_szUpdateParent[1024];
+    /** Inserted or/and removed nodes during the update. */
+    bool m_fUpdateInsertRemove;
 };
 
 
@@ -420,6 +436,7 @@ static char *formatNumber(char *psz, uint64_t u64)
 }
 
 
+#if 0
 /**
  * Formats a number into a 64-byte buffer.
  * (18.446.744.073.709.551.615)
@@ -447,6 +464,7 @@ static char *formatNumberSigned(char *psz, int64_t i64)
         *--psz = '-';
     return psz;
 }
+#endif
 
 
 /**
@@ -624,6 +642,7 @@ VBoxDbgStatsModel::createRootNode(void)
     pRoot->enmType = STAMTYPE_INVALID;
     pRoot->enmUnit = STAMUNIT_INVALID;
     pRoot->pszName = (char *)RTMemDup("/", sizeof("/"));
+    pRoot->cchName = 1;
     pRoot->enmState = kDbgGuiStatsNodeState_kRoot;
 
     return pRoot;
@@ -643,6 +662,7 @@ VBoxDbgStatsModel::createAndInsertNode(PDBGGUISTATSNODE pParent, const char *psz
     pNode->enmType = STAMTYPE_INVALID;
     pNode->enmUnit = STAMUNIT_INVALID;
     pNode->pszName = (char *)RTMemDupEx(pszName, cchName, 1);
+    pNode->cchName = cchName;
     pNode->enmState = kDbgGuiStatsNodeState_kVisible;
 
     /*
@@ -1060,14 +1080,16 @@ VBoxDbgStatsModel::logTree(QModelIndex &a_rRoot, bool a_fReleaseLog) const
  */
 
 
-VBoxDbgStatsModelVM::VBoxDbgStatsModelVM(PVM a_pVM, QObject *a_pParent)
-    : VBoxDbgStatsModel(a_pParent), VBoxDbgBase(a_pVM)
+VBoxDbgStatsModelVM::VBoxDbgStatsModelVM(PVM a_pVM, QString &a_rPatStr, QObject *a_pParent)
+    : VBoxDbgStatsModel(a_pParent), VBoxDbgBase(a_pVM),
+    m_iUpdateChild(UINT32_MAX), m_pUpdateParent(NULL), m_cchUpdateParent(0)
 {
     /*
-     * Create a model containing *all* the STAM entries since this is is
-     * faster than adding stuff later. (And who cares about wasing a few MBs anyway...)
+     * Create a model containing the STAM entries matching the pattern.
+     * (The original idea was to get everything and rely on some hide/visible
+     * flag that it turned out didn't exist.)
      */
-    PDBGGUISTATSNODE pTree = createNewTree();
+    PDBGGUISTATSNODE pTree = createNewTree(a_rPatStr);
     setRootNode(pTree);
 }
 
@@ -1075,6 +1097,72 @@ VBoxDbgStatsModelVM::VBoxDbgStatsModelVM(PVM a_pVM, QObject *a_pParent)
 VBoxDbgStatsModelVM::~VBoxDbgStatsModelVM()
 {
     /* nothing to do here. */
+}
+
+
+static void resetNode(PDBGGUISTATSNODE pNode)
+{
+    /** @todo */
+}
+
+static void updateNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
+                       STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser)
+{
+    /** @todo */
+}
+
+static int32_t getNodePath(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch)
+{
+    int32_t off;
+    if (!pNode->pParent)
+    {
+        /* root - don't add it's slash! */
+        AssertReturn(cch >= 1, -1);
+        off = 0;
+        *psz = '\0';
+    }
+    else
+    {
+        cch -= pNode->cchName - 1;
+        AssertReturn(cch > 0, -1);
+        off = getNodePath(pNode->pParent, psz, cch);
+        if (off >= 0)
+        {
+            psz[off++] = '/';
+            memcpy(&psz[off], pNode->pszName, pNode->cchName + 1);
+            off += pNode->cchName;
+        }
+    }
+    return off;
+}
+
+static bool isNodeAncestorOf(PCDBGGUISTATSNODE pNode, PCDBGGUISTATSNODE pAncestor)
+{
+    while (pNode)
+    {
+        pNode = pNode->pParent;
+        if (pNode == pAncestor)
+            return true;
+    }
+    return false;
+}
+
+static PDBGGUISTATSNODE nextNode(PDBGGUISTATSNODE pNode)
+{
+    /** @todo */
+    return pNode;
+}
+
+static PDBGGUISTATSNODE prevNode(PDBGGUISTATSNODE pNode)
+{
+    /** @todo */
+    return pNode;
+}
+
+static void removeAndDeleteNode(PDBGGUISTATSNODE pNode)
+{
+    /** @todo */
+
 }
 
 
@@ -1091,122 +1179,245 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
     if (enmVisibility == STAMVISIBILITY_NOT_GUI)
         return 0;
 
-/** @todo a much much faster approach would be to link all items into a doubly chained list. */
-#if 0
     /*
-     * Locate the node in the tree, creating whatever doesn't exist.
-     * Because of strict input ordering we can assume that any parent that is
-     * still in an undetermined state should be wing clipped and show no data.
+     * The default assumption is that nothing has changed.
+     * For now we'll reset the model when ever something changes.
      */
-    AssertReturn(*pszName == '/' && pszName[1] != '/', VERR_INTERNAL_ERROR);
-    PDBGGUISTATSNODE pNode = pRoot;
-    const char *pszCur = pszName + 1;
-    while (*pszCur)
+    PDBGGUISTATSNODE pNode;
+    if (pThis->m_iUpdateChild != UINT32_MAX)
     {
-        /* find the end of this component. */
-        const char *pszNext = strchr(pszCur, '/');
-        if (!pszNext)
-            pszNext = strchr(pszCur, '\0');
-        size_t cchCur = pszNext - pszCur;
-
-        /* look it up, create it if it not found. */
-
-
-        /* Create it if it doesn't exist (it will be last if it exists). */
-        if (    !pNode->cChildren
-            ||  strncmp(pNode->papChildren[pNode->cChildren - 1]->pszName, pszCur, cchCur)
-            ||  pNode->papChildren[pNode->cChildren - 1]->pszName[cchCur])
-        {
-            pNode = createAndInsertNode(pNode, pszCur, pszNext - pszCur, UINT32_MAX);
-            if (!pNode)
-                return VERR_NO_MEMORY;
-        }
+        pNode = pThis->m_pUpdateParent->papChildren[pThis->m_iUpdateChild];
+        if (    !strncmp(pszName, pThis->m_szUpdateParent, pThis->m_cchUpdateParent)
+            &&  !strcmp(pszName + pThis->m_cchUpdateParent, pNode->pszName))
+            /* got it! */;
         else
-            pNode = pNode->papChildren[pNode->cChildren - 1];
-
-        /* Advance */
-        pszCur = *pszNext ? pszNext + 1 : pszNext;
-    }
-
-    /*
-     * Save the data.
-     */
-    return initNode(pNode, enmType, pvSample, enmUnit, enmVisibility, pszDesc);
-#endif
-#if 0
-    /*
-     * Advance to the matching item.
-     */
-    VBoxDbgStatsLeafItem *pCur = pThis->m_pCur;
-    while (pCur)
-    {
-        /*
-         * ASSUMES ascending order of STAM items.
-         */
-        int iDiff = strcmp(pszName, pCur->getName());
-        if (!iDiff)
-            break;
-        if (iDiff > 0)
         {
             /*
-             * Removed / filtered out.
+             * We might be inserting a new node between pPrev and pNode
+             * or we might be removing one or more nodes. Either case is
+             * handled in the same rough way.
              */
-            Log2(("updateCallback: %s - filtered out\n", pCur->getName()));
-            if (pCur->isVisible())
+            pThis->m_fUpdateInsertRemove = true;
+
+            /* Start with the current parent node and look for a common ancestor
+               hoping that this is faster than going from the root. */
+            PDBGGUISTATSNODE const pPrev = prevNode(pNode);
+            while (pNode != pThis->m_pRoot)
             {
-                pCur->setVisible(false);
-                hideParentBranches(pCur);
+                if (!strncmp(pszName, pThis->m_szUpdateParent, pThis->m_cchUpdateParent))
+                    break;
+                Assert(pThis->m_cchUpdateParent > pNode->cchName);
+                pThis->m_cchUpdateParent -= pNode->cchName + 1;
+                pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
+                pNode = pNode->pParent;
             }
 
-            pCur = pCur->m_pNext;
-        }
-        else if (iDiff < 0)
-        {
-            /*
-             * New item, insert before pCur.
-             */
-            Log2(("updateCallback: %s - new\n", pszName));
-            VBoxDbgStatsLeafItem *pNew = new VBoxDbgStatsLeafItem(pszName, pThis->createPath(pszName));
-            pNew->m_pNext = pCur;
-            pNew->m_pPrev = pCur->m_pPrev;
-            if (pNew->m_pPrev)
-                pNew->m_pPrev->m_pNext = pNew;
-            else
-                pThis->m_pHead = pNew;
-            pCur->m_pPrev = pNew;
-            pCur = pNew;
-            Assert(!strcmp(pszName, pCur->getName()));
-            break;
+            /* Decent until we've found/created the node pszName indicates,
+               modifying m_szUpdateParent as we go along. */
+            while (pszName[pThis->m_cchUpdateParent - 1] == '/')
+            {
+                /* Find the end of this component. */
+                const char *pszStart = &pszName[pThis->m_cchUpdateParent];
+                const char *pszEnd = strchr(pszStart, '/');
+                if (!pszEnd)
+                    pszEnd = strchr(pszStart, '/');
+                char *pszSubName = &pThis->m_szUpdateParent[pThis->m_cchUpdateParent];
+                size_t cchSubName = pszEnd - pszStart;
+
+                /* Add the name to the path. */
+                memcpy(pszSubName, pszStart, cchSubName);
+                pThis->m_cchUpdateParent += cchSubName;
+                pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
+
+                if (pNode->cChildren)
+                {
+                    /* first child */
+                    pNode = createAndInsertNode(pNode, pszSubName, UINT32_MAX);
+                    AssertReturn(pNode, VERR_NO_MEMORY);
+                }
+                else
+                {
+                    /* binary search. */
+                    int32_t iStart = 0;
+                    int32_t iLast = pNode->cChildren - 1;
+                    for (;;)
+                    {
+                        int32_t i = iStart + (iLast + 1 - iStart) / 2;
+                        int iDiff = strcmp(pszSubName, pNode->papChildren[i]->pszName);
+                        if (iDiff > 0)
+                        {
+                            iStart = i + 1;
+                            if (iStart > iLast)
+                            {
+                                pNode = createAndInsertNode(pNode, pszSubName, iStart);
+                                AssertReturn(pNode, VERR_NO_MEMORY);
+                                break;
+                            }
+                        }
+                        else if (iDiff < 0)
+                        {
+                            iLast = i - 1;
+                            if (iLast < iStart)
+                            {
+                                pNode = createAndInsertNode(pNode, pszSubName, i);
+                                AssertReturn(pNode, VERR_NO_MEMORY);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            pNode = pNode->papChildren[i];
+                            break;
+                        }
+                    }
+                }
+
+                pThis->m_szUpdateParent[pThis->m_cchUpdateParent++] = '/';
+                pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
+                Assert(pThis->m_cchUpdateParent < sizeof(pThis->m_szUpdateParent));
+            }
+            Assert(pszName[pThis->m_cchUpdateParent - 1] == '\0');
+
+            /* Remove all the nodes between pNode and pPrev but keep all
+               of pNode's ancestors (or it'll get orphaned). */
+            PDBGGUISTATSNODE pCur = prevNode(pNode);
+            Assert(pCur != pPrev);
+            while (pCur != pPrev)
+            {
+                PDBGGUISTATSNODE pAdv = prevNode(pCur);
+                if (!isNodeAncestorOf(pCur, pNode))
+                    removeAndDeleteNode(pCur);
+                pCur = pAdv;
+            }
+
+            /* Removed the data from all ancestors of pNode that it doesn't share them pPrev. */
+            pCur = pNode->pParent;
+            while (!isNodeAncestorOf(pCur, pPrev))
+            {
+                resetNode(pNode);
+                pCur = pCur->pParent;
+            }
+
+            /* Finally, adjust the globals (szUpdateParent is one level too deep). */
+            Assert(pThis->m_cchUpdateParent > pNode->cchName - 1);
+            pThis->m_cchUpdateParent -= pNode->cchName - 1;
+            pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
+            pThis->m_pUpdateParent = pNode->pParent;
+            pThis->m_iUpdateChild = pNode->iSelf;
         }
     }
-
-    /*
-     * End of items, insert it at the tail.
-     */
-    if (!pCur)
+    else
     {
-        Log2(("updateCallback: %s - new end\n", pszName));
-        pCur = new VBoxDbgStatsLeafItem(pszName, pThis->createPath(pszName));
-        pCur->m_pNext = NULL;
-        pCur->m_pPrev = pThis->m_pTail;
-        if (pCur->m_pPrev)
-            pCur->m_pPrev->m_pNext = pCur;
-        else
-            pThis->m_pHead = pCur;
-        pThis->m_pTail = pCur;
+        /*
+         * Insert it at the end of the tree                                                                        .
+         *                                                                                                        .
+         * Do the same as we're doing down in createNewTreeCallback, walk from the                                 .
+         * root and create whatever we need.
+         */
+        pThis->m_fUpdateInsertRemove = true;
+
+        AssertReturn(*pszName == '/' && pszName[1] != '/', VERR_INTERNAL_ERROR);
+        pNode = pThis->m_pRoot;
+        const char *pszCur = pszName + 1;
+        while (*pszCur)
+        {
+            /* Find the end of this component. */
+            const char *pszNext = strchr(pszCur, '/');
+            if (!pszNext)
+                pszNext = strchr(pszCur, '\0');
+            size_t cchCur = pszNext - pszCur;
+
+            /* Create it if it doesn't exist (it will be last if it exists). */
+            if (    !pNode->cChildren
+                ||  strncmp(pNode->papChildren[pNode->cChildren - 1]->pszName, pszCur, cchCur)
+                ||  pNode->papChildren[pNode->cChildren - 1]->pszName[cchCur])
+            {
+                pNode = createAndInsertNode(pNode, pszCur, pszNext - pszCur, UINT32_MAX);
+                if (!pNode)
+                    return VERR_NO_MEMORY;
+            }
+            else
+                pNode = pNode->papChildren[pNode->cChildren - 1];
+
+            /* Advance */
+            pszCur = *pszNext ? pszNext + 1 : pszNext;
+        }
+
     }
-    Assert(pThis->m_pHead);
-    Assert(pThis->m_pTail);
 
     /*
-     * Update it and move on.
+     * Perform the update.
      */
-    if (!pCur->isVisible())
-        showParentBranches(pCur);
-    pCur->update(enmType, pvSample, enmUnit, enmVisibility, pszDesc);
-    pThis->m_pCur = pCur->m_pNext;
+    updateNode(pNode, enmType, pvSample, enmUnit, enmVisibility, pszDesc, pvUser);
 
-#endif
+    /*
+     * Advance to the next node.
+     * (Again, we're ASSUMING that the input is sorted on (full) path name.)
+     */
+    PDBGGUISTATSNODE pParent = pNode->pParent;
+    if (pNode->cChildren)
+    {
+        /* decend to the children. */
+        pThis->m_iUpdateChild = 0;
+        Assert(pThis->m_cchUpdateParent + pNode->cchName + 2 < sizeof(pThis->m_szUpdateParent));
+        memcpy(&pThis->m_szUpdateParent[pThis->m_cchUpdateParent], pNode->pszName, pNode->cchName);
+        pThis->m_cchUpdateParent += pNode->cchName;
+        pThis->m_szUpdateParent[pThis->m_cchUpdateParent++] = '/';
+        pThis->m_pUpdateParent = pNode;
+    }
+    else if (pNode->iSelf + 1 < pParent->cChildren)
+    {
+        /* next sibling  */
+        pThis->m_iUpdateChild = pNode->iSelf + 1;
+        Assert(pThis->m_pUpdateParent == pNode->pParent);
+    }
+    else
+    {
+        /* move up and down- / on-wards */
+        for (;;)
+        {
+            /* ascend */
+            pNode = pParent;
+            pParent = pParent->pParent;
+            if (!pParent)
+            {
+                Assert(pNode == pThis->m_pRoot);
+                pThis->m_iUpdateChild = UINT32_MAX;
+                pThis->m_szUpdateParent[0] = '\0';
+                pThis->m_cchUpdateParent = 0;
+                pThis->m_pUpdateParent = NULL;
+                break;
+            }
+            Assert(pThis->m_cchUpdateParent > pNode->cchName);
+            pThis->m_cchUpdateParent -= pNode->cchName - 1;
+            pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
+
+            /* try advance */
+            if (pNode->iSelf + 1 < pParent->cChildren)
+            {
+                pNode = pParent->papChildren[pNode->iSelf + 1];
+
+                /* decend to a node containing data. */
+                while (   pNode->enmType == STAMTYPE_INVALID
+                       && pNode->cChildren > 0)
+                {
+                    Assert(pNode->enmState == kDbgGuiStatsNodeState_kVisible);
+
+                    Assert(pThis->m_cchUpdateParent + pNode->cchName + 2 < sizeof(pThis->m_szUpdateParent));
+                    memcpy(&pThis->m_szUpdateParent[pThis->m_cchUpdateParent], pNode->pszName, pNode->cchName);
+                    pThis->m_cchUpdateParent += pNode->cchName;
+                    pThis->m_szUpdateParent[pThis->m_cchUpdateParent++] = '/';
+
+                    pNode = pNode->papChildren[0];
+                }
+                Assert(pNode->enmType != STAMTYPE_INVALID);
+                pThis->m_iUpdateChild = pNode->iSelf;
+                pThis->m_pUpdateParent = pNode->pParent;
+                break;
+            }
+        }
+
+    }
     return VINF_SUCCESS;
 }
 
@@ -1215,110 +1426,104 @@ void
 VBoxDbgStatsModelVM::update(const QString &a_rPatStr)
 {
     /*
-     * Mark all nodes that aren't yet invisble as invisible.
-     * (Depth first)
+     * Find the first child with data and set it up as the 'next'
+     * node to be updated.
      */
-    DBGGUISTATSSTACK    Stack;
-    Stack.a[0].pNode = m_pRoot;
-    Stack.a[0].iChild = -1;
-    Stack.iTop = 0;
-
-    while (Stack.iTop >= 0)
+    PDBGGUISTATSNODE pFirst = m_pRoot;
+    while (pFirst && pFirst->enmType == STAMTYPE_INVALID)
+        pFirst = nextNode(pFirst);
+    if (pFirst)
     {
-        /* get top element */
-        PDBGGUISTATSNODE pNode  = Stack.a[Stack.iTop].pNode;
-        uint32_t         iChild = ++Stack.a[Stack.iTop].iChild;
-        if (iChild < pNode->cChildren)
-        {
-            /* push */
-            Stack.iTop++;
-            Assert(Stack.iTop < (int32_t)RT_ELEMENTS(Stack.a));
-            Stack.a[Stack.iTop].pNode = pNode->papChildren[iChild];
-            Stack.a[Stack.iTop].iChild = 0;
-        }
-        else
-        {
-            /* pop */
-            Stack.iTop--;
-
-            /* do the actual work. */
-            switch (pNode->enmState)
-            {
-                case kDbgGuiStatsNodeState_kVisible:
-                    pNode->enmState = kDbgGuiStatsNodeState_kMakeInvisible;
-                    break;
-                case kDbgGuiStatsNodeState_kInvisible:
-                case kDbgGuiStatsNodeState_kRoot:
-                    break;
-                default:
-                    AssertMsgFailedBreak(("%d\n", pNode->enmState));
-            }
-        }
+        m_iUpdateChild = pFirst->iSelf;
+        m_pUpdateParent = pFirst;
+        m_cchUpdateParent = getNodePath(m_pUpdateParent, m_szUpdateParent, sizeof(m_szUpdateParent) - 1);
+        AssertReturnVoid(m_cchUpdateParent >= 1);
+        m_szUpdateParent[m_cchUpdateParent++] = '/';
+        m_szUpdateParent[m_cchUpdateParent] = '\0';
     }
-
+    else
+    {
+        m_iUpdateChild = UINT32_MAX;
+        m_pUpdateParent = NULL;
+        m_szUpdateParent[0] = '\0';
+        m_cchUpdateParent = 0;
+    }
 
     /*
      * Perform the update.
+     *
+     * If we're inserting and/or removing anything we'll simply reset the model.
+     * This can be optimized later when the normal updating is working perfectly.
      */
+    m_fUpdateInsertRemove = false;
+
+    /** @todo the way we update this stuff is independent of the source (XML, file, STAM), our only
+     * ASSUMPTION is that the input is strictly ordered by (full) name. So, all this stuff should
+     * really move up into the parent class. */
     stamEnum(a_rPatStr, updateCallback, this);
 
-
-    /*
-     * Send dataChanged events.
-     */
-    Stack.a[0].pNode = m_pRoot;
-    Stack.a[0].iChild = -1;
-    Stack.iTop = 0;
-
-    while (Stack.iTop >= 0)
+    if (m_fUpdateInsertRemove)
+        reset();
+    else
     {
-        /* get top element */
-        PDBGGUISTATSNODE pNode  = Stack.a[Stack.iTop].pNode;
-        uint32_t         iChild = ++Stack.a[Stack.iTop].iChild;
-        if (iChild < pNode->cChildren)
-        {
-            /* push */
-            Stack.iTop++;
-            Assert(Stack.iTop < (int32_t)RT_ELEMENTS(Stack.a));
-            Stack.a[Stack.iTop].pNode = pNode->papChildren[iChild];
-            Stack.a[Stack.iTop].iChild = 0;
-        }
-        else
-        {
-            /* pop */
-            Stack.iTop--;
+        /*
+         * Send dataChanged events.
+         */
+        DBGGUISTATSSTACK    Stack;
+        Stack.a[0].pNode = m_pRoot;
+        Stack.a[0].iChild = -1;
+        Stack.iTop = 0;
 
-            /* do the actual work. */
-            iChild = 0;
-            while (iChild < pNode->cChildren)
+        while (Stack.iTop >= 0)
+        {
+            /* get top element */
+            PDBGGUISTATSNODE pNode  = Stack.a[Stack.iTop].pNode;
+            uint32_t         iChild = ++Stack.a[Stack.iTop].iChild;
+            if (iChild < pNode->cChildren)
             {
-                /* skip to the first needing updating. */
-                while (     iChild < pNode->cChildren
-                       &&   (   pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kMakeVisible
-                             && pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kMakeInvisible
-                             && pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kRefresh))
-                    iChild++;
-                if (iChild >= pNode->cChildren)
-                    break;
-                QModelIndex TopLeft = createIndex(iChild, 0, pNode->papChildren[iChild]);
+                /* push */
+                Stack.iTop++;
+                Assert(Stack.iTop < (int32_t)RT_ELEMENTS(Stack.a));
+                Stack.a[Stack.iTop].pNode = pNode->papChildren[iChild];
+                Stack.a[Stack.iTop].iChild = 0;
+            }
+            else
+            {
+                /* pop */
+                Stack.iTop--;
 
-                /* collect any subsequent nodes that also needs refreshing. */
-                while (++iChild < pNode->cChildren)
+                /* do the actual work. */
+                iChild = 0;
+                while (iChild < pNode->cChildren)
                 {
-                    DBGGUISTATENODESTATE enmState = pNode->papChildren[iChild]->enmState;
-                    if (    enmState == kDbgGuiStatsNodeState_kRefresh
-                        ||  enmState == kDbgGuiStatsNodeState_kMakeVisible)
-                        enmState = kDbgGuiStatsNodeState_kVisible;
-                    else if (enmState == kDbgGuiStatsNodeState_kMakeInvisible)
-                        enmState = kDbgGuiStatsNodeState_kInvisible;
-                    else
+                    /* skip to the first needing updating. */
+                    while (     iChild < pNode->cChildren
+                           &&   (   pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kMakeVisible
+                                 && pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kMakeInvisible
+                                 && pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kRefresh))
+                        iChild++;
+                    if (iChild >= pNode->cChildren)
                         break;
-                    pNode->papChildren[iChild]->enmState = enmState;
-                }
-                QModelIndex BottomRight = createIndex(iChild - 1, DBGGUI_STATS_COLUMNS - 1, pNode->papChildren[iChild - 1]);
+                    QModelIndex TopLeft = createIndex(iChild, 0, pNode->papChildren[iChild]);
 
-                /* emit the refresh signal */
-                emit dataChanged(TopLeft, BottomRight);
+                    /* collect any subsequent nodes that also needs refreshing. */
+                    while (++iChild < pNode->cChildren)
+                    {
+                        DBGGUISTATENODESTATE enmState = pNode->papChildren[iChild]->enmState;
+                        if (    enmState == kDbgGuiStatsNodeState_kRefresh
+                            ||  enmState == kDbgGuiStatsNodeState_kMakeVisible)
+                            enmState = kDbgGuiStatsNodeState_kVisible;
+                        else if (enmState == kDbgGuiStatsNodeState_kMakeInvisible)
+                            enmState = kDbgGuiStatsNodeState_kInvisible;
+                        else
+                            break;
+                        pNode->papChildren[iChild]->enmState = enmState;
+                    }
+                    QModelIndex BottomRight = createIndex(iChild - 1, DBGGUI_STATS_COLUMNS - 1, pNode->papChildren[iChild - 1]);
+
+                    /* emit the refresh signal */
+                    emit dataChanged(TopLeft, BottomRight);
+                }
             }
         }
     }
@@ -1478,12 +1683,12 @@ VBoxDbgStatsModelVM::createNewTreeCallback(const char *pszName, STAMTYPE enmType
 
 
 PDBGGUISTATSNODE
-VBoxDbgStatsModelVM::createNewTree(void)
+VBoxDbgStatsModelVM::createNewTree(QString &a_rPatStr)
 {
     PDBGGUISTATSNODE pRoot = createRootNode();
     if (pRoot)
     {
-        int rc = stamEnum(QString(), createNewTreeCallback, pRoot);
+        int rc = stamEnum(a_rPatStr, createNewTreeCallback, pRoot);
         if (VBOX_SUCCESS(rc))
             return pRoot;
 
@@ -2326,8 +2531,8 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
 
     m_pPatCB = new QComboBox();
     pHLayout->addWidget(m_pPatCB);
-    if (pszPat && *pszPat)
-        m_pPatCB->addItem(pszPat);
+    if (!m_PatStr.isEmpty())
+        m_pPatCB->addItem(m_PatStr);
     m_pPatCB->setDuplicatesEnabled(false);
     m_pPatCB->setEditable(true);
     connect(m_pPatCB, SIGNAL(activated(const QString &)), this, SLOT(apply(const QString &)));
@@ -2358,7 +2563,7 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     /*
      * Create the tree view and setup the layout.
      */
-    VBoxDbgStatsModelVM *pModel = new VBoxDbgStatsModelVM(pVM, NULL);
+    VBoxDbgStatsModelVM *pModel = new VBoxDbgStatsModelVM(pVM, m_PatStr, NULL);
     m_pView = new VBoxDbgStatsView(pVM, pModel, this);
 
     QWidget *pHBox = new QWidget;
