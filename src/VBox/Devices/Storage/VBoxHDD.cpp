@@ -1,8 +1,6 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * VBox HDD container implementation
+ * VBoxHDD - VBox HDD container implementation.
  */
 
 /*
