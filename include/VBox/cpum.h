@@ -363,8 +363,7 @@ typedef struct CPUMCTX
 
 
 /**
- * Selector hidden registers. (version 1.6)
- * @todo move to CPUMInteral.h
+ * Selector hidden registers, for version 1.6 saved state.
  */
 typedef struct CPUMSELREGHID_VER1_6
 {
@@ -379,8 +378,8 @@ typedef struct CPUMSELREGHID_VER1_6
 } CPUMSELREGHID_VER1_6;
 
 /**
- * CPU context. (Version 1.6)
- * @todo move to CPUMInteral.h
+ * CPU context, for version 1.6 saved state.
+ * @remarks PATM uses this, which is why it has to be here.
  */
 #pragma pack(1)
 typedef struct CPUMCTX_VER1_6
@@ -543,6 +542,7 @@ typedef struct CPUMCTX_VER1_6
     uint32_t        padding[2];
 } CPUMCTX_VER1_6;
 #pragma pack()
+
 
 /**
  * The register set returned by a CPUID operation.
