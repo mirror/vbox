@@ -229,12 +229,12 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @name HC APIC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
-static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
+static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
 static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
 static DECLCALLBACK(int) pdmR3ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns);
-static DECLCALLBACK(uint32_t) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
+static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -4072,7 +4072,7 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR3::pfnSetInterruptFF */
-static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMHC;
@@ -4085,7 +4085,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR3::pfnClearInterruptFF */
-static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT %d -> 0\n",
@@ -4099,7 +4099,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: fEnabled=%RTbool\n",
+    LogFlow(("pdmR3ApicHlp_ChangeFeature: caller='%s'/%d: fEnabled=%RTbool\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, fEnabled));
     if (fEnabled)
         CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMHC, CPUMCPUIDFEATURE_APIC);
@@ -4124,7 +4124,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR3::pfnGetCpuId */
-static DECLCALLBACK(uint32_t) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
+static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     return VMMGetCpuId(pDevIns->Internal.s.pVMHC);

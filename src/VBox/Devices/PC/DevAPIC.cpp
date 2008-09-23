@@ -308,20 +308,30 @@ typedef struct
 
 DECLINLINE(APICState*) getLapic(APICDeviceInfo* dev)
 {
-    uint32_t id = dev->CTX_SUFF(pApicHlp)->pfnGetCpuId(dev->CTX_SUFF(pDevIns));
+    /* LAPIC's array is indexed by CPU id */
+    VMCPUID id = dev->CTX_SUFF(pApicHlp)->pfnGetCpuId(dev->CTX_SUFF(pDevIns));
     return LAPIC_BASE(dev) + id;
 }
 
-
-DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, uint32_t cpuid)
+DECLINLINE(VMCPUID) getCpuFromLapic(APICDeviceInfo* dev, APICState *s)
 {
-    dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns));
+    /* for now we assume LAPIC id == CPU id */
+    return VMCPUID(s->id);
 }
 
-DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, uint32_t cpuid)
+DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, APICState *s)
 {
-    dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns));
+    dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns), 
+                                               getCpuFromLapic(dev, s));
 }
+
+DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s)
+{
+    dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns), 
+                                                 getCpuFromLapic(dev, s));
+}
+
+
 #endif /* VBOX */
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -392,13 +402,13 @@ static void apic_bus_deliver(APICDeviceInfo* dev,
         case APIC_DM_SMI:
             /** @todo: what do we really do with SMI */
             foreach_apic(dev, deliver_bitmask,
-                         cpuSetInterrupt(dev, apic->id));
+                         cpuSetInterrupt(dev, apic));
             return;
 
         case APIC_DM_NMI:
             /** @todo: what do we really do with NMI */
             foreach_apic(dev, deliver_bitmask,
-                         cpuSetInterrupt(dev, apic->id));
+                         cpuSetInterrupt(dev, apic));
             return;
 
         case APIC_DM_INIT:
@@ -469,7 +479,7 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
         s->spurious_vec &= ~APIC_SV_ENABLE;
 
         /* Clear any pending APIC interrupt action flag. */
-        cpuClearInterrupt(dev, s->id);
+        cpuClearInterrupt(dev, s);
         dev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, false);
     }
     /* APIC_UNLOCK(dev); */
@@ -631,7 +641,7 @@ static bool apic_update_irq(APICDeviceInfo *dev, APICState* s)
 #ifdef VBOX
     {
         /* Clear any pending APIC interrupt action flag. */
-        cpuClearInterrupt(dev, s->id);
+        cpuClearInterrupt(dev, s);
         return false;
     }
 #else
@@ -646,7 +656,7 @@ static bool apic_update_irq(APICDeviceInfo *dev, APICState* s)
 #ifndef VBOX
     cpu_interrupt(s->cpu_env, CPU_INTERRUPT_HARD);
 #else
-    cpuSetInterrupt(dev, s->id);
+    cpuSetInterrupt(dev, s);
     return true;
 #endif
 }
@@ -692,7 +702,7 @@ static void apic_update_tpr(APICDeviceInfo *dev, APICState* s, uint32_t val)
     {
         Log(("apic_update_tpr: deactivate interrupt that was masked by the TPR update (%x)\n", val));
         STAM_COUNTER_INC(&dev->StatClearedActiveIrq);
-        cpuClearInterrupt(dev, s->id);
+        cpuClearInterrupt(dev, s);
     }
 }
 #endif
@@ -1803,7 +1813,7 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
     s->apicbase = 0xfee00000 | MSR_IA32_APICBASE_BSP | MSR_IA32_APICBASE_ENABLE;
     dev->pApicHlpR3->pfnChangeFeature(dev->pDevInsR3, true);
     /* Clear any pending APIC interrupt action flag. */
-    cpuClearInterrupt(dev, s->id);
+    cpuClearInterrupt(dev, s);
     APIC_UNLOCK(dev);
 }
 

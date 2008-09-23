@@ -98,12 +98,12 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns);
 /** @name APIC GC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
-static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
+static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
 static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
 static DECLCALLBACK(int) pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns);
-static DECLCALLBACK(uint32_t) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
+static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
 /** @} */
 
 
@@ -396,7 +396,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR0::pfnSetInterruptFF */
-static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0ApicHlp_SetInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 1\n",
@@ -406,7 +406,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR0::pfnClearInterruptFF */
-static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0ApicHlp_ClearInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 0\n",
@@ -444,13 +444,11 @@ static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR0::pfnGetCpuId */
-static DECLCALLBACK(uint32_t) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
+static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     return VMMGetCpuId(pDevIns->Internal.s.pVMHC);
 }
-
-
 
 
 /** @copydoc PDMIOAPICHLPR0::pfnApicBusDeliver */

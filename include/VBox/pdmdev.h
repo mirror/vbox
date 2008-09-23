@@ -1055,14 +1055,14 @@ typedef struct PDMAPICHLPRC
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
 
     /**
      * Sets or clears the APIC bit in the CPUID feature masks.
@@ -1121,14 +1121,14 @@ typedef struct PDMAPICHLPR0
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
 
     /**
      * Sets or clears the APIC bit in the CPUID feature masks.
@@ -1186,14 +1186,14 @@ typedef struct PDMAPICHLPR3
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
      */
-    DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
 
     /**
      * Sets or clears the APIC bit in the CPUID feature masks.
