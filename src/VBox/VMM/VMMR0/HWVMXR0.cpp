@@ -2173,7 +2173,9 @@ ResumeExecution:
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxIOCheck);
                     for (unsigned i=0;i<4;i++)
                     {
-                        if (    pCtx->dr[i] == uPort
+                        unsigned uBPLen = aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
+
+                        if (    (uPort >= pCtx->dr[i] && uPort <= pCtx->dr[i] + uBPLen)
                             &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
                             &&  (pCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
                         {
