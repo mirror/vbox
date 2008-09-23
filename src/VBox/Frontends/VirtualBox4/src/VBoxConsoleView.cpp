@@ -1990,7 +1990,8 @@ bool VBoxConsoleView::x11Event (XEvent *event)
     if (!scan & 0x7F)
         return true;
 
-    /* When X11 sends events for repeated keys, it always inserts an
+    /* Fix for http://www.virtualbox.org/ticket/1296:
+     * when X11 sends events for repeated keys, it always inserts an
      * XKeyRelease before the XKeyPress.  Since it nearly always
      * (always?) uses the same time stamp for both, we can spot the
      * unwanted event and discard it.  Of course, if we do miss one it
