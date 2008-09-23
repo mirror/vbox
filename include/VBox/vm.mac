@@ -56,8 +56,7 @@ struc VM
     .pVMGC              RTGCPTR32_RES 1
     .hSelf              resd 1
     .cCPUs              resd 1
-    .idCPU              resd 1
-    .u32Reserved        resd 7
+    .u32Reserved        resd 8
 
     .pfnVMMGCGuestToHostAsmGuestCtx RTGCPTR32_RES 1
     .pfnVMMGCGuestToHostAsmHyperCtx RTGCPTR32_RES 1
