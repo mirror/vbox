@@ -41,11 +41,8 @@
 
 
 /*******************************************************************************
-*   Internal Functions                                                         *
+*   Structures and Typedefs                                                    *
 *******************************************************************************/
-static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR pSrc, uint8_t *pDest, uint32_t size, void *pvUserdata);
-
-
 /**
  * Structure used when disassembling and instructions in DBGF.
  * This is used so the reader function can get the stuff it needs.
@@ -77,6 +74,12 @@ typedef struct
     /** 64 bits mode or not. */
     bool            f64Bits;
 } DBGFDISASSTATE, *PDBGFDISASSTATE;
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR pSrc, uint8_t *pDest, uint32_t size, void *pvUserdata);
 
 
 

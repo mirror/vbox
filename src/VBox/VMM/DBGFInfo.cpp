@@ -389,7 +389,6 @@ DBGFR3DECL(int) DBGFR3InfoRegisterInternalEx(PVM pVM, const char *pszName, const
 }
 
 
-
 /**
  * Register a info handler owned by an external component.
  *
@@ -629,6 +628,7 @@ static int dbgfR3InfoDeregister(PVM pVM, const char *pszName, DBGFINFOTYPE enmTy
     LogFlow(("dbgfR3InfoDeregister: returns %Vrc\n", rc));
     return rc;
 }
+
 
 /**
  * Deregister a info handler owned by an internal component.

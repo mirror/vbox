@@ -20,29 +20,30 @@
  */
 
 
-/** @page   pg_dbgf     DBGC - The Debugger Facility
+/** @page   pg_dbgf     DBGF - The Debugger Facility
  *
- * The purpose of the DBGC is to provide an interface for debuggers to manipulate
- * the VMM without having to mess up the source code for each of them. The DBGF
- * is always built in and will always work when a debugger attaches to the VM.
- * The DBGF provides the basic debugger features, such as halting execution,
- * handling breakpoints and single step execution.
+ * The purpose of the DBGF is to provide an interface for debuggers to
+ * manipulate the VMM without having to mess up the source code for each of
+ * them. The DBGF is always built in and will always work when a debugger
+ * attaches to the VM. The DBGF provides the basic debugger features, such as
+ * halting execution, handling breakpoints, single step execution, instruction
+ * disassembly, info querying, OS specific diggers, symbol and module
+ * management.
  *
  * The interface is working in a manner similar to the win32, linux and os2
  * debugger interfaces. It interface has an asynchronous nature. This comes from
- * the fact that the VMM and the Debugger are running in different threads.
- * They are refered to as the "emulation thread" and the "debugger thread",
- * or as the "ping thread" and the "pong thread, respectivly. (The last set
- * of names comes from the use of the Ping-Pong synchronization construct from
- * the RTSem API.)
+ * the fact that the VMM and the Debugger are running in different threads. They
+ * are refered to as the "emulation thread" and the "debugger thread", or as the
+ * "ping thread" and the "pong thread, respectivly. (The last set of names comes
+ * from the use of the Ping-Pong synchronization construct from the RTSem API.)
  *
  *
  *
- * @section sec_dbgf_scenario   Debugger Scenario
+ * @section sec_dbgf_scenario   Usage Scenario
  *
  * The debugger starts by attaching to the VM. For pratical reasons we limit the
- * number of concurrently attached debuggers to 1 per VM. The action of attaching
- * to the VM causes the VM to check and generate debug events.
+ * number of concurrently attached debuggers to 1 per VM. The action of
+ * attaching to the VM causes the VM to check and generate debug events.
  *
  * The debugger then will wait/poll for debug events and issue commands.
  *
@@ -52,7 +53,7 @@
  *
  * An event can be a respons to an command issued previously, the hitting of a
  * breakpoint, or running into a bad/fatal VMM condition. The debugger now have
- * the ping and must respond to the event at hand - the VMM is waiting.  This
+ * the ping and must respond to the event at hand - the VMM is waiting. This
  * usually means that the user of the debugger must do something, but it doesn't
  * have to. The debugger is free to call any DBGF function (nearly at least)
  * while processing the event.
@@ -61,11 +62,10 @@
  * the debugger calls DBGFResume() and goes back to waiting/polling for events.
  *
  * When the user eventually terminates the debugging session or selects another
- * VM, the debugger detaches from the VM. This means that breakpoints are disabled
- * and that the emulation thread no longer polls for debugger commands.
+ * VM, the debugger detaches from the VM. This means that breakpoints are
+ * disabled and that the emulation thread no longer polls for debugger commands.
  *
  */
-
 
 
 /*******************************************************************************
@@ -92,8 +92,8 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int dbgfr3VMMWait(PVM pVM);
-static int dbgfr3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pfResumeExecution);
+static int dbgfR3VMMWait(PVM pVM);
+static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pfResumeExecution);
 
 
 /**
@@ -103,7 +103,7 @@ static int dbgfr3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
  * @param   pVM     VM Handle.
  * @param   enmCmd  The command.
  */
-DECLINLINE(DBGFCMD) dbgfr3SetCmd(PVM pVM, DBGFCMD enmCmd)
+DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
 {
     DBGFCMD rc;
     if (enmCmd == DBGFCMD_NO_COMMAND)
@@ -188,11 +188,11 @@ DBGFR3DECL(int) DBGFR3Term(PVM pVM)
                  * Process the command.
                  */
                 DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
-                DBGFCMD         enmCmd = dbgfr3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+                DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
                 if (enmCmd != DBGFCMD_NO_COMMAND)
                 {
                     bool fResumeExecution = false;
-                    rc = dbgfr3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
+                    rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
                     if (enmCmd == DBGFCMD_DETACH_DEBUGGER)
                         break;
                 }
@@ -303,10 +303,10 @@ DBGFR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
          */
         bool            fResumeExecution;
         DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
-        DBGFCMD         enmCmd = dbgfr3SetCmd(pVM, DBGFCMD_NO_COMMAND);
-        rc = dbgfr3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
+        DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+        rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
         if (!fResumeExecution)
-            rc = dbgfr3VMMWait(pVM);
+            rc = dbgfR3VMMWait(pVM);
     }
     return rc;
 }
@@ -409,7 +409,7 @@ static int dbgfR3SendEvent(PVM pVM)
 {
     int rc = RTSemPing(&pVM->dbgf.s.PingPong);
     if (VBOX_SUCCESS(rc))
-        rc = dbgfr3VMMWait(pVM);
+        rc = dbgfR3VMMWait(pVM);
 
     pVM->dbgf.s.fStoppedInHyper = false;
     /** @todo sync VMM -> REM after exitting the debugger. everything may change while in the debugger! */
@@ -581,9 +581,9 @@ DBGFR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
  * @returns VBox status. (clearify)
  * @param   pVM     VM handle.
  */
-static int dbgfr3VMMWait(PVM pVM)
+static int dbgfR3VMMWait(PVM pVM)
 {
-    LogFlow(("dbgfr3VMMWait:\n"));
+    LogFlow(("dbgfR3VMMWait:\n"));
 
     /** @todo stupid GDT/LDT sync hack. go away! */
     SELMR3UpdateFromCPUM(pVM);
@@ -604,15 +604,15 @@ static int dbgfr3VMMWait(PVM pVM)
                 break;
             if (rc != VERR_TIMEOUT)
             {
-                LogFlow(("dbgfr3VMMWait: returns %Vrc\n", rc));
+                LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rc));
                 return rc;
             }
 
             if (VM_FF_ISSET(pVM, VM_FF_REQUEST))
             {
-                LogFlow(("dbgfr3VMMWait: Processes requests...\n"));
+                LogFlow(("dbgfR3VMMWait: Processes requests...\n"));
                 rc = VMR3ReqProcessU(pVM->pUVM);
-                LogFlow(("dbgfr3VMMWait: VMR3ReqProcess -> %Vrc rcRet=%Vrc\n", rc, rcRet));
+                LogFlow(("dbgfR3VMMWait: VMR3ReqProcess -> %Vrc rcRet=%Vrc\n", rc, rcRet));
                 if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
                 {
                     switch (rc)
@@ -627,7 +627,7 @@ static int dbgfr3VMMWait(PVM pVM)
                         /* return straight away */
                         case VINF_EM_TERMINATE:
                         case VINF_EM_OFF:
-                            LogFlow(("dbgfr3VMMWait: returns %Vrc\n", rc));
+                            LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rc));
                             return rc;
 
                         /* remember return code. */
@@ -647,7 +647,7 @@ static int dbgfr3VMMWait(PVM pVM)
                 }
                 else if (VBOX_FAILURE(rc))
                 {
-                    LogFlow(("dbgfr3VMMWait: returns %Vrc\n", rc));
+                    LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rc));
                     return rc;
                 }
             }
@@ -658,8 +658,8 @@ static int dbgfr3VMMWait(PVM pVM)
          */
         bool            fResumeExecution;
         DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
-        DBGFCMD         enmCmd = dbgfr3SetCmd(pVM, DBGFCMD_NO_COMMAND);
-        int rc = dbgfr3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
+        DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+        int rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
         if (fResumeExecution)
         {
             if (VBOX_FAILURE(rc))
@@ -668,7 +668,7 @@ static int dbgfr3VMMWait(PVM pVM)
                      &&  rc <= VINF_EM_LAST
                      &&  (rc < rcRet || rcRet == VINF_SUCCESS))
                 rcRet = rc;
-            LogFlow(("dbgfr3VMMWait: returns %Vrc\n", rcRet));
+            LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rcRet));
             return rcRet;
         }
     }
@@ -686,7 +686,7 @@ static int dbgfr3VMMWait(PVM pVM)
  * @param   pCmdData            Pointer to the command data.
  * @param   pfResumeExecution   Where to store the resume execution / continue waiting indicator.
  */
-static int dbgfr3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pfResumeExecution)
+static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pfResumeExecution)
 {
     bool    fSendEvent;
     bool    fResume;
@@ -846,7 +846,7 @@ DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
     DBGFCMD enmCmd;
     if (pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG)
     {
-        enmCmd = dbgfr3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
+        enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
         int rc = RTSemPong(&pVM->dbgf.s.PingPong);
         if (VBOX_FAILURE(rc))
         {
@@ -857,7 +857,7 @@ DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
     }
     else
     {
-        enmCmd = dbgfr3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
+        enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
         LogFunc(("enmCmd=%d (ping)\n", enmCmd));
     }
 
@@ -947,7 +947,7 @@ DBGFR3DECL(int) DBGFR3Halt(PVM pVM)
     /*
      * Send command.
      */
-    dbgfr3SetCmd(pVM, DBGFCMD_HALT);
+    dbgfR3SetCmd(pVM, DBGFCMD_HALT);
 
     return VINF_SUCCESS;
 }
@@ -1019,7 +1019,7 @@ DBGFR3DECL(int) DBGFR3Resume(PVM pVM)
     /*
      * Send the ping back to the emulation thread telling it to run.
      */
-    dbgfr3SetCmd(pVM, DBGFCMD_GO);
+    dbgfR3SetCmd(pVM, DBGFCMD_GO);
     int rc = RTSemPong(&pVM->dbgf.s.PingPong);
     AssertRC(rc);
 
@@ -1055,7 +1055,7 @@ DBGFR3DECL(int) DBGFR3Step(PVM pVM)
     /*
      * Send the ping back to the emulation thread telling it to run.
      */
-    dbgfr3SetCmd(pVM, DBGFCMD_SINGLE_STEP);
+    dbgfR3SetCmd(pVM, DBGFCMD_SINGLE_STEP);
     int rc = RTSemPong(&pVM->dbgf.s.PingPong);
     AssertRC(rc);
     return rc;

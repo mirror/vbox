@@ -55,6 +55,7 @@ static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp);
 __END_DECLS
 
 
+
 /**
  * Initialize the breakpoint stuff.
  *

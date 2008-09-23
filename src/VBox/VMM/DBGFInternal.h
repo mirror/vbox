@@ -83,7 +83,6 @@ typedef enum DBGFCMD
 typedef union DBGFCMDDATA
 {
     uint32_t    uDummy;
-
 } DBGFCMDDATA;
 /** Pointer to DBGF Command Data. */
 typedef DBGFCMDDATA *PDBGFCMDDATA;
@@ -204,13 +203,13 @@ typedef struct DBGF
     /** Debugger Attached flag.
      * Set if a debugger is attached, elsewise it's clear.
      */
-    volatile bool           fAttached;
+    bool volatile           fAttached;
 
     /** Stopped in the Hypervisor.
      * Set if we're stopped on a trace, breakpoint or assertion inside
      * the hypervisor and have to restrict the available operations.
      */
-    volatile bool           fStoppedInHyper;
+    bool volatile           fStoppedInHyper;
 
     /**
      * Ping-Pong construct where the Ping side is the VMM and the Pong side
@@ -231,7 +230,7 @@ typedef struct DBGF
      * is set. The VMM will reset this member to the no-command state
      * when it have processed it.
      */
-    volatile DBGFCMD        enmVMMCmd;
+    DBGFCMD volatile        enmVMMCmd;
     /** The Command data.
      * Not all commands take data. */
     DBGFCMDDATA             VMMCmdData;

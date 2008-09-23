@@ -63,8 +63,6 @@ DECLINLINE(int) dbgfR3Read(PVM pVM, void *pvBuf, RTGCUINTPTR GCPtr, size_t cb, s
 }
 
 
-
-
 /**
  * Internal worker routine.
  *
@@ -75,6 +73,9 @@ DECLINLINE(int) dbgfR3Read(PVM pVM, void *pvBuf, RTGCUINTPTR GCPtr, size_t cb, s
  *      8  parameter 0
  *      4  return address
  *      0  old ebp; current ebp points here
+ *
+ * @todo Add AMD64 support (needs teaming up with the module management for
+ *       unwind tables).
  */
 static int dbgfR3StackWalk(PVM pVM, PDBGFSTACKFRAME pFrame)
 {
