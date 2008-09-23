@@ -157,3 +157,4 @@ DBGFR3DECL(bool) DBGFR3AddrIsValid(PVM pVM, PCDBGFADDRESS pAddress)
     /* more? */
     return true;
 }
+

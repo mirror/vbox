@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * DBGF - Debugger Facility, R0 part.
+ *
+ * Almost identical to DBGFGC.cpp, except for the fInHyper stuff.
  */
 
 /*

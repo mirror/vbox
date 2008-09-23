@@ -49,32 +49,8 @@ __BEGIN_DECLS
  * @ingroup grp_dbgf
  * @{
  */
-
-/**
- * \#DB (Debug event) handler.
- *
- * @returns VBox status code.
- *          VINF_SUCCESS means we completely handled this trap,
- *          other codes are passed execution to host context.
- *
- * @param   pVM         The VM handle.
- * @param   pRegFrame   Pointer to the register frame for the trap.
- * @param   uDr6        The DR6 register value.
- */
 DBGFGCDECL(int) DBGFGCTrap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6);
-
-/**
- * \#BP (Breakpoint) handler.
- *
- * @returns VBox status code.
- *          VINF_SUCCESS means we completely handled this trap,
- *          other codes are passed execution to host context.
- *
- * @param   pVM         The VM handle.
- * @param   pRegFrame   Pointer to the register frame for the trap.
- */
 DBGFGCDECL(int) DBGFGCTrap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame);
-
 /** @} */
 #endif
 
@@ -83,39 +59,15 @@ DBGFGCDECL(int) DBGFGCTrap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame);
  * @ingroup grp_dbgf
  * @{
  */
-
-/**
- * \#DB (Debug event) handler.
- *
- * @returns VBox status code.
- *          VINF_SUCCESS means we completely handled this trap,
- *          other codes are passed execution to host context.
- *
- * @param   pVM         The VM handle.
- * @param   pRegFrame   Pointer to the register frame for the trap.
- * @param   uDr6        The DR6 register value.
- */
 DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6);
-
-/**
- * \#BP (Breakpoint) handler.
- *
- * @returns VBox status code.
- *          VINF_SUCCESS means we completely handled this trap,
- *          other codes are passed execution to host context.
- *
- * @param   pVM         The VM handle.
- * @param   pRegFrame   Pointer to the register frame for the trap.
- */
 DBGFR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame);
-
 /** @} */
 #endif
 
 
 
 /**
- *  Mixed address.
+ * Mixed address.
  */
 typedef struct DBGFADDRESS
 {
@@ -171,44 +123,9 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_IS_HMA(pAddress)     ( !!((pAddress)->fFlags & DBGFADDRESS_FLAGS_HMA) )
 /** @} */
 
-/**
- * Creates a mixed address from a Sel:off pair.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pAddress    Where to store the mixed address.
- * @param   Sel         The selector part.
- * @param   off         The offset part.
- */
 DBGFR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, PDBGFADDRESS pAddress, RTSEL Sel, RTUINTPTR off);
-
-/**
- * Creates a mixed address from a flat address.
- *
- * @returns pAddress.
- * @param   pVM         The VM handle.
- * @param   pAddress    Where to store the mixed address.
- * @param   FlatPtr     The flat pointer.
- */
 DBGFR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr);
-
-/**
- * Creates a mixed address from a guest physical address.
- *
- * @param   pVM         The VM handle.
- * @param   pAddress    Where to store the mixed address.
- * @param   PhysAddr    The guest physical address.
- */
 DBGFR3DECL(void) DBGFR3AddrFromPhys(PVM pVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr);
-
-/**
- * Checks if the specified address is valid (checks the structure pointer too).
- *
- * @returns true if valid.
- * @returns false if invalid.
- * @param   pVM         The VM handle.
- * @param   pAddress    The address to validate.
- */
 DBGFR3DECL(bool) DBGFR3AddrIsValid(PVM pVM, PCDBGFADDRESS pAddress);
 
 
@@ -365,195 +282,24 @@ typedef const DBGFEVENT *PCDBGFEVENT;
 # define DBGFSTOP(pVM)  VINF_SUCCESS
 #endif
 
-/**
- * Initializes the DBGF.
- *
- * @returns VBox status code.
- * @param   pVM     VM handle.
- */
-DBGFR3DECL(int) DBGFR3Init(PVM pVM);
-
-/**
- * Termiantes and cleans up resources allocated by the DBGF.
- *
- * @returns VBox status code.
- * @param   pVM     VM Handle.
- */
-DBGFR3DECL(int) DBGFR3Term(PVM pVM);
-
-/**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
- *
- * @param   pVM         VM handle.
- * @param   offDelta    Relocation delta relative to old location.
- */
-DBGFR3DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-
-/**
- * Forced action callback.
- * The VMM will call this from it's main loop when VM_FF_DBGF is set.
- *
- * The function checks and executes pending commands from the debugger.
- *
- * @returns VINF_SUCCESS normally.
- * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happend.
- * @param   pVM         VM Handle.
- */
-DBGFR3DECL(int) DBGFR3VMMForcedAction(PVM pVM);
-
-/**
- * Send a generic debugger event which takes no data.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   enmEvent    The event to send.
- */
-DBGFR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent);
-
-/**
- * Send a debugger event which takes the full source file location.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   enmEvent    The event to send.
- * @param   pszFile     Source file.
- * @param   uLine       Line number in source file.
- * @param   pszFunction Function name.
- * @param   pszFormat   Message which accompanies the event.
- * @param   ...         Message arguments.
- */
-DBGFR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, ...);
-
-/**
- * Send a debugger event which takes the full source file location.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   enmEvent    The event to send.
- * @param   pszFile     Source file.
- * @param   uLine       Line number in source file.
- * @param   pszFunction Function name.
- * @param   pszFormat   Message which accompanies the event.
- * @param   args        Message arguments.
- */
-DBGFR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, va_list args);
-
-/**
- * Send a debugger event which takes the two assertion messages.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   enmEvent    The event to send.
- * @param   pszMsg1     First assertion message.
- * @param   pszMsg2     Second assertion message.
- */
-DBGFR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2);
-
-/**
- * Breakpoint was hit somewhere.
- * Figure out which breakpoint it is and notify the debugger.
- *
- * @returns VBox status.
- * @param   pVM         The VM handle.
- * @param   enmEvent    DBGFEVENT_BREAKPOINT_HYPER or DBGFEVENT_BREAKPOINT.
- */
-DBGFR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent);
-
-/**
- * Attaches a debugger to the specified VM.
- *
- * Only one debugger at a time.
- *
- * @returns VBox status code.
- * @param   pVM     VM Handle.
- */
-DBGFR3DECL(int) DBGFR3Attach(PVM pVM);
-
-/**
- * Detaches a debugger from the specified VM.
- *
- * Caller must be attached to the VM.
- *
- * @returns VBox status code.
- * @param   pVM     VM Handle.
- */
-DBGFR3DECL(int) DBGFR3Detach(PVM pVM);
-
-/**
- * Wait for a debug event.
- *
- * @returns VBox status. Will not return VBOX_INTERRUPTED.
- * @param   pVM         VM handle.
- * @param   cMillies    Number of millies to wait.
- * @param   ppEvent     Where to store the event pointer.
- */
-DBGFR3DECL(int) DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent);
-
-/**
- * Halts VM execution.
- *
- * After calling this the VM isn't actually halted till an DBGFEVENT_HALT_DONE
- * arrives. Until that time it's not possible to issue any new commands.
- *
- * @returns VBox status.
- * @param   pVM     VM handle.
- */
-DBGFR3DECL(int) DBGFR3Halt(PVM pVM);
-
-/**
- * Checks if the VM is halted by the debugger.
- *
- * @returns True if halted.
- * @returns False if not halted.
- * @param   pVM     VM handle.
- */
-DBGFR3DECL(bool) DBGFR3IsHalted(PVM pVM);
-
-/**
- * Checks if the the debugger can wait for events or not.
- *
- * This function is only used by lazy, multiplexing debuggers. :-)
- *
- * @returns True if waitable.
- * @returns False if not waitable.
- * @param   pVM     VM handle.
- */
-DBGFR3DECL(bool) DBGFR3CanWait(PVM pVM);
-
-/**
- * Resumes VM execution.
- *
- * There is no receipt event on this command.
- *
- * @returns VBox status.
- * @param   pVM     VM handle.
- */
-DBGFR3DECL(int) DBGFR3Resume(PVM pVM);
-
-/**
- * Step Into.
- *
- * A single step event is generated from this command.
- * The current implementation is not reliable, so don't rely on the event comming.
- *
- * @returns VBox status.
- * @param   pVM     VM handle.
- */
-DBGFR3DECL(int) DBGFR3Step(PVM pVM);
-
-/**
- * Call this to single step rawmode or recompiled mode.
- *
- * You must pass down the return code to the EM loop! That's
- * where the actual single stepping take place (at least in the
- * current implementation).
- *
- * @returns VINF_EM_DBG_STEP
- * @thread  EMT
- */
-DBGFR3DECL(int) DBGFR3PrgStep(PVM pVM);
+DBGFR3DECL(int)     DBGFR3Init(PVM pVM);
+DBGFR3DECL(int)     DBGFR3Term(PVM pVM);
+DBGFR3DECL(void)    DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+DBGFR3DECL(int)     DBGFR3VMMForcedAction(PVM pVM);
+DBGFR3DECL(int)     DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent);
+DBGFR3DECL(int)     DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, ...);
+DBGFR3DECL(int)     DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, va_list args);
+DBGFR3DECL(int)     DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2);
+DBGFR3DECL(int)     DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent);
+DBGFR3DECL(int)     DBGFR3Attach(PVM pVM);
+DBGFR3DECL(int)     DBGFR3Detach(PVM pVM);
+DBGFR3DECL(int)     DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent);
+DBGFR3DECL(int)     DBGFR3Halt(PVM pVM);
+DBGFR3DECL(bool)    DBGFR3IsHalted(PVM pVM);
+DBGFR3DECL(bool)    DBGFR3CanWait(PVM pVM);
+DBGFR3DECL(int)     DBGFR3Resume(PVM pVM);
+DBGFR3DECL(int)     DBGFR3Step(PVM pVM);
+DBGFR3DECL(int)     DBGFR3PrgStep(PVM pVM);
 
 
 /** Breakpoint type. */
@@ -636,84 +382,13 @@ typedef DBGFBP *PDBGFBP;
 typedef const DBGFBP *PCDBGFBP;
 
 
-/**
- * Sets a breakpoint (int 3 based).
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pAddress    The address of the breakpoint.
- * @param   iHitTrigger The hit count at which the breakpoint start triggering.
- *                      Use 0 (or 1) if it's gonna trigger at once.
- * @param   iHitDisable The hit count which disables the breakpoint.
- *                      Use ~(uint64_t) if it's never gonna be disabled.
- * @param   piBp        Where to store the breakpoint id. (optional)
- * @thread  Any thread.
- */
-DBGFR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp);
-
-/**
- * Sets a register breakpoint.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pAddress    The address of the breakpoint.
- * @param   iHitTrigger The hit count at which the breakpoint start triggering.
- *                      Use 0 (or 1) if it's gonna trigger at once.
- * @param   iHitDisable The hit count which disables the breakpoint.
- *                      Use ~(uint64_t) if it's never gonna be disabled.
- * @param   fType       The access type (one of the X86_DR7_RW_* defines).
- * @param   cb          The access size - 1,2,4 or 8 (the latter is AMD64 long mode only.
- *                      Must be 1 if fType is X86_DR7_RW_EO.
- * @param   piBp        Where to store the breakpoint id. (optional)
- * @thread  Any thread.
- */
-DBGFR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
-                               uint8_t fType, uint8_t cb, PRTUINT piBp);
-
-/**
- * Sets a recompiler breakpoint.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pAddress    The address of the breakpoint.
- * @param   iHitTrigger The hit count at which the breakpoint start triggering.
- *                      Use 0 (or 1) if it's gonna trigger at once.
- * @param   iHitDisable The hit count which disables the breakpoint.
- *                      Use ~(uint64_t) if it's never gonna be disabled.
- * @param   piBp        Where to store the breakpoint id. (optional)
- * @thread  Any thread.
- */
-DBGFR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp);
-
-/**
- * Clears a breakpoint.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   iBp         The id of the breakpoint which should be removed (cleared).
- * @thread  Any thread.
- */
-DBGFR3DECL(int) DBGFR3BpClear(PVM pVM, RTUINT iBp);
-
-/**
- * Enables a breakpoint.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   iBp         The id of the breakpoint which should be enabled.
- * @thread  Any thread.
- */
-DBGFR3DECL(int) DBGFR3BpEnable(PVM pVM, RTUINT iBp);
-
-/**
- * Disables a breakpoint.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   iBp         The id of the breakpoint which should be disabled.
- * @thread  Any thread.
- */
-DBGFR3DECL(int) DBGFR3BpDisable(PVM pVM, RTUINT iBp);
+DBGFR3DECL(int)     DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp);
+DBGFR3DECL(int)     DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
+                                   uint8_t fType, uint8_t cb, PRTUINT piBp);
+DBGFR3DECL(int)     DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp);
+DBGFR3DECL(int)     DBGFR3BpClear(PVM pVM, RTUINT iBp);
+DBGFR3DECL(int)     DBGFR3BpEnable(PVM pVM, RTUINT iBp);
+DBGFR3DECL(int)     DBGFR3BpDisable(PVM pVM, RTUINT iBp);
 
 /**
  * Breakpoint enumeration callback function.
@@ -727,65 +402,15 @@ typedef DECLCALLBACK(int) FNDBGFBPENUM(PVM pVM, void *pvUser, PCDBGFBP pBp);
 /** Pointer to a breakpoint enumeration callback function. */
 typedef FNDBGFBPENUM *PFNDBGFBPENUM;
 
-/**
- * Enumerate the breakpoints.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pfnCallback The callback function.
- * @param   pvUser      The user argument to pass to the callback.
- * @thread  Any thread but the callback will be called from EMT.
- */
-DBGFR3DECL(int) DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
+DBGFR3DECL(int)         DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
+DBGFDECL(RTGCUINTREG)   DBGFBpGetDR7(PVM pVM);
+DBGFDECL(RTGCUINTREG)   DBGFBpGetDR0(PVM pVM);
+DBGFDECL(RTGCUINTREG)   DBGFBpGetDR1(PVM pVM);
+DBGFDECL(RTGCUINTREG)   DBGFBpGetDR2(PVM pVM);
+DBGFDECL(RTGCUINTREG)   DBGFBpGetDR3(PVM pVM);
+DBGFDECL(bool)          DBGFIsStepping(PVM pVM);
 
 
-/**
- * Gets the hardware breakpoint configuration as DR7.
- *
- * @returns DR7 from the DBGF point of view.
- * @param   pVM         The VM handle.
- */
-DBGFDECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM);
-
-/**
- * Gets the address of the hardware breakpoint number 0.
- *
- * @returns DR0 from the DBGF point of view.
- * @param   pVM         The VM handle.
- */
-DBGFDECL(RTGCUINTREG) DBGFBpGetDR0(PVM pVM);
-
-/**
- * Gets the address of the hardware breakpoint number 1.
- *
- * @returns DR1 from the DBGF point of view.
- * @param   pVM         The VM handle.
- */
-DBGFDECL(RTGCUINTREG) DBGFBpGetDR1(PVM pVM);
-
-/**
- * Gets the address of the hardware breakpoint number 2.
- *
- * @returns DR2 from the DBGF point of view.
- * @param   pVM         The VM handle.
- */
-DBGFDECL(RTGCUINTREG) DBGFBpGetDR2(PVM pVM);
-
-/**
- * Gets the address of the hardware breakpoint number 3.
- *
- * @returns DR3 from the DBGF point of view.
- * @param   pVM         The VM handle.
- */
-DBGFDECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM);
-
-/**
- * Returns single stepping state
- *
- * @returns stepping or not
- * @param   pVM         The VM handle.
- */
-DBGFDECL(bool) DBGFIsStepping(PVM pVM);
 
 
 /** Pointer to a info helper callback structure. */
@@ -869,113 +494,15 @@ typedef FNDBGFHANDLEREXT  *PFNDBGFHANDLEREXT;
 #define DBGFINFO_FLAGS_RUN_ON_EMT       RT_BIT(0)
 /** @} */
 
-
-/**
- * Register a info handler owned by a device.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pszName     The identifier of the info.
- * @param   pszDesc     The description of the info and any arguments the handler may take.
- * @param   pfnHandler  The handler function to be called to display the info.
- * @param   pDevIns     The device instance owning the info.
- */
 DBGFR3DECL(int) DBGFR3InfoRegisterDevice(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler, PPDMDEVINS pDevIns);
-
-/**
- * Register a info handler owned by a driver.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pszName     The identifier of the info.
- * @param   pszDesc     The description of the info and any arguments the handler may take.
- * @param   pfnHandler  The handler function to be called to display the info.
- * @param   pDrvIns     The driver instance owning the info.
- */
 DBGFR3DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler, PPDMDRVINS pDrvIns);
-
-/**
- * Register a info handler owned by an internal component.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pszName     The identifier of the info.
- * @param   pszDesc     The description of the info and any arguments the handler may take.
- * @param   pfnHandler  The handler function to be called to display the info.
- */
 DBGFR3DECL(int) DBGFR3InfoRegisterInternal(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler);
-
-/**
- * Register a info handler owned by an internal component.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pszName     The identifier of the info.
- * @param   pszDesc     The description of the info and any arguments the handler may take.
- * @param   pfnHandler  The handler function to be called to display the info.
- * @param   fFlags      Flags, see the DBGFINFO_FLAGS_*.
- */
 DBGFR3DECL(int) DBGFR3InfoRegisterInternalEx(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler, uint32_t fFlags);
-
-/**
- * Register a info handler owned by an external component.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pszName     The identifier of the info.
- * @param   pszDesc     The description of the info and any arguments the handler may take.
- * @param   pfnHandler  The handler function to be called to display the info.
- * @param   pvUser      User argument to be passed to the handler.
- */
 DBGFR3DECL(int) DBGFR3InfoRegisterExternal(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLEREXT pfnHandler, void *pvUser);
-
-/**
- * Deregister one(/all) info handler(s) owned by a device.
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle.
- * @param   pDevIns     Device instance.
- * @param   pszName     The identifier of the info. If NULL all owned by the device.
- */
 DBGFR3DECL(int) DBGFR3InfoDeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName);
-
-/**
- * Deregister one(/all) info handler(s) owned by a driver.
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle.
- * @param   pDrvIns     Driver instance.
- * @param   pszName     The identifier of the info. If NULL all owned by the driver.
- */
 DBGFR3DECL(int) DBGFR3InfoDeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName);
-
-/**
- * Deregister a info handler owned by an internal component.
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle.
- * @param   pszName     The identifier of the info. If NULL all owned by the device.
- */
 DBGFR3DECL(int) DBGFR3InfoDeregisterInternal(PVM pVM, const char *pszName);
-
-/**
- * Deregister a info handler owned by an external component.
- *
- * @returns VBox status code.
- * @param   pVM         VM Handle.
- * @param   pszName     The identifier of the info. If NULL all owned by the device.
- */
 DBGFR3DECL(int) DBGFR3InfoDeregisterExternal(PVM pVM, const char *pszName);
-
-/**
- * Display a piece of info writing to the supplied handler.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pszName     The identifier of the info to display.
- * @param   pszArgs     Arguments to the info handler.
- * @param   pHlp        The output helper functions. If NULL the logger will be used.
- */
 DBGFR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp);
 
 /** @def DBGFR3InfoLog
@@ -995,35 +522,6 @@ DBGFR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PC
 #define DBGFR3InfoLog(pVM, pszName, pszArgs) do { } while (0)
 #endif
 
-
-/**
- * Changes the logger group settings.
- *
- * @returns VBox status code.
- * @param   pVM                 The VM handle.
- * @param   pszGroupSettings    The group settings string. (VBOX_LOG)
- */
-DBGFR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings);
-
-/**
- * Changes the logger flag settings.
- *
- * @returns VBox status code.
- * @param   pVM                 The VM handle.
- * @param   pszFlagSettings     The flag settings string. (VBOX_LOG_FLAGS)
- */
-DBGFR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings);
-
-/**
- * Changes the logger destination settings.
- *
- * @returns VBox status code.
- * @param   pVM                 The VM handle.
- * @param   pszDestSettings     The destination settings string. (VBOX_LOG_DEST)
- */
-DBGFR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings);
-
-
 /**
  * Enumeration callback for use with DBGFR3InfoEnum.
  *
@@ -1038,31 +536,15 @@ typedef DECLCALLBACK(int) FNDBGFINFOENUM(PVM pVM, const char *pszName, const cha
 /** Pointer to a FNDBGFINFOENUM function. */
 typedef FNDBGFINFOENUM *PFNDBGFINFOENUM;
 
-/**
- * Enumerate all the register info handlers.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pfnCallback     Pointer to callback function.
- * @param   pvUser          User argument to pass to the callback.
- */
 DBGFR3DECL(int) DBGFR3InfoEnum(PVM pVM, PFNDBGFINFOENUM pfnCallback, void *pvUser);
-
-/**
- * Gets the logger info helper.
- * The returned info helper will unconditionally write all output to the log.
- *
- * @returns Pointer to the logger info helper.
- */
 DBGFR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogHlp(void);
-
-/**
- * Gets the release logger info helper.
- * The returned info helper will unconditionally write all output to the release log.
- *
- * @returns Pointer to the release logger info helper.
- */
 DBGFR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogRelHlp(void);
+
+
+
+DBGFR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings);
+DBGFR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings);
+DBGFR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings);
 
 
 
@@ -1105,126 +587,19 @@ typedef DBGFLINE *PDBGFLINE;
 /** Pointer to const debug line number. */
 typedef const DBGFLINE *PCDBGFLINE;
 
-
-/**
- * Load debug info, optionally related to a specific module.
- *
- * @returns VBox status.
- * @param   pVM             VM Handle.
- * @param   pszFilename     Path to the file containing the symbol information.
- *                          This can be the executable image, a flat symbol file of some kind or stripped debug info.
- * @param   AddressDelta    The value to add to the loaded symbols.
- * @param   pszName         Short hand name for the module. If not related to a module specify NULL.
- * @param   Address         Address which the image is loaded at. This will be used to reference the module other places in the api.
- *                          Ignored when pszName is NULL.
- * @param   cbImage         Size of the image.
- *                          Ignored when pszName is NULL.
- */
-DBGFR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage);
-
-/**
- * Interface used by PDMR3LdrRelocate for telling us that a GC module has been relocated.
- *
- * @param   pVM             The VM handle.
- * @param   OldImageBase    The old image base.
- * @param   NewImageBase    The new image base.
- * @param   cbImage         The image size.
- * @param   pszFilename     The image filename.
- * @param   pszName         The module name.
- */
-DBGFR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, unsigned cbImage,
-                                      const char *pszFilename, const char *pszName);
-
-/**
- * Adds a symbol to the debug info manager.
- *
- * @returns VBox status.
- * @param   pVM             VM Handle.
- * @param   ModuleAddress   Module address. Use 0 if no module.
- * @param   SymbolAddress   Symbol address
- * @param   cbSymbol        Size of the symbol. Use 0 if info not available.
- * @param   pszSymbol       Symbol name.
- */
-DBGFR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol);
-
-/**
- * Find symbol by address (nearest).
- *
- * @returns VBox status.
- * @param   pVM                 VM handle.
- * @param   Address             Address.
- * @param   poffDisplacement    Where to store the symbol displacement from Address.
- * @param   pSymbol             Where to store the symbol info.
- */
-DBGFR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol);
-
-/**
- * Find symbol by name (first).
- *
- * @returns VBox status.
- * @param   pVM                 VM handle.
- * @param   pszSymbol           Symbol name.
- * @param   pSymbol             Where to store the symbol info.
- */
-DBGFR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol);
-
-/**
- * Find symbol by address (nearest), allocate return buffer.
- *
- * @returns Pointer to the symbol. Must be freed using DBGFR3SymbolFree().
- * @returns NULL if the symbol was not found or if we're out of memory.
- * @param   pVM                 VM handle.
- * @param   Address             Address.
- * @param   poffDisplacement    Where to store the symbol displacement from Address.
- */
+DBGFR3DECL(int)         DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage);
+DBGFR3DECL(void)        DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, unsigned cbImage,
+                                             const char *pszFilename, const char *pszName);
+DBGFR3DECL(int)         DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol);
+DBGFR3DECL(int)         DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol);
+DBGFR3DECL(int)         DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol);
 DBGFR3DECL(PDBGFSYMBOL) DBGFR3SymbolByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement);
-
-/**
- * Find symbol by name (first), allocate return buffer.
- *
- * @returns Pointer to the symbol. Must be freed using DBGFR3SymbolFree().
- * @returns NULL if the symbol was not found or if we're out of memory.
- * @param   pVM                 VM handle.
- * @param   pszSymbol           Symbol name.
- * @param   ppSymbol            Where to store the pointer to the symbol info.
- */
 DBGFR3DECL(PDBGFSYMBOL) DBGFR3SymbolByNameAlloc(PVM pVM, const char *pszSymbol);
+DBGFR3DECL(void)        DBGFR3SymbolFree(PDBGFSYMBOL pSymbol);
+DBGFR3DECL(int)         DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine);
+DBGFR3DECL(PDBGFLINE)   DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement);
+DBGFR3DECL(void)        DBGFR3LineFree(PDBGFLINE pLine);
 
-/**
- * Frees a symbol returned by DBGFR3SymbolbyNameAlloc() or DBGFR3SymbolByAddressAlloc().
- *
- * @param   pSymbol         Pointer to the symbol.
- */
-DBGFR3DECL(void) DBGFR3SymbolFree(PDBGFSYMBOL pSymbol);
-
-/**
- * Find line by address (nearest).
- *
- * @returns VBox status.
- * @param   pVM                 VM handle.
- * @param   Address             Address.
- * @param   poffDisplacement    Where to store the line displacement from Address.
- * @param   pLine               Where to store the line info.
- */
-DBGFR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine);
-
-/**
- * Find line by address (nearest), allocate return buffer.
- *
- * @returns Pointer to the line. Must be freed using DBGFR3LineFree().
- * @returns NULL if the line was not found or if we're out of memory.
- * @param   pVM                 VM handle.
- * @param   Address             Address.
- * @param   poffDisplacement    Where to store the line displacement from Address.
- */
-DBGFR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement);
-
-/**
- * Frees a line returned by DBGFR3LineByAddressAlloc().
- *
- * @param   pLine           Pointer to the line.
- */
-DBGFR3DECL(void) DBGFR3LineFree(PDBGFLINE pLine);
 
 /**
  * Return type.
@@ -1258,7 +633,6 @@ typedef enum DBGFRETRUNTYPE
     /** The usual 32-bit blowup. */
     DBGFRETURNTYPE_32BIT_HACK = 0x7fffffff
 } DBGFRETURNTYPE;
-
 
 /**
  * Figures the size of the return state on the stack.
@@ -1364,59 +738,9 @@ typedef struct DBGFSTACKFRAME
 #define DBGFSTACKFRAME_FLAGS_MAX_DEPTH  RT_BIT(3)
 /** @} */
 
-/**
- * Begins a stack walk.
- * This will construct and obtain the first frame.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_NO_MEMORY if we're out of memory.
- * @param   pVM         The VM handle.
- * @param   pFrame      The stack frame info structure.
- *                      On input this structure must be memset to zero.
- *                      If wanted, the AddrPC, AddrStack and AddrFrame fields may be set
- *                      to valid addresses after memsetting it. Any of those fields not set
- *                      will be fetched from the guest CPU state.
- *                      On output the structure will contain all the information we were able to
- *                      obtain about the stack frame.
- */
 DBGFR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame);
-
-/**
- * Begins a stack walk.
- * This will construct and obtain the first frame.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_NO_MEMORY if we're out of memory.
- * @param   pVM         The VM handle.
- * @param   pFrame      The stack frame info structure.
- *                      On input this structure must be memset to zero.
- *                      If wanted, the AddrPC, AddrStack and AddrFrame fields may be set
- *                      to valid addresses after memsetting it. Any of those fields not set
- *                      will be fetched from the hypervisor CPU state.
- *                      On output the structure will contain all the information we were able to
- *                      obtain about the stack frame.
- */
 DBGFR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, PDBGFSTACKFRAME pFrame);
-
-/**
- * Gets the next stack frame.
- *
- * @returns VINF_SUCCESS
- * @returns VERR_NO_MORE_FILES if not more stack frames.
- * @param   pVM         The VM handle.
- * @param   pFrame      Pointer to the current frame on input, content is replaced with the next frame on successful return.
- */
 DBGFR3DECL(int) DBGFR3StackWalkNext(PVM pVM, PDBGFSTACKFRAME pFrame);
-
-/**
- * Ends a stack walk process.
- *
- * This *must* be called after a successful first call to any of the stack
- * walker functions. If not called we will leak memory or other resources.
- *
- * @param   pVM         The VM handle.
- * @param   pFrame      The stackframe as returned by the last stack walk call.
- */
 DBGFR3DECL(void) DBGFR3StackWalkEnd(PVM pVM, PDBGFSTACKFRAME pFrame);
 
 
@@ -1441,57 +765,9 @@ DBGFR3DECL(void) DBGFR3StackWalkEnd(PVM pVM, PDBGFSTACKFRAME pFrame);
 /** Special flat selector. */
 #define DBGF_SEL_FLAT                       1
 
-/**
- * Disassembles the one instruction according to the specified flags and address.
- *
- * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       Sel             The code selector. This used to determin the 32/16 bit ness and
- *                              calculation of the actual instruction address.
- *                              Use DBGF_SEL_FLAT for specifying a flat address.
- * @param       GCPtr           The code address relative to the base of Sel.
- * @param       fFlags          Flags controlling where to start and how to format.
- *                              A combination of the DBGF_DISAS_FLAGS_* #defines.
- * @param       pszOutput       Output buffer.
- * @param       cchOutput       Size of the output buffer.
- * @param       pcbInstr        Where to return the size of the instruction.
- */
 DBGFR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr);
-
-/**
- * Disassembles the current instruction.
- * Addresses will be tried resolved to symbols
- *
- * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       Sel             The code selector. This used to determin the 32/16 bit ness and
- *                              calculation of the actual instruction address.
- *                              Use DBGF_SEL_FLAT for specifying a flat address.
- * @param       GCPtr           The code address relative to the base of Sel.
- * @param       pszOutput       Output buffer.
- * @param       cbOutput        Size of the output buffer.
- */
 DBGFR3DECL(int) DBGFR3DisasInstr(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, char *pszOutput, uint32_t cbOutput);
-
-/**
- * Disassembles the current instruction.
- * All registers and data will be displayed. Addresses will be attempted resolved to symbols
- *
- * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       pszOutput       Output buffer.
- * @param       cbOutput        Size of the output buffer.
- */
 DBGFR3DECL(int) DBGFR3DisasInstrCurrent(PVM pVM, char *pszOutput, uint32_t cbOutput);
-
-/**
- * Disassembles the current guest context instruction and writes it to the log.
- * All registers and data will be displayed. Addresses will be attempted resolved to symbols.
- *
- * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       pszPrefix       Short prefix string to the dissassembly string. (optional)
- */
 DBGFR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix);
 
 /** @def DBGFR3DisasInstrCurrentLog
@@ -1508,16 +784,6 @@ DBGFR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefi
 # define DBGFR3DisasInstrCurrentLog(pVM, pszPrefix) do { } while (0)
 #endif
 
-/**
- * Disassembles the specified guest context instruction and writes it to the log.
- * Addresses will be attempted resolved to symbols.
- *
- * @returns VBox status code.
- * @param       pVM             VM handle.
- * @param       Sel             The code selector. This used to determin the 32/16 bit-ness and
- *                              calculation of the actual instruction address.
- * @param       GCPtr           The code address relative to the base of Sel.
- */
 DBGFR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr);
 
 /** @def DBGFR3DisasInstrLog
@@ -1691,3 +957,4 @@ DBGFR3DECL(void *)  DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf);
 __END_DECLS
 
 #endif
+
