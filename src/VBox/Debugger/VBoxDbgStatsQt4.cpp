@@ -299,8 +299,16 @@ public:
 protected:
     /** Gets the unit. */
     static QString strUnit(PCDBGGUISTATSNODE pNode);
-    /** Gets the value. */
-    static QString strValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the value/times. */
+    static QString strValueTimes(PCDBGGUISTATSNODE pNode);
+    /** Gets the minimum value. */
+    static QString strMinValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the average value. */
+    static QString strAvgValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the maximum value. */
+    static QString strMaxValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the total value count. */
+    static QString strTotalValue(PCDBGGUISTATSNODE pNode);
 
     /**
      * Destroys a node and all its children.
@@ -889,7 +897,7 @@ VBoxDbgStatsModel::strUnit(PCDBGGUISTATSNODE pNode)
 
 
 /*static*/ QString
-VBoxDbgStatsModel::strValue(PCDBGGUISTATSNODE pNode)
+VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
 {
     char sz[128];
 
@@ -957,6 +965,78 @@ VBoxDbgStatsModel::strValue(PCDBGGUISTATSNODE pNode)
 }
 
 
+/*static*/ QString
+VBoxDbgStatsModel::strMinValue(PCDBGGUISTATSNODE pNode)
+{
+    char sz[128];
+
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (!pNode->Data.Profile.cPeriods)
+                return "0";
+            return formatNumber(sz, pNode->Data.Profile.cTicksMin);
+        default:
+            return "";
+    }
+}
+
+
+/*static*/ QString
+VBoxDbgStatsModel::strAvgValue(PCDBGGUISTATSNODE pNode)
+{
+    char sz[128];
+
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (!pNode->Data.Profile.cPeriods)
+                return "0";
+            return formatNumber(sz, pNode->Data.Profile.cTicks / pNode->Data.Profile.cPeriods);
+        default:
+            return "";
+    }
+}
+
+
+/*static*/ QString
+VBoxDbgStatsModel::strMaxValue(PCDBGGUISTATSNODE pNode)
+{
+    char sz[128];
+
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (!pNode->Data.Profile.cPeriods)
+                return "0";
+            return formatNumber(sz, pNode->Data.Profile.cTicksMax);
+        default:
+            return "";
+    }
+}
+
+
+/*static*/ QString
+VBoxDbgStatsModel::strTotalValue(PCDBGGUISTATSNODE pNode)
+{
+    char sz[128];
+
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (!pNode->Data.Profile.cPeriods)
+                return "0";
+            return formatNumber(sz, pNode->Data.Profile.cTicks);
+        default:
+            return "";
+    }
+}
+
+
 QVariant
 VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
 {
@@ -975,21 +1055,22 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
     {
         case 0:
             return QString(pNode->pszName);
-
         case 1:
             return strUnit(pNode);
         case 2:
-            return strValue(pNode);
+            return strValueTimes(pNode);
         case 3:
+            return strMinValue(pNode);
         case 4:
+            return strAvgValue(pNode);
         case 5:
+            return strMaxValue(pNode);
         case 6:
-            return QString("todo"); /** @todo the rest of the data formatting... */
+            return strTotalValue(pNode);
         case 7:
             return pNode->szDelta;
         case 8:
             return pNode->pDescStr ? QString(*pNode->pDescStr) : QString("");
-
         default:
             return QVariant();
     }
@@ -1149,7 +1230,37 @@ static bool isNodeAncestorOf(PCDBGGUISTATSNODE pNode, PCDBGGUISTATSNODE pAncesto
 
 static PDBGGUISTATSNODE nextNode(PDBGGUISTATSNODE pNode)
 {
-    /** @todo */
+    if (!pNode)
+        /* done */;
+    /* decend to children. */
+    else if (pNode->cChildren)
+        pNode = pNode->papChildren[0];
+    else
+    {
+        PDBGGUISTATSNODE pParent = pNode->pParent;
+        if (!pParent)
+            pNode = NULL;
+        /* next sibling. */
+        else if (pNode->iSelf + 1 < pNode->pParent->cChildren)
+            pNode = pParent->papChildren[pNode->iSelf + 1];
+        /* ascend and advanced to a parent's sibiling. */
+        else
+        {
+            for (;;)
+            {
+                uint32_t breakage!!! yea! iSelf = pParent->iSelf;
+                pNode = pNode->pParent;
+                if (!pNode)
+                    break;
+                if (iSelf + 1 < pNode->cChildren)
+                {
+                    pNode = pNode->papChildren[iSelf + 1];
+                    break;
+                }
+            }
+        }
+    }
+
     return pNode;
 }
 
