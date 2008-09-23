@@ -1249,12 +1249,15 @@ static PDBGGUISTATSNODE nextNode(PDBGGUISTATSNODE pNode)
             for (;;)
             {
                 uint32_t iSelf = pParent->iSelf;
-                pNode = pNode->pParent;
-                if (!pNode)
-                    break;
-                if (iSelf + 1 < pNode->cChildren)
+                pParent = pParent->pParent;
+                if (!pParent)
                 {
-                    pNode = pNode->papChildren[iSelf + 1];
+                    pNode = NULL;
+                    break;
+                }
+                if (iSelf + 1 < pParent->cChildren)
+                {
+                    pNode = pParent->papChildren[iSelf + 1];
                     break;
                 }
             }
