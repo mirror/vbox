@@ -1248,7 +1248,7 @@ static PDBGGUISTATSNODE nextNode(PDBGGUISTATSNODE pNode)
         {
             for (;;)
             {
-                uint32_t breakage!!! yea! iSelf = pParent->iSelf;
+                uint32_t iSelf = pParent->iSelf;
                 pNode = pNode->pParent;
                 if (!pNode)
                     break;
