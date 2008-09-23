@@ -193,7 +193,7 @@ static struct cb_ops g_VBoxNetFltSolarisCbOps =
     nochpoll,                       /* c poll */
     ddi_prop_op,                    /* property ops */
     &g_VBoxNetFltSolarisStreamTab,
-    D_NEW | D_MP | D_MTQPAIR,       /* compat. flag */
+    D_NEW | D_MP | D_MTPERQ,        /* compat. flag */
     CB_REV                          /* revision */
 };
 
@@ -724,8 +724,13 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     pStream->pNext = *ppPrevStream;
     *ppPrevStream = pStream;
 
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     qprocson(pQueue);
 
+    /*
+     * Don't hold the spinlocks across putnext calls as it could
+     * (and does mostly) re-enter the put procedure on the same thread.
+     */
     if (pStream->Type == kPromiscStream)
     {
         vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
@@ -758,12 +763,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         }
         else
             LogRel((DEVICE_NAME ":vboxNetFltSolarisBindReq failed rc=%Vrc.\n", rc));
-
-        if (RT_FAILURE(rc))
-        {
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-            return EPROTO;
-        }
     }
 
     NOREF(fOpenMode);
@@ -771,7 +770,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
 
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModOpen returns 0, DevMinor=%d pQueue=%p\n", DevMinor, pStream->pReadQueue));
 
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     return 0;
 }
 
