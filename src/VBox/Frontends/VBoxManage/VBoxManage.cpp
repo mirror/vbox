@@ -660,6 +660,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "VBoxManage metrics          setup\n"
                  "                            [-period <seconds>]\n"
                  "                            [-samples <count>]\n"
+                 "                            [-list]\n"
                  "                            [*|host|<vmname> [<metric_list>]]\n\n"
                  "VBoxManage metrics          query [*|host|<vmname> [<metric_list>]]\n\n"
                  "VBoxManage metrics          collect\n"
@@ -7806,6 +7807,33 @@ static int countMatchingMetrics(ComPtr<IVirtualBox> aVirtualBox,
     return metricInfo.size();
 }
 
+static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
+                                ComSafeArrayIn(IPerformanceMetric*, aMetrics))
+{
+    HRESULT rc;
+    com::SafeIfaceArray<IPerformanceMetric> metrics(ComSafeArrayInArg(aMetrics));
+    if (metrics.size())
+    {
+        ComPtr<IUnknown> object;
+        Bstr metricName;
+        RTPrintf("The following metrics were modified:\n\n"
+                 "Object     Metric\n"
+                 "---------- --------------------\n");
+        for (size_t i = 0; i < metrics.size(); i++)
+        {
+            CHECK_ERROR(metrics[i], COMGETTER(Object)(object.asOutParam()));
+            CHECK_ERROR(metrics[i], COMGETTER(MetricName)(metricName.asOutParam()));
+            RTPrintf("%-10ls %-20ls\n",
+                getObjectName(aVirtualBox, object).raw(), metricName.raw());
+        }
+        RTPrintf("\n");
+    }
+    else
+    {
+        RTPrintf("No metrics match the specified filter!\n");
+    }
+}
+
 /**
  * list                                                               *
  */
@@ -7869,7 +7897,7 @@ static int handleMetricsSetup(int argc, char *argv[],
     com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
     ULONG period = 1, samples = 1;
-    /*bool listMatches = false;*/
+    bool listMatches = false;
     int i;
 
     for (i = 1; i < argc; i++)
@@ -7892,10 +7920,10 @@ static int handleMetricsSetup(int argc, char *argv[],
             if (!endptr || *endptr)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
+        else if (strcmp(argv[i], "-list") == 0)
+            listMatches = true;
         else
             break; /* The rest of params should define the filter */
-        /*else if (strcmp(argv[i], "-list") == 0)
-            listMatches = true;*/
     }
 
     rc = parseFilterParameters(argc - i, &argv[i], aVirtualBox,
@@ -7905,16 +7933,23 @@ static int handleMetricsSetup(int argc, char *argv[],
     if (FAILED(rc))
         return 1;
 
-/*    if (countMatchingMetrics(aVirtualBox, performanceCollector,
-                             ComSafeArrayAsInParam(metrics),
-                             ComSafeArrayAsInParam(objects),
-                             listMatches) == 0)
-        return 1;*/
-
-    CHECK_ERROR(performanceCollector,
-        SetupMetrics(ComSafeArrayAsInParam(metrics),
-                     ComSafeArrayAsInParam(objects), period, samples));
-
+    if (listMatches)
+    {
+        com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
+        CHECK_ERROR(performanceCollector,
+            SetupMetricsEx(ComSafeArrayAsInParam(metrics),
+                           ComSafeArrayAsInParam(objects), period, samples,
+                           ComSafeArrayAsOutParam(affectedMetrics)));
+        listAffectedMetrics(aVirtualBox,
+                            ComSafeArrayAsInParam(affectedMetrics));
+    }
+    else
+    {
+        CHECK_ERROR(performanceCollector,
+            SetupMetrics(ComSafeArrayAsInParam(metrics),
+                         ComSafeArrayAsInParam(objects), period, samples));
+    }
+    
     return 0;
 }
 
@@ -7979,7 +8014,7 @@ static int handleMetricsQuery(int argc, char *argv[],
             if (strcmp((const char *)metricUnit.raw(), "%"))
                 RTPrintf("%s%d %ls", separator, retData[retIndices[i] + j], metricUnit.raw());
             else
-                RTPrintf("%s%d.%02d%%", separator, retData[retIndices[i] + j] / 1000, retData[retIndices[i] + j] % 100);
+                RTPrintf("%s%d.%02d%%", separator, retData[retIndices[i] + j] / 1000, (retData[retIndices[i] + j] / 10) % 100);
             separator = ", ";
         }
         RTPrintf("\n");

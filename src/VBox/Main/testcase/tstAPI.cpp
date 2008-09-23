@@ -47,8 +47,13 @@ using namespace com;
 // forward declarations
 ///////////////////////////////////////////////////////////////////////////////
 
-void queryMetrics (ComPtr <IPerformanceCollector> collector,
-                   ComSafeArrayIn (IUnknown *, objects));
+static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
+                                  ComPtr<IUnknown> aObject);
+static void queryMetrics (ComPtr<IVirtualBox> aVirtualBox,
+                          ComPtr <IPerformanceCollector> collector,
+                          ComSafeArrayIn (IUnknown *, objects));
+static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
+                                ComSafeArrayIn(IPerformanceMetric*, aMetrics));
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -945,6 +950,7 @@ int main(int argc, char *argv[])
         // Get machine
         ComPtr <IMachine> machine;
         Bstr name = argc > 1 ? argv [1] : "dsl";
+        Bstr sessionType = argc > 2 ? argv [2] : "vrdp";
         printf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_RC_BREAK (virtualBox->FindMachine (name, machine.asOutParam()));
 
@@ -953,7 +959,7 @@ int main(int argc, char *argv[])
         CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
         printf ("Opening a remote session for this machine...\n");
         ComPtr <IProgress> progress;
-        CHECK_RC_BREAK (virtualBox->OpenRemoteSession (session, guid, Bstr("vrdp"),
+        CHECK_RC_BREAK (virtualBox->OpenRemoteSession (session, guid, sessionType,
                                                        NULL, progress.asOutParam()));
         printf ("Waiting for the session to open...\n");
         CHECK_RC_BREAK (progress->WaitForCompletion (-1));
@@ -976,8 +982,8 @@ int main(int argc, char *argv[])
 
         RTThreadSleep(5000); // Sleep for 5 seconds
 
-        printf("Metrics collected with DSL machine running: --------------------\n");
-        queryMetrics(collector, ComSafeArrayAsInParam(objects));
+        printf("\nMetrics collected with VM running: --------------------\n");
+        queryMetrics(virtualBox, collector, ComSafeArrayAsInParam(objects));
 
         // Pause
         //printf ("Press enter to pause the VM execution in the remote session...");
@@ -986,8 +992,44 @@ int main(int argc, char *argv[])
 
         RTThreadSleep(5000); // Sleep for 5 seconds
 
-        printf("Metrics collected with DSL machine paused: ---------------------\n");
-        queryMetrics(collector, ComSafeArrayAsInParam(objects));
+        printf("\nMetrics collected with VM paused: ---------------------\n");
+        queryMetrics(virtualBox, collector, ComSafeArrayAsInParam(objects));
+
+        com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
+        printf("\nDrop collected metrics: ----------------------------------------\n");
+        CHECK_ERROR_BREAK (collector,
+            SetupMetricsEx(ComSafeArrayAsInParam(baseMetrics),
+                           ComSafeArrayAsInParam(objects),
+                           1u, 5u, ComSafeArrayAsOutParam(affectedMetrics)) );
+        listAffectedMetrics(virtualBox,
+                            ComSafeArrayAsInParam(affectedMetrics));
+        affectedMetrics.setNull();
+        queryMetrics(virtualBox, collector, ComSafeArrayAsInParam(objects));
+
+        com::SafeIfaceArray<IUnknown> vmObject(1);
+        machine.queryInterfaceTo(&vmObject[0]);
+
+        printf("\nDisable collection of VM metrics: ------------------------------\n");
+        CHECK_ERROR_BREAK (collector,
+            DisableMetricsEx(ComSafeArrayAsInParam(baseMetrics),
+                             ComSafeArrayAsInParam(vmObject),
+                             ComSafeArrayAsOutParam(affectedMetrics)) );
+        listAffectedMetrics(virtualBox,
+                            ComSafeArrayAsInParam(affectedMetrics));
+        affectedMetrics.setNull();
+        RTThreadSleep(5000); // Sleep for 5 seconds
+        queryMetrics(virtualBox, collector, ComSafeArrayAsInParam(objects));
+
+        printf("\nRe-enable collection of all metrics: ---------------------------\n");
+        CHECK_ERROR_BREAK (collector,
+            EnableMetricsEx(ComSafeArrayAsInParam(baseMetrics),
+                            ComSafeArrayAsInParam(objects),
+                            ComSafeArrayAsOutParam(affectedMetrics)) );
+        listAffectedMetrics(virtualBox,
+                            ComSafeArrayAsInParam(affectedMetrics));
+        affectedMetrics.setNull();
+        RTThreadSleep(5000); // Sleep for 5 seconds
+        queryMetrics(virtualBox, collector, ComSafeArrayAsInParam(objects));
 
         // Power off
         printf ("Press enter to power off VM...");
@@ -1018,8 +1060,9 @@ int main(int argc, char *argv[])
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-void queryMetrics (ComPtr <IPerformanceCollector> collector,
-                   ComSafeArrayIn (IUnknown *, objects))
+static void queryMetrics (ComPtr<IVirtualBox> aVirtualBox,
+                          ComPtr <IPerformanceCollector> collector,
+                          ComSafeArrayIn (IUnknown *, objects))
 {
     HRESULT rc;
 
@@ -1039,6 +1082,8 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
                                              ComSafeArrayAsOutParam(retIndices),
                                              ComSafeArrayAsOutParam(retLengths),
                                              ComSafeArrayAsOutParam(retData)) );
+    RTPrintf("Object     Metric               Values\n"
+             "---------- -------------------- --------------------------------------------\n");
     for (unsigned i = 0; i < retNames.size(); i++)
     {
         // Get info for the metric
@@ -1059,12 +1104,65 @@ void queryMetrics (ComPtr <IPerformanceCollector> collector,
         LONG minVal, maxVal;
         CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MinimumValue) (&minVal));
         CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MaximumValue) (&maxVal));
-        printf("obj(%p) %ls (min=%lu max=%lu)", anObject[0], metricName.raw(), minVal, maxVal);
+        RTPrintf("%-10ls %-20ls ", getObjectName(aVirtualBox, anObject[0]).raw(), metricName.raw());
+        const char *separator = "";
         for (unsigned j = 0; j < retLengths[i]; j++)
         {
-            printf(", %d %ls", retData[retIndices[i] + j] / (strcmp((const char *)metricUnit.raw(), "%")?1:1000), metricUnit.raw());
+            if (strcmp((const char *)metricUnit.raw(), "%"))
+                RTPrintf("%s%d %ls", separator, retData[retIndices[i] + j], metricUnit.raw());
+            else
+                RTPrintf("%s%d.%02d%%", separator, retData[retIndices[i] + j] / 1000, (retData[retIndices[i] + j] / 10) % 100);
+            separator = ", ";
         }
-        printf("\n");
+        RTPrintf("\n");
     }
 }
+
+static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
+                                  ComPtr<IUnknown> aObject)
+{
+    HRESULT rc;
+
+    ComPtr<IHost> host = aObject;
+    if (!host.isNull())
+        return Bstr("host");
+
+    ComPtr<IMachine> machine = aObject;
+    if (!machine.isNull())
+    {
+        Bstr name;
+        CHECK_ERROR(machine, COMGETTER(Name)(name.asOutParam()));
+        if (SUCCEEDED(rc))
+            return name;
+    }
+    return Bstr("unknown");
+}
+
+static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
+                                ComSafeArrayIn(IPerformanceMetric*, aMetrics))
+{
+    HRESULT rc;
+    com::SafeIfaceArray<IPerformanceMetric> metrics(ComSafeArrayInArg(aMetrics));
+    if (metrics.size())
+    {
+        ComPtr<IUnknown> object;
+        Bstr metricName;
+        RTPrintf("The following metrics were modified:\n\n"
+                 "Object     Metric\n"
+                 "---------- --------------------\n");
+        for (size_t i = 0; i < metrics.size(); i++)
+        {
+            CHECK_ERROR(metrics[i], COMGETTER(Object)(object.asOutParam()));
+            CHECK_ERROR(metrics[i], COMGETTER(MetricName)(metricName.asOutParam()));
+            RTPrintf("%-10ls %-20ls\n",
+                getObjectName(aVirtualBox, object).raw(), metricName.raw());
+        }
+        RTPrintf("\n");
+    }
+    else
+    {
+        RTPrintf("No metrics match the specified filter!\n");
+    }
+}
+
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
