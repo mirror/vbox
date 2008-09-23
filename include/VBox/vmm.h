@@ -129,7 +129,7 @@ RTGCPTR VMMGetStackGC(PVM pVM);
  */
 RTHCPTR VMMGetHCStack(PVM pVM);
 
-uint32_t VMMGetCpuId(PVM pVM);
+VMCPUID VMMGetCpuId(PVM pVM);
 
 VMMDECL(uint32_t) VMMGetSvnRev(void);
 
