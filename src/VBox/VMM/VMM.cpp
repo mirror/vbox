@@ -389,9 +389,6 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     LogRel(("[SMP] VMM with %RU32 CPUs\n", pVM->cCPUs));
 #endif
 
-    /* Current CPU id */ /** @todo move to per CPU structure. */
-    pVM->idCPU = 0;
-
     /*
      * Register the saved state data unit.
      */

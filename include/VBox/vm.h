@@ -91,7 +91,7 @@ typedef struct VMCPU
     PVMRC               pVMRC;
     /** The CPU ID.
      * This is the index into the VM::aCpus array. */
-    uint32_t            idCpu;
+    VMCPUID             idCpu;
     /** The ring-3 thread handle of the emulation thread for this CPU.
      * @todo Use the VM_IS_EMT() macro to check if executing in EMT? */
     RTTHREAD            hThreadR3;
@@ -250,7 +250,6 @@ typedef struct VMCPU
  * @param   fFlag   The flag to check.
  */
 #define VM_FF_ISSET(pVM, fFlag)         (((pVM)->fForcedActions & (fFlag)) == (fFlag))
-
 #define VMCPU_FF_ISSET(pVM, cpu, fFlag) (((pVM)->aCpus[cpu].fForcedActions & (fFlag)) == (fFlag))
 
 /** @def VM_FF_ISPENDING
@@ -368,10 +367,8 @@ typedef struct VM
     uint32_t                    hSelf;
     /** Number of virtual CPUs. */
     uint32_t                    cCPUs;
-    /** Current CPU id; @todo move to per CPU structure. */
-    uint32_t                    idCPU;
     /** Reserved; alignment. */
-    uint32_t                    u32Reserved[7];
+    uint32_t                    u32Reserved[8];
 
     /** @name Public VMM Switcher APIs
      * @{ */
