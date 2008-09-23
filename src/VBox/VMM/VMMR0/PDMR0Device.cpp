@@ -394,14 +394,20 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 
-
 /** @copydoc PDMAPICHLPR0::pfnSetInterruptFF */
 static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogFlow(("pdmR0ApicHlp_SetInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 1\n",
+             pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_SET(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC);
+#else
     LogFlow(("pdmR0ApicHlp_SetInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 1\n",
              pDevIns, pDevIns->iInstance, VM_FF_ISSET(pDevIns->Internal.s.pVMHC, VM_FF_INTERRUPT_APIC)));
     VM_FF_SET(pDevIns->Internal.s.pVMHC, VM_FF_INTERRUPT_APIC);
+#endif
 }
 
 
@@ -409,9 +415,16 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
 static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+   
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogFlow(("pdmR0ApicHlp_ClearInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 0\n",
+             pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC);
+#else
     LogFlow(("pdmR0ApicHlp_ClearInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 0\n",
              pDevIns, pDevIns->iInstance, VM_FF_ISSET(pDevIns->Internal.s.pVMHC, VM_FF_INTERRUPT_APIC)));
     VM_FF_CLEAR(pDevIns->Internal.s.pVMHC, VM_FF_INTERRUPT_APIC);
+#endif
 }
 
 
