@@ -67,6 +67,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init (pm::Metric *aMetric);
+    HRESULT init (pm::BaseMetric *aMetric);
     void uninit();
 
     // IPerformanceMetric properties
@@ -151,6 +152,19 @@ public:
                               ComSafeArrayIn (IUnknown *, objects));
     STDMETHOD(DisableMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
                                ComSafeArrayIn (IUnknown *, objects));
+    STDMETHOD(SetupMetricsEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
+                               ComSafeArrayIn (IUnknown *, objects),
+                               ULONG aPeriod, ULONG aCount,
+                               ComSafeArrayOut (IPerformanceMetric *,
+                                                outMetrics));
+    STDMETHOD(EnableMetricsEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
+                                ComSafeArrayIn (IUnknown *, objects),
+                                ComSafeArrayOut (IPerformanceMetric *,
+                                                 outMetrics));
+    STDMETHOD(DisableMetricsEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
+                                 ComSafeArrayIn (IUnknown *, objects),
+                                 ComSafeArrayOut (IPerformanceMetric *,
+                                                  outMetrics));
     STDMETHOD(QueryMetricsData) (ComSafeArrayIn (INPTR BSTR, metricNames),
                                  ComSafeArrayIn (IUnknown *, objects),
                                  ComSafeArrayOut (BSTR, outMetricNames),
@@ -175,7 +189,23 @@ public:
     static const wchar_t *getComponentName() { return L"PerformanceCollector"; }
 
 private:
-
+    HRESULT toIPerformanceMetric(pm::Metric *src, IPerformanceMetric **dst);
+    HRESULT toIPerformanceMetric(pm::BaseMetric *src, IPerformanceMetric **dst);
+    HRESULT SetupMetricsInt(ComSafeArrayIn (INPTR BSTR, metricNames),
+                            ComSafeArrayIn (IUnknown *, objects),
+                            ULONG aPeriod, ULONG aCount, bool reportAffected,
+                            ComSafeArrayOut (IPerformanceMetric *, outMetrics));
+    HRESULT EnableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
+                              ComSafeArrayIn (IUnknown *, objects),
+                              bool reportAffected,
+                              ComSafeArrayOut (IPerformanceMetric *,
+                                               outMetrics));
+    HRESULT DisableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
+                               ComSafeArrayIn (IUnknown *, objects),
+                               bool reportAffected,
+                               ComSafeArrayOut (IPerformanceMetric *,
+                                                outMetrics));
+                            
     static void staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     void samplerCallback();
 

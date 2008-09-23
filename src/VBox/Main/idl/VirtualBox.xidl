@@ -10401,7 +10401,7 @@
 
   <interface
     name="IPerformanceCollector" extends="$unknown"
-    uuid="dcd37e5a-3964-43d1-be30-0f3c7234e347"
+    uuid="840f887a-18b4-4af9-9608-d6a1813fe6ac"
     wsmap="managed"
   >
     <desc>
@@ -10414,7 +10414,7 @@
 
       Metric data are collected at the specified intervals and are retained
       internally. The interval and the number of samples retained can be set
-      with <link to="IPerformanceCollector::setMetrics" />.
+      with <link to="IPerformanceCollector::setupMetrics" />.
 
       Metrics are organized hierarchically, each level separated by slash (/).
       General scheme for metric name is
@@ -10590,6 +10590,105 @@
       <param name="objects" type="$unknown" dir="in" safearray="yes">
         <desc>
           Set of objects to disable metrics for.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setupMetricsEx">
+      <desc>
+        Sets parameters of specified base metrics for a set of objects.
+        Indentical to <link to="IPerformanceCollector::setupMetrics" /> except
+        that it returns an array of <link to="IPerformanceMetric" /> describing
+        the metrics have been affected.
+        <note>
+          @c Null metrics array means all metrics. @c Null object array means
+          all existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to setup metric parameters for.
+        </desc>
+      </param>
+      <param name="period" type="unsigned long" dir="in">
+        <desc>
+          Time interval in seconds between two consecutive samples of performace
+          data.
+        </desc>
+      </param>
+      <param name="count" type="unsigned long" dir="in">
+        <desc>
+          Number of samples to retain in performance data history. Older samples
+          get discarded.
+        </desc>
+      </param>
+      <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
+        <desc>
+          Array of metrics that have been modified by the call to this method.
+        </desc>
+      </param>
+    </method>
+
+    <method name="enableMetricsEx">
+      <desc>
+        Turns on collecting specified base metrics.
+        Indentical to <link to="IPerformanceCollector::enableMetrics" /> except
+        that it returns an array of <link to="IPerformanceMetric" /> describing
+        the metrics have been affected.
+        <note>
+          @c Null metrics array means all metrics. @c Null object array means
+          all existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to enable metrics for.
+        </desc>
+      </param>
+      <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
+        <desc>
+          Array of metrics that have been modified by the call to this method.
+        </desc>
+      </param>
+    </method>
+
+    <method name="disableMetricsEx">
+      <desc>
+        Turns off collecting specified base metrics.
+        Indentical to <link to="IPerformanceCollector::disableMetrics" /> except
+        that it returns an array of <link to="IPerformanceMetric" /> describing
+        the metrics have been affected.
+        <note>
+          @c Null metrics array means all metrics. @c Null object array means
+          all existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to disable metrics for.
+        </desc>
+      </param>
+      <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
+        <desc>
+          Array of metrics that have been modified by the call to this method.
         </desc>
       </param>
     </method>
