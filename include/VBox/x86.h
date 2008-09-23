@@ -717,6 +717,12 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  */
 #define X86_DR7_LEN(iBp, cb)                ( (cb) << ((iBp) * 4 + 18) )
 
+/** Fetch the breakpoint length bits from the DR7 value.
+ * @param   uDR7    DR7 value
+ * @param   iBp     The breakpoint number [0..3].
+ */
+#define X86_DR7_GET_LEN(uDR7, iBp)          ( ( (uDR7) >> ((iBp) * 4 + 18) ) & 0x3)
+
 /** Mask used to check if any breakpoints are enabled. */
 #define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7))
 
