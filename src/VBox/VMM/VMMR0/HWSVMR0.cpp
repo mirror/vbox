@@ -1865,7 +1865,7 @@ ResumeExecution:
                     {
                         unsigned uBPLen = aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
 
-                        if (    (IoExitInfo.n.u16Port >= pCtx->dr[i] && IoExitInfo.n.u16Port <= pCtx->dr[i] + uBPLen)
+                        if (    (IoExitInfo.n.u16Port >= pCtx->dr[i] && IoExitInfo.n.u16Port < pCtx->dr[i] + uBPLen)
                             &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
                             &&  (pCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
                         {
