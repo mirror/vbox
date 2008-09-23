@@ -217,6 +217,9 @@ typedef struct VMCPU
  */
 #if 1
 # define VM_FF_SET(pVM, fFlag)           ASMAtomicOrU32(&(pVM)->fForcedActions, (fFlag))
+/** @todo: per-VM force action flag will likely go away, thus only per-CPU 
+    macros will be available */ 
+# define VMCPU_FF_SET(pVM, cpu, fFlag)   ASMAtomicOrU32(&(pVM)->aCpus[cpu].fForcedActions, (fFlag))
 #else
 # define VM_FF_SET(pVM, fFlag) \
     do { ASMAtomicOrU32(&(pVM)->fForcedActions, (fFlag)); \
@@ -232,6 +235,7 @@ typedef struct VMCPU
  */
 #if 1
 # define VM_FF_CLEAR(pVM, fFlag)         ASMAtomicAndU32(&(pVM)->fForcedActions, ~(fFlag))
+# define VMCPU_FF_CLEAR(pVM, cpu, fFlag) ASMAtomicAndU32(&(pVM)->aCpus[cpu].fForcedActions, ~(fFlag))
 #else
 # define VM_FF_CLEAR(pVM, fFlag) \
     do { ASMAtomicAndU32(&(pVM)->fForcedActions, ~(fFlag)); \
@@ -247,6 +251,8 @@ typedef struct VMCPU
  */
 #define VM_FF_ISSET(pVM, fFlag)         (((pVM)->fForcedActions & (fFlag)) == (fFlag))
 
+#define VMCPU_FF_ISSET(pVM, cpu, fFlag) (((pVM)->aCpus[cpu].fForcedActions & (fFlag)) == (fFlag))
+
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending.
  *
@@ -254,6 +260,7 @@ typedef struct VMCPU
  * @param   fFlags  The flags to check for.
  */
 #define VM_FF_ISPENDING(pVM, fFlags)    ((pVM)->fForcedActions & (fFlags))
+#define VMCPU_FF_ISPENDING(pVM, fFlags) ((pVM)->aCpus[cpu].fForcedActions & (fFlags))
 
 
 /** @def VM_IS_EMT
@@ -267,6 +274,7 @@ typedef struct VMCPU
 #elif defined(IN_RING0)
 # define VM_IS_EMT(pVM)                 true
 #else
+/** @todo need to rework this macro for the case of multiple emulation threads for SMP */
 # define VM_IS_EMT(pVM)                 ((pVM)->NativeThreadEMT == RTThreadNativeSelf())
 #endif
 

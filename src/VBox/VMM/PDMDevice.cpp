@@ -4076,9 +4076,15 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMHC;
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT %d -> 1\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pVM, cpuid, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_SET(pVM, cpuid, VM_FF_INTERRUPT_APIC);
+#else
     LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT %d -> 1\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VM_FF_ISSET(pVM, VM_FF_INTERRUPT_APIC)));
     VM_FF_SET(pVM, VM_FF_INTERRUPT_APIC);
+#endif
     REMR3NotifyInterruptSet(pVM);
     VMR3NotifyFF(pVM, true);
 }
@@ -4088,9 +4094,15 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUI
 static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+#ifdef VBOX_WITH_SMP_GUESTS
+    LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT %d -> 0\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC);
+#else
     LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT %d -> 0\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VM_FF_ISSET(pDevIns->Internal.s.pVMHC, VM_FF_INTERRUPT_APIC)));
     VM_FF_CLEAR(pDevIns->Internal.s.pVMHC, VM_FF_INTERRUPT_APIC);
+#endif
     REMR3NotifyInterruptClear(pDevIns->Internal.s.pVMHC);
 }
 
