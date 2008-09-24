@@ -654,11 +654,6 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         {
             switch(pVM->hwaccm.s.enmShadowMode)
             {
-            case PGMMODE_REAL:
-            case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
-                AssertFailed();
-                return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-
             case PGMMODE_32_BIT:        /* 32-bit paging. */
                 break;
 
@@ -677,6 +672,8 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
 
+            case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
+            case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
             default:                    /* shut up gcc */
                 AssertFailed();
                 return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;

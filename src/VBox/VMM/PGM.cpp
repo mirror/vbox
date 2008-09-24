@@ -1378,16 +1378,17 @@ static int pgmR3InitPaging(PVM pVM)
      * of the first 4GB down to PD level.
      * As with the intermediate context, AMD64 uses the PAE PDPT and PDs.
      */
-    pVM->pgm.s.pHC32BitPD    = (PX86PD)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.apHCPaePDs[0] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apHCPaePDs[1] = (PX86PDPAE)MMR3PageAlloc(pVM);
+    pVM->pgm.s.pHC32BitPD           = (PX86PD)MMR3PageAllocLow(pVM);
+    pVM->pgm.s.apHCPaePDs[0]        = (PX86PDPAE)MMR3PageAlloc(pVM);
+    pVM->pgm.s.apHCPaePDs[1]        = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[0] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[1]);
-    pVM->pgm.s.apHCPaePDs[2] = (PX86PDPAE)MMR3PageAlloc(pVM);
+    pVM->pgm.s.apHCPaePDs[2]        = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[1] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[2]);
-    pVM->pgm.s.apHCPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
+    pVM->pgm.s.apHCPaePDs[3]        = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[3]);
-    pVM->pgm.s.pHCPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.pHCNestedRoot = MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pHCPaePDPT           = (PX86PDPT)MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pHCNestedRoot        = MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pHCNoPaging32BitPD   = (PX86PD)MMR3PageAllocLow(pVM);
 
     if (    !pVM->pgm.s.pHC32BitPD
         ||  !pVM->pgm.s.apHCPaePDs[0]
@@ -1395,21 +1396,23 @@ static int pgmR3InitPaging(PVM pVM)
         ||  !pVM->pgm.s.apHCPaePDs[2]
         ||  !pVM->pgm.s.apHCPaePDs[3]
         ||  !pVM->pgm.s.pHCPaePDPT
-        ||  !pVM->pgm.s.pHCNestedRoot)
+        ||  !pVM->pgm.s.pHCNestedRoot
+        ||  !pVM->pgm.s.pHCNoPaging32BitPD)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
         return VERR_NO_PAGE_MEMORY;
     }
 
     /* get physical addresses. */
-    pVM->pgm.s.HCPhys32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pHC32BitPD);
+    pVM->pgm.s.HCPhys32BitPD      = MMPage2Phys(pVM, pVM->pgm.s.pHC32BitPD);
     Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhys32BitPD) == pVM->pgm.s.pHC32BitPD);
-    pVM->pgm.s.aHCPhysPaePDs[0] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[0]);
-    pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[1]);
-    pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[2]);
-    pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
-    pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPT);
-    pVM->pgm.s.HCPhysNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pHCNestedRoot);
+    pVM->pgm.s.aHCPhysPaePDs[0]         = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[0]);
+    pVM->pgm.s.aHCPhysPaePDs[1]         = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[1]);
+    pVM->pgm.s.aHCPhysPaePDs[2]         = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[2]);
+    pVM->pgm.s.aHCPhysPaePDs[3]         = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
+    pVM->pgm.s.HCPhysPaePDPT            = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPT);
+    pVM->pgm.s.HCPhysNestedRoot         = MMPage2Phys(pVM, pVM->pgm.s.pHCNestedRoot);
+    pVM->pgm.s.HCPhysNoPaging32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pHCNoPaging32BitPD);
 
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
@@ -1417,6 +1420,7 @@ static int pgmR3InitPaging(PVM pVM)
     ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pHCPaePDPT, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pHCNestedRoot, PAGE_SIZE);
+    ASMMemZero32(pVM->pgm.s.pHCNoPaging32BitPD, PAGE_SIZE);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
     {
         ASMMemZero32(pVM->pgm.s.apHCPaePDs[i], PAGE_SIZE);
@@ -2985,39 +2989,11 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                 && !HWACCMIsEnabled(pVM) /* always switch in hwaccm mode! */)
                 break; /* (no change) */
 
-            switch (enmHostMode)
-            {
-                case SUPPAGINGMODE_32_BIT:
-                case SUPPAGINGMODE_32_BIT_GLOBAL:
-                    enmShadowMode = PGMMODE_32_BIT;
-                    enmSwitcher = VMMSWITCHER_32_TO_32;
-                    break;
-
-                case SUPPAGINGMODE_PAE:
-                case SUPPAGINGMODE_PAE_NX:
-                case SUPPAGINGMODE_PAE_GLOBAL:
-                case SUPPAGINGMODE_PAE_GLOBAL_NX:
-                    enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
-#ifdef DEBUG_bird
-if (getenv("VBOX_32BIT"))
-{
-                    enmShadowMode = PGMMODE_32_BIT;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_32;
-}
-#endif
-                    break;
-
-                case SUPPAGINGMODE_AMD64:
-                case SUPPAGINGMODE_AMD64_GLOBAL:
-                case SUPPAGINGMODE_AMD64_NX:
-                case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-                    enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
-                    break;
-
-                default: AssertMsgFailed(("enmHostMode=%d\n", enmHostMode)); break;
-            }
+            /* Always use the 32 bits shadow mode for this case. We never execute real or protected mode without paging code
+             * in raw mode.
+             */
+            enmShadowMode = PGMMODE_32_BIT;
+            enmSwitcher = VMMSWITCHER_INVALID;
             break;
 
         case PGMMODE_32_BIT:
