@@ -787,23 +787,20 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             Assert(pCtx->tr == 0);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         sizeof(VBOXTSS));
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          GCPhys /* phys = virt in this mode */);
-
-            val = X86_DESC_P | X86_SEL_TYPE_SYS_386_TSS_BUSY;
         }
         else
         {
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u64Base);
-
-            val = pCtx->trHid.Attr.u;
-
-            /* The TSS selector must be busy. */
-            if ((val & 0xF) == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
-                val = (val & ~0xF) | X86_SEL_TYPE_SYS_286_TSS_BUSY;
-            else
-                /* Default even if no TR selector has been set (otherwise vmlaunch will fail!) */
-                val = (val & ~0xF) | X86_SEL_TYPE_SYS_386_TSS_BUSY;
         }
+        val = pCtx->trHid.Attr.u;
+
+        /* The TSS selector must be busy. */
+        if ((val & 0xF) == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
+            val = (val & ~0xF) | X86_SEL_TYPE_SYS_286_TSS_BUSY;
+        else
+            /* Default even if no TR selector has been set (otherwise vmlaunch will fail!) */
+            val = (val & ~0xF) | X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_ACCESS_RIGHTS, val);
         AssertRC(rc);
@@ -898,6 +895,8 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         val = pCtx->cr4 | (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0;
         switch(pVM->hwaccm.s.enmShadowMode)
         {
+        case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
+        case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
         case PGMMODE_32_BIT:        /* 32-bit paging. */
             break;
 
@@ -915,24 +914,26 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             AssertFailed();
             return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
-        case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
-        case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
-        default:                    /* shut up gcc */
+        default:                   /* shut up gcc */
             AssertFailed();
             return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
         }
-        /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS and VIF support) */
+        /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
             val |= X86_CR4_VME;
 
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_CR4,              val);
         Log2(("Guest CR4 %08x\n", val));
-        /* All CR4 flags owned by the host; if the guests attempts to change them, then
+        /* CR4 flags owned by the host; if the guests attempts to change them, then
          * the VM will exit.
          */
-        pVM->hwaccm.s.vmx.cr4_mask = ~0;
+        val =   X86_CR4_PAE
+              | X86_CR4_PGE
+              | X86_CR4_PSE
+              | X86_CR4_VMXE;
+        pVM->hwaccm.s.vmx.cr4_mask = val;
 
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_CR4_MASK, pVM->hwaccm.s.vmx.cr4_mask);
+        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_CR4_MASK, val);
         Log2(("Guest CR4-mask %08x\n", val));
         AssertRC(rc);
     }
