@@ -792,6 +792,8 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     vboxnetflt_stream_t *pStream = NULL;
     vboxnetflt_stream_t **ppPrevStream = NULL;
 
+    qprocsoff(pQueue);
+
     /*
      * Get instance data.
      */
@@ -805,8 +807,6 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     PVBOXNETFLTINS pThis = ASMAtomicUoReadPtr((void * volatile *)&pStream->pThis);
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-
-    qprocsoff(pQueue);
 
     /*
      * Unlink it from the list of streams.
@@ -858,7 +858,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
     /*
      * Yes, I'm paranoid.
      */
-    if (!pMsg || !pQueue)
+    if (!pMsg)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut huh?? Invalid parameters.\n"));
         return 0;
@@ -883,7 +883,9 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
         if (RT_LIKELY(pThis))
         {
             /*
-             * Retain the instance if we're actively filtering.
+             * Retain the instance if we're filtering regardless of we are active or not
+             * The reason being even when we are inactive we reference the instance (e.g
+             * the promiscuous OFF acknowledgement case).
              */
             RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
             RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
@@ -2395,7 +2397,7 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
         {
             if (!pPromiscStream->pHead)
             {
-                pCur = RTMemAllocZ(sizeof(VBOXNETFLTPACKETID));
+                pCur = RTMemAlloc(sizeof(VBOXNETFLTPACKETID));
                 if (RT_UNLIKELY(!pCur))
                 {
                     rc = VERR_NO_MEMORY;
@@ -2406,16 +2408,14 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
 
                 pPromiscStream->pHead = pCur;
                 pPromiscStream->pTail = pCur;
-                pCur->pNext = NULL;
                 pPromiscStream->cLoopback++;
 
                 LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback initialized head. checksum=%u.\n",
                         pPromiscStream->pHead->Checksum));
                 break;
             }
-
-            if (   pPromiscStream->pTail
-                && pPromiscStream->pTail->cbPacket == 0)
+            else if (   pPromiscStream->pTail
+                     && pPromiscStream->pTail->cbPacket == 0)
             {
                 pCur = pPromiscStream->pTail;
                 vboxNetFltSolarisInitPacketId(pCur, pMsg);
@@ -2425,25 +2425,26 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
                         pCur->Checksum, pPromiscStream->cLoopback));
                 break;
             }
-
-            AssertRelease(pPromiscStream->pTail);
-
-            pCur = RTMemAllocZ(sizeof(VBOXNETFLTPACKETID));
-            if (RT_UNLIKELY(!pCur))
+            else
             {
-                rc = VERR_NO_MEMORY;
+                Assert(pPromiscStream->pTail);
+                pCur = RTMemAlloc(sizeof(VBOXNETFLTPACKETID));
+                if (RT_UNLIKELY(!pCur))
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+
+                vboxNetFltSolarisInitPacketId(pCur, pMsg);
+
+                pPromiscStream->pTail->pNext = pCur;
+                pPromiscStream->pTail = pCur;
+                pPromiscStream->cLoopback++;
+
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback added tail checksum=%u cLoopback=%d.\n", pCur->Checksum,
+                        pPromiscStream->cLoopback));
                 break;
             }
-
-            vboxNetFltSolarisInitPacketId(pCur, pMsg);
-            pPromiscStream->pTail->pNext = pCur;
-            pPromiscStream->pTail = pCur;
-            pCur->pNext = NULL;
-            pPromiscStream->cLoopback++;
-
-            LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback added tail checksum=%u cLoopback=%d.\n", pCur->Checksum,
-                    pPromiscStream->cLoopback));
-            break;
         } while (0);
     }
     else
@@ -2459,7 +2460,6 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
         pPromiscStream->pTail->pNext = pCur;
         pPromiscStream->pTail = pCur;
 
-        pCur->pNext = NULL;
         vboxNetFltSolarisInitPacketId(pCur, pMsg);
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback recycled head!! checksum=%u cLoopback=%d\n", pCur->Checksum,
                 pPromiscStream->cLoopback));
@@ -2607,8 +2607,8 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         if (pCorrectedMsg)
             pMsg = pCorrectedMsg;
     }
-
     vboxNetFltSolarisAnalyzeMBlk(pMsg);
+
 #endif
 
     /*
@@ -2808,7 +2808,7 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
                 if (   RT_BE2H_U16(pUdpHdr->uh_sport) == 67
                     && RT_BE2H_U16(pUdpHdr->uh_dport) == 68)
                 {
-                    LogFlow((DEVICE_NAME ":UDP bootp ack D=%.6Rhxs S=%.6Rhxs UDP_CheckSum=%04x Computex=%04x\n", pb, pb + 6,
+                    LogRel((DEVICE_NAME ":UDP bootp ack D=%.6Rhxs S=%.6Rhxs UDP_CheckSum=%04x Computex=%04x\n", pb, pb + 6,
                                 RT_BE2H_U16(pUdpHdr->uh_sum), RT_BE2H_U16(RTNetIPv4UDPChecksum(pIpHdr, pUdpHdr, pUdpHdr + 1))));
                 }
             }
@@ -2983,7 +2983,6 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             rc = VERR_NO_MEMORY;
     }
 
-
     /*
      * Create a message block and send it up the host stack (upstream).
      */
@@ -2996,69 +2995,54 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             bool fArp = (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_ARP));
 
             /*
-             * Construct a DL_UNITDATA_IND style message.
+             * Send message up ARP stream.
              */
-            mblk_t *pDlpiMsg;
-            int rc = vboxNetFltSolarisRawToUnitData(pMsg, &pDlpiMsg);
-            if (RT_SUCCESS(rc))
+            if (fArp)
             {
-                pMsg = pDlpiMsg;
+                LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST ARP\n"));
 
-                if (fArp)
+                /*
+                 * Construct a DL_UNITDATA_IND style message for ARP as it doesn't understand fast path.
+                 */
+                mblk_t *pDlpiMsg;
+                int rc = vboxNetFltSolarisRawToUnitData(pMsg, &pDlpiMsg);
+                if (RT_SUCCESS(rc))
                 {
-                    LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST ARP\n"));
-
-                    /*
-                     * Send message up ARP stream.
-                     */
-                    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+                    pMsg = pDlpiMsg;
 
                     vboxnetflt_stream_t *pArpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvArpStream);
                     if (RT_LIKELY(pArpStream))
                     {
                         queue_t *pArpReadQueue = pArpStream->pReadQueue;
-                        Assert(pArpReadQueue);
-
-                        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-
                         putnext(pArpReadQueue, pMsg);
                     }
                     else
-                    {
-                        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
                         rc = VERR_INVALID_POINTER;
-                    }
                 }
                 else
                 {
-                    LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST\n"));
-
-                    /*
-                     * Send messages up IP stream.
-                     */
-                    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-
-                    vboxnetflt_stream_t *pIpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIpStream);
-                    if (RT_LIKELY(pIpStream))
-                    {
-                        queue_t *pIpReadQueue = pIpStream->pReadQueue;
-                        Assert(pIpReadQueue);
-    
-                        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-                        putnext(pIpReadQueue, pMsg);
-                    }
-                    else
-                    {
-                        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-                        rc = VERR_INVALID_POINTER;                    
-                    }
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData failed! rc=%d\n", rc));
+                    freemsg(pMsg);
+                    rc = VERR_NO_MEMORY;
                 }
             }
             else
             {
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData failed! rc=%d\n", rc));
-                freemsg(pMsg);
-                rc = VERR_NO_MEMORY;
+                /*
+                 * Send messages up IP stream.
+                 */
+                LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST\n"));
+
+                pMsg->b_rptr += sizeof(RTNETETHERHDR);
+
+                vboxnetflt_stream_t *pIpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIpStream);
+                if (RT_LIKELY(pIpStream))
+                {
+                    queue_t *pIpReadQueue = pIpStream->pReadQueue;
+                    putnext(pIpReadQueue, pMsg);
+                }
+                else
+                    rc = VERR_INVALID_POINTER;                    
             }
         }
         else
