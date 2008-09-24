@@ -1,8 +1,8 @@
-;/** @file
-; * HWACC/VMX - VMX Structures and Definitions.
-; */
+;; @file
+; HWACCM - VMX Structures and Definitions.
 ;
-;/*
+
+;
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
@@ -26,7 +26,7 @@
 ; Clara, CA 95054 USA or visit http://www.sun.com if you need
 ; additional information or have any questions.
 ;
-; */
+;
 
 %define VMX_VMCS_GUEST_FIELD_ES                                 0800h
 %define VMX_VMCS_GUEST_FIELD_CS                                 0802h
@@ -155,3 +155,4 @@
 %define VMX_VMCS_HOST_SYSENTER_EIP                              06C12h
 %define VMX_VMCS_HOST_RSP                                       06C14h
 %define VMX_VMCS_HOST_RIP                                       06C16h
+

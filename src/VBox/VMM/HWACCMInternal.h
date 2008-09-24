@@ -178,6 +178,10 @@ typedef struct HWACCM
     /** Set if nested paging is allowed. */
     bool                        fAllowNestedPaging;
 
+    /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
+     *  naturally. */
+    bool                        padding[3+4];
+
     /** HWACCM_CHANGED_* flags. */
     uint32_t                    fContextUseFlags;
 
@@ -357,7 +361,7 @@ typedef struct HWACCM
         uint32_t                    u32AMDFeatureEDX;
     } cpuid;
 
-    /* Event injection state. */
+    /** Event injection state. */
     struct
     {
         uint32_t                    fPending;
@@ -373,6 +377,9 @@ typedef struct HWACCM
 
     /** Currenty shadow paging mode. */
     PGMMODE                 enmShadowMode;
+
+    /** Explicit alignment padding of StatEntry (32-bit g++ again). */
+    int32_t                 padding2;
 
 #ifdef VBOX_STRICT
     /** The CPU ID of the CPU currently owning the VMCS. Set in
@@ -440,21 +447,14 @@ typedef struct HWACCM
     STAMCOUNTER             StatDRxIOCheck;
 
 
-    R3PTRTYPE(PSTAMCOUNTER) pStatExitReason;
-    R0PTRTYPE(PSTAMCOUNTER) pStatExitReasonR0;
+    R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
+    R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
 } HWACCM;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;
 
 #ifdef IN_RING0
 
-/**
- * Returns the cpu structure for the current cpu.
- * Keep in mind that there is no guarantee it will stay the same (long jumps to ring 3!!!).
- *
- * @returns cpu structure pointer
- * @param   pVM         The VM to operate on.
- */
 HWACCMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu();
 
 #ifdef VBOX_STRICT
@@ -477,7 +477,7 @@ HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx);
 HWACCMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM);
 HWACCMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx);
 
-#endif
+#endif /* IN_RING0 */
 
 /** @} */
 

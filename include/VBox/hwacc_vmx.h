@@ -1,5 +1,5 @@
 /** @file
- * HWACC/VMX - VMX Structures and Definitions.
+ * HWACCM - VMX Structures and Definitions.
  */
 
 /*
@@ -146,16 +146,16 @@ typedef VTXEPT *PVTXEPT;
 /** Pointer to a const extended table. */
 typedef const VTXEPT *PCVTXEPT;
 
-/** VMX Basic Exit Reasons.
+/** @name VMX Basic Exit Reasons.
  * @{
  */
-/* And-mask for setting reserved bits to zero */
+/** And-mask for setting reserved bits to zero */
 #define VMX_EFLAGS_RESERVED_0           (~0xffc08028)
-/* Or-mask for setting reserved bits to 1 */
+/** Or-mask for setting reserved bits to 1 */
 #define VMX_EFLAGS_RESERVED_1           0x00000002
 /** @} */
 
-/** VMX Basic Exit Reasons.
+/** @name VMX Basic Exit Reasons.
  * @{
  */
 /** 0 Exception or non-maskable interrupt (NMI). */
@@ -240,7 +240,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VM Instruction Errors
+/** @name VM Instruction Errors
  * @{
  */
 /** 1 VMCALL executed in VMX root operation. */
@@ -296,11 +296,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VMX MSR bit definitions
- * @{
- */
-
-/** Basic VMX information.
+/** @name VMX MSRs - Basic VMX information.
  * @{
  */
 /** VMCS revision identifier used by the processor. */
@@ -319,7 +315,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** Misc VMX info.
+/** @name VMX MSRs - Misc VMX info.
  * @{
  */
 /** Activity states supported by the implementation. */
@@ -333,7 +329,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VMCS enumeration field info
+/** @name VMX MSRs - VMCS enumeration field info
  * @{
  */
 /** Highest field index. */
@@ -342,7 +338,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** MSR_IA32_VMX_EPT_CAPS; EPT capabilities MSR
+/** @name MSR_IA32_VMX_EPT_CAPS; EPT capabilities MSR
  * @{
  */
 #define MSR_IA32_VMX_EPT_CAPS_RWX_X_ONLY                     RT_BIT_64(0)
@@ -374,14 +370,8 @@ typedef const VTXEPT *PCVTXEPT;
 
 /** @} */
 
-/** @} */
 
-
-/** VMCS field encoding
- * @{
- */
-
-/* 16 bits guest fields
+/** @name VMCS field encoding - 16 bits guest fields
  * @{
  */
 #define VMX_VMCS_GUEST_FIELD_VPID                               0x0
@@ -395,7 +385,7 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_GUEST_FIELD_TR                                 0x80E
 /** @} */
 
-/** 16 bits host fields
+/** @name VMCS field encoding - 16 bits host fields
  * @{
  */
 #define VMX_VMCS_HOST_FIELD_ES                                  0xC00
@@ -407,19 +397,19 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_HOST_FIELD_TR                                  0xC0C
 /** @}          */
 
-/** 64 bits host fields
+/** @name VMCS field encoding - 64 bits host fields
  * @{
  */
 #define VMX_VMCS_HOST_FIELD_PAT_FULL                            0x2C00
 #define VMX_VMCS_HOST_FIELD_PAT_HIGH                            0x2C01
 #define VMX_VMCS_HOST_FIELD_EFER_FULL                           0x2C02
 #define VMX_VMCS_HOST_FIELD_EFER_HIGH                           0x2C03
-#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_FULL                     0x2C04      /* MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_HIGH                     0x2C05      /* MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_FULL                     0x2C04      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS_HOST_PERF_GLOBAL_CTRL_HIGH                     0x2C05      /**< MSR IA32_PERF_GLOBAL_CTRL */
 /** @}          */
 
 
-/** 64 Bits control fields
+/** @name VMCS field encoding - 64 Bits control fields
  * @{
  */
 #define VMX_VMCS_CTRL_IO_BITMAP_A_FULL                          0x2000
@@ -445,11 +435,11 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_CTRL_TSC_OFFSET_FULL                           0x2010
 #define VMX_VMCS_CTRL_TSC_OFFSET_HIGH                           0x2011
 
-/* Optional (VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW) */
+/** Optional (VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW) */
 #define VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL                       0x2012
 #define VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH                       0x2013
 
-/* Optional (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) */
+/** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) */
 #define VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL                      0x2014
 #define VMX_VMCS_CTRL_APIC_ACCESSADDR_HIGH                      0x2015
 
@@ -463,19 +453,19 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** 64 Bits guest fields
+/** @name VMCS field encoding - 64 Bits guest fields
  * @{
  */
 #define VMX_VMCS_GUEST_LINK_PTR_FULL                            0x2800
 #define VMX_VMCS_GUEST_LINK_PTR_HIGH                            0x2801
-#define VMX_VMCS_GUEST_DEBUGCTL_FULL                            0x2802      /* MSR IA32_DEBUGCTL */
-#define VMX_VMCS_GUEST_DEBUGCTL_HIGH                            0x2803      /* MSR IA32_DEBUGCTL */
+#define VMX_VMCS_GUEST_DEBUGCTL_FULL                            0x2802      /**< MSR IA32_DEBUGCTL */
+#define VMX_VMCS_GUEST_DEBUGCTL_HIGH                            0x2803      /**< MSR IA32_DEBUGCTL */
 #define VMX_VMCS_GUEST_PAT_FULL                                 0x2804
 #define VMX_VMCS_GUEST_PAT_HIGH                                 0x2805
 #define VMX_VMCS_GUEST_EFER_FULL                                0x2806
 #define VMX_VMCS_GUEST_EFER_HIGH                                0x2807
-#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_FULL                    0x2808      /* MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_HIGH                    0x2809      /* MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_FULL                    0x2808      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS_GUEST_PERF_GLOBAL_CTRL_HIGH                    0x2809      /**< MSR IA32_PERF_GLOBAL_CTRL */
 #define VMX_VMCS_GUEST_PDPTR0_FULL                              0x280A
 #define VMX_VMCS_GUEST_PDPTR0_HIGH                              0x280B
 #define VMX_VMCS_GUEST_PDPTR1_FULL                              0x280C
@@ -487,7 +477,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** 32 Bits control fields
+/** @name VMCS field encoding - 32 Bits control fields
  * @{
  */
 #define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS                         0x4000
@@ -511,56 +501,56 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VMX_VMCS_CTRL_PIN_EXEC_CONTROLS
+/** @name VMX_VMCS_CTRL_PIN_EXEC_CONTROLS
  * @{
  */
-/* External interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
+/** External interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
 #define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT            RT_BIT(0)
-/* Non-maskable interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
+/** Non-maskable interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
 #define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT                RT_BIT(3)
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
 
-/** VMX_VMCS_CTRL_PROC_EXEC_CONTROLS
+/** @name VMX_VMCS_CTRL_PROC_EXEC_CONTROLS
  * @{
  */
-/* VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
+/** VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT        RT_BIT(2)
-/* Use timestamp counter offset. */
+/** Use timestamp counter offset. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET             RT_BIT(3)
-/* VM Exit when executing the HLT instruction. */
+/** VM Exit when executing the HLT instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT               RT_BIT(7)
-/* VM Exit when executing the INVLPG instruction. */
+/** VM Exit when executing the INVLPG instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT            RT_BIT(9)
-/* VM Exit when executing the MWAIT instruction. */
+/** VM Exit when executing the MWAIT instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT             RT_BIT(10)
-/* VM Exit when executing the RDPMC instruction. */
+/** VM Exit when executing the RDPMC instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT             RT_BIT(11)
-/* VM Exit when executing the RDTSC instruction. */
+/** VM Exit when executing the RDTSC instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT             RT_BIT(12)
-/* VM Exit on CR8 loads. */
+/** VM Exit on CR8 loads. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT          RT_BIT(19)
-/* VM Exit on CR8 stores. */
+/** VM Exit on CR8 stores. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT         RT_BIT(20)
-/* Use TPR shadow. */
+/** Use TPR shadow. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW         RT_BIT(21)
-/* VM Exit when executing a MOV DRx instruction. */
+/** VM Exit when executing a MOV DRx instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT            RT_BIT(23)
-/* VM Exit when executing IO instructions. */
+/** VM Exit when executing IO instructions. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT         RT_BIT(24)
-/* Use IO bitmaps. */
+/** Use IO bitmaps. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS         RT_BIT(25)
-/* Use MSR bitmaps. */
+/** Use MSR bitmaps. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS        RT_BIT(28)
-/* VM Exit when executing the MONITOR instruction. */
+/** VM Exit when executing the MONITOR instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT           RT_BIT(29)
-/* VM Exit when executing the PAUSE instruction. */
+/** VM Exit when executing the PAUSE instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT             RT_BIT(30)
-/* Determines whether the secondary processor based VM-execution controls are used. */
+/** Determines whether the secondary processor based VM-execution controls are used. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
 /** @} */
 
-/** VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
+/** @name VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
  * @{
  */
 /** Virtualize APIC access. */
@@ -574,7 +564,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VMX_VMCS_CTRL_ENTRY_CONTROLS
+/** @name VMX_VMCS_CTRL_ENTRY_CONTROLS
  * @{
  */
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
@@ -586,7 +576,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VMX_VMCS_CTRL_EXIT_CONTROLS
+/** @name VMX_VMCS_CTRL_EXIT_CONTROLS
  * @{
  */
 /** Return to long mode after a VM-exit. */
@@ -595,7 +585,7 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ            RT_BIT(15)
 /** @} */
 
-/** 32 Bits read-only fields
+/**  @name VMCS field encoding - 32 Bits read-only fields
  * @{
  */
 #define VMX_VMCS_RO_VM_INSTR_ERROR                              0x4400
@@ -608,7 +598,7 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_RO_EXIT_INSTR_INFO                             0x440E
 /** @} */
 
-/** VMX_VMCS_RO_EXIT_INTERRUPTION_INFO
+/** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO
  * @{
  */
 #define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)            (a & 0xff)
@@ -619,22 +609,22 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)       (a & RT_BIT(12))
 #define VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT          31
 #define VMX_EXIT_INTERRUPTION_INFO_VALID(a)             (a & RT_BIT(31))
-/* Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
+/** Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
 #define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)      (a & ~RT_BIT(12))
 /** @} */
 
-/** VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
+/** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
  * @{
  */
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT             0
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI             2
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT         3
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW              4 /* int xx */
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW              4 /**< int xx */
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT         6
 /** @} */
 
 
-/** 32 Bits guest state fields
+/**  @name VMCS field encoding - 32 Bits guest state fields
  * @{
  */
 #define VMX_VMCS_GUEST_ES_LIMIT                                 0x4800
@@ -657,25 +647,25 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_GUEST_TR_ACCESS_RIGHTS                         0x4822
 #define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE                   0x4824
 #define VMX_VMCS_GUEST_ACTIVITY_STATE                           0x4826
-#define VMX_VMCS_GUEST_SYSENTER_CS                              0x482A  /* MSR IA32_SYSENTER_CS */
+#define VMX_VMCS_GUEST_SYSENTER_CS                              0x482A  /**< MSR IA32_SYSENTER_CS */
 /** @} */
 
 
-/** VMX_VMCS_GUEST_ACTIVITY_STATE
+/** @name VMX_VMCS_GUEST_ACTIVITY_STATE
  * @{
  */
-/* The logical processor is active. */
+/** The logical processor is active. */
 #define VMX_CMS_GUEST_ACTIVITY_ACTIVE                           0x0
-/* The logical processor is inactive, because executed a HLT instruction. */
+/** The logical processor is inactive, because executed a HLT instruction. */
 #define VMX_CMS_GUEST_ACTIVITY_HLT                              0x1
-/* The logical processor is inactive, because of a triple fault or other serious error. */
+/** The logical processor is inactive, because of a triple fault or other serious error. */
 #define VMX_CMS_GUEST_ACTIVITY_SHUTDOWN                         0x2
-/* The logical processor is inactive, because it's waiting for a startup-IPI */
+/** The logical processor is inactive, because it's waiting for a startup-IPI */
 #define VMX_CMS_GUEST_ACTIVITY_SIPI_WAIT                        0x3
 /** @} */
 
 
-/** VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE
+/** @name VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE
  * @{
  */
 #define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI         RT_BIT(0)
@@ -685,13 +675,13 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** 32 Bits host state fields
+/** @name VMCS field encoding - 32 Bits host state fields
  * @{
  */
 #define VMX_VMCS_HOST_SYSENTER_CS                               0x4C00
 /** @} */
 
-/** Natural width control fields
+/** @name Natural width control fields
  * @{
  */
 #define VMX_VMCS_CTRL_CR0_MASK                                  0x6000
@@ -705,7 +695,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** Natural width read-only data fields
+/** @name Natural width read-only data fields
  * @{
  */
 #define VMX_VMCS_RO_EXIT_QUALIFICATION                          0x6400
@@ -717,11 +707,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VMX_VMCS_RO_EXIT_QUALIFICATION
- * @{
- */
-
-/** DRx moves
+/** @name VMX_VMCS_RO_EXIT_QUALIFICATION
  * @{
  */
 /** 0-2:  Debug register number */
@@ -735,18 +721,18 @@ typedef const VTXEPT *PCVTXEPT;
 /** 8-11: General purpose register number. */
 #define VMX_EXIT_QUALIFICATION_DRX_GENREG(a)           ((a >> 8) & 0xF)
 /** Rest: reserved. */
+/** @} */
 
-/** VMX_EXIT_QUALIFICATION_DRX_DIRECTION
+/** @name VMX_EXIT_QUALIFICATION_DRX_DIRECTION values
  * @{
  */
 #define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE     0
 #define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_READ      1
 /** @} */
 
-/** @} */
 
 
-/** CRx accesses
+/** @name CRx accesses
  * @{
  */
 /** 0-3:   Control register number (0 for CLTS & LMSW) */
@@ -764,9 +750,9 @@ typedef const VTXEPT *PCVTXEPT;
 /** 16-31: LMSW source data (else 0). */
 #define VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(a)        ((a >> 16) & 0xFFFF)
 /** Rest: reserved. */
+/** @} */
 
-
-/** VMX_EXIT_QUALIFICATION_CRX_ACCESS
+/** @name VMX_EXIT_QUALIFICATION_CRX_ACCESS
  * @{
  */
 #define VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE        0
@@ -775,10 +761,9 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW         3
 /** @} */
 
-/** @} */
 
 
-/** VMX_EXIT_PORT_IO
+/** @name VMX_EXIT_PORT_IO
  * @{
  */
 /** 0-2:   IO operation width. */
@@ -796,7 +781,7 @@ typedef const VTXEPT *PCVTXEPT;
 /* Rest reserved. */
 /** @} */
 
-/** VMX_EXIT_QUALIFICATION_IO_DIRECTION
+/** @name VMX_EXIT_QUALIFICATION_IO_DIRECTION
  * @{
  */
 #define VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT        0
@@ -804,7 +789,7 @@ typedef const VTXEPT *PCVTXEPT;
 /** @} */
 
 
-/** VMX_EXIT_QUALIFICATION_IO_ENCODING
+/** @name VMX_EXIT_QUALIFICATION_IO_ENCODING
  * @{
  */
 #define VMX_EXIT_QUALIFICATION_IO_ENCODING_DX          0
@@ -813,7 +798,7 @@ typedef const VTXEPT *PCVTXEPT;
 
 /** @} */
 
-/** Natural width guest state fields
+/** @name VMCS field encoding - Natural width guest state fields
  * @{
  */
 #define VMX_VMCS_GUEST_CR0                                      0x6800
@@ -834,34 +819,31 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_GUEST_RIP                                      0x681E
 #define VMX_VMCS_GUEST_RFLAGS                                   0x6820
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS                         0x6822
-#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /* MSR IA32_SYSENTER_ESP */
-#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /* MSR IA32_SYSENTER_EIP */
+#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
+#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
 /** @} */
 
 
-/** VMX_VMCS_GUEST_DEBUG_EXCEPTIONS
+/** @name VMX_VMCS_GUEST_DEBUG_EXCEPTIONS
  * @{
  */
-/* Hardware breakpoint 0 was met. */
+/** Hardware breakpoint 0 was met. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B0                      RT_BIT(0)
-/* Hardware breakpoint 1 was met. */
+/** Hardware breakpoint 1 was met. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B1                      RT_BIT(1)
-/* Hardware breakpoint 2 was met. */
+/** Hardware breakpoint 2 was met. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B2                      RT_BIT(2)
-/* Hardware breakpoint 3 was met. */
+/** Hardware breakpoint 3 was met. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_B3                      RT_BIT(3)
-/* At least one data or IO breakpoint was hit. */
+/** At least one data or IO breakpoint was hit. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BREAKPOINT_ENABLED      RT_BIT(12)
-/* A debug exception would have been triggered by single-step execution mode. */
+/** A debug exception would have been triggered by single-step execution mode. */
 #define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS                      RT_BIT(14)
-/* Bits 4-11, 13 and 15-63 are reserved. */
-
-
-
+/** Bits 4-11, 13 and 15-63 are reserved. */
 
 /** @} */
 
-/** Natural width host state fields
+/** @name VMCS field encoding - Natural width host state fields
  * @{
  */
 #define VMX_VMCS_HOST_CR0                                       0x6C00
@@ -882,12 +864,10 @@ typedef const VTXEPT *PCVTXEPT;
 
 
 #if RT_INLINE_ASM_GNU_STYLE
-#  define __STR(x) #x
-#  define STR(x) __STR(x)
+# define __STR(x)   #x
+# define STR(x)     __STR(x)
 #endif
 
-
-/** @} */
 
 /** @defgroup grp_vmx_asm   vmx assembly helpers
  * @ingroup grp_vmx
@@ -1210,9 +1190,9 @@ the_end:
 #endif
 
 #if HC_ARCH_BITS == 64
-#define VMXReadVMCS VMXReadVMCS64
+# define VMXReadVMCS VMXReadVMCS64
 #else
-#define VMXReadVMCS VMXReadVMCS32
+# define VMXReadVMCS VMXReadVMCS32
 #endif /* HC_ARCH_BITS == 64 */
 
 /**
@@ -1229,12 +1209,10 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
     return (uint32_t)uLastError;
 
 #else /* 32-bit host: */
-    uint32_t lasterr = 0;
-    int      rc;
-
-    rc = VMXReadVMCS32(VMX_VMCS_RO_VM_INSTR_ERROR, &lasterr);
+    uint32_t uLastError = 0;
+    int rc = VMXReadVMCS32(VMX_VMCS_RO_VM_INSTR_ERROR, &uLastError);
     AssertRC(rc);
-    return lasterr;
+    return uLastError;
 #endif
 }
 
