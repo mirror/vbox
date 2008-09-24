@@ -2689,6 +2689,28 @@ typedef struct PDMDEVHLP
     DECLR3CALLBACKMEMBER(int, pfnMMHyperMapMMIO2,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
                                                   const char *pszDesc, PRTRCPTR pRCPtr));
 
+    /**
+     * Registers the VMM device heap
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         The device instance.
+     * @param   GCPhys          The physical address.
+     * @param   pvHeap          Ring 3 heap pointer.
+     * @param   cbSize          Size of the heap.
+     * @thread  EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRegisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize));
+
+    /**
+     * Unregisters the VMM device heap
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         The device instance.
+     * @param   GCPhys          The physical address.
+     * @thread  EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUnregisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
+
     /** @} */
 
     /** Just a safety precaution. (PDM_DEVHLP_VERSION) */
@@ -3211,6 +3233,22 @@ DECLINLINE(int) PDMDevHlpMMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, R
                                          const char *pszDesc, PRTRCPTR pRCPtr)
 {
     return pDevIns->pDevHlp->pfnMMHyperMapMMIO2(pDevIns, iRegion, off, cb, pszDesc, pRCPtr);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnRegisterVMMDevHeap
+ */
+DECLINLINE(int) PDMDevHlpRegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
+{
+    return pDevIns->pDevHlp->pfnRegisterVMMDevHeap(pDevIns, GCPhys, pvHeap, cbSize);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnUnregisterVMMDevHeap
+ */
+DECLINLINE(int) PDMDevHlpUnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    return pDevIns->pDevHlp->pfnUnregisterVMMDevHeap(pDevIns, GCPhys);
 }
 
 /**

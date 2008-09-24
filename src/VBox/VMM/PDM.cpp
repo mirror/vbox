@@ -1187,3 +1187,72 @@ PDMR3DECL(int) PDMR3LockCall(PVM pVM)
     return PDMR3CritSectEnterEx(&pVM->pdm.s.CritSect, true /* fHostCall */);
 }
 
+/**
+ * Registers the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   GCPhys          The physical address.
+ * @param   pvHeap          Ring-3 pointer.
+ * @param   cbSize          Size of the heap.
+ */
+PDMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
+{
+    Assert(pVM->pdm.s.pvVMMDevHeap == NULL);
+
+    pVM->pdm.s.pvVMMDevHeap     = pvHeap;
+    pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
+    pVM->pdm.s.cbVMMDevHeap     = cbSize;
+    pVM->pdm.s.cbVMMDevHeapLeft = cbSize;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Unregisters the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   GCPhys          The physical address.
+ */
+PDMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
+{
+    Assert(pVM->pdm.s.GCPhysVMMDevHeap == GCPhys);
+
+    pVM->pdm.s.pvVMMDevHeap     = NULL;
+    pVM->pdm.s.GCPhysVMMDevHeap = NIL_RTGCPHYS;
+    pVM->pdm.s.cbVMMDevHeap     = 0;
+    pVM->pdm.s.cbVMMDevHeapLeft = 0;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Allocates memory from the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   cbSize          Allocation size.
+ * @param   pv              Ring-3 pointer. (out)
+ */
+PDMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
+{
+    AssertReturn(cbSize && cbSize <= pVM->pdm.s.cbVMMDevHeapLeft, VERR_NO_MEMORY);
+
+    /* @todo not a real heap as there's currently only one user. */
+    *ppv = pVM->pdm.s.pvVMMDevHeap;
+    pVM->pdm.s.cbVMMDevHeapLeft = 0;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Frees memory from the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   pv              Ring-3 pointer. 
+ */
+PDMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
+{
+    Assert(pVM->pdm.s.cbVMMDevHeapLeft == 0);
+    pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;
+    return VINF_SUCCESS;
+}
