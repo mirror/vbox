@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMM DBGF - Debugger Facility, Guest OS Diggers.
+ * DBGF - Debugger Facility, Guest OS Diggers.
  */
 
 /*

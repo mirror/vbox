@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMM DBGF - Debugger Facility, Info.
+ * DBGF - Debugger Facility, Info.
  */
 
 /*

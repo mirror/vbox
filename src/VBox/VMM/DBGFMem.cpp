@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMM DBGF - Debugger Facility, Memory Methods.
+ * DBGF - Debugger Facility, Memory Methods.
  */
 
 /*

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMM DBGF - Debugger Facility, Disassembler.
+ * DBGF - Debugger Facility, Disassembler.
  */
 
 /*
