@@ -217,9 +217,11 @@ typedef struct VMCPU
  */
 #if 1
 # define VM_FF_SET(pVM, fFlag)           ASMAtomicOrU32(&(pVM)->fForcedActions, (fFlag))
-/** @todo: per-VM force action flag will likely go away, thus only per-CPU 
-    macros will be available */ 
+#ifdef VBOX_WITH_SMP_GUESTS
 # define VMCPU_FF_SET(pVM, cpu, fFlag)   ASMAtomicOrU32(&(pVM)->aCpus[cpu].fForcedActions, (fFlag))
+#else
+# define VMCPU_FF_SET(pVM, cpu, fFlag)   VM_FF_SET(pVM, fFlag)
+#endif
 #else
 # define VM_FF_SET(pVM, fFlag) \
     do { ASMAtomicOrU32(&(pVM)->fForcedActions, (fFlag)); \
@@ -235,7 +237,11 @@ typedef struct VMCPU
  */
 #if 1
 # define VM_FF_CLEAR(pVM, fFlag)         ASMAtomicAndU32(&(pVM)->fForcedActions, ~(fFlag))
+#ifdef VBOX_WITH_SMP_GUESTS
 # define VMCPU_FF_CLEAR(pVM, cpu, fFlag) ASMAtomicAndU32(&(pVM)->aCpus[cpu].fForcedActions, ~(fFlag))
+#else
+# define VMCPU_FF_CLEAR(pVM, cpu, fFlag) VM_FF_CLEAR(pVM, fFlag)
+#endif
 #else
 # define VM_FF_CLEAR(pVM, fFlag) \
     do { ASMAtomicAndU32(&(pVM)->fForcedActions, ~(fFlag)); \
@@ -250,7 +256,11 @@ typedef struct VMCPU
  * @param   fFlag   The flag to check.
  */
 #define VM_FF_ISSET(pVM, fFlag)         (((pVM)->fForcedActions & (fFlag)) == (fFlag))
+#ifdef VBOX_WITH_SMP_GUESTS
 #define VMCPU_FF_ISSET(pVM, cpu, fFlag) (((pVM)->aCpus[cpu].fForcedActions & (fFlag)) == (fFlag))
+#else
+#define VMCPU_FF_ISSET(pVM, cpu, fFlag)  VM_FF_ISSET(pVM, fFlag)
+#endif
 
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending.
@@ -259,8 +269,11 @@ typedef struct VMCPU
  * @param   fFlags  The flags to check for.
  */
 #define VM_FF_ISPENDING(pVM, fFlags)    ((pVM)->fForcedActions & (fFlags))
+#ifdef VBOX_WITH_SMP_GUESTS
 #define VMCPU_FF_ISPENDING(pVM, fFlags) ((pVM)->aCpus[cpu].fForcedActions & (fFlags))
-
+#else
+#define VMCPU_FF_ISPENDING(pVM, fFlags)  VM_FF_ISPENDING(pVM, fFlags)
+#endif
 
 /** @def VM_IS_EMT
  * Checks if the current thread is the emulation thread (EMT).
