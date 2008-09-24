@@ -44,7 +44,7 @@
  * @returns true on success.
  *
  * @todo Get rid of this code. Use DISQueryParamVal instead
- * 
+ *
  * @param   pCpu                Pointer to current disassembler context.
  * @param   pParam              Pointer to parameter of instruction to proccess.
  * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
