@@ -773,8 +773,6 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Guest CPU context: TR. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
     {
-        rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         pCtx->tr);
-
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
         {
@@ -784,12 +782,13 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
             AssertRC(rc);
 
-            Assert(pCtx->tr == 0);
+            rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         0);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         sizeof(VBOXTSS));
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          GCPhys /* phys = virt in this mode */);
         }
         else
         {
+            rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         pCtx->tr);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u64Base);
         }
@@ -1553,7 +1552,10 @@ ResumeExecution:
 
     /* Misc. registers; must sync everything otherwise we can get out of sync when jumping to ring 3. */
     VMX_READ_SELREG(LDTR, ldtr);
-    VMX_READ_SELREG(TR, tr);
+
+    /* In real mode we have a fake TSS, so only sync it back when it's supposed to be valid. */
+    if (pCtx->cr0 & X86_CR0_PROTECTION_ENABLE)
+        VMX_READ_SELREG(TR, tr);
 
     VMXReadVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       &val);
     pCtx->gdtr.cbGdt        = val;
