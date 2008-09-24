@@ -1505,16 +1505,6 @@ ResumeExecution:
     else
         VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
 
-    /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
-    if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
-    {
-        /* Hide our emulation flags */
-        pCtx->eflags.Bits.u1VM   = 0;
-        pCtx->eflags.Bits.u1IF   = pCtx->eflags.Bits.u1VIF;
-        pCtx->eflags.Bits.u1VIF  = 0;
-        pCtx->eflags.Bits.u2IOPL = 0;
-    }
-
     /* Control registers. */
     VMXReadVMCS(VMX_VMCS_CTRL_CR0_READ_SHADOW,   &valShadow);
     VMXReadVMCS(VMX_VMCS_GUEST_CR0,              &val);
@@ -1553,15 +1543,6 @@ ResumeExecution:
     /* Misc. registers; must sync everything otherwise we can get out of sync when jumping to ring 3. */
     VMX_READ_SELREG(LDTR, ldtr);
 
-    /* In real mode we have a fake TSS, so only sync it back when it's supposed to be valid. */
-    if (pCtx->cr0 & X86_CR0_PROTECTION_ENABLE)
-    {
-        VMX_READ_SELREG(TR, tr);
-    }
-    else
-        /* Force a TR resync every time in case we switch modes. */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
-
     VMXReadVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       &val);
     pCtx->gdtr.cbGdt        = val;
     VMXReadVMCS(VMX_VMCS_GUEST_GDTR_BASE,        &val);
@@ -1571,6 +1552,24 @@ ResumeExecution:
     pCtx->idtr.cbIdt        = val;
     VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE,        &val);
     pCtx->idtr.pIdt         = val;
+
+    /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
+    if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+    {
+        /* Hide our emulation flags */
+        pCtx->eflags.Bits.u1VM   = 0;
+        pCtx->eflags.Bits.u1IF   = pCtx->eflags.Bits.u1VIF;
+        pCtx->eflags.Bits.u1VIF  = 0;
+        pCtx->eflags.Bits.u2IOPL = 0;
+
+        /* Force a TR resync every time in case we switch modes. */
+        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
+    }
+    else
+    {
+        /* In real mode we have a fake TSS, so only sync it back when it's supposed to be valid. */
+        VMX_READ_SELREG(TR, tr);
+    }
 
     /** @note NOW IT'S SAFE FOR LOGGING! */
     Log2(("Raw exit reason %08x\n", exitReason));
