@@ -127,3 +127,4 @@ DBGFDECL(bool) DBGFIsStepping(PVM pVM)
 {
     return pVM->dbgf.s.fSingleSteppingRaw;
 }
+

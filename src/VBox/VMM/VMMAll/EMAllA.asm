@@ -29,17 +29,17 @@
 ;; @def MY_PTR_REG
 ; The register we use for value pointers (And,Or,Dec,Inc).
 %ifdef RT_ARCH_AMD64
-%define MY_PTR_REG  rcx
+ %define MY_PTR_REG     rcx
 %else
-%define MY_PTR_REG  ecx
+ %define MY_PTR_REG     ecx
 %endif
 
 ;; @def MY_RET_REG
 ; The register we return the result in.
 %ifdef RT_ARCH_AMD64
-%define MY_RET_REG  rax
+ %define MY_RET_REG     rax
 %else
-%define MY_RET_REG  eax
+ %define MY_RET_REG     eax
 %endif
 
 BEGINCODE
@@ -238,6 +238,7 @@ BEGINPROC   EMEmulateOr
     retn
 ENDPROC     EMEmulateOr
 
+
 ;;
 ; Emulate LOCK OR instruction.
 ; EMDECL(int)      EMEmulateLockOr(void *pvParam1, uint64_t u64Param2, size_t cbSize, RTGCUINTREG32 *pf);
@@ -309,17 +310,18 @@ BEGINPROC   EMEmulateLockOr
     mov     eax, [esp + 14h + 4]
     pop     dword [eax]
 %endif
-    mov     eax, VINF_SUCCESS     
+    mov     eax, VINF_SUCCESS
     retn
 
 %ifdef IN_GC
-; #PF resume point. 
+; #PF resume point.
 GLOBALNAME EMEmulateLockOr_Error
     mov     eax, VERR_ACCESS_DENIED
     ret
 %endif
 
 ENDPROC     EMEmulateLockOr
+
 
 ;;
 ; Emulate XOR instruction, CDECL calling conv.
@@ -384,6 +386,7 @@ BEGINPROC   EMEmulateXor
     pop     MY_RET_REG
     retn
 ENDPROC     EMEmulateXor
+
 
 ;;
 ; Emulate INC instruction, CDECL calling conv.
@@ -510,6 +513,7 @@ BEGINPROC   EMEmulateDec
     retn
 ENDPROC     EMEmulateDec
 
+
 ;;
 ; Emulate ADD instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateAdd(void *pvParam1, uint64_t u64Param2, size_t cb);
@@ -573,6 +577,7 @@ BEGINPROC   EMEmulateAdd
     pop     MY_RET_REG
     retn
 ENDPROC     EMEmulateAdd
+
 
 ;;
 ; Emulate ADC instruction, CDECL calling conv.
@@ -641,6 +646,7 @@ BEGINPROC   EMEmulateAdcWithCarrySet
     pop     MY_RET_REG
     retn
 ENDPROC     EMEmulateAdcWithCarrySet
+
 
 ;;
 ; Emulate SUB instruction, CDECL calling conv.
@@ -772,13 +778,14 @@ BEGINPROC   EMEmulateLockBtr
     retn
 
 %ifdef IN_GC
-; #PF resume point. 
+; #PF resume point.
 GLOBALNAME EMEmulateLockBtr_Error
     mov     eax, VERR_ACCESS_DENIED
     ret
 %endif
 
 ENDPROC     EMEmulateLockBtr
+
 
 ;;
 ; Emulate BTC instruction, CDECL calling conv.
@@ -809,6 +816,7 @@ BEGINPROC   EMEmulateBtc
     pop     MY_RET_REG
     retn
 ENDPROC     EMEmulateBtc
+
 
 ;;
 ; Emulate BTS instruction, CDECL calling conv.
@@ -928,6 +936,7 @@ BEGINPROC   EMEmulateLockCmpXchg
     retn
 ENDPROC     EMEmulateLockCmpXchg
 
+
 ;;
 ; Emulate CMPXCHG instruction, CDECL calling conv.
 ; EMDECL(uint32_t) EMEmulateCmpXchg(void *pvParam1, uint64_t *pu32Param2, uint64_t u32Param3, size_t cbSize);
@@ -1014,6 +1023,7 @@ BEGINPROC   EMEmulateCmpXchg
     pop     xBX
     retn
 ENDPROC     EMEmulateCmpXchg
+
 
 %if 0
 ;; not tested!!

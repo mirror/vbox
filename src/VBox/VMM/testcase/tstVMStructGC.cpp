@@ -120,8 +120,9 @@ int main()
     GEN_CHECK_OFF(EM, u.achPaddingFatalLongJump);
     GEN_CHECK_OFF(EM, StatForcedActions);
     GEN_CHECK_OFF(EM, StatTotalClis);
-    GEN_CHECK_OFF(EM, pStatsHC);
-    GEN_CHECK_OFF(EM, pStatsGC);
+    GEN_CHECK_OFF(EM, pStatsR3);
+    GEN_CHECK_OFF(EM, pStatsR0);
+    GEN_CHECK_OFF(EM, pStatsRC);
     GEN_CHECK_OFF(EM, pCliStatTree);
 
     GEN_CHECK_SIZE(IOM);
