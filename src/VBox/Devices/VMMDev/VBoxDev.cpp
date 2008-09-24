@@ -1648,7 +1648,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
             /*
              * It is about to be unmapped, just clean up.
              */
-            PDMDevHlpUnregisterVMMDevHeap(pPciDev->pDevIns, GCPhysAddress);
+            PDMDevHlpUnregisterVMMDevHeap(pPciDev->pDevIns, pThis->GCPhysVMMDevHeap);
             pThis->GCPhysVMMDevHeap = NIL_RTGCPHYS32;
             rc = VINF_SUCCESS;
         }
