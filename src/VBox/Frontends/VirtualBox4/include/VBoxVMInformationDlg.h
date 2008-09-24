@@ -63,6 +63,7 @@ private slots:
     void updateDetails();
     void processStatistics();
     void onPageChanged (int aIndex);
+    void suicide();
 
 private:
 
