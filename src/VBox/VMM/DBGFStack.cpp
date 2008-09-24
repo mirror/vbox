@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMM DBGF - Debugger Facility, Call Stack Analyser.
+ * DBGF - Debugger Facility, Call Stack Analyser.
  */
 
 /*
