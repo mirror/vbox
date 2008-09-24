@@ -2989,7 +2989,31 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
              * in raw mode.
              */
             enmShadowMode = PGMMODE_32_BIT;
-            enmSwitcher = VMMSWITCHER_INVALID;
+
+            switch (enmHostMode)
+            {
+                case SUPPAGINGMODE_32_BIT:
+                case SUPPAGINGMODE_32_BIT_GLOBAL:
+                    enmSwitcher = VMMSWITCHER_32_TO_32;
+                    break;
+
+                case SUPPAGINGMODE_PAE:
+                case SUPPAGINGMODE_PAE_NX:
+                case SUPPAGINGMODE_PAE_GLOBAL:
+                case SUPPAGINGMODE_PAE_GLOBAL_NX:
+                    enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
+                    break;
+
+                case SUPPAGINGMODE_AMD64:
+                case SUPPAGINGMODE_AMD64_GLOBAL:
+                case SUPPAGINGMODE_AMD64_NX:
+                case SUPPAGINGMODE_AMD64_GLOBAL_NX:
+                    /* Not correct, but not relevant as we don't use switchers in real or protected mode without paging. */
+                    enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
+                    break;
+
+                default: AssertMsgFailed(("enmHostMode=%d\n", enmHostMode)); break;
+            }
             break;
 
         case PGMMODE_32_BIT:
