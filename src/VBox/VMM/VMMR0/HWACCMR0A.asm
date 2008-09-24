@@ -79,7 +79,7 @@
   ; Only really useful for gs kernel base as that one can be changed behind our back (swapgs)
   %macro LOADHOSTMSREX 2
     mov     rcx, %1
-    rdmsr 
+    rdmsr
     mov     dword [xSI + %2], eax
     mov     dword [xSI + %2 + 4], edx
     pop     rax
@@ -307,8 +307,8 @@ BEGINPROC VMXR0StartVM32
 
     vmresume
     jmp     .vmlaunch_done;      ;/* here if vmresume detected a failure. */
-    
-.vmlauch_lauch:    
+
+.vmlauch_lauch:
     ;/* Restore edi & esi. */
     mov     edi, [xSI + CPUMCTX.edi]
     mov     esi, [xSI + CPUMCTX.esi]
@@ -462,7 +462,7 @@ BEGINPROC VMXR0StartVM64
     MYPUSHSEGS xAX, ax
 
     ; Save the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the guest MSRs
-    ; @todo use the automatic load feature for MSRs
+    ;; @todo use the automatic load feature for MSRs
     LOADGUESTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
 %if 0  ; not supported on Intel CPUs
     LOADGUESTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
@@ -526,8 +526,8 @@ BEGINPROC VMXR0StartVM64
 
     vmresume
     jmp     .vmlaunch64_done;      ;/* here if vmresume detected a failure. */
-    
-.vmlauch64_lauch:    
+
+.vmlauch64_lauch:
     ;/* Restore rdi & rsi. */
     mov     rdi, qword [xSI + CPUMCTX.edi]
     mov     rsi, qword [xSI + CPUMCTX.esi]
@@ -579,7 +579,7 @@ ALIGNCODE(16)
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ; @todo use the automatic load feature for MSRs
+    ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K6_STAR
@@ -615,7 +615,7 @@ ALIGNCODE(16)
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ; @todo use the automatic load feature for MSRs
+    ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K8_CSTAR
@@ -642,7 +642,7 @@ ALIGNCODE(16)
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ; @todo use the automatic load feature for MSRs
+    ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K8_CSTAR

@@ -41,6 +41,9 @@
 #include "HWVMXR0.h"
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /* IO operation lookup arrays. */
 static uint32_t aIOSize[4]  = {1, 2, 0, 4};
 static uint32_t aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
@@ -82,7 +85,7 @@ HWACCMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu,
     /* Set revision dword at the beginning of the VMXON structure. */
     *(uint32_t *)pvPageCpu = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
 
-    /* @todo we should unmap the two pages from the virtual address space in order to prevent accidental corruption.
+    /** @todo we should unmap the two pages from the virtual address space in order to prevent accidental corruption.
      * (which can have very bad consequences!!!)
      */
 
@@ -273,7 +276,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT
               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT;    /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
 
-    /** @note VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
+    /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
 
 #if HC_ARCH_BITS == 64
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
@@ -347,13 +350,12 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
      * And we always lazily sync the FPU & XMM state.
      */
 
-    /*
-     * @todo Possible optimization:
+    /** @todo Possible optimization:
      * Keep the FPU and XMM state current in the EM thread. That way there's no need to
      * lazily sync anything, but the downside is that we can't use the FPU stack or XMM
      * registers ourselves of course.
      *
-     * @note only possible if the current state is actually ours (X86_CR0_TS flag)
+     * Note: only possible if the current state is actually ours (X86_CR0_TS flag)
      */
     pVM->hwaccm.s.vmx.u32TrapMask = HWACCM_VMX_TRAP_MASK;
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
@@ -635,7 +637,7 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
 
         /* Selector registers. */
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_FIELD_CS,          ASMGetCS());
-        /** @note VMX is (again) very picky about the RPL of the selectors here; we'll restore them manually. */
+        /* Note: VMX is (again) very picky about the RPL of the selectors here; we'll restore them manually. */
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_DS,          0);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_FIELD_ES,          0);
 #if HC_ARCH_BITS == 32
@@ -758,7 +760,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_LDTR,         0);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LDTR_LIMIT,         0);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LDTR_BASE,          0);
-            /** @note vmlaunch will fail with 0 or just 0x02. No idea why. */
+            /* Note: vmlaunch will fail with 0 or just 0x02. No idea why. */
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LDTR_ACCESS_RIGHTS, 0x82 /* present, LDT */);
         }
         else
@@ -848,7 +850,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
                 if (!pVM->hwaccm.s.fFPUOldStyleOverride)
                 {
-                    pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_MF); 
+                    pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_MF);
                     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
                     AssertRC(rc);
                     pVM->hwaccm.s.fFPUOldStyleOverride = true;
@@ -1071,9 +1073,9 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #ifdef DEBUG
     /* Intercept X86_XCPT_DB if stepping is enabled */
     if (DBGFIsStepping(pVM))
-        pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_DB); 
+        pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_DB);
     else
-        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_DB); 
+        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_DB);
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
 #endif
@@ -1180,10 +1182,10 @@ ResumeExecution:
         Log(("VM_FF_INHIBIT_INTERRUPTS at %VGv successor %VGv\n", pCtx->rip, EMGetInhibitInterruptsPC(pVM)));
         if (pCtx->rip != EMGetInhibitInterruptsPC(pVM))
         {
-            /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
-             *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
-             *  force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
-             *  break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
+            /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
+             * Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
+             * force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
+             * break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
              */
             VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
             /* Irq inhibition is no longer active; clear the corresponding VMX state. */
@@ -1216,7 +1218,7 @@ ResumeExecution:
     }
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
-    /** @note *after* VM_FF_INHIBIT_INTERRUPTS check!!! */
+    /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = VMXR0CheckPendingInterrupt(pVM, pCtx);
     if (VBOX_FAILURE(rc))
     {
@@ -1229,7 +1231,7 @@ ResumeExecution:
     /* TPR caching using CR8 is only available in 64 bits mode */
     /* Note the 32 bits exception for AMD (X86_CPUID_AMD_FEATURE_ECX_CR8L), but that appears missing in Intel CPUs */
     /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!! */
-    /*
+    /**
      * @todo reduce overhead
      */
     if (   (pCtx->msrEFER & MSR_K6_EFER_LMA)
@@ -1253,7 +1255,7 @@ ResumeExecution:
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, (fPending) ? u8TPR : 0);
         AssertRC(rc);
 
-        /* Always sync back the TPR; we should optimize this though (@todo) */
+        /* Always sync back the TPR; we should optimize this though */ /** @todo optimize TPR sync. */
         fSyncTPR = true;
     }
 
@@ -1467,7 +1469,7 @@ ResumeExecution:
 
     /* Investigate why there was a VM-exit. */
     rc  = VMXReadVMCS(VMX_VMCS_RO_EXIT_REASON, &exitReason);
-    STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReasonR0[exitReason & MASK_EXITREASON_STAT]);
+    STAM_COUNTER_INC(&pVM->hwaccm.s.paStatExitReasonR0[exitReason & MASK_EXITREASON_STAT]);
 
     exitReason &= 0xffff;   /* bit 0-15 contain the exit code. */
     rc |= VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
@@ -1571,7 +1573,7 @@ ResumeExecution:
         VMX_READ_SELREG(TR, tr);
     }
 
-    /** @note NOW IT'S SAFE FOR LOGGING! */
+    /* Note! NOW IT'S SAFE FOR LOGGING! */
     Log2(("Raw exit reason %08x\n", exitReason));
 
     /* Check if an injected event was interrupted prematurely. */
@@ -1767,7 +1769,7 @@ ResumeExecution:
                 rc = DBGFR0Trap01Handler(pVM, CPUMCTX2CORE(pCtx), uDR6);
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
-                    /* @todo this isn't working, but we'll never get here normally. */
+                    /** @todo this isn't working, but we'll never get here normally. */
 
                     /* Update DR6 here. */
                     pCtx->dr[6]  = uDR6;
@@ -2077,7 +2079,7 @@ ResumeExecution:
         break;
     }
 
-    /** @note We'll get a #GP if the IO instruction isn't allowed (IOPL or TSS bitmap); no need to double check. */
+    /* Note: We'll get a #GP if the IO instruction isn't allowed (IOPL or TSS bitmap); no need to double check. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */
     {
         uint32_t uIOWidth = VMX_EXIT_QUALIFICATION_IO_WIDTH(exitQualification);

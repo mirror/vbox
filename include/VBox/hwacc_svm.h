@@ -1,5 +1,5 @@
 /** @file
- * SVM Structures and Definitions.
+ * HWACCM - SVM Structures and Definitions.
  */
 
 /*
@@ -256,69 +256,69 @@
 /** @name SVM_VMCB.ctrl.u32InterceptCtrl1
  * @{
  */
-/* 0 Intercept INTR (physical maskable interrupt) */
+/** 0 Intercept INTR (physical maskable interrupt) */
 #define SVM_CTRL1_INTERCEPT_INTR              RT_BIT(0)
-/* 1 Intercept NMI */
+/** 1 Intercept NMI */
 #define SVM_CTRL1_INTERCEPT_NMI               RT_BIT(1)
-/* 2 Intercept SMI */
+/** 2 Intercept SMI */
 #define SVM_CTRL1_INTERCEPT_SMI               RT_BIT(2)
-/* 3 Intercept INIT */
+/** 3 Intercept INIT */
 #define SVM_CTRL1_INTERCEPT_INIT              RT_BIT(3)
-/* 4 Intercept VINTR (virtual maskable interrupt) */
+/** 4 Intercept VINTR (virtual maskable interrupt) */
 #define SVM_CTRL1_INTERCEPT_VINTR             RT_BIT(4)
-/* 5 Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
+/** 5 Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
 #define SVM_CTRL1_INTERCEPT_CR0               RT_BIT(5)
-/* 6 Intercept reads of IDTR */
+/** 6 Intercept reads of IDTR */
 #define SVM_CTRL1_INTERCEPT_IDTR_READS        RT_BIT(6)
-/* 7 Intercept reads of GDTR */
+/** 7 Intercept reads of GDTR */
 #define SVM_CTRL1_INTERCEPT_GDTR_READS        RT_BIT(7)
-/* 8 Intercept reads of LDTR */
+/** 8 Intercept reads of LDTR */
 #define SVM_CTRL1_INTERCEPT_LDTR_READS        RT_BIT(8)
-/* 9 Intercept reads of TR */
+/** 9 Intercept reads of TR */
 #define SVM_CTRL1_INTERCEPT_TR_READS          RT_BIT(9)
-/* 10 Intercept writes of IDTR */
+/** 10 Intercept writes of IDTR */
 #define SVM_CTRL1_INTERCEPT_IDTR_WRITES       RT_BIT(10)
-/* 11 Intercept writes of GDTR */
+/** 11 Intercept writes of GDTR */
 #define SVM_CTRL1_INTERCEPT_GDTR_WRITES       RT_BIT(11)
-/* 12 Intercept writes of LDTR */
+/** 12 Intercept writes of LDTR */
 #define SVM_CTRL1_INTERCEPT_LDTR_WRITES       RT_BIT(12)
-/* 13 Intercept writes of TR */
+/** 13 Intercept writes of TR */
 #define SVM_CTRL1_INTERCEPT_TR_WRITES         RT_BIT(13)
-/* 14 Intercept RDTSC instruction */
+/** 14 Intercept RDTSC instruction */
 #define SVM_CTRL1_INTERCEPT_RDTSC             RT_BIT(14)
-/* 15 Intercept RDPMC instruction */
+/** 15 Intercept RDPMC instruction */
 #define SVM_CTRL1_INTERCEPT_RDPMC             RT_BIT(15)
-/* 16 Intercept PUSHF instruction */
+/** 16 Intercept PUSHF instruction */
 #define SVM_CTRL1_INTERCEPT_PUSHF             RT_BIT(16)
-/* 17 Intercept POPF instruction */
+/** 17 Intercept POPF instruction */
 #define SVM_CTRL1_INTERCEPT_POPF              RT_BIT(17)
-/* 18 Intercept CPUID instruction */
+/** 18 Intercept CPUID instruction */
 #define SVM_CTRL1_INTERCEPT_CPUID             RT_BIT(18)
-/* 19 Intercept RSM instruction */
+/** 19 Intercept RSM instruction */
 #define SVM_CTRL1_INTERCEPT_RSM               RT_BIT(19)
-/* 20 Intercept IRET instruction */
+/** 20 Intercept IRET instruction */
 #define SVM_CTRL1_INTERCEPT_IRET              RT_BIT(20)
-/* 21 Intercept INTn instruction */
+/** 21 Intercept INTn instruction */
 #define SVM_CTRL1_INTERCEPT_INTN              RT_BIT(21)
-/* 22 Intercept INVD instruction */
+/** 22 Intercept INVD instruction */
 #define SVM_CTRL1_INTERCEPT_INVD              RT_BIT(22)
-/* 23 Intercept PAUSE instruction */
+/** 23 Intercept PAUSE instruction */
 #define SVM_CTRL1_INTERCEPT_PAUSE             RT_BIT(23)
-/* 24 Intercept HLT instruction */
+/** 24 Intercept HLT instruction */
 #define SVM_CTRL1_INTERCEPT_HLT               RT_BIT(24)
-/* 25 Intercept INVLPG instruction */
+/** 25 Intercept INVLPG instruction */
 #define SVM_CTRL1_INTERCEPT_INVLPG            RT_BIT(25)
-/* 26 Intercept INVLPGA instruction */
+/** 26 Intercept INVLPGA instruction */
 #define SVM_CTRL1_INTERCEPT_INVLPGA           RT_BIT(26)
-/* 27 IOIO_PROT Intercept IN/OUT accesses to selected ports. */
+/** 27 IOIO_PROT Intercept IN/OUT accesses to selected ports. */
 #define SVM_CTRL1_INTERCEPT_INOUT_BITMAP      RT_BIT(27)
-/* 28 MSR_PROT Intercept RDMSR or WRMSR accesses to selected MSRs. */
+/** 28 MSR_PROT Intercept RDMSR or WRMSR accesses to selected MSRs. */
 #define SVM_CTRL1_INTERCEPT_MSR_SHADOW        RT_BIT(28)
-/* 29 Intercept task switches. */
+/** 29 Intercept task switches. */
 #define SVM_CTRL1_INTERCEPT_TASK_SWITCH       RT_BIT(29)
-/* 30 FERR_FREEZE: intercept processor "freezing" during legacy FERR handling. */
+/** 30 FERR_FREEZE: intercept processor "freezing" during legacy FERR handling. */
 #define SVM_CTRL1_INTERCEPT_FERR_FREEZE       RT_BIT(30)
-/* 31 Intercept shutdown events. */
+/** 31 Intercept shutdown events. */
 #define SVM_CTRL1_INTERCEPT_SHUTDOWN          RT_BIT(31)
 /** @} */
 
@@ -326,31 +326,31 @@
 /** @name SVM_VMCB.ctrl.u32InterceptCtrl2
  * @{
  */
-/* 0 Intercept VMRUN instruction */
+/** 0 Intercept VMRUN instruction */
 #define SVM_CTRL2_INTERCEPT_VMRUN             RT_BIT(0)
-/* 1 Intercept VMMCALL instruction */
+/** 1 Intercept VMMCALL instruction */
 #define SVM_CTRL2_INTERCEPT_VMMCALL           RT_BIT(1)
-/* 2 Intercept VMLOAD instruction */
+/** 2 Intercept VMLOAD instruction */
 #define SVM_CTRL2_INTERCEPT_VMLOAD            RT_BIT(2)
-/* 3 Intercept VMSAVE instruction */
+/** 3 Intercept VMSAVE instruction */
 #define SVM_CTRL2_INTERCEPT_VMSAVE            RT_BIT(3)
-/* 4 Intercept STGI instruction */
+/** 4 Intercept STGI instruction */
 #define SVM_CTRL2_INTERCEPT_STGI              RT_BIT(4)
-/* 5 Intercept CLGI instruction */
+/** 5 Intercept CLGI instruction */
 #define SVM_CTRL2_INTERCEPT_CLGI              RT_BIT(5)
-/* 6 Intercept SKINIT instruction */
+/** 6 Intercept SKINIT instruction */
 #define SVM_CTRL2_INTERCEPT_SKINIT            RT_BIT(6)
-/* 7 Intercept RDTSCP instruction */
+/** 7 Intercept RDTSCP instruction */
 #define SVM_CTRL2_INTERCEPT_RDTSCP            RT_BIT(7)
-/* 8 Intercept ICEBP instruction */
+/** 8 Intercept ICEBP instruction */
 #define SVM_CTRL2_INTERCEPT_ICEBP             RT_BIT(8)
-/* 9 Intercept WBINVD instruction */
+/** 9 Intercept WBINVD instruction */
 #define SVM_CTRL2_INTERCEPT_WBINVD            RT_BIT(9)
-/* 10 Intercept MONITOR instruction */
+/** 10 Intercept MONITOR instruction */
 #define SVM_CTRL2_INTERCEPT_MONITOR           RT_BIT(10)
-/* 11 Intercept MWAIT instruction unconditionally */
+/** 11 Intercept MWAIT instruction unconditionally */
 #define SVM_CTRL2_INTERCEPT_MWAIT_UNCOND      RT_BIT(11)
-/* 12 Intercept MWAIT instruction when armed */
+/** 12 Intercept MWAIT instruction when armed */
 #define SVM_CTRL2_INTERCEPT_MWAIT_ARMED       RT_BIT(12)
 /** @} */
 
@@ -392,7 +392,7 @@ typedef struct
     uint16_t    u16Sel;
     uint16_t    u16Attr;
     uint32_t    u32Limit;
-    uint64_t    u64Base;        /* Only lower 32 bits are implemented for CS, DS, ES & SS. */
+    uint64_t    u64Base;        /**< Only lower 32 bits are implemented for CS, DS, ES & SS. */
 } SVMSEL;
 #pragma pack()
 
@@ -404,7 +404,7 @@ typedef struct
 {
     uint16_t    u16Reserved1;
     uint16_t    u16Reserved2;
-    uint32_t    u32Limit;       /* Only lower 16 bits are implemented. */
+    uint32_t    u32Limit;       /**< Only lower 16 bits are implemented. */
     uint64_t    u64Base;
 } SVMGDTR;
 #pragma pack()
@@ -481,7 +481,7 @@ typedef union
 {
     struct
     {
-        uint32_t    u1Type              : 1;        /* 0 = out, 1 = in */
+        uint32_t    u1Type              : 1;        /**< 0 = out, 1 = in */
         uint32_t    u1Reserved          : 1;
         uint32_t    u1STR               : 1;
         uint32_t    u1REP               : 1;
@@ -506,7 +506,7 @@ typedef union
 {
     struct
     {
-        uint32_t    u1NestedPaging : 1;             /* enabled/disabled */
+        uint32_t    u1NestedPaging : 1;             /**< enabled/disabled */
     } n;
     uint64_t    au64[1];
 } SVM_NPCTRL;
@@ -572,7 +572,7 @@ typedef struct _SVM_VMCB
     /** Offset 0xC0-0x3FF - Reserved. */
     uint8_t     u8Reserved3[0x400-0xC0];
 
-    /* State Save Area. Starts at offset 0x400. */
+    /** State Save Area. Starts at offset 0x400. */
     struct
     {
         /** Offset 0x400 - Guest ES register + hidden parts. */
@@ -696,27 +696,8 @@ DECLASM(int) SVMVMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCt
 DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 #ifdef IN_RING0
-
-/**
- * Invalidates a guest page
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   GCVirt      Page to invalidate
- */
 HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
-
-/**
- * Invalidates a guest page by physical address
- *
- * NOTE: Assumes the current instruction references this physical page though a virtual address!!
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   GCPhys      Page to invalidate
- */
 HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
-
 #endif /* IN_RING0 */
 
 /** @} */

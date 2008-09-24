@@ -51,10 +51,10 @@
 static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
-static              int   hwaccmr0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu);
+static              int   hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu);
 
 /*******************************************************************************
-*   Local Variables                                                            *
+*   Global Variables                                                           *
 *******************************************************************************/
 
 static struct
@@ -135,7 +135,7 @@ static struct
  *
  * @returns VBox status code.
  */
-HWACCMR0DECL(int) HWACCMR0Init()
+HWACCMR0DECL(int) HWACCMR0Init(void)
 {
     int        rc;
 
@@ -198,7 +198,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
 
                 /* Check the return code of all invocations. */
                 if (VBOX_SUCCESS(HWACCMR0Globals.lLastError))
-                    HWACCMR0Globals.lLastError = hwaccmr0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
+                    HWACCMR0Globals.lLastError = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
                 if (VBOX_SUCCESS(HWACCMR0Globals.lLastError))
                 {
@@ -206,7 +206,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
                     HWACCMR0Globals.vmx.msr.feature_ctrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
                     if (   (HWACCMR0Globals.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
-                                                                == (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
+                        ==                                         (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
                     {
                         RTR0MEMOBJ pScatchMemObj;
                         void      *pvScatchPage;
@@ -323,7 +323,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
 
                 /* Check the return code of all invocations. */
                 if (VBOX_SUCCESS(rc))
-                    rc = hwaccmr0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
+                    rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
                 AssertMsg(VBOX_SUCCESS(rc), ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, rc));
 
@@ -388,7 +388,7 @@ HWACCMR0DECL(int) HWACCMR0Init()
  * @param   cErrorCodes Array size
  * @param   pidCpu      Value of the first cpu that set an error (out)
  */
-static int hwaccmr0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu)
+static int hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu)
 {
     int rc = VINF_SUCCESS;
 
@@ -414,7 +414,7 @@ static int hwaccmr0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pid
  *
  * @returns VBox status code.
  */
-HWACCMR0DECL(int) HWACCMR0Term()
+HWACCMR0DECL(int) HWACCMR0Term(void)
 {
     int aRc[RTCPUSET_MAX_CPUS];
 
@@ -552,7 +552,7 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
 
         /* Check the return code of all invocations. */
         if (VBOX_SUCCESS(rc))
-            rc = hwaccmr0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
+            rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
         AssertMsg(VBOX_SUCCESS(rc), ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", idCpu, rc));
         return rc;
@@ -793,8 +793,8 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
     if (VBOX_FAILURE(rc))
         return rc;
 
-    /** @note It's rather tricky with longjmps done by e.g. Log statements or the page fault handler. */
-    /*        We must restore the host FPU here to make absolutely sure we don't leave the guest FPU state active
+    /* Note:  It's rather tricky with longjmps done by e.g. Log statements or the page fault handler.
+     *        We must restore the host FPU here to make absolutely sure we don't leave the guest FPU state active
      *        or trash somebody else's FPU state.
      */
     /* Save the guest FPU and XMM state if necessary. */
@@ -855,7 +855,7 @@ HWACCMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu()
 }
 
 #ifdef VBOX_STRICT
-#include <iprt/string.h>
+# include <iprt/string.h>
 /**
  * Dumps a descriptor.
  *
@@ -874,10 +874,10 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
         const char *psz;
     } const aTypes[32] =
     {
-        #define STRENTRY(str) { sizeof(str) - 1, str }
+# define STRENTRY(str) { sizeof(str) - 1, str }
 
         /* system */
-#if HC_ARCH_BITS == 64
+# if HC_ARCH_BITS == 64
         STRENTRY("Reserved0 "),                  /* 0x00 */
         STRENTRY("Reserved1 "),                  /* 0x01 */
         STRENTRY("LDT "),                        /* 0x02 */
@@ -894,7 +894,7 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
         STRENTRY("ReservedD "),                  /* 0x0d */
         STRENTRY("Int64 "),                      /* 0x0e */
         STRENTRY("Trap64 "),                     /* 0x0f */
-#else
+# else
         STRENTRY("Reserved0 "),                  /* 0x00 */
         STRENTRY("TSS16Avail "),                 /* 0x01 */
         STRENTRY("LDT "),                        /* 0x02 */
@@ -911,7 +911,7 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
         STRENTRY("ReservedD "),                  /* 0x0d */
         STRENTRY("Int32 "),                      /* 0x0e */
         STRENTRY("Trap32 "),                     /* 0x0f */
-#endif
+# endif
         /* non system */
         STRENTRY("DataRO "),                     /* 0x10 */
         STRENTRY("DataRO Accessed "),            /* 0x11 */
@@ -929,9 +929,9 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
         STRENTRY("CodeConfEO Accessed "),        /* 0x1d */
         STRENTRY("CodeConfER "),                 /* 0x1e */
         STRENTRY("CodeConfER Accessed ")         /* 0x1f */
-        #undef SYSENTRY
+# undef SYSENTRY
     };
-    #define ADD_STR(psz, pszAdd) do { strcpy(psz, pszAdd); psz += strlen(pszAdd); } while (0)
+# define ADD_STR(psz, pszAdd) do { strcpy(psz, pszAdd); psz += strlen(pszAdd); } while (0)
     char        szMsg[128];
     char       *psz = &szMsg[0];
     unsigned    i = pDesc->Gen.u1DescType << 4 | pDesc->Gen.u4Type;
@@ -942,20 +942,20 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
         ADD_STR(psz, "Present ");
     else
         ADD_STR(psz, "Not-Present ");
-#if HC_ARCH_BITS == 64
+# if HC_ARCH_BITS == 64
     if (pDesc->Gen.u1Long)
         ADD_STR(psz, "64-bit ");
     else
         ADD_STR(psz, "Comp   ");
-#else
+# else
     if (pDesc->Gen.u1Granularity)
         ADD_STR(psz, "Page ");
     if (pDesc->Gen.u1DefBig)
         ADD_STR(psz, "32-bit ");
     else
         ADD_STR(psz, "16-bit ");
-#endif
-    #undef ADD_STR
+# endif
+# undef ADD_STR
     *psz = '\0';
 
     /*
@@ -965,17 +965,17 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
     if (pDesc->Gen.u1Granularity)
         u32Limit = u32Limit << PAGE_SHIFT | PAGE_OFFSET_MASK;
 
-#if HC_ARCH_BITS == 64
+# if HC_ARCH_BITS == 64
     uint64_t    u32Base =  X86DESC64_BASE(*pDesc);
 
     Log(("%s %04x - %VX64 %VX64 - base=%VX64 limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au64[0], pDesc->au64[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
-#else
+# else
     uint32_t    u32Base =  X86DESC_BASE(*pDesc);
 
     Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au32[0], pDesc->au32[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
-#endif
+# endif
 }
 
 /**
@@ -1123,7 +1123,7 @@ HWACCMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
         pCtx->msrKERNELGSBASE));
 
 }
-#endif
+#endif /* VBOX_STRICT */
 
 /* Dummy callback handlers. */
 HWACCMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu)

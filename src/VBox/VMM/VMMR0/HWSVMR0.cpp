@@ -45,6 +45,9 @@
 #include <iprt/mp.h>
 #include "HWSVMR0.h"
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID);
 
 /* IO operation lookup arrays. */
@@ -264,7 +267,7 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
     /* Program the control fields. Most of them never have to be changed again. */
     /* CR0/3/4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
-    /** @note CR0 & CR4 can be safely read when guest and shadow copies are identical. */
+    /* Note: CR0 & CR4 can be safely read when guest and shadow copies are identical. */
     if (!pVM->hwaccm.s.fNestedPaging)
         pVMCB->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
     else
@@ -827,10 +830,10 @@ ResumeExecution:
         Log(("VM_FF_INHIBIT_INTERRUPTS at %VGv successor %VGv\n", pCtx->rip, EMGetInhibitInterruptsPC(pVM)));
         if (pCtx->rip != EMGetInhibitInterruptsPC(pVM))
         {
-            /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
-             *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
-             *  force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
-             *  break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
+            /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
+             * Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
+             * force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
+             * break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
              */
             VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
             /* Irq inhibition is no longer active; clear the corresponding SVM state. */
@@ -868,7 +871,7 @@ ResumeExecution:
     }
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
-    /** @note *after* VM_FF_INHIBIT_INTERRUPTS check!!! */
+    /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = SVMR0CheckPendingInterrupt(pVM, pVMCB, pCtx);
     if (VBOX_FAILURE(rc))
     {
@@ -1205,7 +1208,7 @@ ResumeExecution:
         PGMUpdateCR3(pVM, pVMCB->guest.u64CR3);
     }
 
-    /** @note NOW IT'S SAFE FOR LOGGING! */
+    /* Note! NOW IT'S SAFE FOR LOGGING! */
 
     /* Take care of instruction fusing (sti, mov ss) (see 15.20.5 Interrupt Shadows) */
     if (pVMCB->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
@@ -1254,7 +1257,7 @@ ResumeExecution:
     if (exitCode == SVM_EXIT_NPF)
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitReasonNPF);
     else
-        STAM_COUNTER_INC(&pVM->hwaccm.s.pStatExitReasonR0[exitCode & MASK_EXITREASON_STAT]);
+        STAM_COUNTER_INC(&pVM->hwaccm.s.paStatExitReasonR0[exitCode & MASK_EXITREASON_STAT]);
 #endif
 
     if (fSyncTPR)
@@ -1558,7 +1561,7 @@ ResumeExecution:
     case SVM_EXIT_INVD:                 /* Guest software attempted to execute INVD. */
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvd);
         /* Skip instruction and continue directly. */
-        pCtx->rip += 2;     /** @note hardcoded opcode size! */
+        pCtx->rip += 2;     /* Note! hardcoded opcode size! */
         /* Continue execution.*/
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
         goto ResumeExecution;
@@ -1571,7 +1574,7 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
-            pCtx->rip += 2;             /** @note hardcoded opcode size! */
+            pCtx->rip += 2;             /* Note! hardcoded opcode size! */
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
@@ -1588,7 +1591,7 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
-            pCtx->rip += 2;             /** @note hardcoded opcode size! */
+            pCtx->rip += 2;             /* Note! hardcoded opcode size! */
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
@@ -2093,7 +2096,7 @@ HWACCMR0DECL(int) SVMR0Leave(PVM pVM, PCPUMCTX pCtx)
 }
 
 
-static int svmInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
+static int svmR0InterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
 {
     OP_PARAMVAL param1;
     RTGCPTR     addr;
@@ -2165,7 +2168,7 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
             if (VBOX_SUCCESS(rc) && Cpu.pCurInstr->opcode == OP_INVLPG)
             {
                 Assert(cbOp == Cpu.opsize);
-                rc = svmInterpretInvlPg(pVM, &Cpu, pRegFrame, uASID);
+                rc = svmR0InterpretInvlPg(pVM, &Cpu, pRegFrame, uASID);
                 if (VBOX_SUCCESS(rc))
                 {
                     pRegFrame->rip += cbOp; /* Move on to the next instruction. */

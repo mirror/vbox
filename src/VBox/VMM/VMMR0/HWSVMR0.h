@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ___HWSVMR0_h
-#define ___HWSVMR0_h
+#ifndef ___VMMR0_HWSVMR0_h
+#define ___VMMR0_HWSVMR0_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -108,7 +108,9 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM);
 /**
  * Runs guest code in an AMD-V VM.
  *
- * @note NEVER EVER turn on interrupts here. Due to our illegal entry into the kernel, it might mess things up. (XP kernel traps have been frequently observed)
+ * @note NEVER EVER turn on interrupts here. Due to our illegal entry into the
+ *       kernel, it might mess things up. (XP kernel traps have been frequently
+ *       observed.) [obsolete?]
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
@@ -135,7 +137,7 @@ HWACCMR0DECL(int) SVMR0SaveHostState(PVM pVM);
 HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
 
 
-/* Convert hidden selector attribute word between VMX and SVM formats. */
+/** Convert hidden selector attribute word between VMX and SVM formats. */
 #define SVM_HIDSEGATTR_VMX2SVM(a)     (a & 0xFF) | ((a & 0xF000) >> 4)
 #define SVM_HIDSEGATTR_SVM2VMX(a)     (a & 0xFF) | ((a & 0x0F00) << 4)
 

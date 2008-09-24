@@ -166,25 +166,24 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->hwaccm.s.StatDRxContextSwitch,      STAMTYPE_COUNTER, "/HWACCM/Debug/ContextSwitch",   STAMUNIT_OCCURENCES,    "Nr of occurances");
     STAM_REG(pVM, &pVM->hwaccm.s.StatDRxIOCheck,            STAMTYPE_COUNTER, "/HWACCM/Debug/IOCheck",         STAMUNIT_OCCURENCES,    "Nr of occurances");
 
-    pVM->hwaccm.s.pStatExitReason = 0;
+    pVM->hwaccm.s.paStatExitReason = NULL;
 
 #ifdef VBOX_WITH_STATISTICS
-    rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT*sizeof(*pVM->hwaccm.s.pStatExitReason), 0, MM_TAG_HWACCM, (void **)&pVM->hwaccm.s.pStatExitReason);
+    rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT*sizeof(*pVM->hwaccm.s.paStatExitReason), 0, MM_TAG_HWACCM, (void **)&pVM->hwaccm.s.paStatExitReason);
     AssertRC(rc);
     if (VBOX_SUCCESS(rc))
     {
         for (int i=0;i<MAX_EXITREASON_STAT;i++)
         {
-            char szName[64];
-            RTStrPrintf(szName, sizeof(szName), "/HWACCM/Exit/Reason/%02x", i);
-            int rc = STAMR3Register(pVM, &pVM->hwaccm.s.pStatExitReason[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, "Exit reason");
+            int rc = STAMR3RegisterF(pVM, &pVM->hwaccm.s.paStatExitReason[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Exit reason",
+                                     "/HWACCM/Exit/Reason/%02x", i);
             AssertRC(rc);
         }
         int rc = STAMR3Register(pVM, &pVM->hwaccm.s.StatExitReasonNPF, STAMTYPE_COUNTER, STAMVISIBILITY_USED, "/HWACCM/Exit/Reason/#NPF", STAMUNIT_OCCURENCES, "Exit reason");
         AssertRC(rc);
     }
-    pVM->hwaccm.s.pStatExitReasonR0 = MMHyperR3ToR0(pVM, pVM->hwaccm.s.pStatExitReason);
-    Assert(pVM->hwaccm.s.pStatExitReasonR0);
+    pVM->hwaccm.s.paStatExitReasonR0 = MMHyperR3ToR0(pVM, pVM->hwaccm.s.paStatExitReason);
+    Assert(pVM->hwaccm.s.paStatExitReasonR0);
 #endif
 
     /* Disabled by default. */
@@ -204,13 +203,12 @@ HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
     return VINF_SUCCESS;
 }
 
-
 /**
  * Turns off normal raw mode features
  *
  * @param   pVM         The VM to operate on.
  */
-static void hwaccmr3DisableRawMode(PVM pVM)
+static void hwaccmR3DisableRawMode(PVM pVM)
 {
     /* Disable PATM & CSAM. */
     PATMR3AllowPatching(pVM, false);
@@ -448,7 +446,7 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps)
             {
                 LogRel(("HWACCM: MSR_IA32_VMX_EPT_VPID_CAPS    = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_eptcaps));
-                
+
                 if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_RWX_X_ONLY)
                     LogRel(("HWACCM:    MSR_IA32_VMX_EPT_CAPS_RWX_X_ONLY\n"));
                 if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_RWX_W_ONLY)
@@ -541,7 +539,7 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             {
                 pVM->fHWACCMEnabled = true;
                 pVM->hwaccm.s.vmx.fEnabled = true;
-                hwaccmr3DisableRawMode(pVM);
+                hwaccmR3DisableRawMode(pVM);
 
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
@@ -631,7 +629,7 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 if (pVM->hwaccm.s.fNestedPaging)
                     LogRel(("HWACCM:    Enabled nested paging\n"));
 
-                hwaccmr3DisableRawMode(pVM);
+                hwaccmR3DisableRawMode(pVM);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
@@ -663,7 +661,6 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
     return;
 }
 
-
 /**
  * Checks hardware accelerated raw mode is allowed.
  *
@@ -675,10 +672,10 @@ HWACCMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
     return pVM->hwaccm.s.fAllowed;
 }
 
-
 /**
  * Notification callback which is called whenever there is a chance that a CR3
  * value might have changed.
+ *
  * This is called by PGM.
  *
  * @param   pVM            The VM to operate on.
@@ -706,14 +703,13 @@ HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
         pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
     }
 
-    if (pVM->hwaccm.s.pStatExitReason)
+    if (pVM->hwaccm.s.paStatExitReason)
     {
-        MMHyperFree(pVM, pVM->hwaccm.s.pStatExitReason);
-        pVM->hwaccm.s.pStatExitReason = 0;
+        MMHyperFree(pVM, pVM->hwaccm.s.paStatExitReason);
+        pVM->hwaccm.s.paStatExitReason = NULL;
     }
     return 0;
 }
-
 
 /**
  * The VM is being reset.
@@ -728,7 +724,7 @@ HWACCMR3DECL(void) HWACCMR3Reset(PVM pVM)
     LogFlow(("HWACCMR3Reset:\n"));
 
     if (pVM->fHWACCMEnabled)
-        hwaccmr3DisableRawMode(pVM);
+        hwaccmR3DisableRawMode(pVM);
 
     /* On first entry we'll sync everything. */
     pVM->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
@@ -757,13 +753,13 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         return true;
     }
 
-    /* @todo we can support real-mode by using v86 with identity mapped pages.
+    /** @todo we can support real-mode by using v86 with identity mapped pages.
      * (but do we really care?)
      */
 
     pVM->hwaccm.s.fActive = false;
 
-    /** @note The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
+    /* Note! The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 
     if (!CPUMIsGuestInLongModeEx(pCtx))
     {
@@ -855,7 +851,7 @@ HWACCMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
 }
 
 /**
- * Check fatal VT-x/AMD-V error and produce some meaningful 
+ * Check fatal VT-x/AMD-V error and produce some meaningful
  * log release message.
  *
  * @param   pVM         The VM to operate on.
@@ -903,7 +899,6 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
 
     return VINF_SUCCESS;
 }
-
 
 /**
  * Execute state load operation.
