@@ -462,9 +462,13 @@ void Filter::processMetricList(const std::string &name, const ComPtr<IUnknown> o
     mElements.push_back(std::make_pair(object, name.substr(startPos)));
 }
 
-/* The following method was borrowed from VMM/STAM.cpp */
-bool Filter::patternMatch(const char *pszPat, const char *pszName)
+/* The following method was borrowed from VMM/STAM.cpp and modified to handle
+ * the special case of trailing colon in the pattern.
+ */
+bool Filter::patternMatch(const char *pszPat, const char *pszName,
+                          bool fSeenColon)
 {
+    bool seenColon = fSeenColon;
     /* ASSUMES ASCII */
     for (;;)
     {
@@ -472,6 +476,13 @@ bool Filter::patternMatch(const char *pszPat, const char *pszName)
         switch (chPat)
         {
             default:
+                /* Handle a special case, the mask terminating with a colon */
+                if (chPat == ':')
+                {
+                    if (!seenColon && !*(pszPat + 1))
+                        return !*pszName;
+                    seenColon = true;
+                }
                 if (*pszName != chPat)
                     return false;
                 break;
@@ -481,12 +492,19 @@ bool Filter::patternMatch(const char *pszPat, const char *pszName)
                 while ((chPat = *++pszPat) == '*' || chPat == '?')
                     /* nothing */;
 
+                /* Handle a special case, the mask terminating with a colon */
+                if (chPat == ':')
+                {
+                    if (!seenColon && !*(pszPat + 1))
+                        return !strchr(pszName, ':');
+                    seenColon = true;
+                }
                 for (;;)
                 {
                     char ch = *pszName++;
                     if (    ch == chPat
                         &&  (   !chPat
-                             || patternMatch(pszPat + 1, pszName)))
+                             || patternMatch(pszPat + 1, pszName, seenColon)))
                         return true;
                     if (!ch)
                         return false;

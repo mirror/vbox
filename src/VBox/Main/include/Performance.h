@@ -375,7 +375,8 @@ namespace pm
     public:
         Filter(ComSafeArrayIn(INPTR BSTR, metricNames),
                ComSafeArrayIn(IUnknown * , objects));
-        static bool patternMatch(const char *pszPat, const char *pszName);
+        static bool patternMatch(const char *pszPat, const char *pszName,
+                                 bool fSeenColon = false);
         bool match(const ComPtr<IUnknown> object, const std::string &name) const;
     private:
         typedef std::pair<const ComPtr<IUnknown>, const std::string> FilterElement;

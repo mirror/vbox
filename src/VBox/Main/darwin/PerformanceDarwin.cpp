@@ -148,7 +148,7 @@ static int getProcessInfo(RTPROCESS process, struct proc_taskinfo *tinfo)
         Log(("proc_pidinfo() -> %s", strerror(rc)));
         return RTErrConvertFromDarwin(rc);
     }
-    else if (nb < sizeof(*tinfo))
+    else if ((unsigned int)nb < sizeof(*tinfo))
     {
         Log(("proc_pidinfo() -> too few bytes %d", nb));
         return VERR_INTERNAL_ERROR;
