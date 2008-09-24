@@ -1096,7 +1096,7 @@ typedef struct PDMAPICHLPRC
      *
      * @param   pDevIns         The APIC device instance.
      */
-    DECLRCCALLBACKMEMBER(uint32_t, pfnGetCpuId,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(VMCPUID, pfnGetCpuId,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1164,7 +1164,7 @@ typedef struct PDMAPICHLPR0
      *
      * @param   pDevIns         The APIC device instance.
      */
-    DECLR0CALLBACKMEMBER(uint32_t, pfnGetCpuId,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(VMCPUID, pfnGetCpuId,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1231,7 +1231,7 @@ typedef struct PDMAPICHLPR3
      *
      * @param   pDevIns         The APIC device instance.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnGetCpuId,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(VMCPUID, pfnGetCpuId,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the address of the RC APIC helpers.

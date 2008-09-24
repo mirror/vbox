@@ -299,6 +299,17 @@ def hostCmd(ctx, args):
 
    return 0
 
+
+def evalCmd(ctx, args):
+   expr = ' '.join(args[1:])
+   try:
+        exec expr
+   except Exception, e:
+        print 'failed: ',e
+        if g_verbose:
+            traceback.print_exc()
+   return 0
+
 aliases = {'s':'start',  
            'i':'info',
            'l':'list',
@@ -317,7 +328,8 @@ commands = {'help':['Prints help information', helpCmd],
             'info':['Shows info on machine', infoCmd],
             'aliases':['Shows aliases', aliasesCmd],
             'verbose':['Toggle verbosity', verboseCmd],
-            'setvar':['Set VMs variable: "setvar Fedora BIOSSettings.ACPIEnabled True"', setvarCmd],
+            'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd],
+            'eval':['Evaluate arbitrary Python construction: eval for m in getMachines(ctx): print m.name,"has",m.memorySize,"M"', evalCmd],
             'quit':['Exits', quitCmd],
             'host':['Show host information', hostCmd]}
 
