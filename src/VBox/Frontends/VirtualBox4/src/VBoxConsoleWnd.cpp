@@ -1787,7 +1787,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             if (adapter.GetEnabled())
                 info += tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>",
                             "Network adapters tooltip")
-                    .arg (slot)
+                    .arg (slot+1)
                     .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
                     .arg (adapter.GetCableConnected() ?
                           tr ("connected", "Network adapters tooltip") :
@@ -2913,7 +2913,7 @@ void VBoxConsoleWnd::prepareNetworkMenu()
     for (ulong slot = 0; slot < count; ++ slot)
     {
         CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
-        QAction *action = mDevicesNetworkMenu->addAction (tr ("Adapter %1", "network").arg (slot));
+        QAction *action = mDevicesNetworkMenu->addAction (tr ("Adapter %1", "network").arg (slot+1));
         action->setEnabled (adapter.GetEnabled());
         action->setCheckable (true);
         action->setChecked (adapter.GetEnabled() && adapter.GetCableConnected());
