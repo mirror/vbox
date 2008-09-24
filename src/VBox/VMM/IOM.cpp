@@ -20,7 +20,7 @@
  */
 
 
-/** @page pg_iom        IOM - The Input/Output Monitor
+/** @page pg_iom        IOM - The Input / Output Monitor
  *
  * The input/output monitor will handle I/O exceptions routing them to the
  * appropriate device. It implements an API to register and deregister
