@@ -279,19 +279,24 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     ((QVBoxLayout*)layout())->insertWidget (0, toolBar);
 
     /* Setup actions */
-    mDiscardSnapshotAction->setIcon (VBoxGlobal::iconSetEx (
+    mDiscardSnapshotAction->setIcon (VBoxGlobal::iconSetFull (
+        QSize (22, 22), QSize (16, 16),
         ":/discard_snapshot_22px.png", ":/discard_snapshot_16px.png",
         ":/discard_snapshot_dis_22px.png", ":/discard_snapshot_dis_16px.png"));
-    mTakeSnapshotAction->setIcon (VBoxGlobal::iconSetEx (
+    mTakeSnapshotAction->setIcon (VBoxGlobal::iconSetFull (
+        QSize (22, 22), QSize (16, 16),
         ":/take_snapshot_22px.png", ":/take_snapshot_16px.png",
         ":/take_snapshot_dis_22px.png", ":/take_snapshot_dis_16px.png"));
-    mRevertToCurSnapAction->setIcon (VBoxGlobal::iconSetEx (
+    mRevertToCurSnapAction->setIcon (VBoxGlobal::iconSetFull (
+        QSize (22, 22), QSize (16, 16),
         ":/discard_cur_state_22px.png", ":/discard_cur_state_16px.png",
         ":/discard_cur_state_dis_22px.png", ":/discard_cur_state_dis_16px.png"));
-    mDiscardCurSnapAndStateAction->setIcon (VBoxGlobal::iconSetEx (
+    mDiscardCurSnapAndStateAction->setIcon (VBoxGlobal::iconSetFull (
+        QSize (22, 22), QSize (16, 16),
         ":/discard_cur_state_snapshot_22px.png", ":/discard_cur_state_snapshot_16px.png",
         ":/discard_cur_state_snapshot_dis_22px.png", ":/discard_cur_state_snapshot_dis_16px.png"));
-    mShowSnapshotDetailsAction->setIcon (VBoxGlobal::iconSetEx (
+    mShowSnapshotDetailsAction->setIcon (VBoxGlobal::iconSetFull (
+        QSize (22, 22), QSize (16, 16),
         ":/show_snapshot_details_22px.png", ":/show_snapshot_details_16px.png",
         ":/show_snapshot_details_dis_22px.png", ":/show_snapshot_details_dis_16px.png"));
 

@@ -2928,7 +2928,7 @@ QString VBoxGlobal::helpFile() const
 #elif defined (Q_WS_MAC)
     const QString name = "UserManual";
     const QString suffix = "pdf";
-#endif 
+#endif
     /* Where are the docs located? */
     char szDocsPath[RTPATH_MAX];
     int rc = RTPathAppDocs (szDocsPath, sizeof (szDocsPath));
@@ -2970,26 +2970,26 @@ QIcon VBoxGlobal::iconSet (const char *aNormal,
 }
 
 /* static */
-QIcon VBoxGlobal::
-iconSetEx (const char *aNormal, const char *aSmallNormal,
-           const char *aDisabled /* = NULL */,
-           const char *aSmallDisabled /* = NULL */,
-           const char *aActive /* = NULL */,
-           const char *aSmallActive /* = NULL */)
+QIcon VBoxGlobal::iconSetFull (const QSize &aNormalSize, const QSize &aSmallSize,
+                               const char *aNormal, const char *aSmallNormal,
+                               const char *aDisabled /* = NULL */,
+                               const char *aSmallDisabled /* = NULL */,
+                               const char *aActive /* = NULL */,
+                               const char *aSmallActive /* = NULL */)
 {
     QIcon iconSet;
 
-    iconSet.addFile (aNormal, QSize(), QIcon::Normal);
-    iconSet.addFile (aSmallNormal, QSize(), QIcon::Normal);
+    iconSet.addFile (aNormal, aNormalSize, QIcon::Normal);
+    iconSet.addFile (aSmallNormal, aSmallSize, QIcon::Normal);
     if (aSmallDisabled != NULL)
     {
-        iconSet.addFile (aDisabled, QSize(), QIcon::Disabled);
-        iconSet.addFile (aSmallDisabled, QSize(), QIcon::Disabled);
+        iconSet.addFile (aDisabled, aNormalSize, QIcon::Disabled);
+        iconSet.addFile (aSmallDisabled, aSmallSize, QIcon::Disabled);
     }
     if (aSmallActive != NULL)
     {
-        iconSet.addFile (aActive, QSize(), QIcon::Active);
-        iconSet.addFile (aSmallActive, QSize(), QIcon::Active);
+        iconSet.addFile (aActive, aNormalSize, QIcon::Active);
+        iconSet.addFile (aSmallActive, aSmallSize, QIcon::Active);
     }
 
     return iconSet;

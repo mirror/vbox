@@ -570,11 +570,12 @@ public:
     static QIcon iconSet (const char *aNormal,
                           const char *aDisabled = NULL,
                           const char *aActive = NULL);
-    static QIcon iconSetEx (const char *aNormal, const char *aSmallNormal,
-                            const char *aDisabled = NULL,
-                            const char *aSmallDisabled = NULL,
-                            const char *aActive = NULL,
-                            const char *aSmallActive = NULL);
+    static QIcon iconSetFull (const QSize &aNormalSize, const QSize &aSmallSize,
+                              const char *aNormal, const char *aSmallNormal,
+                              const char *aDisabled = NULL,
+                              const char *aSmallDisabled = NULL,
+                              const char *aActive = NULL,
+                              const char *aSmallActive = NULL);
 
     static QIcon standardIcon (QStyle::StandardPixmap aStandard, QWidget *aWidget = NULL);
 
