@@ -140,7 +140,6 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
 #endif
     pVM->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
     pVM->hwaccm.s.vmx.pMemObjAPIC = NIL_RTR0MEMOBJ;
-    pVM->hwaccm.s.vmx.pMemObjRealModeTSS = NIL_RTR0MEMOBJ;
 
 
     /* Allocate one page for the VM control structure (VMCS). */
@@ -152,22 +151,6 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
     pVM->hwaccm.s.vmx.pVMCS     = RTR0MemObjAddress(pVM->hwaccm.s.vmx.pMemObjVMCS);
     pVM->hwaccm.s.vmx.pVMCSPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjVMCS, 0);
     ASMMemZero32(pVM->hwaccm.s.vmx.pVMCS, PAGE_SIZE);
-
-    /* Allocate one page for the TSS we need for real mode emulation. */
-    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjRealModeTSS, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
-    AssertRC(rc);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pVM->hwaccm.s.vmx.pRealModeTSS     = (PVBOXTSS)RTR0MemObjAddress(pVM->hwaccm.s.vmx.pMemObjRealModeTSS);
-    pVM->hwaccm.s.vmx.pRealModeTSSPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.vmx.pMemObjRealModeTSS, 0);
-
-    /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
-     * for I/O operations. */
-    ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, PAGE_SIZE);
-    pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
-    /* Bit set to 0 means redirection enabled. */
-    memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
 
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
@@ -202,7 +185,7 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
     }
 
 #ifdef LOG_ENABLED
-    SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x) RealModeTSS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys, pVM->hwaccm.s.vmx.pRealModeTSS, (uint32_t)pVM->hwaccm.s.vmx.pRealModeTSSPhys);
+    SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys);
 #endif
     return VINF_SUCCESS;
 }
@@ -221,13 +204,6 @@ HWACCMR0DECL(int) VMXR0TermVM(PVM pVM)
         pVM->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
         pVM->hwaccm.s.vmx.pVMCS       = 0;
         pVM->hwaccm.s.vmx.pVMCSPhys   = 0;
-    }
-    if (pVM->hwaccm.s.vmx.pMemObjRealModeTSS != NIL_RTR0MEMOBJ)
-    {
-        RTR0MemObjFree(pVM->hwaccm.s.vmx.pMemObjRealModeTSS, false);
-        pVM->hwaccm.s.vmx.pMemObjRealModeTSS = NIL_RTR0MEMOBJ;
-        pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
-        pVM->hwaccm.s.vmx.pRealModeTSSPhys   = 0;
     }
     if (pVM->hwaccm.s.vmx.pMemObjAPIC != NIL_RTR0MEMOBJ)
     {
@@ -802,9 +778,15 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
         {
+            RTGCPHYS GCPhys;
+
+            /* We convert it here every time as pci regions could be reconfigured. */
+            rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
+            AssertRC(rc);
+
             Assert(pCtx->tr == 0);
-            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
-            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          0);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         sizeof(VBOXTSS));
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          GCPhys /* phys = virt in this mode */);
 
             val = X86_DESC_P | X86_SEL_TYPE_SYS_386_TSS_BUSY;
         }

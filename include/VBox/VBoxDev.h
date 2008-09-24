@@ -77,6 +77,10 @@ __BEGIN_DECLS
  */
 #define VMMDEV_RAM_SIZE (4 * 256 * PAGE_SIZE)
 
+/** Size of VMMDev heap region accessible by guest.
+ */
+#define VMMDEV_HEAP_SIZE (PAGE_SIZE)
+
 __END_DECLS
 
 #endif

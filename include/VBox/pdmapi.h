@@ -117,6 +117,15 @@ PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR);
  */
 PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending);
 
+/**
+ * Converts ring 3 VMM heap pointer to a guest physical address
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   pv              Ring-3 pointer.
+ * @param   pGCPhys         GC phys address (out).
+ */
+PDMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 
 #ifdef IN_RING3
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
@@ -434,6 +443,46 @@ PDMR3DECL(void) PDMR3Poll(PVM pVM);
  * @param   pVM     The VM handle.
  */
 PDMR3DECL(int) PDMR3LockCall(PVM pVM);
+
+
+/**
+ * Registers the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   GCPhys          The physical address.
+ * @param   pvHeap          Ring-3 pointer.
+ * @param   cbSize          Size of the heap.
+ */
+PDMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
+
+/**
+ * Allocates memory from the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   cbSize          Allocation size.
+ * @param   ppv             Ring-3 pointer. (out)
+ */
+PDMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv);
+
+/**
+ * Frees memory from the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   pv              Ring-3 pointer. 
+ */
+PDMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv);
+
+/**
+ * Unregisters the VMM device heap
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ * @param   GCPhys          The physical address.
+ */
+PDMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
 
 /** @} */
 #endif

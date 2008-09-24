@@ -90,6 +90,12 @@ typedef struct VMMDevState
     /** GC physical address of VMMDev RAM area */
     RTGCPHYS32 GCPhysVMMDevRAM;
 
+    /** R3 pointer to VMMDev Heap RAM area 
+     */
+    R3PTRTYPE(VMMDevMemory *) pVMMDevHeapR3;
+    /** GC physical address of VMMDev Heap RAM area */
+    RTGCPHYS32 GCPhysVMMDevHeap;
+
     /** Information reported by guest via VMMDevReportGuestInfo generic request.
      * Until this information is reported the VMMDev refuses any other requests.
      */

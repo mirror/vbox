@@ -516,12 +516,24 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACCM: MSR_IA32_VMX_VMCS_ENUM        = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum));
 
             LogRel(("HWACCM: VMCS physaddr                 = %VHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
-            LogRel(("HWACCM: Real mode TSS physaddr        = %VHp\n", pVM->hwaccm.s.vmx.pRealModeTSSPhys));
             LogRel(("HWACCM: TPR shadow physaddr           = %VHp\n", pVM->hwaccm.s.vmx.pAPICPhys));
             LogRel(("HWACCM: MSR bitmap physaddr           = %VHp\n", pVM->hwaccm.s.vmx.pMSRBitmapPhys));
 
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
+
+            /* Allocate one page for the TSS we need for real mode emulation. */
+            rc = PDMR3VMMDevHeapAlloc(pVM, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS), (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                return rc;
+
+            /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
+            * for I/O operations. */
+            ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
+            pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
+            /* Bit set to 0 means redirection enabled. */
+            memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
@@ -688,6 +700,12 @@ HWACCMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode)
  */
 HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
 {
+    if (pVM->hwaccm.s.vmx.pRealModeTSS)
+    {
+        PDMR3VMMDevHeapFree(pVM, pVM->hwaccm.s.vmx.pRealModeTSS);
+        pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
+    }
+
     if (pVM->hwaccm.s.pStatExitReason)
     {
         MMHyperFree(pVM, pVM->hwaccm.s.pStatExitReason);

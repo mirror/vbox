@@ -1605,25 +1605,53 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
     VMMDevState *pThis = PCIDEV_2_VMMDEVSTATE(pPciDev);
     int rc;
 
-    AssertReturn(iRegion == 1 && enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
+    AssertReturn(iRegion <= 2 && enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
     Assert(pThis->pVMMDevRAMR3 != NULL);
+    Assert(pThis->pVMMDevHeapR3 != NULL);
 
-    if (GCPhysAddress != NIL_RTGCPHYS)
+    if (iRegion == 1)
     {
-        /*
-         * Map the MMIO2 memory.
-         */
-        pThis->GCPhysVMMDevRAM = GCPhysAddress;
-        Assert(pThis->GCPhysVMMDevRAM == GCPhysAddress);
-        rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
+        if (GCPhysAddress != NIL_RTGCPHYS)
+        {
+            /*
+             * Map the MMIO2 memory.
+             */
+            pThis->GCPhysVMMDevRAM = GCPhysAddress;
+            Assert(pThis->GCPhysVMMDevRAM == GCPhysAddress);
+            rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
+        }
+        else
+        {
+            /*
+             * It is about to be unmapped, just clean up.
+             */
+            pThis->GCPhysVMMDevRAM = NIL_RTGCPHYS32;
+            rc = VINF_SUCCESS;
+        }
     }
     else
+    if (iRegion == 2)
     {
-        /*
-         * It is about to be unmapped, just clean up.
-         */
-        pThis->GCPhysVMMDevRAM = NIL_RTGCPHYS32;
-        rc = VINF_SUCCESS;
+        if (GCPhysAddress != NIL_RTGCPHYS)
+        {
+            /*
+             * Map the MMIO2 memory.
+             */
+            pThis->GCPhysVMMDevHeap = GCPhysAddress;
+            Assert(pThis->GCPhysVMMDevHeap == GCPhysAddress);
+            rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
+            if (VBOX_SUCCESS(rc))
+                rc = PDMDevHlpRegisterVMMDevHeap(pPciDev->pDevIns, GCPhysAddress, pThis->pVMMDevHeapR3, VMMDEV_HEAP_SIZE);
+        }
+        else
+        {
+            /*
+             * It is about to be unmapped, just clean up.
+             */
+            PDMDevHlpUnregisterVMMDevHeap(pPciDev->pDevIns, GCPhysAddress);
+            pThis->GCPhysVMMDevHeap = NIL_RTGCPHYS32;
+            rc = VINF_SUCCESS;
+        }
     }
 
     return rc;
@@ -2244,6 +2272,11 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    N_("Failed to allocate %u bytes of memory for the VMM device"), VMMDEV_RAM_SIZE);
     vmmdevInitRam(pThis);
 
+    rc = PDMDevHlpMMIO2Register(pDevIns, 2 /*iRegion*/, VMMDEV_HEAP_SIZE, 0, (void **)&pThis->pVMMDevHeapR3, "VMMDev Heap");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Failed to allocate %u bytes of memory for the VMM device"), PAGE_SIZE);
+
     /*
      * Register the PCI device.
      */
@@ -2256,6 +2289,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, VMMDEV_RAM_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, VMMDEV_HEAP_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
     if (RT_FAILURE(rc))
         return rc;
 
