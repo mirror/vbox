@@ -762,7 +762,7 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
  * @param   pRange      Pointer MMIO range.
  * @param   pfnEmulate  Instruction emulation function.
  */
-static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange, PFN_EMULATE_PARAM3 pfnEmulate)
+static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange, PFNEMULATEPARAM3 pfnEmulate)
 {
     unsigned    cb     = 0;
     uint64_t    uData1 = 0;
