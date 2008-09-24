@@ -45,6 +45,7 @@ NTSTATUS VBoxScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXT pD
     // enumerate the resource list
     dprintf(("found %d resources\n", pResList->List->PartialResourceList.Count));
     ULONG rangeCount = 0;
+    ULONG cMMIORange = 0;
     PBASE_ADDRESS baseAddress = pDevExt->baseAddress;
     for (ULONG i = 0; i < pResList->List->PartialResourceList.Count; i++)
     {
@@ -107,7 +108,8 @@ NTSTATUS VBoxScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXT pD
                             partialData->u.Memory.Length));
                     // we only care about read/write memory
                     /** @todo reconsider memory type */
-                    if ((partialData->Flags & VBOX_CM_PRE_VISTA_MASK) == CM_RESOURCE_MEMORY_READ_WRITE)
+                    if (    cMMIORange == 0 /* only care about the first mmio range (!!!) */
+                        && (partialData->Flags & VBOX_CM_PRE_VISTA_MASK) == CM_RESOURCE_MEMORY_READ_WRITE)
                     {
                         pDevExt->memoryAddress = partialData->u.Memory.Start;
                         pDevExt->memoryLength = (ULONG)partialData->u.Memory.Length;
@@ -117,7 +119,7 @@ NTSTATUS VBoxScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTDEVEXT pD
                         baseAddress->RangeInMemory  = TRUE;
                         baseAddress->ResourceMapped = FALSE;
                         // next item
-                        rangeCount++; baseAddress++;
+                        rangeCount++; baseAddress++;cMMIORange++;
                     } else
                     {
                         dprintf(("Ignoring memory: flags = %08x \n", partialData->Flags));
