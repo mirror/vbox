@@ -610,7 +610,8 @@ DECLINLINE(PPGMMMIO2RANGE) pgmR3PhysMMIO2Find(PVM pVM, PPDMDEVINS pDevIns, uint3
      * Search the list.
      */
     for (PPGMMMIO2RANGE pCur = pVM->pgm.s.pMmio2RangesR3; pCur; pCur = pCur->pNextR3)
-        if (pCur->pDevInsR3 == pDevIns)
+        if (   pCur->pDevInsR3 == pDevIns
+            && pCur->iRegion == iRegion)
             return pCur;
     return NULL;
 }
