@@ -1605,7 +1605,11 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
     VMMDevState *pThis = PCIDEV_2_VMMDEVSTATE(pPciDev);
     int rc;
 
+#ifdef VBOX_WITH_VMMDEV_HEAP
     AssertReturn(iRegion <= 2 && enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
+#else
+    AssertReturn(iRegion <= 1 && enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
+#endif
     Assert(pThis->pVMMDevRAMR3 != NULL);
     Assert(pThis->pVMMDevHeapR3 != NULL);
 
@@ -1629,6 +1633,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
             rc = VINF_SUCCESS;
         }
     }
+#ifdef VBOX_WITH_VMMDEV_HEAP
     else
     if (iRegion == 2)
     {
@@ -1653,6 +1658,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
             rc = VINF_SUCCESS;
         }
     }
+#endif
 
     return rc;
 }
@@ -2291,9 +2297,11 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, VMMDEV_RAM_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef VBOX_WITH_VMMDEV_HEAP
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, VMMDEV_HEAP_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
     if (RT_FAILURE(rc))
         return rc;
+#endif
 
     /*
      * Get the corresponding connector interface
