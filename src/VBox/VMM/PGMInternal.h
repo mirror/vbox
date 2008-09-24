@@ -1272,31 +1272,31 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  * Aka. the unique shadow page identifier.
  * @{ */
 /** NIL page pool IDX. */
-#define NIL_PGMPOOL_IDX         0
+#define NIL_PGMPOOL_IDX             0
 /** The first normal index. */
-#define PGMPOOL_IDX_FIRST_SPECIAL 1
+#define PGMPOOL_IDX_FIRST_SPECIAL   1
 /** Page directory (32-bit root). */
-#define PGMPOOL_IDX_PD          1
+#define PGMPOOL_IDX_PD              1
 /** The extended PAE page directory (2048 entries, works as root currently). */
-#define PGMPOOL_IDX_PAE_PD      2
+#define PGMPOOL_IDX_PAE_PD          2
 /** PAE Page Directory Table 0. */
-#define PGMPOOL_IDX_PAE_PD_0    3
+#define PGMPOOL_IDX_PAE_PD_0        3
 /** PAE Page Directory Table 1. */
-#define PGMPOOL_IDX_PAE_PD_1    4
+#define PGMPOOL_IDX_PAE_PD_1        4
 /** PAE Page Directory Table 2. */
-#define PGMPOOL_IDX_PAE_PD_2    5
+#define PGMPOOL_IDX_PAE_PD_2        5
 /** PAE Page Directory Table 3. */
-#define PGMPOOL_IDX_PAE_PD_3    6
+#define PGMPOOL_IDX_PAE_PD_3        6
 /** Page Directory Pointer Table (PAE root, not currently used). */
-#define PGMPOOL_IDX_PDPT        7
+#define PGMPOOL_IDX_PDPT            7
 /** AMD64 CR3 level index.*/
-#define PGMPOOL_IDX_AMD64_CR3   8
+#define PGMPOOL_IDX_AMD64_CR3       8
 /** Nested paging root.*/
-#define PGMPOOL_IDX_NESTED_ROOT 9
+#define PGMPOOL_IDX_NESTED_ROOT     9
 /** The first normal index. */
-#define PGMPOOL_IDX_FIRST       10
+#define PGMPOOL_IDX_FIRST           10
 /** The last valid index. (inclusive, 14 bits) */
-#define PGMPOOL_IDX_LAST        0x3fff
+#define PGMPOOL_IDX_LAST            0x3fff
 /** @} */
 
 /** The NIL index for the parent chain. */
@@ -1997,6 +1997,14 @@ typedef struct PGM
     RTHCPHYS                    HCPhys32BitPD;
     /** @} */
 
+    /** @name 32-bit Shadow Paging with guest real or protected mode without paging.
+     * @{ */
+    /** The 32-Bit PD - HC Ptr. */
+    R3R0PTRTYPE(PX86PD)         pHCNoPaging32BitPD;
+    /** The Physical Address (HC) of the 32-Bit PD. */
+    RTHCPHYS                    HCPhysNoPaging32BitPD;
+    /** @} */
+    
     /** @name PAE Shadow Paging
      * @{ */
     /** The four PDs for the low 4GB - HC Ptr.
