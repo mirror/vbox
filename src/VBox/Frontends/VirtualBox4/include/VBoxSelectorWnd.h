@@ -58,6 +58,10 @@ public:
 
     bool startMachine (const QUuid &aId);
 
+signals:
+
+    void closing();
+
 public slots:
 
     void fileDiskMgr();
@@ -85,6 +89,7 @@ protected:
 
     /* Events */
     bool event (QEvent *aEvent);
+    void closeEvent (QCloseEvent *aEvent);
 
     void retranslateUi();
 

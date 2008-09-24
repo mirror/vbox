@@ -36,9 +36,12 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
     if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
     {
         /* Creating new information dialog if there is no one existing */
-        mSelfArray [machine.GetName()] = new VBoxVMInformationDlg (
-            aConsole, aSession, Qt::Window);
-        mSelfArray [machine.GetName()]->setAttribute (Qt::WA_DeleteOnClose);
+        VBoxVMInformationDlg *id = new VBoxVMInformationDlg (aConsole,
+                                                             aSession, Qt::Window);
+        id->centerAccording (aConsole);
+        connect (aConsole, SIGNAL (destroyed (QObject*)), id, SLOT (suicide()));
+        id->setAttribute (Qt::WA_DeleteOnClose);
+        mSelfArray [machine.GetName()] = id;
     }
 
     VBoxVMInformationDlg *info = mSelfArray [machine.GetName()];
@@ -52,7 +55,7 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
 VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
                                             const CSession &aSession,
                                             Qt::WindowFlags aFlags)
-    : QIWithRetranslateUI2<QIMainDialog> (aConsole, aFlags)
+    : QIWithRetranslateUI2<QIMainDialog> (0, aFlags)
     , mIsPolished (false)
     , mConsole (aConsole)
     , mSession (aSession)
@@ -293,25 +296,22 @@ void VBoxVMInformationDlg::resizeEvent (QResizeEvent *aEvent)
 
 void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
 {
-    QIMainDialog::showEvent (aEvent);
-
     /* One may think that QWidget::polish() is the right place to do things
      * below, but apparently, by the time when QWidget::polish() is called,
      * the widget style & layout are not fully done, at least the minimum
      * size hint is not properly calculated. Since this is sometimes necessary,
      * we provide our own "polish" implementation */
+    if (!mIsPolished)
+    {
+        /* Load window size and state */
+        resize (mWidth, mHeight);
+        if (mMax)
+            QTimer::singleShot (0, this, SLOT (showMaximized()));
+        else
+            mIsPolished = true;
+    }
 
-    if (mIsPolished)
-        return;
-
-    /* Load window size and state */
-    resize (mWidth, mHeight);
-    if (mMax)
-        QTimer::singleShot (0, this, SLOT (showMaximized()));
-    else
-        mIsPolished = true;
-
-    VBoxGlobal::centerWidget (this, parentWidget());
+    QIMainDialog::showEvent (aEvent);
 }
 
 
@@ -344,6 +344,14 @@ void VBoxVMInformationDlg::onPageChanged (int aIndex)
 {
     /* Focusing the browser on shown page */
     mInfoStack->widget (aIndex)->setFocus();
+}
+
+/**
+ * Opposing to deleteLater() slot this one makes it immediately.
+ */
+void VBoxVMInformationDlg::suicide()
+{
+    delete this;
 }
 
 

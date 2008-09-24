@@ -489,12 +489,14 @@ void VBoxDiskImageManagerDlg::setup (int aType, bool aDoSelect,
 }
 
 /* static */
-void VBoxDiskImageManagerDlg::showModeless (QWidget *aParent /* = NULL */, bool aRefresh /* = true */)
+void VBoxDiskImageManagerDlg::showModeless (QWidget *aCenterWidget /* = NULL */,
+                                            bool aRefresh /* = true */)
 {
     if (!mModelessDialog)
     {
-        mModelessDialog =
-            new VBoxDiskImageManagerDlg (aParent, Qt::Window);
+        mModelessDialog = new VBoxDiskImageManagerDlg (0, Qt::Window);
+        mModelessDialog->centerAccording (aCenterWidget);
+        connect (aCenterWidget, SIGNAL (closing()), mModelessDialog, SLOT (close()));
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
         mModelessDialog->setup (VBoxDefs::HD | VBoxDefs::CD | VBoxDefs::FD,
                                 false, QUuid(), aRefresh);

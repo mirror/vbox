@@ -64,6 +64,8 @@ protected:
 
     QPushButton* searchDefaultButton() const;
 
+    void centerAccording (QWidget *aWidget) { mCenterWidget = aWidget; }
+
 protected slots:
 
     void accept();
@@ -86,6 +88,7 @@ private:
     QPointer<QPushButton> mDefaultButton;
 
     bool mPolished;
+    QWidget *mCenterWidget;
 };
 
 #endif /* __QIMainDialog_h__ */

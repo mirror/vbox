@@ -1103,6 +1103,12 @@ bool VBoxSelectorWnd::event (QEvent *e)
     return QMainWindow::event (e);
 }
 
+void VBoxSelectorWnd::closeEvent (QCloseEvent *aEvent)
+{
+    emit closing();
+    return QMainWindow::closeEvent (aEvent);
+}
+
 /**
  *  Sets the strings of the subwidgets using the current
  *  language.

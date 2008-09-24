@@ -43,6 +43,7 @@ QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,
     : QMainWindow (aParent, aFlags)
     , mRescode (QDialog::Rejected)
     , mPolished (false)
+    , mCenterWidget (aParent)
 {
     qApp->installEventFilter (this);
 }
@@ -215,16 +216,16 @@ bool QIMainDialog::event (QEvent *aEvent)
 
 void QIMainDialog::showEvent (QShowEvent *aEvent)
 {
-	QMainWindow::showEvent (aEvent);
+    QMainWindow::showEvent (aEvent);
 
     /* Polishing border */
     if (mPolished)
         return;
     mPolished = true;
 
-    /* Explicit widget centering relatively to it's parent
-     * if any or desktop if parent is missed. */
-    vboxGlobal().centerWidget (this, parentWidget(), false);
+    /* Explicit widget centering relatively to it's centering
+     * widget if any or desktop if centering widget is missed. */
+    vboxGlobal().centerWidget (this, mCenterWidget, false);
 }
 
 void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
