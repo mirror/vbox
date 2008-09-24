@@ -1996,15 +1996,7 @@ typedef struct PGM
     /** The Physical Address (HC) of the 32-Bit PD. */
     RTHCPHYS                    HCPhys32BitPD;
     /** @} */
-
-    /** @name 32-bit Shadow Paging with guest real or protected mode without paging.
-     * @{ */
-    /** The 32-Bit PD - HC Ptr. */
-    R3R0PTRTYPE(PX86PD)         pHCNoPaging32BitPD;
-    /** The Physical Address (HC) of the 32-Bit PD. */
-    RTHCPHYS                    HCPhysNoPaging32BitPD;
-    /** @} */
-    
+  
     /** @name PAE Shadow Paging
      * @{ */
     /** The four PDs for the low 4GB - HC Ptr.
