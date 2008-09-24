@@ -378,17 +378,17 @@ endif
 
 # Some flag hacks (should go away).
 ifneq ($(KBUILD_TARGET),win)
- src/HappyHttp.cpp_CXXFLAGS += -fexceptions
- src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
- src/VBoxNetworkFramework.cpp_CXXFLAGS += -fexceptions
+ VirtualBox_src/HappyHttp.cpp_CXXFLAGS += -fexceptions
+ VirtualBox_src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
+ VirtualBox_src/VBoxNetworkFramework.cpp_CXXFLAGS += -fexceptions
 endif
-src/HappyHttp.cpp_CXXFLAGS.linux += -O2
+VirtualBox_src/HappyHttp.cpp_CXXFLAGS.linux += -O2
 
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use more generic -Wno-extra
 ## @todo r=bird: see VirtualBox4.
 ifdef VBOX_WITH_XPCOM
- src/COMDefs.cpp_CXXFLAGS = $(VBOX_GCC_Wno-extra)
+ VirtualBox_src/COMDefs.cpp_CXXFLAGS = $(VBOX_GCC_Wno-extra)
 endif
 
 #

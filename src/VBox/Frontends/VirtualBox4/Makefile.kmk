@@ -405,21 +405,20 @@ VirtualBox4_LRCFLAGS = -compress
 VirtualBox4_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
 
 
-
 # Some flag hacks (should go away).
 ifneq ($(KBUILD_TARGET),win)
- src/HappyHttp.cpp_CXXFLAGS += -fexceptions
- src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
- src/VBoxNetworkFramework.cpp_CXXFLAGS += -fexceptions
+ VirtualBox4_src/HappyHttp.cpp_CXXFLAGS += -fexceptions
+ VirtualBox4_src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
+ VirtualBox4_src/VBoxNetworkFramework.cpp_CXXFLAGS += -fexceptions
 endif
-src/HappyHttp.cpp_CXXFLAGS.linux += -O2
+VirtualBox4_src/HappyHttp.cpp_CXXFLAGS.linux += -O2
 
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use
 #  more generic -Wno-extra
 # bird: What about $(if $(VBOX_GCC_Wno-missing-base-class-initializer),$(VBOX_GCC_Wno-missing-base-class-initializer),$(VBOX_GCC_Wno-extra))?
 ifdef VBOX_WITH_XPCOM
- src/COMDefs.cpp_CXXFLAGS  = $(VBOX_GCC_Wno-extra)
+ VirtualBox4_src/COMDefs.cpp_CXXFLAGS  = $(VBOX_GCC_Wno-extra)
 endif
 
 
