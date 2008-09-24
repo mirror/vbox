@@ -68,6 +68,8 @@
 #  pragma intrinsic(__writecr0)
 #  pragma intrinsic(__writecr3)
 #  pragma intrinsic(__writecr4)
+#  pragma intrinsic(__readdr)
+#  pragma intrinsic(__writedr)
 #  pragma intrinsic(_BitScanForward)
 #  pragma intrinsic(_BitScanReverse)
 #  pragma intrinsic(_bittest)
@@ -90,8 +92,6 @@
 #   pragma intrinsic(__stosq)
 #   pragma intrinsic(__readcr8)
 #   pragma intrinsic(__writecr8)
-#   pragma intrinsic(__readdr)
-#   pragma intrinsic(__writedr)
 #   pragma intrinsic(_byteswap_uint64)
 #   pragma intrinsic(_InterlockedExchange64)
 #  endif
