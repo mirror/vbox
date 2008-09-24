@@ -59,6 +59,24 @@
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 
+/**
+ * Drag in symbols from R0 Runtime required by VBoxNetFlt.
+ */
+#ifdef VBOX_WITH_NETFLT
+# include <iprt/crc32.h>
+# include <iprt/uuid.h>
+# include <iprt/net.h>
+
+static RTR0PTR g_vboxNetFltSolarisRTR0Symbols[] =
+{
+    (void *)RTCrc32,
+    (void *)RTUuidFromStr,
+    (void *)RTUuidCompareStr,
+    (void *)RTNetIPv4UDPChecksum,
+    (void *)RTNetIPv4TCPChecksum,
+    (void *)RTNetIPv4IsHdrValid
+};
+#endif  /* VBOX_WITH_NETFLT */
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -190,6 +208,10 @@ static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
 int _init(void)
 {
     LogFlow((DEVICE_NAME ":_init\n"));
+
+#ifdef VBOX_WITH_NETFLT
+    NOREF(g_vboxNetFltSolarisRTR0Symbols);
+#endif
 
     /*
      * Prevent module autounloading.
