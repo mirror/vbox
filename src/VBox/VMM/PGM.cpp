@@ -1388,7 +1388,6 @@ static int pgmR3InitPaging(PVM pVM)
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[3]);
     pVM->pgm.s.pHCPaePDPT           = (PX86PDPT)MMR3PageAllocLow(pVM);
     pVM->pgm.s.pHCNestedRoot        = MMR3PageAllocLow(pVM);
-    pVM->pgm.s.pHCNoPaging32BitPD   = (PX86PD)MMR3PageAllocLow(pVM);
 
     if (    !pVM->pgm.s.pHC32BitPD
         ||  !pVM->pgm.s.apHCPaePDs[0]
@@ -1396,8 +1395,7 @@ static int pgmR3InitPaging(PVM pVM)
         ||  !pVM->pgm.s.apHCPaePDs[2]
         ||  !pVM->pgm.s.apHCPaePDs[3]
         ||  !pVM->pgm.s.pHCPaePDPT
-        ||  !pVM->pgm.s.pHCNestedRoot
-        ||  !pVM->pgm.s.pHCNoPaging32BitPD)
+        ||  !pVM->pgm.s.pHCNestedRoot)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
         return VERR_NO_PAGE_MEMORY;
@@ -1412,7 +1410,6 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.aHCPhysPaePDs[3]         = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
     pVM->pgm.s.HCPhysPaePDPT            = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPT);
     pVM->pgm.s.HCPhysNestedRoot         = MMPage2Phys(pVM, pVM->pgm.s.pHCNestedRoot);
-    pVM->pgm.s.HCPhysNoPaging32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pHCNoPaging32BitPD);
 
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
@@ -1420,7 +1417,6 @@ static int pgmR3InitPaging(PVM pVM)
     ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pHCPaePDPT, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pHCNestedRoot, PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.pHCNoPaging32BitPD, PAGE_SIZE);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
     {
         ASMMemZero32(pVM->pgm.s.apHCPaePDs[i], PAGE_SIZE);
