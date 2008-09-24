@@ -1555,7 +1555,12 @@ ResumeExecution:
 
     /* In real mode we have a fake TSS, so only sync it back when it's supposed to be valid. */
     if (pCtx->cr0 & X86_CR0_PROTECTION_ENABLE)
+    {
         VMX_READ_SELREG(TR, tr);
+    }
+    else
+        /* Force a TR resync every time in case we switch modes. */
+        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
 
     VMXReadVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       &val);
     pCtx->gdtr.cbGdt        = val;
