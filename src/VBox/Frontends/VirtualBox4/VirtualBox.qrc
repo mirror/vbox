@@ -144,6 +144,7 @@
     <file alias="sound_32px.png">images/sound_32px.png</file>
     <file alias="sound_disabled_32px.png">images/sound_disabled_32px.png</file>
     <file alias="nw_16px.png">images/nw_16px.png</file>
+    <file alias="nw_disabled_16px.png">images/nw_disabled_16px.png</file>
     <file alias="nw_32px.png">images/nw_32px.png</file>
     <file alias="nw_disabled_32px.png">images/nw_disabled_32px.png</file>
     <file alias="nw_read_16px.png">images/nw_read_16px.png</file>
