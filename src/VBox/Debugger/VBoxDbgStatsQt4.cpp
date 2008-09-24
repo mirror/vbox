@@ -70,12 +70,6 @@ typedef enum DBGGUISTATSNODESTATE
     kDbgGuiStatsNodeState_kRoot,
     /** The node is visible. */
     kDbgGuiStatsNodeState_kVisible,
-    /** The node is invisible. */
-    kDbgGuiStatsNodeState_kInvisible,
-    /** The node should be made visble. */
-    kDbgGuiStatsNodeState_kMakeVisible,
-    /** The node should be made invisble. */
-    kDbgGuiStatsNodeState_kMakeInvisible,
     /** The node should be refreshed. */
     kDbgGuiStatsNodeState_kRefresh,
     /** diff: The node equals. */
@@ -113,7 +107,8 @@ typedef struct DBGGUISTATSNODE
     uint32_t                iSelf;
     /** The unit. */
     STAMUNIT                enmUnit;
-    /** The data type. */
+    /** The data type.
+     * For filler nodes not containing data, this will be set to STAMTYPE_INVALID. */
     STAMTYPE                enmType;
     /** The data at last update. */
     union
@@ -134,9 +129,11 @@ typedef struct DBGGUISTATSNODE
         uint32_t            u32;
         /** STAMTYPE_U64 & STAMTYPE_U64_RESET. */
         uint64_t            u64;
-        /** STAMTYPE_CALLBACK - buffer of 256 bytes. */
-        char               *psz;
+        /** STAMTYPE_CALLBACK. */
+        QString            *pStr;
     } Data;
+    /** The delta. */
+    int64_t                 i64Delta;
     /** The name. */
     char                   *pszName;
     /** The length of the name. */
@@ -145,8 +142,6 @@ typedef struct DBGGUISTATSNODE
     QString                *pDescStr;
     /** The node state. */
     DBGGUISTATENODESTATE    enmState;
-    /** The delta. */
-    char                    szDelta[32];
 } DBGGUISTATSNODE;
 
 
@@ -230,19 +225,71 @@ protected:
     /** Creates and insert a node under the given parent. */
     static PDBGGUISTATSNODE createAndInsertNode(PDBGGUISTATSNODE pParent, const char *pszName, size_t cchName, uint32_t iPosition = UINT32_MAX);
 
+    /**
+     * Resets the node to a pristine state.
+     *
+     * @param   pNode       The node.
+     */
     static void resetNode(PDBGGUISTATSNODE pNode);
-    static void updateNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                           STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser);
+
+    /**
+     * Initializes a pristine node.
+     */
+    static int initNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, const char *pszDesc);
+
+    /**
+     * Updates (or reinitializes if you like) a node.
+     */
+    static void updateNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, const char *pszDesc);
+
+    /**
+     * Calculates the full path of a node.
+     *
+     * @returns Number of bytes returned, negative value on buffer overflow
+     *
+     * @param   pNode       The node.
+     * @param   psz         The output buffer.
+     * @param   cch         The size of the buffer.
+     */
     static int32_t getNodePath(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch);
+
+    /**
+     * Check if the second node is an ancestor to the first one.
+     *
+     * @returns true/false.
+     * @param   pNode       The first node.
+     * @param   pAncestor   The second node, the alleged ancestor. */
     static bool isNodeAncestorOf(PCDBGGUISTATSNODE pNode, PCDBGGUISTATSNODE pAncestor);
+
+    /**
+     * Advance to the next node in the tree.
+     *
+     * @returns Pointer to the next node, NULL if we've reached the end or
+     *          was handed a NULL node..
+     * @param   pNode       The current node.
+     */
     static PDBGGUISTATSNODE nextNode(PDBGGUISTATSNODE pNode);
+
+    /**
+     * Advance to the previous node in the tree.
+     *
+     * @returns Pointer to the previous node, NULL if we've reached the end or
+     *          was handed a NULL node..
+     * @param   pNode       The current node.
+     */
     static PDBGGUISTATSNODE prevNode(PDBGGUISTATSNODE pNode);
-    static void removeAndDeleteNode(PDBGGUISTATSNODE pNode);
+
+    /**
+     * Removes a node from the tree and destroys it and all its decentands.
+     *
+     * @param   pNode       The node.
+     */
+    static void removeAndDestroyNode(PDBGGUISTATSNODE pNode);
 
     /**
      * Destroys a statistics tree.
      *
-     * @param   a_pRoot         The root of the tree. NULL is fine.
+     * @param   a_pRoot     The root of the tree. NULL is fine.
      */
     static void destroyTree(PDBGGUISTATSNODE a_pRoot);
 
@@ -316,8 +363,10 @@ protected:
     static QString strAvgValue(PCDBGGUISTATSNODE pNode);
     /** Gets the maximum value. */
     static QString strMaxValue(PCDBGGUISTATSNODE pNode);
-    /** Gets the total value count. */
+    /** Gets the total value. */
     static QString strTotalValue(PCDBGGUISTATSNODE pNode);
+    /** Gets the delta value. */
+    static QString strDeltaValue(PCDBGGUISTATSNODE pNode);
 
     /**
      * Destroys a node and all its children.
@@ -391,11 +440,6 @@ protected:
                                             STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser);
 
     /**
-     * Initializes a new node.
-     */
-    static int initNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, STAMVISIBILITY enmVisibility, const char *pszDesc);
-
-    /**
      * Enumeration callback used by createNewTree.
      */
     static DECLCALLBACK(int) createNewTreeCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
@@ -453,7 +497,6 @@ static char *formatNumber(char *psz, uint64_t u64)
 }
 
 
-#if 0
 /**
  * Formats a number into a 64-byte buffer.
  * (18.446.744.073.709.551.615)
@@ -481,7 +524,6 @@ static char *formatNumberSigned(char *psz, int64_t i64)
         *--psz = '-';
     return psz;
 }
-#endif
 
 
 /**
@@ -509,6 +551,7 @@ static char *formatHexNumber(char *psz, uint64_t u64, unsigned cZeros)
 }
 
 
+#if 0/* unused */
 /**
  * Formats a sort key number.
  */
@@ -533,6 +576,7 @@ static void formatSortKey(char *psz, uint64_t u64)
             psz[i] = '0';
     }
 }
+#endif
 
 
 #if 0/* unused */
@@ -628,6 +672,12 @@ VBoxDbgStatsModel::destroyNode(PDBGGUISTATSNODE a_pNode)
 
     RTMemFree(a_pNode->papChildren);
     a_pNode->papChildren = NULL;
+
+    if (a_pNode->enmType == STAMTYPE_CALLBACK)
+    {
+        delete a_pNode->Data.pStr;
+        a_pNode->Data.pStr = NULL;
+    }
 
     a_pNode->cChildren = 0;
     a_pNode->iSelf = UINT32_MAX;
@@ -725,26 +775,288 @@ VBoxDbgStatsModel::createAndInsertNode(PDBGGUISTATSNODE pParent, const char *psz
 
 
 /*static*/ void
-VBoxDbgStatsModel::removeAndDeleteNode(PDBGGUISTATSNODE pNode)
+VBoxDbgStatsModel::removeAndDestroyNode(PDBGGUISTATSNODE pNode)
 {
-    /* frees stuff up */
-    resetNode(pNode);
+    /*
+     * Unlink it.
+     */
+    PDBGGUISTATSNODE pParent = pNode->pParent;
+    if (pParent)
+    {
+        uint32_t const iPosition = pNode->iSelf;
+        Assert(pParent->papChildren[iPosition] == pNode);
+        uint32_t iShift = --pParent->cChildren;
+        while (iShift-- > iPosition)
+        {
+            PDBGGUISTATSNODE pChild = pParent->papChildren[iShift + 1];
+            pParent->papChildren[iShift] = pChild;
+            pChild->iSelf = iShift;
+        }
+    }
 
+    /*
+     * Delete it.
+     */
+    destroyNode(pNode);
 }
 
 
 /*static*/ void
 VBoxDbgStatsModel::resetNode(PDBGGUISTATSNODE pNode)
 {
-    /** @todo */
+    /* free and reinit the data. */
+    if (pNode->enmType == STAMTYPE_CALLBACK)
+    {
+        delete pNode->Data.pStr;
+        pNode->Data.pStr = NULL;
+    }
+    pNode->enmType = STAMTYPE_INVALID;
+
+    /* free the description. */
+    if (pNode->pDescStr)
+    {
+        delete pNode->pDescStr;
+        pNode->pDescStr = NULL;
+    }
 }
 
 
-/*static*/ void
-VBoxDbgStatsModel::updateNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                              STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser)
+/*static*/ int
+VBoxDbgStatsModel::initNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, const char *pszDesc)
 {
-    /** @todo */
+    /*
+     * Copy the data.
+     */
+    pNode->enmUnit = enmUnit;
+    Assert(pNode->enmType == STAMTYPE_INVALID);
+    pNode->enmType = enmType;
+    if (pszDesc)
+        pNode->pDescStr = new QString(pszDesc); /* ignore allocation failure (well, at least up to the point we can ignore it) */
+
+    switch (enmType)
+    {
+        case STAMTYPE_COUNTER:
+            pNode->Data.Counter = *(PSTAMCOUNTER)pvSample;
+            break;
+
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            pNode->Data.Profile = *(PSTAMPROFILE)pvSample;
+            break;
+
+        case STAMTYPE_RATIO_U32:
+        case STAMTYPE_RATIO_U32_RESET:
+            pNode->Data.RatioU32 = *(PSTAMRATIOU32)pvSample;
+            break;
+
+        case STAMTYPE_CALLBACK:
+        {
+            const char *pszString = (const char *)pvSample;
+            pNode->Data.pStr = new QString(pszString);
+            break;
+        }
+
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+            pNode->Data.u8 = *(uint8_t *)pvSample;
+            break;
+
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+            pNode->Data.u16 = *(uint16_t *)pvSample;
+            break;
+
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+            pNode->Data.u32 = *(uint32_t *)pvSample;
+            break;
+
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+            pNode->Data.u64 = *(uint64_t *)pvSample;
+            break;
+
+        default:
+            AssertMsgFailed(("%d\n", enmType));
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
+
+/*static*/ void
+VBoxDbgStatsModel::updateNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, const char *pszDesc)
+{
+
+    /*
+     * Reset and init the node if the type changed.
+     */
+    if (    enmType != pNode->enmType
+        &&  pNode->enmType != STAMTYPE_INVALID)
+    {
+        resetNode(pNode);
+        initNode(pNode, enmType, pvSample, enmUnit, pszDesc);
+        pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+    }
+    else
+    {
+        /*
+         * ASSUME that only the sample value will change and that the unit, visibility
+         * and description remains the same.
+         */
+
+        int64_t iDelta;
+        switch (enmType)
+        {
+            case STAMTYPE_COUNTER:
+            {
+                uint64_t cPrev = pNode->Data.Counter.c;
+                pNode->Data.Counter = *(PSTAMCOUNTER)pvSample;
+                iDelta = pNode->Data.Counter.c - cPrev;
+                if (iDelta || pNode->i64Delta)
+                {
+                    pNode->i64Delta = iDelta;
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
+            case STAMTYPE_PROFILE:
+            case STAMTYPE_PROFILE_ADV:
+            {
+                uint64_t cPrevPeriods = pNode->Data.Profile.cPeriods;
+                pNode->Data.Profile = *(PSTAMPROFILE)pvSample;
+                iDelta = pNode->Data.Profile.cPeriods - cPrevPeriods;
+                if (iDelta || pNode->i64Delta)
+                {
+                    pNode->i64Delta = iDelta;
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
+            case STAMTYPE_RATIO_U32:
+            case STAMTYPE_RATIO_U32_RESET:
+            {
+                STAMRATIOU32 Prev = pNode->Data.RatioU32;
+                pNode->Data.RatioU32 = *(PSTAMRATIOU32)pvSample;
+                int32_t iDeltaA = pNode->Data.RatioU32.u32A - Prev.u32A;
+                int32_t iDeltaB = pNode->Data.RatioU32.u32B - Prev.u32B;
+                if (iDeltaA == 0 && iDeltaB == 0)
+                {
+                    if (pNode->i64Delta)
+                    {
+                        pNode->i64Delta = 0;
+                        pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                    }
+                }
+                else
+                {
+                    if (iDeltaA >= 0)
+                        pNode->i64Delta = iDeltaA + (iDeltaB >= 0 ? iDeltaB : -iDeltaB);
+                    else
+                        pNode->i64Delta = iDeltaA + (iDeltaB <  0 ? iDeltaB : -iDeltaB);
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
+            case STAMTYPE_CALLBACK:
+            {
+                const char *pszString = (const char *)pvSample;
+                if (!pNode->Data.pStr)
+                {
+                    pNode->Data.pStr = new QString(pszString);
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                else if (*pNode->Data.pStr == pszString)
+                {
+                    delete pNode->Data.pStr;
+                    pNode->Data.pStr = new QString(pszString);
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
+            case STAMTYPE_U8:
+            case STAMTYPE_U8_RESET:
+            case STAMTYPE_X8:
+            case STAMTYPE_X8_RESET:
+            {
+                uint8_t uPrev = pNode->Data.u8;
+                pNode->Data.u8 = *(uint8_t *)pvSample;
+                iDelta = pNode->Data.u8 - uPrev;
+                if (iDelta || pNode->i64Delta)
+                {
+                    pNode->i64Delta = iDelta;
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
+            case STAMTYPE_U16:
+            case STAMTYPE_U16_RESET:
+            case STAMTYPE_X16:
+            case STAMTYPE_X16_RESET:
+            {
+                uint16_t uPrev = pNode->Data.u16;
+                pNode->Data.u16 = *(uint16_t *)pvSample;
+                iDelta = pNode->Data.u16 - uPrev;
+                if (iDelta || pNode->i64Delta)
+                {
+                    pNode->i64Delta = iDelta;
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
+            case STAMTYPE_U32:
+            case STAMTYPE_U32_RESET:
+            case STAMTYPE_X32:
+            case STAMTYPE_X32_RESET:
+            {
+                uint32_t uPrev = pNode->Data.u32;
+                pNode->Data.u8 = *(uint32_t *)pvSample;
+                iDelta = pNode->Data.u32 - uPrev;
+                if (iDelta || pNode->i64Delta)
+                {
+                    pNode->i64Delta = iDelta;
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
+            case STAMTYPE_U64:
+            case STAMTYPE_U64_RESET:
+            case STAMTYPE_X64:
+            case STAMTYPE_X64_RESET:
+            {
+                uint64_t uPrev = pNode->Data.u64;
+                pNode->Data.u64 = *(uint64_t *)pvSample;
+                iDelta = pNode->Data.u64 - uPrev;
+                if (iDelta || pNode->i64Delta)
+                {
+                    pNode->i64Delta = iDelta;
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+            default:
+                AssertMsgFailed(("%d\n", enmType));
+                break;
+        }
+    }
 }
 
 
@@ -895,13 +1207,12 @@ Qt::ItemFlags
 VBoxDbgStatsModel::flags(const QModelIndex &a_rIndex) const
 {
     Qt::ItemFlags fFlags = QAbstractItemModel::flags(a_rIndex);
-
+#if 0
     PDBGGUISTATSNODE pNode = nodeFromIndex(a_rIndex);
     if (pNode)
     {
-        if (pNode->enmState == kDbgGuiStatsNodeState_kInvisible)
-            fFlags &= ~(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
     }
+#endif
     return fFlags;
 }
 
@@ -909,10 +1220,7 @@ VBoxDbgStatsModel::flags(const QModelIndex &a_rIndex) const
 int
 VBoxDbgStatsModel::columnCount(const QModelIndex &a_rParent) const
 {
-    PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
-    if (    pParent
-        &&  pParent->enmState == kDbgGuiStatsNodeState_kInvisible)
-        return 0;
+    NOREF(a_rParent);
     return DBGGUI_STATS_COLUMNS;
 }
 
@@ -921,9 +1229,6 @@ int
 VBoxDbgStatsModel::rowCount(const QModelIndex &a_rParent) const
 {
     PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
-    if (    !pParent
-        ||  pParent->enmState == kDbgGuiStatsNodeState_kInvisible)
-        return 0;
     return pParent->cChildren;
 }
 
@@ -933,8 +1238,7 @@ VBoxDbgStatsModel::hasChildren(const QModelIndex &a_rParent) const
 {
     PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
     return pParent
-        && pParent->cChildren > 0
-        && pParent->enmState != kDbgGuiStatsNodeState_kInvisible;
+        && pParent->cChildren > 0;
 }
 
 
@@ -958,14 +1262,9 @@ VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &r_pParent) co
         return QModelIndex(); /* bug? */
     }
     PDBGGUISTATSNODE pChild = pParent->papChildren[iRow];
-    if (pChild->enmState == kDbgGuiStatsNodeState_kInvisible)
-    {
-        printf("index: invisible (iColumn=%d iRow=%d)\n", iColumn, iRow);
-        return QModelIndex();
-    }
 
-    //printf("index: iRow=%d iColumn=%d %p %s/%s\n", iRow, iColumn, pParent->papChildren[iRow], pParent->pszName, pParent->papChildren[iRow]->pszName);
-    return createIndex(iRow, iColumn, pParent->papChildren[iRow]);
+    //printf("index: iRow=%d iColumn=%d %p %s/%s\n", iRow, iColumn, pChild, pParent->pszName, pChild->pszName);
+    return createIndex(iRow, iColumn, pChild);
 }
 
 
@@ -1050,7 +1349,7 @@ VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
         }
 
         case STAMTYPE_CALLBACK:
-            return pNode->Data.psz;
+            return *pNode->Data.pStr;
 
         case STAMTYPE_U8:
         case STAMTYPE_U8_RESET:
@@ -1164,6 +1463,24 @@ VBoxDbgStatsModel::strTotalValue(PCDBGGUISTATSNODE pNode)
 }
 
 
+/*static*/ QString
+VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
+{
+    char sz[128];
+
+    switch (pNode->enmType)
+    {
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            if (!pNode->Data.Profile.cPeriods)
+                return "0";
+            return formatNumberSigned(sz, pNode->i64Delta);
+        default:
+            return "";
+    }
+}
+
+
 QVariant
 VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
 {
@@ -1174,8 +1491,7 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
         return QVariant();
 
     PDBGGUISTATSNODE pNode = nodeFromIndex(a_rIndex);
-    if (    !pNode
-        ||  pNode->enmState == kDbgGuiStatsNodeState_kInvisible)
+    if (!pNode)
         return QVariant();
 
     switch (iCol)
@@ -1195,13 +1511,14 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
         case 6:
             return strTotalValue(pNode);
         case 7:
-            return pNode->szDelta;
+            return strDeltaValue(pNode);
         case 8:
             return pNode->pDescStr ? QString(*pNode->pDescStr) : QString("");
         default:
             return QVariant();
     }
 }
+
 
 /*static*/ void
 VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a_rString)
@@ -1341,6 +1658,7 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
              * handled in the same rough way.
              */
             pThis->m_fUpdateInsertRemove = true;
+            /** @todo optimize insert since that is a normal occurence. */
 
             /* Start with the current parent node and look for a common ancestor
                hoping that this is faster than going from the root. */
@@ -1429,7 +1747,7 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
             {
                 PDBGGUISTATSNODE pAdv = prevNode(pCur);
                 if (!isNodeAncestorOf(pCur, pNode))
-                    removeAndDeleteNode(pCur);
+                    removeAndDestroyNode(pCur);
                 pCur = pAdv;
             }
 
@@ -1452,9 +1770,9 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
     else
     {
         /*
-         * Insert it at the end of the tree                                                                        .
-         *                                                                                                        .
-         * Do the same as we're doing down in createNewTreeCallback, walk from the                                 .
+         * Insert it at the end of the tree.
+         *
+         * Do the same as we're doing down in createNewTreeCallback, walk from the
          * root and create whatever we need.
          */
         pThis->m_fUpdateInsertRemove = true;
@@ -1491,7 +1809,7 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
     /*
      * Perform the update.
      */
-    updateNode(pNode, enmType, pvSample, enmUnit, enmVisibility, pszDesc, pvUser);
+    updateNode(pNode, enmType, pvSample, enmUnit, pszDesc);
 
     /*
      * Advance to the next node.
@@ -1641,9 +1959,7 @@ VBoxDbgStatsModelVM::update(const QString &a_rPatStr)
                 {
                     /* skip to the first needing updating. */
                     while (     iChild < pNode->cChildren
-                           &&   (   pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kMakeVisible
-                                 && pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kMakeInvisible
-                                 && pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kRefresh))
+                           &&   pNode->papChildren[iChild]->enmState != kDbgGuiStatsNodeState_kRefresh)
                         iChild++;
                     if (iChild >= pNode->cChildren)
                         break;
@@ -1653,11 +1969,8 @@ VBoxDbgStatsModelVM::update(const QString &a_rPatStr)
                     while (++iChild < pNode->cChildren)
                     {
                         DBGGUISTATENODESTATE enmState = pNode->papChildren[iChild]->enmState;
-                        if (    enmState == kDbgGuiStatsNodeState_kRefresh
-                            ||  enmState == kDbgGuiStatsNodeState_kMakeVisible)
+                        if (enmState == kDbgGuiStatsNodeState_kRefresh)
                             enmState = kDbgGuiStatsNodeState_kVisible;
-                        else if (enmState == kDbgGuiStatsNodeState_kMakeInvisible)
-                            enmState = kDbgGuiStatsNodeState_kInvisible;
                         else
                             break;
                         pNode->papChildren[iChild]->enmState = enmState;
@@ -1670,106 +1983,6 @@ VBoxDbgStatsModelVM::update(const QString &a_rPatStr)
             }
         }
     }
-}
-
-
-/*static*/ int
-VBoxDbgStatsModelVM::initNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, STAMVISIBILITY enmVisibility, const char *pszDesc)
-{
-    /*
-     * Copy the data.
-     */
-    bool fVisible = true;
-    pNode->enmUnit = enmUnit;
-    Assert(pNode->enmType == STAMTYPE_INVALID);
-    pNode->enmType = enmType;
-    if (pszDesc)
-        pNode->pDescStr = new QString(pszDesc); /* ignore allocation failure (well, at least up to the point we can ignore it) */
-
-    switch (enmType)
-    {
-        case STAMTYPE_COUNTER:
-            pNode->Data.Counter = *(PSTAMCOUNTER)pvSample;
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || pNode->Data.Counter.c);
-            break;
-
-        case STAMTYPE_PROFILE:
-        case STAMTYPE_PROFILE_ADV:
-            pNode->Data.Profile = *(PSTAMPROFILE)pvSample;
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || pNode->Data.Profile.cPeriods);
-            break;
-
-        case STAMTYPE_RATIO_U32:
-        case STAMTYPE_RATIO_U32_RESET:
-            pNode->Data.RatioU32 = *(PSTAMRATIOU32)pvSample;
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || pNode->Data.RatioU32.u32A || pNode->Data.RatioU32.u32B);
-            break;
-
-        case STAMTYPE_CALLBACK:
-        {
-            const char *pszString = (const char *)pvSample;
-            size_t cchString = strlen(pszString);
-            pNode->Data.psz = (char *)RTMemAlloc(256);
-            if (pNode->Data.psz)
-                return VERR_NO_MEMORY;
-            memcpy(pNode->Data.psz, pszString, RT_MIN(256, cchString + 1));
-
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || cchString);
-            break;
-        }
-
-        case STAMTYPE_U8:
-        case STAMTYPE_U8_RESET:
-        case STAMTYPE_X8:
-        case STAMTYPE_X8_RESET:
-            pNode->Data.u8 = *(uint8_t *)pvSample;
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || pNode->Data.u8);
-            break;
-
-        case STAMTYPE_U16:
-        case STAMTYPE_U16_RESET:
-        case STAMTYPE_X16:
-        case STAMTYPE_X16_RESET:
-            pNode->Data.u16 = *(uint16_t *)pvSample;
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || pNode->Data.u16);
-            break;
-
-        case STAMTYPE_U32:
-        case STAMTYPE_U32_RESET:
-        case STAMTYPE_X32:
-        case STAMTYPE_X32_RESET:
-            pNode->Data.u32 = *(uint32_t *)pvSample;
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || pNode->Data.u32);
-            break;
-
-        case STAMTYPE_U64:
-        case STAMTYPE_U64_RESET:
-        case STAMTYPE_X64:
-        case STAMTYPE_X64_RESET:
-            pNode->Data.u64 = *(uint64_t *)pvSample;
-            fVisible = enmVisibility != STAMVISIBILITY_NOT_GUI
-                    && (enmVisibility == STAMVISIBILITY_ALWAYS || pNode->Data.u64);
-            break;
-
-        default:
-            AssertMsgFailed(("%d\n", enmType));
-            break;
-    }
-
-    /*
-     * Set the state according to the visibility.
-     */
-    pNode->enmState = fVisible
-                    ? kDbgGuiStatsNodeState_kVisible
-                    : kDbgGuiStatsNodeState_kInvisible;
-    return VINF_SUCCESS;
 }
 
 
@@ -1821,7 +2034,7 @@ VBoxDbgStatsModelVM::createNewTreeCallback(const char *pszName, STAMTYPE enmType
     /*
      * Save the data.
      */
-    return initNode(pNode, enmType, pvSample, enmUnit, enmVisibility, pszDesc);
+    return initNode(pNode, enmType, pvSample, enmUnit, pszDesc);
 }
 
 
@@ -2334,6 +2547,8 @@ void VBoxDbgStatsView::collapsAll()
      */
     if (enmVisibility == STAMVISIBILITY_NOT_GUI)
         return 0;
+    /** @todo !STAMVISIBILITY_USED */
+
 
     /*
      * Advance to the matching item.
