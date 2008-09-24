@@ -281,6 +281,7 @@
  *
  * This is macro should only be used in shared code to avoid a forrest of ifdefs.
  * @param   var     Identifier name.
+ * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
 /** @def OTHERCTXSUFF
  * Adds the suffix of the other context to the passed in
@@ -288,6 +289,7 @@
  *
  * This is macro should only be used in shared code to avoid a forrest of ifdefs.
  * @param   var     Identifier name.
+ * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
 #ifdef IN_GC
 # define CTXSUFF(var)       var##GC
@@ -303,6 +305,7 @@
  *
  * This is macro should only be used in shared code to avoid a forrest of ifdefs.
  * @param   var     Identifier name.
+ * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
 #ifdef IN_GC
 # define CTXALLSUFF(var)    var##GC
@@ -329,6 +332,23 @@
 # define CTX_SUFF(var)      var##R3
 #endif
 
+/** @def CTX_SUFF_Z
+ * Adds the suffix of the current context to the passed in
+ * identifier name, combining RC and R0 into RZ.
+ * The suffix thus is R3 or RZ.
+ *
+ * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * @param   var     Identifier name.
+ *
+ * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
+ */
+#ifdef IN_RING3
+# define CTX_SUFF_Z(var)    var##R3
+#else
+# define CTX_SUFF_Z(var)    var##RZ
+#endif
+
+
 /** @def CTXMID
  * Adds the current context as a middle name of an identifier name
  * The middle name is HC or GC.
@@ -344,6 +364,7 @@
  * This is macro should only be used in shared code to avoid a forrest of ifdefs.
  * @param   first   First name.
  * @param   last    Surname.
+ * @deprecated use CTX_MID or CTX_MID_Z
  */
 #ifdef IN_GC
 # define CTXMID(first, last)        first##GC##last
@@ -354,12 +375,13 @@
 #endif
 
 /** @def CTXALLMID
- * Adds the current context as a middle name of an identifier name
+ * Adds the current context as a middle name of an identifier name.
  * The middle name is R3, R0 or GC.
  *
  * This is macro should only be used in shared code to avoid a forrest of ifdefs.
  * @param   first   First name.
  * @param   last    Surname.
+ * @deprecated use CTX_MID or CTX_MID_Z
  */
 #ifdef IN_GC
 # define CTXALLMID(first, last)     first##GC##last
@@ -367,6 +389,37 @@
 # define CTXALLMID(first, last)     first##R0##last
 #else
 # define CTXALLMID(first, last)     first##R3##last
+#endif
+
+/** @def CTX_MID
+ * Adds the current context as a middle name of an identifier name.
+ * The middle name is R3, R0 or RC.
+ *
+ * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * @param   first   First name.
+ * @param   last    Surname.
+ */
+#ifdef IN_GC
+# define CTX_MID(first, last)       first##RC##last
+#elif defined(IN_RING0)
+# define CTX_MID(first, last)       first##R0##last
+#else
+# define CTX_MID(first, last)       first##R3##last
+#endif
+
+/** @def CTX_MID_Z
+ * Adds the current context as a middle name of an identifier name, combining RC
+ * and R0 into RZ.
+ * The middle name thus is either R3 or RZ.
+ *
+ * This is macro should only be used in shared code to avoid a forrest of ifdefs.
+ * @param   first   First name.
+ * @param   last    Surname.
+ */
+#ifdef IN_RING3
+# define CTX_MID_Z(first, last)     first##R3##last
+#else
+# define CTX_MID_Z(first, last)     first##RZ##last
 #endif
 
 
