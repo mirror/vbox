@@ -1200,6 +1200,7 @@ PDMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap,
 {
     Assert(pVM->pdm.s.pvVMMDevHeap == NULL);
 
+    Log(("PDMR3RegisterVMMDevHeap %VGp %VHv %x\n", GCPhys, pvHeap, cbSize));
     pVM->pdm.s.pvVMMDevHeap     = pvHeap;
     pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
     pVM->pdm.s.cbVMMDevHeap     = cbSize;
@@ -1218,6 +1219,7 @@ PDMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
 {
     Assert(pVM->pdm.s.GCPhysVMMDevHeap == GCPhys);
 
+    Log(("PDMR3UnregisterVMMDevHeap %VGp\n", GCPhys));
     pVM->pdm.s.pvVMMDevHeap     = NULL;
     pVM->pdm.s.GCPhysVMMDevHeap = NIL_RTGCPHYS;
     pVM->pdm.s.cbVMMDevHeap     = 0;
@@ -1237,6 +1239,8 @@ PDMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
 {
     AssertReturn(cbSize && cbSize <= pVM->pdm.s.cbVMMDevHeapLeft, VERR_NO_MEMORY);
 
+    Log(("PDMR3VMMDevHeapAlloc %x\n", cbSize));
+
     /* @todo not a real heap as there's currently only one user. */
     *ppv = pVM->pdm.s.pvVMMDevHeap;
     pVM->pdm.s.cbVMMDevHeapLeft = 0;
@@ -1252,6 +1256,8 @@ PDMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
  */
 PDMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
 {
+    Log(("PDMR3VMMDevHeapFree %VHv\n", pv));
+
     Assert(pVM->pdm.s.cbVMMDevHeapLeft == 0);
     pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;
     return VINF_SUCCESS;
