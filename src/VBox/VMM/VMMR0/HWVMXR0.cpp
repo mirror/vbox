@@ -1857,7 +1857,7 @@ ResumeExecution:
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
-                AssertMsg(rc == VERR_EM_INTERPRETER, ("Unexpected rc=%VRc\n", rc));
+                AssertMsg(rc == VERR_EM_INTERPRETER, ("Unexpected rc=%Vrc\n", rc));
                 break;
             }
 
