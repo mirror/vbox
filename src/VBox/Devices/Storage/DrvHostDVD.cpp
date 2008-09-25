@@ -544,7 +544,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
     struct _REQ
     {
         SCSI_PASS_THROUGH_DIRECT spt;
-        uint8_t aSense[18];
+        uint8_t aSense[64];
     } Req;
     DWORD cbReturned = 0;
 
@@ -591,8 +591,11 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
         else
             memset(pabSense, '\0', cbSense);
         /* Windows shares the property of not properly reflecting the actually
-         * transferred data size. See above. Assume that everything worked ok. */
-        rc = VINF_SUCCESS;
+         * transferred data size. See above. Assume that everything worked ok.
+         * Except if there are sense information. */
+        rc = (pabSense[2] & 0x0f) == SCSI_SENSE_NONE
+                 ? VINF_SUCCESS
+                 : VERR_DEV_IO_ERROR;
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());
