@@ -136,6 +136,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
     Log(("VBoxService: Starting services ...\n"));
 
+    Assert(pEnv);
     pEnv->hStopEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
 
     if (!pEnv->hStopEvent)
@@ -210,6 +211,8 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 static void vboxStopServices (BOOL bAlert, VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
     /* Signal to all threads. */
+    Assert(pEnv);
+    Assert(pTable);
     if (bAlert && (NULL != pEnv->hStopEvent))
     {
         Log(("VBoxService: Setting stop event ...\n"));
@@ -277,10 +280,7 @@ void vboxServiceStart()
                                        NO_INHERITANCE);
 
     /* Start service threads. */
-    /*gServiceEnv.hInstance = gInstance;
-    gServiceEnv.hDriver   = gVBoxDriver;*/
-
-    int rc = vboxStartServices (&gServiceEnv, vboxServiceTable);
+    int rc = vboxStartServices(&gServiceEnv, vboxServiceTable);
 
     /** @todo Add error handling. */
 
@@ -292,24 +292,27 @@ DWORD WINAPI ServiceCtrlHandler (DWORD dwControl,
                                  LPVOID lpEventData,
                                  LPVOID lpContext)
 {
+    DWORD rc = NO_ERROR;
+
     switch (dwControl)
     {
 
     case SERVICE_CONTROL_INTERROGATE:
-        SetStatus (gvboxServiceStatusCode);
+        SetStatus(gvboxServiceStatusCode);
         break;
 
     case SERVICE_CONTROL_STOP:
     case SERVICE_CONTROL_SHUTDOWN:
         {
-            SetStatus (SERVICE_STOP_PENDING);
+            SetStatus(SERVICE_STOP_PENDING);
 
-            vboxStopServices (TRUE, &gServiceEnv, vboxServiceTable);
+            vboxStopServices(TRUE, &gServiceEnv, vboxServiceTable);
 
-            /*CloseHandle(gvboxDriver);*/
+            /* Don't close VBox driver here - the service might be
+             * started again. */
             CloseHandle(gStopSem);
 
-            SetStatus (SERVICE_STOPPED);
+            SetStatus(SERVICE_STOPPED);
         }
         break;
 
@@ -329,11 +332,12 @@ DWORD WINAPI ServiceCtrlHandler (DWORD dwControl,
         break;
 
     default:
-        /** @todo r=bird: Andy, you should probably return ERROR_CALL_NOT_IMPLEMENTED here.
-         * Whoever omitted the DWORD return here and WINAPI bit here has been very sloppy :-| */
+
+        Log(("VBoxService: Service control function not implemented: %ld\n", dwControl));
+        rc = ERROR_CALL_NOT_IMPLEMENTED;
         break;
     }
-    return NO_ERROR;
+    return rc;
 }
 
 void WINAPI ServiceMain (DWORD argc, LPTSTR *argv)
@@ -354,7 +358,7 @@ void WINAPI ServiceMain (DWORD argc, LPTSTR *argv)
             writeLog("VBoxService: Service does not exist!\n");
             break;
         default:
-            writeLog("VBoxService: Could not register service control handle! Error: %d\n", dwErr);
+            writeLog("VBoxService: Could not register service control handle! Error: %ld\n", dwErr);
             break;
         }
     }
@@ -362,8 +366,8 @@ void WINAPI ServiceMain (DWORD argc, LPTSTR *argv)
     {
         vboxServiceStart();
 
-        while( 1) {
-            Sleep( 100 );       /** @todo */
+        while (1) {
+            Sleep (100);       /** @todo */
         }
     }
 }
@@ -386,13 +390,13 @@ int Install ()
     hService = ::CreateService (hSCManager,
                                 VBOXSERVICE_NAME, VBOXSERVICE_FRIENDLY_NAME,
                                 SERVICE_ALL_ACCESS,
-                                SERVICE_WIN32_OWN_PROCESS|SERVICE_INTERACTIVE_PROCESS,
+                                SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
                                 SERVICE_DEMAND_START,SERVICE_ERROR_NORMAL,
                                 imagePath, NULL, NULL, NULL, NULL, NULL);
 
     if (NULL == hService) {
         writeLog("VBoxService: Could not create service! Error: %d\n", GetLastError());
-        CloseServiceHandle (hSCManager);
+        CloseServiceHandle(hSCManager);
         return 1;
     }
     else
@@ -400,8 +404,8 @@ int Install ()
         writeLog("VBoxService: Service successfully installed!\n");
     }
 
-    CloseServiceHandle (hService);
-    CloseServiceHandle (hSCManager);
+    CloseServiceHandle(hService);
+    CloseServiceHandle(hSCManager);
 
     return 0;
 }
@@ -409,7 +413,7 @@ int Install ()
 int Uninstall ()
 {
     SC_HANDLE hService, hSCManager;
-    hSCManager = OpenSCManager (NULL,NULL,SC_MANAGER_ALL_ACCESS);
+    hSCManager = OpenSCManager(NULL,NULL,SC_MANAGER_ALL_ACCESS);
 
     writeLog("VBoxService: Uninstalling service ...\n");
 
@@ -434,17 +438,17 @@ int Uninstall ()
     }
     else
     {
-        HKEY hKey;
-        if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, _T("SYSTEM\\CurrentControlSet\\Services\\EventLog\\System"), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS) {
-            RegDeleteKey (hKey, VBOXSERVICE_NAME);
-            RegCloseKey (hKey);
+        HKEY hKey = NULL;
+        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("SYSTEM\\CurrentControlSet\\Services\\EventLog\\System"), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS) {
+            RegDeleteKey(hKey, VBOXSERVICE_NAME);
+            RegCloseKey(hKey);
         }
 
         writeLog("VBoxService: Service successfully uninstalled!\n");
     }
 
-    CloseServiceHandle (hService);
-    CloseServiceHandle (hSCManager);
+    CloseServiceHandle(hService);
+    CloseServiceHandle(hSCManager);
 
     return 0;
 }
@@ -452,6 +456,8 @@ int Uninstall ()
 void writeLog (char* a_pszText, ...)
 {
     char szBuffer[1024] = { 0 };
+
+    Assert(a_pszText);
 
     va_list va;
     va_start(va, a_pszText);
@@ -465,6 +471,7 @@ void writeLog (char* a_pszText, ...)
 
 void printHelp (_TCHAR* a_pszName)
 {
+    Assert(a_pszName);
     _tprintf(_T("VBoxService - Guest Additions Helper Service for Windows XP/2K/Vista\n"));
     _tprintf(_T("Version: %d.%d.%d.%d\n\n"), VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
     _tprintf(_T("Syntax:\n"));
@@ -504,7 +511,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
     static SERVICE_TABLE_ENTRY const s_serviceTable[]=
     {
-        { VBOXSERVICE_NAME, ServiceMain },
+        {VBOXSERVICE_NAME, ServiceMain},
         {NULL,NULL}
     };
 
@@ -526,8 +533,8 @@ int _tmain(int argc, _TCHAR* argv[])
             printHelp(argv[0]);
 
         else {
-            _tprintf (_T("Invalid command line argument: %ws\n"), argv[1]);
-            _tprintf (_T("Type %s /h to display help.\n"), argv[0]);
+            _tprintf(_T("Invalid command line argument: %ws\n"), argv[1]);
+            _tprintf(_T("Type %s /h to display help.\n"), argv[0]);
         }
     }
     else    /* Normal service. */

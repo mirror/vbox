@@ -23,6 +23,7 @@
 #include <aclapi.h>
 
 #include <iprt/alloc.h>
+#include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
 #include <iprt/log.h>
