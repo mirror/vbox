@@ -708,6 +708,17 @@ DECLINLINE(bool) CPUMIsGuestInRealMode(PVM pVM)
 }
 
 /**
+ * Tests if the guest is running in real mode or not.
+ *
+ * @returns true if in real mode, otherwise false.
+ * @param   pCtx    Current CPU context
+ */
+DECLINLINE(bool) CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
+{
+    return !(pCtx->cr0 & X86_CR0_PE);
+}
+
+/**
  * Tests if the guest is running in protected or not.
  *
  * @returns true if in protected mode, otherwise false.
