@@ -85,7 +85,7 @@ int vboxVMInfoInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartT
         LogRel(("vboxVMInfoThread: Failed to connect to the guest property service! Error: %Rrc\n", rc));
     else
     {
-        LogRel(("vboxVMInfoThread: GuestProp ClientID = %d\n", gCtx.iInfoSvcClientID));
+        Log(("vboxVMInfoThread: GuestProp ClientID = %d\n", gCtx.iInfoSvcClientID));
 
         /* Loading dynamic APIs. */
         HMODULE hKernel32 = LoadLibrary(_T("kernel32"));
