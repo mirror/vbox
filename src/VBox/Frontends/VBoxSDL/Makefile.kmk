@@ -78,7 +78,8 @@ ifdef VBOX_OPENGL
  #VBoxSDL_DEFS.linux += VBOX_OPENGL
 endif
 ifndef VBOX_OSE
- VBoxSDL_DEFS.win  = VBOX_WIN32_UI
+# disable for now as this customer-specific GUI
+# VBoxSDL_DEFS.win  = VBOX_WIN32_UI
 endif
 VBoxSDL_DEFS.win.x86 = _WIN32_WINNT=0x0500
 VBoxSDL_DEFS.win.amd64 = _WIN32_WINNT=0x0510
