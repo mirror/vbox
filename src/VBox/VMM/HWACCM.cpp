@@ -521,7 +521,7 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             pVM->hwaccm.s.fInitialized = true;
 
             /* Allocate three pages for the TSS we need for real mode emulation. (2 page for the IO bitmap) */
-            rc = PDMR3VMMDevHeapAlloc(pVM, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS) + 2*PAGE_SIZE, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
+            rc = PDMR3VMMDevHeapAlloc(pVM, HWACCM_VTX_TSS_SIZE, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 return rc;
@@ -532,7 +532,8 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* Bit set to 0 means redirection enabled. */
             memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
             /* Allow all port IO, so the VT-x IO intercepts do their job. */
-            memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0xff, PAGE_SIZE*2);
+            memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
+            *((unsigned char *)pVM->hwaccm.s.vmx.pRealModeTSS + HWACCM_VTX_TSS_SIZE - 2) = 0xff;
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
