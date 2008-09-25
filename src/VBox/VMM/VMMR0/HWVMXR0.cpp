@@ -1283,7 +1283,6 @@ ResumeExecution:
         /* Always sync back the TPR; we should optimize this though */ /** @todo optimize TPR sync. */
         fSyncTPR = true;
     }
-        HWACCMDumpRegs(pVM, pCtx);
 
     /*
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
@@ -1829,14 +1828,19 @@ ResumeExecution:
 
             case X86_XCPT_GP:   /* General protection failure exception.*/
             {
+                uint32_t cbSize;
+
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestGP);
 #ifdef VBOX_STRICT
-                Log(("Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
-                rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
-                AssertRC(rc);
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-                goto ResumeExecution;
-#else
+                if (!CPUMIsGuestInRealModeEx(pCtx))
+                {
+                    Log(("Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
+                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    AssertRC(rc);
+                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    goto ResumeExecution;
+                }
+#endif
                 Assert(CPUMIsGuestInRealModeEx(pCtx));
 
                 LogFlow(("Real mode X86_XCPT_GP instruction emulation at %VGv\n", pCtx->rip));
@@ -1851,7 +1855,6 @@ ResumeExecution:
                 }
                 AssertMsg(rc == VERR_EM_INTERPRETER);
                 break;
-#endif
             }
 
 #ifdef VBOX_STRICT
