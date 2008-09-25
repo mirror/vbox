@@ -2397,6 +2397,7 @@ end:
     {
         /* On the next entry we'll sync everything. */
         /** @todo we can do better than this */
+        /* Not in the VINF_PGM_CHANGE_MODE though! */
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
     }
 
