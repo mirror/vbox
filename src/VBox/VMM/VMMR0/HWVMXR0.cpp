@@ -1096,6 +1096,15 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
 #endif
 
+    /* Intercept #GP faults in real mode to handle IO instructions. */
+    if (CPUMIsGuestInRealModeEx(pCtx))
+        pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_GP);
+    else
+        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_GP);
+
+    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
+    AssertRC(rc);    
+
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
@@ -1818,9 +1827,35 @@ ResumeExecution:
                 break;
             }
 
+            case X86_XCPT_GP:   /* General protection failure exception.*/
+            {
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestGP);
+#ifdef VBOX_STRICT
+                Log(("Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
+                rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                AssertRC(rc);
+                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                goto ResumeExecution;
+#else
+                Assert(CPUMIsGuestInRealModeEx(pCtx));
+
+                LogFlow(("Real mode X86_XCPT_GP instruction emulation at %VGv\n", pCtx->rip));
+                rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
+                if (rc == VINF_SUCCESS)
+                {
+                    /* EIP has been updated already. */
+
+                    /* Only resume if successful. */
+                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    goto ResumeExecution;
+                }
+                AssertMsg(rc == VERR_EM_INTERPRETER);
+                break;
+#endif
+            }
+
 #ifdef VBOX_STRICT
             case X86_XCPT_DE:   /* Divide error. */
-            case X86_XCPT_GP:   /* General protection failure exception.*/
             case X86_XCPT_UD:   /* Unknown opcode exception. */
             case X86_XCPT_SS:   /* Stack segment exception. */
             case X86_XCPT_NP:   /* Segment not present exception. */
@@ -1838,9 +1873,6 @@ ResumeExecution:
                     break;
                 case X86_XCPT_NP:
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestNP);
-                    break;
-                case X86_XCPT_GP:
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestGP);
                     break;
                 }
 

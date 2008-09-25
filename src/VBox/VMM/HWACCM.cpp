@@ -528,7 +528,7 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 return rc;
 
             /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
-            * for I/O operations. */
+             * for I/O operations. (but fault (#GP) on all IO instructions instead) */
             ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
             pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
             /* Bit set to 0 means redirection enabled. */
