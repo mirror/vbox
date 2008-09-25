@@ -23,24 +23,70 @@
 /** @page pg_iom        IOM - The Input / Output Monitor
  *
  * The input/output monitor will handle I/O exceptions routing them to the
- * appropriate device. It implements an API to register and deregister
- * virtual port I/O handler and memory mapped I/O handlers. A handler is
- * PDM devices and a set of callback functions.
+ * appropriate device. It implements an API to register and deregister virtual
+ * I/0 port handlers and memory mapped I/O handlers. A handler is PDM devices
+ * and a set of callback functions.
  *
- * Port I/O (PIO) is easily trapped by ensuring IOPL is 0, thus causing \#GP(0) on
- * any access to I/O ports. Using the dissassembler (DIS) the faulting
- * instruction will be interpreted determing the port and if there is a handler
- * for it. If a handler exists it will be called, else default action will be
- * performed.
  *
- * Memory Mapped I/O (MMIO) is gonna be worse since there are numerous instructions
- * which can access memory. I'm afraid we might have to emulate each
- * instruction which faults. The Execution Monitor (EM) will provide facilities
- * for doing this using DIS.
+ * @section sec_iom_rawmode     Raw-Mode
  *
- * Emulating I/O port access is less complex and sligtly faster than emulating MMIO,
- * so in most cases we should encourage the OS to use PIO. Devices which are freqently
- * accessed should register GC handlers to speed up execution.
+ * In raw-mode I/O port access is trapped (\#GP(0)) by ensuring that the actual
+ * IOPL is 0 regardless of what the guest IOPL is. The \#GP handler use the
+ * dissassembler (DIS) to figure which instruction caused it (there are a number
+ * of instructions in addition to the I/O ones) and if it's an I/O port access
+ * it will hand it to IOMGCIOPortHandler (via EMInterpretPortIO).
+ * IOMGCIOPortHandler will lookup the port in the AVL tree of registered
+ * handlers. If found, the handler will be called otherwise default action is
+ * taken. (Default action is to write into the void and read all set bits.)
+ *
+ * Memory Mapped I/O (MMIO) is implemented as a sligtly special case of PGM
+ * access handlers. An MMIO range is registered with IOM which then registers it
+ * with the PGM access handler sub-system. The access handler catches all
+ * access and will be called in the context of a \#PF handler. In RC and R0 this
+ * handler is IOMMMIOHandler while in ring-3 it's IOMR3MMIOHandler (althought in
+ * ring-3 there can be alternative ways). IOMMMIOHandler will attempt to emulate
+ * the instruction that is doing the access and pass the corresponding reads /
+ * writes to the device.
+ *
+ * Emulating I/O port access is less complex and should be sligtly faster than
+ * emulating MMIO, so in most cases we should encourage the OS to use port I/O.
+ * Devices which are freqently accessed should register GC handlers to speed up
+ * execution.
+ *
+ *
+ * @section sec_iom_hwaccm     Hardware Assisted Virtualization Mode
+ *
+ * When running in hardware assisted virtualization mode we'll be doing much the
+ * same things as in raw-mode. The main difference is that we're running in the
+ * host ring-0 context and that we don't get faults (\#GP(0) and \#PG) but
+ * exits.
+ *
+ *
+ * @section sec_iom_rem         Recompiled Execution Mode
+ *
+ * When running in the recompiler things are different. I/O port access is
+ * handled by calling IOMIOPortRead and IOMIOPortWrite directly. While MMIO can
+ * be handled in one of two ways. The normal way is that we have a registered a
+ * special RAM range with the recompiler and in the three callbacks (for byte,
+ * word and dword access) we call IOMMMIORead and IOMMMIOWrite directly. The
+ * alternative ways that the physical memory access which goes via PGM will take
+ * care of it by calling IOMR3MMIOHandler via the PGM access handler machinery
+ * - this shouldn't happen but it is an alternative...
+ *
+ *
+ * @section sec_iom_other       Other Accesses
+ *
+ * I/O ports aren't really exposed in any other way, unless you count the
+ * instruction interpreter in EM, but that's just what we're doing in the
+ * raw-mode \#GP(0) case really. Now it's possible to call IOMIOPortRead and
+ * IOMIOPortWrite directly to talk to a device, but this is really bad behavior
+ * and should only be done as temporary hacks (the PC BIOS device used to
+ * setup the CMOS this way back in the dark ages).
+ *
+ * MMIO has similar direct routes as the I/O ports and these shouldn't be used
+ * for the same reasons and with the same restrictions. OTOH since MMIO is
+ * mapped into the physical memory address space, it can be accessed in a number
+ * of ways thru PGM.
  *
  */
 
