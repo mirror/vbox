@@ -1559,6 +1559,7 @@ VBGLR3DECL(int)     VbglR3GuestPropEnumRaw(uint32_t u32ClientId, const char *pas
 VBGLR3DECL(int)     VbglR3GuestPropEnum(uint32_t u32ClientId, char **ppaszPatterns, int cPatterns, PVBGLR3GUESTPROPENUM *ppHandle, char **ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags);
 VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle, char **ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags);
 VBGLR3DECL(void)    VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle);
+VBGLR3DECL(int)     VbglR3GuestPropDelTree(uint32_t u32ClientId, char **papszPatterns, int cPatterns);
 /** @}  */
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 

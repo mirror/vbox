@@ -650,3 +650,46 @@ VBGLR3DECL(void) VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle)
     RTMemFree(pHandle->pchBuf);
     RTMemFree(pHandle);
 }
+
+/**
+ * Deletes a key (matching pattern) including its children.
+ *
+ * @returns VBox status code.
+ */
+VBGLR3DECL(int) VbglR3GuestPropDelTree(uint32_t u32ClientId,
+                                       char **papszPatterns,
+                                       int cPatterns)
+{
+    PVBGLR3GUESTPROPENUM pHandle = NULL;
+    int rc = VINF_SUCCESS;
+
+    char* pszName = NULL;
+    char* pszValue = NULL;
+    uint64_t pu64Timestamp = 0;
+    char* pszFlags = NULL;
+
+    rc = VbglR3GuestPropEnum(u32ClientId,
+                             papszPatterns,
+                             cPatterns,
+                             &pHandle,
+                             &pszName,
+                             &pszValue,
+                             &pu64Timestamp,
+                             &pszFlags);
+
+    while (RT_SUCCESS(rc) && (pszName != NULL))
+    {
+        rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
+        if(!RT_SUCCESS(rc))
+            break;
+
+        rc = VbglR3GuestPropEnumNext(pHandle,
+                                     &pszName,
+                                     &pszValue,
+                                     &pu64Timestamp,
+                                     &pszFlags);
+    }
+
+    VbglR3GuestPropEnumFree(pHandle);
+    return rc;
+}
