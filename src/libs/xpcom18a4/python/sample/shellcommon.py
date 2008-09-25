@@ -107,7 +107,7 @@ def guestStats(ctx,mach):
     for i in range(0,len(names)):
         valsStr = '[ '
         for j in range(0, lens[i]):
-            valsStr += str(vals[idxs[i]])+' '
+            valsStr += str(vals[int(idxs[i])+j])+' '
         valsStr += ']'
         print names[i],valsStr
 
@@ -296,7 +296,7 @@ def hostCmd(ctx, args):
    for i in range(0,len(names)):
        valsStr = '[ '
        for j in range(0, lens[i]):
-           valsStr += str(vals[idxs[i]])+' '
+           valsStr += str(vals[int(idxs[i])+j])+' '
        valsStr += ']'
        print names[i],valsStr
 
