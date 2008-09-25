@@ -1274,7 +1274,6 @@ ResumeExecution:
         /* Always sync back the TPR; we should optimize this though */ /** @todo optimize TPR sync. */
         fSyncTPR = true;
     }
-        HWACCMDumpRegs(pVM, pCtx);
 
     /*
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
