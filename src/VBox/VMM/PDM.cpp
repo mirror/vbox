@@ -1258,7 +1258,7 @@ PDMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
 {
     Log(("PDMR3VMMDevHeapFree %VHv\n", pv));
 
-    Assert(pVM->pdm.s.cbVMMDevHeapLeft == 0);
+    /* @todo not a real heap as there's currently only one user. */
     pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;
     return VINF_SUCCESS;
 }
