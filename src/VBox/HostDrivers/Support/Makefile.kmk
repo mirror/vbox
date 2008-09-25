@@ -391,9 +391,10 @@ vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
-ifdef VBOX_WITH_NETFLT
-vboxdrv_DEFS         += VBOX_WITH_NETFLT
-endif
+# Disabled temporarily
+#ifdef VBOX_WITH_NETFLT
+#vboxdrv_DEFS         += VBOX_WITH_NETFLT
+#endif
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
