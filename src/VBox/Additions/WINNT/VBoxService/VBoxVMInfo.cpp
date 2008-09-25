@@ -22,8 +22,9 @@ static VBOXINFORMATIONCONTEXT gCtx = {0};
 int vboxVMInfoWriteProp(VBOXINFORMATIONCONTEXT* a_pCtx, char *a_pszKey, char *a_pszValue)
 {
     int rc = VINF_SUCCESS;
-    if((!a_pCtx) || (!a_pszKey))
-       return VERR_INVALID_PARAMETER;
+    Assert(a_pCtx);
+    Assert(a_pszKey);
+    /* Not checking for a valid a_pszValue is intentional. */
 
     char szKeyTemp [_MAX_PATH] = {0};
     char *pszValue = NULL;
@@ -58,8 +59,11 @@ cleanup:
     return rc;
 }
 
-int vboxVMInfoWritePropInt(VBOXINFORMATIONCONTEXT* a_pCtx, char *a_pszKey, int a_iValue )
+int vboxVMInfoWritePropInt(VBOXINFORMATIONCONTEXT* a_pCtx, char *a_pszKey, int a_iValue)
 {
+    Assert(a_pCtx);
+    Assert(a_pszKey);
+
     char szBuffer[_MAX_PATH] = {0}; /** @todo r=bird: this is a bit excessive (the size) */
     itoa(a_iValue, szBuffer, 10);
 
@@ -68,6 +72,9 @@ int vboxVMInfoWritePropInt(VBOXINFORMATIONCONTEXT* a_pCtx, char *a_pszKey, int a
 
 int vboxVMInfoInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
+    Assert(pEnv);
+    Assert(ppInstance);
+
     Log(("vboxVMInfoThread: Init.\n"));
 
     gCtx.pEnv = pEnv;
@@ -99,8 +106,24 @@ int vboxVMInfoInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartT
 
 void vboxVMInfoDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    VBOXINFORMATIONCONTEXT *pCtx = (VBOXINFORMATIONCONTEXT *)pInstance;
+    Assert(pEnv);
 
+    VBOXINFORMATIONCONTEXT *pCtx = (VBOXINFORMATIONCONTEXT *)pInstance;
+    Assert(pCtx);
+
+    /* @todo Temporary solution: Zap all values which are not valid anymore when VM goes down (reboot/shutdown).
+     * Needs to be replaced with "temporary properties" later. */
+    char szPropPath [_MAX_PATH+1] = {0};
+    char*pPtr = &szPropPath[0];
+
+    vboxVMInfoWriteProp(pCtx, "GuestInfo/OS/LoggedInUsersList", "");
+    vboxVMInfoWritePropInt(pCtx, "GuestInfo/OS/LoggedInUsers", 0);
+
+    RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/*");
+    VbglR3GuestPropDelTree(pCtx->iInfoSvcClientID, &pPtr, 1);
+    vboxVMInfoWritePropInt(pCtx, "GuestInfo/Net/Count", 0);
+
+    /* Disconnect from guest properties API. */
     int rc = VbglR3GuestPropDisconnect(pCtx->iInfoSvcClientID);
     if (!RT_SUCCESS(rc))
         LogRel(("vboxVMInfoThread: Failed to disconnect from guest property service! Error: %Rrc\n", rc));
@@ -111,6 +134,8 @@ void vboxVMInfoDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 
 unsigned __stdcall vboxVMInfoThread(void *pInstance)
 {
+    Assert(pInstance);
+
     VBOXINFORMATIONCONTEXT *pCtx = (VBOXINFORMATIONCONTEXT *)pInstance;
     bool fTerminate = false;
 
