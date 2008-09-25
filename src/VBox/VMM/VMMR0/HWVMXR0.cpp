@@ -1096,7 +1096,10 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
 #endif
 
-    /* Intercept #GP faults in real mode to handle IO instructions. */
+#ifdef VBOX_STRICT
+    Assert(pVM->hwaccm.s.vmx.u32TrapMask & RT_BIT(X86_XCPT_GP));
+#else
+    /* Intercept #GP faults in real mode to handle privileged instructions. */
     if (CPUMIsGuestInRealModeEx(pCtx))
         pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_GP);
     else
@@ -1104,6 +1107,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
     AssertRC(rc);    
+#endif
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
