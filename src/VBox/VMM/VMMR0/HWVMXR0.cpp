@@ -787,22 +787,30 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         0);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         sizeof(VBOXTSS));
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          GCPhys /* phys = virt in this mode */);
+
+            X86DESCATTR attr;
+
+            attr.u              = 0;
+            attr.n.u1Present    = 1;
+            attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+            val                 = attr.u;
         }
         else
         {
             rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         pCtx->tr);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          pCtx->trHid.u64Base);
+
+            val = pCtx->trHid.Attr.u;
+
+            /* The TSS selector must be busy. */
+            if ((val & 0xF) == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
+                val = (val & ~0xF) | X86_SEL_TYPE_SYS_286_TSS_BUSY;
+            else
+                /* Default even if no TR selector has been set (otherwise vmlaunch will fail!) */
+                val = (val & ~0xF) | X86_SEL_TYPE_SYS_386_TSS_BUSY;
+
         }
-        val = pCtx->trHid.Attr.u;
-
-        /* The TSS selector must be busy. */
-        if ((val & 0xF) == X86_SEL_TYPE_SYS_286_TSS_AVAIL)
-            val = (val & ~0xF) | X86_SEL_TYPE_SYS_286_TSS_BUSY;
-        else
-            /* Default even if no TR selector has been set (otherwise vmlaunch will fail!) */
-            val = (val & ~0xF) | X86_SEL_TYPE_SYS_386_TSS_BUSY;
-
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_ACCESS_RIGHTS, val);
         AssertRC(rc);
     }
