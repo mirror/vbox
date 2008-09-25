@@ -1567,11 +1567,14 @@ static bool atapiPassthroughSS(ATADevState *s)
              * transfer size. But the I/O buffer size limits what can actually be
              * done in one transfer, so set the actual value of the buffer end. */
             s->cbElementaryTransfer = cbTransfer;
-            if (s->aATAPICmd[0] == SCSI_INQUIRY)
+            if (   s->aATAPICmd[0] == SCSI_INQUIRY
+                && !s->fATAPIPassthrough)
             {
                 /* Make sure that the real drive cannot be identified.
                  * Motivation: changing the VM configuration should be as
-                 * invisible as possible to the guest. */
+                 *             invisible as possible to the guest.
+                 * Exception:  passthrough. Otherwise Windows will not detect
+                 *             CDR/CDRW burning capabilities */
                 Log3(("ATAPI PT inquiry data before (%d): %.*Vhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
