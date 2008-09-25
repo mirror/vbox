@@ -520,20 +520,19 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
-#ifdef VBOX_WITH_VMMDEV_HEAP
-            /* Allocate one page for the TSS we need for real mode emulation. */
-            rc = PDMR3VMMDevHeapAlloc(pVM, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS), (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
+            /* Allocate three pages for the TSS we need for real mode emulation. (2 page for the IO bitmap) */
+            rc = PDMR3VMMDevHeapAlloc(pVM, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS) + 2*PAGE_SIZE, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 return rc;
 
-            /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. Outside the TSS on purpose; the CPU will not check it
-             * for I/O operations. (but fault (#GP) on all IO instructions instead) */
+            /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
             ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
             pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
             /* Bit set to 0 means redirection enabled. */
             memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
-#endif
+            /* Allow all port IO, so the VT-x IO intercepts do their job. */
+            memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0xff, PAGE_SIZE*2);
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
