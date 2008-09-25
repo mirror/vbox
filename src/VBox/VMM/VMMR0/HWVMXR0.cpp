@@ -793,7 +793,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             AssertRC(rc);
 
             rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         0);
-            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         sizeof(VBOXTSS) + 2*PAGE_SIZE);
+            rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         HWACCM_VTX_TSS_SIZE);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_BASE,          GCPhys /* phys = virt in this mode */);
 
             X86DESCATTR attr;

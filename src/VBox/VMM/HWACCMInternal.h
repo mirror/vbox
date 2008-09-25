@@ -121,6 +121,9 @@ __BEGIN_DECLS
 /** Maxium resume loops allowed in ring 0 (safety precaution) */
 #define HWACCM_MAX_RESUME_LOOPS             1024
 
+/** Size of the TSS structure + 2 pages for the IO bitmap + end byte. */
+#define HWACCM_VTX_TSS_SIZE                 (sizeof(VBOXTSS) + 2*PAGE_SIZE + 1)
+
 /** HWACCM SSM version
  */
 #define HWACCM_SSM_VERSION                  3
