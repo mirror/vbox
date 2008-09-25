@@ -143,9 +143,15 @@ HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
         rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_##REG,      pCtx->reg);                         \
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_LIMIT,    pCtx->reg##Hid.u32Limit);           \
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);            \
-        if (   (pCtx->eflags.u32 & X86_EFL_VM)                                                  \
-            || !(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))                                        \
+        if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
             val = pCtx->reg##Hid.Attr.u;                                                        \
+        else                                                                                    \
+        if (CPUMIsGuestInRealModeEx(pCtx))                                                      \
+        {                                                                                       \
+            /* Must override this or else VT-x will fail with invalid guest state errors. */    \
+            /* DPL=3, present, code/data, r/w/accessed. */                                      \
+            val = 0xf3;                                                                         \
+        }                                                                                       \
         else                                                                                    \
         if (pCtx->reg && pCtx->reg##Hid.Attr.n.u1Present == 1)                                  \
             val = pCtx->reg##Hid.Attr.u | X86_SEL_TYPE_ACCESSED;                                \

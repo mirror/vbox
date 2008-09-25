@@ -732,6 +732,14 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
+        /* VT-x will fail with a guest invalid state otherwise... */
+        if (   CPUMIsGuestInRealModeEx(pCtx)
+            && pCtx->csHid.u64Base == 0xffff0000)
+        {
+            pCtx->csHid.u64Base = 0xf0000;
+            pCtx->cs = 0xf000;
+        }
+
         VMX_WRITE_SELREG(ES, es);
         AssertRC(rc);
 
@@ -776,7 +784,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
     {
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
-        if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+        if (CPUMIsGuestInRealModeEx(pCtx))
         {
             RTGCPHYS GCPhys;
 
@@ -928,7 +936,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
         }
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
-        if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+        if (CPUMIsGuestInRealModeEx(pCtx))
             val |= X86_CR4_VME;
 
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_CR4,              val);
@@ -1008,7 +1016,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     eflags.u32 |= VMX_EFLAGS_RESERVED_1;
 
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
-    if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+    if (CPUMIsGuestInRealModeEx(pCtx))
     {
         eflags.Bits.u1VM   = 1;
         eflags.Bits.u1VIF  = pCtx->eflags.Bits.u1IF;
@@ -1266,6 +1274,7 @@ ResumeExecution:
         /* Always sync back the TPR; we should optimize this though */ /** @todo optimize TPR sync. */
         fSyncTPR = true;
     }
+        HWACCMDumpRegs(pVM, pCtx);
 
     /*
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
@@ -1568,7 +1577,7 @@ ResumeExecution:
     pCtx->idtr.pIdt         = val;
 
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
-    if (!(pCtx->cr0 & X86_CR0_PROTECTION_ENABLE))
+    if (CPUMIsGuestInRealModeEx(pCtx))
     {
         /* Hide our emulation flags */
         pCtx->eflags.Bits.u1VM   = 0;
