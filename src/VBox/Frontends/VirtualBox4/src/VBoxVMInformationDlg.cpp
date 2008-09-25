@@ -579,7 +579,7 @@ QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
         return QString::null;
 
     QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
-    QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot);
+    QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot + 1);
     QString result = header.arg (name);
     result += composeArticle (aBelongsTo);
     return result;
