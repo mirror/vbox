@@ -48,6 +48,9 @@
 #include "PyXPCOM_std.h"
 #include "nsReadableUtils.h"
 #include <nsIConsoleService.h>
+#ifdef VBOX
+#include <nsIExceptionService.h>
+#endif
 #include "nspr.h" // PR_fprintf
 
 static char *PyTraceback_AsString(PyObject *exc_tb);
@@ -242,11 +245,48 @@ void PyXPCOM_LogDebug(const char *fmt, ...)
 
 PyObject *PyXPCOM_BuildPyException(nsresult r)
 {
+#ifndef VBOX 
 	// Need the message etc.
 	PyObject *evalue = Py_BuildValue("i", r);
 	PyErr_SetObject(PyXPCOM_Error, evalue);
 	Py_XDECREF(evalue);
 	return NULL;
+#else
+        char msg[256];
+        
+        nsresult rc;
+        nsCOMPtr <nsIExceptionService> es;
+        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+        bool gotMsg = false;
+        if (NS_SUCCEEDED (rc))
+        {
+            nsCOMPtr <nsIExceptionManager> em;
+            rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+            if (NS_SUCCEEDED (rc))
+            {
+                nsCOMPtr <nsIException> ex;
+                rc = em->GetExceptionFromProvider(r, NULL, getter_AddRefs (ex));
+                if  (NS_SUCCEEDED (rc) && ex)
+                {       
+                    nsXPIDLCString emsg;
+                    ex->GetMessage(getter_Copies(emsg));
+                    PR_snprintf(msg, sizeof(msg), "%s",
+                                emsg.get());
+                    gotMsg = true;
+                }
+            }
+        }
+
+        if (!gotMsg)
+        {
+            PR_snprintf(msg, sizeof(msg), "Error %d in module %d", 
+                        NS_ERROR_GET_CODE(r), NS_ERROR_GET_MODULE(r));
+        }
+        PyObject *evalue = Py_BuildValue("is", r, msg);
+	PyErr_SetObject(PyXPCOM_Error, evalue);
+	Py_XDECREF(evalue);
+	return NULL;
+#endif
 }
 
 nsresult PyXPCOM_SetCOMErrorFromPyException()
