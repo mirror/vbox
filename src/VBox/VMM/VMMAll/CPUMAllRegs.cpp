@@ -1922,7 +1922,10 @@ CPUMDECL(uint32_t) CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore)
          * This only seems to apply to AMD-V; in the VT-x case we *do* need to look
          * at SS. (ACP2 regression during install after a far call to ring 2)
          */
-        cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
+        if (RT_LIKELY(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
+            cpl = pCtxCore->ssHid.Attr.n.u2Dpl;
+        else
+            cpl = 0;  /* CPL set to 3 for VT-x real-mode emulation. */
     }
     else if (RT_LIKELY(pVM->cpum.s.Guest.cr0 & X86_CR0_PE))
     {
