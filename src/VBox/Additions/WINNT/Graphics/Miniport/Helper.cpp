@@ -177,7 +177,8 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
 {
     BOOLEAN bRC = FALSE;
 
-    dprintf(("VBoxVideo::vboxQueryPointerPosInternal: pointerXPos = %p, pointerYPos = %p\n", pointerXPos, pointerYPos));
+    /* Activate next line only when really needed; floods the log very quickly! */
+    /*dprintf(("VBoxVideo::vboxQueryPointerPosInternal: pointerXPos = %p, pointerYPos = %p\n", pointerXPos, pointerYPos));*/
 
     VMMDevReqMouseStatus *req = NULL;
 
@@ -318,7 +319,8 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
     }
     else
     {
-        dprintf(("VBoxVideo::vboxUpdatePointerShape: req->u32Version = %08X\n", req->header.version));
+        /* Activate next line only when really needed; floods the log very quickly! */
+        /*dprintf(("VBoxVideo::vboxUpdatePointerShape: req->u32Version = %08X\n", req->header.version));*/
 
         /* We have our custom flags in the field */
         req->fFlags = pointerAttr->Enable & 0xFFFF;
