@@ -61,8 +61,14 @@ if test "$currentzone" = "global"; then
         /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
     fi
 
-    # create /dev link for vboxdrv
-    /usr/sbin/installf -c none $PKGINST /dev/vboxdrv=../devices/pseudo/vboxdrv@0:vboxdrv s
+    # add vboxdrv to the devlink.tab
+    sed -e '
+/name=vboxdrv/d
+$i\
+type=ddi_pseudo;name=vboxdrv    \\D' /etc/devlink.tab
+
+    # create the device link
+    /usr/sbin/devfsadm -i vboxdrv
 
     # We need to touch the desktop link in order to add it to the menu right away
     if test -f "/usr/share/applications/virtualbox.desktop"; then
