@@ -272,7 +272,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
      */
     const char *pszSuff = RTLdrGetSuff();
     size_t      cchSuff = RTPathHaveExt(pszFilename) ? strlen(pszSuff) : 0;
-    PPDMMOD     pModule = (PPDMMOD)RTMemAllocZ(sizeof(*pModule) + cchFilename + cchSuff);
+    PPDMMOD     pModule = (PPDMMOD)RTMemAllocZ(RT_OFFSETOF(PDMMOD, szFilename[cchFilename + cchSuff + 1]));
     if (!pModule)
         return VERR_NO_MEMORY;
 
