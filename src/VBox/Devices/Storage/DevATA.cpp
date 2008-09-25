@@ -1594,6 +1594,7 @@ static bool atapiPassthroughSS(ATADevState *s)
                 if (    rc == VERR_DEV_IO_ERROR
                     && (   u8Cmd == SCSI_TEST_UNIT_READY
                         || u8Cmd == SCSI_READ_CAPACITY
+                        || u8Cmd == SCSI_READ_DVD_STRUCTURE
                         || u8Cmd == SCSI_READ_TOC_PMA_ATIP))
                     break;
                 s->cErrors++;
