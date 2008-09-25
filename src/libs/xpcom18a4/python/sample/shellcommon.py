@@ -85,8 +85,11 @@ def startVm(mgr,vb,mach,type):
     completed = progress.completed
     rc = progress.resultCode
     print "Completed:", completed, "rc:",rc
-    if int(rc) == 0:
-        vb.performanceCollector.setupMetrics(['*'], [mach], 10, 15)
+    if rc == 0:
+        try:
+            vb.performanceCollector.setupMetrics(['*'], [mach], 10, 15)
+        except:
+            pass
     session.close()
 
 def getMachines(ctx):
@@ -104,7 +107,7 @@ def guestStats(ctx,mach):
     for i in range(0,len(names)):
         valsStr = '[ '
         for j in range(0, lens[i]):
-            valsStr += str(vals[int(idxs[i])+j])+' '
+            valsStr += str(vals[idxs[i]])+' '
         valsStr += ']'
         print names[i],valsStr
 
@@ -293,7 +296,7 @@ def hostCmd(ctx, args):
    for i in range(0,len(names)):
        valsStr = '[ '
        for j in range(0, lens[i]):
-           valsStr += str(vals[int(idxs[i])+j])+' '
+           valsStr += str(vals[idxs[i]])+' '
        valsStr += ']'
        print names[i],valsStr
 
@@ -336,6 +339,7 @@ commands = {'help':['Prints help information', helpCmd],
 def runCommand(ctx, cmd):
     if len(cmd) == 0: return 0 
     args = split_no_quotes(cmd)
+    if len(args) == 0: return 0 
     c = args[0]
     if aliases.get(c, None) != None:
         c = aliases[c]
@@ -354,8 +358,11 @@ def interpret(ctx):
 
     # to allow to print actual host information, we collect info for
     # last 150 secs maximum, (sample every 10 secs and keep up to 15 samples)
-    vbox.performanceCollector.setupMetrics(['*'], [vbox.host], 10, 15)
-   
+    try:
+        vbox.performanceCollector.setupMetrics(['*'], [vbox.host], 10, 15)
+    except:
+        pass
+
     while True:
         try:
             cmd = raw_input("vbox> ")
@@ -371,4 +378,7 @@ def interpret(ctx):
             if g_verbose:
                 traceback.print_exc()
 
-    vbox.performanceCollector.disableMetrics(['*'], [vbox.host])
+    try:
+        vbox.performanceCollector.disableMetrics(['*'], [vbox.host])
+    except:
+        pass

@@ -53,6 +53,8 @@ class Exception(exceptions.Exception):
         self.errno = errno
         self.message = message
         exceptions.Exception.__init__(self, errno)
+        # we do this, as parent's constructor can override message
+        self.message = message
     def __str__(self):
         if not hr_map:
             import nsError
@@ -64,7 +66,7 @@ class Exception(exceptions.Exception):
             message = hr_map.get(self.errno)
             if message is None:
                 message = ""
-        return "%d (%s)" % (self.errno, message)
+        return "0x%x (%s)" % (self.errno & 0xFFFFFFFF, message)
 
 # An alias for Exception - allows code to say "from xpcom import COMException"
 # rather than "Exception", preventing clashes with the builtin Exception
