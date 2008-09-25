@@ -85,7 +85,7 @@ def startVm(mgr,vb,mach,type):
     completed = progress.completed
     rc = progress.resultCode
     print "Completed:", completed, "rc:",rc
-    if rc == 0:
+    if int(rc) == 0:
         vb.performanceCollector.setupMetrics(['*'], [mach], 10, 15)
     session.close()
 
@@ -104,7 +104,7 @@ def guestStats(ctx,mach):
     for i in range(0,len(names)):
         valsStr = '[ '
         for j in range(0, lens[i]):
-            valsStr += str(vals[idxs[i]])+' '
+            valsStr += str(vals[int(idxs[i])+j])+' '
         valsStr += ']'
         print names[i],valsStr
 
@@ -293,7 +293,7 @@ def hostCmd(ctx, args):
    for i in range(0,len(names)):
        valsStr = '[ '
        for j in range(0, lens[i]):
-           valsStr += str(vals[idxs[i]])+' '
+           valsStr += str(vals[int(idxs[i])+j])+' '
        valsStr += ']'
        print names[i],valsStr
 
