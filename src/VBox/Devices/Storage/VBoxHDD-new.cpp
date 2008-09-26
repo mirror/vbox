@@ -2066,6 +2066,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 break;
 
             /* Open the source image in the destination container. */
+            /** @todo fix open flags - the flags in pImageFrom are not the right info, the info from the image format backend is relevant */
             rc = VDOpen(pDiskTo, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags, pDstVDIfsImage);
             if (RT_FAILURE(rc))
                 goto movefail;
@@ -2136,12 +2137,12 @@ movefail:
         if (enmTypeFrom == VD_IMAGE_TYPE_DIFF)
         {
             rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlagsFrom,
-                              "", NULL, uOpenFlagsFrom, NULL, NULL);
+                              "", NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
         } else {
             rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeFrom,
                               cbSize, uImageFlagsFrom, "",
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
-                              NULL, uOpenFlagsFrom, NULL, NULL);
+                              NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
         }
         if (RT_FAILURE(rc))
             break;
