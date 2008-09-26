@@ -187,6 +187,9 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
         memset(pVM->hwaccm.s.vmx.pMSRBitmap, 0xff, PAGE_SIZE);
     }
 
+    /* Current guest paging mode. */
+    pVM->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
+
 #ifdef LOG_ENABLED
     SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVM->hwaccm.s.vmx.pVMCS, (uint32_t)pVM->hwaccm.s.vmx.pVMCSPhys);
 #endif
@@ -732,6 +735,22 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
+        PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
+        if (pVM->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
+        {
+            if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+                &&  enmGuestMode == PGMMODE_PROTECTED)
+            {
+                pCtx->csHid.Attr.n.u2Dpl = 0;
+                pCtx->dsHid.Attr.n.u2Dpl = 0;
+                pCtx->esHid.Attr.n.u2Dpl = 0;
+                pCtx->fsHid.Attr.n.u2Dpl = 0;
+                pCtx->gsHid.Attr.n.u2Dpl = 0;
+                pCtx->ssHid.Attr.n.u2Dpl = 0;
+            }
+            pVM->hwaccm.s.vmx.enmCurrGuestMode = enmGuestMode;
+        }
+
         /* VT-x will fail with a guest invalid state otherwise... */
         if (   CPUMIsGuestInRealModeEx(pCtx)
             && pCtx->csHid.u64Base == 0xffff0000)
