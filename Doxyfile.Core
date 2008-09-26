@@ -216,6 +216,11 @@ ALIASES                += \
 <b>Type:</b> \2 <br> \
 "
 
+# bugref - xTracker bug reference, takes a bug number.
+ALIASES               += bugref{1}="https://xtracker.innotek.de/index.php?bug=\1"
+# ticketref - Track ticket reference, takes a ticket number.
+ALIASES               += ticketref{1}="http://www.virtualbox.org/ticket/\1"
+
 
 OPTIMIZE_OUTPUT_FOR_C  = YES
 OPTIMIZE_OUTPUT_JAVA   = NO
