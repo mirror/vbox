@@ -291,6 +291,9 @@ typedef struct HWACCM
         /** Current trap mask. */
         uint32_t                    u32TrapMask;
 
+        /** The last known guest paging mode. */
+        PGMMODE                     enmCurrGuestMode;
+
         struct
         {
             uint64_t                u64VMCSPhys;
