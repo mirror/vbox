@@ -1921,16 +1921,6 @@ EMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
     uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
                     | (u16Data &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
 
-#ifdef IN_GC
-    /* Need to change the hyper CR0? Doing it the lazy way then. */
-    if (    (OldCr0 & (X86_CR0_AM | X86_CR0_WP))
-        !=  (NewCr0 & (X86_CR0_AM | X86_CR0_WP)))
-    {
-        Log(("EMInterpretLMSW: CR0: %#x->%#x => R3\n", OldCr0, NewCr0));
-        VM_FF_SET(pVM, VM_FF_TO_R3);
-    }
-#endif
-
     return CPUMSetGuestCR0(pVM, NewCr0);
 }
 
