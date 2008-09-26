@@ -695,7 +695,7 @@ typedef const STAMPROFILE *PCSTAMPROFILE;
  *
  * @param   pProfile    Pointer to the STAMPROFILE structure to operate on.
  * @param   pProfile2   Pointer to the STAMPROFILE structure which this
- *                      interval should be attributed too. This may be NULL.
+ *                      interval should be attributed to as well. This may be NULL.
  * @param   Prefix      Identifier prefix used to internal variables.
  */
 #ifndef VBOX_WITHOUT_RELEASE_STATISTICS
@@ -731,7 +731,7 @@ typedef const STAMPROFILE *PCSTAMPROFILE;
  *
  * @param   pProfile    Pointer to the STAMPROFILE structure to operate on.
  * @param   pProfile2   Pointer to the STAMPROFILE structure which this
- *                      interval should be attributed too. This may be NULL.
+ *                      interval should be attributed to as well. This may be NULL.
  * @param   Prefix      Identifier prefix used to internal variables.
  */
 #ifdef VBOX_WITH_STATISTICS
@@ -894,7 +894,7 @@ typedef const STAMPROFILEADV *PCSTAMPROFILEADV;
  *
  * @param   pProfileAdv Pointer to the STAMPROFILEADV structure to operate on.
  * @param   pProfile2   Pointer to the STAMPROFILE structure which this
- *                      interval should be attributed too. This may be NULL.
+ *                      interval should be attributed to as well. This may be NULL.
  * @param   Prefix      Identifier prefix used to internal variables.
  */
 #ifndef VBOX_WITHOUT_RELEASE_STATISTICS
@@ -932,7 +932,7 @@ typedef const STAMPROFILEADV *PCSTAMPROFILEADV;
  *
  * @param   pProfileAdv Pointer to the STAMPROFILEADV structure to operate on.
  * @param   pProfile2   Pointer to the STAMPROFILE structure which this
- *                      interval should be attributed too. This may be NULL.
+ *                      interval should be attributed to as well. This may be NULL.
  * @param   Prefix      Identifier prefix used to internal variables.
  */
 #ifdef VBOX_WITH_STATISTICS
