@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IOM - Input / Output Monitor - Guest Context.
+ * IOM - Input / Output Monitor - Any Context, MMIO & String I/O.
  */
 
 /*
@@ -45,7 +45,6 @@
 #include <iprt/string.h>
 
 
-
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -74,7 +73,7 @@ static const unsigned g_aSize2Shift[] =
 
 /**
  * Wrapper which does the write and updates range statistics when such are enabled.
- * @warning VBOX_SUCCESS(rc=VINF_IOM_HC_MMIO_WRITE) is TRUE!
+ * @warning RT_SUCCESS(rc=VINF_IOM_HC_MMIO_WRITE) is TRUE!
  */
 DECLINLINE(int) iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, const void *pvData, unsigned cb)
 {
@@ -84,14 +83,15 @@ DECLINLINE(int) iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFau
 #endif
 
     int rc;
-    if (RT_LIKELY(pRange->CTXALLSUFF(pfnWriteCallback)))
-        rc = pRange->CTXALLSUFF(pfnWriteCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhysFault, (void *)pvData, cb); /* @todo fix const!! */
+    if (RT_LIKELY(pRange->CTX_SUFF(pfnWriteCallback)))
+        rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhysFault, (void *)pvData, cb); /* @todo fix const!! */
     else
         rc = VINF_SUCCESS;
     if (rc != VINF_IOM_HC_MMIO_WRITE)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(Write));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
     return rc;
 }
+
 
 /**
  * Wrapper which does the read and updates range statistics when such are enabled.
@@ -104,10 +104,12 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFaul
 #endif
 
     int rc;
-    if (RT_LIKELY(pRange->CTXALLSUFF(pfnReadCallback)))
-        rc = pRange->CTXALLSUFF(pfnReadCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhysFault, pvData, cb);
+    if (RT_LIKELY(pRange->CTX_SUFF(pfnReadCallback)))
+        rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhysFault, pvData, cb);
     else
     {
+/** @todo r=bird: this is (probably) wrong, all bits should be set here I
+ *        think. */
         switch (cb)
         {
             case 1: *(uint8_t  *)pvData = 0; break;
@@ -121,11 +123,12 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFaul
         rc = VINF_SUCCESS;
     }
     if (rc != VINF_IOM_HC_MMIO_READ)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(Read));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
     return rc;
 }
 
-/*
+
+/**
  * Internal - statistics only.
  */
 DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
@@ -134,16 +137,16 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
     switch (cb)
     {
         case 1:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO1Byte);
+            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIO1Byte);
             break;
         case 2:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO2Bytes);
+            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIO2Bytes);
             break;
         case 4:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO4Bytes);
+            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIO4Bytes);
             break;
         case 8:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO8Bytes);
+            STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIO8Bytes);
             break;
         default:
             /* No way. */
@@ -171,7 +174,7 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
  */
 static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault)
 {
-    Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
+    Assert(pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
     /*
      * Get the data size from parameter 2,
@@ -230,7 +233,7 @@ static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE p
  */
 static int iomInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault)
 {
-    Assert(pRange->CTXALLSUFF(pfnWriteCallback) || !pRange->pfnWriteCallbackR3);
+    Assert(pRange->CTX_SUFF(pfnWriteCallback) || !pRange->pfnWriteCallbackR3);
 
     /*
      * Get data to write from second parameter,
@@ -270,7 +273,7 @@ DECLINLINE(int) iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 }
 
 
-#ifdef iom_MOVS_SUPPORT
+#ifdef IOM_WITH_MOVS_SUPPORT
 /**
  * [REP] MOVSB
  * [REP] MOVSW
@@ -287,8 +290,9 @@ DECLINLINE(int) iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
  * @param   pRange      Pointer MMIO range.
+ * @param   ppStat      Which sub-sample to attribute this call to.
  */
-static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
+static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange, PSTAMPROFILE *ppStat)
 {
     /*
      * We do not support segment prefixes or REPNE.
@@ -298,7 +302,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
 
     /*
-     * Get bytes/words/dwords count to copy.
+     * Get bytes/words/dwords/qword count to copy.
      */
     uint32_t cTransfers = 1;
     if (pCpu->prefix & PREFIX_REP)
@@ -342,21 +346,18 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
          * Write operation: [Mem] -> [MMIO]
          * ds:esi (Virt Src) -> es:edi (Phys Dst)
          */
-        STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovsToMMIO, a2);
+        STAM_STATS({ *ppStat = &pVM->iom.s.StatRZInstMovsToMMIO; });
 
         /* Check callback. */
-        if (!pRange->CTXALLSUFF(pfnWriteCallback))
-        {
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsToMMIO, a2);
+        if (!pRange->CTX_SUFF(pfnWriteCallback))
             return VINF_IOM_HC_MMIO_WRITE;
-        }
 
         /* Convert source address ds:esi. */
         RTGCUINTPTR pu8Virt;
         rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           (PRTGCPTR)&pu8Virt);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
 
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
@@ -364,7 +365,6 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
-                STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsToMMIO, a2);
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
@@ -395,7 +395,6 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
             /* Update ecx. */
             if (pCpu->prefix & PREFIX_REP)
                 pRegFrame->ecx = cTransfers;
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsToMMIO, a2);
         }
         else
             rc = VINF_IOM_HC_MMIO_READ_WRITE;
@@ -406,8 +405,10 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
          * Read operation: [MMIO] -> [mem] or [MMIO] -> [MMIO]
          * ds:[eSI] (Phys Src) -> es:[eDI] (Virt Dst)
          */
+        STAM_STATS({ *ppStat = &pVM->iom.s.StatRZInstMovsFromMMIO; });
+
         /* Check callback. */
-        if (!pRange->pfnReadCallback)
+        if (!pRange->CTX_SUFF(pfnReadCallback))
             return VINF_IOM_HC_MMIO_READ;
 
         /* Convert destination address. */
@@ -415,7 +416,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
         rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           (RTGCPTR *)&pu8Virt);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return VINF_EM_RAW_GUEST_TRAP;
 
         /* Check if destination address is MMIO. */
@@ -423,21 +424,15 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
         RTGCPHYS PhysDst;
         rc = PGMGstGetPage(pVM, (RTGCPTR)pu8Virt, NULL, &PhysDst);
         PhysDst |= (RTGCUINTPTR)pu8Virt & PAGE_OFFSET_MASK;
-        if (    VBOX_SUCCESS(rc)
+        if (    RT_SUCCESS(rc)
             &&  (pMMIODst = iomMMIOGetRange(&pVM->iom.s, PhysDst)))
         {
             /*
              * Extra: [MMIO] -> [MMIO]
              */
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovsMMIO, d);
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
-
-            if (!pMMIODst->CTXALLSUFF(pfnWriteCallback) && pMMIODst->pfnWriteCallbackR3)
-            {
-                STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsMMIO, d);
-                STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
+            STAM_STATS({ *ppStat = &pVM->iom.s.StatRZInstMovsMMIO; });
+            if (!pMMIODst->CTX_SUFF(pfnWriteCallback) && pMMIODst->pfnWriteCallbackR3)
                 return VINF_IOM_HC_MMIO_READ_WRITE;
-            }
 
             /* copy loop. */
             while (cTransfers)
@@ -456,22 +451,17 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
                 pRegFrame->rdi += offIncrement;
                 cTransfers--;
             }
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsMMIO, d);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
         }
         else
         {
             /*
              * Normal: [MMIO] -> [Mem]
              */
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
-
             /* Access verification first; we currently can't recover properly from traps inside this instruction */
             rc = PGMVerifyAccess(pVM, pu8Virt, cTransfers * cb, X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
             if (rc != VINF_SUCCESS)
             {
                 Log(("MOVS will generate a trap -> recompiler, rc=%d\n", rc));
-                STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
@@ -501,7 +491,6 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 #ifdef IN_GC
             MMGCRamDeregisterTrapHandler(pVM);
 #endif
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovsFromMMIO, c);
         }
 
         /* Update ecx on exit. */
@@ -511,13 +500,11 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 
     /* work statistics. */
     if (rc == VINF_SUCCESS)
-    {
         iomMMIOStatLength(pVM, cb);
-    }
+    NOREF(ppStat);
     return rc;
 }
-#endif
-
+#endif /* IOM_WITH_MOVS_SUPPORT */
 
 
 /**
@@ -564,6 +551,8 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
             return VINF_SUCCESS;
     }
 
+/** @todo r=bird: bounds checks! */
+
     /*
      * Get data size.
      */
@@ -580,7 +569,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     RTGCPHYS    Phys    = GCPhysFault;
     uint32_t    u32Data = pRegFrame->eax;
     int rc;
-    if (pRange->CTXALLSUFF(pfnFillCallback))
+    if (pRange->CTX_SUFF(pfnFillCallback))
     {
         /*
          * Use the fill callback.
@@ -589,7 +578,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         if (offIncrement > 0)
         {
             /* addr++ variant. */
-            rc = pRange->CTXALLSUFF(pfnFillCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), Phys, u32Data, cb, cTransfers);
+            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), Phys, u32Data, cb, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
@@ -601,7 +590,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         else
         {
             /* addr-- variant. */
-            rc = pRange->CTXALLSUFF(pfnFillCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), (Phys - (cTransfers - 1)) << SIZE_2_SHIFT(cb), u32Data, cb, cTransfers);
+            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), (Phys - (cTransfers - 1)) << SIZE_2_SHIFT(cb), u32Data, cb, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
@@ -616,7 +605,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         /*
          * Use the write callback.
          */
-        Assert(pRange->CTXALLSUFF(pfnWriteCallback) || !pRange->pfnWriteCallbackR3);
+        Assert(pRange->CTX_SUFF(pfnWriteCallback) || !pRange->pfnWriteCallbackR3);
 
         /* fill loop. */
         do
@@ -662,7 +651,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  */
 static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
 {
-    Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
+    Assert(pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
     /*
      * We do not support segment prefixes or REP*.
@@ -710,7 +699,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  */
 static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
 {
-    Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
+    Assert(pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
     /*
      * Get the operands.
@@ -786,7 +775,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
     {
         /* and reg, [MMIO]. */
-        Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
+        Assert(pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
         fAndWrite = false;
         rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData2, cb);
     }
@@ -794,8 +783,8 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
     {
         /* and [MMIO], reg|imm. */
         fAndWrite = true;
-        if (    (pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3)
-            &&  (pRange->CTXALLSUFF(pfnWriteCallback) || !pRange->pfnWriteCallbackR3))
+        if (    (pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3)
+            &&  (pRange->CTX_SUFF(pfnWriteCallback) || !pRange->pfnWriteCallbackR3))
             rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &uData1, cb);
         else
             rc = VINF_IOM_HC_MMIO_READ_WRITE;
@@ -834,6 +823,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
     return rc;
 }
 
+
 /**
  * TEST [MMIO], reg|imm
  * TEST reg, [MMIO]
@@ -851,7 +841,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
  */
 static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
 {
-    Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
+    Assert(pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
     unsigned    cb     = 0;
     uint64_t    uData1 = 0;
@@ -886,6 +876,7 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     return rc;
 }
 
+
 /**
  * BT [MMIO], reg|imm
  *
@@ -902,7 +893,7 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  */
 static int iomInterpretBT(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
 {
-    Assert(pRange->CTXALLSUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
+    Assert(pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
 
     uint64_t    uBit   = 0;
     uint64_t    uData1 = 0;
@@ -953,8 +944,8 @@ static int iomInterpretBT(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault,
 static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, PDISCPUSTATE pCpu, PIOMMMIORANGE pRange)
 {
     /* Check for read & write handlers since IOMMMIOHandler doesn't cover this. */
-    if (    (!pRange->CTXALLSUFF(pfnReadCallback) && pRange->pfnReadCallbackR3)
-        ||  (!pRange->CTXALLSUFF(pfnWriteCallback) && pRange->pfnWriteCallbackR3))
+    if (    (!pRange->CTX_SUFF(pfnReadCallback) && pRange->pfnReadCallbackR3)
+        ||  (!pRange->CTX_SUFF(pfnWriteCallback) && pRange->pfnWriteCallbackR3))
         return VINF_IOM_HC_MMIO_READ_WRITE;
 
     int         rc;
@@ -1013,7 +1004,6 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 
 /**
  * \#PF Handler callback for MMIO ranges.
- * Note: we are on ring0 in Hypervisor and interrupts are disabled.
  *
  * @returns VBox status code (appropriate for GC return).
  * @param   pVM         VM Handle.
@@ -1025,7 +1015,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  */
 IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
-    STAM_PROFILE_START(&pVM->iom.s.StatGCMMIOHandler, a);
+    STAM_PROFILE_START(&pVM->iom.s.StatRZMMIOHandler, a);
     Log(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv eip=%VGv\n",
           GCPhysFault, (uint32_t)uErrorCode, pvFault, pCtxCore->rip));
 
@@ -1043,8 +1033,8 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
 # ifdef IN_RING3
         return VERR_NO_MEMORY;
 # else
-        STAM_PROFILE_STOP(&pVM->iom.s.StatGCMMIOHandler, a);
-        STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIOFailures);
+        STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
+        STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
         return uErrorCode & X86_TRAP_PF_RW ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
 # endif
     }
@@ -1055,18 +1045,18 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
      * Should we defer the request right away?
      */
     if (uErrorCode & X86_TRAP_PF_RW
-        ? !pRange->CTXALLSUFF(pfnWriteCallback) && pRange->pfnWriteCallbackR3
-        : !pRange->CTXALLSUFF(pfnReadCallback)  && pRange->pfnReadCallbackR3)
+        ? !pRange->CTX_SUFF(pfnWriteCallback) && pRange->pfnWriteCallbackR3
+        : !pRange->CTX_SUFF(pfnReadCallback)  && pRange->pfnReadCallbackR3)
     {
 # ifdef VBOX_WITH_STATISTICS
         if (uErrorCode & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(Write,ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
         else
-            STAM_COUNTER_INC(&pStats->CTXALLMID(Read,ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Read,ToR3));
 # endif
 
-        STAM_PROFILE_STOP(&pVM->iom.s.StatGCMMIOHandler, a);
-        STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIOFailures);
+        STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
+        STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
         return uErrorCode & X86_TRAP_PF_RW ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
     }
 #endif /* !IN_RING3 */
@@ -1084,84 +1074,87 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
         case OP_MOVZX:
         case OP_MOVSX:
         {
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstMov, b);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstMov, b);
             if (uErrorCode & X86_TRAP_PF_RW)
                 rc = iomInterpretMOVxXWrite(pVM, pCtxCore, &Cpu, pRange, GCPhysFault);
             else
                 rc = iomInterpretMOVxXRead(pVM, pCtxCore, &Cpu, pRange, GCPhysFault);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMov, b);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstMov, b);
             break;
         }
 
 
-#ifdef iom_MOVS_SUPPORT
+#ifdef IOM_WITH_MOVS_SUPPORT
         case OP_MOVSB:
         case OP_MOVSWD:
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstMovs, c);
-            rc = iomInterpretMOVS(pVM, uErrorCode, pCtxCore, GCPhysFault, &Cpu, pRange);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstMovs, c);
+        {
+            STAM_PROFILE_ADV_START(&pVM->iom.s.StatRZInstMovs, c);
+            PSTAMPROFILE pStat = NULL;
+            rc = iomInterpretMOVS(pVM, uErrorCode, pCtxCore, GCPhysFault, &Cpu, pRange, &pStat);
+            STAM_PROFILE_ADV_STOP_EX(&pVM->iom.s.StatRZInstMovs, pStat, c);
             break;
+        }
 #endif
 
         case OP_STOSB:
         case OP_STOSWD:
             Assert(uErrorCode & X86_TRAP_PF_RW);
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstStos, d);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstStos, d);
             rc = iomInterpretSTOS(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstStos, d);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstStos, d);
             break;
 
         case OP_LODSB:
         case OP_LODSWD:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstLods, e);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstLods, e);
             rc = iomInterpretLODS(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstLods, e);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstLods, e);
             break;
 
         case OP_CMP:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstCmp, f);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstCmp, f);
             rc = iomInterpretCMP(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstCmp, f);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstCmp, f);
             break;
 
         case OP_AND:
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstAnd, g);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstAnd, g);
             rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateAnd);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstAnd, g);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstAnd, g);
             break;
 
         case OP_OR:
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstOr, k);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstOr, k);
             rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateOr);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstOr, k);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstOr, k);
             break;
 
         case OP_XOR:
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstXor, m);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstXor, m);
             rc = iomInterpretOrXorAnd(pVM, pCtxCore, GCPhysFault, &Cpu, pRange, EMEmulateXor);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstXor, m);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstXor, m);
             break;
 
         case OP_TEST:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstTest, h);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstTest, h);
             rc = iomInterpretTEST(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstTest, h);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstTest, h);
             break;
 
         case OP_BT:
             Assert(!(uErrorCode & X86_TRAP_PF_RW));
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstBt, l);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstBt, l);
             rc = iomInterpretBT(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstBt, l);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstBt, l);
             break;
 
         case OP_XCHG:
-            STAM_PROFILE_START(&pVM->iom.s.StatGCInstXchg, i);
+            STAM_PROFILE_START(&pVM->iom.s.StatRZInstXchg, i);
             rc = iomInterpretXCHG(pVM, pCtxCore, GCPhysFault, &Cpu, pRange);
-            STAM_PROFILE_STOP(&pVM->iom.s.StatGCInstXchg, i);
+            STAM_PROFILE_STOP(&pVM->iom.s.StatRZInstXchg, i);
             break;
 
 
@@ -1169,7 +1162,7 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
          * The instruction isn't supported. Hand it on to ring-3.
          */
         default:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCInstOther);
+            STAM_COUNTER_INC(&pVM->iom.s.StatRZInstOther);
             rc = (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
             break;
     }
@@ -1181,22 +1174,22 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
         pCtxCore->rip += cbOp;
     else
     {
-        STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIOFailures);
+        STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
 #if defined(VBOX_WITH_STATISTICS) && !defined(IN_RING3)
         switch (rc)
         {
             case VINF_IOM_HC_MMIO_READ:
             case VINF_IOM_HC_MMIO_READ_WRITE:
-                STAM_COUNTER_INC(&pStats->CTXALLMID(Read,ToR3));
+                STAM_COUNTER_INC(&pStats->CTX_MID_Z(Read,ToR3));
                 break;
             case VINF_IOM_HC_MMIO_WRITE:
-                STAM_COUNTER_INC(&pStats->CTXALLMID(Write,ToR3));
+                STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
                 break;
         }
 #endif
     }
 
-    STAM_PROFILE_STOP(&pVM->iom.s.StatGCMMIOHandler, a);
+    STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
     return rc;
 }
 
@@ -1219,6 +1212,9 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
 {
     int           rc;
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
+    STAM_COUNTER_INC(&pVM->iom.s.StatR3MMIOHandler);
+
+    AssertMsg(cbBuf == 1 || cbBuf == 2 || cbBuf == 4 || cbBuf == 8, ("%zu\n", cbBuf));
 
     Assert(pRange);
     Assert(pRange == iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
@@ -1262,21 +1258,21 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
         return VINF_IOM_HC_MMIO_READ;
 # endif
 #endif /* VBOX_WITH_STATISTICS */
-    if (pRange->CTXALLSUFF(pfnReadCallback))
+    if (pRange->CTX_SUFF(pfnReadCallback))
     {
         /*
          * Perform the read and deal with the result.
          */
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfRead), a);
+            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfRead), a);
 #endif
-        int rc = pRange->CTXALLSUFF(pfnReadCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhys, pu32Value, cbValue);
+        int rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pu32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfRead), a);
+            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
         if (pStats && rc != VINF_IOM_HC_MMIO_READ)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Read));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
 #endif
         switch (rc)
         {
@@ -1313,7 +1309,7 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
 #ifndef IN_RING3
     if (pRange->pfnReadCallbackR3)
     {
-        STAM_COUNTER_INC(&pStats->CTXALLMID(Read,ToR3));
+        STAM_COUNTER_INC(&pStats->CTX_MID_Z(Read,ToR3));
         return VINF_IOM_HC_MMIO_READ;
     }
 #endif
@@ -1323,7 +1319,7 @@ IOMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
      */
 #ifdef VBOX_WITH_STATISTICS
     if (pStats)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(Read));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
 #endif
     /* Unassigned memory; this is actually not supposed to happen. */
     switch (cbValue)
@@ -1372,18 +1368,18 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
      * Perform the write if there's a write handler. R0/GC may have
      * to defer it to ring-3.
      */
-    if (pRange->CTXALLSUFF(pfnWriteCallback))
+    if (pRange->CTX_SUFF(pfnWriteCallback))
     {
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfWrite), a);
+            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
 #endif
-        int rc = pRange->CTXALLSUFF(pfnWriteCallback)(pRange->CTXALLSUFF(pDevIns), pRange->CTXALLSUFF(pvUser), GCPhys, &u32Value, cbValue);
+        int rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, &u32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfWrite), a);
+            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
         if (pStats && rc != VINF_IOM_HC_MMIO_WRITE)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Write));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
 #endif
         Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue, rc));
         return rc;
@@ -1391,7 +1387,7 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
 #ifndef IN_RING3
     if (pRange->pfnWriteCallbackR3)
     {
-        STAM_COUNTER_INC(&pStats->CTXALLMID(Write,ToR3));
+        STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
         return VINF_IOM_HC_MMIO_WRITE;
     }
 #endif
@@ -1401,7 +1397,7 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
      */
 #ifdef VBOX_WITH_STATISTICS
     if (pStats)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(Write));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
 #endif
     Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue, VINF_SUCCESS));
     return VINF_SUCCESS;
@@ -1434,7 +1430,7 @@ IOMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
 IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
 #ifdef VBOX_WITH_STATISTICS
-    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstIns);
+    STAM_COUNTER_INC(&pVM->iom.s.StatInstIns);
 #endif
 
     /*
@@ -1470,7 +1466,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     int rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           &GCPtrDst);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
         return VINF_EM_RAW_EMULATE_INSTR;
@@ -1522,7 +1518,7 @@ IOMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
 
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_READ || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_READ || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Vrc\n", rc));
     return rc;
 }
 
@@ -1562,7 +1558,7 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
         return rc;
     }
 
@@ -1595,7 +1591,7 @@ IOMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
 #ifdef VBOX_WITH_STATISTICS
-    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstOuts);
+    STAM_COUNTER_INC(&pVM->iom.s.StatInstOuts);
 #endif
 
     /*
@@ -1630,7 +1626,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     int rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                           &GCPtrSrc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("OUTS source address conversion failed -> fallback, rc=%Vrc\n", rc));
         return VINF_EM_RAW_EMULATE_INSTR;
@@ -1685,7 +1681,7 @@ IOMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
 
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Vrc\n", rc));
     return rc;
 }
 
@@ -1727,7 +1723,7 @@ IOMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
         return rc;
     }
 

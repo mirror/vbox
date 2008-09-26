@@ -1280,7 +1280,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPO
         }
 
         if (VBOX_SUCCESS(rc))
-            rc = IOMR3IOPortRegisterGC(pDevIns->Internal.s.pVMHC, pDevIns, Port, cPorts, pvUser, GCPtrOut, GCPtrIn, GCPtrOutStr, GCPtrInStr, pszDesc);
+            rc = IOMR3IOPortRegisterRC(pDevIns->Internal.s.pVMHC, pDevIns, Port, cPorts, pvUser, GCPtrOut, GCPtrIn, GCPtrOutStr, GCPtrInStr, pszDesc);
     }
     else
     {
@@ -1411,7 +1411,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS
         if (pszFill)
             rc3 = PDMR3GetSymbolGCLazy(pDevIns->Internal.s.pVMHC, pDevIns->pDevReg->szGCMod, pszFill, &GCPtrFill);
         if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(rc2) && VBOX_SUCCESS(rc3))
-            rc = IOMR3MMIORegisterGC(pDevIns->Internal.s.pVMHC, pDevIns, GCPhysStart, cbRange, pvUser, GCPtrWrite, GCPtrRead, GCPtrFill);
+            rc = IOMR3MMIORegisterRC(pDevIns->Internal.s.pVMHC, pDevIns, GCPhysStart, cbRange, pvUser, GCPtrWrite, GCPtrRead, GCPtrFill);
         else
         {
             AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pDevReg->szGCMod, pszWrite));

@@ -3215,7 +3215,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     uint32_t b;
     uint32_t write_mask, bit_mask, set_mask;
-    uint32_t aVal[4]; /** @todo r=bird: Why is this an 32-bit array? */
+    uint32_t aVal[4];
     unsigned i;
     NOREF(pvUser);
     for (i = 0; i < cbItem; i++)

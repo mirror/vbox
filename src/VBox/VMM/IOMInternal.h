@@ -54,40 +54,40 @@ typedef struct IOMMMIORANGE
     uint32_t                    cb;
     uint32_t                    u32Alignment; /**< Alignment padding. */
 
-    /** Pointer to user argument. */
+    /** Pointer to user argument - R3. */
     RTR3PTR                     pvUserR3;
-    /** Pointer to device instance. */
+    /** Pointer to device instance - R3. */
     PPDMDEVINSR3                pDevInsR3;
-    /** Pointer to write callback function. */
+    /** Pointer to write callback function - R3. */
     R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR3;
-    /** Pointer to read callback function. */
+    /** Pointer to read callback function - R3. */
     R3PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR3;
-    /** Pointer to fill (memset) callback function. */
+    /** Pointer to fill (memset) callback function - R3. */
     R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR3;
 
-    /** Pointer to user argument. */
+    /** Pointer to user argument - R0. */
     RTR0PTR                     pvUserR0;
-    /** Pointer to device instance. */
+    /** Pointer to device instance - R0. */
     PPDMDEVINSR0                pDevInsR0;
-    /** Pointer to write callback function. */
+    /** Pointer to write callback function - R0. */
     R0PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR0;
-    /** Pointer to read callback function. */
+    /** Pointer to read callback function - R0. */
     R0PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR0;
-    /** Pointer to fill (memset) callback function. */
+    /** Pointer to fill (memset) callback function - R0. */
     R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR0;
 
-    /** Pointer to user argument. */
-    RCPTRTYPE(void *)           pvUserGC;
-    /** Pointer to device instance. */
-    PPDMDEVINSRC                pDevInsGC;
-    /** Pointer to write callback function. */
-    RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackGC;
-    /** Pointer to read callback function. */
-    RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackGC;
-    /** Pointer to fill (memset) callback function. */
-    RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackGC;
+    /** Pointer to user argument - RC. */
+    RTRCPTR                     pvUserRC;
+    /** Pointer to device instance - RC. */
+    PPDMDEVINSRC                pDevInsRC;
+    /** Pointer to write callback function - RC. */
+    RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackRC;
+    /** Pointer to read callback function - RC. */
+    RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackRC;
+    /** Pointer to fill (memset) callback function - RC. */
+    RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackRC;
     /** Alignment padding. */
-    RTRCPTR                     GCPtrAlignment;
+    RTRCPTR                     RCPtrAlignment;
 
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
@@ -100,44 +100,36 @@ typedef struct IOMMMIORANGE *PIOMMMIORANGE;
  * MMIO address statistics. (one address)
  *
  * This is a simple way of making on demand statistics, however it's a
- * bit free with the hypervisor heap memory..
+ * bit free with the hypervisor heap memory.
  */
 typedef struct IOMMMIOSTATS
 {
     /** Avl node core with the address as Key. */
     AVLOGCPHYSNODECORE          Core;
+
     /** Number of reads to this address from R3. */
     STAMCOUNTER                 ReadR3;
-    /** Number of writes to this address from R3. */
-    STAMCOUNTER                 WriteR3;
-    /** Number of reads to this address from R0. */
-    STAMCOUNTER                 ReadR0;
-    /** Number of writes to this address from R0. */
-    STAMCOUNTER                 WriteR0;
-    /** Number of reads to this address from GC. */
-    STAMCOUNTER                 ReadGC;
-    /** Number of writes to this address from GC. */
-    STAMCOUNTER                 WriteGC;
     /** Profiling read handler overhead in R3. */
     STAMPROFILEADV              ProfReadR3;
+
+    /** Number of writes to this address from R3. */
+    STAMCOUNTER                 WriteR3;
     /** Profiling write handler overhead in R3. */
     STAMPROFILEADV              ProfWriteR3;
-    /** Profiling read handler overhead in R0. */
-    STAMPROFILEADV              ProfReadR0;
-    /** Profiling write handler overhead in R0. */
-    STAMPROFILEADV              ProfWriteR0;
-    /** Profiling read handler overhead in GC. */
-    STAMPROFILEADV              ProfReadGC;
-    /** Profiling write handler overhead in GC. */
-    STAMPROFILEADV              ProfWriteGC;
-    /** Number of reads to this address from R0 which was serviced in R3. */
-    STAMCOUNTER                 ReadR0ToR3;
-    /** Number of writes to this address from R0 which was serviced in R3. */
-    STAMCOUNTER                 WriteR0ToR3;
-    /** Number of reads to this address from GC which was serviced in R3. */
-    STAMCOUNTER                 ReadGCToR3;
-    /** Number of writes to this address from GC which was serviced in R3. */
-    STAMCOUNTER                 WriteGCToR3;
+
+    /** Number of reads to this address from R0/RC. */
+    STAMCOUNTER                 ReadRZ;
+    /** Profiling read handler overhead in R0/RC. */
+    STAMPROFILEADV              ProfReadRZ;
+    /** Number of reads to this address from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 ReadRZToR3;
+
+    /** Number of writes to this address from R0/RC. */
+    STAMCOUNTER                 WriteRZ;
+    /** Profiling write handler overhead in R0/RC. */
+    STAMPROFILEADV              ProfWriteRZ;
+    /** Number of writes to this address from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 WriteRZToR3;
 } IOMMMIOSTATS;
 /** Pointer to I/O port statistics. */
 typedef IOMMMIOSTATS *PIOMMMIOSTATS;
@@ -208,9 +200,9 @@ typedef struct IOMIOPORTRANGER0
 typedef IOMIOPORTRANGER0 *PIOMIOPORTRANGER0;
 
 /**
- * I/O port range descriptor.
+ * I/O port range descriptor, RC version.
  */
-typedef struct IOMIOPORTRANGEGC
+typedef struct IOMIOPORTRANGERC
 {
     /** Avl node core with Port as Key and Port + cPorts - 1 as KeyLast. */
     AVLROIOPORTNODECORE         Core;
@@ -219,7 +211,7 @@ typedef struct IOMIOPORTRANGEGC
     /** Size of the range. */
     uint16_t                    cPorts;
     /** Pointer to user argument. */
-    RCPTRTYPE(void *)           pvUser;
+    RTRCPTR                     pvUser;
     /** Pointer to the associated device instance. */
     RCPTRTYPE(PPDMDEVINS)       pDevIns;
     /** Pointer to OUT callback function. */
@@ -231,20 +223,20 @@ typedef struct IOMIOPORTRANGEGC
     /** Pointer to string IN callback function. */
     RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback;
 #if HC_ARCH_BITS == 64
-    RTRCPTR                     GCPtrAlignment; /**< pszDesc is 8 byte aligned. */
+    RTRCPTR                     RCPtrAlignment; /**< pszDesc is 8 byte aligned. */
 #endif
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
-} IOMIOPORTRANGEGC;
-/** Pointer to I/O port range descriptor, GC version. */
-typedef IOMIOPORTRANGEGC *PIOMIOPORTRANGEGC;
+} IOMIOPORTRANGERC;
+/** Pointer to I/O port range descriptor, RC version. */
+typedef IOMIOPORTRANGERC *PIOMIOPORTRANGERC;
 
 
 /**
  * I/O port statistics. (one I/O port)
  *
  * This is a simple way of making on demand statistics, however it's a
- * bit free with the hypervisor heap memory..
+ * bit free with the hypervisor heap memory.
  */
 typedef struct IOMIOPORTSTATS
 {
@@ -255,36 +247,26 @@ typedef struct IOMIOPORTSTATS
 #endif
     /** Number of INs to this port from R3. */
     STAMCOUNTER                 InR3;
-    /** Number of OUTs to this port from R3. */
-    STAMCOUNTER                 OutR3;
-    /** Number of INs to this port from R0. */
-    STAMCOUNTER                 InR0;
-    /** Number of OUTs to this port from R0. */
-    STAMCOUNTER                 OutR0;
-    /** Number of INs to this port from GC. */
-    STAMCOUNTER                 InGC;
-    /** Number of OUTs to this port from GC. */
-    STAMCOUNTER                 OutGC;
     /** Profiling IN handler overhead in R3. */
     STAMPROFILEADV              ProfInR3;
+    /** Number of OUTs to this port from R3. */
+    STAMCOUNTER                 OutR3;
     /** Profiling OUT handler overhead in R3. */
     STAMPROFILEADV              ProfOutR3;
-    /** Profiling IN handler overhead in R0. */
-    STAMPROFILEADV              ProfInR0;
-    /** Profiling OUT handler overhead in R0. */
-    STAMPROFILEADV              ProfOutR0;
-    /** Profiling IN handler overhead in GC. */
-    STAMPROFILEADV              ProfInGC;
-    /** Profiling OUT handler overhead in GC. */
-    STAMPROFILEADV              ProfOutGC;
-    /** Number of INs to this port from R0 which was serviced in R3. */
-    STAMCOUNTER                 InR0ToR3;
-    /** Number of OUTs to this port from R0 which was serviced in R3. */
-    STAMCOUNTER                 OutR0ToR3;
-    /** Number of INs to this port from GC which was serviced in R3. */
-    STAMCOUNTER                 InGCToR3;
-    /** Number of OUTs to this port from GC which was serviced in R3. */
-    STAMCOUNTER                 OutGCToR3;
+
+    /** Number of INs to this port from R0/RC. */
+    STAMCOUNTER                 InRZ;
+    /** Profiling IN handler overhead in R0/RC. */
+    STAMPROFILEADV              ProfInRZ;
+    /** Number of INs to this port from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 InRZToR3;
+
+    /** Number of OUTs to this port from R0/RC. */
+    STAMCOUNTER                 OutRZ;
+    /** Profiling OUT handler overhead in R0/RC. */
+    STAMPROFILEADV              ProfOutRZ;
+    /** Number of OUTs to this port from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 OutRZToR3;
 } IOMIOPORTSTATS;
 /** Pointer to I/O port statistics. */
 typedef IOMIOPORTSTATS *PIOMIOPORTSTATS;
@@ -294,7 +276,7 @@ typedef IOMIOPORTSTATS *PIOMIOPORTSTATS;
  * The IOM trees.
  * These are offset based the nodes and root must be in the same
  * memory block in HC. The locations of IOM structure and the hypervisor heap
- * are quite different in HC and GC.
+ * are quite different in R3, R0 and RC.
  */
 typedef struct IOMTREES
 {
@@ -302,8 +284,8 @@ typedef struct IOMTREES
     AVLROIOPORTTREE         IOPortTreeR3;
     /** Tree containing I/O port range descriptors registered for R0 (IOMIOPORTRANGER0). */
     AVLROIOPORTTREE         IOPortTreeR0;
-    /** Tree containing I/O port range descriptors registered for GC (IOMIOPORTRANGEGC). */
-    AVLROIOPORTTREE         IOPortTreeGC;
+    /** Tree containing I/O port range descriptors registered for RC (IOMIOPORTRANGERC). */
+    AVLROIOPORTTREE         IOPortTreeRC;
 
     /** Tree containing the MMIO range descriptors (IOMMMIORANGE). */
     AVLROGCPHYSTREE         MMIOTree;
@@ -332,19 +314,20 @@ typedef struct IOM
     /** Offset to the VM structure. */
     RTINT                           offVM;
 
-    /** Pointer to the trees - GC ptr. */
-    RCPTRTYPE(PIOMTREES)            pTreesGC;
-    /** Pointer to the trees - HC ptr. */
-    R3R0PTRTYPE(PIOMTREES)          pTreesHC;
+    /** Pointer to the trees - RC ptr. */
+    RCPTRTYPE(PIOMTREES)            pTreesRC;
+    /** Pointer to the trees - R3 ptr. */
+    R3PTRTYPE(PIOMTREES)            pTreesR3;
+    /** Pointer to the trees - R0 ptr. */
+    R0PTRTYPE(PIOMTREES)            pTreesR0;
 
     /** The ring-0 address of IOMMMIOHandler. */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnMMIOHandlerR0;
-    /** The GC address of IOMMMIOHandler. */
-    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnMMIOHandlerGC;
+    /** The RC address of IOMMMIOHandler. */
+    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnMMIOHandlerRC;
 #if GC_ARCH_BITS == 64
     RTRCPTR                         padding;
 #endif
-    RTGCPTR                         Alignment;
 
     /** @name Caching of I/O Port and MMIO ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
@@ -363,54 +346,55 @@ typedef struct IOM
     R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
     R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
 
-    RCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastReadGC;
-    RCPTRTYPE(PIOMIOPORTRANGEGC)    pRangeLastWriteGC;
-    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadGC;
-    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteGC;
-    RCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastGC;
-    RCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastGC;
+    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastReadRC;
+    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastWriteRC;
+    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadRC;
+    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteRC;
+    RCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastRC;
+    RCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastRC;
     /** @} */
 
     /** @name I/O Port statistics.
      * @{ */
-    STAMPROFILE             StatGCIOPortHandler;
-
-    STAMCOUNTER             StatGCInstIn;
-    STAMCOUNTER             StatGCInstOut;
-    STAMCOUNTER             StatGCInstIns;
-    STAMCOUNTER             StatGCInstOuts;
+    STAMCOUNTER                     StatInstIn;
+    STAMCOUNTER                     StatInstOut;
+    STAMCOUNTER                     StatInstIns;
+    STAMCOUNTER                     StatInstOuts;
     /** @} */
 
     /** @name MMIO statistics.
      * @{ */
-    STAMPROFILE             StatGCMMIOHandler;
-    STAMCOUNTER             StatGCMMIOFailures;
+    STAMPROFILE                     StatRZMMIOHandler;
+    STAMCOUNTER                     StatRZMMIOFailures;
 
-    STAMPROFILE             StatGCInstMov;
-    STAMPROFILE             StatGCInstCmp;
-    STAMPROFILE             StatGCInstAnd;
-    STAMPROFILE             StatGCInstOr;
-    STAMPROFILE             StatGCInstXor;
-    STAMPROFILE             StatGCInstBt;
-    STAMPROFILE             StatGCInstTest;
-    STAMPROFILE             StatGCInstXchg;
-    STAMPROFILE             StatGCInstStos;
-    STAMPROFILE             StatGCInstLods;
-    STAMPROFILE             StatGCInstMovs;
-    STAMPROFILE             StatGCInstMovsToMMIO;
-    STAMPROFILE             StatGCInstMovsFromMMIO;
-    STAMPROFILE             StatGCInstMovsMMIO;
-    STAMCOUNTER             StatGCInstOther;
+    STAMPROFILE                     StatRZInstMov;
+    STAMPROFILE                     StatRZInstCmp;
+    STAMPROFILE                     StatRZInstAnd;
+    STAMPROFILE                     StatRZInstOr;
+    STAMPROFILE                     StatRZInstXor;
+    STAMPROFILE                     StatRZInstBt;
+    STAMPROFILE                     StatRZInstTest;
+    STAMPROFILE                     StatRZInstXchg;
+    STAMPROFILE                     StatRZInstStos;
+    STAMPROFILE                     StatRZInstLods;
+#ifdef IOM_WITH_MOVS_SUPPORT
+    STAMPROFILEADV                  StatRZInstMovs;
+    STAMPROFILE                     StatRZInstMovsToMMIO;
+    STAMPROFILE                     StatRZInstMovsFromMMIO;
+    STAMPROFILE                     StatRZInstMovsMMIO;
+#endif
+    STAMCOUNTER                     StatRZInstOther;
 
-    STAMCOUNTER             StatGCMMIO1Byte;
-    STAMCOUNTER             StatGCMMIO2Bytes;
-    STAMCOUNTER             StatGCMMIO4Bytes;
-    STAMCOUNTER             StatGCMMIO8Bytes;
+    STAMCOUNTER                     StatRZMMIO1Byte;
+    STAMCOUNTER                     StatRZMMIO2Bytes;
+    STAMCOUNTER                     StatRZMMIO4Bytes;
+    STAMCOUNTER                     StatRZMMIO8Bytes;
 
-    RTUINT                  cMovsMaxBytes;
-    RTUINT                  cStosMaxBytes;
+    STAMCOUNTER                     StatR3MMIOHandler;
+
+    RTUINT                          cMovsMaxBytes;
+    RTUINT                          cStosMaxBytes;
     /** @} */
-
 } IOM;
 /** Pointer to IOM instance data. */
 typedef IOM *PIOM;
@@ -419,7 +403,7 @@ typedef IOM *PIOM;
 __BEGIN_DECLS
 
 #ifdef IN_IOM_R3
-PIOMIOPORTSTATS iomr3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc);
+PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc);
 PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
 #endif /* IN_IOM_R3 */
 
@@ -454,6 +438,7 @@ IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
 DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 #endif
 
+
 /**
  * Gets the I/O port range for the specified I/O port in the current context.
  *
@@ -463,11 +448,12 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void 
  * @param   pIOM    IOM instance data.
  * @param   Port    Port to lookup.
  */
-DECLINLINE(CTXALLSUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PIOM pIOM, RTIOPORT Port)
+DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PIOM pIOM, RTIOPORT Port)
 {
-    CTXALLSUFF(PIOMIOPORTRANGE) pRange = (CTXALLSUFF(PIOMIOPORTRANGE))RTAvlroIOPortRangeGet(&pIOM->CTXSUFF(pTrees)->CTXALLSUFF(IOPortTree), Port);
+    CTX_SUFF(PIOMIOPORTRANGE) pRange = (CTX_SUFF(PIOMIOPORTRANGE))RTAvlroIOPortRangeGet(&pIOM->CTX_SUFF(pTrees)->CTX_SUFF(IOPortTree), Port);
     return pRange;
 }
+
 
 /**
  * Gets the I/O port range for the specified I/O port in the HC.
@@ -478,9 +464,9 @@ DECLINLINE(CTXALLSUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PIOM pIOM, RTIOPORT Po
  * @param   pIOM    IOM instance data.
  * @param   Port    Port to lookup.
  */
-DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeHC(PIOM pIOM, RTIOPORT Port)
+DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PIOM pIOM, RTIOPORT Port)
 {
-    PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pIOM->CTXSUFF(pTrees)->IOPortTreeR3, Port);
+    PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pIOM->CTX_SUFF(pTrees)->IOPortTreeR3, Port);
     return pRange;
 }
 
@@ -496,10 +482,10 @@ DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeHC(PIOM pIOM, RTIOPORT Port)
  */
 DECLINLINE(PIOMMMIORANGE) iomMMIOGetRange(PIOM pIOM, RTGCPHYS GCPhys)
 {
-    PIOMMMIORANGE pRange = CTXALLSUFF(pIOM->pMMIORangeLast);
+    PIOMMMIORANGE pRange = pIOM->CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
-        CTXALLSUFF(pIOM->pMMIORangeLast) = pRange = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pIOM->CTXSUFF(pTrees)->MMIOTree, GCPhys);
+        pIOM->CTX_SUFF(pMMIORangeLast) = pRange = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pIOM->CTX_SUFF(pTrees)->MMIOTree, GCPhys);
     return pRange;
 }
 
@@ -524,11 +510,11 @@ DECLINLINE(PIOMMMIOSTATS) iomMMIOGetStats(PIOM pIOM, RTGCPHYS GCPhys, PIOMMMIORA
     if (pRange->cb > PAGE_SIZE)
         GCPhys = pRange->GCPhys;
 
-    PIOMMMIOSTATS pStats = CTXALLSUFF(pIOM->pMMIOStatsLast);
+    PIOMMMIOSTATS pStats = pIOM->CTX_SUFF(pMMIOStatsLast);
     if (    !pStats
         ||  pStats->Core.Key != GCPhys)
     {
-        pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pIOM->CTXSUFF(pTrees)->MMIOStatTree, GCPhys);
+        pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pIOM->CTX_SUFF(pTrees)->MMIOStatTree, GCPhys);
 # ifdef IN_RING3
         if (!pStats)
             pStats = iomR3MMIOStatsCreate(IOM2VM(pIOM), GCPhys, pRange->pszDesc);

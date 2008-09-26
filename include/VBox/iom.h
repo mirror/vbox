@@ -42,8 +42,9 @@ __BEGIN_DECLS
  */
 
 /** @def IOM_NO_PDMINS_CHECKS
- * Untill all devices have been fully adjusted to PDM style, the pPdmIns parameter
- * is not checked by IOM.
+ * Until all devices have been fully adjusted to PDM style, the pPdmIns
+ * parameter is not checked by IOM.
+ * @todo Check this again, now.
  */
 #define IOM_NO_PDMINS_CHECKS
 
@@ -238,7 +239,7 @@ IOMR3DECL(int)  IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                                       R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                       R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStringCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStringCallback,
                                       const char *pszDesc);
-IOMR3DECL(int)  IOMR3IOPortRegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTRCPTR pvUser,
+IOMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTRCPTR pvUser,
                                       RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                       RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
                                       const char *pszDesc);
@@ -256,7 +257,7 @@ IOMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                     R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-IOMR3DECL(int)  IOMR3MMIORegisterGC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+IOMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                     RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                     RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);

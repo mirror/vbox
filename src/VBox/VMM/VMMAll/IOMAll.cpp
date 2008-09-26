@@ -60,73 +60,77 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
         return false;
     }
 
-    if (pParam->flags & USE_REG_GEN32)
+    /* divide and conquer */
+    if (pParam->flags & (USE_REG_GEN64 | USE_REG_GEN32 | USE_REG_GEN16 | USE_REG_GEN8))
     {
-        *pcbSize  = 4;
-        DISFetchReg32(pRegFrame, pParam->base.reg_gen, (uint32_t *)pu64Data);
-        return true;
-    }
+        if (pParam->flags & USE_REG_GEN32)
+        {
+            *pcbSize  = 4;
+            DISFetchReg32(pRegFrame, pParam->base.reg_gen, (uint32_t *)pu64Data);
+            return true;
+        }
 
-    if (pParam->flags & USE_REG_GEN16)
-    {
-        *pcbSize  = 2;
-        DISFetchReg16(pRegFrame, pParam->base.reg_gen, (uint16_t *)pu64Data);
-        return true;
-    }
+        if (pParam->flags & USE_REG_GEN16)
+        {
+            *pcbSize  = 2;
+            DISFetchReg16(pRegFrame, pParam->base.reg_gen, (uint16_t *)pu64Data);
+            return true;
+        }
 
-    if (pParam->flags & USE_REG_GEN8)
-    {
-        *pcbSize  = 1;
-        DISFetchReg8(pRegFrame, pParam->base.reg_gen, (uint8_t *)pu64Data);
-        return true;
-    }
+        if (pParam->flags & USE_REG_GEN8)
+        {
+            *pcbSize  = 1;
+            DISFetchReg8(pRegFrame, pParam->base.reg_gen, (uint8_t *)pu64Data);
+            return true;
+        }
 
-    if (pParam->flags & USE_REG_GEN64)
-    {
+        Assert(pParam->flags & USE_REG_GEN64);
         *pcbSize  = 8;
         DISFetchReg64(pRegFrame, pParam->base.reg_gen, pu64Data);
         return true;
     }
-
-    if (pParam->flags & (USE_IMMEDIATE64|USE_IMMEDIATE64_SX8))
+    else
     {
-        *pcbSize  = 8;
-        *pu64Data = pParam->parval;
-        return true;
+        if (pParam->flags & (USE_IMMEDIATE64 | USE_IMMEDIATE64_SX8))
+        {
+            *pcbSize  = 8;
+            *pu64Data = pParam->parval;
+            return true;
+        }
+
+        if (pParam->flags & (USE_IMMEDIATE32 | USE_IMMEDIATE32_SX8))
+        {
+            *pcbSize  = 4;
+            *pu64Data = (uint32_t)pParam->parval;
+            return true;
+        }
+
+        if (pParam->flags & (USE_IMMEDIATE16 | USE_IMMEDIATE16_SX8))
+        {
+            *pcbSize  = 2;
+            *pu64Data = (uint16_t)pParam->parval;
+            return true;
+        }
+
+        if (pParam->flags & USE_IMMEDIATE8)
+        {
+            *pcbSize  = 1;
+            *pu64Data = (uint8_t)pParam->parval;
+            return true;
+        }
+
+        if (pParam->flags & USE_REG_SEG)
+        {
+            *pcbSize  = 2;
+            DISFetchRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL *)pu64Data);
+            return true;
+        } /* Else - error. */
+
+        AssertFailed();
+        *pcbSize  = 0;
+        *pu64Data = 0;
+        return false;
     }
-
-    if (pParam->flags & (USE_IMMEDIATE32|USE_IMMEDIATE32_SX8))
-    {
-        *pcbSize  = 4;
-        *pu64Data = (uint32_t)pParam->parval;
-        return true;
-    }
-
-    if (pParam->flags & (USE_IMMEDIATE16|USE_IMMEDIATE16_SX8))
-    {
-        *pcbSize  = 2;
-        *pu64Data = (uint16_t)pParam->parval;
-        return true;
-    }
-
-    if (pParam->flags & USE_IMMEDIATE8)
-    {
-        *pcbSize  = 1;
-        *pu64Data = (uint8_t)pParam->parval;
-        return true;
-    }
-
-    if (pParam->flags & USE_REG_SEG)
-    {
-        *pcbSize  = 2;
-        DISFetchRegSeg(pRegFrame, pParam->base.reg_seg, (RTSEL *)pu64Data);
-        return true;
-    } /* Else - error. */
-
-    AssertFailed();
-    *pcbSize  = 0;
-    *pu64Data = 0;
-    return false;
 }
 
 
@@ -181,33 +185,6 @@ bool iomSaveDataToReg(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
     return false;
 }
 
-/*
- * Internal - statistics only.
- */
-DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
-{
-#ifdef VBOX_WITH_STATISTICS
-    switch (cb)
-    {
-        case 1:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO1Byte);
-            break;
-        case 2:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO2Bytes);
-            break;
-        case 4:
-            STAM_COUNTER_INC(&pVM->iom.s.StatGCMMIO4Bytes);
-            break;
-        default:
-            /* No way. */
-            AssertMsgFailed(("Invalid data length %d\n", cb));
-            break;
-    }
-#else
-    NOREF(pVM); NOREF(cb);
-#endif
-}
-
 
 //#undef LOG_GROUP
 //#define LOG_GROUP LOG_GROUP_IOM_IOPORT
@@ -233,30 +210,27 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
     /*
      * Get the statistics record.
      */
-    PIOMIOPORTSTATS  pStats = CTXALLSUFF(pVM->iom.s.pStatsLastRead);
+    PIOMIOPORTSTATS  pStats = pVM->iom.s.CTX_SUFF(pStatsLastRead);
     if (!pStats || pStats->Core.Key != Port)
     {
-        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTXSUFF(pTrees)->IOPortStatTree, Port);
+        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, Port);
         if (pStats)
-            CTXALLSUFF(pVM->iom.s.pStatsLastRead) = pStats;
+            pVM->iom.s.CTX_SUFF(pStatsLastRead) = pStats;
     }
 #endif
 
     /*
      * Get handler for current context.
      */
-    CTXALLSUFF(PIOMIOPORTRANGE) pRange = CTXALLSUFF(pVM->iom.s.pRangeLastRead);
+    CTX_SUFF(PIOMIOPORTRANGE) pRange = pVM->iom.s.CTX_SUFF(pRangeLastRead);
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
         pRange = iomIOPortGetRange(&pVM->iom.s, Port);
         if (pRange)
-            CTXALLSUFF(pVM->iom.s.pRangeLastRead) = pRange;
+            pVM->iom.s.CTX_SUFF(pRangeLastRead) = pRange;
     }
-#ifdef IN_GC
-    AssertMsg(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange), ("pRange = %VGv\n", pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
-#endif
-
+    MMHYPER_RC_ASSERT_RCPTR(pVM, pRange);
     if (pRange)
     {
         /*
@@ -267,7 +241,7 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
         {
 # ifdef VBOX_WITH_STATISTICS
             if (pStats)
-                STAM_COUNTER_INC(&pStats->CTXALLMID(In,ToR3));
+                STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
 # endif
             return VINF_IOM_HC_IOPORT_READ;
         }
@@ -275,17 +249,17 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
         /* call the device. */
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfIn), a);
+            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfIn), a);
 #endif
         int rc = pRange->pfnInCallback(pRange->pDevIns, pRange->pvUser, Port, pu32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfIn), a);
+            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
         if (rc == VINF_SUCCESS && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 # ifndef IN_RING3
         else if (rc == VINF_IOM_HC_IOPORT_READ && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(In,ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
 # endif
 #endif
         if (rc == VERR_IOM_IOPORT_UNUSED)
@@ -296,7 +270,7 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
             {
                 case 1: *(uint8_t  *)pu32Value = 0xff; break;
                 case 2: *(uint16_t *)pu32Value = 0xffff; break;
-                case 4: *(uint32_t *)pu32Value = 0xffffffff; break;
+                case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
                 default:
                     AssertMsgFailed(("Invalid I/O port size %d. Port=%d\n", cbValue, Port));
                     return VERR_IOM_INVALID_IOPORT_SIZE;
@@ -310,12 +284,12 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeHC(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(In,ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
 # endif
         return VINF_IOM_HC_IOPORT_READ;
     }
@@ -326,16 +300,16 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
      */
 #ifdef VBOX_WITH_STATISTICS
     if (pStats)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
     else
     {
 # ifndef IN_RING3
         /* Ring-3 will have to create the statistics record. */
         return VINF_IOM_HC_IOPORT_READ;
 # else
-        pStats = iomr3IOPortStatsCreate(pVM, Port, NULL);
+        pStats = iomR3IOPortStatsCreate(pVM, Port, NULL);
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 # endif
     }
 #endif
@@ -345,7 +319,7 @@ IOMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
     {
         case 1: *(uint8_t  *)pu32Value = 0xff; break;
         case 2: *(uint16_t *)pu32Value = 0xffff; break;
-        case 4: *(uint32_t *)pu32Value = 0xffffffff; break;
+        case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
         default:
             AssertMsgFailed(("Invalid I/O port size %d. Port=%d\n", cbValue, Port));
             return VERR_IOM_INVALID_IOPORT_SIZE;
@@ -380,30 +354,27 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
     /*
      * Get the statistics record.
      */
-    PIOMIOPORTSTATS pStats = CTXALLSUFF(pVM->iom.s.pStatsLastRead);
+    PIOMIOPORTSTATS pStats = pVM->iom.s.CTX_SUFF(pStatsLastRead);
     if (!pStats || pStats->Core.Key != Port)
     {
-        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTXSUFF(pTrees)->IOPortStatTree, Port);
+        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, Port);
         if (pStats)
-            CTXALLSUFF(pVM->iom.s.pStatsLastRead) = pStats;
+            pVM->iom.s.CTX_SUFF(pStatsLastRead) = pStats;
     }
 #endif
 
     /*
      * Get handler for current context.
      */
-    CTXALLSUFF(PIOMIOPORTRANGE) pRange = CTXALLSUFF(pVM->iom.s.pRangeLastRead);
+    CTX_SUFF(PIOMIOPORTRANGE) pRange = pVM->iom.s.CTX_SUFF(pRangeLastRead);
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
         pRange = iomIOPortGetRange(&pVM->iom.s, Port);
         if (pRange)
-            CTXALLSUFF(pVM->iom.s.pRangeLastRead) = pRange;
+            pVM->iom.s.CTX_SUFF(pRangeLastRead) = pRange;
     }
-#ifdef IN_GC
-    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
-#endif
-
+    MMHYPER_RC_ASSERT_RCPTR(pVM, pRange);
     if (pRange)
     {
         /*
@@ -414,7 +385,7 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
         {
 # ifdef VBOX_WITH_STATISTICS
             if (pStats)
-                STAM_COUNTER_INC(&pStats->CTXALLMID(In,ToR3));
+                STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
 # endif
             return VINF_IOM_HC_IOPORT_READ;
         }
@@ -422,18 +393,18 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
         /* call the device. */
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfIn), a);
+            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfIn), a);
 #endif
 
         int rc = pRange->pfnInStrCallback(pRange->pDevIns, pRange->pvUser, Port, pGCPtrDst, pcTransfers, cb);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfIn), a);
+            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
         if (rc == VINF_SUCCESS && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 # ifndef IN_RING3
         else if (rc == VINF_IOM_HC_IOPORT_READ && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(In, ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In, ToR3));
 # endif
 #endif
         Log3(("IOMIOPortReadStr: Port=%RTiop pGCPtrDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Vrc\n",
@@ -445,12 +416,12 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeHC(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(In,ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
 # endif
         return VINF_IOM_HC_IOPORT_READ;
     }
@@ -461,16 +432,16 @@ IOMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
      */
 #ifdef VBOX_WITH_STATISTICS
     if (pStats)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
     else
     {
 # ifndef IN_RING3
         /* Ring-3 will have to create the statistics record. */
         return VINF_IOM_HC_IOPORT_READ;
 # else
-        pStats = iomr3IOPortStatsCreate(pVM, Port, NULL);
+        pStats = iomR3IOPortStatsCreate(pVM, Port, NULL);
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(In));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 # endif
     }
 #endif
@@ -503,30 +474,27 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
     /*
      * Find the statistics record.
      */
-    PIOMIOPORTSTATS pStats = CTXALLSUFF(pVM->iom.s.pStatsLastWrite);
+    PIOMIOPORTSTATS pStats = pVM->iom.s.CTX_SUFF(pStatsLastWrite);
     if (!pStats || pStats->Core.Key != Port)
     {
-        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTXSUFF(pTrees)->IOPortStatTree, Port);
+        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, Port);
         if (pStats)
-            CTXALLSUFF(pVM->iom.s.pStatsLastWrite) = pStats;
+            pVM->iom.s.CTX_SUFF(pStatsLastWrite) = pStats;
     }
 #endif
 
     /*
      * Get handler for current context.
      */
-    CTXALLSUFF(PIOMIOPORTRANGE) pRange = CTXALLSUFF(pVM->iom.s.pRangeLastWrite);
+    CTX_SUFF(PIOMIOPORTRANGE) pRange = pVM->iom.s.CTX_SUFF(pRangeLastWrite);
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
         pRange = iomIOPortGetRange(&pVM->iom.s, Port);
         if (pRange)
-            CTXALLSUFF(pVM->iom.s.pRangeLastWrite) = pRange;
+            pVM->iom.s.CTX_SUFF(pRangeLastWrite) = pRange;
     }
-#ifdef IN_GC
-    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange));
-#endif
-
+    MMHYPER_RC_ASSERT_RCPTR(pVM, pRange);
     if (pRange)
     {
         /*
@@ -537,7 +505,7 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
         {
 # ifdef VBOX_WITH_STATISTICS
             if (pStats)
-                STAM_COUNTER_INC(&pStats->CTXALLMID(Out,ToR3));
+                STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
 # endif
             return VINF_IOM_HC_IOPORT_WRITE;
         }
@@ -545,18 +513,18 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
         /* call the device. */
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfOut), a);
+            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfOut), a);
 #endif
         int rc = pRange->pfnOutCallback(pRange->pDevIns, pRange->pvUser, Port, u32Value, cbValue);
 
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfOut), a);
+            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
         if (rc == VINF_SUCCESS && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 # ifndef IN_RING3
         else if (rc == VINF_IOM_HC_IOPORT_WRITE && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(Out, ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out, ToR3));
 # endif
 #endif
         Log3(("IOMIOPortWrite: Port=%RTiop u32=%08RX32 cb=%d rc=%Vrc\n", Port, u32Value, cbValue, rc));
@@ -567,12 +535,12 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeHC(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(Out,ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
 # endif
         return VINF_IOM_HC_IOPORT_WRITE;
     }
@@ -584,16 +552,16 @@ IOMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
 #ifdef VBOX_WITH_STATISTICS
     /* statistics. */
     if (pStats)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
     else
     {
 # ifndef IN_RING3
         /* R3 will have to create the statistics record. */
         return VINF_IOM_HC_IOPORT_WRITE;
 # else
-        pStats = iomr3IOPortStatsCreate(pVM, Port, NULL);
+        pStats = iomR3IOPortStatsCreate(pVM, Port, NULL);
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 # endif
     }
 #endif
@@ -627,30 +595,27 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
     /*
      * Get the statistics record.
      */
-    PIOMIOPORTSTATS     pStats = CTXALLSUFF(pVM->iom.s.pStatsLastWrite);
+    PIOMIOPORTSTATS     pStats = pVM->iom.s.CTX_SUFF(pStatsLastWrite);
     if (!pStats || pStats->Core.Key != Port)
     {
-        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTXSUFF(pTrees)->IOPortStatTree, Port);
+        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, Port);
         if (pStats)
-            CTXALLSUFF(pVM->iom.s.pStatsLastWrite) = pStats;
+            pVM->iom.s.CTX_SUFF(pStatsLastWrite) = pStats;
     }
 #endif
 
     /*
      * Get handler for current context.
      */
-    CTXALLSUFF(PIOMIOPORTRANGE) pRange = CTXALLSUFF(pVM->iom.s.pRangeLastWrite);
+    CTX_SUFF(PIOMIOPORTRANGE) pRange = pVM->iom.s.CTX_SUFF(pRangeLastWrite);
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
         pRange = iomIOPortGetRange(&pVM->iom.s, Port);
         if (pRange)
-            CTXALLSUFF(pVM->iom.s.pRangeLastWrite) = pRange;
+            pVM->iom.s.CTX_SUFF(pRangeLastWrite) = pRange;
     }
-#ifdef IN_GC
-    Assert(!pRange || MMHyperIsInsideArea(pVM, (RTGCPTR)(RTRCUINTPTR)pRange)); /** @todo r=bird: there is a macro for this which skips the #if'ing. */
-#endif
-
+    MMHYPER_RC_ASSERT_RCPTR(pVM, pRange);
     if (pRange)
     {
         /*
@@ -661,7 +626,7 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
         {
 # ifdef VBOX_WITH_STATISTICS
             if (pStats)
-                STAM_COUNTER_INC(&pStats->CTXALLMID(Out,ToR3));
+                STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
 # endif
             return VINF_IOM_HC_IOPORT_WRITE;
         }
@@ -669,17 +634,17 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
         /* call the device. */
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTXALLSUFF(ProfOut), a);
+            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfOut), a);
 #endif
         int rc = pRange->pfnOutStrCallback(pRange->pDevIns, pRange->pvUser, Port, pGCPtrSrc, pcTransfers, cb);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTXALLSUFF(ProfOut), a);
+            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
         if (rc == VINF_SUCCESS && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 # ifndef IN_RING3
         else if (rc == VINF_IOM_HC_IOPORT_WRITE && pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(Out, ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out, ToR3));
 # endif
 #endif
         Log3(("IOMIOPortWriteStr: Port=%RTiop pGCPtrSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Vrc\n",
@@ -691,12 +656,12 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeHC(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLMID(Out,ToR3));
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
 # endif
         return VINF_IOM_HC_IOPORT_WRITE;
     }
@@ -707,16 +672,16 @@ IOMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
      */
 #ifdef VBOX_WITH_STATISTICS
     if (pStats)
-        STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
+        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
     else
     {
 # ifndef IN_RING3
         /* Ring-3 will have to create the statistics record. */
         return VINF_IOM_HC_IOPORT_WRITE;
 # else
-        pStats = iomr3IOPortStatsCreate(pVM, Port, NULL);
+        pStats = iomR3IOPortStatsCreate(pVM, Port, NULL);
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTXALLSUFF(Out));
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 # endif
     }
 #endif
@@ -763,7 +728,7 @@ IOMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         RTGCUINTPTR cbTss;
         bool        fCanHaveIOBitmap;
         int rc = SELMGetTSSInfo(pVM, &GCPtrTss, &cbTss, &fCanHaveIOBitmap);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d %Vrc -> #GP(0)\n", Port, cb, rc));
             return TRPMRaiseXcptErr(pVM, pCtxCore, X86_XCPT_GP, 0);
@@ -823,6 +788,7 @@ IOMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
     return VINF_SUCCESS;
 }
 
+
 /**
  * IN <AL|AX|EAX>, <DX|imm16>
  *
@@ -843,7 +809,7 @@ IOMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
 IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
 #ifdef IN_GC
-    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstIn);
+    STAM_COUNTER_INC(&pVM->iom.s.StatInstIn);
 #endif
 
     /*
@@ -863,7 +829,7 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
         /*
          * Attemp to read the port.
          */
-        uint32_t    u32Data = ~0U;
+        uint32_t u32Data = UINT32_C(0xffffffff);
         rc = IOMIOPortRead(pVM, uPort, &u32Data, cbSize);
         if (IOM_SUCCESS(rc))
         {
@@ -874,10 +840,10 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
             AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
         }
         else
-            AssertMsg(rc == VINF_IOM_HC_IOPORT_READ || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+            AssertMsg(rc == VINF_IOM_HC_IOPORT_READ || RT_FAILURE(rc), ("%Vrc\n", rc));
     }
     else
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
     return rc;
 }
 
@@ -902,7 +868,7 @@ IOMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 IOMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
 #ifdef IN_GC
-    STAM_COUNTER_INC(&pVM->iom.s.StatGCInstOut);
+    STAM_COUNTER_INC(&pVM->iom.s.StatInstOut);
 #endif
 
     /*
@@ -925,9 +891,9 @@ IOMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
          * Attempt to write to the port.
          */
         rc = IOMIOPortWrite(pVM, uPort, u64Data, cbSize);
-        AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Vrc\n", rc));
     }
     else
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || VBOX_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
     return rc;
 }

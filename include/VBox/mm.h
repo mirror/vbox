@@ -306,15 +306,15 @@ MMDECL(int)         MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvP
 MMDECL(void *)      MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 
 
-/** @def MMHYPER_GC_ASSERT_GCPTR
+/** @def MMHYPER_RC_ASSERT_RCPTR
  * Asserts that an address is either NULL or inside the hypervisor memory area.
  * This assertion only works while IN_GC, it's a NOP everywhere else.
  * @thread  The Emulation Thread.
  */
 #ifdef IN_GC
-# define MMHYPER_GC_ASSERT_GCPTR(pVM, GCPtr)   Assert(MMHyperIsInsideArea((pVM), (GCPtr)) || !(GCPtr))
+# define MMHYPER_RC_ASSERT_RCPTR(pVM, RCPtr)   Assert(MMHyperIsInsideArea((pVM), (RTRCUINTPTR)(RCPtr)) || !(RCPtr))
 #else
-# define MMHYPER_GC_ASSERT_GCPTR(pVM, GCPtr)   do { } while (0)
+# define MMHYPER_RC_ASSERT_RCPTR(pVM, RCPtr)   do { } while (0)
 #endif
 
 /** @} */
