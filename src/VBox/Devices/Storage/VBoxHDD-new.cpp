@@ -2187,7 +2187,7 @@ movefail:
                 if (RT_FAILURE(rc))
                     break;
             }
-            if (pDstCbProgress->pfnProgress)
+            if (pDstCbProgress && pDstCbProgress->pfnProgress)
             {
                 rc = pDstCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
                                                  uOffset * 99 / cbSize,
@@ -2247,7 +2247,7 @@ movefail:
         if (pCbProgress && pCbProgress->pfnProgress)
             pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
                                      pIfProgress->pvUser);
-        if (pDstCbProgress->pfnProgress)
+        if (pDstCbProgress && pDstCbProgress->pfnProgress)
             pDstCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
                                         pDstIfProgress->pvUser);
     }
