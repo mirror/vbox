@@ -409,7 +409,8 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
         memset(pvBuf, '\0', *pcbBuf); /* we got read size, but zero it anyway. */
     rc = DRVHostBaseScsiCmd(pThis, pbCmd, 12, PDMBLOCKTXDIR_FROM_DEVICE, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
     if (rc == VERR_UNRESOLVED_ERROR)
-        rc = VINF_SUCCESS;
+        /* sense information set */
+        rc = VERR_DEV_IO_ERROR;
 
 #elif defined(RT_OS_L4)
     /* Not really ported to L4 yet. */
