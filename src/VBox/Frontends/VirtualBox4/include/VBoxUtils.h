@@ -180,6 +180,8 @@ inline HIRect darwinToHIRect (const QRect &aRect)
     return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
 }
 
+bool darwinIsMenuOpen();
+
 void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow);
 
 void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);

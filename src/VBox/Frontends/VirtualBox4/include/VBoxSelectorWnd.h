@@ -90,6 +90,9 @@ protected:
     /* Events */
     bool event (QEvent *aEvent);
     void closeEvent (QCloseEvent *aEvent);
+#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
+    bool eventFilter (QObject *aObject, QEvent *aEvent);
+#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
 
     void retranslateUi();
 

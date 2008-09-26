@@ -284,6 +284,13 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
         }
         case QEvent::KeyPress:
         {
+#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
+            /* Bug in Qt below 4.4.2. The key events are send to the current
+             * window even if a menu is shown & has the focus. See
+             * http://trolltech.com/developer/task-tracker/index_html?method=entry&id=214681. */
+            if (::darwinIsMenuOpen())
+                return true;
+#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
             /* Make sure that we only proceed if no
              * popup or other modal widgets are open. */
             if (qApp->activePopupWidget() ||

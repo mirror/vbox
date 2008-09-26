@@ -107,7 +107,7 @@ void darwinSetShowToolBarButton (QToolBar *aToolBar, bool aShow)
     QWidget *parent = aToolBar->parentWidget();
     if (parent)
     {
-        int err = ChangeWindowAttributes (::darwinToWindowRef (parent), aShow ? kWindowToolbarButtonAttribute:kWindowNoAttributes, 
+        int err = ChangeWindowAttributes (::darwinToWindowRef (parent), aShow ? kWindowToolbarButtonAttribute:kWindowNoAttributes,
                                                                         aShow ? kWindowNoAttributes:kWindowToolbarButtonAttribute);
         AssertCarbonOSStatus (err);
     }
@@ -159,7 +159,7 @@ CGImageRef darwinCreateDockBadge (const char *aSource)
     if (badge.width() < 32)
         badge = badge.scaled (32, 32, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     QPainter painter (&transImage);
-    painter.drawImage (QPoint ((transImage.width() - badge.width()) / 2.0, 
+    painter.drawImage (QPoint ((transImage.width() - badge.width()) / 2.0,
                                (transImage.height() - badge.height()) / 2.0),
                        badge);
     painter.end();
@@ -275,6 +275,12 @@ void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
     CGDataProviderRelease (dp);
     CGImageRelease (ir);
     CGColorSpaceRelease (cs);
+}
+
+bool darwinIsMenuOpen()
+{
+    MenuTrackingData outData;
+    return (GetMenuTrackingData (NULL, &outData) != menuNotFoundErr);
 }
 
 void darwinDisableIconsInMenus()
@@ -443,15 +449,15 @@ const char * DarwinDebugEventName (UInt32 ekind)
 # undef MY_CASE
 
 /* Convert a class into the 4 char code defined in
- * 'Developer/Headers/CFMCarbon/CarbonEvents.h' to 
+ * 'Developer/Headers/CFMCarbon/CarbonEvents.h' to
  * identify the event. */
 const char * darwinDebugClassName (UInt32 eclass)
 {
     char *pclass = (char*)&eclass;
     static char s_sz[11];
-    sprintf(s_sz, "class=%c%c%c%c", pclass[3], 
-                                    pclass[2], 
-                                    pclass[1], 
+    sprintf(s_sz, "class=%c%c%c%c", pclass[3],
+                                    pclass[2],
+                                    pclass[1],
                                     pclass[0]);
     return s_sz;
 }

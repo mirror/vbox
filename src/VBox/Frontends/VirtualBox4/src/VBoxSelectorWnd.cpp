@@ -389,6 +389,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     statusBar();
 
+#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
+    qApp->installEventFilter (this);
+#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
+
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     /* The application icon. On Win32, it's built-in to the executable. On Mac
      * OS X the icon referenced in info.plist is used. */
@@ -1116,6 +1120,33 @@ void VBoxSelectorWnd::closeEvent (QCloseEvent *aEvent)
     emit closing();
     return QMainWindow::closeEvent (aEvent);
 }
+
+#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
+bool VBoxSelectorWnd::eventFilter (QObject *aObject, QEvent *aEvent)
+{
+    if (!isActiveWindow())
+        return QIWithRetranslateUI2<QMainWindow>::eventFilter (aObject, aEvent);
+
+    if (qobject_cast<QWidget*> (aObject) &&
+        qobject_cast<QWidget*> (aObject)->window() != this)
+        return QIWithRetranslateUI2<QMainWindow>::eventFilter (aObject, aEvent);
+
+    switch (aEvent->type())
+    {
+        case QEvent::KeyPress:
+            {
+                /* Bug in Qt below 4.4.2. The key events are send to the current
+                 * window even if a menu is shown & has the focus. See
+                 * http://trolltech.com/developer/task-tracker/index_html?method=entry&id=214681. */
+                if (::darwinIsMenuOpen())
+                    return true;
+            }
+        default:
+            break;
+    }
+    return QIWithRetranslateUI2<QMainWindow>::eventFilter (aObject, aEvent);
+}
+#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
 
 /**
  *  Sets the strings of the subwidgets using the current
