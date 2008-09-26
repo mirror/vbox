@@ -63,9 +63,9 @@ if test "$currentzone" = "global"; then
 
     # add vboxdrv to the devlink.tab
     sed -e '
-/name=vboxdrv/d
-$i\
-type=ddi_pseudo;name=vboxdrv	\\D' /etc/devlink.tab
+/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
+    echo "type=ddi_pseudo;name=vboxdrv	\D" >> /etc/devlink.vbox
+    mv -f /etc/devlink.vbox /etc/devlink.tab
 
     # create the device link
     /usr/sbin/devfsadm -i vboxdrv

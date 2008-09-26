@@ -31,7 +31,8 @@ if test "$currentzone" = "global"; then
 
     # remove devlink.tab entry for vboxdrv
     sed -e '
-/name=vboxdrv/d' /etc/devlink.tab
+/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
+    mv -f /etc/devlink.vbox /etc/devlink.tab
 
     # remove the link
     rm /dev/vboxdrv
