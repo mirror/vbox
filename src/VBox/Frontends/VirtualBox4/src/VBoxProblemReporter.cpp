@@ -2257,7 +2257,7 @@ void VBoxProblemReporter::showHelpHelpDialog()
     int rc;
 
     rc = RTPathAppPrivateArch (szViewerPath, sizeof (szViewerPath));
-    Assert(RT_SUCCESS(rc));
+    AssertRC (rc);
 
     QProcess::startDetached (QString(szViewerPath) + "/kchmviewer",
                              QStringList (manual));

@@ -2055,7 +2055,7 @@ QString VBoxGlobal::platformInfo()
     /* Get script path */
     char szAppPrivPath [RTPATH_MAX];
     int rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath)); NOREF(rc);
-    Assert (RT_SUCCESS (rc));
+    AssertRC (rc);
     /* Run script */
     QByteArray result =
         Process::singleShot (QString (szAppPrivPath) + "/VBoxSysInfo.sh");
@@ -2808,7 +2808,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     int rc;
 
     rc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
-    Assert(RT_SUCCESS(rc));
+    AssertRC (rc);
 
     QString nlsPath = QString(szNlsPath) + gVBoxLangSubDir;
     QDir nlsDir (nlsPath);
@@ -2932,7 +2932,7 @@ QString VBoxGlobal::helpFile() const
     /* Where are the docs located? */
     char szDocsPath[RTPATH_MAX];
     int rc = RTPathAppDocs (szDocsPath, sizeof (szDocsPath));
-    Assert (RT_SUCCESS (rc));
+    AssertRC (rc);
 
     /* Construct the path and the filename */
     QString manual = QString ("%1/%2_%3.%4").arg (szDocsPath)

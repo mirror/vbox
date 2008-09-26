@@ -2650,7 +2650,7 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     int rc;
 
     rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
-    Assert (RT_SUCCESS (rc));
+    AssertRC (rc);
 
     QString src1 = QString (szAppPrivPath) + "/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/additions/VBoxGuestAdditions.iso";
