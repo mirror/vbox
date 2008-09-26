@@ -2423,10 +2423,15 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
+#if 0
+        /* Disable this passthrough command. The guest should fallback to other means to
+         * detect the disk status. We cannot emulate this command properly when in non-
+         * passthrough mode. */
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
+#endif
         case SCSI_GET_PERFORMANCE:
             cbTransfer = s->uATARegLCyl | (s->uATARegHCyl << 8); /* use ATAPI transfer length */
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
