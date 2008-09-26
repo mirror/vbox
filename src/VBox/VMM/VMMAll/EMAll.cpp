@@ -48,6 +48,25 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def EM_ASSERT_FAULT_RETURN
+ * Safety check.
+ *
+ * Could in theory it misfire on a cross page boundary access...
+ *
+ * Currently disabled because the CSAM (+ PATM) patch monitoring occationally
+ * turns up an alias page instead of the original faulting one and annoying the
+ * heck out of anyone running a debug build. See @bugref{2609} and @bugref{1931}.
+ */
+#if 0
+# define EM_ASSERT_FAULT_RETURN(expr, rc) AssertReturn(expr, rc)
+#else
+# define EM_ASSERT_FAULT_RETURN(expr, rc) do { } while (0)
+#endif
+
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
@@ -443,10 +462,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTGCPTR)param1.val.val64;
                 pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
-#endif
+                EM_ASSERT_FAULT_RETURN(pParam1 == pvFault, VERR_EM_INTERPRETER);
                 rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
                 if (VBOX_FAILURE(rc))
                 {
@@ -465,10 +481,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             case PARMTYPE_ADDRESS:
                 pParam2 = (RTGCPTR)param2.val.val64;
                 pParam2 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param2, pParam2);
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertReturn(pParam2 == pvFault, VERR_EM_INTERPRETER);
-#endif
+                EM_ASSERT_FAULT_RETURN(pParam2 == pvFault, VERR_EM_INTERPRETER);
                 rc = emRamRead(pVM,  &valpar2, pParam2, param2.size);
                 if (VBOX_FAILURE(rc))
                 {
@@ -666,11 +679,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                    pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + param1.size);
 
                 pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == pvFault || (RTGCPTR)pRegFrame->esp == pvFault, ("%VGv != %VGv ss:esp=%04X:%08x\n", pParam1, pvFault, pRegFrame->ss, pRegFrame->esp), VERR_EM_INTERPRETER);
-#endif
+                EM_ASSERT_FAULT_RETURN(pParam1 == pvFault || (RTGCPTR)pRegFrame->esp == pvFault, VERR_EM_INTERPRETER);
                 rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
                 if (VBOX_FAILURE(rc))
                 {
@@ -741,11 +750,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
             {
                 pParam1 = (RTGCPTR)param1.val.val64;
                 pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == pvFault, ("eip=%VGv, pParam1=%VGv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
-#endif
+                EM_ASSERT_FAULT_RETURN(pParam1 == pvFault, VERR_EM_INTERPRETER);
                 rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
                 if (VBOX_FAILURE(rc))
                 {
@@ -842,12 +847,12 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     }
 #endif
 
-# ifdef IN_GC
+#ifdef IN_GC
     /* Safety check (in theory it could cross a page boundary and fault there though) */
     Assert(   TRPMHasTrap(pVM)
            && (TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW));
-    AssertMsgReturn(GCPtrPar1 == pvFault, ("eip=%VGv, GCPtrPar1=%VGv pvFault=%VGv\n", pRegFrame->rip, GCPtrPar1, pvFault), VERR_EM_INTERPRETER);
-# endif
+    EM_ASSERT_FAULT_RETURN(GCPtrPar1 == pvFault, VERR_EM_INTERPRETER);
+#endif
 
     /* Register and immediate data == PARMTYPE_IMMEDIATE */
     AssertReturn(param2.type == PARMTYPE_IMMEDIATE, VERR_EM_INTERPRETER);
@@ -920,11 +925,7 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             {
                 pParam1 = (RTGCPTR)param1.val.val64;
                 pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
-
-#ifdef IN_GC
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertReturn(pParam1 == pvFault, VERR_EM_INTERPRETER);
-#endif
+                EM_ASSERT_FAULT_RETURN(pParam1 == pvFault, VERR_EM_INTERPRETER);
                 rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
                 if (VBOX_FAILURE(rc))
                 {
@@ -1033,10 +1034,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 
             Log2(("emInterpret%s: pvFault=%VGv pParam1=%VGv val2=%x\n", emGetMnemonic(pCpu), pvFault, pParam1, valpar2));
             pParam1 = (RTGCPTR)((RTGCUINTPTR)pParam1 + valpar2/8);
-#ifdef IN_GC
-            /* Safety check. */
-            AssertMsgReturn((RTGCPTR)((RTGCUINTPTR)pParam1 & ~3) == pvFault, ("pParam1=%VGv pvFault=%VGv\n", pParam1, pvFault), VERR_EM_INTERPRETER);
-#endif
+            EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)pParam1 & ~3) == pvFault, VERR_EM_INTERPRETER);
             rc = emRamRead(pVM, &valpar1, pParam1, 1);
             if (VBOX_FAILURE(rc))
             {
@@ -1117,9 +1115,7 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
 
 #ifdef IN_GC
     Assert(TRPMHasTrap(pVM));
-    AssertMsgReturn((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault,
-                    ("GCPtrPar1=%VGv pvFault=%VGv\n", GCPtrPar1, pvFault),
-                    VERR_EM_INTERPRETER);
+    EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault, VERR_EM_INTERPRETER);
 #endif
 
     /* Try emulate it with a one-shot #PF handler in place. */
@@ -1211,13 +1207,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 #endif
 
             Assert(param2.size <= 8 && param2.size > 0);
-
-#if 0 /* CSAM/PATM translates aliases which causes this to incorrectly trigger. See #2609 and #1498. */
-#ifdef IN_GC
-            /* Safety check (in theory it could cross a page boundary and fault there though) */
-            AssertMsgReturn(pDest == pvFault, ("eip=%VGv pDest=%VGv pvFault=%VGv\n", pRegFrame->rip, pDest, pvFault), VERR_EM_INTERPRETER);
-#endif
-#endif
+            EM_ASSERT_FAULT_RETURN(pDest == pvFault, VERR_EM_INTERPRETER);
             rc = emRamWrite(pVM, pDest, &val64, param2.size);
             if (VBOX_FAILURE(rc))
                 return VERR_EM_INTERPRETER;
@@ -1247,10 +1237,7 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             }
 
             Assert(param1.size <= 8 && param1.size > 0);
-#ifdef IN_GC
-            /* Safety check (in theory it could cross a page boundary and fault there though) */
-            AssertReturn(pSrc == pvFault, VERR_EM_INTERPRETER);
-#endif
+            EM_ASSERT_FAULT_RETURN(pSrc == pvFault, VERR_EM_INTERPRETER);
             rc = emRamRead(pVM, &val64, pSrc, param1.size);
             if (VBOX_FAILURE(rc))
                 return VERR_EM_INTERPRETER;
@@ -1525,9 +1512,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTRCPTR)param1.val.val64;
                 pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
-
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VGv pParam1=%VRv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
             default:
@@ -1598,9 +1583,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTRCPTR)param1.val.val64;
                 pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
-
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VGv pParam1=%VRv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
             default:
@@ -1671,9 +1654,7 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
             case PARMTYPE_ADDRESS:
                 pParam1 = (RTRCPTR)param1.val.val64;
                 pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
-
-                /* Safety check (in theory it could cross a page boundary and fault there though) */
-                AssertMsgReturn(pParam1 == (RTRCPTR)pvFault, ("eip=%VGv pParam1=%VRv pvFault=%VGv\n", pRegFrame->rip, pParam1, pvFault), VERR_EM_INTERPRETER);
+                EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
             default:
