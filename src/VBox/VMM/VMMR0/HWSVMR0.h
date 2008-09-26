@@ -108,10 +108,6 @@ HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM);
 /**
  * Runs guest code in an AMD-V VM.
  *
- * @note NEVER EVER turn on interrupts here. Due to our illegal entry into the
- *       kernel, it might mess things up. (XP kernel traps have been frequently
- *       observed.) [obsolete?]
- *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
