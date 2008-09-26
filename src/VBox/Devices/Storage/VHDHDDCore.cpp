@@ -851,7 +851,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    LogFlow(("%s: pBackendData=%p uOffset=%llu pvBuf=%p cbRead=%u pcbActuallyRead=%p\n", __FUNCTION__, pBackendData, uOffset, pvBuf, cbRead, pcbActuallyRead));
+    LogFlow(("%s: pBackendData=%p uOffset=%#llx pvBuf=%p cbRead=%u pcbActuallyRead=%p\n", __FUNCTION__, pBackendData, uOffset, pvBuf, cbRead, pcbActuallyRead));
 
     if (uOffset + cbRead > pImage->cbSize)
         return VERR_INVALID_PARAMETER;
@@ -881,7 +881,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
             return VERR_VDI_BLOCK_FREE;
         }
 
-        uVhdOffset = (pImage->pBlockAllocationTable[cBlockAllocationTableEntry] +  pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
+        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
         Log(("%s: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
 
         /*
@@ -891,7 +891,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
 
         /* Read in the block's bitmap. */
         rc = RTFileReadAt(pImage->File,
-            pImage->pBlockAllocationTable[cBlockAllocationTableEntry] * VHD_SECTOR_SIZE,
+            (uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] * VHD_SECTOR_SIZE,
             pImage->pu8Bitmap, pImage->cbDataBlockBitmap, NULL);
         if (RT_SUCCESS(rc))
         {
@@ -961,6 +961,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                 } while (cSectors < (cbRead / VHD_SECTOR_SIZE));
 
                 cbRead = cSectors * VHD_SECTOR_SIZE;
+                Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
                 rc = VERR_VDI_BLOCK_FREE;
             }
         }
@@ -974,6 +975,10 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
 
     if (pcbActuallyRead)
         *pcbActuallyRead = cbRead;
+
+    Log2(("vhdRead: off=%#llx pvBuf=%p cbRead=%d\n"
+            "%.*Vhxd\n",
+            uOffset, pvBuf, cbRead, cbRead, pvBuf));
 
     return rc;
 }
@@ -1027,7 +1032,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
         /*
          * Calculate the real offset in the file.
          */
-        uVhdOffset = (pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
+        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
 
         /*
          * Clip write range.
@@ -1037,7 +1042,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
 
         /* Read in the block's bitmap. */
         rc = RTFileReadAt(pImage->File,
-            pImage->pBlockAllocationTable[cBlockAllocationTableEntry] * VHD_SECTOR_SIZE,
+            (uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] * VHD_SECTOR_SIZE,
             pImage->pu8Bitmap, pImage->cbDataBlockBitmap, NULL);
         if (RT_SUCCESS(rc))
         {
@@ -1117,7 +1122,10 @@ static uint64_t vhdGetSize(void *pBackendData)
     Assert(pImage);
 
     if (pImage)
+    {
+        Log(("%s: cbSize=%llu\n", __FUNCTION__, pImage->cbSize));
         return pImage->cbSize;
+    }
     else
         return 0;
 }
