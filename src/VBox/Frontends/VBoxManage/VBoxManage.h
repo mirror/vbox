@@ -76,6 +76,7 @@
 #endif  /* VBOX_WITH_GUEST_PROPS defined */
 #define USAGE_CONVERTTORAW          RT_BIT_64(41)
 #define USAGE_METRICS               RT_BIT_64(42)
+#define USAGE_CONVERTDISK           RT_BIT_64(43)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
