@@ -1519,62 +1519,67 @@ static int CmdConvertDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox
                              &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
-    /* Try to determine input image format */
-    if (srcformat.isEmpty())
+    do
     {
-        char *pszFormat = NULL;
-        vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
+        /* Try to determine input image format */
+        if (srcformat.isEmpty())
+        {
+            char *pszFormat = NULL;
+            vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
+            if (VBOX_FAILURE(vrc))
+            {
+                RTPrintf("No file format specified and autodetect failed - please specify format: %Vrc\n", vrc);
+                break;
+            }
+            srcformat = pszFormat;
+            RTStrFree(pszFormat);
+        }
+
+        vrc = VDCreate(&vdInterfaceError, &pSrcDisk);
         if (VBOX_FAILURE(vrc))
         {
-            RTPrintf("No file format specified and autodetect failed - please specify format: %Vrc\n", vrc);
-            goto cleanup;
+            RTPrintf("Error while creating the source virtual disk container: %Vrc\n", vrc);
+            break;
         }
-        srcformat = pszFormat;
-        RTStrFree(pszFormat);
+
+        /* Open the input image */
+        vrc = VDOpen(pSrcDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY, NULL);
+        if (VBOX_FAILURE(vrc))
+        {
+            RTPrintf("Error while opening the source image: %Vrc\n", vrc);
+            break;
+        }
+
+        /* Output format defaults to VDI */
+        if (dstformat.isEmpty())
+            dstformat = "VDI";
+
+        vrc = VDCreate(&vdInterfaceError, &pDstDisk);
+        if (VBOX_FAILURE(vrc))
+        {
+            RTPrintf("Error while creating the destination virtual disk container: %Vrc\n", vrc);
+            break;
+        }
+
+        uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
+        RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", Utf8Str(src).raw(), cbSize, (cbSize + _1M - 1) / _1M);
+
+        /* Create the output image */
+        vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
+                     Utf8Str(dst).raw(), false, 0, NULL, NULL, NULL);
+        if (VBOX_FAILURE(vrc))
+        {
+            RTPrintf("Error while copying the image: %Vrc\n", vrc);
+            break;
+        }
     }
+    while (0);
 
-    vrc = VDCreate(&vdInterfaceError, &pSrcDisk);
-    if (VBOX_FAILURE(vrc))
-    {
-        RTPrintf("Error while creating the source virtual disk container: %Vrc\n", vrc);
-        goto cleanup;
-    }
-
-    /* Open the input image */
-    vrc = VDOpen(pSrcDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY, NULL);
-    if (VBOX_FAILURE(vrc))
-    {
-        RTPrintf("Error while opening the source image: %Vrc\n", vrc);
-        goto cleanup;
-    }
-
-    /* Output format defaults to VDI */
-    if (dstformat.isEmpty())
-        dstformat = "VDI";
-
-    vrc = VDCreate(&vdInterfaceError, &pDstDisk);
-    if (VBOX_FAILURE(vrc))
-    {
-        RTPrintf("Error while creating the destination virtual disk container: %Vrc\n", vrc);
-        goto cleanup;
-    }
-
-    uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
-    RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", Utf8Str(src).raw(), cbSize, (cbSize + _1M - 1) / _1M);
-
-    /* Create the output image */
-    vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
-                 Utf8Str(dst).raw(), false, 0, NULL, NULL, NULL);
-    if (VBOX_FAILURE(vrc))
-    {
-        RTPrintf("Error while copying the image: %Vrc\n", vrc);
-    }
-
-cleanup:
     if (pDstDisk)
         VDCloseAll(pDstDisk);
     if (pSrcDisk)
         VDCloseAll(pSrcDisk);
+
     return VBOX_SUCCESS(vrc) ? 0 : 1;
 }
 
