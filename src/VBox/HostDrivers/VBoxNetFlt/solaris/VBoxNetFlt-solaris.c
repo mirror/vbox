@@ -857,8 +857,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut pQueue=%p pMsg=%p\n", pQueue, pMsg));
 
     bool fSendUpstream = true;
-    bool fActive = false;
-    bool fRetained = false;
     vboxnetflt_stream_t *pStream = pQueue->q_ptr;
     PVBOXNETFLTINS pThis = NULL;
 
@@ -880,9 +878,8 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
              */
             RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
             RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-            fActive = ASMAtomicUoReadBool(&pThis->fActive);
+            const bool fActive = ASMAtomicUoReadBool(&pThis->fActive);
             vboxNetFltRetain(pThis, true);
-            fRetained = true;
             RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
             vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
@@ -987,6 +984,8 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                     break;
                 }
             }
+
+            vboxNetFltRelease(pThis, true);        
         }
         else
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Could not find VirtualBox instance!!\n"));
@@ -1006,9 +1005,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
         else
             putbq(pQueue, pMsg);
     }
-
-    if (fRetained)
-        vboxNetFltRelease(pThis, true);
 
     return 0;
 }
@@ -2376,8 +2372,10 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
     if (RT_UNLIKELY(cbMsg < sizeof(RTNETETHERHDR)))
         return VERR_NET_MSG_SIZE;
 
+    int rc = RTSemFastMutexRequest(pThis->u.s.hFastMtx);
+    AssertRCReturn(rc, rc);
+
     PVBOXNETFLTPACKETID pCur = NULL;
-    int rc = VINF_SUCCESS;
     if (pPromiscStream->cLoopback < VBOXNETFLT_LOOPBACK_SIZE)
     {
         do
@@ -2445,11 +2443,16 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
         pPromiscStream->pHead = pPromiscStream->pHead->pNext;
         pPromiscStream->pTail->pNext = pCur;
         pPromiscStream->pTail = pCur;
+        pCur->pNext = NULL;
+        pCur->cbPacket = 0;
+        pPromiscStream->cLoopback--;
 
         vboxNetFltSolarisInitPacketId(pCur, pMsg);
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback recycled head!! checksum=%u cLoopback=%d\n", pCur->Checksum,
                 pPromiscStream->cLoopback));
     }
+
+    RTSemFastMutexRelease(pThis->u.s.hFastMtx);
 
     return rc;
 }
@@ -2482,9 +2485,12 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
     if (cbMsg < sizeof(RTNETETHERHDR))
         return false;
 
+    int rc = RTSemFastMutexRequest(pThis->u.s.hFastMtx);
+    AssertRCReturn(rc, rc);
+
     PVBOXNETFLTPACKETID pPrev = NULL;
     PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
-    bool fIsOur = false;
+    bool fIsOurPacket = false;
     while (pCur)
     {
         PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
@@ -2528,13 +2534,14 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
             pCur->pNext = NULL;
         }
         pPromiscStream->cLoopback--;
+        fIsOurPacket = true;
 
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p cLoopback=%d\n", pMsg, pPromiscStream->cLoopback));
-        return true;
+        break;
     }
 
-    NOREF(pThis);
-    return false;
+    RTSemFastMutexRelease(pThis->u.s.hFastMtx);
+    return fIsOurPacket;
 }
 
 
@@ -2565,24 +2572,23 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     /*
      * Don't loopback packets we transmit to the wire.
      */
-#if 0
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-    bool fOurPacket = vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-
-    if (fOurPacket)
+    if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
     {
         LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
         freemsg(pMsg);
         return VINF_SUCCESS;
     }
-#endif
+
+#if 0
+    /*
+     * Yeah, I wish.
+     */
     if (pMsg->b_flag & MSGNOLOOP)
     {
         freemsg(pMsg);
         return VINF_SUCCESS;
     }
+#endif
 
     /*
      * Figure out the source of the packet based on the source Mac address.
@@ -2916,13 +2922,35 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltOsDeleteInstance pThis=%p\n"));
     vboxNetFltSolarisDetachFromInterface(pThis);
+
+    if (pThis->u.s.hFastMtx != NIL_RTSEMFASTMUTEX)
+    {
+        RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
+        pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
+    }
 }
 
 
 int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltOsInitInstance pThis=%p\n"));
-    return vboxNetFltSolarisAttachToInterface(pThis);
+
+    /*
+     * Mutex used for loopback lockouts.
+     */
+    int rc = RTSemFastMutexCreate(&pThis->u.s.hFastMtx);
+    if (RT_SUCCESS(rc))
+    {
+        rc = vboxNetFltSolarisAttachToInterface(pThis);
+        if (RT_SUCCESS(rc))
+            return rc;
+    
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Vrc\n", rc));
+        RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
+        pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
+    }
+
+    return rc;
 }
 
 
@@ -2934,6 +2962,7 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.pvIpStream = NULL;
     pThis->u.s.pvArpStream = NULL;
     pThis->u.s.pvPromiscStream = NULL;
+    pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
     bzero(&pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
     return VINF_SUCCESS;
 }
@@ -2964,16 +2993,14 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             {
                 LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_WIRE\n"));
 
-#if 0
-                RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-                RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-
                 vboxNetFltSolarisQueueLoopback(pThis, pPromiscStream, pMsg);
 
-                RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-#endif
-
+#if 0
+                /*
+                 * Too bad we can't keep this, though it "works"....
+                 */
                 pMsg->b_flag |= MSGNOLOOP;
+#endif
                 putnext(WR(pPromiscStream->Stream.pReadQueue), pMsg);
             }
         }
