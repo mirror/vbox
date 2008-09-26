@@ -460,13 +460,13 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
 #ifdef VBOX_STRICT
     uint32_t    iGate = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
     if (iGate == 0xE)
-        Log2(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", iGate, pCtx->rip, errCode, pCtx->cr2, intInfo));
+        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", iGate, pCtx->rip, errCode, pCtx->cr2, intInfo));
     else
     if (iGate < 0x20)
-        Log2(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x\n", iGate, pCtx->rip, errCode));
+        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x\n", iGate, pCtx->rip, errCode));
     else
     {
-        Log2(("INJ-EI: %x at %VGv\n", iGate, pCtx->rip));
+        LogFlow(("INJ-EI: %x at %VGv\n", iGate, pCtx->rip));
         Assert(!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
         Assert(pCtx->eflags.u32 & X86_EFL_IF);
     }
@@ -514,10 +514,14 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
     {
         if (!(pCtx->eflags.u32 & X86_EFL_IF))
         {
-            Log2(("Enable irq window exit!\n"));
-            pVM->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
-            AssertRC(rc);
+            if (!(pVM->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT))
+            {
+                LogFlow(("Enable irq window exit!\n"));
+                pVM->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
+                rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
+                AssertRC(rc);
+            }
+            /* else nothing to do but wait */
         }
         else
         if (!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
@@ -738,15 +742,46 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
         if (pVM->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
         {
+            /* Correct weird requirements for switching to protected mode. */
             if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
-                &&  enmGuestMode == PGMMODE_PROTECTED)
+                &&  enmGuestMode >= PGMMODE_PROTECTED)
             {
-                pCtx->csHid.Attr.n.u2Dpl = 0;
-                pCtx->dsHid.Attr.n.u2Dpl = 0;
-                pCtx->esHid.Attr.n.u2Dpl = 0;
-                pCtx->fsHid.Attr.n.u2Dpl = 0;
-                pCtx->gsHid.Attr.n.u2Dpl = 0;
-                pCtx->ssHid.Attr.n.u2Dpl = 0;
+                /* DPL of all hidden selector registers must match the current CPL (0). */
+                pCtx->csHid.Attr.n.u2Dpl  = 0;
+                pCtx->csHid.Attr.n.u4Type = X86_SEL_TYPE_CODE | X86_SEL_TYPE_RW_ACC;
+
+                pCtx->dsHid.Attr.n.u2Dpl  = 0;
+                pCtx->esHid.Attr.n.u2Dpl  = 0;
+                pCtx->fsHid.Attr.n.u2Dpl  = 0;
+                pCtx->gsHid.Attr.n.u2Dpl  = 0;
+                pCtx->ssHid.Attr.n.u2Dpl  = 0;
+
+                /* RPL of all selectors must match the current CPL (0). */
+                pCtx->cs &= ~X86_SEL_RPL;
+                pCtx->ds &= ~X86_SEL_RPL;
+                pCtx->es &= ~X86_SEL_RPL;
+                pCtx->fs &= ~X86_SEL_RPL;
+                pCtx->gs &= ~X86_SEL_RPL;
+                pCtx->ss &= ~X86_SEL_RPL;
+            }
+            else
+            /* Switching from protected mode to real mode. */
+            if (    pVM->hwaccm.s.vmx.enmCurrGuestMode >= PGMMODE_PROTECTED
+                &&  enmGuestMode == PGMMODE_REAL)
+            {
+                /* The selector value & base must be adjusted or else... */
+                pCtx->cs = pCtx->csHid.u64Base >> 4;
+                pCtx->ds = pCtx->dsHid.u64Base >> 4;
+                pCtx->es = pCtx->esHid.u64Base >> 4;
+                pCtx->fs = pCtx->fsHid.u64Base >> 4;
+                pCtx->gs = pCtx->gsHid.u64Base >> 4;
+                pCtx->ss = pCtx->ssHid.u64Base >> 4;
+
+                pCtx->dsHid.u64Base &= 0xfffff;
+                pCtx->esHid.u64Base &= 0xfffff;
+                pCtx->fsHid.u64Base &= 0xfffff;
+                pCtx->gsHid.u64Base &= 0xfffff;
+
             }
             pVM->hwaccm.s.vmx.enmCurrGuestMode = enmGuestMode;
         }
@@ -1038,7 +1073,6 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
         eflags.Bits.u1VM   = 1;
-        eflags.Bits.u1VIF  = pCtx->eflags.Bits.u1IF;
         eflags.Bits.u2IOPL = 3;
     }
 
@@ -1612,8 +1646,6 @@ ResumeExecution:
     {
         /* Hide our emulation flags */
         pCtx->eflags.Bits.u1VM   = 0;
-        pCtx->eflags.Bits.u1IF   = pCtx->eflags.Bits.u1VIF;
-        pCtx->eflags.Bits.u1VIF  = 0;
         pCtx->eflags.Bits.u2IOPL = 0;
 
         /* Force a TR resync every time in case we switch modes. */
@@ -1929,7 +1961,7 @@ ResumeExecution:
 
     case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */
         /* Clear VM-exit on IF=1 change. */
-        Log2(("VMX_EXIT_IRQ_WINDOW %VGv\n", pCtx->rip));
+        LogFlow(("VMX_EXIT_IRQ_WINDOW %VGv pending=%d IF=%d\n", pCtx->rip, VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)), pCtx->eflags.Bits.u1IF));
         pVM->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
         AssertRC(rc);
