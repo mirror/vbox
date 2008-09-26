@@ -604,6 +604,15 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
 #else
 # error "Unsupported platform."
 #endif
+
+    if (pbCmd[0] == SCSI_GET_EVENT_STATUS_NOTIFICATION)
+    {
+        uint8_t *pbBuf = (uint8_t*)pvBuf;
+        Log2(("Event Status Notification class=%#02x supported classes=%#02x\n", pbBuf[2], pbBuf[3]));
+        if (RT_BE2H_U16(*(uint16_t*)pbBuf) >= 6)
+            Log2(("  event %#02x %#02x %#02x %#02x\n", pbBuf[4], pbBuf[5], pbBuf[6], pbBuf[7]));
+    }
+
     LogFlow(("%s: rc=%Rrc\n", __FUNCTION__, rc));
     return rc;
 }
