@@ -123,8 +123,6 @@ endif # xpcom
 VBOX_MAIN_DOC_DIR = $(VBOX_PATH_SDK)/docs
 BLDDIRS += $(VBOX_MAIN_DOC_DIR)
 
-docs: $(PATH_TARGET)/docs.Main
-
 $(PATH_TARGET)/docs.Main: \
 		$(VBOX_PATH_MAIN_SRC)/Doxyfile.Main \
 		$(VBOX_PATH_MAIN_SRC)/idl/doxygen.xsl \
@@ -137,6 +135,11 @@ $(PATH_TARGET)/docs.Main: \
 		-- doxygen $(VBOX_PATH_MAIN_SRC)/Doxyfile.Main
 	-$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe $(subst /,\\,$(VBOX_MAIN_DOC_DIR)/html/index.hhp)
 	$(APPEND) $(PATH_TARGET)/docs.Main
+# aliases
+docs.main docs.Main: $(PATH_TARGET)/docs.Main
+if !defined(VBOX_ONLY_DOCS)
+docs:                $(PATH_TARGET)/docs.Main
+endif
 
 
 #
@@ -505,7 +508,7 @@ endif
 
 ConsoleImpl.cpp_DEFS = \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
-		
+
 
 Version.cpp_DEFS  = VBOX_SVN_REV=$(VBOX_SVN_REV)
 Version.cpp_DEPS  = $(VBOX_SVN_REV_KMK)
