@@ -1744,9 +1744,6 @@ else
     QTDIR := $(wildcard /usr/share/qt3)
     ifeq ($(QTDIR),)
      QTDIR := $(patsubst %/bin/moc,%,$(firstword $(wildcard /usr/bin/moc /usr/local/bin/moc /usr/X11R6/bin/moc)))
-$(warning QTDIR-2=$(QTDIR))
-else
-$(warning QTDIR-1=$(QTDIR))
     endif
     ifneq ($(QTDIR),)
      export QTDIR
@@ -1759,7 +1756,7 @@ $(warning QTDIR-1=$(QTDIR))
  endif
 endif
 ifndef VBOX_PATH_QT
- VBOX_PATH_QT ?= $(QTDIR)
+ VBOX_PATH_QT := $(QTDIR)
  LIB_QT ?= qt-mt
 endif
 ifeq ($(KBUILD_HOST),$(KBUILD_TARGET))
@@ -3604,5 +3601,4 @@ st stat status:
 
 quick:
 	$(MAKE) VBOX_QUICK=1
-
 
