@@ -281,6 +281,7 @@ include $(KBUILD_PATH)/subfooter.kmk
 ifdef VBOX_ONLY_DOCS
 # It may sound a bit odd, but for preparing the documentation package the
 # doxygen documentation isn't needed and increases the build time a lot.
+docs:
 else  # !VBOX_ONLY_DOCS
 #
 # Generate documentation.
