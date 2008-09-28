@@ -278,20 +278,25 @@ endif # !VBOX_ONLY_DOCS
 include $(KBUILD_PATH)/subfooter.kmk
 
 
+ifdef VBOX_ONLY_DOCS
+# It may sound a bit odd, but for preparing the documentation package the
+# doxygen documentation isn't needed and increases the build time a lot.
+else  # !VBOX_ONLY_DOCS
 #
 # Generate documentation.
 # (This should be converted into a separate pass or merged with an existing one later.)
 #
-ifdef VBOX_ONLY_DOCS
-# It may sound a bit odd, but for preparing the documentation package the
-# doxygen documentation isn't needed and increases the build time a lot.
-docs:
-else # !VBOX_ONLY_DOCS
+ ifdef VBOX_SINGLE_MAKEFILE
+  ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
+docs: docs.Core
+  endif
+ else  # !VBOX_SINGLE_MAKEFILE
 docs: $(if $(VBOX_WITH_ALL_DOXYGEN_TARGETS),docs.Core)
-	$(KMK) -C src/VBox/Main docs
-ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
-	$(KMK) -C src/VBox/Runtime docs
-endif
+	$(KMK) -C src/VBox/Main    docs.Main
+  ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
+	$(KMK) -C src/VBox/Runtime docs.iprt
+  endif
+ endif # !VBOX_SINGLE_MAKEFILE
 endif # !VBOX_ONLY_DOCS
 
 docs.Core docs.core: $(PATH_TARGET)/docs.Core
