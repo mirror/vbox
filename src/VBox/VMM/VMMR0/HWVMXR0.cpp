@@ -1049,7 +1049,11 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         /* CR4 flags owned by the host; if the guests attempts to change them, then
          * the VM will exit.
          */
-        val =   X86_CR4_PAE
+        val =   0
+#ifdef HWACCM_VMX_EMULATE_REALMODE
+              | X86_CR4_VME
+#endif
+              | X86_CR4_PAE
               | X86_CR4_PGE
               | X86_CR4_PSE
               | X86_CR4_VMXE;
