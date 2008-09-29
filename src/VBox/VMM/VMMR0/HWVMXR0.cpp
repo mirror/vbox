@@ -824,6 +824,14 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 pCtx->gs = pCtx->gsHid.u64Base >> 4;
                 pCtx->ss = pCtx->ssHid.u64Base >> 4;
 
+                /* The limit must also be adjusted. */
+                pCtx->csHid.u32Limit &= 0xffff;
+                pCtx->dsHid.u32Limit &= 0xffff;
+                pCtx->esHid.u32Limit &= 0xffff;
+                pCtx->fsHid.u32Limit &= 0xffff;
+                pCtx->gsHid.u32Limit &= 0xffff;
+                pCtx->ssHid.u32Limit &= 0xffff;
+
                 Assert(pCtx->dsHid.u64Base <= 0xfffff);
                 Assert(pCtx->esHid.u64Base <= 0xfffff);
                 Assert(pCtx->fsHid.u64Base <= 0xfffff);
