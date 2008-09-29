@@ -395,9 +395,10 @@ MMR3DECL(int) MMR3Term(PVM pVM)
      */
     pVM->mm.s.offLookupHyper = NIL_OFFSET;
     pVM->mm.s.pLockedMem     = NULL;
-    pVM->mm.s.pHyperHeapHC   = NULL;    /* freed above. */
-    pVM->mm.s.pHyperHeapGC   = 0;       /* freed above. */
-    pVM->mm.s.offVM          = 0;       /* init assertion on this */
+    pVM->mm.s.pHyperHeapR3   = NULL;        /* freed above. */
+    pVM->mm.s.pHyperHeapR0   = NIL_RTR0PTR; /* freed above. */
+    pVM->mm.s.pHyperHeapRC   = NIL_RTRCPTR; /* freed above. */
+    pVM->mm.s.offVM          = 0;           /* init assertion on this */
 
     return 0;
 }
