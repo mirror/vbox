@@ -1023,6 +1023,7 @@ int main()
     GEN_CHECK_OFF(AHCI, fR0Enabled);
     GEN_CHECK_OFF(AHCI, lock);
     GEN_CHECK_OFF(AHCI, cPortsImpl);
+    GEN_CHECK_OFF(AHCI, f8ByteMMIO4BytesWrittenSuccessfully);
 #endif /* VBOX_WITH_AHCI */
 
 #ifdef VBOX_WITH_E1000
