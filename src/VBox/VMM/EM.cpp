@@ -179,6 +179,10 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatR3Iret,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Iret",      STAMUNIT_OCCURENCES,    "The number of times IRET was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZLLdt,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/LLdt",      STAMUNIT_OCCURENCES,    "The number of times LLDT was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3LLdt,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/LLdt",      STAMUNIT_OCCURENCES,    "The number of times LLDT was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZLIdt,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/LIdt",      STAMUNIT_OCCURENCES,    "The number of times LIDT was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3LIdt,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/LIdt",      STAMUNIT_OCCURENCES,    "The number of times LIDT was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZLGdt,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/LGdt",      STAMUNIT_OCCURENCES,    "The number of times LGDT was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3LGdt,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/LGdt",      STAMUNIT_OCCURENCES,    "The number of times LGDT was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZMov,                  STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Mov",       STAMUNIT_OCCURENCES,    "The number of times MOV was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3Mov,                  STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Mov",       STAMUNIT_OCCURENCES,    "The number of times MOV was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZMovCRx,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/MovCRx",    STAMUNIT_OCCURENCES,    "The number of times MOV CRx was successfully interpreted.");
@@ -239,6 +243,10 @@ EMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatR3FailedIret,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Iret",       STAMUNIT_OCCURENCES,    "The number of times IRET was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZFailedLLdt,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/LLdt",       STAMUNIT_OCCURENCES,    "The number of times LLDT was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3FailedLLdt,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/LLdt",       STAMUNIT_OCCURENCES,    "The number of times LLDT was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZFailedLIdt,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/LIdt",       STAMUNIT_OCCURENCES,    "The number of times LIDT was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3FailedLIdt,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/LIdt",       STAMUNIT_OCCURENCES,    "The number of times LIDT was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZFailedLGdt,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/LGdt",       STAMUNIT_OCCURENCES,    "The number of times LGDT was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3FailedLGdt,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/LGdt",       STAMUNIT_OCCURENCES,    "The number of times LGDT was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZFailedMov,            STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Mov",        STAMUNIT_OCCURENCES,    "The number of times MOV was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3FailedMov,            STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Mov",        STAMUNIT_OCCURENCES,    "The number of times MOV was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZFailedMovCRx,         STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/MovCRx",     STAMUNIT_OCCURENCES,    "The number of times MOV CRx was not interpreted.");
