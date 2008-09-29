@@ -111,16 +111,14 @@ void vboxVMInfoDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     VBOXINFORMATIONCONTEXT *pCtx = (VBOXINFORMATIONCONTEXT *)pInstance;
     Assert(pCtx);
 
-    /* @todo Temporary solution: Zap all values which are not valid anymore when VM goes down (reboot/shutdown).
+    /** @todo Temporary solution: Zap all values which are not valid anymore when VM goes down (reboot/shutdown).
      * Needs to be replaced with "temporary properties" later. */
-    char szPropPath [_MAX_PATH+1] = {0};
-    char*pPtr = &szPropPath[0];
 
     vboxVMInfoWriteProp(pCtx, "GuestInfo/OS/LoggedInUsersList", "");
     vboxVMInfoWritePropInt(pCtx, "GuestInfo/OS/LoggedInUsers", 0);
 
-    RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/*");
-    VbglR3GuestPropDelTree(pCtx->iInfoSvcClientID, &pPtr, 1);
+    const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
+    VbglR3GuestPropDelSet(pCtx->iInfoSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
     vboxVMInfoWritePropInt(pCtx, "GuestInfo/Net/Count", 0);
 
     /* Disconnect from guest properties API. */
