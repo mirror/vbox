@@ -735,6 +735,11 @@ HWACCMR3DECL(void) HWACCMR3Reset(PVM pVM)
     pVM->hwaccm.s.vmx.cr4_mask = 0;
 
     pVM->hwaccm.s.Event.fPending = false;
+
+    /* Reset state information for real-mode emulation in VT-x. */
+    pVM->hwaccm.s.vmx.RealMode.Event.fPending = false;
+    memset(&pVM->hwaccm.s.vmx.RealMode, 0, sizeof(pVM->hwaccm.s.vmx.RealMode));
+    pVM->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
 }
 
 /**
