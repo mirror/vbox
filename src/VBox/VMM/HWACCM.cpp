@@ -755,14 +755,20 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         return true;
     }
 
-    /** @todo we can support real-mode by using v86 with identity mapped pages.
-     * (but do we really care?)
-     */
-
     pVM->hwaccm.s.fActive = false;
 
     /* Note! The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
-
+#ifdef HWACCM_VMX_EMULATE_REALMODE
+    if (CPUMIsGuestInRealModeEx(pCtx))
+    {
+        /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case. */
+        if (    pCtx->dsHid.n.u64Base > 0xfffff
+            ||  pCtx->esHid.n.u64Base > 0xfffff
+            ||  pCtx->fsHid.n.u64Base > 0xfffff
+            ||  pCtx->gsHid.n.u64Base > 0xfffff)
+            return false;
+    }
+#else
     if (!CPUMIsGuestInLongModeEx(pCtx))
     {
         /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
@@ -777,6 +783,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         if (pCtx->ssHid.Attr.n.u1Present == 0)
             return false;
     }
+#endif
 
     if (pVM->hwaccm.s.vmx.fEnabled)
     {
@@ -786,12 +793,13 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         mask = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0;
         /* Note: We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
         mask &= ~X86_CR0_NE;
-        /* We support protected mode without paging using identity mapping. */
-        mask &= ~X86_CR0_PG;
 
-#ifdef HWACCM_VMX_EMULATE_ALL
+#ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
         mask &= ~(X86_CR0_PG|X86_CR0_PE);
+#else
+        /* We support protected mode without paging using identity mapping. */
+        mask &= ~X86_CR0_PG;
 #endif
         if ((pCtx->cr0 & mask) != mask)
             return false;

@@ -472,10 +472,28 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
     }
 #endif
 
+#ifdef HWACCM_VMX_EMULATE_REALMODE
+    if (CPUMIsGuestInRealModeEx(pCtx))
+    {
+        /* Injecting events doens't work right with real mode emulation.  
+         * (#GP if we try to inject external hardware interrupts)
+         * Fake an 'int x' instruction. Note that we need to take special precautions when
+         * the inject is interrupted as the normal pending event method seems to be broken in this case.
+         */
+        LogFlow(("Fake 'int %x' inject (real mode)\n", iGate));
+        /* Make sure the return address is set to the current IP. (ugly hack alert) */
+        pCtx->rip--;
+        cbInstr   = 1;
+        intInfo   = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo) | (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+        pVM->hwaccm.s.vmx.RealMode.Event.intInfo  = intInfo;
+        pVM->hwaccm.s.vmx.RealMode.Event.fPending = true;
+        pVM->hwaccm.s.vmx.RealMode.eip            = pCtx->eip;
+    }
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
+
     /* Set event injection state. */
-    rc  = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_IRQ_INFO,
-                       intInfo | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT)
-                      );
+    rc  = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_IRQ_INFO, intInfo | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT));
 
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
     rc |= VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_EXCEPTION_ERRCODE, errCode);
@@ -739,9 +757,20 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
+#ifdef HWACCM_VMX_EMULATE_REALMODE
         PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
         if (pVM->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
         {
+# define VTX_CORRECT_PROT_SEL(reg) \
+            {                                                                                               \
+                if (    pCtx->reg##Hid.u64Base == (pVM->hwaccm.s.vmx.RealMode.reg##Hid.u64Base & 0xfffff)   \
+                    &&  pCtx->reg == ((pVM->hwaccm.s.vmx.RealMode.reg##Hid.u64Base >> 4) & ~X86_SEL_RPL))   \
+                {                                                                                           \
+                    pCtx->reg##Hid = pVM->hwaccm.s.vmx.RealMode.reg##Hid;                                   \
+                    pCtx->reg      = pVM->hwaccm.s.vmx.RealMode.reg;                                        \
+                }                                                                                           \
+            }
+
             /* Correct weird requirements for switching to protected mode. */
             if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
                 &&  enmGuestMode >= PGMMODE_PROTECTED)
@@ -763,12 +792,30 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 pCtx->fs &= ~X86_SEL_RPL;
                 pCtx->gs &= ~X86_SEL_RPL;
                 pCtx->ss &= ~X86_SEL_RPL;
+
+                VTX_CORRECT_PROT_SEL(ds);
+                VTX_CORRECT_PROT_SEL(es);
+                VTX_CORRECT_PROT_SEL(fs);
+                VTX_CORRECT_PROT_SEL(gs);
+                VTX_CORRECT_PROT_SEL(ss);
             }
             else
             /* Switching from protected mode to real mode. */
             if (    pVM->hwaccm.s.vmx.enmCurrGuestMode >= PGMMODE_PROTECTED
                 &&  enmGuestMode == PGMMODE_REAL)
             {
+                /* Save the original hidden selectors in case we need to restore them later on. */
+                pVM->hwaccm.s.vmx.RealMode.ds    = pCtx->ds;
+                pVM->hwaccm.s.vmx.RealMode.dsHid = pCtx->dsHid;
+                pVM->hwaccm.s.vmx.RealMode.es    = pCtx->es;
+                pVM->hwaccm.s.vmx.RealMode.esHid = pCtx->esHid;
+                pVM->hwaccm.s.vmx.RealMode.fs    = pCtx->fs;
+                pVM->hwaccm.s.vmx.RealMode.fsHid = pCtx->fsHid;
+                pVM->hwaccm.s.vmx.RealMode.gs    = pCtx->gs;
+                pVM->hwaccm.s.vmx.RealMode.gsHid = pCtx->gsHid;
+                pVM->hwaccm.s.vmx.RealMode.ss    = pCtx->ss;
+                pVM->hwaccm.s.vmx.RealMode.ssHid = pCtx->ssHid;
+
                 /* The selector value & base must be adjusted or else... */
                 pCtx->cs = pCtx->csHid.u64Base >> 4;
                 pCtx->ds = pCtx->dsHid.u64Base >> 4;
@@ -777,22 +824,22 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 pCtx->gs = pCtx->gsHid.u64Base >> 4;
                 pCtx->ss = pCtx->ssHid.u64Base >> 4;
 
-                pCtx->dsHid.u64Base &= 0xfffff;
-                pCtx->esHid.u64Base &= 0xfffff;
-                pCtx->fsHid.u64Base &= 0xfffff;
-                pCtx->gsHid.u64Base &= 0xfffff;
-
+                Assert(pCtx->dsHid.u64Base <= 0xfffff);
+                Assert(pCtx->esHid.u64Base <= 0xfffff);
+                Assert(pCtx->fsHid.u64Base <= 0xfffff);
+                Assert(pCtx->gsHid.u64Base <= 0xfffff);
             }
             pVM->hwaccm.s.vmx.enmCurrGuestMode = enmGuestMode;
         }
-
-        /* VT-x will fail with a guest invalid state otherwise... */
+        else
+        /* VT-x will fail with a guest invalid state otherwise... (CPU state after a reset) */
         if (   CPUMIsGuestInRealModeEx(pCtx)
             && pCtx->csHid.u64Base == 0xffff0000)
         {
             pCtx->csHid.u64Base = 0xf0000;
             pCtx->cs = 0xf000;
         }
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
 
         VMX_WRITE_SELREG(ES, es);
         AssertRC(rc);
@@ -837,6 +884,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* Guest CPU context: TR. */
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
     {
+#ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (CPUMIsGuestInRealModeEx(pCtx))
         {
@@ -858,6 +906,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             val                 = attr.u;
         }
         else
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
         {
             rc =  VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_TR,         pCtx->tr);
             rc |= VMXWriteVMCS(VMX_VMCS_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
@@ -989,9 +1038,11 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             AssertFailed();
             return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
         }
+#ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (CPUMIsGuestInRealModeEx(pCtx))
             val |= X86_CR4_VME;
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
 
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_CR4,              val);
         Log2(("Guest CR4 %08x\n", val));
@@ -1069,13 +1120,14 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     eflags.u32 &= VMX_EFLAGS_RESERVED_0;
     eflags.u32 |= VMX_EFLAGS_RESERVED_1;
 
+#ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
         eflags.Bits.u1VM   = 1;
         eflags.Bits.u2IOPL = 3;
     }
-
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
     rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           eflags.u32);
     AssertRC(rc);
 
@@ -1152,12 +1204,13 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #ifdef VBOX_STRICT
     Assert(pVM->hwaccm.s.vmx.u32TrapMask & RT_BIT(X86_XCPT_GP));
 #else
+# ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Intercept #GP faults in real mode to handle privileged instructions. */
     if (CPUMIsGuestInRealModeEx(pCtx))
         pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_GP);
     else
         pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_GP);
-
+# endif /* HWACCM_VMX_EMULATE_REALMODE */
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
     AssertRC(rc);    
 #endif
@@ -1641,6 +1694,7 @@ ResumeExecution:
     VMXReadVMCS(VMX_VMCS_GUEST_IDTR_BASE,        &val);
     pCtx->idtr.pIdt         = val;
 
+#ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
@@ -1652,6 +1706,7 @@ ResumeExecution:
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
     }
     else
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
     {
         /* In real mode we have a fake TSS, so only sync it back when it's supposed to be valid. */
         VMX_READ_SELREG(TR, tr);
@@ -1663,25 +1718,45 @@ ResumeExecution:
     /* Check if an injected event was interrupted prematurely. */
     rc = VMXReadVMCS(VMX_VMCS_RO_IDT_INFO,            &val);
     AssertRC(rc);
-    pVM->hwaccm.s.Event.intInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
-    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo)
-        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVM->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
+#ifdef HWACCM_VMX_EMULATE_REALMODE
+    /* For some reason injected software interrupts are ignored when e.g. a shadow page fault occurs. */
+    if (    CPUMIsGuestInRealModeEx(pCtx)
+        &&  pVM->hwaccm.s.vmx.RealMode.eip == pCtx->eip
+        &&  pVM->hwaccm.s.vmx.RealMode.Event.fPending)
     {
+        Assert(!VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo));
+
+        Log(("Pending real-mode inject %VX64 at %VGv\n", pVM->hwaccm.s.vmx.RealMode.Event.intInfo, pCtx->rip));
+
+        /* We faked an 'int x' instruction and messed with IP, so correct it here. */
+        pCtx->rip++;
+        pVM->hwaccm.s.Event.intInfo  = pVM->hwaccm.s.vmx.RealMode.Event.intInfo;
         pVM->hwaccm.s.Event.fPending = true;
-        /* Error code present? */
-        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVM->hwaccm.s.Event.intInfo))
+    }
+    else
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
+    {
+        pVM->hwaccm.s.Event.intInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
+        if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo)
+            &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVM->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
         {
-            rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
-            AssertRC(rc);
-            pVM->hwaccm.s.Event.errCode  = val;
-            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification, val));
-        }
-        else
-        {
-            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification));
-            pVM->hwaccm.s.Event.errCode  = 0;
+            pVM->hwaccm.s.Event.fPending = true;
+            /* Error code present? */
+            if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVM->hwaccm.s.Event.intInfo))
+            {
+                rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
+                AssertRC(rc);
+                pVM->hwaccm.s.Event.errCode  = val;
+                Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification, val));
+            }
+            else
+            {
+                Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification));
+                pVM->hwaccm.s.Event.errCode  = 0;
+            }
         }
     }
+    pVM->hwaccm.s.vmx.RealMode.Event.fPending = false;
 
 #ifdef VBOX_STRICT
     if (exitReason == VMX_EXIT_ERR_INVALID_GUEST_STATE)
@@ -1789,6 +1864,8 @@ ResumeExecution:
                      * Forward the trap to the guest by injecting the exception and resuming execution.
                      */
                     Log2(("Forward page fault to the guest\n"));
+           AssertFailed();
+
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
                     /* The error code might have been changed. */
                     errCode = TRPMGetErrorCode(pVM);
@@ -1904,11 +1981,14 @@ ResumeExecution:
                 {
                     /* EIP has been updated already. */
 
+                    /* lidt, lgdt can end up here. In the future crx changes as well. Just reload the whole context to be done with it. */
+                    pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
+
                     /* Only resume if successful. */
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
-                AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE, ("Unexpected rc=%Vrc\n", rc));
+                AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT, ("Unexpected rc=%Vrc\n", rc));
                 break;
             }
 

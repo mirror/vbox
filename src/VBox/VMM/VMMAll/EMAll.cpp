@@ -395,6 +395,8 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
         case OP_MOV_CR:     return "MovCRx";
         case OP_MOV_DR:     return "MovDRx";
         case OP_LLDT:       return "LLdt";
+        case OP_LGDT:       return "LGdt";
+        case OP_LIDT:       return "LGdt";
         case OP_CLTS:       return "Clts";
         case OP_MONITOR:    return "Monitor";
         case OP_MWAIT:      return "MWait";
@@ -2240,6 +2242,48 @@ static int emInterpretLLdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     return VERR_EM_INTERPRETER;
 }
 
+#ifdef IN_RING0
+/**
+ * LIDT/LGDT Emulation.
+ */
+static int emInterpretLIGdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    OP_PARAMVAL param1;
+    RTGCPTR     pParam1;
+    X86XDTR32   dtr32;
+
+    LogFlow(("Emulate %s at %VGv\n", emGetMnemonic(pCpu), pRegFrame->rip));
+
+    /* Only for the VT-x real-mode emulation case. */
+    if (!CPUMIsGuestInRealMode(pVM))
+        return VERR_EM_INTERPRETER;
+
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    switch(param1.type)
+    {
+    case PARMTYPE_ADDRESS:
+        pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, param1.val.val16);
+        break;
+
+    default:
+        return VERR_EM_INTERPRETER;
+    }
+
+    rc = emRamRead(pVM, &dtr32, pParam1, sizeof(dtr32));
+    AssertRCReturn(rc, VERR_EM_INTERPRETER);
+
+    if (pCpu->pCurInstr->opcode == OP_LIDT)
+        CPUMSetGuestIDTR(pVM, dtr32.uAddr, dtr32.cb);
+    else
+        CPUMSetGuestGDTR(pVM, dtr32.uAddr, dtr32.cb);
+
+    return VINF_SUCCESS;
+}
+#endif
+
 
 #ifdef IN_GC
 /**
@@ -2771,6 +2815,16 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
             else \
                 STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
             return rc
+
+#define INTERPRET_CASE_EX_DUAL_PARAM2(opcode, Instr, InstrFn) \
+        case opcode:\
+            rc = emInterpret##InstrFn(pVM, pCpu, pRegFrame, pvFault, pcbSize); \
+            if (VBOX_SUCCESS(rc)) \
+                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Instr)); \
+            else \
+                STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); \
+            return rc
+
 #define INTERPRET_STAT_CASE(opcode, Instr) \
         case opcode: STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); return VERR_EM_INTERPRETER;
 
@@ -2790,6 +2844,10 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_MOV_CR,MovCRx);
         INTERPRET_CASE(OP_MOV_DR,MovDRx);
         INTERPRET_CASE(OP_LLDT,LLdt);
+#ifdef IN_RING0
+        INTERPRET_CASE_EX_DUAL_PARAM2(OP_LIDT, LIdt, LIGdt);
+        INTERPRET_CASE_EX_DUAL_PARAM2(OP_LGDT, LGdt, LIGdt);
+#endif
         INTERPRET_CASE(OP_CLTS,Clts);
         INTERPRET_CASE(OP_MONITOR, Monitor);
         INTERPRET_CASE(OP_MWAIT, MWait);
