@@ -47,15 +47,15 @@
 
 #define ASSERT_OFFPREV(pHeap, pChunk)  \
     do { Assert(MMHYPERCHUNK_GET_OFFPREV(pChunk) <= 0); \
-         Assert(MMHYPERCHUNK_GET_OFFPREV(pChunk) >= (intptr_t)CTXSUFF((pHeap)->pbHeap) - (intptr_t)(pChunk)); \
+         Assert(MMHYPERCHUNK_GET_OFFPREV(pChunk) >= (intptr_t)(pHeap)->CTX_SUFF(pbHeap) - (intptr_t)(pChunk)); \
          AssertMsg(     MMHYPERCHUNK_GET_OFFPREV(pChunk) != 0 \
-                   ||   (uint8_t *)(pChunk) == CTXSUFF((pHeap)->pbHeap), \
-                   ("pChunk=%p pvHyperHeap=%p\n", (pChunk), CTXSUFF((pHeap)->pbHeap))); \
+                   ||   (uint8_t *)(pChunk) == (pHeap)->CTX_SUFF(pbHeap), \
+                   ("pChunk=%p pvHyperHeap=%p\n", (pChunk), (pHeap)->CTX_SUFF(pbHeap))); \
     } while (0)
 
 #define ASSERT_OFFNEXT(pHeap, pChunk) \
     do { ASSERT_ALIGN((pChunk)->offNext); \
-         ASSERT_L((pChunk)->offNext, (uintptr_t)CTXSUFF((pHeap)->pbHeap) + (pHeap)->offPageAligned - (uintptr_t)(pChunk)); \
+         ASSERT_L((pChunk)->offNext, (uintptr_t)(pHeap)->CTX_SUFF(pbHeap) + (pHeap)->offPageAligned - (uintptr_t)(pChunk)); \
     } while (0)
 
 #define ASSERT_OFFHEAP(pHeap, pChunk) \
@@ -74,8 +74,8 @@
              Assert((pChunk)->offStat); \
              AssertMsg(!((pChunk)->offStat & (MMHYPER_HEAP_ALIGN_MIN - 1)), ("offStat=%RX32\n", (pChunk)->offStat)); \
              uintptr_t uPtr = (uintptr_t)(pChunk)->offStat + (uintptr_t)pChunk; NOREF(uPtr); \
-             AssertMsg(uPtr - (uintptr_t)CTXSUFF((pHeap)->pbHeap) < (pHeap)->offPageAligned, \
-                       ("%p - %p < %RX32\n", uPtr, CTXSUFF((pHeap)->pbHeap), (pHeap)->offPageAligned)); \
+             AssertMsg(uPtr - (uintptr_t)(pHeap)->CTX_SUFF(pbHeap) < (pHeap)->offPageAligned, \
+                       ("%p - %p < %RX32\n", uPtr, (pHeap)->CTX_SUFF(pbHeap), (pHeap)->offPageAligned)); \
          } \
     } while (0)
 #else
@@ -98,21 +98,21 @@
 
 #define ASSERT_FREE_OFFPREV(pHeap, pChunk)  \
     do { ASSERT_ALIGN((pChunk)->offPrev); \
-         ASSERT_GE(((pChunk)->offPrev  & (MMHYPER_HEAP_ALIGN_MIN - 1)), (intptr_t)CTXSUFF((pHeap)->pbHeap) - (intptr_t)(pChunk)); \
+         ASSERT_GE(((pChunk)->offPrev  & (MMHYPER_HEAP_ALIGN_MIN - 1)), (intptr_t)(pHeap)->CTX_SUFF(pbHeap) - (intptr_t)(pChunk)); \
          Assert((pChunk)->offPrev != MMHYPERCHUNK_GET_OFFPREV(&(pChunk)->core) || !(pChunk)->offPrev); \
          AssertMsg(    (pChunk)->offPrev \
-                  ||   (uintptr_t)(pChunk) - (uintptr_t)CTXSUFF((pHeap)->pbHeap) == (pHeap)->offFreeHead, \
-                  ("pChunk=%p offChunk=%#x offFreeHead=%#x\n", (pChunk), (uintptr_t)(pChunk) - (uintptr_t)CTXSUFF((pHeap)->pbHeap),\
+                  ||   (uintptr_t)(pChunk) - (uintptr_t)(pHeap)->CTX_SUFF(pbHeap) == (pHeap)->offFreeHead, \
+                  ("pChunk=%p offChunk=%#x offFreeHead=%#x\n", (pChunk), (uintptr_t)(pChunk) - (uintptr_t)(pHeap)->CTX_SUFF(pbHeap),\
                   (pHeap)->offFreeHead)); \
     } while (0)
 
 #define ASSERT_FREE_OFFNEXT(pHeap, pChunk) \
     do { ASSERT_ALIGN((pChunk)->offNext); \
-         ASSERT_L((pChunk)->offNext, (uintptr_t)CTXSUFF((pHeap)->pbHeap) + (pHeap)->offPageAligned - (uintptr_t)(pChunk)); \
+         ASSERT_L((pChunk)->offNext, (uintptr_t)(pHeap)->CTX_SUFF(pbHeap) + (pHeap)->offPageAligned - (uintptr_t)(pChunk)); \
          Assert((pChunk)->offNext != (pChunk)->core.offNext || !(pChunk)->offNext); \
          AssertMsg(     (pChunk)->offNext \
-                   ||   (uintptr_t)(pChunk) - (uintptr_t)CTXSUFF((pHeap)->pbHeap) == (pHeap)->offFreeTail, \
-                   ("pChunk=%p offChunk=%#x offFreeTail=%#x\n", (pChunk),  (uintptr_t)(pChunk) - (uintptr_t)CTXSUFF((pHeap)->pbHeap), \
+                   ||   (uintptr_t)(pChunk) - (uintptr_t)(pHeap)->CTX_SUFF(pbHeap) == (pHeap)->offFreeTail, \
+                   ("pChunk=%p offChunk=%#x offFreeTail=%#x\n", (pChunk),  (uintptr_t)(pChunk) - (uintptr_t)(pHeap)->CTX_SUFF(pbHeap), \
                     (pHeap)->offFreeTail)); \
     } while (0)
 
@@ -123,7 +123,7 @@
              AssertMsg((pChunk)->cb == ((pChunk)->core.offNext - sizeof(MMHYPERCHUNK)), \
                        ("cb=%d offNext=%d\n", (pChunk)->cb, (pChunk)->core.offNext)); \
          else \
-             ASSERT_LE((pChunk)->cb, (uintptr_t)CTXSUFF((pHeap)->pbHeap) + (pHeap)->offPageAligned - (uintptr_t)(pChunk)); \
+             ASSERT_LE((pChunk)->cb, (uintptr_t)(pHeap)->CTX_SUFF(pbHeap) + (pHeap)->offPageAligned - (uintptr_t)(pChunk)); \
     } while (0)
 
 #define ASSERT_CHUNK_FREE(pHeap, pChunk) \
@@ -233,7 +233,7 @@ MMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, 
 #ifdef VBOX_WITH_STATISTICS
             const uint32_t cbChunk = pChunk->offNext
                 ? pChunk->offNext
-                : CTXSUFF(pHeap->pbHeap) + pHeap->offPageAligned - (uint8_t *)pChunk;
+                : pHeap->CTX_SUFF(pbHeap) + pHeap->offPageAligned - (uint8_t *)pChunk;
             pStat->cbAllocated += (uint32_t)cbChunk;
             pStat->cbCurAllocated += (uint32_t)cbChunk;
             if (pStat->cbCurAllocated > pStat->cbMaxAllocated)
@@ -318,7 +318,7 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
      * last free node which we take the page aligned memory from the top of.
      */
     PMMHYPERCHUNK     pRet = NULL;
-    PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)((char *)CTXSUFF(pHeap->pbHeap) + pHeap->offFreeHead);
+    PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)((char *)pHeap->CTX_SUFF(pbHeap) + pHeap->offFreeHead);
     while (pFree)
     {
         ASSERT_CHUNK_FREE(pHeap, pFree);
@@ -349,7 +349,7 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
                     else
                     {
                         /* make new head node, mark it USED for simplisity. */
-                        PMMHYPERCHUNK pPrev = (PMMHYPERCHUNK)CTXSUFF(pHeap->pbHeap);
+                        PMMHYPERCHUNK pPrev = (PMMHYPERCHUNK)pHeap->CTX_SUFF(pbHeap);
                         Assert(pPrev == &pFree->core);
                         pPrev->offPrev = 0;
                         MMHYPERCHUNK_SET_TYPE(pPrev, MMHYPERCHUNK_FLAGS_USED);
@@ -563,7 +563,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
      * So, for this to work, the last FREE chunk needs to end on a page aligned
      * boundrary.
      */
-    PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)((char *)CTXSUFF(pHeap->pbHeap) + pHeap->offFreeTail);
+    PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)((char *)pHeap->CTX_SUFF(pbHeap) + pHeap->offFreeTail);
     ASSERT_CHUNK_FREE(pHeap, pFree);
     if (    (((uintptr_t)(&pFree->core + 1) + pFree->cb) & (PAGE_OFFSET_MASK - 1))
         ||  pFree->cb + sizeof(MMHYPERCHUNK) < cb)
@@ -623,7 +623,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
         }
         Log3(("mmHyperAllocPages: Unlinked pFree=%d\n", pFree));
     }
-    pHeap->offPageAligned = (uintptr_t)pvRet - (uintptr_t)CTXSUFF(pHeap->pbHeap);
+    pHeap->offPageAligned = (uintptr_t)pvRet - (uintptr_t)pHeap->CTX_SUFF(pbHeap);
     Log3(("mmHyperAllocPages: Returning %p (page aligned)\n", pvRet));
 
 #ifdef MMHYPER_HEAP_STRICT
@@ -632,8 +632,8 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
     return pvRet;
 }
 
-
 #ifdef VBOX_WITH_STATISTICS
+
 /**
  * Get the statistic record for a tag.
  *
@@ -661,16 +661,17 @@ static PMMHYPERSTAT mmHyperStat(PMMHYPERHEAP pHeap, MMTAG enmTag)
     }
     if (!pStat->fRegistered)
     {
-#ifdef IN_RING3
-        mmR3HyperStatRegisterOne(pHeap->pVMHC, pStat);
-#else
-        /** @todo schedule a HC action. */
-#endif
+# ifdef IN_RING3
+        mmR3HyperStatRegisterOne(pHeap->pVMR3, pStat);
+# else
+        /** @todo schedule a R3 action. */
+# endif
     }
     return pStat;
 }
 
-#ifdef IN_RING3
+
+# ifdef IN_RING3
 /**
  * Registers statistics with STAM.
  *
@@ -680,34 +681,18 @@ static void mmR3HyperStatRegisterOne(PVM pVM, PMMHYPERSTAT pStat)
     if (pStat->fRegistered)
         return;
     const char *pszTag = mmR3GetTagName((MMTAG)pStat->Core.Key);
-
-    char szName[128];
-    RTStrPrintf(szName, sizeof(szName), "/MM/HyperHeap/%s/cAllocations", pszTag);
-    STAMR3Register(pVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_COUNT, "Number of alloc calls.");
-
-    RTStrPrintf(szName, sizeof(szName), "/MM/HyperHeap/%s/cFrees", pszTag);
-    STAMR3Register(pVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_COUNT, "Number of free calls.");
-
-    RTStrPrintf(szName, sizeof(szName), "/MM/HyperHeap/%s/cFailures", pszTag);
-    STAMR3Register(pVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_COUNT, "Number of failures.");
-
-    RTStrPrintf(szName, sizeof(szName), "/MM/HyperHeap/%s/cbAllocated", pszTag);
-    STAMR3Register(pVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_BYTES, "Total number of allocated bytes.");
-
-    RTStrPrintf(szName, sizeof(szName), "/MM/HyperHeap/%s/cbFreed", pszTag);
-    STAMR3Register(pVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_BYTES, "Total number of freed bytes.");
-
-    RTStrPrintf(szName, sizeof(szName), "/MM/HyperHeap/%s/cbCurAllocated", pszTag);
-    STAMR3Register(pVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_BYTES, "Number of bytes currently allocated.");
-
-    RTStrPrintf(szName, sizeof(szName), "/MM/HyperHeap/%s/cbMaxAllocated", pszTag);
-    STAMR3Register(pVM, &pStat->cbMaxAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_BYTES, "Max number of bytes allocated at the same time.");
-
+    STAMR3RegisterF(pVM, &pStat->cAllocations,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Number of alloc calls.",                         "/MM/HyperHeap/%s/cAllocations", pszTag);
+    STAMR3RegisterF(pVM, &pStat->cFrees,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Number of free calls.",                          "/MM/HyperHeap/%s/cFrees", pszTag);
+    STAMR3RegisterF(pVM, &pStat->cFailures,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Number of failures.",                            "/MM/HyperHeap/%s/cFailures", pszTag);
+    STAMR3RegisterF(pVM, &pStat->cbAllocated,    STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Total number of allocated bytes.",               "/MM/HyperHeap/%s/cbAllocated", pszTag);
+    STAMR3RegisterF(pVM, &pStat->cbFreed,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Total number of freed bytes.",                   "/MM/HyperHeap/%s/cbFreed", pszTag);
+    STAMR3RegisterF(pVM, &pStat->cbCurAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Number of bytes currently allocated.",           "/MM/HyperHeap/%s/cbCurAllocated", pszTag);
+    STAMR3RegisterF(pVM, &pStat->cbMaxAllocated, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Max number of bytes allocated at the same time.","/MM/HyperHeap/%s/cbMaxAllocated", pszTag);
     pStat->fRegistered = true;
 }
-#endif
+# endif /* IN_RING3 */
 
-#endif
+#endif /* VBOX_WITH_STATISTICS */
 
 
 /**
@@ -775,7 +760,7 @@ MMDECL(int) MMHyperFree(PVM pVM, void *pv)
 Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
 
     /* Some more verifications using additional info from pHeap. */
-    AssertMsgReturn((uintptr_t)pChunk + offPrev >= (uintptr_t)CTXSUFF(pHeap->pbHeap),
+    AssertMsgReturn((uintptr_t)pChunk + offPrev >= (uintptr_t)pHeap->CTX_SUFF(pbHeap),
                     ("%p: offPrev=%#RX32!\n", pv, offPrev),
                     VERR_INVALID_POINTER);
 
@@ -783,9 +768,9 @@ Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
                     ("%p: offNext=%#RX32!\n", pv, pChunk->offNext),
                     VERR_INVALID_POINTER);
 
-    AssertMsgReturn(   (uintptr_t)pv - (uintptr_t)CTXSUFF(pHeap->pbHeap) <= pHeap->offPageAligned,
-                    ("Invalid pointer %p! (heap: %p-%p)\n", pv, CTXSUFF(pHeap->pbHeap),
-                    (char *)CTXSUFF(pHeap->pbHeap) + pHeap->offPageAligned),
+    AssertMsgReturn(   (uintptr_t)pv - (uintptr_t)pHeap->CTX_SUFF(pbHeap) <= pHeap->offPageAligned,
+                    ("Invalid pointer %p! (heap: %p-%p)\n", pv, pHeap->CTX_SUFF(pbHeap),
+                    (char *)pHeap->CTX_SUFF(pbHeap) + pHeap->offPageAligned),
                     VERR_INVALID_POINTER);
 
 #ifdef MMHYPER_HEAP_STRICT
@@ -796,7 +781,7 @@ Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
     /* calc block size. */
     const uint32_t cbChunk = pChunk->offNext
         ? pChunk->offNext
-        : CTXSUFF(pHeap->pbHeap) + pHeap->offPageAligned - (uint8_t *)pChunk;
+        : pHeap->CTX_SUFF(pbHeap) + pHeap->offPageAligned - (uint8_t *)pChunk;
 #endif
 #ifdef MMHYPER_HEAP_FREE_POISON
     /* poison the block */
@@ -815,7 +800,7 @@ Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
             PMMHYPERCHUNK pCur = (PMMHYPERCHUNK)((uintptr_t)pHeap + pHeap->aDelayedFrees[i].offChunk);
             const size_t cb = pCur->offNext
                 ? pCur->offNext - sizeof(*pCur)
-                : CTXSUFF(pHeap->pbHeap) + pHeap->offPageAligned - (uint8_t *)pCur - sizeof(*pCur);
+                : pHeap->CTX_SUFF(pbHeap) + pHeap->offPageAligned - (uint8_t *)pCur - sizeof(*pCur);
             uint8_t *pab = (uint8_t *)(pCur + 1);
             for (unsigned off = 0; off < cb; off++)
                 AssertReleaseMsg(pab[off] == 0xCB,
@@ -900,7 +885,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
             }
         }
         if (!pRight)
-            pRight = (PMMHYPERCHUNKFREE)((char *)CTXSUFF(pHeap->pbHeap) + pHeap->offFreeTail); /** @todo this can't be correct! 'pLeft = .. ; else' I think */
+            pRight = (PMMHYPERCHUNKFREE)((char *)pHeap->CTX_SUFF(pbHeap) + pHeap->offFreeTail); /** @todo this can't be correct! 'pLeft = .. ; else' I think */
         if (pRight)
         {
             ASSERT_CHUNK_FREE(pHeap, pRight);
@@ -925,7 +910,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
     {
         MMHYPERCHUNK_SET_TYPE(&pFree->core, MMHYPERCHUNK_FLAGS_FREE);
         pFree->offPrev = 0;
-        pHeap->offFreeHead = (uintptr_t)pFree - (uintptr_t)CTXSUFF(pHeap->pbHeap);
+        pHeap->offFreeHead = (uintptr_t)pFree - (uintptr_t)pHeap->CTX_SUFF(pbHeap);
         if (pRight)
         {
             pFree->offNext = (uintptr_t)pRight - (uintptr_t)pFree;
@@ -973,7 +958,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
             else
             {
                 pFree->offNext = 0;
-                pHeap->offFreeTail = (uintptr_t)pFree - (uintptr_t)CTXSUFF(pHeap->pbHeap);
+                pHeap->offFreeTail = (uintptr_t)pFree - (uintptr_t)pHeap->CTX_SUFF(pbHeap);
             }
             Log3(("mmHyperFree: Inserted %p after %p in free list.\n", pFree, pLeft));
         }
@@ -1004,7 +989,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
         else
         {
             pFree->offNext = 0;
-            pHeap->offFreeTail = (uintptr_t)pFree - (uintptr_t)CTXSUFF(pHeap->pbHeap);
+            pHeap->offFreeTail = (uintptr_t)pFree - (uintptr_t)pHeap->CTX_SUFF(pbHeap);
         }
         Log3(("mmHyperFree: cbFree %d -> %d (%d)\n", pHeap->cbFree, pHeap->cbFree - pRight->cb, -(int32_t)pRight->cb));
         pHeap->cbFree -= pRight->cb;
@@ -1015,7 +1000,7 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk)
     if (pFree->core.offNext)
         pFree->cb = pFree->core.offNext - sizeof(MMHYPERCHUNK);
     else
-        pFree->cb = pHeap->offPageAligned - ((uintptr_t)pFree - (uintptr_t)CTXSUFF(pHeap->pbHeap)) - sizeof(MMHYPERCHUNK);
+        pFree->cb = pHeap->offPageAligned - ((uintptr_t)pFree - (uintptr_t)pHeap->CTX_SUFF(pbHeap)) - sizeof(MMHYPERCHUNK);
     Log3(("mmHyperFree: cbFree %d -> %d (%d)\n", pHeap->cbFree, pHeap->cbFree + pFree->cb, pFree->cb));
     pHeap->cbFree += pFree->cb;
     ASSERT_CHUNK_FREE(pHeap, pFree);
@@ -1044,24 +1029,24 @@ static void mmHyperHeapDumpOne(PMMHYPERHEAP pHeap, PMMHYPERCHUNKFREE pCur)
             const char *pszSelf = pCur->core.offStat == sizeof(MMHYPERCHUNK) ? " stat record" : "";
 #ifdef IN_RING3
             Log(("%p  %06x USED offNext=%06x offPrev=-%06x %s%s\n",
-                 pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+                 pCur, (uintptr_t)pCur - (uintptr_t)pHeap->CTX_SUFF(pbHeap),
                  pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
                  mmR3GetTagName((MMTAG)pStat->Core.Key), pszSelf));
 #else
             Log(("%p  %06x USED offNext=%06x offPrev=-%06x %d%s\n",
-                 pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+                 pCur, (uintptr_t)pCur - (uintptr_t)pHeap->CTX_SUFF(pbHeap),
                  pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core),
                  (MMTAG)pStat->Core.Key, pszSelf));
 #endif
         }
         else
             Log(("%p  %06x USED offNext=%06x offPrev=-%06x\n",
-                 pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+                 pCur, (uintptr_t)pCur - (uintptr_t)pHeap->CTX_SUFF(pbHeap),
                  pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core)));
     }
     else
         Log(("%p  %06x FREE offNext=%06x offPrev=-%06x : cb=%06x offNext=%06x offPrev=-%06x\n",
-             pCur, (uintptr_t)pCur - (uintptr_t)CTXSUFF(pHeap->pbHeap),
+             pCur, (uintptr_t)pCur - (uintptr_t)pHeap->CTX_SUFF(pbHeap),
              pCur->core.offNext, -MMHYPERCHUNK_GET_OFFPREV(&pCur->core), pCur->cb, pCur->offNext, pCur->offPrev));
 }
 #endif /* DEBUG || MMHYPER_HEAP_STRICT */
@@ -1074,7 +1059,7 @@ static void mmHyperHeapDumpOne(PMMHYPERHEAP pHeap, PMMHYPERCHUNKFREE pCur)
 static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
 {
     PMMHYPERCHUNKFREE pPrev = NULL;
-    PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)CTXSUFF(pHeap->pbHeap);
+    PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)pHeap->CTX_SUFF(pbHeap);
     for (;;)
     {
         if (MMHYPERCHUNK_ISUSED(&pCur->core))
@@ -1086,7 +1071,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
                       ("pPrev->core.offNext=%d offPrev=%d\n", pPrev->core.offNext, MMHYPERCHUNK_GET_OFFPREV(&pCur->core)));
 
 # ifdef MMHYPER_HEAP_STRICT_FENCE
-        uint32_t off = (uint8_t *)pCur - CTXSUFF(pHeap->pbHeap);
+        uint32_t off = (uint8_t *)pCur - pHeap->CTX_SUFF(pbHeap);
         if (    MMHYPERCHUNK_ISUSED(&pCur->core)
             &&  off < pHeap->offPageAligned)
         {
@@ -1145,7 +1130,7 @@ MMDECL(void) MMHyperHeapDump(PVM pVM)
 {
     Log(("MMHyperHeapDump: *** heap dump - start ***\n"));
     PMMHYPERHEAP pHeap = CTXSUFF(pVM->mm.s.pHyperHeap);
-    PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)CTXSUFF(pHeap->pbHeap);
+    PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)pHeap->CTX_SUFF(pbHeap);
     for (;;)
     {
         mmHyperHeapDumpOne(pHeap, pCur);

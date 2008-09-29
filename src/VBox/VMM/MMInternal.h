@@ -138,23 +138,23 @@ typedef MMHEAP *PMMHEAP;
 /** @def MMHYPER_HEAP_FREE_DELAY
  * If defined, it indicates the number of frees that should be delayed.
  */
-#if defined(__DOXYGEN__)
-# define MMHYPER_HEAP_FREE_DELAY   64
+#if defined(DOXYGEN_RUNNING)
+# define MMHYPER_HEAP_FREE_DELAY            64
 #endif
 
 /** @def MMHYPER_HEAP_FREE_POISON
  * If defined, it indicates that freed memory should be poisoned
  * with the value it has.
  */
-#if defined(VBOX_STRICT) || defined(__DOXYGEN__)
-# define MMHYPER_HEAP_FREE_POISON   0xCB
+#if defined(VBOX_STRICT) || defined(DOXYGEN_RUNNING)
+# define MMHYPER_HEAP_FREE_POISON           0xcb
 #endif
 
 /** @def MMHYPER_HEAP_STRICT
  * Enables a bunch of assertions in the heap code. */
-#if defined(VBOX_STRICT) || defined(__DOXYGEN__)
+#if defined(VBOX_STRICT) || defined(DOXYGEN_RUNNING)
 # define MMHYPER_HEAP_STRICT 1
-# if 0 || defined(__DOXYGEN__)
+# if 0 || defined(DOXYGEN_RUNNING)
 /** @def MMHYPER_HEAP_STRICT_FENCE
  * Enables tail fence. */
 #  define MMHYPER_HEAP_STRICT_FENCE
@@ -163,7 +163,7 @@ typedef MMHEAP *PMMHEAP;
 #  define MMHYPER_HEAP_STRICT_FENCE_SIZE    256
 /** @def MMHYPER_HEAP_STRICT_FENCE_U32
  * The fence filler. */
-#  define MMHYPER_HEAP_STRICT_FENCE_U32     0xdeadbeef
+#  define MMHYPER_HEAP_STRICT_FENCE_U32     UINT32_C(0xdeadbeef)
 # endif
 #endif
 
@@ -175,25 +175,25 @@ typedef struct MMHYPERSTAT
 {
     /** Core avl node, key is the tag.
      * @todo The type is wrong! Get your lazy a$$ over and create that offsetted uint32_t version we need here!  */
-    AVLOGCPHYSNODECORE Core;
+    AVLOGCPHYSNODECORE  Core;
     /** Aligning the 64-bit fields on a 64-bit line. */
-    uint32_t        u32Padding0;
+    uint32_t            u32Padding0;
     /** Indicator for whether these statistics are registered with STAM or not. */
-    bool            fRegistered;
+    bool                fRegistered;
     /** Number of allocation. */
-    uint64_t        cAllocations;
+    uint64_t            cAllocations;
     /** Number of frees. */
-    uint64_t        cFrees;
+    uint64_t            cFrees;
     /** Failures. */
-    uint64_t        cFailures;
+    uint64_t            cFailures;
     /** Number of bytes allocated (sum). */
-    uint64_t        cbAllocated;
+    uint64_t            cbAllocated;
     /** Number of bytes freed (sum). */
-    uint64_t        cbFreed;
+    uint64_t            cbFreed;
     /** Number of bytes currently allocated. */
-    uint32_t        cbCurAllocated;
+    uint32_t            cbCurAllocated;
     /** Max number of bytes allocated. */
-    uint32_t        cbMaxAllocated;
+    uint32_t            cbMaxAllocated;
 } MMHYPERSTAT;
 /** Pointer to hypervisor heap statistics record. */
 typedef MMHYPERSTAT *PMMHYPERSTAT;
@@ -205,13 +205,13 @@ typedef struct MMHYPERCHUNK
 {
     /** Previous block in the list of all blocks.
      * This is relative to the start of the heap. */
-    uint32_t                offNext;
+    uint32_t            offNext;
     /** Offset to the previous block relative to this one. */
-    int32_t                 offPrev;
+    int32_t             offPrev;
     /** The statistics record this allocation belongs to (self relative). */
-    int32_t                 offStat;
+    int32_t             offStat;
     /** Offset to the heap block (self relative). */
-    int32_t                 offHeap;
+    int32_t             offHeap;
 } MMHYPERCHUNK;
 /** Pointer to a hypervisor heap chunk. */
 typedef MMHYPERCHUNK *PMMHYPERCHUNK;
@@ -223,13 +223,13 @@ typedef MMHYPERCHUNK *PMMHYPERCHUNK;
 typedef struct MMHYPERCHUNKFREE
 {
     /** Main list. */
-    MMHYPERCHUNK            core;
+    MMHYPERCHUNK        core;
     /** Offset of the next chunk in the list of free nodes. */
-    uint32_t                offNext;
+    uint32_t            offNext;
     /** Offset of the previous chunk in the list of free nodes. */
-    int32_t                 offPrev;
+    int32_t             offPrev;
     /** Size of the block. */
-    uint32_t                cb;
+    uint32_t            cb;
 } MMHYPERCHUNKFREE;
 /** Pointer to a free hypervisor heap chunk. */
 typedef MMHYPERCHUNKFREE *PMMHYPERCHUNKFREE;
@@ -244,14 +244,18 @@ typedef struct MMHYPERHEAP
     uint32_t                u32Magic;
     /** The heap size. (This structure is not included!) */
     uint32_t                cbHeap;
-    /** The HC Ring-3 address of the VM. */
-    R3PTRTYPE(PVM)          pVMHC;
-    /** The HC Ring-3 address of the heap. */
-    R3R0PTRTYPE(uint8_t *)  pbHeapHC;
-    /** The GC address of the heap. */
-    RCPTRTYPE(uint8_t *)    pbHeapGC;
-    /** The GC address of the VM. */
-    RCPTRTYPE(PVM)          pVMGC;
+    /** The HC ring-3 address of the heap. */
+    R3PTRTYPE(uint8_t *)    pbHeapR3;
+    /** The HC ring-3 address of the shared VM strcture. */
+    PVMR3                   pVMR3;
+    /** The HC ring-0 address of the heap. */
+    R0PTRTYPE(uint8_t *)    pbHeapR0;
+    /** The HC ring-0 address of the shared VM strcture. */
+    PVMR0                   pVMR0;
+    /** The RC address of the heap. */
+    RCPTRTYPE(uint8_t *)    pbHeapRC;
+    /** The RC address of the shared VM strcture. */
+    PVMRC                   pVMRC;
     /** The amount of free memory in the heap. */
     uint32_t                cbFree;
     /** Offset of the first free chunk in the heap.
@@ -285,7 +289,7 @@ typedef struct MMHYPERHEAP
 typedef MMHYPERHEAP *PMMHYPERHEAP;
 
 /** Magic value for MMHYPERHEAP. (C. S. Lewis) */
-#define MMHYPERHEAP_MAGIC   0x18981129
+#define MMHYPERHEAP_MAGIC               UINT32_C(0x18981129)
 
 
 /**
@@ -777,3 +781,4 @@ __END_DECLS
 /** @} */
 
 #endif
+
