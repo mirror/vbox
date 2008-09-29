@@ -50,8 +50,11 @@
 *******************************************************************************/
 static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID);
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /* IO operation lookup arrays. */
-static uint32_t aIOSize[4]  = {1, 2, 0, 4};
+static uint32_t const g_aIOSize[4] = {1, 2, 0, 4};
 
 /**
  * Sets up and activates AMD-V on the current CPU
@@ -1866,7 +1869,7 @@ ResumeExecution:
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxIOCheck);
                     for (unsigned i=0;i<4;i++)
                     {
-                        unsigned uBPLen = aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
+                        unsigned uBPLen = g_aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
 
                         if (    (IoExitInfo.n.u16Port >= pCtx->dr[i] && IoExitInfo.n.u16Port < pCtx->dr[i] + uBPLen)
                             &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))

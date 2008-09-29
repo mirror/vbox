@@ -678,23 +678,23 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Calcs the L bit of Nth breakpoint.
  * @param   iBp     The breakpoint number [0..3].
  */
-#define X86_DR7_L(iBp)                      ( 1 << (iBp * 2) )
+#define X86_DR7_L(iBp)                      ( UINT32_C(1) << (iBp * 2) )
 
 /** Calcs the G bit of Nth breakpoint.
  * @param   iBp     The breakpoint number [0..3].
  */
-#define X86_DR7_G(iBp)                      ( 1 << (iBp * 2 + 1) )
+#define X86_DR7_G(iBp)                      ( UINT32_C(1) << (iBp * 2 + 1) )
 
 /** @name Read/Write values.
  * @{ */
 /** Break on instruction fetch only. */
-#define X86_DR7_RW_EO                       0
+#define X86_DR7_RW_EO                       0U
 /** Break on write only. */
-#define X86_DR7_RW_WO                       1
+#define X86_DR7_RW_WO                       1U
 /** Break on I/O read/write. This is only defined if CR4.DE is set. */
-#define X86_DR7_RW_IO                       2
+#define X86_DR7_RW_IO                       2U
 /** Break on read or write (but not instruction fetches). */
-#define X86_DR7_RW_RW                       3
+#define X86_DR7_RW_RW                       3U
 /** @} */
 
 /** Shifts a X86_DR7_RW_* value to its right place.
@@ -705,10 +705,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 
 /** @name Length values.
  * @{ */
-#define X86_DR7_LEN_BYTE                    0
-#define X86_DR7_LEN_WORD                    1
-#define X86_DR7_LEN_QWORD                   2 /**< AMD64 long mode only. */
-#define X86_DR7_LEN_DWORD                   3
+#define X86_DR7_LEN_BYTE                    0U
+#define X86_DR7_LEN_WORD                    1U
+#define X86_DR7_LEN_QWORD                   2U /**< AMD64 long mode only. */
+#define X86_DR7_LEN_DWORD                   3U
 /** @} */
 
 /** Shifts a X86_DR7_LEN_* value to its right place.
@@ -721,7 +721,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  * @param   uDR7    DR7 value
  * @param   iBp     The breakpoint number [0..3].
  */
-#define X86_DR7_GET_LEN(uDR7, iBp)          ( ( (uDR7) >> ((iBp) * 4 + 18) ) & 0x3)
+#define X86_DR7_GET_LEN(uDR7, iBp)          ( ( (uDR7) >> ((iBp) * 4 + 18) ) & 0x3U)
 
 /** Mask used to check if any breakpoints are enabled. */
 #define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7))
