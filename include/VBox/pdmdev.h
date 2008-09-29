@@ -1054,17 +1054,17 @@ typedef struct PDMAPICHLPRC
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   cpuid           Virtual CPU to set flag upon.
+     * @param   idCpu           Virtual CPU to set flag upon.
      */
-    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
+    DECLRCCALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   cpuid           Virtual CPU to clear flag upon.
+     * @param   idCpu           Virtual CPU to clear flag upon.
      */
-    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
+    DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Sets or clears the APIC bit in the CPUID feature masks.
@@ -1122,17 +1122,17 @@ typedef struct PDMAPICHLPR0
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   cpuid           Virtual CPU to set flag upon.
+     * @param   idCpu           Virtual CPU to set flag upon.
      */
-    DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
+    DECLR0CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   cpuid           Virtual CPU to clear flag upon.
+     * @param   idCpu           Virtual CPU to clear flag upon.
      */
-    DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
+    DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Sets or clears the APIC bit in the CPUID feature masks.
@@ -1189,17 +1189,17 @@ typedef struct PDMAPICHLPR3
      * Set the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   cpuid           Virtual CPU to set flag upon.
+     * @param   idCpu           Virtual CPU to set flag upon.
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
+    DECLR3CALLBACKMEMBER(void, pfnSetInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Clear the interrupt force action flag.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   cpuid           Virtual CPU to clear flag upon.
+     * @param   idCpu           Virtual CPU to clear flag upon.
      */
-    DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID cpuid));
+    DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
      * Sets or clears the APIC bit in the CPUID feature masks.

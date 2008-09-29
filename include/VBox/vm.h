@@ -216,7 +216,7 @@ typedef struct VMCPU
  * @param   fFlag   The flag to set.
  */
 #if 1
-# define VM_FF_SET(pVM, fFlag)           ASMAtomicOrU32(&(pVM)->fForcedActions, (fFlag))
+# define VM_FF_SET(pVM, fFlag)              ASMAtomicOrU32(&(pVM)->fForcedActions, (fFlag))
 #else
 # define VM_FF_SET(pVM, fFlag) \
     do { ASMAtomicOrU32(&(pVM)->fForcedActions, (fFlag)); \
@@ -228,13 +228,13 @@ typedef struct VMCPU
  * Sets a force action flag for given VCPU.
  *
  * @param   pVM     VM Handle.
- * @param   cpu     Virtual CPU id.
+ * @param   idCpu   Virtual CPU ID.
  * @param   fFlag   The flag to set.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_SET(pVM, cpu, fFlag)   ASMAtomicOrU32(&(pVM)->aCpus[cpu].fForcedActions, (fFlag))
+# define VMCPU_FF_SET(pVM, idCpu, fFlag)    ASMAtomicOrU32(&(pVM)->aCpus[idCpu].fForcedActions, (fFlag))
 #else
-# define VMCPU_FF_SET(pVM, cpu, fFlag)   VM_FF_SET(pVM, fFlag)
+# define VMCPU_FF_SET(pVM, idCpu, fFlag)    VM_FF_SET(pVM, fFlag)
 #endif
 
 /** @def VM_FF_CLEAR
@@ -244,7 +244,7 @@ typedef struct VMCPU
  * @param   fFlag   The flag to clear.
  */
 #if 1
-# define VM_FF_CLEAR(pVM, fFlag)         ASMAtomicAndU32(&(pVM)->fForcedActions, ~(fFlag))
+# define VM_FF_CLEAR(pVM, fFlag)            ASMAtomicAndU32(&(pVM)->fForcedActions, ~(fFlag))
 #else
 # define VM_FF_CLEAR(pVM, fFlag) \
     do { ASMAtomicAndU32(&(pVM)->fForcedActions, ~(fFlag)); \
@@ -256,13 +256,13 @@ typedef struct VMCPU
  * Clears a force action flag for given VCPU.
  *
  * @param   pVM     VM Handle.
- * @param   cpu     Virtual CPU id.
+ * @param   idCpu   Virtual CPU ID.
  * @param   fFlag   The flag to clear.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_CLEAR(pVM, cpu, fFlag) ASMAtomicAndU32(&(pVM)->aCpus[cpu].fForcedActions, ~(fFlag))
+# define VMCPU_FF_CLEAR(pVM, idCpu, fFlag)  ASMAtomicAndU32(&(pVM)->aCpus[idCpu].fForcedActions, ~(fFlag))
 #else
-# define VMCPU_FF_CLEAR(pVM, cpu, fFlag) VM_FF_CLEAR(pVM, fFlag)
+# define VMCPU_FF_CLEAR(pVM, idCpu, fFlag)  VM_FF_CLEAR(pVM, fFlag)
 #endif
 
 /** @def VM_FF_ISSET
@@ -271,19 +271,19 @@ typedef struct VMCPU
  * @param   pVM     VM Handle.
  * @param   fFlag   The flag to check.
  */
-#define VM_FF_ISSET(pVM, fFlag)         (((pVM)->fForcedActions & (fFlag)) == (fFlag))
+#define VM_FF_ISSET(pVM, fFlag)             (((pVM)->fForcedActions & (fFlag)) == (fFlag))
 
 /** @def VMCPU_FF_ISSET
  * Checks if a force action flag is set for given VCPU.
  *
  * @param   pVM     VM Handle.
- * @param   cpu     Virtual CPU id.
+ * @param   idCpu   Virtual CPU ID.
  * @param   fFlag   The flag to check.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-#define VMCPU_FF_ISSET(pVM, cpu, fFlag) (((pVM)->aCpus[cpu].fForcedActions & (fFlag)) == (fFlag))
+# define VMCPU_FF_ISSET(pVM, idCpu, fFlag)  (((pVM)->aCpus[idCpu].fForcedActions & (fFlag)) == (fFlag))
 #else
-#define VMCPU_FF_ISSET(pVM, cpu, fFlag)  VM_FF_ISSET(pVM, fFlag)
+# define VMCPU_FF_ISSET(pVM, idCpu, fFlag)  VM_FF_ISSET(pVM, fFlag)
 #endif
 
 /** @def VM_FF_ISPENDING
@@ -292,19 +292,19 @@ typedef struct VMCPU
  * @param   pVM     VM Handle.
  * @param   fFlags  The flags to check for.
  */
-#define VM_FF_ISPENDING(pVM, fFlags)    ((pVM)->fForcedActions & (fFlags))
+#define VM_FF_ISPENDING(pVM, fFlags)        ((pVM)->fForcedActions & (fFlags))
 
 /** @def VMCPU_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending for given VCPU.
  *
  * @param   pVM     VM Handle.
- * @param   cpu     Virtual CPU id.
+ * @param   idCpu   Virtual CPU ID.
  * @param   fFlags  The flags to check for.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-#define VMCPU_FF_ISPENDING(pVM, cpu, fFlags) ((pVM)->aCpus[cpu].fForcedActions & (fFlags))
+# define VMCPU_FF_ISPENDING(pVM, idCpu, fFlags) ((pVM)->aCpus[idCpu].fForcedActions & (fFlags))
 #else
-#define VMCPU_FF_ISPENDING(pVM, cpu, fFlags)  VM_FF_ISPENDING(pVM, fFlags)
+# define VMCPU_FF_ISPENDING(pVM, idCpu, fFlags) VM_FF_ISPENDING(pVM, fFlags)
 #endif
 
 /** @def VM_IS_EMT
@@ -314,21 +314,21 @@ typedef struct VMCPU
  *          code to let threads other than EMT mess around with the VM.
  */
 #ifdef IN_GC
-# define VM_IS_EMT(pVM)                 true
+# define VM_IS_EMT(pVM)                     true
 #elif defined(IN_RING0)
-# define VM_IS_EMT(pVM)                 true
+# define VM_IS_EMT(pVM)                     true
 #else
 /** @todo need to rework this macro for the case of multiple emulation threads for SMP */
-# define VM_IS_EMT(pVM)                 ((pVM)->NativeThreadEMT == RTThreadNativeSelf())
+# define VM_IS_EMT(pVM)                     ((pVM)->NativeThreadEMT == RTThreadNativeSelf())
 #endif
 
 /** @def VM_ASSERT_EMT
  * Asserts that the current thread IS the emulation thread (EMT).
  */
 #ifdef IN_GC
-# define VM_ASSERT_EMT(pVM) Assert(VM_IS_EMT(pVM))
+# define VM_ASSERT_EMT(pVM)                 Assert(VM_IS_EMT(pVM))
 #elif defined(IN_RING0)
-# define VM_ASSERT_EMT(pVM) Assert(VM_IS_EMT(pVM))
+# define VM_ASSERT_EMT(pVM)                 Assert(VM_IS_EMT(pVM))
 #else
 # define VM_ASSERT_EMT(pVM) \
     AssertMsg(VM_IS_EMT(pVM), \
@@ -339,9 +339,9 @@ typedef struct VMCPU
  * Asserts that the current thread IS the emulation thread (EMT) and returns if it isn't.
  */
 #ifdef IN_GC
-# define VM_ASSERT_EMT_RETURN(pVM, rc)  AssertReturn(VM_IS_EMT(pVM), (rc))
+# define VM_ASSERT_EMT_RETURN(pVM, rc)      AssertReturn(VM_IS_EMT(pVM), (rc))
 #elif defined(IN_RING0)
-# define VM_ASSERT_EMT_RETURN(pVM, rc)  AssertReturn(VM_IS_EMT(pVM), (rc))
+# define VM_ASSERT_EMT_RETURN(pVM, rc)      AssertReturn(VM_IS_EMT(pVM), (rc))
 #else
 # define VM_ASSERT_EMT_RETURN(pVM, rc) \
     AssertMsgReturn(VM_IS_EMT(pVM), \
