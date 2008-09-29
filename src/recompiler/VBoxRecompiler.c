@@ -1133,6 +1133,26 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         Ctx.csHid.u32Limit = env->segs[R_CS].limit;
         Ctx.csHid.Attr.u   = (env->segs[R_CS].flags >> 8) & 0xF0FF;
 
+        Ctx.ds             = env->segs[R_DS].selector;
+        Ctx.dsHid.u64Base  = env->segs[R_DS].base;
+        Ctx.dsHid.u32Limit = env->segs[R_DS].limit;
+        Ctx.dsHid.Attr.u   = (env->segs[R_DS].flags >> 8) & 0xF0FF;
+
+        Ctx.es             = env->segs[R_ES].selector;
+        Ctx.esHid.u64Base  = env->segs[R_ES].base;
+        Ctx.esHid.u32Limit = env->segs[R_ES].limit;
+        Ctx.esHid.Attr.u   = (env->segs[R_ES].flags >> 8) & 0xF0FF;
+
+        Ctx.fs             = env->segs[R_FS].selector;
+        Ctx.fsHid.u64Base  = env->segs[R_FS].base;
+        Ctx.fsHid.u32Limit = env->segs[R_FS].limit;
+        Ctx.fsHid.Attr.u   = (env->segs[R_FS].flags >> 8) & 0xF0FF;
+
+        Ctx.gs             = env->segs[R_GS].selector;
+        Ctx.gsHid.u64Base  = env->segs[R_GS].base;
+        Ctx.gsHid.u32Limit = env->segs[R_GS].limit;
+        Ctx.gsHid.Attr.u   = (env->segs[R_GS].flags >> 8) & 0xF0FF;
+
         Ctx.ss             = env->segs[R_SS].selector;
         Ctx.ssHid.u64Base  = env->segs[R_SS].base;
         Ctx.ssHid.u32Limit = env->segs[R_SS].limit;
