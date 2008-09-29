@@ -768,7 +768,7 @@ sdk:
 	+ $(KMK) VBOX_ONLY_SDK=1  \
               pass_bldprogs pass_others pass_installs pass_packing
 
-fetch_sdk_reqs:
+fetch-sdk-reqs:
 	+ $(KMK) KBUILD_TARGET=win  KBUILD_TARGET_ARCH=x86  -C tools fetch
 
 #
