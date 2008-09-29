@@ -38,19 +38,21 @@
 /* crOpenGL host functions */
 #define SHCRGL_HOST_FN_SET_FRAMEBUFFER (1)
 /* crOpenGL guest functions */
-#define SHCRGL_GUEST_FN_WRITE (2)
-#define SHCRGL_GUEST_FN_READ (3)
+#define SHCRGL_GUEST_FN_WRITE       (2)
+#define SHCRGL_GUEST_FN_READ        (3)
+#define SHCRGL_GUEST_FN_WRITE_READ  (4)
 
 /* Parameters count */
 #define SHCRGL_CPARMS_SET_FRAMEBUFFER (1)
-#define SHCRGL_CPARMS_WRITE (1)
-#define SHCRGL_CPARMS_READ (2)
+#define SHCRGL_CPARMS_WRITE      (1)
+#define SHCRGL_CPARMS_READ       (2)
+#define SHCRGL_CPARMS_WRITE_READ (3)
 
 /**
  * SHCRGL_GUEST_FN_WRITE
  */
 
-/** GUEST_FN_READ Parameters structure. */
+/** GUEST_FN_WRITE Parameters structure. */
 typedef struct
 {
     VBoxGuestHGCMCallInfo   hdr;
@@ -61,7 +63,7 @@ typedef struct
     HGCMFunctionParameter   pBuffer;
 } CRVBOXHGCMWRITE;
 
-/** GUEST_FN_WRITE Parameters structure. */
+/** GUEST_FN_READ Parameters structure. */
 typedef struct
 {
     VBoxGuestHGCMCallInfo   hdr;
@@ -77,5 +79,27 @@ typedef struct
     HGCMFunctionParameter   cbBuffer;
 
 } CRVBOXHGCMREAD;
+
+/** GUEST_FN_WRITE_READ Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** pointer, in
+     *  Data buffer
+     */
+    HGCMFunctionParameter   pBuffer;
+
+    /** pointer, out
+     *  Writeback buffer
+     */
+    HGCMFunctionParameter   pWriteback;
+
+    /** 32bit, out
+     * Count of bytes written to writeback buffer
+     */
+    HGCMFunctionParameter   cbWriteback;
+    
+} CRVBOXHGCMWRITEREAD;
 
 #endif
