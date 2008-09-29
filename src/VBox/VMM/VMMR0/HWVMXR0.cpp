@@ -45,8 +45,8 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /* IO operation lookup arrays. */
-static uint32_t aIOSize[4]  = {1, 2, 0, 4};
-static uint32_t aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
+static uint32_t const g_aIOSize[4]  = {1, 2, 0, 4};
+static uint32_t const g_aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
 
 
 static void VMXR0CheckError(PVM pVM, int rc)
@@ -2303,7 +2303,7 @@ ResumeExecution:
             break;
         }
 
-        uint32_t cbSize = aIOSize[uIOWidth];
+        uint32_t cbSize = g_aIOSize[uIOWidth];
 
         if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
         {
@@ -2328,7 +2328,7 @@ ResumeExecution:
         else
         {
             /* normal in/out */
-            uint32_t uAndVal = aIOOpAnd[uIOWidth];
+            uint32_t uAndVal = g_aIOOpAnd[uIOWidth];
 
             Assert(!VMX_EXIT_QUALIFICATION_IO_REP(exitQualification));
 
@@ -2366,7 +2366,7 @@ ResumeExecution:
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxIOCheck);
                     for (unsigned i=0;i<4;i++)
                     {
-                        unsigned uBPLen = aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
+                        unsigned uBPLen = g_aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
 
                         if (    (uPort >= pCtx->dr[i] && uPort < pCtx->dr[i] + uBPLen)
                             &&  (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
