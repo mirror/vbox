@@ -1719,7 +1719,7 @@ ResumeExecution:
     rc = VMXReadVMCS(VMX_VMCS_RO_IDT_INFO,            &val);
     AssertRC(rc);
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-    /* For some reason injected software interrupts are ignored when e.g. a shadow page fault occurs. */
+    /* For some reason injected software interrupts are ignored (not signalled as pending) when e.g. a shadow page fault occurs. */
     if (    CPUMIsGuestInRealModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.RealMode.eip == pCtx->eip
         &&  pVM->hwaccm.s.vmx.RealMode.Event.fPending)
@@ -1864,7 +1864,6 @@ ResumeExecution:
                      * Forward the trap to the guest by injecting the exception and resuming execution.
                      */
                     Log2(("Forward page fault to the guest\n"));
-           AssertFailed();
 
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
                     /* The error code might have been changed. */
