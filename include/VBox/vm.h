@@ -583,7 +583,7 @@ typedef struct VM
 #ifdef ___MMInternal_h
         struct MM   s;
 #endif
-        char        padding[128];       /* multiple of 32 */
+        char        padding[192];       /* multiple of 32 */
     } mm;
 
     /** CFGM part. */
