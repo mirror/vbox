@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * MM - Memory Monitor(/Manager) - Page Pool.
+ *
+ * @remarks     This file is NOT built for the raw-mode context.
  */
 
 /*
@@ -126,13 +128,13 @@ MMDECL(void *) mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
  */
 MMDECL(RTHCPHYS) MMPage2Phys(PVM pVM, void *pvPage)
 {
-    RTHCPHYS HCPhys = mmPagePoolPtr2Phys(pVM->mm.s.pPagePool, pvPage);
+    RTHCPHYS HCPhys = mmPagePoolPtr2Phys(pVM->mm.s.CTX_SUFF(pPagePool), pvPage);
     if (HCPhys == NIL_RTHCPHYS)
     {
-        HCPhys = mmPagePoolPtr2Phys(pVM->mm.s.pPagePoolLow, pvPage);
+        HCPhys = mmPagePoolPtr2Phys(pVM->mm.s.CTX_SUFF(pPagePoolLow), pvPage);
         if (HCPhys == NIL_RTHCPHYS)
         {
-            STAM_COUNTER_INC(&pVM->mm.s.pPagePool->cErrors);
+            STAM_COUNTER_INC(&pVM->mm.s.CTX_SUFF(pPagePool)->cErrors);
             AssertMsgFailed(("Invalid pvPage=%p specified\n", pvPage));
         }
     }
@@ -152,13 +154,13 @@ MMDECL(RTHCPHYS) MMPage2Phys(PVM pVM, void *pvPage)
  */
 MMDECL(void *) MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage)
 {
-    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePool, HCPhysPage);
+    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePool), HCPhysPage);
     if (!pvPage)
     {
-        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolLow, HCPhysPage);
+        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePoolLow), HCPhysPage);
         if (!pvPage)
         {
-            STAM_COUNTER_INC(&pVM->mm.s.pPagePool->cErrors);
+            STAM_COUNTER_INC(&pVM->mm.s.CTX_SUFF(pPagePool)->cErrors);
             AssertMsg(pvPage, ("Invalid HCPhysPage=%VHp specified\n", HCPhysPage));
         }
     }
@@ -179,13 +181,13 @@ MMDECL(void *) MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage)
  */
 MMDECL(int) MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
 {
-    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePool, HCPhysPage);
+    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePool), HCPhysPage);
     if (!pvPage)
     {
-        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolLow, HCPhysPage);
+        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePoolLow), HCPhysPage);
         if (!pvPage)
         {
-            STAM_COUNTER_INC(&pVM->mm.s.pPagePool->cErrors);
+            STAM_COUNTER_INC(&pVM->mm.s.CTX_SUFF(pPagePool)->cErrors);
             AssertMsg(pvPage, ("Invalid HCPhysPage=%VHp specified\n", HCPhysPage));
             return VERR_INVALID_POINTER;
         }
@@ -208,10 +210,10 @@ MMDECL(int) MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
  */
 MMDECL(int) MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
 {
-    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePool, HCPhysPage);
+    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePool), HCPhysPage);
     if (!pvPage)
     {
-        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolLow, HCPhysPage);
+        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePoolLow), HCPhysPage);
         if (!pvPage)
             return VERR_INVALID_POINTER;
     }

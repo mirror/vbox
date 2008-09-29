@@ -59,37 +59,43 @@ static void     mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv);
  */
 int mmR3PagePoolInit(PVM pVM)
 {
-    AssertMsg(!pVM->mm.s.pPagePool, ("Already initialized!\n"));
+    AssertMsg(!pVM->mm.s.pPagePoolR3, ("Already initialized!\n"));
 
     /*
      * Allocate the pool structures.
      */
-    AssertRelease(sizeof(*pVM->mm.s.pPagePool) + sizeof(*pVM->mm.s.pPagePoolLow) < PAGE_SIZE);
-    int rc = SUPPageAllocLocked(1, (void **)&pVM->mm.s.pPagePool);
+    /** @todo @bufref{1865},@bufref{3202}: mapping the page pool page into
+     *        ring-0. Need to change the wasy we allocate it... */
+    AssertReleaseReturn(sizeof(*pVM->mm.s.pPagePoolR3) + sizeof(*pVM->mm.s.pPagePoolLowR3) < PAGE_SIZE, VERR_INTERNAL_ERROR);
+    int rc = SUPPageAllocLocked(1, (void **)&pVM->mm.s.pPagePoolR3);
     if (VBOX_FAILURE(rc))
         return rc;
-    memset(pVM->mm.s.pPagePool, 0, PAGE_SIZE);
-    pVM->mm.s.pPagePool->pVM = pVM;
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cPages,         STAMTYPE_U32,     "/MM/Page/Def/cPages",        STAMUNIT_PAGES, "Number of pages in the default pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cFreePages,     STAMTYPE_U32,     "/MM/Page/Def/cFreePages",    STAMUNIT_PAGES, "Number of free pages in the default pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cSubPools,      STAMTYPE_U32,     "/MM/Page/Def/cSubPools",     STAMUNIT_COUNT, "Number of sub pools in the default pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cAllocCalls,    STAMTYPE_COUNTER, "/MM/Page/Def/cAllocCalls",   STAMUNIT_CALLS, "Number of MMR3PageAlloc() calls for the default pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cFreeCalls,     STAMTYPE_COUNTER, "/MM/Page/Def/cFreeCalls",    STAMUNIT_CALLS, "Number of MMR3PageFree()+MMR3PageFreeByPhys() calls for the default pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cToPhysCalls,   STAMTYPE_COUNTER, "/MM/Page/Def/cToPhysCalls",  STAMUNIT_CALLS, "Number of MMR3Page2Phys() calls for this pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cToVirtCalls,   STAMTYPE_COUNTER, "/MM/Page/Def/cToVirtCalls",  STAMUNIT_CALLS, "Number of MMR3PagePhys2Page()+MMR3PageFreeByPhys() calls for the default pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePool->cErrors,        STAMTYPE_COUNTER, "/MM/Page/Def/cErrors",       STAMUNIT_ERRORS,"Number of errors for the default pool.");
+    memset(pVM->mm.s.pPagePoolR3, 0, PAGE_SIZE);
+    pVM->mm.s.pPagePoolR3->pVM = pVM;
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cPages,         STAMTYPE_U32,     "/MM/Page/Def/cPages",        STAMUNIT_PAGES, "Number of pages in the default pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cFreePages,     STAMTYPE_U32,     "/MM/Page/Def/cFreePages",    STAMUNIT_PAGES, "Number of free pages in the default pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cSubPools,      STAMTYPE_U32,     "/MM/Page/Def/cSubPools",     STAMUNIT_COUNT, "Number of sub pools in the default pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cAllocCalls,    STAMTYPE_COUNTER, "/MM/Page/Def/cAllocCalls",   STAMUNIT_CALLS, "Number of MMR3PageAlloc() calls for the default pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cFreeCalls,     STAMTYPE_COUNTER, "/MM/Page/Def/cFreeCalls",    STAMUNIT_CALLS, "Number of MMR3PageFree()+MMR3PageFreeByPhys() calls for the default pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cToPhysCalls,   STAMTYPE_COUNTER, "/MM/Page/Def/cToPhysCalls",  STAMUNIT_CALLS, "Number of MMR3Page2Phys() calls for this pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cToVirtCalls,   STAMTYPE_COUNTER, "/MM/Page/Def/cToVirtCalls",  STAMUNIT_CALLS, "Number of MMR3PagePhys2Page()+MMR3PageFreeByPhys() calls for the default pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolR3->cErrors,        STAMTYPE_COUNTER, "/MM/Page/Def/cErrors",       STAMUNIT_ERRORS,"Number of errors for the default pool.");
 
-    pVM->mm.s.pPagePoolLow = pVM->mm.s.pPagePool + 1;
-    pVM->mm.s.pPagePoolLow->pVM = pVM;
-    pVM->mm.s.pPagePoolLow->fLow = true;
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cPages,      STAMTYPE_U32,     "/MM/Page/Low/cPages",        STAMUNIT_PAGES, "Number of pages in the <4GB pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cFreePages,  STAMTYPE_U32,     "/MM/Page/Low/cFreePages",    STAMUNIT_PAGES, "Number of free pages in the <4GB pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cSubPools,   STAMTYPE_U32,     "/MM/Page/Low/cSubPools",     STAMUNIT_COUNT, "Number of sub pools in the <4GB pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cAllocCalls, STAMTYPE_COUNTER, "/MM/Page/Low/cAllocCalls",   STAMUNIT_CALLS, "Number of MMR3PageAllocLow() calls for the <4GB pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cFreeCalls,  STAMTYPE_COUNTER, "/MM/Page/Low/cFreeCalls",    STAMUNIT_CALLS, "Number of MMR3PageFreeLow()+MMR3PageFreeByPhys() calls for the <4GB pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cToPhysCalls,STAMTYPE_COUNTER, "/MM/Page/Low/cToPhysCalls",  STAMUNIT_CALLS, "Number of MMR3Page2Phys() calls for the <4GB pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cToVirtCalls,STAMTYPE_COUNTER, "/MM/Page/Low/cToVirtCalls",  STAMUNIT_CALLS, "Number of MMR3PagePhys2Page()+MMR3PageFreeByPhys() calls for the <4GB pool.");
-    STAM_REG(pVM, &pVM->mm.s.pPagePoolLow->cErrors,     STAMTYPE_COUNTER, "/MM/Page/Low/cErrors",       STAMUNIT_ERRORS,"Number of errors for the <4GB pool.");
+    pVM->mm.s.pPagePoolLowR3 = pVM->mm.s.pPagePoolR3 + 1;
+    pVM->mm.s.pPagePoolLowR3->pVM = pVM;
+    pVM->mm.s.pPagePoolLowR3->fLow = true;
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cPages,      STAMTYPE_U32,     "/MM/Page/Low/cPages",        STAMUNIT_PAGES, "Number of pages in the <4GB pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cFreePages,  STAMTYPE_U32,     "/MM/Page/Low/cFreePages",    STAMUNIT_PAGES, "Number of free pages in the <4GB pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cSubPools,   STAMTYPE_U32,     "/MM/Page/Low/cSubPools",     STAMUNIT_COUNT, "Number of sub pools in the <4GB pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cAllocCalls, STAMTYPE_COUNTER, "/MM/Page/Low/cAllocCalls",   STAMUNIT_CALLS, "Number of MMR3PageAllocLow() calls for the <4GB pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cFreeCalls,  STAMTYPE_COUNTER, "/MM/Page/Low/cFreeCalls",    STAMUNIT_CALLS, "Number of MMR3PageFreeLow()+MMR3PageFreeByPhys() calls for the <4GB pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cToPhysCalls,STAMTYPE_COUNTER, "/MM/Page/Low/cToPhysCalls",  STAMUNIT_CALLS, "Number of MMR3Page2Phys() calls for the <4GB pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cToVirtCalls,STAMTYPE_COUNTER, "/MM/Page/Low/cToVirtCalls",  STAMUNIT_CALLS, "Number of MMR3PagePhys2Page()+MMR3PageFreeByPhys() calls for the <4GB pool.");
+    STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cErrors,     STAMTYPE_COUNTER, "/MM/Page/Low/cErrors",       STAMUNIT_ERRORS,"Number of errors for the <4GB pool.");
+
+    /** @todo @bufref{1865},@bufref{3202}: more */
+    pVM->mm.s.pPagePoolR0 = (uintptr_t)pVM->mm.s.pPagePoolR3;
+    pVM->mm.s.pPagePoolLowR0 = (uintptr_t)pVM->mm.s.pPagePoolLowR3;
 
     /** @todo init a mutex? */
     return VINF_SUCCESS;
@@ -104,14 +110,14 @@ int mmR3PagePoolInit(PVM pVM)
  */
 void mmR3PagePoolTerm(PVM pVM)
 {
-    if (pVM->mm.s.pPagePool)
+    if (pVM->mm.s.pPagePoolR3)
     {
         /*
          * Unlock all memory held by subpools and free the memory.
          * (The MM Heap will free the memory used for internal stuff.)
          */
-        Assert(!pVM->mm.s.pPagePool->fLow);
-        PMMPAGESUBPOOL  pSubPool = pVM->mm.s.pPagePool->pHead;
+        Assert(!pVM->mm.s.pPagePoolR3->fLow);
+        PMMPAGESUBPOOL  pSubPool = pVM->mm.s.pPagePoolR3->pHead;
         while (pSubPool)
         {
             int rc = SUPPageUnlock(pSubPool->pvPages);
@@ -123,16 +129,17 @@ void mmR3PagePoolTerm(PVM pVM)
             /* next */
             pSubPool = pSubPool->pNext;
         }
-        pVM->mm.s.pPagePool = NULL;
+        pVM->mm.s.pPagePoolR3 = NULL;
+        pVM->mm.s.pPagePoolR0 = NIL_RTR0PTR;
     }
 
-    if (pVM->mm.s.pPagePoolLow)
+    if (pVM->mm.s.pPagePoolLowR3)
     {
         /*
          * Free the memory.
          */
-        Assert(pVM->mm.s.pPagePoolLow->fLow);
-        PMMPAGESUBPOOL  pSubPool = pVM->mm.s.pPagePoolLow->pHead;
+        Assert(pVM->mm.s.pPagePoolLowR3->fLow);
+        PMMPAGESUBPOOL  pSubPool = pVM->mm.s.pPagePoolLowR3->pHead;
         while (pSubPool)
         {
             int rc = SUPLowFree(pSubPool->pvPages, pSubPool->cPages);
@@ -142,7 +149,8 @@ void mmR3PagePoolTerm(PVM pVM)
             /* next */
             pSubPool = pSubPool->pNext;
         }
-        pVM->mm.s.pPagePoolLow = NULL;
+        pVM->mm.s.pPagePoolLowR3 = NULL;
+        pVM->mm.s.pPagePoolLowR0 = NIL_RTR0PTR;
     }
 }
 
@@ -391,7 +399,7 @@ DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
  */
 MMR3DECL(void *) MMR3PageAlloc(PVM pVM)
 {
-    return mmR3PagePoolAlloc(pVM->mm.s.pPagePool);
+    return mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
 }
 
 
@@ -410,9 +418,9 @@ MMR3DECL(void *) MMR3PageAlloc(PVM pVM)
 MMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
 {
     /** @todo optimize this, it's the most common case now. */
-    void *pv = mmR3PagePoolAlloc(pVM->mm.s.pPagePool);
+    void *pv = mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
     if (pv)
-        return mmPagePoolPtr2Phys(pVM->mm.s.pPagePool, pv);
+        return mmPagePoolPtr2Phys(pVM->mm.s.pPagePoolR3, pv);
     return NIL_RTHCPHYS;
 }
 
@@ -427,7 +435,7 @@ MMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
  */
 MMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
 {
-    mmR3PagePoolFree(pVM->mm.s.pPagePool, pvPage);
+    mmR3PagePoolFree(pVM->mm.s.pPagePoolR3, pvPage);
 }
 
 
@@ -441,7 +449,7 @@ MMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
  */
 MMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
 {
-    return mmR3PagePoolAlloc(pVM->mm.s.pPagePoolLow);
+    return mmR3PagePoolAlloc(pVM->mm.s.pPagePoolLowR3);
 }
 
 
@@ -454,7 +462,7 @@ MMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
  */
 MMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage)
 {
-    mmR3PagePoolFree(pVM->mm.s.pPagePoolLow, pvPage);
+    mmR3PagePoolFree(pVM->mm.s.pPagePoolLowR3, pvPage);
 }
 
 
@@ -469,11 +477,11 @@ MMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage)
  */
 MMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage)
 {
-    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePool, HCPhysPage);
+    void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolR3, HCPhysPage);
     if (!pvPage)
-        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolLow, HCPhysPage);
+        pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolLowR3, HCPhysPage);
     if (pvPage)
-        mmR3PagePoolFree(pVM->mm.s.pPagePool, pvPage);
+        mmR3PagePoolFree(pVM->mm.s.pPagePoolR3, pvPage);
     else
         AssertMsgFailed(("Invalid address HCPhysPT=%#x\n", HCPhysPage));
 }
@@ -494,9 +502,9 @@ MMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
     VM_ASSERT_EMT(pVM);
     if (!pVM->mm.s.pvDummyPage)
     {
-        pVM->mm.s.pvDummyPage = mmR3PagePoolAlloc(pVM->mm.s.pPagePool);
+        pVM->mm.s.pvDummyPage = mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
         AssertRelease(pVM->mm.s.pvDummyPage);
-        pVM->mm.s.HCPhysDummyPage = mmPagePoolPtr2Phys(pVM->mm.s.pPagePool, pVM->mm.s.pvDummyPage);
+        pVM->mm.s.HCPhysDummyPage = mmPagePoolPtr2Phys(pVM->mm.s.pPagePoolR3, pVM->mm.s.pvDummyPage);
         AssertRelease(!(pVM->mm.s.HCPhysDummyPage & ~X86_PTE_PAE_PG_MASK));
     }
     return pVM->mm.s.pvDummyPage;

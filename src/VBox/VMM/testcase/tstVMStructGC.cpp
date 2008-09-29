@@ -197,8 +197,10 @@ int main()
     GEN_CHECK_OFF(MM, pHyperHeapR3);
     GEN_CHECK_OFF(MM, pHyperHeapR0);
     GEN_CHECK_OFF(MM, pLockedMem);
-    GEN_CHECK_OFF(MM, pPagePool);
-    GEN_CHECK_OFF(MM, pPagePoolLow);
+    GEN_CHECK_OFF(MM, pPagePoolR3);
+    GEN_CHECK_OFF(MM, pPagePoolR0);
+    GEN_CHECK_OFF(MM, pPagePoolLowR3);
+    GEN_CHECK_OFF(MM, pPagePoolLowR0);
     GEN_CHECK_OFF(MM, pvDummyPage);
     GEN_CHECK_OFF(MM, HCPhysDummyPage);
     GEN_CHECK_OFF(MM, cbRamBase);
