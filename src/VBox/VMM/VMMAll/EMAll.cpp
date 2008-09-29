@@ -2252,7 +2252,7 @@ static int emInterpretLIGdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     RTGCPTR     pParam1;
     X86XDTR32   dtr32;
 
-    LogFlow(("Emulate %s at %VGv\n", emGetMnemonic(pCpu), pRegFrame->rip));
+    Log(("Emulate %s at %VGv\n", emGetMnemonic(pCpu), pRegFrame->rip));
 
     /* Only for the VT-x real-mode emulation case. */
     if (!CPUMIsGuestInRealMode(pVM))
@@ -2274,6 +2274,9 @@ static int emInterpretLIGdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
 
     rc = emRamRead(pVM, &dtr32, pParam1, sizeof(dtr32));
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
+
+    if (!(pCpu->prefix & PREFIX_OPSIZE))
+        dtr32.uAddr &= 0xffffff; /* 16 bits operand size */
 
     if (pCpu->pCurInstr->opcode == OP_LIDT)
         CPUMSetGuestIDTR(pVM, dtr32.uAddr, dtr32.cb);
