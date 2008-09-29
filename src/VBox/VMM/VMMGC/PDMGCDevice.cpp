@@ -98,8 +98,8 @@ static DECLCALLBACK(void) pdmRCPicHlp_Unlock(PPDMDEVINS pDevIns);
 /** @name APIC RC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
-static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
+static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
+static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
 static DECLCALLBACK(void) pdmRCApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
 static DECLCALLBACK(int) pdmRCApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmRCApicHlp_Unlock(PPDMDEVINS pDevIns);
@@ -394,22 +394,22 @@ static DECLCALLBACK(void) pdmRCPicHlp_Unlock(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPRC::pfnSetInterruptFF */
-static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
+static DECLCALLBACK(void) pdmRCApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmRCApicHlp_SetInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 1\n",
-             pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMGC, cpuid, VM_FF_INTERRUPT_APIC)));
-    VMCPU_FF_SET(pDevIns->Internal.s.pVMGC, cpuid, VM_FF_INTERRUPT_APIC);
+             pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMGC, idCpu, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_SET(pDevIns->Internal.s.pVMGC, idCpu, VM_FF_INTERRUPT_APIC);
 }
 
 
 /** @copydoc PDMAPICHLPRC::pfnClearInterruptFF */
-static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
+static DECLCALLBACK(void) pdmRCApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmRCApicHlp_ClearInterruptFF: caller=%p/%d: VM_FF_INTERRUPT %d -> 0\n",
-             pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMGC, cpuid, VM_FF_INTERRUPT_APIC)));
-    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMGC, cpuid, VM_FF_INTERRUPT_APIC);
+             pDevIns, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMGC, idCpu, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMGC, idCpu, VM_FF_INTERRUPT_APIC);
 }
 
 

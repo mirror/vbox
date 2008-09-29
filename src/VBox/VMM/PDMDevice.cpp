@@ -233,8 +233,8 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @name HC APIC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
-static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid);
+static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
+static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
 static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
 static DECLCALLBACK(int) pdmR3ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns);
@@ -4124,25 +4124,25 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 
 
 /** @copydoc PDMAPICHLPR3::pfnSetInterruptFF */
-static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
+static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMHC;
     LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT %d -> 1\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pVM, cpuid, VM_FF_INTERRUPT_APIC)));
-    VMCPU_FF_SET(pVM, cpuid, VM_FF_INTERRUPT_APIC);
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pVM, idCpu, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_SET(pVM, idCpu, VM_FF_INTERRUPT_APIC);
     REMR3NotifyInterruptSet(pVM);
     VMR3NotifyFF(pVM, true);
 }
 
 
 /** @copydoc PDMAPICHLPR3::pfnClearInterruptFF */
-static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID cpuid)
+static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT %d -> 0\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC)));
-    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMHC, cpuid, VM_FF_INTERRUPT_APIC);
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VMCPU_FF_ISSET(pDevIns->Internal.s.pVMHC, idCpu, VM_FF_INTERRUPT_APIC)));
+    VMCPU_FF_CLEAR(pDevIns->Internal.s.pVMHC, idCpu, VM_FF_INTERRUPT_APIC);
     REMR3NotifyInterruptClear(pDevIns->Internal.s.pVMHC);
 }
 
