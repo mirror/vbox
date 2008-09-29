@@ -53,7 +53,6 @@
 #include <iprt/semaphore.h>
 #include <iprt/process.h>
 #include <iprt/alloc.h>
-#include <iprt/uuid.h>
 #include <iprt/err.h>
 #include <VBox/log.h>
 
@@ -203,17 +202,6 @@ static PSUPDRVSESSION   g_apSessionHashTab[19];
 /** The number of open sessions. */
 static int32_t volatile g_cSessions = 0;
 
-
-/*
- * Drag in the rest of IRPT since we share it with the
- * rest of the kernel modules on darwin.
- */
-PFNRT g_apfnVBoxDrvIPRTDeps[] =
-{
-    (PFNRT)RTUuidCompare,
-    (PFNRT)RTErrConvertFromErrno,
-    NULL
-};
 
 
 /**

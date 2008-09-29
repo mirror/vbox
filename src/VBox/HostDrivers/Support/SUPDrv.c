@@ -46,6 +46,10 @@
 #include <iprt/uuid.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+# include <iprt/crc32.h>
+# include <iprt/net.h>
+#endif
 /* VBox/x86.h not compatible with the Linux kernel sources */
 #ifdef RT_OS_LINUX
 # define X86_CPUID_VENDOR_AMD_EBX       0x68747541
@@ -387,6 +391,25 @@ static SUPFUNC g_aFunctions[] =
     { "AssertMsg1",                             (void *)UNWIND_WRAP(AssertMsg1) },
     { "AssertMsg2",                             (void *)AssertMsg2 }, /** @todo replace this by RTAssertMsg2V */
 };
+
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+/**
+ * Drag in the rest of IRPT since we share it with the
+ * rest of the kernel modules on darwin.
+ */
+PFNRT g_apfnVBoxDrvIPRTDeps[] =
+{
+    (PFNRT)RTCrc32,
+    (PFNRT)RTErrConvertFromErrno,
+    (PFNRT)RTNetIPv4IsHdrValid
+    (PFNRT)RTNetIPv4TCPChecksum,
+    (PFNRT)RTNetIPv4UDPChecksum,
+    (PFNRT)RTUuidCompare,
+    (PFNRT)RTUuidCompareStr,
+    (PFNRT)RTUuidFromStr,
+    NULL
+};
+#endif  /* RT_OS_DARWIN || RT_OS_SOLARIS */
 
 
 /**
