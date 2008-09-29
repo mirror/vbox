@@ -401,7 +401,7 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
 {
     (PFNRT)RTCrc32,
     (PFNRT)RTErrConvertFromErrno,
-    (PFNRT)RTNetIPv4IsHdrValid
+    (PFNRT)RTNetIPv4IsHdrValid,
     (PFNRT)RTNetIPv4TCPChecksum,
     (PFNRT)RTNetIPv4UDPChecksum,
     (PFNRT)RTUuidCompare,
