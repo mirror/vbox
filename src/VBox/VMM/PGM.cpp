@@ -3140,7 +3140,7 @@ if (getenv("VBOX_32BIT"))
  */
 PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 {
-    LogFlow(("PGMR3ChangeMode: Guest mode: %s -> %s\n", PGMGetModeName(pVM->pgm.s.enmGuestMode), PGMGetModeName(enmGuestMode)));
+    Log(("PGMR3ChangeMode: Guest mode: %s -> %s\n", PGMGetModeName(pVM->pgm.s.enmGuestMode), PGMGetModeName(enmGuestMode)));
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cGuestModeChanges);
 
     /*
