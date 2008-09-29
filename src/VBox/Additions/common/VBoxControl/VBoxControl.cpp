@@ -1043,57 +1043,59 @@ static int setGuestProperty(int argc, char *argv[])
  */
 static int enumGuestProperty(int argc, char *argv[])
 {
-/*
- * Check the syntax.  We can deduce the correct syntax from the number of
- * arguments.
- */
-    const char *paszPatterns = NULL;
-    if ((argc > 1) && (0 == strcmp(argv[0], "-patterns")))
-        paszPatterns = argv[1];
+    /*
+     * Check the syntax.  We can deduce the correct syntax from the number of
+     * arguments.
+     */
+    char const * const *papszPatterns = NULL;
+    size_t cPatterns = 0;
+    if (    argc > 1
+        && !strcmp(argv[0], "-patterns"))
+    {
+        papszPatterns = (char const * const *)&argv[1];
+        cPatterns = argc - 1;
+    }
     else if (argc != 0)
     {
         usage(GUEST_PROP);
         return 1;
     }
 
-/*
- * Do the actual enumeration.
- */
+    /*
+     * Do the actual enumeration.
+     */
     uint32_t u32ClientId = 0;
-    PVBGLR3GUESTPROPENUM pHandle = NULL;
-    RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
-    char *pszName = NULL, *pszValue = NULL, *pszFlags = NULL;
-    uint64_t u64Timestamp = 0;
-    int rc = VINF_SUCCESS;
-    rc = VbglR3GuestPropConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
-        VBoxControlError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
+    int rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        char **ppaszPatterns = argc > 1 ? argv + 1 : NULL;
-        int cPatterns = argc > 1 ? argc - 1 : 0;
-        rc = VbglR3GuestPropEnum(u32ClientId, ppaszPatterns, cPatterns, &pHandle,
+        PVBGLR3GUESTPROPENUM pHandle;
+        const char *pszName, *pszValue, *pszFlags;
+        uint64_t u64Timestamp;
+
+        rc = VbglR3GuestPropEnum(u32ClientId, papszPatterns, cPatterns, &pHandle,
                                  &pszName, &pszValue, &u64Timestamp, &pszFlags);
         if (RT_SUCCESS(rc))
         {
-            Handle = pHandle;
+            while (RT_SUCCESS(rc) && !pszName)
+            {
+                RTPrintf("Name: %s, value: %s, timestamp: %lld, flags: %s\n",
+                         pszName, pszValue, u64Timestamp, pszFlags);
+
+                rc = VbglR3GuestPropEnumNext(pHandle, &pszName, &pszValue, &u64Timestamp, &pszFlags);
+                if (RT_FAILURE(rc))
+                    VBoxControlError("Error while enumerating guest properties: %Rrc\n", rc);
+            }
+
+            VbglR3GuestPropEnumFree(pHandle);
         }
         else if (VERR_NOT_FOUND == rc)
             RTPrintf("No properties found.\n");
         else
             VBoxControlError("Failed to enumerate the guest properties! Error: %Rrc\n", rc);
-    }
-    while (RT_SUCCESS(rc) && (pszName != NULL))
-    {
-        RTPrintf("Name: %s, value: %s, timestamp: %lld, flags: %s\n",
-                 pszName, pszValue, u64Timestamp, pszFlags);
-        rc = VbglR3GuestPropEnumNext(Handle.get(), &pszName, &pszValue, &u64Timestamp, &pszFlags);
-        if (!RT_SUCCESS(rc))
-            VBoxControlError("Error while enumerating guest properties: %Rrc\n", rc);
-    }
-
-    if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);
+    }
+    else
+        VBoxControlError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
     return RT_SUCCESS(rc) ? 0 : 1;
 }
 

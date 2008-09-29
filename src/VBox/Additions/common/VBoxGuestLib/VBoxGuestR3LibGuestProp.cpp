@@ -522,36 +522,32 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  * @param   ppszValue       Where to store the first timestamp value on success.
  * @param   ppszFlags       Where to store the first flags value on success.
  *                          Should not be freed.
- *
- * @todo    Make papszPatterns char const * const *, and cPatterns size_t (so we
- *          can use RT_ELEMENTS without getting warnings on Windows).
- *          Most of the returns should also be made char const * to discourage
- *          changes and encourage compiler optimizations.
  */
 VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
-                                    char **papszPatterns,
-                                    int cPatterns,
+                                    char const * const *papszPatterns,
+                                    size_t cPatterns,
                                     PVBGLR3GUESTPROPENUM *ppHandle,
-                                    char **ppszName,
-                                    char **ppszValue,
+                                    char const **ppszName,
+                                    char const **ppszValue,
                                     uint64_t *pu64Timestamp,
-                                    char **ppszFlags)
+                                    char const **ppszFlags)
 {
     int rc = VINF_SUCCESS;
     RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
-    Handle = (PVBGLR3GUESTPROPENUM) RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM));
+    Handle = (PVBGLR3GUESTPROPENUM)RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM));
     if (!Handle)
         rc = VERR_NO_MEMORY;
 
     /* Get the length of the pattern string, including the final terminator. */
     uint32_t cchPatterns = 1;
-    for (int i = 0; i < cPatterns; ++i)
+    for (unsigned i = 0; i < cPatterns; ++i)
         cchPatterns += strlen(papszPatterns[i]) + 1;
+
     /* Pack the pattern array */
     RTMemAutoPtr<char> Patterns;
-    Patterns = (char *) RTMemAlloc(cchPatterns);
+    Patterns = (char *)RTMemAlloc(cchPatterns);
     size_t iOffs = 0;
-    for (int i = 0; i < cPatterns; ++i)
+    for (size_t i = 0; i < cPatterns; ++i)
     {
         size_t cb = strlen(papszPatterns[i]) + 1;
         memcpy(&Patterns[iOffs], papszPatterns[i], cb);
@@ -618,18 +614,18 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
  * @param  ppszFlags     Where to store the next property flags.  This will be
  *                       set to NULL if there are no more properties to
  *                       enumerate.  This pointer should not be freed.
- *
- * @todo return char const *.
  */
 VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
-                                        char **ppszName,
-                                        char **ppszValue,
+                                        char const **ppszName,
+                                        char const **ppszValue,
                                         uint64_t *pu64Timestamp,
-                                        char **ppszFlags)
+                                        char const **ppszFlags)
 {
     uint32_t iBuf = pHandle->iBuf;
     char *pszName = pHandle->pchBuf + iBuf;
-    /** @todo replace these with safe memchr's and return an error if needed. */
+    /** @todo replace these with safe memchr's and return an error if needed. A
+     *        PLEASE add a comment about the layout because this is rather
+     *        unreadable. */
     iBuf += strlen(pszName) + 1;
     char *pszValue = pHandle->pchBuf + iBuf;
     iBuf += strlen(pszValue) + 1;
@@ -679,10 +675,8 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
                                       size_t cPatterns)
 {
     PVBGLR3GUESTPROPENUM pHandle;
-    char *pszName;
-    char *pszValue;
+    char const *pszName, *pszValue, *pszFlags;
     uint64_t pu64Timestamp;
-    char *pszFlags;
     int rc = VbglR3GuestPropEnum(u32ClientId,
                                  (char **)papszPatterns, /** @todo fix this cast. */
                                  cPatterns,
