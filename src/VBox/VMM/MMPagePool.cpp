@@ -180,7 +180,7 @@ DECLINLINE(void *) mmR3PagePoolAlloc(PMMPAGEPOOL pPool)
         {
             Assert(!ASMBitTest(pSub->auBitmap, iPage));
             ASMBitSet(pSub->auBitmap, iPage);
-            return (char *)pSub->pvPages + PAGE_SIZE * iPage;
+            return (uint8_t *)pSub->pvPages + PAGE_SIZE * iPage;
         }
 #else
         unsigned   *pu = &pSub->auBitmap[0];
@@ -197,8 +197,8 @@ DECLINLINE(void *) mmR3PagePoolAlloc(PMMPAGEPOOL pPool)
                     if (!(u & uMask))
                     {
                         *pu |= uMask;
-                        return (char *)pSub->pvPages
-                            + PAGE_SIZE * (iBit + ((char *)pu - (char *)&pSub->auBitmap[0]) * 8);
+                        return (uint8_t *)pSub->pvPages
+                            + PAGE_SIZE * (iBit + ((uint8_t *)pu - (uint8_t *)&pSub->auBitmap[0]) * 8);
                     }
                     iBit++;
                     uMask <<= 1;
@@ -342,7 +342,7 @@ DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
      */
     PMMPPLOOKUPHCPTR pLookup = (PMMPPLOOKUPHCPTR)RTAvlPVGetBestFit(&pPool->pLookupVirt, pv, false);
     if (    !pLookup
-        ||  (char *)pv >= (char *)pLookup->pSubPool->pvPages + (pLookup->pSubPool->cPages << PAGE_SHIFT)
+        ||  (uint8_t *)pv >= (uint8_t *)pLookup->pSubPool->pvPages + (pLookup->pSubPool->cPages << PAGE_SHIFT)
         )
     {
         STAM_COUNTER_INC(&pPool->cErrors);
@@ -355,7 +355,7 @@ DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
      */
     PMMPAGESUBPOOL  pSubPool = pLookup->pSubPool;
     /* clear bitmap bit */
-    const unsigned  iPage = ((char *)pv - (char *)pSubPool->pvPages) >> PAGE_SHIFT;
+    const unsigned  iPage = ((uint8_t *)pv - (uint8_t *)pSubPool->pvPages) >> PAGE_SHIFT;
 #ifdef USE_INLINE_ASM_BIT_OPS
     Assert(ASMBitTest(pSubPool->auBitmap, iPage));
     ASMBitClear(pSubPool->auBitmap, iPage);

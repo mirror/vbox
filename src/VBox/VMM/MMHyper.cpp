@@ -71,6 +71,9 @@ int mmR3HyperInit(PVM pVM)
     AssertRelease(RT_ALIGN_T(pVM->mm.s.pvHyperAreaGC, 1 << X86_PD_SHIFT, RTGCPTR) == pVM->mm.s.pvHyperAreaGC);
     Assert(pVM->mm.s.pvHyperAreaGC < 0xff000000);
 
+    /** @todo @bugref{1865}, @bugref{3202}: Change the cbHyperHeap default
+     *        depending on whether VT-x/AMD-V is enabled or not! Don't waste
+     *        precious kernel space on heap for the PATM. */
     uint32_t cbHyperHeap;
     int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "cbHyperHeap", &cbHyperHeap);
     if (rc == VERR_CFGM_NO_PARENT || rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -88,9 +91,11 @@ int mmR3HyperInit(PVM pVM)
      * (This must be done before we start adding memory to the
      * hypervisor static area because lookup records are allocated from it.)
      */
-    rc = mmR3HyperHeapCreate(pVM, cbHyperHeap, &pVM->mm.s.pHyperHeapHC);
+    rc = mmR3HyperHeapCreate(pVM, cbHyperHeap, &pVM->mm.s.pHyperHeapR3);
     if (VBOX_SUCCESS(rc))
     {
+        pVM->mm.s.pHyperHeapR0 = (uintptr_t)pVM->mm.s.pHyperHeapR3; /** @todo #1865: map into ring-0 / whatever. */
+
         /*
          * Make a small head fence to fend of accidental sequential access.
          */
@@ -114,10 +119,11 @@ int mmR3HyperInit(PVM pVM)
             /*
              * Map the heap into the hypervisor space.
              */
-            rc = mmR3HyperHeapMap(pVM, pVM->mm.s.pHyperHeapHC, &GCPtr);
+            rc = mmR3HyperHeapMap(pVM, pVM->mm.s.pHyperHeapR3, &GCPtr);
             if (VBOX_SUCCESS(rc))
             {
-                pVM->mm.s.pHyperHeapGC = (RTGCPTR32)GCPtr;
+                pVM->mm.s.pHyperHeapRC = (RTRCPTR)GCPtr;
+                Assert(pVM->mm.s.pHyperHeapRC == GCPtr);
 
                 /*
                  * Register info handlers.
@@ -162,7 +168,7 @@ MMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
     /*
      * Do all the delayed mappings.
      */
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uintptr_t)pVM->mm.s.pHyperHeapHC + pVM->mm.s.offLookupHyper);
+    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uintptr_t)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
     for (;;)
     {
         RTGCPTR     GCPtr = pVM->mm.s.pvHyperAreaGC + pLookup->off;
@@ -287,9 +293,10 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
                 pVM->aCpus[i].pVMRC             = pVM->pVMRC;
 
             pVM->mm.s.pvHyperAreaGC             += offDelta;
-            pVM->mm.s.pHyperHeapGC              += offDelta;
-            pVM->mm.s.pHyperHeapHC->pbHeapRC    += offDelta;
-            pVM->mm.s.pHyperHeapHC->pVMRC        = pVM->pVMRC;
+            Assert(pVM->mm.s.pvHyperAreaGC < _4G);
+            pVM->mm.s.pHyperHeapRC              += offDelta;
+            pVM->mm.s.pHyperHeapR3->pbHeapRC    += offDelta;
+            pVM->mm.s.pHyperHeapR3->pVMRC        = pVM->pVMRC;
 
             /*
              * Relocate the rest.
@@ -312,20 +319,22 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
  * @return VBox status code.
  *
  * @param   pVM         VM handle.
- * @param   pvHC        Host context address of the memory. Must be page aligned!
- * @param   HCPhys      Host context physical address of the memory to be mapped. Must be page aligned!
+ * @param   pvR3        Host context address of the memory. Must be page
+ *                      aligned!
+ * @param   HCPhys      Host context physical address of the memory to be
+ *                      mapped. Must be page aligned!
  * @param   cb          Size of the memory. Will be rounded up to nearest page.
  * @param   pszDesc     Description.
  * @param   pGCPtr      Where to store the GC address.
  */
-MMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvHC, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr)
+MMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr)
 {
-    LogFlow(("MMR3HyperMapHCPhys: pvHc=%p HCPhys=%VHp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", pvHC, HCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
+    LogFlow(("MMR3HyperMapHCPhys: pvR3=%p HCPhys=%RHp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", pvR3, HCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
 
     /*
      * Validate input.
      */
-    AssertReturn(RT_ALIGN_P(pvHC, PAGE_SIZE) == pvHC, VERR_INVALID_PARAMETER);
+    AssertReturn(RT_ALIGN_P(pvR3, PAGE_SIZE) == pvR3, VERR_INVALID_PARAMETER);
     AssertReturn(RT_ALIGN_T(HCPhys, PAGE_SIZE, RTHCPHYS) == HCPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pszDesc && *pszDesc, VERR_INVALID_PARAMETER);
 
@@ -340,7 +349,7 @@ MMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvHC, RTHCPHYS HCPhys, size_t cb
     if (VBOX_SUCCESS(rc))
     {
         pLookup->enmType = MMLOOKUPHYPERTYPE_HCPHYS;
-        pLookup->u.HCPhys.pvHC   = pvHC;
+        pLookup->u.HCPhys.pvR3   = pvR3;
         pLookup->u.HCPhys.HCPhys = HCPhys;
 
         /*
@@ -513,20 +522,22 @@ MMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, R
  * @return VBox status code.
  *
  * @param   pVM         VM handle.
- * @param   pvHC        Host context address of the memory (may be not page aligned).
+ * @param   pvR3        Host context address of the memory (may be not page
+ *                      aligned).
  * @param   cb          Size of the memory. Will be rounded up to nearest page.
- * @param   fFree       Set this if MM is responsible for freeing the memory using SUPPageFree.
+ * @param   fFree       Set this if MM is responsible for freeing the memory
+ *                      using SUPPageFree.
  * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the GC address corresponding to pvHC.
+ * @param   pGCPtr      Where to store the GC address corresponding to pvR3.
  */
-MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr)
+MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvR3, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr)
 {
-    LogFlow(("MMR3HyperMapHCRam: pvHc=%p cb=%d fFree=%d pszDesc=%p:{%s} pGCPtr=%p\n", pvHC, (int)cb, fFree, pszDesc, pszDesc, pGCPtr));
+    LogFlow(("MMR3HyperMapHCRam: pvR3=%p cb=%d fFree=%d pszDesc=%p:{%s} pGCPtr=%p\n", pvR3, (int)cb, fFree, pszDesc, pszDesc, pGCPtr));
 
     /*
      * Validate input.
      */
-    if (    !pvHC
+    if (    !pvR3
         ||  cb <= 0
         ||  !pszDesc
         ||  !*pszDesc)
@@ -538,8 +549,8 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
     /*
      * Page align address and size.
      */
-    void *pvHCPage = (void *)((uintptr_t)pvHC & PAGE_BASE_HC_MASK);
-    cb += (uintptr_t)pvHC & PAGE_OFFSET_MASK;
+    void *pvR3Page = (void *)((uintptr_t)pvR3 & PAGE_BASE_HC_MASK);
+    cb += (uintptr_t)pvR3 & PAGE_OFFSET_MASK;
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
 
     /*
@@ -554,7 +565,7 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
          * Lock the heap memory and tell PGM about the locked pages.
          */
         PMMLOCKEDMEM    pLockedMem;
-        rc = mmR3LockMem(pVM, pvHCPage, cb, fFree ? MM_LOCKED_TYPE_HYPER : MM_LOCKED_TYPE_HYPER_NOFREE, &pLockedMem, false /* fSilentFailure */);
+        rc = mmR3LockMem(pVM, pvR3Page, cb, fFree ? MM_LOCKED_TYPE_HYPER : MM_LOCKED_TYPE_HYPER_NOFREE, &pLockedMem, false /* fSilentFailure */);
         if (VBOX_SUCCESS(rc))
         {
             /* map the stuff into guest address space. */
@@ -563,12 +574,12 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
             if (VBOX_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
-                pLookup->u.Locked.pvHC       = pvHC;
+                pLookup->u.Locked.pvR3       = pvR3;
                 pLookup->u.Locked.pvR0       = NIL_RTR0PTR;
                 pLookup->u.Locked.pLockedMem = pLockedMem;
 
                 /* done. */
-                GCPtr    |= (uintptr_t)pvHC & PAGE_OFFSET_MASK;
+                GCPtr    |= (uintptr_t)pvR3 & PAGE_OFFSET_MASK;
                 *pGCPtr   = GCPtr;
                 return rc;
             }
@@ -591,7 +602,7 @@ MMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, cons
  * @param   cPages      The number of pages.
  * @param   paPages     The page descriptors.
  * @param   pszDesc     Mapping description.
- * @param   pGCPtr      Where to store the GC address corresponding to pvHC.
+ * @param   pGCPtr      Where to store the GC address corresponding to pvR3.
  */
 MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr)
 {
@@ -640,7 +651,7 @@ MMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages
             if (VBOX_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
-                pLookup->u.Locked.pvHC       = pvR3;
+                pLookup->u.Locked.pvR3       = pvR3;
                 pLookup->u.Locked.pvR0       = pvR0;
                 pLookup->u.Locked.pLockedMem = pLockedMem;
 
@@ -738,7 +749,7 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
         pLookup->offNext        = pVM->mm.s.offLookupHyper;
         pLookup->cb             = cbAligned;
         pLookup->off            = pVM->mm.s.offHyperNextStatic;
-        pVM->mm.s.offLookupHyper = (char *)pLookup - (char *)pVM->mm.s.pHyperHeapHC;
+        pVM->mm.s.offLookupHyper = (uint8_t *)pLookup - (uint8_t *)pVM->mm.s.pHyperHeapR3;
         if (pLookup->offNext != (int32_t)NIL_OFFSET)
             pLookup->offNext   -= pVM->mm.s.offLookupHyper;
         pLookup->enmType        = MMLOOKUPHYPERTYPE_INVALID;
@@ -953,18 +964,18 @@ MMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MMT
  *
  * @returns HC physical address.
  * @param   pVM         VM Handle
- * @param   pvHC        Host context physical address.
+ * @param   pvR3        Host context virtual address.
  */
-MMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC)
+MMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
 {
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)pVM->mm.s.pHyperHeapHC + pVM->mm.s.offLookupHyper);
+    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
     for (;;)
     {
         switch (pLookup->enmType)
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
             {
-                unsigned off = (char *)pvHC - (char *)pLookup->u.Locked.pvHC;
+                unsigned off = (uint8_t *)pvR3 - (uint8_t *)pLookup->u.Locked.pvR3;
                 if (off < pLookup->cb)
                     return (pLookup->u.Locked.pLockedMem->aPhysPages[off >> PAGE_SHIFT].Phys & X86_PTE_PAE_PG_MASK) | (off & PAGE_OFFSET_MASK);
                 break;
@@ -972,7 +983,7 @@ MMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC)
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
             {
-                unsigned off = (char *)pvHC - (char *)pLookup->u.HCPhys.pvHC;
+                unsigned off = (uint8_t *)pvR3 - (uint8_t *)pLookup->u.HCPhys.pvR3;
                 if (off < pLookup->cb)
                     return pLookup->u.HCPhys.HCPhys + off;
                 break;
@@ -992,10 +1003,10 @@ MMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC)
         /* next */
         if ((unsigned)pLookup->offNext == NIL_OFFSET)
             break;
-        pLookup = (PMMLOOKUPHYPER)((char *)pLookup + pLookup->offNext);
+        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 
-    AssertMsgFailed(("pvHC=%p is not inside the hypervisor memory area!\n", pvHC));
+    AssertMsgFailed(("pvR3=%p is not inside the hypervisor memory area!\n", pvR3));
     return NIL_RTHCPHYS;
 }
 
@@ -1067,16 +1078,16 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
     pHlp->pfnPrintf(pHlp, "Hypervisor Memory Area (HMA) Layout: Base %VGv, 0x%08x bytes\n",
                     pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea);
 
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)pVM->mm.s.pHyperHeapHC + pVM->mm.s.offLookupHyper);
+    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
     for (;;)
     {
         switch (pLookup->enmType)
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %VHv LOCKED  %-*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %RHv LOCKED  %-*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
-                                pLookup->u.Locked.pvHC,
+                                pLookup->u.Locked.pvR3,
                                 sizeof(RTHCPTR) * 2,
                                 pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_NOFREE  ? "nofree"
                                 : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER       ? "autofree"
@@ -1087,10 +1098,10 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %VHv HCPHYS  %VHp %s\n",
+                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %RHv HCPHYS  %VHp %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
-                                pLookup->u.HCPhys.pvHC, pLookup->u.HCPhys.HCPhys,
+                                pLookup->u.HCPhys.pvR3, pLookup->u.HCPhys.HCPhys,
                                 pLookup->pszDesc);
                 break;
 
@@ -1129,7 +1140,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
         /* next */
         if ((unsigned)pLookup->offNext == NIL_OFFSET)
             break;
-        pLookup = (PMMLOOKUPHYPER)((char *)pLookup + pLookup->offNext);
+        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 }
 

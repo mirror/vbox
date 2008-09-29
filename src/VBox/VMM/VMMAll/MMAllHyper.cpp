@@ -212,7 +212,7 @@ MMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, 
     /*
      * Get heap and statisticsStatistics.
      */
-    PMMHYPERHEAP pHeap = CTXSUFF(pVM->mm.s.pHyperHeap);
+    PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
 #ifdef VBOX_WITH_STATISTICS
     PMMHYPERSTAT pStat = mmHyperStat(pHeap, enmTag);
     if (!pStat)
@@ -757,7 +757,7 @@ MMDECL(int) MMHyperFree(PVM pVM, void *pv)
     AssertMsgReturn(pHeap->u32Magic == MMHYPERHEAP_MAGIC,
                     ("%p: u32Magic=%#x\n", pv, pHeap->u32Magic),
                     VERR_INVALID_POINTER);
-Assert(pHeap == CTXSUFF(pVM->mm.s.pHyperHeap));
+Assert(pHeap == pVM->mm.s.CTX_SUFF(pHyperHeap));
 
     /* Some more verifications using additional info from pHeap. */
     AssertMsgReturn((uintptr_t)pChunk + offPrev >= (uintptr_t)pHeap->CTX_SUFF(pbHeap),
@@ -1116,7 +1116,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
 MMDECL(void) MMHyperHeapCheck(PVM pVM)
 {
 #ifdef MMHYPER_HEAP_STRICT
-    mmHyperHeapCheck(CTXSUFF(pVM->mm.s.pHyperHeap));
+    mmHyperHeapCheck(pVM->mm.s.CTX_SUFF(pHyperHeap));
 #endif
 }
 
@@ -1129,7 +1129,7 @@ MMDECL(void) MMHyperHeapCheck(PVM pVM)
 MMDECL(void) MMHyperHeapDump(PVM pVM)
 {
     Log(("MMHyperHeapDump: *** heap dump - start ***\n"));
-    PMMHYPERHEAP pHeap = CTXSUFF(pVM->mm.s.pHyperHeap);
+    PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
     PMMHYPERCHUNKFREE pCur = (PMMHYPERCHUNKFREE)pHeap->CTX_SUFF(pbHeap);
     for (;;)
     {
@@ -1152,7 +1152,7 @@ MMDECL(void) MMHyperHeapDump(PVM pVM)
  */
 MMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM)
 {
-    return CTXSUFF(pVM->mm.s.pHyperHeap)->cbFree;
+    return pVM->mm.s.CTX_SUFF(pHyperHeap)->cbFree;
 }
 
 /**
@@ -1162,7 +1162,7 @@ MMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM)
  */
 MMDECL(size_t) MMHyperHeapGetSize(PVM pVM)
 {
-    return CTXSUFF(pVM->mm.s.pHyperHeap)->cbHeap;
+    return pVM->mm.s.CTX_SUFF(pHyperHeap)->cbHeap;
 }
 
 

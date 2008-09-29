@@ -44,14 +44,14 @@
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *poff)
 {
     /** @todo cache last lookup this stuff ain't cheap! */
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)CTXSUFF(pVM->mm.s.pHyperHeap) + pVM->mm.s.offLookupHyper);
+    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
     {
         switch (pLookup->enmType)
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
             {
-                const uint32_t off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.Locked.pvHC;
+                const uint32_t off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.Locked.pvR3;
                 if (off < pLookup->cb)
                 {
                     *poff = off;
@@ -62,7 +62,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
             {
-                const uint32_t off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.HCPhys.pvHC;
+                const uint32_t off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.HCPhys.pvR3;
                 if (off < pLookup->cb)
                 {
                     *poff = off;
@@ -84,7 +84,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
         /* next */
         if (pLookup->offNext ==  (int32_t)NIL_OFFSET)
             break;
-        pLookup = (PMMLOOKUPHYPER)((char *)pLookup + pLookup->offNext);
+        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 
     AssertMsgFailed(("R3Ptr=%p is not inside the hypervisor memory area!\n", R3Ptr));
@@ -131,7 +131,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
 {
     /** @todo cache last lookup this stuff ain't cheap! */
     unsigned        offRC = (RTRCUINTPTR)RCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC;
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((char*)CTXSUFF(pVM->mm.s.pHyperHeap) + pVM->mm.s.offLookupHyper);
+    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
     {
         const uint32_t off = offRC - pLookup->off;
@@ -153,7 +153,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
         /* next */
         if (pLookup->offNext == (int32_t)NIL_OFFSET)
             break;
-        pLookup = (PMMLOOKUPHYPER)((char *)pLookup + pLookup->offNext);
+        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 
     AssertMsgFailed(("GCPtr=%p is not inside the hypervisor memory area!\n", RCPtr));
@@ -194,9 +194,9 @@ DECLINLINE(RTR3PTR) mmHyperLookupCalcR3(PMMLOOKUPHYPER pLookup, uint32_t off)
     switch (pLookup->enmType)
     {
         case MMLOOKUPHYPERTYPE_LOCKED:
-            return (RTR3PTR)((RTR3UINTPTR)pLookup->u.Locked.pvHC + off);
+            return (RTR3PTR)((RTR3UINTPTR)pLookup->u.Locked.pvR3 + off);
         case MMLOOKUPHYPERTYPE_HCPHYS:
-            return (RTR3PTR)((RTR3UINTPTR)pLookup->u.HCPhys.pvHC + off);
+            return (RTR3PTR)((RTR3UINTPTR)pLookup->u.HCPhys.pvR3 + off);
         default:
             AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
             return NIL_RTR3PTR;
@@ -218,9 +218,11 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PMMLOOKUPHYPER pLookup, uint32_t off)
         case MMLOOKUPHYPERTYPE_LOCKED:
             if (pLookup->u.Locked.pvR0)
                 return (RTR0PTR)((RTR0UINTPTR)pLookup->u.Locked.pvR0 + off);
-            return (RTR0PTR)((RTR3UINTPTR)pLookup->u.Locked.pvHC + off);
+            /** @todo #1865: accessing ring-3 memory (LOCKED)! */
+            return (RTR0PTR)((RTR3UINTPTR)pLookup->u.Locked.pvR3 + off);
         case MMLOOKUPHYPERTYPE_HCPHYS:
-            return (RTR0PTR)((RTR3UINTPTR)pLookup->u.HCPhys.pvHC + off);
+            /** @todo #1865: accessing ring-3 memory (HCPHYS)! */
+            return (RTR0PTR)((RTR3UINTPTR)pLookup->u.HCPhys.pvR3 + off);
         default:
             AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
             return NIL_RTR0PTR;

@@ -193,8 +193,9 @@ int main()
     GEN_CHECK_OFF(MM, fDoneMMR3InitPaging);
     GEN_CHECK_OFF(MM, fPGMInitialized);
     GEN_CHECK_OFF(MM, offLookupHyper);
-    GEN_CHECK_OFF(MM, pHyperHeapHC);
-    GEN_CHECK_OFF(MM, pHyperHeapGC);
+    GEN_CHECK_OFF(MM, pHyperHeapRC);
+    GEN_CHECK_OFF(MM, pHyperHeapR3);
+    GEN_CHECK_OFF(MM, pHyperHeapR0);
     GEN_CHECK_OFF(MM, pLockedMem);
     GEN_CHECK_OFF(MM, pPagePool);
     GEN_CHECK_OFF(MM, pPagePoolLow);
@@ -226,10 +227,10 @@ int main()
     GEN_CHECK_OFF(MMLOOKUPHYPER, off);
     GEN_CHECK_OFF(MMLOOKUPHYPER, cb);
     GEN_CHECK_OFF(MMLOOKUPHYPER, enmType);
-    GEN_CHECK_OFF(MMLOOKUPHYPER, u.Locked.pvHC);
+    GEN_CHECK_OFF(MMLOOKUPHYPER, u.Locked.pvR3);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.Locked.pvR0);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.Locked.pLockedMem);
-    GEN_CHECK_OFF(MMLOOKUPHYPER, u.HCPhys.pvHC);
+    GEN_CHECK_OFF(MMLOOKUPHYPER, u.HCPhys.pvR3);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.HCPhys.HCPhys);
     GEN_CHECK_OFF(MMLOOKUPHYPER, u.GCPhys.GCPhys);
     GEN_CHECK_OFF(MMLOOKUPHYPER, pszDesc);
