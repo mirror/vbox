@@ -1684,7 +1684,7 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                     }
 
                     /** @todo Knoppix 5 regression when returning VINF_SUCCESS here and going back to raw mode. */
-                    /** @note possibly because a reschedule is required (e.g. iret to V86 code) */
+                    /* Note: possibly because a reschedule is required (e.g. iret to V86 code) */
 
                     return emR3RawExecuteInstruction(pVM, "PATCHIR");
                     /* Interrupts are enabled; just go back to the original instruction.
@@ -2177,7 +2177,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                 {
                     CSAMR3CheckGates(pVM, u8Interrupt, 1);
                     Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
-                    /** @note If it was successful, then we could go back to raw mode, but let's keep things simple for now. */
+                    /* Note: If it was successful, then we could go back to raw mode, but let's keep things simple for now. */
                 }
             }
             rc = VINF_EM_RESCHEDULE_REM;
@@ -3076,7 +3076,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
             Log(("VM_FF_EMULATED_STI at %VGv successor %VGv\n", (RTGCPTR)CPUMGetGuestRIP(pVM), EMGetInhibitInterruptsPC(pVM)));
             if (CPUMGetGuestEIP(pVM) != EMGetInhibitInterruptsPC(pVM))
             {
-                /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
+                /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
                  *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
                  *  force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
                  *  break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
@@ -3102,7 +3102,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
         {
             if (VM_FF_ISPENDING(pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC))
             {
-                /** @note it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
+                /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                 /** @todo this really isn't nice, should properly handle this */
                 rc2 = TRPMR3InjectEvent(pVM, TRPM_HARDWARE_INT);
 #ifdef VBOX_STRICT
