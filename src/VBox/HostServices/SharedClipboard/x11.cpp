@@ -797,14 +797,46 @@ int vboxClipboardInit (void)
     RTSemMutexCreate(&g_ctx.asyncMutex);
     rc = RTThreadCreate(&g_ctx.thread, vboxClipboardThread, 0, 0, RTTHREADTYPE_IO,
                         RTTHREADFLAGS_WAITABLE, "SHCLIP");
-    if (RT_FAILURE(rc))
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("vboxClipboardInit: failed to create the clipboard thread.\n"));
-        RTSemEventDestroy(g_ctx.waitForData);
-        RTSemMutexDestroy(g_ctx.asyncMutex);
-        AssertRCReturn(rc, rc);
+        /*
+         * Wait for the thread to initialize.
+         *
+         * We must *NOT* return failure on a timeout because then the code will be
+         * unloaded and we'll be SIGSEGV'ing in the thread.
+         */
+        /** @todo r=bird: This isn't very reliable, waiting for just one second and
+         *        not signalling on failure. *grumble* */
+        int rcThread = VERR_WRONG_ORDER;
+        rc = RTThreadUserWait(g_ctx.thread, 1000);
+        if (RT_SUCCESS(rc))
+        {
+            /* paranoia: check that the thread is actually running */
+            rc = RTThreadWait(g_ctx.thread, 0, &rcThread);
+            Assert(rc == VERR_TIMEOUT);
+            if (RT_FAILURE(rc))
+                return VINF_SUCCESS;
+            LogRel(("vboxClipboardInit: thread died unexpectedly, rcThread=%Rrc, rcWait=%Rrc\n", rcThread, rc));
+        }
+        else
+        {
+            LogRel(("vboxClipboardInit: thread failed to start in a timely manner, rc=%Rrc\n", rc));
+            rc = RTThreadWait(g_ctx.thread, 30000, &rcThread);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("vboxClipboardInit: thread still running! (rcThread=%Rrc, rcWait=%Rrc)\n", rcThread, rc));
+                return VINF_SUCCESS;
+            }
+            LogRel(("vboxClipboardInit: rcThread=%Rrc, rcWait=%Rrc\n", rcThread, rc));
+            rc = RT_FAILURE(rcThread) ? rcThread : VERR_INTERNAL_ERROR;
+        }
     }
-    return RTThreadUserWait(g_ctx.thread, 1000);
+    else
+        LogRel(("vboxClipboardInit: failed to create the clipboard thread. rc=%Rrc\n", rc));
+    RTSemEventDestroy(g_ctx.waitForData);
+    RTSemMutexDestroy(g_ctx.asyncMutex);
+    return rc;
 }
 
 /** Terminate the host side of the shared clipboard - called by the hgcm layer. */
