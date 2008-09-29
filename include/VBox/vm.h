@@ -405,15 +405,18 @@ typedef struct VM
     R3PTRTYPE(struct VM *)      pVMR3;
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(struct VM *)      pVMR0;
-    /** Guest Context VM Pointer. */
+    /** Raw-mode Context VM Pointer.
+     * @deprecated Use VM::pVMRC. */
     RCPTRTYPE(struct VM *)      pVMGC;
+    /** Raw-mode Context VM Pointer. */
+    RCPTRTYPE(struct VM *)      pVMRC;
 
     /** The GVM VM handle. Only the GVM should modify this field. */
     uint32_t                    hSelf;
     /** Number of virtual CPUs. */
     uint32_t                    cCPUs;
     /** Reserved; alignment. */
-    uint32_t                    u32Reserved[8];
+    uint32_t                    u32Reserved[7];
 
     /** @name Public VMM Switcher APIs
      * @{ */

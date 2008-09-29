@@ -103,9 +103,10 @@ int mmR3HyperInit(PVM pVM)
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(sizeof(VM), PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
         if (VBOX_SUCCESS(rc))
         {
-            pVM->pVMGC = (RTGCPTR32)GCPtr;
+            pVM->pVMRC = (RTGCPTR32)GCPtr;
+            pVM->pVMGC = pVM->pVMRC;
             for (uint32_t i = 0; i < pVM->cCPUs; i++)
-                pVM->aCpus[i].pVMRC = pVM->pVMGC;
+                pVM->aCpus[i].pVMRC = pVM->pVMRC;
 
             /* Reserve a page for fencing. */
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
@@ -280,14 +281,15 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
              * Relocate the VM structure and ourselves.
              */
             RTGCINTPTR      offDelta = GCPtrNew - GCPtrOld;
-            pVM->pVMGC                          += offDelta;
+            pVM->pVMRC                          += offDelta;
+            pVM->pVMGC                          = pVM->pVMRC;
             for (uint32_t i = 0; i < pVM->cCPUs; i++)
-                pVM->aCpus[i].pVMRC = pVM->pVMGC;
+                pVM->aCpus[i].pVMRC             = pVM->pVMRC;
 
             pVM->mm.s.pvHyperAreaGC             += offDelta;
             pVM->mm.s.pHyperHeapGC              += offDelta;
             pVM->mm.s.pHyperHeapHC->pbHeapRC    += offDelta;
-            pVM->mm.s.pHyperHeapHC->pVMRC        = pVM->pVMGC;
+            pVM->mm.s.pHyperHeapHC->pVMRC        = pVM->pVMRC;
 
             /*
              * Relocate the rest.
@@ -786,7 +788,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
         //pHeap->pbHeapGC           = 0; // set by mmR3HyperHeapMap()
         pHeap->pVMR3                = pVM;
         pHeap->pVMR0                = pVM->pVMR0;
-        pHeap->pVMRC                = pVM->pVMGC;
+        pHeap->pVMRC                = pVM->pVMRC;
         pHeap->cbHeap               = cbAligned - MMYPERHEAP_HDR_SIZE;
         pHeap->cbFree               = pHeap->cbHeap - sizeof(MMHYPERCHUNK);
         //pHeap->offFreeHead        = 0;
@@ -823,7 +825,7 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
     int rc = MMR3HyperMapHCRam(pVM, pHeap, pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, true, "Heap", ppHeapGC);
     if (VBOX_SUCCESS(rc))
     {
-        pHeap->pVMRC    = pVM->pVMGC;
+        pHeap->pVMRC    = pVM->pVMRC;
         pHeap->pbHeapRC = *ppHeapGC + MMYPERHEAP_HDR_SIZE;
         /* Reserve a page for fencing. */
         MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
