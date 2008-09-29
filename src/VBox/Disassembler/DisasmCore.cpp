@@ -780,7 +780,7 @@ unsigned UseModRM(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, P
             if (rm == 5)
             {
                 /* 32 bits displacement */
-                if (pCpu->mode == CPUMODE_32BIT)
+                if (pCpu->mode != CPUMODE_64BIT)
                 {
                     pParam->flags |= USE_DISPLACEMENT32;
                     pParam->disp32 = pCpu->disp;
