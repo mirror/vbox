@@ -3676,6 +3676,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RT
 }
 
 
+
+
+
 /** @copydoc PDMDEVHLP::pfnGetVM */
 static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns)
 {
@@ -4029,9 +4032,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIn
     return VERR_ACCESS_DENIED;
 }
 
-/**
- * @copydoc PDMDEVHLP::pfnRegisterVMMDevHeap
- */
+
+/** @copydoc PDMDEVHLP::pfnRegisterVMMDevHeap */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -4039,15 +4041,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDe
     return VERR_ACCESS_DENIED;
 }
 
-/**
- * @copydoc PDMDEVHLP::pfnUnregisterVMMDevHeap
- */
+
+/** @copydoc PDMDEVHLP::pfnUnregisterVMMDevHeap */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
+
+
 
 
 

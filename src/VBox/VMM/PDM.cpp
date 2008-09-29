@@ -183,6 +183,7 @@ PDMR3DECL(int) PDMR3Init(PVM pVM)
      * Init the structure.
      */
     pVM->pdm.s.offVM = RT_OFFSETOF(VM, pdm.s);
+    pVM->pdm.s.GCPhysVMMDevHeap = NIL_RTGCPHYS;
 
     int rc = TMR3TimerCreateInternal(pVM, TMCLOCK_VIRTUAL, pdmR3PollerTimer, NULL, "PDM Poller", &pVM->pdm.s.pTimerPollers);
     AssertRC(rc);
@@ -1187,6 +1188,7 @@ PDMR3DECL(int) PDMR3LockCall(PVM pVM)
     return PDMR3CritSectEnterEx(&pVM->pdm.s.CritSect, true /* fHostCall */);
 }
 
+
 /**
  * Registers the VMM device heap
  *
@@ -1208,6 +1210,7 @@ PDMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap,
     return VINF_SUCCESS;
 }
 
+
 /**
  * Unregisters the VMM device heap
  *
@@ -1227,6 +1230,7 @@ PDMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Allocates memory from the VMM device heap
  *
@@ -1241,24 +1245,25 @@ PDMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
 
     Log(("PDMR3VMMDevHeapAlloc %x\n", cbSize));
 
-    /* @todo not a real heap as there's currently only one user. */
+    /** @todo not a real heap as there's currently only one user. */
     *ppv = pVM->pdm.s.pvVMMDevHeap;
     pVM->pdm.s.cbVMMDevHeapLeft = 0;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Frees memory from the VMM device heap
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
- * @param   pv              Ring-3 pointer. 
+ * @param   pv              Ring-3 pointer.
  */
 PDMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
 {
     Log(("PDMR3VMMDevHeapFree %VHv\n", pv));
 
-    /* @todo not a real heap as there's currently only one user. */
+    /** @todo not a real heap as there's currently only one user. */
     pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;
     return VINF_SUCCESS;
 }
