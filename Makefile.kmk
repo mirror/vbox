@@ -764,12 +764,19 @@ additions-packing:
 		-C src/VBox/Additions \
 		$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso
 
-sdk:
-	+ $(KMK) VBOX_ONLY_SDK=1  \
-              pass_bldprogs pass_others pass_installs pass_packing
 
-fetch-sdk-reqs:
+
+#
+# Aliases for building the SDK.
+#
+sdk:
+	+ $(KMK) VBOX_ONLY_SDK=1 \
+		pass_bldprogs pass_others pass_installs pass_packing
+
+sdk-fetch:
 	+ $(KMK) KBUILD_TARGET=win  KBUILD_TARGET_ARCH=x86  -C tools fetch
+
+
 
 #
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 tarballs for distribution
