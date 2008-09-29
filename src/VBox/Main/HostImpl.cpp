@@ -572,19 +572,21 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, 
     /*
      * Try picking up description from our NIC map.
      */
+    char szNICInstance[128];
+    RTStrPrintf(szNICInstance, sizeof(szNICInstance), "%s%d", pszIface, Instance);
     char szNICDesc[256];
     std::string Description = SolarisNICMap[pszIface];
     if (Description != "")
-        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s%d - %s", pszIface, Instance, Description.c_str());
+        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - %s", szNICInstance, Description.c_str());
     else
-        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s%d - Ethernet", pszIface, Instance);
+        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", szNICInstance);
 
     /*
      * Construct UUID with interface name and the MAC address if available.
      */
     RTUUID Uuid;
     RTUuidClear(&Uuid);
-    memcpy(&Uuid, pszIface, RT_MIN(strlen(pszIface), sizeof(Uuid)));
+    memcpy(&Uuid, szNICInstance, RT_MIN(strlen(szNICInstance), sizeof(Uuid)));
     Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
     Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
     if (pMac)
