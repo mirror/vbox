@@ -55,7 +55,11 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
 VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
                                             const CSession &aSession,
                                             Qt::WindowFlags aFlags)
-    : QIWithRetranslateUI2<QIMainDialog> (0, aFlags)
+#ifdef Q_WS_MAC
+    : QIWithRetranslateUI2<QIMainDialog> (aConsole, aFlags)
+#else /* Q_WS_MAC */
+    : QIWithRetranslateUI2<QIMainDialog> (NULL, aFlags)
+#endif /* Q_WS_MAC */
     , mIsPolished (false)
     , mConsole (aConsole)
     , mSession (aSession)

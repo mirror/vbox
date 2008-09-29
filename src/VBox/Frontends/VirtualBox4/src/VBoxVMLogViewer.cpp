@@ -45,7 +45,12 @@ void VBoxVMLogViewer::createLogViewer (QWidget *aCenterWidget, CMachine &aMachin
     if (!mSelfArray.contains (aMachine.GetName()))
     {
         /* Creating new log viewer if there is no one existing */
-        VBoxVMLogViewer *lv = new VBoxVMLogViewer (0, Qt::Window, aMachine);
+#ifdef Q_WS_MAC
+        VBoxVMLogViewer *lv = new VBoxVMLogViewer (aCenterWidget, Qt::Window, aMachine);
+#else /* Q_WS_MAC */
+        VBoxVMLogViewer *lv = new VBoxVMLogViewer (NULL, Qt::Window, aMachine);
+#endif /* Q_WS_MAC */
+
         lv->centerAccording (aCenterWidget);
         connect (aCenterWidget, SIGNAL (closing()), lv, SLOT (close()));
         lv->setAttribute (Qt::WA_DeleteOnClose);

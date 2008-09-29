@@ -499,7 +499,11 @@ void VBoxDiskImageManagerDlg::showModeless (QWidget *aCenterWidget /* = NULL */,
 {
     if (!mModelessDialog)
     {
+#ifdef Q_WS_MAC
+        mModelessDialog = new VBoxDiskImageManagerDlg (aCenterWidget, Qt::Window);
+#else /* Q_WS_MAC */
         mModelessDialog = new VBoxDiskImageManagerDlg (0, Qt::Window);
+#endif /* Q_WS_MAC */
         mModelessDialog->centerAccording (aCenterWidget);
         connect (aCenterWidget, SIGNAL (closing()), mModelessDialog, SLOT (close()));
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
