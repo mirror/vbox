@@ -462,13 +462,18 @@ void Filter::processMetricList(const std::string &name, const ComPtr<IUnknown> o
     mElements.push_back(std::make_pair(object, name.substr(startPos)));
 }
 
-/* The following method was borrowed from VMM/STAM.cpp and modified to handle
- * the special case of trailing colon in the pattern.
+/**
+ * The following method was borrowed from stamR3Match (VMM/STAM.cpp) and
+ * modified to handle the special case of trailing colon in the pattern.
+ *
+ * @returns True if matches, false if not.
+ * @param   pszPat      Pattern.
+ * @param   pszName     Name to match against the pattern.
+ * @param   fSeenColon  Seen colon (':').
  */
 bool Filter::patternMatch(const char *pszPat, const char *pszName,
                           bool fSeenColon)
 {
-    bool seenColon = fSeenColon;
     /* ASSUMES ASCII */
     for (;;)
     {
@@ -476,13 +481,6 @@ bool Filter::patternMatch(const char *pszPat, const char *pszName,
         switch (chPat)
         {
             default:
-                /* Handle a special case, the mask terminating with a colon */
-                if (chPat == ':')
-                {
-                    if (!seenColon && !*(pszPat + 1))
-                        return !*pszName;
-                    seenColon = true;
-                }
                 if (*pszName != chPat)
                     return false;
                 break;
@@ -492,19 +490,20 @@ bool Filter::patternMatch(const char *pszPat, const char *pszName,
                 while ((chPat = *++pszPat) == '*' || chPat == '?')
                     /* nothing */;
 
-                /* Handle a special case, the mask terminating with a colon */
+                /* Handle a special case, the mask terminating with a colon. */
                 if (chPat == ':')
                 {
-                    if (!seenColon && !*(pszPat + 1))
+                    if (!fSeenColon && !pszPat[1])
                         return !strchr(pszName, ':');
-                    seenColon = true;
+                    fSeenColon = true;
                 }
+
                 for (;;)
                 {
                     char ch = *pszName++;
                     if (    ch == chPat
                         &&  (   !chPat
-                             || patternMatch(pszPat + 1, pszName, seenColon)))
+                             || patternMatch(pszPat + 1, pszName, fSeenColon)))
                         return true;
                     if (!ch)
                         return false;
@@ -516,6 +515,15 @@ bool Filter::patternMatch(const char *pszPat, const char *pszName,
             case '?':
                 if (!*pszName)
                     return false;
+                break;
+
+            /* Handle a special case, the mask terminating with a colon. */
+            case ':':
+                if (!fSeenColon && !pszPat[1])
+                    return !*pszName;
+                if (*pszName != ':')
+                    return false;
+                fSeenColon = true;
                 break;
 
             case '\0':
