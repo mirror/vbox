@@ -430,6 +430,7 @@ endif
 # Use VBoxNetFlt for host interface networking.
 if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_NETFLT = 1
+# VBOX_SOLARIS_USE_DEVINFO = 1
 endif
 
 #

@@ -319,22 +319,6 @@ typedef struct vboxnetflt_promisc_stream_t
     PVBOXNETFLTPACKETID pTail;            /* loopback packet identifier tail */
 } vboxnetflt_promisc_stream_t;
 
-/**
- * vboxnetflt_state_t: per-driver data
- */
-typedef struct vboxnetflt_state_t
-{
-    /** The list of all opened streams. */
-    vboxnetflt_stream_t *pOpenedStreams;
-    /**
-     * pCurInstance is the currently VBox instance to be associated with the stream being created
-     * in ModOpen. This is just shared global data between the dynamic attach and the ModOpen procedure.
-     */
-    PVBOXNETFLTINS pCurInstance;
-    /** Goes along with pCurInstance to determine type of stream being opened/created. */
-    VBOXNETFLTSTREAMTYPE CurType;
-} vboxnetflt_state_t;
-
 
 /*******************************************************************************
 *   Internal Functions                                                           *
@@ -365,15 +349,26 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The (common) global data. */
-static VBOXNETFLTGLOBALS g_VBoxNetFltSolarisGlobals;
-/** Global state. */
-static vboxnetflt_state_t g_VBoxNetFltSolarisState;
-/** Mutex protecting dynamic binding of the filter. */
-RTSEMFASTMUTEX g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
 /** Global device info handle. */
 static dev_info_t *g_pVBoxNetFltSolarisDip = NULL;
 
+/** The (common) global data. */
+static VBOXNETFLTGLOBALS g_VBoxNetFltSolarisGlobals;
+
+/** Mutex protecting dynamic binding of the filter. */
+RTSEMFASTMUTEX g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+
+/** The list of all opened streams. */
+vboxnetflt_stream_t *g_VBoxNetFltSolarisStreams;
+
+/**
+ * g_VBoxNetFltInstance is the current PVBOXNETFLTINS to be associated with the stream being created
+ * in ModOpen. This is just shared global data between the dynamic attach and the ModOpen procedure.
+ */
+PVBOXNETFLTINS volatile g_VBoxNetFltSolarisInstance;
+
+/** Goes along with the instance to determine type of stream being opened/created. */
+VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType;
 
 /** GCC C++ hack. */
 unsigned __gxx_personality_v0 = 0xdecea5ed;
@@ -404,8 +399,8 @@ int _init(void)
         /*
          * Initialize Solaris specific globals here.
          */
-        g_VBoxNetFltSolarisState.pOpenedStreams = NULL;
-        g_VBoxNetFltSolarisState.pCurInstance = NULL;
+        g_VBoxNetFltSolarisStreams = NULL;
+        g_VBoxNetFltSolarisInstance = NULL;
         rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
         if (RT_SUCCESS(rc))
         {
@@ -618,21 +613,20 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     /*
      * Check for the VirtualBox instance.
      */
-    vboxnetflt_state_t *pState = &g_VBoxNetFltSolarisState;
-    if (RT_UNLIKELY(!pState->pCurInstance))
+    if (RT_UNLIKELY(!g_VBoxNetFltSolarisInstance))
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to get VirtualBox instance.\n"));
         return ENOENT;
     }
 
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PVBOXNETFLTINS pThis = pState->pCurInstance;
+    PVBOXNETFLTINS pThis = g_VBoxNetFltSolarisInstance;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
     /*
      * Check VirtualBox stream type.
      */
-    if (pState->CurType == kUndefined)
+    if (g_VBoxNetFltSolarisStreamType == kUndefined)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode.\n"));
 
@@ -645,7 +639,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
      */
     minor_t DevMinor = 0;
     vboxnetflt_stream_t *pStream = NULL;
-    vboxnetflt_stream_t **ppPrevStream = &pState->pOpenedStreams;
+    vboxnetflt_stream_t **ppPrevStream = &g_VBoxNetFltSolarisStreams;
     if (fStreamMode == CLONEOPEN)
     {
         for (; (pStream = *ppPrevStream) != NULL; ppPrevStream = &pStream->pNext)
@@ -659,7 +653,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     else
         DevMinor = getminor(*pDev);
 
-    if (pState->CurType == kPromiscStream)
+    if (g_VBoxNetFltSolarisStreamType == kPromiscStream)
     {
         vboxnetflt_promisc_stream_t *pPromiscStream = RTMemAlloc(sizeof(vboxnetflt_promisc_stream_t));
         if (RT_UNLIKELY(!pPromiscStream))
@@ -700,7 +694,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
      * the one that we will associate this stream with.
      */
     ASMAtomicUoWritePtr((void * volatile *)&pStream->pThis, pThis);
-    pStream->Type = pState->CurType;
+    pStream->Type = g_VBoxNetFltSolarisStreamType;
     switch (pStream->Type)
     {
         case kIpStream:         ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvIpStream, pStream);         break;
@@ -810,7 +804,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     /*
      * Unlink it from the list of streams.
      */
-    for (ppPrevStream = &g_VBoxNetFltSolarisState.pOpenedStreams; (pStream = *ppPrevStream) != NULL; ppPrevStream = &pStream->pNext)
+    for (ppPrevStream = &g_VBoxNetFltSolarisStreams; (pStream = *ppPrevStream) != NULL; ppPrevStream = &pStream->pNext)
         if (pStream == (vboxnetflt_stream_t *)pQueue->q_ptr)
             break;
     *ppPrevStream = pStream->pNext;
@@ -1686,6 +1680,7 @@ static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *
  * As a side-effect, the stream gets opened during
  * the I_PUSH phase.
  *
+ * @param   pThis       The instance.
  */
 static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
 {
@@ -1709,13 +1704,13 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     {
         if (!ret)
         {
-            g_VBoxNetFltSolarisState.pCurInstance = pThis;
-            g_VBoxNetFltSolarisState.CurType = kPromiscStream;
+            g_VBoxNetFltSolarisInstance = pThis;
+            g_VBoxNetFltSolarisStreamType = kPromiscStream;
 
             rc = ldi_ioctl(pThis->u.s.hIface, I_PUSH, (intptr_t)DEVICE_NAME, FKIOCTL, kcred, &ret);
 
-            g_VBoxNetFltSolarisState.pCurInstance = NULL;
-            g_VBoxNetFltSolarisState.CurType = kUndefined;
+            g_VBoxNetFltSolarisInstance = NULL;
+            g_VBoxNetFltSolarisStreamType = kUndefined;
 
             if (!rc)
                 return VINF_SUCCESS;
@@ -1781,12 +1776,6 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
     /*
      * Statuatory Warning: Hackish code ahead.
      */
-    if (strlen(pThis->szName) > VBOXNETFLT_IFNAME_LEN - 1)
-    {
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: interface name too long %s\n", pThis->szName));
-        return VERR_INTNET_FLT_IF_NOT_FOUND;
-    }
-
     char *pszModName = DEVICE_NAME;
 
     struct lifreq Interface;
@@ -1899,8 +1888,8 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                  * There is a known (though very unlikely) race here because
                                  * of the inability to pass user data while inserting.
                                  */
-                                g_VBoxNetFltSolarisState.pCurInstance = pThis;
-                                g_VBoxNetFltSolarisState.CurType = kIpStream;
+                                g_VBoxNetFltSolarisInstance = pThis;
+                                g_VBoxNetFltSolarisStreamType = kIpStream;
 
                                 /*
                                  * Inject/Eject from the host IP stack.
@@ -1912,13 +1901,13 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
                                     /*
                                      * Inject/Eject from the host ARP stack.
                                      */
-                                    g_VBoxNetFltSolarisState.CurType = kArpStream;
+                                    g_VBoxNetFltSolarisStreamType = kArpStream;
                                     rc = strioctl(pVNodeArp, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K,
                                                 kcred, &ret);
                                     if (!rc)
                                     {
-                                        g_VBoxNetFltSolarisState.pCurInstance = NULL;
-                                        g_VBoxNetFltSolarisState.CurType = kUndefined;
+                                        g_VBoxNetFltSolarisInstance = NULL;
+                                        g_VBoxNetFltSolarisStreamType = kUndefined;
 
                                         /*
                                          * Our job's not yet over; we need to relink the upper and lower streams
@@ -1989,10 +1978,19 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach)
             LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: failed to open UDP. rc=%d\n", rc));
     }
     else
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: invalid interface '%s'.\n", pThis->szName));
+    {
+        /*
+         * This would happen for interfaces that are not plumbed.
+         */
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: Warning: seems '%s' is unplumbed.\n", pThis->szName));
+        rc = VINF_SUCCESS;
+    }
 
     ldi_close(ARPDevHandle, FREAD | FWRITE, kcred);
     ldi_close(IPDevHandle, FREAD | FWRITE, kcred);
+
+    if (RT_SUCCESS(rc))
+        return rc;
 
     return VERR_INTNET_FLT_IF_FAILED;
 }
@@ -2017,6 +2015,8 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
         rc = vboxNetFltSolarisModSetup(pThis, true);
         if (RT_SUCCESS(rc))
             ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+        else
+            vboxNetFltSolarisCloseStream(pThis);
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface vboxNetFltSolarisOpenStream failed rc=%Vrc\n", rc));
@@ -2572,6 +2572,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     /*
      * Don't loopback packets we transmit to the wire.
      */
+    /** @todo maybe we need not check for loopback for INTNETTRUNKDIR_HOST case? */
     if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
     {
         LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
@@ -2579,21 +2580,9 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         return VINF_SUCCESS;
     }
 
-#if 0
-    /*
-     * Yeah, I wish.
-     */
-    if (pMsg->b_flag & MSGNOLOOP)
-    {
-        freemsg(pMsg);
-        return VINF_SUCCESS;
-    }
-#endif
-
     /*
      * Figure out the source of the packet based on the source Mac address.
      */
-    /** @todo Is there a more fool-proof way to determine if the packet was indeed sent from the host?? */
     uint32_t fSrc = INTNETTRUNKDIR_WIRE;
     PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
     if (vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
@@ -2641,7 +2630,7 @@ static PVBOXNETFLTINS vboxNetFltSolarisFindInstance(vboxnetflt_stream_t *pStream
     if (!pStream)
         return NULL;
 
-    vboxnetflt_stream_t *pCur = g_VBoxNetFltSolarisState.pOpenedStreams;
+    vboxnetflt_stream_t *pCur = g_VBoxNetFltSolarisStreams;
     for (; pCur; pCur = pCur->pNext)
         if (pCur == pStream)
             return pCur->pThis;
@@ -2859,16 +2848,6 @@ bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
 void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltPortOsGetMacAddress pThis=%p\n", pThis));
-
-    RTMAC EmptyMac;
-    bzero(&EmptyMac, sizeof(EmptyMac));
-    if (!bcmp(&pThis->u.s.Mac, &EmptyMac, sizeof(EmptyMac)))    /* This should never happen... */
-    {
-        /* Bummer, Mac address is not copied yet. */
-        LogRel((DEVICE_NAME ":vboxNetFltPortOsGetMacAddress: Mac address not cached yet!\n"));
-        return;
-    }
-
     *pMac = pThis->u.s.Mac;
 }
 
@@ -2994,13 +2973,6 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                 LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_WIRE\n"));
 
                 vboxNetFltSolarisQueueLoopback(pThis, pPromiscStream, pMsg);
-
-#if 0
-                /*
-                 * Too bad we can't keep this, though it "works"....
-                 */
-                pMsg->b_flag |= MSGNOLOOP;
-#endif
                 putnext(WR(pPromiscStream->Stream.pReadQueue), pMsg);
             }
         }
@@ -3034,13 +3006,18 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                     pMsg = pDlpiMsg;
 
                     vboxnetflt_stream_t *pArpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvArpStream);
-                    if (RT_LIKELY(pArpStream))
+                    if (pArpStream)
                     {
                         queue_t *pArpReadQueue = pArpStream->pReadQueue;
                         putnext(pArpReadQueue, pMsg);
                     }
                     else
-                        rc = VERR_INVALID_POINTER;
+                    {
+                        /*
+                         * For unplumbed interfaces we may not be bound to ARP.
+                         */
+                        freemsg(pMsg);
+                    }
                 }
                 else
                 {
@@ -3056,16 +3033,20 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                  */
                 LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST\n"));
 
-                pMsg->b_rptr += sizeof(RTNETETHERHDR);
-
                 vboxnetflt_stream_t *pIpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIpStream);
-                if (RT_LIKELY(pIpStream))
+                if (pIpStream)
                 {
+                    pMsg->b_rptr += sizeof(RTNETETHERHDR);
                     queue_t *pIpReadQueue = pIpStream->pReadQueue;
                     putnext(pIpReadQueue, pMsg);
                 }
                 else
-                    rc = VERR_INVALID_POINTER;                    
+                {
+                    /*
+                     * For unplumbed interfaces we may not be bound to IP.
+                     */
+                    freemsg(pMsg);
+                }
             }
         }
         else

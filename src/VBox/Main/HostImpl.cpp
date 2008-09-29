@@ -51,11 +51,15 @@
 # include <errno.h>
 # include <limits.h>
 # include <stdio.h>
-# include <net/if.h>
-# include <sys/socket.h>
-# include <sys/sockio.h>
-# include <net/if_arp.h>
-# include <net/if.h>
+# ifdef VBOX_SOLARIS_USE_DEVINFO
+#  include <libdevinfo.h>
+# else
+#  include <net/if.h>
+#  include <sys/socket.h>
+#  include <sys/sockio.h>
+#  include <net/if_arp.h>
+#  include <net/if.h>
+# endif /* VBOX_SOLARIS_USE_DEVINFO */
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sys/cdio.h>
@@ -525,6 +529,102 @@ static bool IsTAPDevice(const char *guid)
 }
 #endif /* RT_OS_WINDOWS */
 
+#ifdef RT_OS_SOLARIS
+static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, void *pvArg)
+{
+    std::list <ComObjPtr <HostNetworkInterface> > *pList = (std::list <ComObjPtr <HostNetworkInterface> > *)pvArg;
+
+    typedef std::map <std::string, std::string> NICMap;
+    typedef std::pair <std::string, std::string> NICPair;
+    static NICMap SolarisNICMap;
+    if (SolarisNICMap.empty())
+    {
+        SolarisNICMap.insert(NICPair("afe", "ADMtek Centaur/Comet Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("aggr", "Link Aggregation Interface"));
+        SolarisNICMap.insert(NICPair("bge", "Broadcom BCM57xx Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("ce", "Cassini Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("chxge", "Chelsio Ethernet"));
+        SolarisNICMap.insert(NICPair("dmfe", "Davicom Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("dnet", "DEC 21040/41 21140 Ethernet"));
+        SolarisNICMap.insert(NICPair("e1000", "Intel PRO/1000 Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("e1000g", "Intel PRO/1000 Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("elx", "3COM EtherLink III Ethernet"));
+        SolarisNICMap.insert(NICPair("elxl", "3COM Ethernet"));
+        SolarisNICMap.insert(NICPair("eri", "eri Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("ge", "GEM Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("hme", "SUNW,hme Fast-Ethernet"));
+        SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("iprb", "Intel 82557/58/59 Ethernet"));
+        SolarisNICMap.insert(NICPair("mxfe", "Macronix 98715 Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("nge", "Nvidia Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("pcelx", "3COM EtherLink III PCMCIA Ethernet"));
+        SolarisNICMap.insert(NICPair("pcn", "AMD PCnet Ethernet"));
+        SolarisNICMap.insert(NICPair("qfe", "SUNW,qfe Quad Fast-Ethernet"));
+        SolarisNICMap.insert(NICPair("rge", "Realtek Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("rtls", "Realtek 8139 Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432) Ethernet"));
+        SolarisNICMap.insert(NICPair("vnic", "Virtual Network Interface Ethernet"));
+        SolarisNICMap.insert(NICPair("xge", "Neterior Xframe Gigabit Ethernet"));
+        SolarisNICMap.insert(NICPair("xge", "Neterior Xframe 10Gigabit Ethernet"));
+    }
+
+    /*
+     * Try picking up description from our NIC map.
+     */
+    char szNICDesc[256];
+    std::string Description = SolarisNICMap[pszIface];
+    if (Description != "")
+        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s%d - %s", pszIface, Instance, Description.c_str());
+    else
+        RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s%d - Ethernet", pszIface, Instance);
+
+    /*
+     * Construct UUID with interface name and the MAC address if available.
+     */
+    RTUUID Uuid;
+    RTUuidClear(&Uuid);
+    memcpy(&Uuid, pszIface, RT_MIN(strlen(pszIface), sizeof(Uuid)));
+    Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
+    Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
+    if (pMac)
+    {
+        Uuid.Gen.au8Node[0] = pMac->au8[0];
+        Uuid.Gen.au8Node[1] = pMac->au8[1];
+        Uuid.Gen.au8Node[2] = pMac->au8[2];
+        Uuid.Gen.au8Node[3] = pMac->au8[3];
+        Uuid.Gen.au8Node[4] = pMac->au8[4];
+        Uuid.Gen.au8Node[5] = pMac->au8[5];
+    }
+
+    ComObjPtr<HostNetworkInterface> IfObj;
+    IfObj.createObject();
+    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid))))
+        pList->push_back(IfObj);
+}
+
+# ifdef VBOX_SOLARIS_USE_DEVINFO
+static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *pvArg)
+{
+	/*
+	 * Skip aggregations.
+	 */
+	if (!strcmp(di_driver_name(Node), "aggr"))
+		return DI_WALK_CONTINUE;
+
+	/*
+	 * Skip softmacs.
+	 */
+	if (!strcmp(di_driver_name(Node), "softmac"))
+		return DI_WALK_CONTINUE;
+
+    vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), NULL, pvArg);
+	return DI_WALK_CONTINUE;
+}
+# endif /* VBOX_SOLARIS_USE_DEVINFO */
+
+#endif
+
 /**
  * Returns a list of host network interfaces.
  *
@@ -558,39 +658,22 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
 # elif defined(RT_OS_SOLARIS)
 
-    typedef std::map <std::string, std::string> NICMap;
-    typedef std::pair <std::string, std::string> NICPair;
-    static NICMap SolarisNICMap;
-    if (SolarisNICMap.empty())
+#ifdef VBOX_SOLARIS_USE_DEVINFO
+    /*
+     * Use libdevinfo for determining all physical interfaces.
+     * @todo Try using libdlpi instead and using links rather than physical interfaces.
+     */
+    di_node_t Root;
+    Root = di_init("/", DINFOCACHE);
+    if (Root != DI_NODE_NIL)
     {
-        SolarisNICMap.insert(NICPair("aggr", "Link Aggregation Interface"));
-        SolarisNICMap.insert(NICPair("bge", "Broadcom BCM57xx Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("ce", "Cassini Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("chxge", "Chelsio Ethernet"));
-        SolarisNICMap.insert(NICPair("dmfe", "Davicom Fast Ethernet"));
-        SolarisNICMap.insert(NICPair("dnet", "DEC 21040/41 21140 Ethernet"));
-        SolarisNICMap.insert(NICPair("e1000", "Intel PRO/1000 Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("e1000g", "Intel PRO/1000 Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("elx", "3COM EtherLink III Ethernet"));
-        SolarisNICMap.insert(NICPair("elxl", "3COM Ethernet"));
-        SolarisNICMap.insert(NICPair("eri", "eri Fast Ethernet"));
-        SolarisNICMap.insert(NICPair("ge", "GEM Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("hme", "SUNW,hme Fast-Ethernet"));
-        SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("iprb", "Intel 82557/58/59 Ethernet"));
-        SolarisNICMap.insert(NICPair("nge", "Nvidia Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("pcelx", "3COM EtherLink III PCMCIA Ethernet"));
-        SolarisNICMap.insert(NICPair("pcn", "AMD PCnet Ethernet"));
-        SolarisNICMap.insert(NICPair("qfe", "SUNW,qfe Quad Fast-Ethernet"));
-        SolarisNICMap.insert(NICPair("rge", "Realtek Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("rtls", "Realtek 8139 Fast Ethernet"));
-        SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432) Ethernet"));
-        SolarisNICMap.insert(NICPair("vnic", "Virtual Network Interface Ethernet"));
-        SolarisNICMap.insert(NICPair("xge", "Neterior Xframe Gigabit Ethernet"));
-        SolarisNICMap.insert(NICPair("xge", "Neterior Xframe 10Gigabit Ethernet"));
+        di_walk_minor(Root, DDI_NT_NET, 0, &list, vboxSolarisAddPhysHostIface);
+    	di_fini(Root);
     }
-
+#else
+    /*
+     * This gets only the list of all plumbed logical interfaces.
+     */
     int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (Sock > 0)
     {
@@ -658,42 +741,21 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                         }
 
                         /*
-                         * Try picking up description from our NIC map.
+                         * Add the interface.
                          */
                         char szIfaceName[LIFNAMSIZ + 1];
                         strncpy(szIfaceName, pszIface, cbIface - cbInstance);
                         szIfaceName[cbIface - cbInstance] = '\0';
-                        std::string Description = SolarisNICMap[szIfaceName];
-                        if (Description != "")
-                            RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - %s", pszIface, Description.c_str());
-                        else
-                            RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", pszIface);
 
-                        /*
-                         * Construct UUID with BSD-name of the interface and the MAC address.
-                         */
-                        RTUUID Uuid;
-                        RTUuidClear(&Uuid);
-                        memcpy(&Uuid, pszIface, RT_MIN(strlen(pszIface), sizeof(Uuid)));
-                        Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
-                        Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
-                        Uuid.Gen.au8Node[0] = Mac.au8[0];
-                        Uuid.Gen.au8Node[1] = Mac.au8[1];
-                        Uuid.Gen.au8Node[2] = Mac.au8[2];
-                        Uuid.Gen.au8Node[3] = Mac.au8[3];
-                        Uuid.Gen.au8Node[4] = Mac.au8[4];
-                        Uuid.Gen.au8Node[5] = Mac.au8[5];
-
-                        ComObjPtr<HostNetworkInterface> IfObj;
-                        IfObj.createObject();
-                        if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid))))
-                            list.push_back(IfObj);
+                        int Instance = atoi(pszEnd + 1);
+                        vboxSolarisAddHostIface(szIfaceName, Instance, &Mac, &list);
                     }
                 }
             }
         }
         close(Sock);
     }
+#endif
 
 # elif defined RT_OS_WINDOWS
     static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"

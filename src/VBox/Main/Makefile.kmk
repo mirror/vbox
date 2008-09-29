@@ -210,6 +210,9 @@ VBoxSVC_DEFS.win.x86 += _WIN32_WINNT=0x0500
 VBoxSVC_DEFS.win.amd64 += _WIN32_WINNT=0x0510
 VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
+ifdef VBOX_SOLARIS_USE_DEVINFO
+ VBoxSVC_DEFS.solaris += VBOX_SOLARIS_USE_DEVINFO
+endif
 
 VBoxSVC_INCS = \
 	include \
@@ -232,8 +235,11 @@ VBoxSVC_LIBS.darwin = \
 VBoxSVC_LIBS.solaris = \
 	adm
 ifdef VBOX_WITH_NETFLT
- VBoxSVC_LIBS.solaris += \
-	socket
+ ifdef VBOX_SOLARIS_USE_DEVINFO
+  VBoxSVC_LIBS.solaris += devinfo
+ else
+  VBoxSVC_LIBS.solaris += socket 
+ endif
 endif
 ifdef VBOX_WITH_USB
  VBoxSVC_LIBS.solaris += \
