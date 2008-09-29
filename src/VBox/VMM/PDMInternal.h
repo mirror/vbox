@@ -843,11 +843,15 @@ typedef struct PDM
     /** Head of the templates. (singly linked) */
     R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
 
-    /** PDM VMM device heap
+    /** @name   VMM device heap
      * @{ */
+    /** Pointer to the heap base (MMIO2 ring-3 mapping). NULL if not registered. */
     RTR3PTR                         pvVMMDevHeap;
+    /** The heap size. */
     RTUINT                          cbVMMDevHeap;
+    /** Free space. */
     RTUINT                          cbVMMDevHeapLeft;
+    /** The current mapping. NIL_RTGCPHYS if not mapped or registered. */
     RTGCPHYS                        GCPhysVMMDevHeap;
     /** @} */
 
