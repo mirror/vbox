@@ -2256,7 +2256,7 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
  * @param   pVM         VM Handle
  * @param   pCtx        CPU context
  * @param   pc          GC instruction pointer
- * @param   prefix      String prefix for logging
+ * @param   pszPrefix   String prefix for logging
  *
  * @deprecated  Use DBGFR3DisasInstrCurrentLog().
  */
@@ -2274,7 +2274,7 @@ CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const cha
  * @param   pVM         VM Handle
  * @param   pCtx        CPU context
  * @param   pc          GC instruction pointer
- * @param   prefix      String prefix for logging
+ * @param   pszPrefix   String prefix for logging
  * @param   nrInstructions
  *
  * @deprecated  Create new DBGFR3Disas function to do this.
