@@ -1804,9 +1804,7 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
             {
                 PDBGGUISTATSNODE pAdv = prevNode(pCur); Assert(pAdv || !pPrev);
                 if (!isNodeAncestorOf(pCur, pNode))
-                {
                     removeAndDestroyNode(pCur);
-                }
                 pCur = pAdv;
             }
 
@@ -1874,71 +1872,84 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
     updateNode(pNode, enmType, pvSample, enmUnit, pszDesc);
 
     /*
-     * Advance to the next node.
-     * (Again, we're ASSUMING that the input is sorted on (full) path name.)
+     * Advance to the next node with data.
+     *
+     * ASSUMES a leaf *must* have data and again we're ASSUMING the sorting
+     * on slash separated sub-strings.
      */
-    PDBGGUISTATSNODE pParent = pNode->pParent;
-    if (pNode->cChildren)
+    if (pThis->m_iUpdateChild != UINT32_MAX)
     {
-        /* decend to the children. */
-        pThis->m_iUpdateChild = 0;
-        Assert(pThis->m_cchUpdateParent + pNode->cchName + 2 < sizeof(pThis->m_szUpdateParent));
-        memcpy(&pThis->m_szUpdateParent[pThis->m_cchUpdateParent], pNode->pszName, pNode->cchName);
-        pThis->m_cchUpdateParent += pNode->cchName;
-        pThis->m_szUpdateParent[pThis->m_cchUpdateParent++] = '/';
-        pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
-        pThis->m_pUpdateParent = pNode;
-    }
-    else if (pNode->iSelf + 1 < pParent->cChildren)
-    {
-        /* next sibling  */
-        pThis->m_iUpdateChild = pNode->iSelf + 1;
-        Assert(pThis->m_pUpdateParent == pNode->pParent);
-    }
-    else if (pThis->m_iUpdateChild != UINT32_MAX)
-    {
-        /* move up and down- / on-wards */
-        for (;;)
+#ifdef VBOX_STRICT
+        PDBGGUISTATSNODE const pCorrectNext = nextDataNode(pNode);
+#endif
+        PDBGGUISTATSNODE pParent = pNode->pParent;
+        if (pNode->cChildren)
         {
-            /* ascend */
-            pNode = pParent;
-            pParent = pParent->pParent;
-            if (!pParent)
-            {
-                Assert(pNode == pThis->m_pRoot);
-                pThis->m_iUpdateChild = UINT32_MAX;
-                pThis->m_szUpdateParent[0] = '\0';
-                pThis->m_cchUpdateParent = 0;
-                pThis->m_pUpdateParent = NULL;
-                break;
-            }
-            Assert(pThis->m_cchUpdateParent > pNode->cchName + 1);
-            pThis->m_cchUpdateParent -= pNode->cchName + 1;
+            /* decend to the first child. */
+            Assert(pThis->m_cchUpdateParent + pNode->cchName + 2 < sizeof(pThis->m_szUpdateParent));
+            memcpy(&pThis->m_szUpdateParent[pThis->m_cchUpdateParent], pNode->pszName, pNode->cchName);
+            pThis->m_cchUpdateParent += pNode->cchName;
+            pThis->m_szUpdateParent[pThis->m_cchUpdateParent++] = '/';
+            pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
 
-            /* try advance */
-            if (pNode->iSelf + 1 < pParent->cChildren)
+            pNode = pNode->papChildren[0];
+        }
+        else if (pNode->iSelf + 1 < pParent->cChildren)
+        {
+            /* next sibling or one if its descendants. */
+            Assert(pThis->m_pUpdateParent == pParent);
+            pNode = pParent->papChildren[pNode->iSelf + 1];
+        }
+        else
+        {
+            /* move up and down- / on-wards */
+            for (;;)
             {
-                pNode = pParent->papChildren[pNode->iSelf + 1];
-
-                /* decend to a node containing data. */
-                while (   pNode->enmType == STAMTYPE_INVALID
-                       && pNode->cChildren > 0)
+                /* ascend */
+                pNode = pParent;
+                pParent = pParent->pParent;
+                if (!pParent)
                 {
-                    Assert(pNode->enmState == kDbgGuiStatsNodeState_kVisible);
-
-                    Assert(pThis->m_cchUpdateParent + pNode->cchName + 2 < sizeof(pThis->m_szUpdateParent));
-                    memcpy(&pThis->m_szUpdateParent[pThis->m_cchUpdateParent], pNode->pszName, pNode->cchName);
-                    pThis->m_cchUpdateParent += pNode->cchName;
-                    pThis->m_szUpdateParent[pThis->m_cchUpdateParent++] = '/';
-
-                    pNode = pNode->papChildren[0];
+                    Assert(pNode == pThis->m_pRoot);
+                    pThis->m_iUpdateChild = UINT32_MAX;
+                    pThis->m_szUpdateParent[0] = '\0';
+                    pThis->m_cchUpdateParent = 0;
+                    pThis->m_pUpdateParent = NULL;
+                    break;
                 }
-                Assert(pNode->enmType != STAMTYPE_INVALID);
-                pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
-                pThis->m_iUpdateChild = pNode->iSelf;
-                pThis->m_pUpdateParent = pNode->pParent;
-                break;
+                Assert(pThis->m_cchUpdateParent > pNode->cchName + 1);
+                pThis->m_cchUpdateParent -= pNode->cchName + 1;
+
+                /* try advance */
+                if (pNode->iSelf + 1 < pParent->cChildren)
+                {
+                    pNode = pParent->papChildren[pNode->iSelf + 1];
+                    pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
+                    break;
+                }
             }
+        }
+
+        /* decend to a node containing data and finalize the globals. (ASSUMES leaf has data.) */
+        if (pThis->m_iUpdateChild != UINT32_MAX)
+        {
+            while (   pNode->enmType == STAMTYPE_INVALID
+                   && pNode->cChildren > 0)
+            {
+                Assert(pNode->enmState == kDbgGuiStatsNodeState_kVisible);
+
+                Assert(pThis->m_cchUpdateParent + pNode->cchName + 2 < sizeof(pThis->m_szUpdateParent));
+                memcpy(&pThis->m_szUpdateParent[pThis->m_cchUpdateParent], pNode->pszName, pNode->cchName);
+                pThis->m_cchUpdateParent += pNode->cchName;
+                pThis->m_szUpdateParent[pThis->m_cchUpdateParent++] = '/';
+                pThis->m_szUpdateParent[pThis->m_cchUpdateParent] = '\0';
+
+                pNode = pNode->papChildren[0];
+            }
+            Assert(pNode->enmType != STAMTYPE_INVALID);
+            pThis->m_iUpdateChild = pNode->iSelf;
+            pThis->m_pUpdateParent = pNode->pParent;
+            Assert(pNode == pCorrectNext);
         }
     }
     /* else: we're at the end */
@@ -1993,16 +2004,13 @@ VBoxDbgStatsModelVM::updateStats(const QString &a_rPatStr)
         &&  m_iUpdateChild != UINT32_MAX)
     {
         PDBGGUISTATSNODE const pLast = prevDataNode(m_pUpdateParent->papChildren[m_iUpdateChild]);
-        for (;;)
+        if (!pLast)
+            setRootNode(createRootNode());
+        else
         {
-            PDBGGUISTATSNODE pNode = nextNode(pLast);
-            if (!pNode)
-                break;
-char szFoo[1024];
-getNodePath(pNode, szFoo, 1024); fprintf(stderr, "removing pNode=%p: %s\n", pNode, szFoo);
-if (pLast) getNodePath(pLast, szFoo, 1024); else szFoo[0] = '\0';
-                                 fprintf(stderr, "         pLast=%p: %s\n", pLast, szFoo);
-            removeAndDestroyNode(pNode);
+            PDBGGUISTATSNODE pNode;
+            while ((pNode = nextNode(pLast)))
+                removeAndDestroyNode(pNode);
         }
         m_fUpdateInsertRemove = true;
     }
