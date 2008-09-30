@@ -475,7 +475,7 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
 #ifdef HWACCM_VMX_EMULATE_REALMODE
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
-        /* Injecting events doens't work right with real mode emulation.  
+        /* Injecting events doesn't work right with real mode emulation.  
          * (#GP if we try to inject external hardware interrupts)
          * Fake an 'int x' instruction. Note that we need to take special precautions when
          * the inject is interrupted as the normal pending event method seems to be broken in this case.
