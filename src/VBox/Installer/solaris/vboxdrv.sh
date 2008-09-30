@@ -25,7 +25,7 @@ MODDIR64=$MODDIR32/amd64
 
 abort()
 {
-    echo 1>&2 "$1"
+    echo 1>&2 "## $1"
     exit 1
 }
 
@@ -50,17 +50,17 @@ check_if_installed()
     if test "$cputype" = "amd64"; then
         modulepath="$MODDIR32/$MODNAME"
         if test -f "$modulepath"; then
-            abort "## Found 32-bit module instead of 64-bit. Please install the amd64 package!"
+            abort "Found 32-bit module instead of 64-bit. Please install the amd64 package!"
         fi
     else
         # x86 ISA, amd64 kernel module??
         modulepath="$MODDIR64/$MODNAME"
         if test -f "$modulepath"; then
-            abort "## Found 64-bit module instead of 32-bit. Please install the x86 package!"
+            abort "Found 64-bit module instead of 32-bit. Please install the x86 package!"
         fi
     fi
 
-    abort "## VirtualBox Host kernel module NOT installed."
+    abort "VirtualBox Host kernel module NOT installed."
 }
 
 module_loaded()
@@ -107,7 +107,7 @@ start_module()
             /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME
         fi
         if test ! module_loaded; then
-            abort "## Failed to load VirtualBox Host kernel module."
+            abort "Failed to load VirtualBox Host kernel module."
         elif test -c "/devices/pseudo/$MODNAME@0:$MODNAME"; then
             info "VirtualBox Host kernel module loaded."
         else
@@ -119,7 +119,7 @@ start_module()
 stop_module()
 {
     if module_loaded; then
-        /usr/sbin/rem_drv $MODNAME || abort "## Failed to unload VirtualBox Host kernel module."
+        /usr/sbin/rem_drv $MODNAME || info "## WARNING!! Failed to unload VirtualBox Host kernel module. Old one still active!"
         info "VirtualBox Host kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox Host kernel module not loaded."
@@ -128,7 +128,7 @@ stop_module()
     # check for vbi and force unload it
     vbi_mod_id=`/usr/sbin/modinfo | grep vbi | cut -f 1 -d ' ' `
     if test -n "$vbi_mod_id"; then
-        /usr/sbin/modunload -i $vbi_mod_id
+        /usr/sbin/modunload -i $vbi_mod_id > /dev/null 2>&1
     fi
 }
 
@@ -140,7 +140,7 @@ start_vboxflt()
         /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME
         /usr/sbin/modload -p drv/$FLTMODNAME
         if test ! vboxflt_module_loaded; then
-            abort "## Failed to load VirtualBox NetFilter kernel module."
+            abort "Failed to load VirtualBox NetFilter kernel module."
         else
             info "VirtualBox NetFilter kernel module loaded."
         fi
@@ -150,7 +150,7 @@ start_vboxflt()
 stop_vboxflt()
 {
     if vboxflt_module_loaded; then
-        /usr/sbin/rem_drv $FLTMODNAME || abort "## Failed to unload VirtualBox NetFilter module."
+        /usr/sbin/rem_drv $FLTMODNAME || info "## WARNING!! Failed to unload VirtualBox NetFilter module. Old one still active!"
         info "VirtualBox NetFilter kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox NetFilter kernel module not loaded."
