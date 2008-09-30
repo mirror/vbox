@@ -78,14 +78,24 @@ public:
     void resetStats(const QString &rPatStr);
 
 protected slots:
-//later:    /** Context menu. */
-//later:    void contextMenuReq(QListViewItem *pItem, const QPoint &rPoint, int iColumn);
-//later:    /** Leaf context. */
-//later:    void leafMenuActivated(int iId);
-//later:    /** Branch context. */
-//later:    void branchMenuActivated(int iId);
-//later:    /** View context. */
-//later:    void viewMenuActivated(int iId);
+    /** @name Action signal slots.
+     * @{ */
+    void actExpand();
+    void actCollapse();
+    void actRefresh();
+    void actReset();
+    void actCopy();
+    void actToLog();
+    void actToRelLog();
+    /** @} */
+
+protected:
+    /**
+     * Popup context menu.
+     *
+     * @param  a_pEvt       The event.
+     */
+    virtual void contextMenuEvent(QContextMenuEvent *a_pEvt);
 
 protected:
     typedef enum { eRefresh = 1, eReset, eExpand, eCollaps, eCopy, eLog, eLogRel } MenuId;
@@ -97,14 +107,46 @@ protected:
     QString m_PatStr;
     /** The parent widget. */
     VBoxDbgStats *m_pParent;
+
     /** Leaf item menu. */
     QMenu *m_pLeafMenu;
     /** Branch item menu. */
     QMenu *m_pBranchMenu;
     /** View menu. */
     QMenu *m_pViewMenu;
-    /** The pointer to the node which is the current focus of a context menu. */
-    PDBGGUISTATSNODE m_pContextNode;
+
+    /** The menu that's currently being executed. */
+    QMenu *m_pCurMenu;
+    /** The current index relating to the context menu.
+     * Considered invalid if m_pCurMenu is NULL. */
+    QModelIndex m_CurIndex;
+
+    /** Expand Tree action. */
+    QAction *m_pExpandAct;
+    /** Collapse Tree action. */
+    QAction *m_pCollapseAct;
+    /** Refresh Tree action. */
+    QAction *m_pRefreshAct;
+    /** Reset Tree action. */
+    QAction *m_pResetAct;
+    /** Copy (to clipboard) action. */
+    QAction *m_pCopyAct;
+    /** To Log action. */
+    QAction *m_pToLogAct;
+    /** To Release Log action. */
+    QAction *m_pToRelLogAct;
+#if 0
+    /** Save Tree (to file) action. */
+    QAction *m_SaveFileAct;
+    /** Load Tree (from file) action. */
+    QAction *m_LoadFileAct;
+    /** Take Snapshot action. */
+    QAction *m_TakeSnapshotAct;
+    /** Load Snapshot action. */
+    QAction *m_LoadSnapshotAct;
+    /** Diff With Snapshot action. */
+    QAction *m_DiffSnapshotAct;
+#endif
 };
 
 
