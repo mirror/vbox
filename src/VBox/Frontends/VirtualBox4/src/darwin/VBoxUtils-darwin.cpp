@@ -277,6 +277,23 @@ void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
     CGColorSpaceRelease (cs);
 }
 
+QString darwinSystemLanguage()
+{
+    /* Get the locales supported by our bundle */
+    CFArrayRef supportedLocales = CFBundleCopyBundleLocalizations (CFBundleGetMainBundle());
+    /* Check them against the languages currently selected by the user */
+    CFArrayRef preferredLocales = CFBundleCopyPreferredLocalizationsFromArray (supportedLocales);
+    /* Get the one which is on top */
+    CFStringRef localeId = (CFStringRef)CFArrayGetValueAtIndex (preferredLocales, 0);
+    /* Convert them to a C-string */
+    char localeName[20];
+    CFStringGetCString (localeId, localeName, sizeof (localeName), kCFStringEncodingUTF8);
+    /* Some cleanup */
+    CFRelease (supportedLocales);
+    CFRelease (preferredLocales);
+    return QString (localeName);
+}
+
 bool darwinIsMenuOpen()
 {
     MenuTrackingData outData;

@@ -503,6 +503,16 @@ endif
 
 ifeq ($(KBUILD_TARGET),darwin)
 #
+# For the application menu it is necessary to have all supported language at
+# least as a project directory in the bundle. Create them all based on the nls
+# files we have.
+VBOX_SUPPORTED_LANG = $(patsubst nls/VirtualBox_%.ts,%.lproj,$(wildcard nls/VirtualBox_*.ts))
+VBOX_LANG_INSTALL = \
+		$(patsubst %,$(PATH_BIN)/../Resources/%,$(VBOX_SUPPORTED_LANG)) \
+		$(patsubst %,$(PATH_BIN)/../Resources/VirtualBoxVM.app/Contents/Resources/%,$(VBOX_SUPPORTED_LANG))
+OTHERS += $(VBOX_LANG_INSTALL)
+
+#
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
 # The VirtualBoxVM.app helper is for launching VMs (fixes some issues with the dock).
 #
@@ -603,3 +613,12 @@ updatenls:: \
 		-ts \
 		$(filter-out nls/qt_%.ts,$(VirtualBox4_QT_TRANSLATIONS)) \
 		nls/VirtualBox_xx_YY.ts
+
+define def_create_lang_dir
+$(language):
+	$(RM) -Rf $(language)
+	$(MKDIR) -p \
+		$(language)
+endef
+$(foreach language,$(VBOX_LANG_INSTALL),$(eval $(def_create_lang_dir)))
+
