@@ -1338,8 +1338,13 @@ VBoxDbgStatsModel::parent(const QModelIndex &a_rChild) const
         return QModelIndex(); /* we're root */
     }
 
+#if 0  /* this triggers qWarning("Can't select indexes from different model or with different parents") in QItemSelection::select(). */
     //printf("parent: iSelf=%d iColumn=%d %p %s(/%s)\n", pParent->iSelf, a_rChild.column(), pParent, pParent->pszName, pChild->pszName);
     return createIndex(pParent->iSelf, a_rChild.column(), pParent);
+#else
+    //printf("parent: iSelf=%d iColumn=%d %p %s(/%s)\n", pParent->iSelf, 0, pParent, pParent->pszName, pChild->pszName);
+    return createIndex(pParent->iSelf, 0, pParent);
+#endif
 }
 
 
@@ -1711,7 +1716,6 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
              * or we might be removing one or more nodes. Either case is
              * handled in the same rough way.
              */
-            pThis->m_fUpdateInsertRemove = true;
             /** @todo optimize insert since that is a normal occurence. */
             Assert(pszName[0] == '/');
             Assert(pThis->m_szUpdateParent[pThis->m_cchUpdateParent - 1] == '/');
@@ -1752,7 +1756,14 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
                 if (!pNode->cChildren)
                 {
                     /* first child */
-                    pNode = createAndInsertNode(pNode, pszSubName, cchSubName, UINT32_MAX);
+                    if (pThis->m_fUpdateInsertRemove)
+                        pNode = createAndInsertNode(pNode, pszSubName, cchSubName, 0);
+                    else
+                    {
+                        pThis->beginInsertRows(pThis->createIndex(pNode->iSelf, 0, pNode), 0, 0);
+                        pNode = createAndInsertNode(pNode, pszSubName, cchSubName, 0);
+                        pThis->endInsertRows();
+                    }
                     AssertReturn(pNode, VERR_NO_MEMORY);
                 }
                 else
@@ -1771,7 +1782,14 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
                             iStart = i + 1;
                             if (iStart > iLast)
                             {
-                                pNode = createAndInsertNode(pNode, pszSubName, cchSubName, iStart);
+                                if (pThis->m_fUpdateInsertRemove)
+                                    pNode = createAndInsertNode(pNode, pszSubName, cchSubName, iStart);
+                                else
+                                {
+                                    pThis->beginInsertRows(pThis->createIndex(pNode->iSelf, 0, pNode), iStart, iStart);
+                                    pNode = createAndInsertNode(pNode, pszSubName, cchSubName, iStart);
+                                    pThis->endInsertRows();
+                                }
                                 AssertReturn(pNode, VERR_NO_MEMORY);
                                 break;
                             }
@@ -1781,7 +1799,14 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
                             iLast = i - 1;
                             if (iLast < iStart)
                             {
-                                pNode = createAndInsertNode(pNode, pszSubName, cchSubName, i);
+                                if (pThis->m_fUpdateInsertRemove)
+                                    pNode = createAndInsertNode(pNode, pszSubName, cchSubName, i);
+                                else
+                                {
+                                    pThis->beginInsertRows(pThis->createIndex(pNode->iSelf, 0, pNode), i, i);
+                                    pNode = createAndInsertNode(pNode, pszSubName, cchSubName, i);
+                                    pThis->endInsertRows();
+                                }
                                 AssertReturn(pNode, VERR_NO_MEMORY);
                                 break;
                             }
@@ -1804,7 +1829,18 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
             {
                 PDBGGUISTATSNODE pAdv = prevNode(pCur); Assert(pAdv || !pPrev);
                 if (!isNodeAncestorOf(pCur, pNode))
-                    removeAndDestroyNode(pCur);
+                {
+                    Assert(pCur != pThis->m_pRoot);
+                    pThis->m_fUpdateInsertRemove = true; /// @todo figure out crash in select using stale data! (presistent index crap)
+                    if (pThis->m_fUpdateInsertRemove)
+                        removeAndDestroyNode(pCur);
+                    else
+                    {
+                        pThis->beginRemoveRows(pThis->createIndex(pCur->pParent->iSelf, 0, pCur->pParent), pCur->iSelf, pCur->iSelf);
+                        removeAndDestroyNode(pCur);
+                        pThis->endRemoveRows();
+                    }
+                }
                 pCur = pAdv;
             }
 
@@ -1835,7 +1871,7 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
          * Do the same as we're doing down in createNewTreeCallback, walk from the
          * root and create whatever we need.
          */
-        pThis->m_fUpdateInsertRemove = true;
+//        pThis->m_fUpdateInsertRemove = true;
 
         AssertReturn(*pszName == '/' && pszName[1] != '/', VERR_INTERNAL_ERROR);
         pNode = pThis->m_pRoot;
@@ -1853,7 +1889,14 @@ VBoxDbgStatsModelVM::updateCallback(const char *pszName, STAMTYPE enmType, void 
                 ||  strncmp(pNode->papChildren[pNode->cChildren - 1]->pszName, pszCur, cchCur)
                 ||  pNode->papChildren[pNode->cChildren - 1]->pszName[cchCur])
             {
-                pNode = createAndInsertNode(pNode, pszCur, pszNext - pszCur, UINT32_MAX);
+                if (pThis->m_fUpdateInsertRemove)
+                    pNode = createAndInsertNode(pNode, pszCur, pszNext - pszCur, pNode->cChildren);
+                else
+                {
+                    pThis->beginInsertRows(pThis->createIndex(pNode->iSelf, 0, pNode), pNode->cChildren, pNode->cChildren);
+                    pNode = createAndInsertNode(pNode, pszCur, pszNext - pszCur, pNode->cChildren);
+                    pThis->endInsertRows();
+                }
                 if (!pNode)
                     return VERR_NO_MEMORY;
             }
@@ -1993,6 +2036,8 @@ VBoxDbgStatsModelVM::updateStats(const QString &a_rPatStr)
      * This can be optimized later when the normal updating is working perfectly.
      */
     m_fUpdateInsertRemove = false;
+fprintf(stderr, "persistentIndexList().count()->%d\n", persistentIndexList().count());
+    emit layoutAboutToBeChanged();
 
     /** @todo the way we update this stuff is independent of the source (XML, file, STAM), our only
      * ASSUMPTION is that the input is strictly ordered by (fully slashed) name. So, all this stuff
@@ -2005,15 +2050,27 @@ VBoxDbgStatsModelVM::updateStats(const QString &a_rPatStr)
     {
         PDBGGUISTATSNODE const pLast = prevDataNode(m_pUpdateParent->papChildren[m_iUpdateChild]);
         if (!pLast)
+        {
             setRootNode(createRootNode());
+            m_fUpdateInsertRemove = true;
+        }
         else
         {
             PDBGGUISTATSNODE pNode;
             while ((pNode = nextNode(pLast)))
+            {
+                Assert(pNode != m_pRoot);
+                m_fUpdateInsertRemove = true; /// @todo figure out crash in select using stale data! (persistent index crap)
+                if (m_fUpdateInsertRemove)
+                    beginRemoveRows(createIndex(pNode->pParent->iSelf, 0, pNode->pParent), pNode->iSelf, pNode->iSelf);
                 removeAndDestroyNode(pNode);
+                if (m_fUpdateInsertRemove)
+                    endRemoveRows();
+            }
         }
-        m_fUpdateInsertRemove = true;
     }
+    emit layoutChanged();
+fprintf(stderr, "persistentIndexList().count()->%d after\n", persistentIndexList().count());
 
     if (m_fUpdateInsertRemove)
         reset();
