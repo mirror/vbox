@@ -249,10 +249,14 @@ typedef struct VMM
     uint64_t                    u64CallHostArg;
     /** The Ring-0 jmp buffer. */
     VMMR0JMPBUF                 CallHostR0JmpBuf;
-    /** Buffer for storing ring 0 assertion output, so we can reroute it to the release log. */
-    char                        szRing0AssertMsg1[256];
-    char                        szRing0AssertMsg2[256];
     /** @} */
+
+    /** Buffer for storing the standard assertion message for a ring-0 assertion.
+     * Used for saving the assertion message text for the release log and guru
+     * meditation dump. */
+    char                        szRing0AssertMsg1[256];
+    /** Buffer for storing the custom message for a ring-0 assertion. */
+    char                        szRing0AssertMsg2[256];
 
     /** Number of VMMR0_DO_RUN_GC calls. */
     STAMCOUNTER                 StatRunGC;
