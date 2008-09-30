@@ -238,12 +238,13 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
      */
 #ifndef RT_OS_L4
 
-# if ! defined(DEBUG) || defined (DEBUG_sandervl) || defined (DEBUG_frank)
+# if !defined(DEBUG) || defined(DEBUG_sandervl) || defined(DEBUG_frank)
     int cWait = 10;
 # else
     int cWait = 150;
 # endif
-    RTStrmPrintf(g_pStdErr, "DBGF: No debugger attached, waiting %u seconds for one to attach (event=%d)\n", cWait / 10, enmEvent);
+    RTStrmPrintf(g_pStdErr, "DBGF: No debugger attached, waiting %d second%s for one to attach (event=%d)\n",
+                 cWait / 10, cWait != 10 ? "s" : "", enmEvent);
     RTStrmFlush(g_pStdErr);
     while (cWait > 0)
     {
