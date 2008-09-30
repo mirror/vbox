@@ -2260,10 +2260,10 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
  *
  * @deprecated  Use DBGFR3DisasInstrCurrentLog().
  */
-CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix)
+CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix)
 {
     DISCPUSTATE Cpu;
-    CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &Cpu, prefix);
+    CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &Cpu, pszPrefix);
 }
 
 
@@ -2279,13 +2279,13 @@ CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *pre
  *
  * @deprecated  Create new DBGFR3Disas function to do this.
  */
-CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix, int nrInstructions)
+CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix, int nrInstructions)
 {
     for (int i = 0; i < nrInstructions; i++)
     {
         DISCPUSTATE cpu;
 
-        CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &cpu, prefix);
+        CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &cpu, pszPrefix);
         pc += cpu.opsize;
     }
 }
