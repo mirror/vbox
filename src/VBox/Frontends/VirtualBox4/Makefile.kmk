@@ -508,6 +508,8 @@ ifeq ($(KBUILD_TARGET),darwin)
 # files we have.
 #
 ## @todo r=bird: Convert this to an INSTALLS target. Please, do avoid using the OTHERS targets if possible.
+## @todo r=bird: This doesn't actually work on the build boxes. there is no nls/VirtualBox_*.ts there since
+##               the makefile is loaded from the root of the trunk... Please fix.
 VBOX_SUPPORTED_LANG = $(patsubst nls/VirtualBox_%.ts,%.lproj,$(wildcard nls/VirtualBox_*.ts))
 VBOX_LANG_INSTALL = \
 		$(patsubst %,$(PATH_BIN)/../Resources/%,$(VBOX_SUPPORTED_LANG)) \
