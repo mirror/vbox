@@ -793,11 +793,15 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 pCtx->gs &= ~X86_SEL_RPL;
                 pCtx->ss &= ~X86_SEL_RPL;
 
-                VTX_CORRECT_PROT_SEL(ds);
-                VTX_CORRECT_PROT_SEL(es);
-                VTX_CORRECT_PROT_SEL(fs);
-                VTX_CORRECT_PROT_SEL(gs);
-                VTX_CORRECT_PROT_SEL(ss);
+                if (pVM->hwaccm.s.vmx.RealMode.fValid)
+                {
+                    VTX_CORRECT_PROT_SEL(ds);
+                    VTX_CORRECT_PROT_SEL(es);
+                    VTX_CORRECT_PROT_SEL(fs);
+                    VTX_CORRECT_PROT_SEL(gs);
+                    VTX_CORRECT_PROT_SEL(ss);
+                    pVM->hwaccm.s.vmx.RealMode.fValid = false;
+                }
             }
             else
             /* Switching from protected mode to real mode. */
@@ -805,16 +809,17 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 &&  enmGuestMode == PGMMODE_REAL)
             {
                 /* Save the original hidden selectors in case we need to restore them later on. */
-                pVM->hwaccm.s.vmx.RealMode.ds    = pCtx->ds;
-                pVM->hwaccm.s.vmx.RealMode.dsHid = pCtx->dsHid;
-                pVM->hwaccm.s.vmx.RealMode.es    = pCtx->es;
-                pVM->hwaccm.s.vmx.RealMode.esHid = pCtx->esHid;
-                pVM->hwaccm.s.vmx.RealMode.fs    = pCtx->fs;
-                pVM->hwaccm.s.vmx.RealMode.fsHid = pCtx->fsHid;
-                pVM->hwaccm.s.vmx.RealMode.gs    = pCtx->gs;
-                pVM->hwaccm.s.vmx.RealMode.gsHid = pCtx->gsHid;
-                pVM->hwaccm.s.vmx.RealMode.ss    = pCtx->ss;
-                pVM->hwaccm.s.vmx.RealMode.ssHid = pCtx->ssHid;
+                pVM->hwaccm.s.vmx.RealMode.ds     = pCtx->ds;
+                pVM->hwaccm.s.vmx.RealMode.dsHid  = pCtx->dsHid;
+                pVM->hwaccm.s.vmx.RealMode.es     = pCtx->es;
+                pVM->hwaccm.s.vmx.RealMode.esHid  = pCtx->esHid;
+                pVM->hwaccm.s.vmx.RealMode.fs     = pCtx->fs;
+                pVM->hwaccm.s.vmx.RealMode.fsHid  = pCtx->fsHid;
+                pVM->hwaccm.s.vmx.RealMode.gs     = pCtx->gs;
+                pVM->hwaccm.s.vmx.RealMode.gsHid  = pCtx->gsHid;
+                pVM->hwaccm.s.vmx.RealMode.ss     = pCtx->ss;
+                pVM->hwaccm.s.vmx.RealMode.ssHid  = pCtx->ssHid;
+                pVM->hwaccm.s.vmx.RealMode.fValid = true;
 
                 /* The selector value & base must be adjusted or else... */
                 pCtx->cs = pCtx->csHid.u64Base >> 4;
