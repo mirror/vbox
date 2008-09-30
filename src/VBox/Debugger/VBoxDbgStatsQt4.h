@@ -67,7 +67,7 @@ public:
      *
      * @param   rPatStr     Selection pattern. NULL means everything, see STAM for further details.
      */
-    void update(const QString &rPatStr);
+    void updateStats(const QString &rPatStr);
 
     /**
      * Resets the stats items matching the specified pattern.
@@ -75,7 +75,7 @@ public:
      *
      * @param   rPatStr     Selection pattern. NULL means everything, see STAM for further details.
      */
-    void reset(const QString &rPatStr);
+    void resetStats(const QString &rPatStr);
 
 private:
     /**
