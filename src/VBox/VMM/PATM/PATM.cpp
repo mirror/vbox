@@ -5847,6 +5847,9 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         pRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->patch.Patch2GuestAddrTree, pCurPatchInstrGC - pVM->patm.s.pPatchMemGC, true);
         if (!pRec || !pRec->fDirty)
             break;  /* no more dirty instructions */
+
+        /* In case of complex instructions the next guest instruction could be quite far off. */
+        pCurPatchInstrGC = pRec->Core.Key + pVM->patm.s.pPatchMemGC;
     }
 
     if (    VBOX_SUCCESS(rc)
@@ -6074,6 +6077,24 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *
                     return VINF_PATCH_CONTINUE;
                 }
             }
+        }
+        else
+        if (pPatch->patch.pPrivInstrGC == pNewEip)
+        {
+            /* Invalidated patch or first instruction overwritten.
+             * We can ignore the fPIF state in this case. 
+             */
+            /* Reset the PATM stack. */
+            CTXSUFF(pVM->patm.s.pGCState)->Psp = PATM_STACK_SIZE;
+
+            Log(("Call to invalidated patch -> go back to the original instruction\n"));
+
+            pVM->patm.s.pGCStateHC->fPIF = 1;
+            
+            /* continue at the original instruction */
+            *ppNewEip = pNewEip - SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), 0);
+            STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
+            return VINF_SUCCESS;
         }
 
         char szBuf[256];
