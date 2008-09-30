@@ -473,6 +473,41 @@ STAMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY
 
 
 /**
+ * Divide the strings into sub-strings using '/' as delimiter
+ * and then compare them in strcmp fashion.
+ *
+ * @returns Difference.
+ * @retval  0 if equal.
+ * @retval  < 0 if psz1 is less than psz2.
+ * @retval  > 0 if psz1 greater than psz2.
+ *
+ * @param   psz1        The first string.
+ * @param   psz2        The second string.
+ */
+static int stamR3SlashCompare(const char *psz1, const char *psz2)
+{
+    for (;;)
+    {
+        unsigned int ch1 = *psz1++;
+        unsigned int ch2 = *psz2++;
+        if (ch1 != ch2)
+        {
+            /* slash is end-of-sub-string, so it trumps everything but '\0'. */
+            if (ch1 == '/')
+                return ch2 ? -1 : 1;
+            if (ch2 == '/')
+                return ch1 ? 1 : -1;
+            return ch1 - ch2;
+        }
+
+        /* done? */
+        if (ch1 == '\0')
+            return 0;
+    }
+}
+
+
+/**
  * Internal worker for the different register calls.
  *
  * @returns VBox status.
@@ -516,6 +551,17 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
         pPrev = pCur;
         pCur = pCur->pNext;
     }
+
+    /*
+     * Check that the name doesn't screw up sorting order when taking
+     * slashes into account. The QT4 GUI makes some assumptions.
+     * Problematic chars are: !"#$%&'()*+,-.
+     */
+    Assert(pszName[0] == '/');
+    if (pPrev)
+        Assert(stamR3SlashCompare(pPrev->pszName, pszName) < 0);
+    if (pCur)
+        Assert(stamR3SlashCompare(pCur->pszName, pszName) > 0);
 
     /*
      * Create a new node and insert it at the current location.
