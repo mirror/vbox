@@ -2483,11 +2483,28 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
     switch (rcErr)
     {
         /*
-         * Hyper visor errors.
+         * Hypervisor errors.
          */
         case VINF_EM_DBG_HYPER_ASSERTION:
-            pHlp->pfnPrintf(pHlp, "%s%s!!\n", VMMR3GetGCAssertMsg1(pVM), VMMR3GetGCAssertMsg2(pVM));
+        {
+            const char *pszMsg1 = HWACCMR3IsActive(pVM) ? pVM->vmm.s.szRing0AssertMsg1 : VMMR3GetGCAssertMsg1(pVM);
+            while (pszMsg1 && *pszMsg1 == '\n')
+                pszMsg1++;
+            const char *pszMsg2 = HWACCMR3IsActive(pVM) ? pVM->vmm.s.szRing0AssertMsg2 : VMMR3GetGCAssertMsg2(pVM);
+            while (pszMsg2 && *pszMsg2 == '\n')
+                pszMsg2++;
+            pHlp->pfnPrintf(pHlp,
+                            "%s"
+                            "%s",
+                            pszMsg1,
+                            pszMsg2);
+            if (    !pszMsg2
+                ||  !*pszMsg2
+                ||  strchr(pszMsg2, '\0')[-1] != '\n')
+                pHlp->pfnPrintf(pHlp, "\n");
+            pHlp->pfnPrintf(pHlp, "!!\n");
             /* fall thru */
+        }
         case VERR_TRPM_DONT_PANIC:
         case VERR_TRPM_PANIC:
         case VINF_EM_RAW_STALE_SELECTOR:
@@ -2495,37 +2512,49 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
         case VINF_EM_DBG_HYPER_BREAKPOINT:
         case VINF_EM_DBG_HYPER_STEPPED:
         {
-            /* Trap? */
-            uint32_t        uEIP = CPUMGetHyperEIP(pVM);
+            /*
+             * Active trap? This is only of partial interest when in hardware
+             * assisted virtualization mode, thus the different messages.
+             */
+            uint32_t        uEIP       = CPUMGetHyperEIP(pVM);
             TRPMEVENT       enmType;
             uint8_t         u8TrapNo   =       0xce;
             RTGCUINT        uErrorCode = 0xdeadface;
             RTGCUINTPTR     uCR2       = 0xdeadface;
             int rc2 = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
-            if (VBOX_SUCCESS(rc2))
-                pHlp->pfnPrintf(pHlp,
-                                "!! TRAP=%02x ERRCD=%VGv CR2=%VGv EIP=%VGv Type=%d\n",
-                                u8TrapNo, uErrorCode, uCR2, uEIP, enmType);
-            else
-                pHlp->pfnPrintf(pHlp,
-                                "!! EIP=%VGv NOTRAP\n",
-                                uEIP);
-
-            /* The hypervisor dump is not relevant when we're in VT-x/AMD-V mode. */
             if (!HWACCMR3IsActive(pVM))
             {
+                if (RT_SUCCESS(rc2))
+                    pHlp->pfnPrintf(pHlp,
+                                    "!! TRAP=%02x ERRCD=%RGv CR2=%RGv EIP=%RX32 Type=%d\n",
+                                    u8TrapNo, uErrorCode, uCR2, uEIP, enmType);
+                else
+                    pHlp->pfnPrintf(pHlp,
+                                    "!! EIP=%RX32 NOTRAP\n",
+                                    uEIP);
+            }
+            else if (RT_SUCCESS(rc2))
+                pHlp->pfnPrintf(pHlp,
+                                "!! ACTIVE TRAP=%02x ERRCD=%RGv CR2=%RGv PC=%RGr Type=%d (Guest!)\n",
+                                u8TrapNo, uErrorCode, uCR2, CPUMGetGuestRIP(pVM), enmType);
+
+            /*
+             * The hypervisor dump is not relevant when we're in VT-x/AMD-V mode.
+             */
+            if (HWACCMR3IsActive(pVM))
+                pHlp->pfnPrintf(pHlp, "\n");
+            else
+            {
                 /*
-                * Try figure out where eip is.
-                */
-                /** @todo make query call for core code or move this function to VMM. */
+                 * Try figure out where eip is.
+                 */
                 /* core code? */
-                //if (uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode < pVM->vmm.s.cbCoreCode)
-                //    pHlp->pfnPrintf(pHlp,
-                //                "!! EIP is in CoreCode, offset %#x\n",
-                //                uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode);
-                //else
-                {   /* ask PDM */
-                    /** @todo ask DBGFR3Sym later. */
+                if (uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode < pVM->vmm.s.cbCoreCode)
+                    pHlp->pfnPrintf(pHlp,
+                                "!! EIP is in CoreCode, offset %#x\n",
+                                uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode);
+                else
+                {   /* ask PDM */  /** @todo ask DBGFR3Sym later? */
                     char        szModName[64];
                     RTGCPTR     GCPtrMod;
                     char        szNearSym1[260];
@@ -2537,15 +2566,13 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                                                 &szNearSym1[0], sizeof(szNearSym1), &GCPtrNearSym1,
                                                 &szNearSym2[0], sizeof(szNearSym2), &GCPtrNearSym2);
                     if (VBOX_SUCCESS(rc))
-                    {
                         pHlp->pfnPrintf(pHlp,
-                                        "!! EIP in %s (%VGv) at rva %x near symbols:\n"
-                                        "!!    %VGv rva %VGv off %08x  %s\n"
-                                        "!!    %VGv rva %VGv off -%08x %s\n",
+                                        "!! EIP in %s (%RGv) at rva %x near symbols:\n"
+                                        "!!    %RGv rva %RGv off %08x  %s\n"
+                                        "!!    %RGv rva %RGv off -%08x %s\n",
                                         szModName,  GCPtrMod, (unsigned)(uEIP - GCPtrMod),
                                         GCPtrNearSym1, GCPtrNearSym1 - GCPtrMod, (unsigned)(uEIP - GCPtrNearSym1), szNearSym1,
                                         GCPtrNearSym2, GCPtrNearSym2 - GCPtrMod, (unsigned)(GCPtrNearSym2 - uEIP), szNearSym2);
-                    }
                     else
                         pHlp->pfnPrintf(pHlp,
                                         "!! EIP is not in any code known to VMM!\n");
@@ -2616,7 +2643,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                                 "!!\n"
                                 "%.*Vhxd\n",
                                 VMM_STACK_SIZE, (char *)pVM->vmm.s.pbHCStack);
-            }
+            } /* !HWACCMR3IsActive */
             break;
         }
 
