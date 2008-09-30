@@ -2511,108 +2511,112 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                                 "!! EIP=%VGv NOTRAP\n",
                                 uEIP);
 
-            /*
-             * Try figure out where eip is.
-             */
-            /** @todo make query call for core code or move this function to VMM. */
-            /* core code? */
-            //if (uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode < pVM->vmm.s.cbCoreCode)
-            //    pHlp->pfnPrintf(pHlp,
-            //                "!! EIP is in CoreCode, offset %#x\n",
-            //                uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode);
-            //else
-            {   /* ask PDM */
-                /** @todo ask DBGFR3Sym later. */
-                char        szModName[64];
-                RTGCPTR     GCPtrMod;
-                char        szNearSym1[260];
-                RTGCPTR     GCPtrNearSym1;
-                char        szNearSym2[260];
-                RTGCPTR     GCPtrNearSym2;
-                int rc = PDMR3QueryModFromEIP(pVM, uEIP,
-                                              &szModName[0],  sizeof(szModName),  &GCPtrMod,
-                                              &szNearSym1[0], sizeof(szNearSym1), &GCPtrNearSym1,
-                                              &szNearSym2[0], sizeof(szNearSym2), &GCPtrNearSym2);
-                if (VBOX_SUCCESS(rc))
-                {
-                    pHlp->pfnPrintf(pHlp,
-                                    "!! EIP in %s (%VGv) at rva %x near symbols:\n"
-                                    "!!    %VGv rva %VGv off %08x  %s\n"
-                                    "!!    %VGv rva %VGv off -%08x %s\n",
-                                    szModName,  GCPtrMod, (unsigned)(uEIP - GCPtrMod),
-                                    GCPtrNearSym1, GCPtrNearSym1 - GCPtrMod, (unsigned)(uEIP - GCPtrNearSym1), szNearSym1,
-                                    GCPtrNearSym2, GCPtrNearSym2 - GCPtrMod, (unsigned)(GCPtrNearSym2 - uEIP), szNearSym2);
-                }
-                else
-                    pHlp->pfnPrintf(pHlp,
-                                    "!! EIP is not in any code known to VMM!\n");
-            }
-
-            /* Disassemble the instruction. */
-            char szInstr[256];
-            rc2 = DBGFR3DisasInstrEx(pVM, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER, &szInstr[0], sizeof(szInstr), NULL);
-            if (VBOX_SUCCESS(rc2))
-                pHlp->pfnPrintf(pHlp,
-                                "!! %s\n", szInstr);
-
-            /* Dump the hypervisor cpu state. */
-            pHlp->pfnPrintf(pHlp,
-                            "!!\n"
-                            "!!\n"
-                            "!!\n");
-            rc2 = DBGFR3Info(pVM, "cpumhyper", "verbose", pHlp);
-            fDoneHyper = true;
-
-            /* Callstack. */
-            DBGFSTACKFRAME Frame = {0};
-            rc2 = DBGFR3StackWalkBeginHyper(pVM, &Frame);
-            if (VBOX_SUCCESS(rc2))
+            /* The hypervisor dump is not relevant when we're in VT-x/AMD-V mode. */
+            if (!HWACCMR3IsActive(pVM))
             {
+                /*
+                * Try figure out where eip is.
+                */
+                /** @todo make query call for core code or move this function to VMM. */
+                /* core code? */
+                //if (uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode < pVM->vmm.s.cbCoreCode)
+                //    pHlp->pfnPrintf(pHlp,
+                //                "!! EIP is in CoreCode, offset %#x\n",
+                //                uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode);
+                //else
+                {   /* ask PDM */
+                    /** @todo ask DBGFR3Sym later. */
+                    char        szModName[64];
+                    RTGCPTR     GCPtrMod;
+                    char        szNearSym1[260];
+                    RTGCPTR     GCPtrNearSym1;
+                    char        szNearSym2[260];
+                    RTGCPTR     GCPtrNearSym2;
+                    int rc = PDMR3QueryModFromEIP(pVM, uEIP,
+                                                &szModName[0],  sizeof(szModName),  &GCPtrMod,
+                                                &szNearSym1[0], sizeof(szNearSym1), &GCPtrNearSym1,
+                                                &szNearSym2[0], sizeof(szNearSym2), &GCPtrNearSym2);
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        pHlp->pfnPrintf(pHlp,
+                                        "!! EIP in %s (%VGv) at rva %x near symbols:\n"
+                                        "!!    %VGv rva %VGv off %08x  %s\n"
+                                        "!!    %VGv rva %VGv off -%08x %s\n",
+                                        szModName,  GCPtrMod, (unsigned)(uEIP - GCPtrMod),
+                                        GCPtrNearSym1, GCPtrNearSym1 - GCPtrMod, (unsigned)(uEIP - GCPtrNearSym1), szNearSym1,
+                                        GCPtrNearSym2, GCPtrNearSym2 - GCPtrMod, (unsigned)(GCPtrNearSym2 - uEIP), szNearSym2);
+                    }
+                    else
+                        pHlp->pfnPrintf(pHlp,
+                                        "!! EIP is not in any code known to VMM!\n");
+                }
+
+                /* Disassemble the instruction. */
+                char szInstr[256];
+                rc2 = DBGFR3DisasInstrEx(pVM, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER, &szInstr[0], sizeof(szInstr), NULL);
+                if (VBOX_SUCCESS(rc2))
+                    pHlp->pfnPrintf(pHlp,
+                                    "!! %s\n", szInstr);
+
+                /* Dump the hypervisor cpu state. */
                 pHlp->pfnPrintf(pHlp,
                                 "!!\n"
-                                "!! Call Stack:\n"
                                 "!!\n"
-                                "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
-                do
+                                "!!\n");
+                rc2 = DBGFR3Info(pVM, "cpumhyper", "verbose", pHlp);
+                fDoneHyper = true;
+
+                /* Callstack. */
+                DBGFSTACKFRAME Frame = {0};
+                rc2 = DBGFR3StackWalkBeginHyper(pVM, &Frame);
+                if (VBOX_SUCCESS(rc2))
                 {
                     pHlp->pfnPrintf(pHlp,
-                                    "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
-                                    (uint32_t)Frame.AddrFrame.off,
-                                    (uint32_t)Frame.AddrReturnFrame.off,
-                                    (uint32_t)Frame.AddrReturnPC.Sel,
-                                    (uint32_t)Frame.AddrReturnPC.off,
-                                    Frame.Args.au32[0],
-                                    Frame.Args.au32[1],
-                                    Frame.Args.au32[2],
-                                    Frame.Args.au32[3]);
-                    pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", Frame.AddrPC.Sel, Frame.AddrPC.off);
-                    if (Frame.pSymPC)
+                                    "!!\n"
+                                    "!! Call Stack:\n"
+                                    "!!\n"
+                                    "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
+                    do
                     {
-                        RTGCINTPTR offDisp = Frame.AddrPC.FlatPtr - Frame.pSymPC->Value;
-                        if (offDisp > 0)
-                            pHlp->pfnPrintf(pHlp, " %s+%llx", Frame.pSymPC->szName, (int64_t)offDisp);
-                        else if (offDisp < 0)
-                            pHlp->pfnPrintf(pHlp, " %s-%llx", Frame.pSymPC->szName, -(int64_t)offDisp);
-                        else
-                            pHlp->pfnPrintf(pHlp, " %s", Frame.pSymPC->szName);
-                    }
-                    if (Frame.pLinePC)
-                        pHlp->pfnPrintf(pHlp, " [%s @ 0i%d]", Frame.pLinePC->szFilename, Frame.pLinePC->uLineNo);
-                    pHlp->pfnPrintf(pHlp, "\n");
+                        pHlp->pfnPrintf(pHlp,
+                                        "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+                                        (uint32_t)Frame.AddrFrame.off,
+                                        (uint32_t)Frame.AddrReturnFrame.off,
+                                        (uint32_t)Frame.AddrReturnPC.Sel,
+                                        (uint32_t)Frame.AddrReturnPC.off,
+                                        Frame.Args.au32[0],
+                                        Frame.Args.au32[1],
+                                        Frame.Args.au32[2],
+                                        Frame.Args.au32[3]);
+                        pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", Frame.AddrPC.Sel, Frame.AddrPC.off);
+                        if (Frame.pSymPC)
+                        {
+                            RTGCINTPTR offDisp = Frame.AddrPC.FlatPtr - Frame.pSymPC->Value;
+                            if (offDisp > 0)
+                                pHlp->pfnPrintf(pHlp, " %s+%llx", Frame.pSymPC->szName, (int64_t)offDisp);
+                            else if (offDisp < 0)
+                                pHlp->pfnPrintf(pHlp, " %s-%llx", Frame.pSymPC->szName, -(int64_t)offDisp);
+                            else
+                                pHlp->pfnPrintf(pHlp, " %s", Frame.pSymPC->szName);
+                        }
+                        if (Frame.pLinePC)
+                            pHlp->pfnPrintf(pHlp, " [%s @ 0i%d]", Frame.pLinePC->szFilename, Frame.pLinePC->uLineNo);
+                        pHlp->pfnPrintf(pHlp, "\n");
 
-                    /* next */
-                    rc2 = DBGFR3StackWalkNext(pVM, &Frame);
-                } while (VBOX_SUCCESS(rc2));
-                DBGFR3StackWalkEnd(pVM, &Frame);
+                        /* next */
+                        rc2 = DBGFR3StackWalkNext(pVM, &Frame);
+                    } while (VBOX_SUCCESS(rc2));
+                    DBGFR3StackWalkEnd(pVM, &Frame);
+                }
+
+                /* raw stack */
+                pHlp->pfnPrintf(pHlp,
+                                "!!\n"
+                                "!! Raw stack (mind the direction).\n"
+                                "!!\n"
+                                "%.*Vhxd\n",
+                                VMM_STACK_SIZE, (char *)pVM->vmm.s.pbHCStack);
             }
-
-            /* raw stack */
-            pHlp->pfnPrintf(pHlp,
-                            "!!\n"
-                            "!! Raw stack (mind the direction).\n"
-                            "!!\n"
-                            "%.*Vhxd\n",
-                            VMM_STACK_SIZE, (char *)pVM->vmm.s.pbHCStack);
             break;
         }
 
