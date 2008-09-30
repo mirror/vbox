@@ -506,6 +506,8 @@ ifeq ($(KBUILD_TARGET),darwin)
 # For the application menu it is necessary to have all supported language at
 # least as a project directory in the bundle. Create them all based on the nls
 # files we have.
+#
+## @todo r=bird: Convert this to an INSTALLS target. Please, do avoid using the OTHERS targets if possible.
 VBOX_SUPPORTED_LANG = $(patsubst nls/VirtualBox_%.ts,%.lproj,$(wildcard nls/VirtualBox_*.ts))
 VBOX_LANG_INSTALL = \
 		$(patsubst %,$(PATH_BIN)/../Resources/%,$(VBOX_SUPPORTED_LANG)) \
