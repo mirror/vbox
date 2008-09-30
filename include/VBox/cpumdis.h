@@ -47,9 +47,9 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
 
 # ifdef DEBUG
 /** @deprecated  Use DBGFR3DisasInstrCurrentLog().  */
-CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix);
+CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix);
 /** @deprecated  Create new DBGFR3Disas function to do this. */
-CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, char *prefix, int nrInstructions);
+CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix, int nrInstructions);
 # else
 /** @deprecated  Use DBGFR3DisasInstrCurrentLog(). */
 #  define CPUMR3DisasmInstr(pVM, pCtx, pc, prefix)  do {} while (0)
