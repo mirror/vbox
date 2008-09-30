@@ -148,11 +148,7 @@ int VBoxDbgGui::showStatistics()
 {
     if (!m_pDbgStats)
     {
-#ifdef VBOXDBG_USE_QT4
-        m_pDbgStats = new VBoxDbgStats(m_pVM, "*x*"); /// @todo the QTreeWidget/QTreeView sucks big time. it freezes the app for 30+ seconds. Need to write a new item model I fear. 'ing crap!!!
-#else
         m_pDbgStats = new VBoxDbgStats(m_pVM);
-#endif
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionStatistics();
     }
