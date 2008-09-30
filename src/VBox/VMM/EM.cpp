@@ -1949,6 +1949,31 @@ int emR3RawPrivileged(PVM pVM)
                             &&  Cpu.param1.flags == USE_REG_CR /* write */
                            )
                         {
+                            /* Deal with CR0 updates inside patch code that force
+                             * us to go to the recompiler.
+                             */
+                            if (   PATMIsPatchGCAddr(pVM, pCtx->rip)
+                                && (pCtx->cr0 & (X86_CR0_WP|X86_CR0_PG|X86_CR0_PE)) != (X86_CR0_WP|X86_CR0_PG|X86_CR0_PE))
+                            {
+                                PATMTRANSSTATE  enmState;
+                                RTGCPTR         pOrgInstrGC = PATMR3PatchToGCPtr(pVM, pCtx->rip, &enmState);
+
+                                Assert(pCtx->eflags.Bits.u1IF == 0);
+                                Log(("Force recompiler switch due to cr0 (%VGp) update\n", pCtx->cr0));
+                                if (enmState == PATMTRANS_OVERWRITTEN)
+                                {
+                                    rc = PATMR3DetectConflict(pVM, pOrgInstrGC, pOrgInstrGC);
+                                    Assert(rc == VERR_PATCH_DISABLED);
+                                    /* Conflict detected, patch disabled */
+                                    Log(("emR3RawPrivileged: detected conflict -> disabled patch at %VGv\n", pCtx->rip));
+                                    enmState = PATMTRANS_SAFE;
+                                }
+                                /* The translation had better be successful. Otherwise we can't recover. */
+                                AssertReleaseMsg(pOrgInstrGC && enmState != PATMTRANS_OVERWRITTEN, ("Unable to translate instruction address at %VGv\n", pCtx->rip));
+                                if (enmState != PATMTRANS_OVERWRITTEN)
+                                    pCtx->rip = pOrgInstrGC;
+                            }
+
                             /* Reschedule is necessary as the execution/paging mode might have changed. */
                             return VINF_EM_RESCHEDULE;
                         }
@@ -3227,7 +3252,7 @@ EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
              * Before we can schedule anything (we're here because
              * scheduling is required) we must service any pending
              * forced actions to avoid any pending action causing
-             * immidate rescheduling upon entering an inner loop
+             * immediate rescheduling upon entering an inner loop
              *
              * Do forced actions.
              */
