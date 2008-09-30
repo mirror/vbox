@@ -34,6 +34,9 @@
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QKeySequence>
+#include <QAction>
+#include <QContextMenuEvent>
 
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -216,8 +219,39 @@ public:
      *
      * @returns true if we reset the model and it's necessary to set the root index.
      * @param   a_rPatStr       The selection pattern.
+     *
+     * @remarks The default implementation is an empty stub.
      */
-    virtual bool updateStats(const QString &a_rPatStr) = 0;
+    virtual bool updateStatsByPattern(const QString &a_rPatStr);
+
+    /**
+     * Similar to updateStatsByPattern, except that it only works on a sub-tree and
+     * will not remove anything that's outside that tree.
+     *
+     * @param  a_rIndex     The sub-tree root. Invalid index means root.
+     *
+     * @todo    Create a default implementation using updateStatsByPattern.
+     */
+    virtual void updateStatsByIndex(QModelIndex const &a_rIndex);
+
+    /**
+     * Reset the stats matching the specified pattern.
+     *
+     * @param  a_rPatStr    The selection pattern.
+     *
+     * @remarks The default implementation is an empty stub.
+     */
+    virtual void resetStatsByPattern(QString const &a_rPatStr);
+
+    /**
+     * Reset the stats of a sub-tree.
+     *
+     * @param   a_rIndex    The sub-tree root. Invalid index means root.
+     * @param   a_fSubTree  Whether to reset the sub-tree as well. Default is true.
+     *
+     * @remarks The default implementation makes use of resetStatsByPattern
+     */
+    virtual void resetStatsByIndex(QModelIndex const &a_rIndex, bool a_fSubTree = true);
 
     /**
      * Gets the model index of the root node.
@@ -225,6 +259,7 @@ public:
      * @returns root index.
      */
     QModelIndex getRootIndex(void) const;
+
 
 protected:
     /**
@@ -265,16 +300,16 @@ protected:
     static void updateNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, const char *pszDesc);
 
     /**
-     * Called by updateStats(), makes the necessary preparations.
+     * Called by updateStatsByPattern(), makes the necessary preparations.
      *
      * @returns Success indicator.
      */
     bool updatePrepare(void);
 
     /**
-     * Called by updateStats(), finalizes the update.
+     * Called by updateStatsByPattern(), finalizes the update.
      *
-     * @return See updateStats().
+     * @return See updateStatsByPattern().
      *
      * @param  a_fSuccess   Whether the update was successful or not.
      *
@@ -306,7 +341,8 @@ protected:
      */
     void updateCallbackAdvance(PDBGGUISTATSNODE pNode);
 
-    /** Callback used by updateStats() to feed changes.
+    /** Callback used by updateStatsByPattern() and updateStatsByIndex() to feed
+     *  changes.
      * @copydoc FNSTAMR3ENUM */
     static DECLCALLBACK(int) updateCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
                                             STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser);
@@ -523,7 +559,8 @@ public:
     /** Destructor */
     virtual ~VBoxDbgStatsModelVM();
 
-    virtual bool updateStats(const QString &a_rPatStr);
+    virtual bool updateStatsByPattern(const QString &a_rPatStr);
+    virtual void resetStatsByPattern(const QString &a_rPatStr);
 
 protected:
     /**
@@ -1838,6 +1875,66 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
 }
 
 
+bool
+VBoxDbgStatsModel::updateStatsByPattern(const QString &a_rPatStr)
+{
+    /* stub */
+    NOREF(a_rPatStr);
+    return false;
+}
+
+
+void
+VBoxDbgStatsModel::updateStatsByIndex(QModelIndex const &a_rIndex)
+{
+    /** @todo implement this based on updateStatsByPattern. */
+    NOREF(a_rIndex);
+}
+
+
+void
+VBoxDbgStatsModel::resetStatsByPattern(QString const &a_rPatStr)
+{
+    /* stub */
+    NOREF(a_rPatStr);
+}
+
+
+void
+VBoxDbgStatsModel::resetStatsByIndex(QModelIndex const &a_rIndex, bool fSubTree /*= true*/)
+{
+    PCDBGGUISTATSNODE pNode = nodeFromIndex(a_rIndex);
+    if (pNode == m_pRoot || !a_rIndex.isValid())
+    {
+        if (fSubTree)
+        {
+            /* everything from the root down. */
+            resetStatsByPattern(QString());
+        }
+    }
+    else if (pNode)
+    {
+        /* the node pattern. */
+        char szPat[1024+1024+4];
+        int32_t cch = getNodePath(pNode, szPat, 1024);
+        AssertReturnVoid(cch >= 0);
+
+        /* the sub-tree pattern. */
+        if (fSubTree && pNode->cChildren)
+        {
+            char *psz = &szPat[cch];
+            *psz++ = '|';
+            memcpy(psz, szPat, cch);
+            psz += cch;
+            *psz++ = '/';
+            *psz++ = '*';
+            *psz++ = '\0';
+        }
+
+        resetStatsByPattern(szPat);
+    }
+}
+
 
 QModelIndex
 VBoxDbgStatsModel::getRootIndex(void) const
@@ -1862,12 +1959,6 @@ Qt::ItemFlags
 VBoxDbgStatsModel::flags(const QModelIndex &a_rIndex) const
 {
     Qt::ItemFlags fFlags = QAbstractItemModel::flags(a_rIndex);
-#if 0
-    PDBGGUISTATSNODE pNode = nodeFromIndex(a_rIndex);
-    if (pNode)
-    {
-    }
-#endif
     return fFlags;
 }
 
@@ -1884,7 +1975,7 @@ int
 VBoxDbgStatsModel::rowCount(const QModelIndex &a_rParent) const
 {
     PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
-    return pParent->cChildren;
+    return pParent ? pParent->cChildren : 0;
 }
 
 
@@ -1903,22 +1994,20 @@ VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &r_pParent) co
     PDBGGUISTATSNODE pParent = nodeFromIndex(r_pParent);
     if (!pParent)
     {
-        printf("index: iRow=%d iColumn=%d invalid parent\n", iRow, iColumn);
+        Log(("index: iRow=%d iColumn=%d invalid parent\n", iRow, iColumn));
         return QModelIndex(); /* bug? */
     }
     if ((unsigned)iRow >= pParent->cChildren)
     {
-        printf("index: iRow=%d >= cChildren=%u (iColumn=%d)\n", iRow, (unsigned)pParent->cChildren, iColumn);
+        Log(("index: iRow=%d >= cChildren=%u (iColumn=%d)\n", iRow, (unsigned)pParent->cChildren, iColumn));
         return QModelIndex(); /* bug? */
     }
     if ((unsigned)iColumn >= DBGGUI_STATS_COLUMNS)
     {
-        printf("index: iColumn=%d (iRow=%d)\n", iColumn, iRow);
+        Log(("index: iColumn=%d (iRow=%d)\n", iColumn, iRow));
         return QModelIndex(); /* bug? */
     }
     PDBGGUISTATSNODE pChild = pParent->papChildren[iRow];
-
-    //printf("index: iRow=%d iColumn=%d %p %s/%s\n", iRow, iColumn, pChild, pParent->pszName, pChild->pszName);
     return createIndex(iRow, iColumn, pChild);
 }
 
@@ -1929,23 +2018,14 @@ VBoxDbgStatsModel::parent(const QModelIndex &a_rChild) const
     PDBGGUISTATSNODE pChild = nodeFromIndex(a_rChild);
     if (!pChild)
     {
-        printf("parent: invalid child\n");
+        Log(("parent: invalid child\n"));
         return QModelIndex(); /* bug */
     }
     PDBGGUISTATSNODE pParent = pChild->pParent;
     if (!pParent)
-    {
-//        printf("parent: root\n");
         return QModelIndex(); /* we're root */
-    }
 
-#if 0  /* this triggers qWarning("Can't select indexes from different model or with different parents") in QItemSelection::select(). */
-    //printf("parent: iSelf=%d iColumn=%d %p %s(/%s)\n", pParent->iSelf, a_rChild.column(), pParent, pParent->pszName, pChild->pszName);
-    return createIndex(pParent->iSelf, a_rChild.column(), pParent);
-#else
-    //printf("parent: iSelf=%d iColumn=%d %p %s(/%s)\n", pParent->iSelf, 0, pParent, pParent->pszName, pChild->pszName);
     return createIndex(pParent->iSelf, 0, pParent);
-#endif
 }
 
 
@@ -2287,7 +2367,7 @@ VBoxDbgStatsModelVM::~VBoxDbgStatsModelVM()
 
 
 bool
-VBoxDbgStatsModelVM::updateStats(const QString &a_rPatStr)
+VBoxDbgStatsModelVM::updateStatsByPattern(const QString &a_rPatStr)
 {
     /** @todo the way we update this stuff is independent of the source (XML, file, STAM), our only
      * ASSUMPTION is that the input is strictly ordered by (fully slashed) name. So, all this stuff
@@ -2299,6 +2379,13 @@ VBoxDbgStatsModelVM::updateStats(const QString &a_rPatStr)
         fRc = updateDone(RT_SUCCESS(rc));
     }
     return fRc;
+}
+
+
+void
+VBoxDbgStatsModelVM::resetStatsByPattern(QString const &a_rPatStr)
+{
+    stamReset(a_rPatStr);
 }
 
 
@@ -2697,8 +2784,8 @@ QString VBoxDbgStatsLeafItem::key(int iColumn, bool /*fAscending*/) const
 
 
 VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxDbgStats *a_pParent/* = NULL*/)
-    : QTreeView(a_pParent), VBoxDbgBase(a_pVM), m_pModel(a_pModel), m_pParent(a_pParent),
-    m_pLeafMenu(NULL), m_pBranchMenu(NULL), m_pViewMenu(NULL), m_pContextNode(NULL)
+    : QTreeView(a_pParent), VBoxDbgBase(a_pVM), m_pModel(a_pModel), m_PatStr(), m_pParent(a_pParent),
+    m_pLeafMenu(NULL), m_pBranchMenu(NULL), m_pViewMenu(NULL), m_pCurMenu(NULL), m_CurIndex()
 
 {
     /*
@@ -2706,48 +2793,73 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxD
      */
     setModel(m_pModel);
     setRootIndex(m_pModel->getRootIndex());
-    //setRootIsDecorated(true);
+    setRootIsDecorated(true);
     setItemsExpandable(true);
-    setSortingEnabled(true);
+    setSelectionBehavior(SelectRows);
+    setSelectionMode(SingleSelection);
+    /// @todo sorting setSortingEnabled(true);
 
     /*
-     * We've got three menus to populate and link up.
+     * Create and setup the actions.
      */
-#ifdef VBOXDBG_USE_QT4
-    /** @todo */
+    m_pExpandAct   = new QAction("Expand Tree", this);
+    m_pCollapseAct = new QAction("Collapse Tree", this);
+    m_pRefreshAct  = new QAction("&Refresh", this);
+    m_pResetAct    = new QAction("Rese&t", this);
+    m_pCopyAct     = new QAction("&Copy", this);
+    m_pToLogAct    = new QAction("To &Log", this);
+    m_pToRelLogAct = new QAction("T&o Release Log", this);
 
-#else  /* QT3 */
-    m_pLeafMenu = new QPopupMenu(this);
-    m_pLeafMenu->insertItem("Rese&t", eReset);
-    m_pLeafMenu->insertItem("&Refresh", eRefresh);
-    m_pLeafMenu->insertItem("&Copy", eCopy);
-    m_pLeafMenu->insertItem("To &Log", eLog);
-    m_pLeafMenu->insertItem("T&o Release Log", eLogRel);
-    connect(m_pLeafMenu, SIGNAL(activated(int)), this, SLOT(leafMenuActivated(int)));
+    m_pCopyAct->setShortcut(QKeySequence::Copy);
+    m_pExpandAct->setShortcut(QKeySequence("Ctrl+E"));
+    m_pRefreshAct->setShortcut(QKeySequence("Ctrl+R"));
+    m_pToLogAct->setShortcut(QKeySequence("Ctrl+L"));
+    m_pToRelLogAct->setShortcut(QKeySequence("Alt+L"));
 
-    m_pBranchMenu = new QPopupMenu(this);
-    m_pBranchMenu->insertItem("&Expand Tree", eExpand);
-    m_pBranchMenu->insertItem("&Collaps Tree", eCollaps);
-    m_pBranchMenu->insertItem("&Refresh", eRefresh);
-    m_pBranchMenu->insertItem("Rese&t", eReset);
-    m_pBranchMenu->insertItem("&Copy", eCopy);
-    m_pBranchMenu->insertItem("To &Log", eLog);
-    m_pBranchMenu->insertItem("T&o Release Log", eLogRel);
-    connect(m_pBranchMenu, SIGNAL(activated(int)), this, SLOT(branchMenuActivated(int)));
+    connect(m_pExpandAct,   SIGNAL(triggered(bool)), this, SLOT(actExpand()));
+    connect(m_pCollapseAct, SIGNAL(triggered(bool)), this, SLOT(actCollapse()));
+    connect(m_pRefreshAct,  SIGNAL(triggered(bool)), this, SLOT(actRefresh()));
+    connect(m_pResetAct,    SIGNAL(triggered(bool)), this, SLOT(actReset()));
+    connect(m_pCopyAct,     SIGNAL(triggered(bool)), this, SLOT(actCopy()));
+    connect(m_pToLogAct,    SIGNAL(triggered(bool)), this, SLOT(actToLog()));
+    connect(m_pToRelLogAct, SIGNAL(triggered(bool)), this, SLOT(actToRelLog()));
 
-    m_pViewMenu = new QPopupMenu(this);
-    m_pViewMenu->insertItem("&Expand All", eExpand);
-    m_pViewMenu->insertItem("&Collaps All", eCollaps);
-    m_pViewMenu->insertItem("&Refresh", eRefresh);
-    m_pViewMenu->insertItem("Rese&t", eReset);
-    m_pViewMenu->insertItem("&Copy", eCopy);
-    m_pViewMenu->insertItem("To &Log", eLog);
-    m_pViewMenu->insertItem("T&o Release Log", eLogRel);
-    connect(m_pViewMenu, SIGNAL(activated(int)), this, SLOT(viewMenuActivated(int)));
+addAction(m_pExpandAct); /// testing
+addAction(m_pCopyAct); /// testing
 
-    connect(this, SIGNAL(contextMenuRequested(QListViewItem *, const QPoint &, int)), this,
-            SLOT(contextMenuReq(QListViewItem *, const QPoint &, int)));
-#endif /* QT3 */
+
+    /*
+     * Create the menus and populate them.
+     */
+    setContextMenuPolicy(Qt::DefaultContextMenu);
+
+    m_pLeafMenu = new QMenu();
+    m_pLeafMenu->addAction(m_pCopyAct);
+    m_pLeafMenu->addAction(m_pRefreshAct);
+    m_pLeafMenu->addAction(m_pResetAct);
+    m_pLeafMenu->addAction(m_pToLogAct);
+    m_pLeafMenu->addAction(m_pToRelLogAct);
+
+    m_pBranchMenu = new QMenu(this);
+    m_pBranchMenu->addAction(m_pCopyAct);
+    m_pBranchMenu->addAction(m_pRefreshAct);
+    m_pBranchMenu->addAction(m_pResetAct);
+    m_pBranchMenu->addAction(m_pToLogAct);
+    m_pBranchMenu->addAction(m_pToRelLogAct);
+    m_pBranchMenu->addSeparator();
+    m_pBranchMenu->addAction(m_pExpandAct);
+    m_pBranchMenu->addAction(m_pCollapseAct);
+
+    m_pViewMenu = new QMenu();
+    m_pBranchMenu->addAction(m_pCopyAct);
+    m_pBranchMenu->addAction(m_pRefreshAct);
+    m_pBranchMenu->addAction(m_pResetAct);
+    m_pBranchMenu->addAction(m_pToLogAct);
+    m_pBranchMenu->addAction(m_pToRelLogAct);
+    m_pBranchMenu->addSeparator();
+    m_pBranchMenu->addAction(m_pExpandAct);
+    m_pBranchMenu->addAction(m_pCollapseAct);
+    m_pBranchMenu->addSeparator();
 }
 
 
@@ -2761,70 +2873,131 @@ VBoxDbgStatsView::~VBoxDbgStatsView()
 }
 
 
-#if 0
-/**
- * Hides all parent branches which doesn't have any visible leafs.
- */
-static void hideParentBranches(VBoxDbgStatsLeafItem *pItem)
+void
+VBoxDbgStatsView::updateStats(const QString &rPatStr)
 {
-#ifdef VBOXDBG_USE_QT4
-    /// @todo
-    NOREF(pItem);
-#else
-    for (VBoxDbgStatsItem *pParent = pItem->getParent(); pParent; pParent = pParent->getParent())
-    {
-        QListViewItem *pChild = pParent->firstChild();
-        while (pChild && !pChild->isVisible())
-            pChild = pChild->nextSibling();
-        if (pChild)
-            return;
-        pParent->setVisible(false);
-    }
-#endif
-}
-
-/**
- * Shows all parent branches
- */
-static void showParentBranches(VBoxDbgStatsLeafItem *pItem)
-{
-    for (VBoxDbgStatsItem *pParent = pItem->getParent(); pParent; pParent = pParent->getParent())
-        pParent->setVisible(true);
-}
-#endif
-
-
-void VBoxDbgStatsView::updateStats(const QString &rPatStr)
-{
-    if (m_pModel->updateStats(rPatStr))
-        setRootIndex(m_pModel->getRootIndex()); /// @todo this is a hack?
-
-#if 0 /* later */
-    m_pCur = m_pHead;
     m_PatStr = rPatStr;
-    int rc = stamEnum(m_PatStr, updateCallback, this);
-    if (VBOX_SUCCESS(rc))
-    {
-        /* hide what's left */
-        for (VBoxDbgStatsLeafItem *pCur = m_pCur; pCur; pCur = pCur->m_pNext)
-            if (pCur->isVisible())
-            {
-                pCur->setVisible(false);
-                hideParentBranches(pCur);
-            }
-    }
-    m_pCur = NULL;
-#endif
-    NOREF(rPatStr);
+    if (m_pModel->updateStatsByPattern(rPatStr))
+        setRootIndex(m_pModel->getRootIndex()); /// @todo this is a hack?
 }
 
-void VBoxDbgStatsView::resetStats(const QString &rPatStr)
+
+void
+VBoxDbgStatsView::contextMenuEvent(QContextMenuEvent *a_pEvt)
 {
-    stamReset(rPatStr);
+    /*
+     * Get the selected item.
+     * If it's a mouse event select the item under the cursor (if any).
+     */
+    QModelIndex Idx;
+    if (a_pEvt->reason() == QContextMenuEvent::Mouse)
+    {
+        Idx = indexAt(a_pEvt->pos());
+        if (Idx.isValid())
+            setCurrentIndex(Idx);
+    }
+    else
+    {
+        QModelIndexList SelIdx = selectedIndexes();
+        if (!SelIdx.isEmpty())
+            Idx = SelIdx.at(0);
+    }
+
+    /*
+     * Popup the corresponding menu.
+     */
+    QMenu *pMenu;
+    if (!Idx.isValid())
+        pMenu = m_pViewMenu;
+    else if (m_pModel->hasChildren(Idx))
+        pMenu = m_pBranchMenu;
+    else
+        pMenu = m_pLeafMenu;
+    if (pMenu)
+    {
+        m_pRefreshAct->setEnabled(!Idx.isValid() || Idx == m_pModel->getRootIndex());
+        m_CurIndex = Idx;
+        m_pCurMenu = pMenu;
+
+        pMenu->exec(a_pEvt->globalPos());
+
+        m_pCurMenu = NULL;
+        m_CurIndex = QModelIndex();
+        m_pRefreshAct->setEnabled(true);
+    }
+    a_pEvt->accept();
 }
 
 
-#if 0 /* later */
+void
+VBoxDbgStatsView::actExpand()
+{
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    if (Idx.isValid())
+        expand(Idx);
+}
+
+
+void
+VBoxDbgStatsView::actCollapse()
+{
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    if (Idx.isValid())
+        collapse(Idx);
+}
+
+
+void
+VBoxDbgStatsView::actRefresh()
+{
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    if (!Idx.isValid() || Idx == m_pModel->getRootIndex())
+        m_pModel->updateStatsByPattern(m_PatStr);
+    else
+        m_pModel->updateStatsByIndex(Idx);
+}
+
+
+void
+VBoxDbgStatsView::actReset()
+{
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    if (!Idx.isValid() || Idx == m_pModel->getRootIndex())
+        m_pModel->resetStatsByPattern(m_PatStr);
+    else
+        m_pModel->resetStatsByIndex(Idx);
+}
+
+
+void
+VBoxDbgStatsView::actCopy()
+{
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    m_pModel->copyTreeToClipboard(Idx);
+}
+
+
+void
+VBoxDbgStatsView::actToLog()
+{
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    m_pModel->logTree(Idx, false /* a_fReleaseLog */);
+}
+
+
+void
+VBoxDbgStatsView::actToRelLog()
+{
+    QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
+    m_pModel->logTree(Idx, true /* a_fReleaseLog */);
+}
+
+
+
+
+
+
+#if 0 /* later? */
 
 static void setOpenTree(QListViewItem *pItem, bool f)
 {
@@ -2839,18 +3012,6 @@ static void setOpenTree(QListViewItem *pItem, bool f)
         setOpenTree(pItem, f);
 #endif
 }
-
-#ifndef VBOXDBG_USE_QT4
-void VBoxDbgStatsView::expandAll()
-{
-    setOpenTree(m_pRoot, true);
-}
-
-void VBoxDbgStatsView::collapsAll()
-{
-    setOpenTree(m_pRoot, false);
-}
-#endif /* QT3 */
 
 
 /*static*/ DECLCALLBACK(int) VBoxDbgStatsView::updateCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
@@ -3234,7 +3395,6 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     pSB->setMaximumSize(pSB->sizeHint());
     connect(pSB, SIGNAL(valueChanged(int)), this, SLOT(setRefresh(int)));
 
-
     /*
      * Create the tree view and setup the layout.
      */
@@ -3249,25 +3409,12 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     pVLayout->addWidget(m_pView);
     this->setLayout(pVLayout);
 
-#if 0 //fixme
     /*
-     * Perform the first refresh to get a good window size.
-     * We do this with sorting disabled because it's horribly slow otherwise.
+     * Expand all and resize columns...
      */
-//later:    int iColumn = m_pView->sortColumn();
-    m_pView->setUpdatesEnabled(false);
-    m_pView->setSortingEnabled(false);
-    refresh();
-//later:    m_pView->sortItems(iColumn, Qt::AscendingOrder);
- //   QTreeView::expandAll
-#endif
     m_pView->expandAll();
     for (int i = 0; i <= 8; i++)
-    {
-        printf("%#x: %d", i, m_pView->columnWidth(i));
         m_pView->resizeColumnToContents(i);
-        printf(" -> %d\n", m_pView->columnWidth(i));
-    }
 
     /*
      * Create a refresh timer and start it.

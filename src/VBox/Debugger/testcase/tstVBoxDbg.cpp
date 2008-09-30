@@ -61,25 +61,29 @@ int main(int argc, char **argv)
         rc = DBGGuiCreateForVM(pVM, &pGui, &pGuiVT);
         if (RT_SUCCESS(rc))
         {
-            RTPrintf(TESTCASE ": calling pfnShowCommandLine...\n");
-            rc = pGuiVT->pfnShowCommandLine(pGui);
-            if (RT_FAILURE(rc))
+            if (argc <= 1 || argc == 2)
             {
-                RTPrintf(TESTCASE ": error: pfnShowCommandLine failed! rc=%Rrc\n", rc);
-                cErrors++;
+                RTPrintf(TESTCASE ": calling pfnShowCommandLine...\n");
+                rc = pGuiVT->pfnShowCommandLine(pGui);
+                if (RT_FAILURE(rc))
+                {
+                    RTPrintf(TESTCASE ": error: pfnShowCommandLine failed! rc=%Rrc\n", rc);
+                    cErrors++;
+                }
             }
 
-#if 1
-            RTPrintf(TESTCASE ": calling pfnShowStatistics...\n");
-            pGuiVT->pfnShowStatistics(pGui);
-            if (RT_FAILURE(rc))
+            if (argc <= 1 || argc == 3)
             {
-                RTPrintf(TESTCASE ": error: pfnShowStatistics failed! rc=%Rrc\n", rc);
-                cErrors++;
+                RTPrintf(TESTCASE ": calling pfnShowStatistics...\n");
+                pGuiVT->pfnShowStatistics(pGui);
+                if (RT_FAILURE(rc))
+                {
+                    RTPrintf(TESTCASE ": error: pfnShowStatistics failed! rc=%Rrc\n", rc);
+                    cErrors++;
+                }
             }
-#endif
 
-            pGuiVT->pfnAdjustRelativePos(pGui, 64, 64, 128, 64);
+            pGuiVT->pfnAdjustRelativePos(pGui, 0, 0, 640, 480);
             RTPrintf(TESTCASE ": calling App.exec()...\n");
             App.exec();
         }
