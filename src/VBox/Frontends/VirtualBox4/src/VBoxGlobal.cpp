@@ -60,6 +60,7 @@
 
 
 #if defined (Q_WS_MAC)
+#include "VBoxUtils.h"
 #include <Carbon/Carbon.h> // for HIToolbox/InternetConfig
 #endif
 
@@ -3430,7 +3431,11 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
 /* static */
 QString VBoxGlobal::systemLanguageId()
 {
-#ifdef Q_OS_UNIX
+#if defined (Q_WS_MAC)
+    /* QLocale return the right id only if the user select the format of the
+     * language also. So we use our own implementation */
+    return ::darwinSystemLanguage();
+#elif defined (Q_OS_UNIX)
     const char *s = RTEnvGet ("LC_ALL");
     if (s == 0)
         s = RTEnvGet ("LC_MESSAGES");
