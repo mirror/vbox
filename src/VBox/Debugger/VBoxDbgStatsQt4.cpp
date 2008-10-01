@@ -1990,10 +1990,17 @@ VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &a_rParent) co
     PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
     if (!pParent)
     {
+        if (    a_rParent.isValid()
+            ||  iRow
+            ||  (unsigned)iColumn < DBGGUI_STATS_COLUMNS)
+        {
+            Assert(!a_rParent.isValid());
+            Assert(!iRow);
+            Assert((unsigned)iColumn < DBGGUI_STATS_COLUMNS);
+            return QModelIndex();
+        }
+
         /* root */
-        AssertReturn(!a_rParent.isValid(), QModelIndex());
-        AssertReturn(!iRow, QModelIndex());
-        AssertReturn((unsigned)iColumn < DBGGUI_STATS_COLUMNS, QModelIndex());
         return createIndex(0, iColumn, m_pRoot);
     }
     if ((unsigned)iRow >= pParent->cChildren)
