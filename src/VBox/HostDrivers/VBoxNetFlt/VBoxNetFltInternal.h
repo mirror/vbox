@@ -165,8 +165,13 @@ typedef struct VBOXNETFLTINS
             /** Mutex protection used for loopback. */
             RTSEMFASTMUTEX hFastMtx;
 # elif defined(RT_OS_WINDOWS)
+#  ifdef VBOX_NETFLT_ONDEMAND_BIND
+            /** filter driver device context */
+            ADAPT IfAdaptor;
+#  else
             /** pointer to the filter driver device context */
             PADAPT volatile pIfAdaptor;
+#  endif
 # else
 #  error "PORTME"
 # endif
