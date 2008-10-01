@@ -2411,14 +2411,17 @@ VBoxDbgStatsModel::copyTreeToClipboard(QModelIndex &a_rRoot) const
 /*static*/ void
 VBoxDbgStatsModel::logNode(PDBGGUISTATSNODE a_pNode, bool a_fReleaseLog)
 {
-    /* this node */
-    QString SelfStr;
-    stringifyNodeNoRecursion(a_pNode, SelfStr);
-    QByteArray SelfByteArray = SelfStr.toUtf8();
-    if (a_fReleaseLog)
-        RTLogRelPrintf("%s\n", SelfByteArray.constData());
-    else
-        RTLogPrintf("%s\n", SelfByteArray.constData());
+    /* this node (if it has data) */
+    if (a_pNode->enmType != STAMTYPE_INVALID)
+    {
+        QString SelfStr;
+        stringifyNodeNoRecursion(a_pNode, SelfStr);
+        QByteArray SelfByteArray = SelfStr.toUtf8();
+        if (a_fReleaseLog)
+            RTLogRelPrintf("%s\n", SelfByteArray.constData());
+        else
+            RTLogPrintf("%s\n", SelfByteArray.constData());
+    }
 
     /* the children */
     uint32_t const cChildren = a_pNode->cChildren;
@@ -2578,6 +2581,7 @@ VBoxDbgStatsModelVM::createNewTree(QString &a_rPatStr)
  *
  */
 
+#include <stdio.h>
 
 VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxDbgStats *a_pParent/* = NULL*/)
     : QTreeView(a_pParent), VBoxDbgBase(a_pVM), m_pModel(a_pModel), m_PatStr(), m_pParent(a_pParent),
@@ -2589,8 +2593,10 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxD
      */
     setRootIsDecorated(true);
     setModel(m_pModel);
-    setRootIndex(m_pModel->getRootIndex());
+    QModelIndex RootIdx = m_pModel->getRootIndex(); /* This should really be QModelIndex(), but Qt on darwin does wrong things then. */
+    setRootIndex(RootIdx);
     setItemsExpandable(true);
+    setAlternatingRowColors(true);
     setSelectionBehavior(SelectRows);
     setSelectionMode(SingleSelection);
     /// @todo sorting setSortingEnabled(true);
@@ -2608,9 +2614,17 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxD
 
     m_pCopyAct->setShortcut(QKeySequence::Copy);
     m_pExpandAct->setShortcut(QKeySequence("Ctrl+E"));
+    m_pCollapseAct->setShortcut(QKeySequence("Ctrl+D"));
     m_pRefreshAct->setShortcut(QKeySequence("Ctrl+R"));
-    m_pToLogAct->setShortcut(QKeySequence("Ctrl+L"));
-    m_pToRelLogAct->setShortcut(QKeySequence("Alt+L"));
+    m_pToLogAct->setShortcut(QKeySequence("Ctrl+W"));
+    m_pToRelLogAct->setShortcut(QKeySequence("Alt+W"));
+
+    addAction(m_pCopyAct);
+    addAction(m_pExpandAct);
+    addAction(m_pCollapseAct);
+    addAction(m_pRefreshAct);
+    addAction(m_pToLogAct);
+    addAction(m_pToRelLogAct);
 
     connect(m_pExpandAct,   SIGNAL(triggered(bool)), this, SLOT(actExpand()));
     connect(m_pCollapseAct, SIGNAL(triggered(bool)), this, SLOT(actCollapse()));
@@ -2619,10 +2633,6 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxD
     connect(m_pCopyAct,     SIGNAL(triggered(bool)), this, SLOT(actCopy()));
     connect(m_pToLogAct,    SIGNAL(triggered(bool)), this, SLOT(actToLog()));
     connect(m_pToRelLogAct, SIGNAL(triggered(bool)), this, SLOT(actToRelLog()));
-
-    /// @todo fix shortcuts!
-addAction(m_pExpandAct); /// testing
-addAction(m_pCopyAct); /// testing
 
 
     /*
@@ -2892,6 +2902,14 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     m_pTimer = new QTimer(this);
     connect(m_pTimer, SIGNAL(timeout()), this, SLOT(refresh()));
     setRefresh(uRefreshRate);
+
+    /*
+     * And some shortcuts.
+     */
+    m_pFocusToPat = new QAction("", this);
+    m_pFocusToPat->setShortcut(QKeySequence("Ctrl+L"));
+    addAction(m_pFocusToPat);
+    connect(m_pFocusToPat, SIGNAL(triggered(bool)), this, SLOT(actFocusToPat()));
 }
 
 
@@ -2944,7 +2962,8 @@ void VBoxDbgStats::refresh()
 }
 
 
-void VBoxDbgStats::setRefresh(int iRefresh)
+void
+VBoxDbgStats::setRefresh(int iRefresh)
 {
     if ((unsigned)iRefresh != m_uRefreshRate)
     {
@@ -2954,5 +2973,12 @@ void VBoxDbgStats::setRefresh(int iRefresh)
             m_pTimer->stop();
         m_uRefreshRate = iRefresh;
     }
+}
+
+
+void
+VBoxDbgStats::actFocusToPat()
+{
+    m_pPatCB->setFocus();
 }
 
