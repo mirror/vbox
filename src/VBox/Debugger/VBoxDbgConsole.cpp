@@ -23,6 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DBGG
 #include "VBoxDbgConsole.h"
 
 #ifdef VBOXDBG_USE_QT4
@@ -209,12 +210,15 @@ VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char
     NOREF(pszName);
 }
 
+
 VBoxDbgConsoleInput::~VBoxDbgConsoleInput()
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
 }
 
-void VBoxDbgConsoleInput::setLineEdit(QLineEdit *pEdit)
+
+void
+VBoxDbgConsoleInput::setLineEdit(QLineEdit *pEdit)
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
     QComboBox::setLineEdit(pEdit);
@@ -222,7 +226,9 @@ void VBoxDbgConsoleInput::setLineEdit(QLineEdit *pEdit)
         connect(pEdit, SIGNAL(returnPressed()), this, SLOT(returnPressed()));
 }
 
-void VBoxDbgConsoleInput::returnPressed()
+
+void
+VBoxDbgConsoleInput::returnPressed()
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
     /* deal with the current command. */
@@ -270,6 +276,7 @@ void VBoxDbgConsoleInput::returnPressed()
 
 VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
     : VBoxDbgBase(pVM), m_pOutput(NULL), m_pInput(NULL),
+    m_fInputNeedsEnabling(false), m_fInputRestoreFocus(false),
     m_pszInputBuf(NULL), m_cbInputBuf(0), m_cbInputBufAlloc(0),
     m_pszOutputBuf(NULL), m_cbOutputBuf(0), m_cbOutputBufAlloc(0),
     m_pTimer(NULL), m_fUpdatePending(false), m_Thread(NIL_RTTHREAD), m_EventSem(NIL_RTSEMEVENT), m_fTerminate(false)
@@ -415,7 +422,7 @@ VBoxDbgConsole::~VBoxDbgConsole()
     /*
      * Wait for the thread.
      */
-    ASMAtomicXchgSize(&m_fTerminate, true);
+    ASMAtomicWriteBool(&m_fTerminate, true);
     RTSemEventSignal(m_EventSem);
     if (m_Thread != NIL_RTTHREAD)
     {
@@ -498,8 +505,10 @@ VBoxDbgConsole::commandSubmitted(const QString &rCommand)
 #endif
 
     m_fInputRestoreFocus = m_pInput->hasFocus();    /* dirty focus hack */
+    m_fInputNeedsEnabling = true;
     m_pInput->setEnabled(false);
 
+    Log(("VBoxDbgConsole::commandSubmitted: %s (input-enabled=%RTbool)\n", psz, m_pInput->isEnabled()));
     unlock();
 }
 
@@ -555,19 +564,27 @@ VBoxDbgConsole::backInput(PDBGCBACK pBack, uint32_t cMillies)
     VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
     pThis->lock();
 
-    /* questing for input means it's done processing. */
-    pThis->m_pInput->setEnabled(true);
-    /* dirty focus hack: */
-    if (pThis->m_fInputRestoreFocus)
-        QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kInputRestoreFocus));
-
     bool fRc = true;
     if (!pThis->m_cbInputBuf)
     {
+        /*
+         * Questing for input and not finding any means it's done processing
+         * any commands that we've queued. Re-enable the input field if required.
+         */
+        if (pThis->m_fInputNeedsEnabling)
+        {
+            pThis->m_fInputNeedsEnabling = false;
+            QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kInputEnable));
+        }
+
+        /*
+         * Wait outside the lock for the requested time, then check again.
+         */
         pThis->unlock();
         RTSemEventWait(pThis->m_EventSem, cMillies);
         pThis->lock();
-        fRc = pThis->m_cbInputBuf || pThis->m_fTerminate;
+        fRc = pThis->m_cbInputBuf
+           || ASMAtomicUoReadBool(&pThis->m_fTerminate);
     }
 
     pThis->unlock();
@@ -596,7 +613,7 @@ VBoxDbgConsole::backRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcb
 
     pThis->lock();
     int rc = VINF_SUCCESS;
-    if (!pThis->m_fTerminate)
+    if (!ASMAtomicUoReadBool(&pThis->m_fTerminate))
     {
         if (pThis->m_cbInputBuf)
         {
@@ -659,7 +676,7 @@ VBoxDbgConsole::backWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size
     if (pcbWritten)
         *pcbWritten = cbBuf;
 
-    if (pThis->m_fTerminate)
+    if (ASMAtomicUoReadBool(&pThis->m_fTerminate))
         rc = VERR_GENERAL_FAILURE;
 
     /*
@@ -694,9 +711,11 @@ VBoxDbgConsole::backThread(RTTHREAD Thread, void *pvUser)
      * Create and execute the console.
      */
     int rc = pThis->dbgcCreate(&pThis->m_Back.Core, 0);
-    LogFlow(("backThread: returns %Vrc\n", rc));
-    if (!pThis->m_fTerminate)
-        QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kTerminated));
+    if (!ASMAtomicUoReadBool(&pThis->m_fTerminate))
+        QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(rc == VINF_SUCCESS
+                                                               ? VBoxDbgConsoleEvent::kTerminatedUser
+                                                               : VBoxDbgConsoleEvent::kTerminatedOther));
+    LogFlow(("backThread: returns %Rrc (m_fTerminate=%RTbool)\n", rc, ASMAtomicUoReadBool(&pThis->m_fTerminate)));
     return rc;
 }
 
@@ -713,6 +732,7 @@ VBoxDbgConsole::event(QEvent *pGenEvent)
         {
             /* make update pending. */
             case VBoxDbgConsoleEvent::kUpdate:
+                lock();
                 if (!m_fUpdatePending)
                 {
                     m_fUpdatePending = true;
@@ -723,20 +743,28 @@ VBoxDbgConsole::event(QEvent *pGenEvent)
                     m_pTimer->start(10, true /* single shot */);
 #endif
                 }
+                unlock();
                 break;
 
-            /* dirty hack: restores the focus */
-            case VBoxDbgConsoleEvent::kInputRestoreFocus:
-                if (m_fInputRestoreFocus)
-                {
-                    m_fInputRestoreFocus = false;
-                    if (!m_pInput->hasFocus())
-                        m_pInput->setFocus();
-                }
+            /* Re-enable the input field and restore focus. */
+            case VBoxDbgConsoleEvent::kInputEnable:
+                Log(("VBoxDbgConsole: kInputEnable (input-enabled=%RTbool)\n", m_pInput->isEnabled()));
+                m_pInput->setEnabled(true);
+                if (    m_fInputRestoreFocus
+                    &&  !m_pInput->hasFocus())
+                    m_pInput->setFocus(); /* this is a hack. */
+                m_fInputRestoreFocus = false;
                 break;
 
-            /* the thread terminated */
-            case VBoxDbgConsoleEvent::kTerminated:
+            /* The thread terminated by user command (exit, quit, bye). */
+            case VBoxDbgConsoleEvent::kTerminatedUser:
+                Log(("VBoxDbgConsole: kTerminatedUser (input-enabled=%RTbool)\n", m_pInput->isEnabled()));
+                close();
+                break;
+
+            /* The thread terminated for some unknown reason., disable input */
+            case VBoxDbgConsoleEvent::kTerminatedOther:
+                Log(("VBoxDbgConsole: kTerminatedOther (input-enabled=%RTbool)\n", m_pInput->isEnabled()));
                 m_pInput->setEnabled(false);
                 break;
 

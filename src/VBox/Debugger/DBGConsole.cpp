@@ -1861,7 +1861,8 @@ int dbgcRun(PDBGC pDbgc)
     int rc = VINF_SUCCESS;
     for (;;)
     {
-        if (pDbgc->pVM && DBGFR3CanWait(pDbgc->pVM))
+        if (    pDbgc->pVM
+            &&  DBGFR3CanWait(pDbgc->pVM))
         {
             /*
              * Wait for a debug event.
@@ -2096,6 +2097,6 @@ DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
      * Cleanup console debugger session.
      */
     dbgcDestroy(pDbgc);
-    return rc;
+    return rc == VERR_DBGC_QUIT ? VINF_SUCCESS : rc;
 }
 
