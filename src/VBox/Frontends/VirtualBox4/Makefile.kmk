@@ -483,22 +483,35 @@ endif # win
 # If there is the accessible plugin & we are using our home-made qt put it to
 # the output dir
 # @todo: fix this &| add it to the qt4 unit
-# note: it seems that $(PATH_SDK_QT4) isn't defined if this makefile is called
-# from the root VBox directory.
-if1of ($(KBUILD_TARGET),)
-#if1of ($(KBUILD_TARGET),darwin win)
-# Where are the plugins located
+# @todo: solaris, all linux distros where we
+if1of ($(KBUILD_TARGET),darwin win)
 PREFIX=lib
 SUFFIX=
+INST_PATH=$(INST_VIRTUALBOX)Contents/MacOS/accessible/
 ifeq ($(KBUILD_TARGET),win)
 PREFIX=
 SUFFIX=4
+INST_PATH=accessible/
 endif
-PATH_SDK_QT4_PLUGINS=$(PATH_SDK_QT4)/plugins
-# Generate the target dir
-BLDDIRS=$(PATH_BIN)/accessible/
-OTHERS += \
-      $(PATH_BIN)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL)
+# Add the accessible plugin as a install target
+INSTALLS += accessible
+accessible_INST = $(INST_PATH)
+accessible_MODE = 0644
+accessible_SOURCES = $(VBOX_VIRTUALBOX4_OUT_DIR)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL)
+
+BLDDIRS += $(VBOX_VIRTUALBOX4_OUT_DIR)/accessible
+# The rule to fix the accessible plugin
+$(VBOX_VIRTUALBOX4_OUT_DIR)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL): $(VBOX_PATH_QT4)/plugins/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL) | $$(dir $$@)
+	$(QUIET)$(INSTALL) $< ${@}
+ifeq ($(KBUILD_TARGET), darwin)
+	$(call MSG_TOOL,install_name_tool,accessible,$<,$@)
+	$(QUIET)install_name_tool \
+       -change           QtCore.framework/Versions/4/QtCore \
+	   @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
+       -change           QtGui.framework/Versions/4/QtGui \
+	   @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
+	${@}
+endif
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
@@ -607,17 +620,6 @@ IMAGES :=
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
 include $(KBUILD_PATH)/subfooter.kmk
-
-$(PATH_BIN)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL): $(PATH_SDK_QT4_PLUGINS)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL) | $$(dir $$@)
-	$(INSTALL) -m 0644 $< ${@}
-ifeq ($(KBUILD_TARGET), darwin)
-	install_name_tool \
-       -change           QtCore.framework/Versions/4/QtCore \
-	   @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
-       -change           QtGui.framework/Versions/4/QtGui \
-	   @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
-	${@}
-endif
 
 #
 # Update all known NLS translation (.ts) files in the nls/ subdirectory.
