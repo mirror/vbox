@@ -788,8 +788,6 @@ static void apic_init_ipi(APICState *s)
     memset(s->isr, 0, sizeof(s->isr));
     memset(s->tmr, 0, sizeof(s->tmr));
     memset(s->irr, 0, sizeof(s->irr));
-    for(i = 0; i < APIC_LVT_NB; i++)
-        s->lvt[i] = 1 << 16; /* mask LVT */
     s->esr = 0;
     memset(s->icr, 0, sizeof(s->icr));
     s->divide_conf = 0;
@@ -1560,14 +1558,28 @@ static void ioapic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t va
                 return;
             default:
                 index = (s->ioregsel - 0x10) >> 1;
-                if (index >= 0 && index < IOAPIC_NUM_PINS) {
+                if (index >= 0 && index < IOAPIC_NUM_PINS) {                    
                     if (s->ioregsel & 1) {
                         s->ioredtbl[index] &= 0xffffffff;
                         s->ioredtbl[index] |= (uint64_t)val << 32;
                     } else {
-                        s->ioredtbl[index] &= ~0xffffffffULL;
-                        s->ioredtbl[index] |= val;
+#ifdef VBOX
+                        /* According to IOAPIC spec, vectors should be from 0x10 to 0xfe */
+                        uint8_t vec = val & 0xff;
+                        if ((vec >= 0x10) && (vec < 0xff))
+                        {
+                            s->ioredtbl[index] &= ~0xffffffffULL;
+                            s->ioredtbl[index] |= val;
+                        }
+                        else
+                        {
+                            LogRel(("IOAPIC BUG: bad vector writing %x(sel=%x) to %d\n", val, s->ioregsel, index));
+                        }
                     }
+#else
+                    s->ioredtbl[index] &= ~0xffffffffULL;
+                    s->ioredtbl[index] |= val;
+#endif
                     ioapic_service(s);
                 }
         }
