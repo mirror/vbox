@@ -260,11 +260,9 @@ VBOX_WITH_HEADLESS = 1
 ## the Direct Framebuffer GUI
 #VBOX_WITH_VBOXFB = 1
 # Enable the debugger.
-ifneq ($(KBUILD_TYPE),release)
- VBOX_WITH_DEBUGGER = 1
- # Enable the debugger GUI.
- VBOX_WITH_DEBUGGER_GUI = 1
-endif
+VBOX_WITH_DEBUGGER = 1
+# Enable the debugger GUI.
+VBOX_WITH_DEBUGGER_GUI = 1
 # build the Host Guest Communication Manager component
 VBOX_WITH_HGCM = 1
 # Enable the USB feature.
@@ -590,6 +588,7 @@ ifdef VBOX_OSE
  ifn1of ($(KBUILD_TARGET), darwin solaris)
   VBOX_WITH_NETFLT=
  endif
+ VBOX_WITH_DEBUGGER=
  VBOX_WITH_DEBUGGER_GUI=
  VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS=
  VBOX_WITH_ADDITIONS_PACKING=
