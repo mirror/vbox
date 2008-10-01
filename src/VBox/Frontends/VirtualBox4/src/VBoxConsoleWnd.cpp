@@ -608,6 +608,11 @@ VBoxConsoleWnd::~VBoxConsoleWnd()
     if (dockImgOS)
         CGImageRelease (dockImgOS);
 #endif
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* destroy the debugger gui */
+    dbgDestroy();
+#endif
 }
 
 //
@@ -1004,6 +1009,11 @@ void VBoxConsoleWnd::closeView()
         machine.SetExtraData (VBoxDefs::GUI_AutoresizeGuest,
                               vmAutoresizeGuestAction->isChecked() ? "on" : "off");
     }
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* close & destroy the debugger gui */
+    dbgDestroy();
+#endif
 
     console->detach();
 
@@ -3490,21 +3500,23 @@ bool VBoxConsoleWnd::dbgCreated()
         rc = pfnGuiCreate (csession.iface(), &mDbgGui, &mDbgGuiVT);
         if (RT_SUCCESS (rc))
         {
-            if (    DBGGUIVT_ARE_VERSIONS_COMPATIBLE(mDbgGuiVT->u32Version, DBGGUIVT_VERSION)
-                ||  mDbgGuiVT->u32EndVersion != mDbgGuiVT->u32Version)
+            if (    DBGGUIVT_ARE_VERSIONS_COMPATIBLE (mDbgGuiVT->u32Version, DBGGUIVT_VERSION)
+                ||  mDbgGuiVT->u32EndVersion == mDbgGuiVT->u32Version)
             {
+                mDbgGuiVT->pfnSetParent (mDbgGui, (QWidget *)this);
+                mDbgGuiVT->pfnSetMenu (mDbgGui, (QMenu *)mDbgMenu);
                 dbgAdjustRelativePos();
                 return true;
             }
 
-            LogRel(("DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
-                    mDbgGuiVT->u32Version, mDbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
+            LogRel (("DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
+                     mDbgGuiVT->u32Version, mDbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
         }
         else
-            LogRel(("DBGGuiCreate failed, rc=%Rrc\n", rc));
+            LogRel (("DBGGuiCreate failed, rc=%Rrc\n", rc));
     }
     else
-        LogRel(("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
+        LogRel (("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
 
     mDbgGui = NULL;
     mDbgGuiVT = NULL;

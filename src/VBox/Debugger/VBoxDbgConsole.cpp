@@ -276,7 +276,12 @@ VBoxDbgConsoleInput::returnPressed()
 
 
 VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
-    : VBoxDbgBase(pVM), m_pOutput(NULL), m_pInput(NULL), m_fInputRestoreFocus(false),
+#ifdef VBOXDBG_USE_QT4
+    : QWidget(pParent, Qt::Window),
+#else
+    : QVBox(pParent),
+#endif
+    VBoxDbgBase(pVM), m_pOutput(NULL), m_pInput(NULL), m_fInputRestoreFocus(false),
     m_pszInputBuf(NULL), m_cbInputBuf(0), m_cbInputBufAlloc(0),
     m_pszOutputBuf(NULL), m_cbOutputBuf(0), m_cbOutputBufAlloc(0),
     m_pTimer(NULL), m_fUpdatePending(false), m_Thread(NIL_RTTHREAD), m_EventSem(NIL_RTSEMEVENT),

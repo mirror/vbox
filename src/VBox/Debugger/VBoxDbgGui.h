@@ -75,6 +75,26 @@ public:
     virtual ~VBoxDbgGui();
 
     /**
+     * Sets the parent widget.
+     *
+     * @param   pParent     New parent widget.
+     * @remarks This only affects new windows.
+     */
+    void setParent(QWidget *pParent);
+
+    /**
+     * Sets the menu object.
+     *
+     * @param   pMenu       New menu object.
+     * @remarks This only affects new menu additions.
+     */
+#ifdef VBOXDBG_USE_QT4
+    void setMenu(QMenu *pMenu);
+#else
+    void setMenu(QPopupMenu *pMenu);
+#endif
+
+    /**
      * Show the default statistics window, creating it if necessary.
      *
      * @returns VBox status code.
@@ -152,6 +172,16 @@ protected:
     IMachine *m_pMachine;
     /** The VM instance. */
     PVM m_pVM;
+
+    /** The parent widget. */
+    QWidget *m_pParent;
+    /** The menu object for the 'debug' menu. */
+#ifdef VBOXDBG_USE_QT4
+    QMenu *m_pMenu;
+#else
+    QPopupMenu *m_pMenu;
+#endif
+
 
     /** The x-coordinate of the window we're relative to. */
     int m_x;

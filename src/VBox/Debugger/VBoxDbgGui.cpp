@@ -42,8 +42,9 @@
 
 VBoxDbgGui::VBoxDbgGui() :
     m_pDbgStats(NULL), m_pDbgConsole(NULL), m_pSession(NULL), m_pConsole(NULL),
-    m_pMachineDebugger(NULL), m_pMachine(NULL), m_pVM(NULL), m_x(0), m_y(0), m_cx(0), m_cy(0),
-    m_xDesktop(0), m_yDesktop(0), m_cxDesktop(0), m_cyDesktop(0)
+    m_pMachineDebugger(NULL), m_pMachine(NULL), m_pVM(NULL),
+    m_pParent(NULL), m_pMenu(NULL),
+    m_x(0), m_y(0), m_cx(0), m_cy(0), m_xDesktop(0), m_yDesktop(0), m_cxDesktop(0), m_cyDesktop(0)
 {
 
 }
@@ -106,14 +107,11 @@ int VBoxDbgGui::init(ISession *pSession)
 
 VBoxDbgGui::~VBoxDbgGui()
 {
-
-#ifndef VBOXDBG_USE_QT4
     if (m_pDbgStats)
     {
         delete m_pDbgStats;
         m_pDbgStats = NULL;
     }
-#endif
 
     if (m_pDbgConsole)
     {
@@ -148,17 +146,41 @@ VBoxDbgGui::~VBoxDbgGui()
     m_pVM = NULL;
 }
 
+void
+VBoxDbgGui::setParent(QWidget *pParent)
+{
+    m_pParent = pParent;
+}
+
+
+void
+#ifdef VBOXDBG_USE_QT4
+VBoxDbgGui::setMenu(QMenu *pMenu)
+#else
+VBoxDbgGui::setMenu(QPopupMenu *pMenu)
+#endif
+{
+    m_pMenu = pMenu;
+}
+
 
 int
 VBoxDbgGui::showStatistics()
 {
     if (!m_pDbgStats)
     {
-        m_pDbgStats = new VBoxDbgStats(m_pVM, "*");
+        m_pDbgStats = new VBoxDbgStats(m_pVM, "*", 0, m_pParent);
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionStatistics();
     }
+
     m_pDbgStats->show();
+#ifdef VBOXDBG_USE_QT4 /** @todo this isn't working right. */
+    m_pDbgStats->setWindowState(m_pDbgStats->windowState() & ~Qt::WindowMinimized);
+    //m_pDbgStats->activateWindow();
+    //m_pDbgStats->setFocus();
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -182,11 +204,18 @@ VBoxDbgGui::showConsole()
 {
     if (!m_pDbgConsole)
     {
-        m_pDbgConsole = new VBoxDbgConsole(m_pVM);
+        m_pDbgConsole = new VBoxDbgConsole(m_pVM, m_pParent);
         connect(m_pDbgConsole, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionConsole();
     }
+
     m_pDbgConsole->show();
+#ifdef VBOXDBG_USE_QT4 /** @todo this ain't working right. */
+    m_pDbgConsole->setWindowState(m_pDbgConsole->windowState() & ~Qt::WindowMinimized);
+    //m_pDbgConsole->activateWindow();
+    //m_pDbgConsole->setFocus();
+#endif
+
     return VINF_SUCCESS;
 }
 

@@ -60,6 +60,10 @@ typedef struct DBGGUIVT
     DECLCALLBACKMEMBER(int,  pfnShowStatistics)(PDBGGUI pGui);
     /** @copydoc DBGGuiShowCommandLine */
     DECLCALLBACKMEMBER(int,  pfnShowCommandLine)(PDBGGUI pGui);
+    /** @copydoc DBGGuiSetParent */
+    DECLCALLBACKMEMBER(void, pfnSetParent)(PDBGGUI pGui, void *pvParent);
+    /** @copydoc DBGGuiSetMenu */
+    DECLCALLBACKMEMBER(void, pfnSetMenu)(PDBGGUI pGui, void *pvMenu);
     /** The end version. (DBGGUIVT_VERSION) */
     uint32_t u32EndVersion;
 } DBGGUIVT;
@@ -143,6 +147,27 @@ DBGDECL(int) DBGGuiShowStatistics(PDBGGUI pGui);
  * @param   pGui        The instance returned by DBGGuiCreate().
  */
 DBGDECL(int) DBGGuiShowCommandLine(PDBGGUI pGui);
+
+/**
+ * Sets the parent windows.
+ *
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   pvParent    Pointer to a QWidget object.
+ *
+ * @remarks This will no affect any existing windows, so call it right after
+ *          creating the thing.
+ */
+DBGDECL(void) DBGGuiSetParent(PDBGGUI pGui, void *pvParent);
+
+/**
+ * Sets the debug menu object.
+ *
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   pvMenu      Pointer to a QMenu object.
+ *
+ * @remarks Call right after creation or risk losing menu item.
+ */
+DBGDECL(void) DBGGuiSetMenu(PDBGGUI pGui, void *pvMenu);
 
 /** @} */
 
