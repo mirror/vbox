@@ -1749,6 +1749,6 @@ $$(TARGET_VBoxXPCOM): $(XPCOM_C_NAMESPACE_MAP)
 
 # Generate linker map file filtering out unwanted global symbols.
 # Never used on windows, so we can use pipes as we wish.
-$(PATH_TARGET)/xpcom-namespace-cleanup.map: $(VBoxXPCOM_LIBS) $(VBoxXPCOM_OBJS_)
+$(PATH_TARGET)/xpcom-namespace-cleanup.map: $$(VBoxXPCOM_LIBS) $$(VBoxXPCOM_OBJS_)
 	$(call MSG_L1, Creating linker map $@ for scrubbing the symbol namespace)
 	$(QUIET)$(VBOX_NM) -p -g $^ | ( $(ECHO_EXT) '{ local: *; global: '; $(SED) -n -e '/^$$/b' -e '/:$$/b' -e '/ U /b' -e 's/^[^ ]* [A-Z] \(.*\)$$/\1/' -e 's/\<_Z[^ ]*$$/&;/p' -e 's/\<VBoxNs[^ ]*$$/&;/p' -e 's/\<_edata$$/&;/p' -e 's/\<_end$$/&;/p' -e 's/\<_etext$$/&;/p' -e 's/\<_fini$$/&;/p' -e 's/\<_init$$/&;/p'; $(ECHO_EXT) '};' ) > $@
