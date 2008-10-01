@@ -45,15 +45,11 @@
 #include <iprt/assert.h>
 
 
-#include <stdio.h> //remove me
-
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The number of column. */
 #define DBGGUI_STATS_COLUMNS    9
-
 
 
 /*******************************************************************************
@@ -2463,314 +2459,6 @@ VBoxDbgStatsModelVM::createNewTree(QString &a_rPatStr)
 
 
 
-#if 0 /* save for later */
-
-void VBoxDbgStatsLeafItem::update(STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit, STAMVISIBILITY enmVisibility, const char *pszDesc)
-{
-    /*
-     * Detect changes.
-     * This path will be taken on the first update and if a item
-     * is reregistred with a different unit/type (unlikely).
-     */
-    if (    enmType != m_enmType
-        ||  enmUnit != m_enmUnit)
-    {
-        m_enmType = enmType;
-        m_enmUnit = enmUnit;
-
-        /*
-         * Unit.
-         */
-        setText(1, STAMR3GetUnit(enmUnit));
-
-        /**
-         * Update the description.
-         * Insert two spaces as gap after the last left-aligned field.
-         * @todo dmik: How to make this better?
-         */
-        m_DescStr = QString("  ") + QString(pszDesc);
-
-        /*
-         * Clear the content.
-         */
-        setText(2, "");
-        setText(3, "");
-        setText(4, "");
-        setText(5, "");
-        setText(6, "");
-        setText(8, m_DescStr);
-    }
-
-    /*
-     * Update the data.
-     */
-    char sz[64];
-    switch (enmType)
-    {
-        case STAMTYPE_COUNTER:
-        {
-            const uint64_t cPrev = m_Data.Counter.c;
-            m_Data.Counter = *(PSTAMCOUNTER)pvSample;
-            setText(2, formatNumber(sz, m_Data.Counter.c));
-            setText(7, formatNumberSigned(sz, m_Data.Counter.c - cPrev));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.Counter.c));
-            break;
-        }
-
-        case STAMTYPE_PROFILE:
-        case STAMTYPE_PROFILE_ADV:
-        {
-            const uint64_t cPeriodsPrev = m_Data.Profile.cPeriods;
-            m_Data.Profile = *(PSTAMPROFILE)pvSample;
-            if (m_Data.Profile.cPeriods)
-            {
-                setText(2, formatNumber(sz, m_Data.Profile.cPeriods));
-                setText(3, formatNumber(sz, m_Data.Profile.cTicksMin));
-                setText(4, formatNumber(sz, m_Data.Profile.cTicks / m_Data.Profile.cPeriods));
-                setText(5, formatNumber(sz, m_Data.Profile.cTicksMax));
-                setText(6, formatNumber(sz, m_Data.Profile.cTicks));
-                setText(7, formatNumberSigned(sz, m_Data.Profile.cPeriods - cPeriodsPrev));
-                setVisible(enmVisibility != STAMVISIBILITY_NOT_GUI);
-            }
-            else
-            {
-                setText(2, "0");
-                setText(3, "0");
-                setText(4, "0");
-                setText(5, "0");
-                setText(6, "0");
-                setText(7, "0");
-                setVisible(enmVisibility != STAMVISIBILITY_NOT_GUI && enmVisibility == STAMVISIBILITY_ALWAYS);
-            }
-            break;
-        }
-
-        case STAMTYPE_RATIO_U32:
-        case STAMTYPE_RATIO_U32_RESET:
-        {
-            const STAMRATIOU32 RatioU32 = m_Data.RatioU32;
-            m_Data.RatioU32 = *(PSTAMRATIOU32)pvSample;
-
-            char sz2[64];
-            char sz3[128];
-            strcat(strcat(strcpy(sz3, formatNumber(sz, m_Data.RatioU32.u32A)), " : "), formatNumber(sz2, m_Data.RatioU32.u32B));
-            setText(2, sz3);
-            ///@todo ratio: setText(7, formatNumberSigned(sz, m_Data.u64 - u64Prev));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.RatioU32.u32A || m_Data.RatioU32.u32B));
-            break;
-        }
-
-        case STAMTYPE_CALLBACK:
-        {
-            const char *pszString = (const char *)pvSample;
-            setText(2, pszString);
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || *pszString));
-            break;
-        }
-
-        case STAMTYPE_U8:
-        case STAMTYPE_U8_RESET:
-        {
-            const uint8_t u8Prev = m_Data.u8;
-            m_Data.u8 = *(uint8_t *)pvSample;
-            setText(2, formatNumber(sz, m_Data.u8));
-            setText(7, formatNumberSigned(sz, (int32_t)m_Data.u8 - u8Prev));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u8));
-            break;
-        }
-
-        case STAMTYPE_X8:
-        case STAMTYPE_X8_RESET:
-        {
-            const uint8_t u8Prev = m_Data.u8;
-            m_Data.u8 = *(uint8_t *)pvSample;
-            setText(2, formatHexNumber(sz, m_Data.u8, 2));
-            setText(7, formatHexNumber(sz, m_Data.u8 - u8Prev, 1));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u8));
-            break;
-        }
-
-        case STAMTYPE_U16:
-        case STAMTYPE_U16_RESET:
-        {
-            const uint16_t u16Prev = m_Data.u16;
-            m_Data.u16 = *(uint16_t *)pvSample;
-            setText(2, formatNumber(sz, m_Data.u16));
-            setText(7, formatNumberSigned(sz, (int32_t)m_Data.u16 - u16Prev));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u16));
-            break;
-        }
-
-        case STAMTYPE_X16:
-        case STAMTYPE_X16_RESET:
-        {
-            const uint16_t u16Prev = m_Data.u16;
-            m_Data.u16 = *(uint16_t *)pvSample;
-            setText(2, formatHexNumber(sz, m_Data.u16, 4));
-            setText(7, formatHexNumber(sz, m_Data.u16 - u16Prev, 1));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u16));
-            break;
-        }
-
-        case STAMTYPE_U32:
-        case STAMTYPE_U32_RESET:
-        {
-            const uint32_t u32Prev = m_Data.u32;
-            m_Data.u32 = *(uint32_t *)pvSample;
-            setText(2, formatNumber(sz, m_Data.u32));
-            setText(7, formatNumberSigned(sz, (int64_t)m_Data.u32 - u32Prev));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u32));
-            break;
-        }
-
-        case STAMTYPE_X32:
-        case STAMTYPE_X32_RESET:
-        {
-            const uint32_t u32Prev = m_Data.u32;
-            m_Data.u32 = *(uint32_t *)pvSample;
-            setText(2, formatHexNumber(sz, m_Data.u32, 8));
-            setText(7, formatHexNumber(sz, m_Data.u32 - u32Prev, 1));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u32));
-            break;
-        }
-
-        case STAMTYPE_U64:
-        case STAMTYPE_U64_RESET:
-        {
-            const uint64_t u64Prev = m_Data.u64;
-            m_Data.u64 = *(uint64_t *)pvSample;
-            setText(2, formatNumber(sz, m_Data.u64));
-            setText(7, formatNumberSigned(sz, m_Data.u64 - u64Prev));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u64));
-            break;
-        }
-
-        case STAMTYPE_X64:
-        case STAMTYPE_X64_RESET:
-        {
-            const uint64_t u64Prev = m_Data.u64;
-            m_Data.u64 = *(uint64_t *)pvSample;
-            setText(2, formatHexNumber(sz, m_Data.u64, 16));
-            setText(7, formatHexNumber(sz, m_Data.u64 - u64Prev, 1));
-            setVisible(   enmVisibility != STAMVISIBILITY_NOT_GUI
-                       && (enmVisibility == STAMVISIBILITY_ALWAYS || m_Data.u64));
-            break;
-        }
-
-        default:
-            break;
-    }
-}
-
-
-QString VBoxDbgStatsLeafItem::key(int iColumn, bool /*fAscending*/) const
-{
-    /* name and description */
-    if (iColumn <= 1 || iColumn >= 8)
-        return text(iColumn);
-
-    /* the number columns */
-    char sz[128];
-    switch (m_enmType)
-    {
-        case STAMTYPE_COUNTER:
-            switch (iColumn)
-            {
-                case 2: formatSortKey(sz, m_Data.Counter.c); break;
-                case 7: return text(iColumn);
-                default: sz[0] = '\0'; break;
-            }
-            break;
-
-        case STAMTYPE_PROFILE:
-        case STAMTYPE_PROFILE_ADV:
-            if (m_Data.Profile.cPeriods)
-            {
-                switch (iColumn)
-                {
-                    case 2: formatSortKey(sz, m_Data.Profile.cPeriods); break;
-                    case 3: formatSortKey(sz, m_Data.Profile.cTicksMin); break;
-                    case 4: formatSortKey(sz, m_Data.Profile.cTicks / m_Data.Profile.cPeriods); break;
-                    case 5: formatSortKey(sz, m_Data.Profile.cTicksMax); break;
-                    case 6: formatSortKey(sz, m_Data.Profile.cTicks); break;
-                    case 7: return text(iColumn);
-                    default: sz[0] = '\0'; break;
-                }
-            }
-            else
-                sz[0] = '\0';
-            break;
-
-        case STAMTYPE_RATIO_U32:
-        case STAMTYPE_RATIO_U32_RESET:
-            if (m_Data.RatioU32.u32B)
-                formatSortKey(sz, (m_Data.RatioU32.u32A * (uint64_t)1000) / m_Data.RatioU32.u32B);
-            else if (m_Data.RatioU32.u32A)
-                formatSortKey(sz, m_Data.RatioU32.u32A * (uint64_t)1000);
-            else
-                formatSortKey(sz, 1000);
-            break;
-
-        case STAMTYPE_U8:
-        case STAMTYPE_U8_RESET:
-            switch (iColumn)
-            {
-                case 2: formatSortKey(sz, m_Data.u8); break;
-                case 7: return text(iColumn);
-                default: sz[0] = '\0'; break;
-            }
-            break;
-
-        case STAMTYPE_U16:
-        case STAMTYPE_U16_RESET:
-            switch (iColumn)
-            {
-                case 2: formatSortKey(sz, m_Data.u16); break;
-                case 7: return text(iColumn);
-                default: sz[0] = '\0'; break;
-            }
-            break;
-
-        case STAMTYPE_U32:
-        case STAMTYPE_U32_RESET:
-            switch (iColumn)
-            {
-                case 2: formatSortKey(sz, m_Data.u32); break;
-                case 7: return text(iColumn);
-                default: sz[0] = '\0'; break;
-            }
-            break;
-
-        case STAMTYPE_U64:
-        case STAMTYPE_U64_RESET:
-            switch (iColumn)
-            {
-                case 2: formatSortKey(sz, m_Data.u64); break;
-                case 7: return text(iColumn);
-                default: sz[0] = '\0'; break;
-            }
-            break;
-
-        case STAMTYPE_CALLBACK:
-        default:
-            return text(iColumn);
-    }
-
-    return QString(sz);
-}
-
-#endif /* saved for later reuse */
-
 
 
 
@@ -2826,6 +2514,7 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxD
     connect(m_pToLogAct,    SIGNAL(triggered(bool)), this, SLOT(actToLog()));
     connect(m_pToRelLogAct, SIGNAL(triggered(bool)), this, SLOT(actToRelLog()));
 
+    /// @todo fix shortcuts!
 addAction(m_pExpandAct); /// testing
 addAction(m_pCopyAct); /// testing
 
@@ -2867,11 +2556,11 @@ addAction(m_pCopyAct); /// testing
 
 VBoxDbgStatsView::~VBoxDbgStatsView()
 {
-#if 0 /// @todo check who has to delete the model...
-    setModel(NULL);
-    delete m_pModel;
-#endif
-    m_pModel = NULL;
+    if (m_pModel)
+    {
+        delete m_pModel;
+        m_pModel = NULL;
+    }
 }
 
 
@@ -2881,6 +2570,16 @@ VBoxDbgStatsView::updateStats(const QString &rPatStr)
     m_PatStr = rPatStr;
     if (m_pModel->updateStatsByPattern(rPatStr))
         setRootIndex(m_pModel->getRootIndex()); /// @todo this is a hack?
+}
+
+
+void
+VBoxDbgStatsView::setSubTreeExpanded(QModelIndex const &a_rIndex, bool a_fExpanded)
+{
+    int cRows = m_pModel->rowCount(a_rIndex);
+    for (int i = 0; i < cRows; i++)
+        setSubTreeExpanded(a_rIndex.child(i, 0), a_fExpanded);
+    setExpanded(a_rIndex, a_fExpanded);
 }
 
 
@@ -2936,7 +2635,7 @@ VBoxDbgStatsView::actExpand()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
     if (Idx.isValid())
-        expand(Idx);
+        setSubTreeExpanded(Idx, true /* a_fExpanded */);
 }
 
 
@@ -2945,7 +2644,7 @@ VBoxDbgStatsView::actCollapse()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
     if (Idx.isValid())
-        collapse(Idx);
+        setSubTreeExpanded(Idx, false /* a_fExpanded */);
 }
 
 
@@ -2999,349 +2698,6 @@ VBoxDbgStatsView::actToRelLog()
 
 
 
-#if 0 /* later? */
-
-static void setOpenTree(QListViewItem *pItem, bool f)
-{
-#ifdef VBOXDBG_USE_QT4
-    pItem->setExpanded(f);
-    int cChildren = pItem->childCount();
-    for (int i = 0; i < cChildren; i++)
-        pItem->child(i)->setExpanded(f);
-#else
-    pItem->setOpen(f);
-    for (pItem = pItem->firstChild(); pItem; pItem = pItem->nextSibling())
-        setOpenTree(pItem, f);
-#endif
-}
-
-
-/*static*/ DECLCALLBACK(int) VBoxDbgStatsView::updateCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                                              STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser)
-{
-    Log3(("updateCallback: %s\n", pszName));
-    VBoxDbgStatsView *pThis = (VBoxDbgStatsView *)pvUser;
-
-    /*
-     * Skip the ones which shouldn't be visible in the GUI.
-     */
-    if (enmVisibility == STAMVISIBILITY_NOT_GUI)
-        return 0;
-    /** @todo !STAMVISIBILITY_USED */
-
-
-    /*
-     * Advance to the matching item.
-     */
-    VBoxDbgStatsLeafItem *pCur = pThis->m_pCur;
-    while (pCur)
-    {
-        /*
-         * ASSUMES ascending order of STAM items.
-         */
-        int iDiff = strcmp(pszName, pCur->getName());
-        if (!iDiff)
-            break;
-        if (iDiff > 0)
-        {
-            /*
-             * Removed / filtered out.
-             */
-            Log2(("updateCallback: %s - filtered out\n", pCur->getName()));
-            if (pCur->isVisible())
-            {
-                pCur->setVisible(false);
-                hideParentBranches(pCur);
-            }
-
-            pCur = pCur->m_pNext;
-        }
-        else if (iDiff < 0)
-        {
-            /*
-             * New item, insert before pCur.
-             */
-            Log2(("updateCallback: %s - new\n", pszName));
-            VBoxDbgStatsLeafItem *pNew = new VBoxDbgStatsLeafItem(pszName, pThis->createPath(pszName));
-            pNew->m_pNext = pCur;
-            pNew->m_pPrev = pCur->m_pPrev;
-            if (pNew->m_pPrev)
-                pNew->m_pPrev->m_pNext = pNew;
-            else
-                pThis->m_pHead = pNew;
-            pCur->m_pPrev = pNew;
-            pCur = pNew;
-            Assert(!strcmp(pszName, pCur->getName()));
-            break;
-        }
-    }
-
-    /*
-     * End of items, insert it at the tail.
-     */
-    if (!pCur)
-    {
-        Log2(("updateCallback: %s - new end\n", pszName));
-        pCur = new VBoxDbgStatsLeafItem(pszName, pThis->createPath(pszName));
-        pCur->m_pNext = NULL;
-        pCur->m_pPrev = pThis->m_pTail;
-        if (pCur->m_pPrev)
-            pCur->m_pPrev->m_pNext = pCur;
-        else
-            pThis->m_pHead = pCur;
-        pThis->m_pTail = pCur;
-    }
-    Assert(pThis->m_pHead);
-    Assert(pThis->m_pTail);
-
-    /*
-     * Update it and move on.
-     */
-    if (!pCur->isVisible())
-        showParentBranches(pCur);
-    pCur->update(enmType, pvSample, enmUnit, enmVisibility, pszDesc);
-    pThis->m_pCur = pCur->m_pNext;
-
-    return 0;
-}
-
-VBoxDbgStatsItem *VBoxDbgStatsView::createPath(const char *pszName)
-{
-    const char * const pszFullName = pszName;
-
-    /*
-     * Start at root.
-     */
-    while (*pszName == '/')
-        pszName++;
-    VBoxDbgStatsItem *pParent = m_pRoot;
-
-    /*
-     * Walk down the path creating what's missing.
-     */
-    for (;;)
-    {
-        /*
-         * Extract the path component.
-         */
-        const char *pszEnd = strchr(pszName, '/');
-        if (!pszEnd)
-            return pParent;
-        QString NameStr = QString::fromUtf8(pszName, pszEnd - pszName);
-        /* advance */
-        pszName = pszEnd + 1;
-
-        /*
-         * Try find the name among the children of that parent guy.
-         */
-#ifdef VBOXDBG_USE_QT4
-        QListViewItem *pChild = NULL;
-        int cChildren = pParent->childCount();
-        for (int i = 0; i < cChildren; i++)
-        {
-            pChild = pParent->child(i);
-            if (pChild->text(0) == NameStr)
-                break;
-        }
-#else
-        QListViewItem *pChild = pParent->firstChild();
-        while (pChild && pChild->text(0) != NameStr)
-            pChild = pChild->nextSibling();
-#endif
-
-        if (pChild)
-            pParent = (VBoxDbgStatsItem *)pChild;
-        else
-        {
-            Log3(("createPath: %.*s\n", pszEnd - pszFullName, pszFullName));
-            NameStr = QString::fromUtf8(pszFullName, pszEnd - pszFullName);
-#ifdef VBOXDBG_USE_QT4
-            QByteArray NameArray = NameStr.toUtf8();
-            pParent = new VBoxDbgStatsItem(NameArray.constData(), pParent);
-#else
-            pParent = new VBoxDbgStatsItem(NameStr, pParent);
-#endif
-        }
-        pParent->setVisible(true);
-    }
-}
-
-void VBoxDbgStatsView::contextMenuReq(QListViewItem *pItem, const QPoint &rPoint, int /*iColumn*/)
-{
-    if (pItem)
-    {
-        m_pContextMenuItem = (VBoxDbgStatsItem *)pItem;
-        if (m_pContextMenuItem->isLeaf())
-        {
-#ifdef VBOXDBG_USE_QT4
-#else
-            m_pLeafMenu->setItemEnabled(eReset, isVMOk());
-            m_pLeafMenu->setItemEnabled(eRefresh, isVMOk());
-#endif
-            m_pLeafMenu->popup(rPoint);
-        }
-        else
-        {
-#ifdef VBOXDBG_USE_QT4
-#else
-            m_pBranchMenu->setItemEnabled(eReset, isVMOk());
-            m_pBranchMenu->setItemEnabled(eRefresh, isVMOk());
-#endif
-            m_pBranchMenu->popup(rPoint);
-        }
-    }
-    else
-    {
-        m_pContextMenuItem = NULL;
-#ifdef VBOXDBG_USE_QT4
-#else
-        m_pViewMenu->setItemEnabled(eReset, isVMOk());
-        m_pViewMenu->setItemEnabled(eRefresh, isVMOk());
-#endif
-        m_pViewMenu->popup(rPoint);
-    }
-}
-
-void VBoxDbgStatsView::leafMenuActivated(int iId)
-{
-    VBoxDbgStatsLeafItem *pItem = (VBoxDbgStatsLeafItem *)m_pContextMenuItem;
-    AssertReturn(pItem, (void)0);
-
-    switch ((MenuId)iId)
-    {
-        case eReset:
-            stamReset(m_pContextMenuItem->getName());
-            /* fall thru */
-
-        case eRefresh:
-            m_pCur = pItem;
-            stamEnum(m_pContextMenuItem->getName(), updateCallback, this);
-            break;
-
-        case eCopy:
-            m_pContextMenuItem->copyTreeToClipboard();
-            break;
-
-        case eLog:
-            m_pContextMenuItem->logTree(false /* !release log */);
-            break;
-
-        case eLogRel:
-            m_pContextMenuItem->logTree(true /* release log */);
-            break;
-
-        default: /* keep gcc quite */
-            break;
-    }
-    m_pContextMenuItem = NULL;
-}
-
-void VBoxDbgStatsView::branchMenuActivated(int iId)
-{
-    AssertReturn(m_pContextMenuItem, (void)0);
-
-    /** @todo make enum for iId */
-    switch ((MenuId)iId)
-    {
-        case eExpand:
-            setOpenTree(m_pContextMenuItem, true);
-            break;
-
-        case eCollaps:
-            setOpenTree(m_pContextMenuItem, false);
-            break;
-
-        case eReset:
-        {
-            QString Str = QString::fromUtf8(m_pContextMenuItem->getName());
-            Str.append((Str != "/") ? "/*" : "*");
-            stamReset(Str);
-        }
-        /* fall thru */
-
-        case eRefresh:
-        {
-            const char *psz = m_pContextMenuItem->getName();
-            QString Str = QString::fromUtf8(psz);
-            if (strcmp(psz, "/"))
-            {
-                int cch = strlen(psz);
-                m_pCur = m_pHead;
-                while (     m_pCur
-                       &&   (   strncmp(psz, m_pCur->getName(), cch)
-                             || m_pCur->getName()[cch] != '/'))
-                {
-                    m_pCur = m_pCur->m_pNext;
-                }
-                if (!m_pCur)
-                    return;
-                Str.append("/*");
-            }
-            else
-            {
-                m_pCur = m_pHead;
-                Str.append("*");
-            }
-            stamEnum(Str, updateCallback, this);
-            m_pCur = NULL;
-            break;
-        }
-
-        case eCopy:
-            m_pContextMenuItem->copyTreeToClipboard();
-            break;
-
-        case eLog:
-            m_pContextMenuItem->logTree(false /* !release log */);
-            break;
-
-        case eLogRel:
-            m_pContextMenuItem->logTree(true /* release log */);
-            break;
-
-    }
-    m_pContextMenuItem = NULL;
-}
-
-void VBoxDbgStatsView::viewMenuActivated(int iId)
-{
-    switch ((MenuId)iId)
-    {
-        case eExpand:
-            setOpenTree(m_pRoot, true);
-            break;
-
-        case eCollaps:
-            setOpenTree(m_pRoot, false);
-            break;
-
-        case eReset:
-            reset(m_PatStr);
-            /* fall thru */
-
-        case eRefresh:
-            update(QString(m_PatStr));
-            break;
-
-        case eCopy:
-            m_pRoot->copyTreeToClipboard();
-            break;
-
-        case eLog:
-            m_pRoot->logTree(false /* !release log */);
-            break;
-
-        case eLogRel:
-            m_pRoot->logTree(true /* release log */);
-            break;
-    }
-}
-
-#endif /* later */
-
-
-
-
 /*
  *
  *      V B o x D b g S t a t s
@@ -3353,7 +2709,7 @@ void VBoxDbgStatsView::viewMenuActivated(int iId)
 
 
 VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
-    : QWidget(pParent), VBoxDbgBase(pVM), m_PatStr(pszPat), m_uRefreshRate(0)
+    : QWidget(pParent), VBoxDbgBase(pVM), m_PatStr(pszPat), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
 {
     setWindowTitle("VBoxDbg - Statistics");
 
@@ -3431,8 +2787,33 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
 
 VBoxDbgStats::~VBoxDbgStats()
 {
-    //????
+    if (m_pTimer)
+    {
+        delete m_pTimer;
+        m_pTimer = NULL;
+    }
+
+    if (m_pPatCB)
+    {
+        delete m_pPatCB;
+        m_pPatCB = NULL;
+    }
+
+    if (m_pView)
+    {
+        delete m_pView;
+        m_pView = NULL;
+    }
 }
+
+
+void
+VBoxDbgStats::closeEvent(QCloseEvent *a_pCloseEvt)
+{
+    a_pCloseEvt->accept();
+    delete this;
+}
+
 
 void VBoxDbgStats::apply(const QString &Str)
 {
@@ -3440,15 +2821,18 @@ void VBoxDbgStats::apply(const QString &Str)
     refresh();
 }
 
+
 void VBoxDbgStats::applyAll()
 {
     apply("");
 }
 
+
 void VBoxDbgStats::refresh()
 {
     m_pView->updateStats(m_PatStr);
 }
+
 
 void VBoxDbgStats::setRefresh(int iRefresh)
 {

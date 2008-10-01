@@ -77,6 +77,22 @@ public:
      */
     void resetStats(const QString &rPatStr);
 
+protected:
+    /**
+     * Expands or collapses a sub-tree.
+     *
+     * @param  a_rIndex     The root of the sub-tree.
+     * @param  a_fExpanded  Expand/collapse.
+     */
+    void setSubTreeExpanded(QModelIndex const &a_rIndex, bool a_fExpanded);
+
+    /**
+     * Popup context menu.
+     *
+     * @param  a_pEvt       The event.
+     */
+    virtual void contextMenuEvent(QContextMenuEvent *a_pEvt);
+
 protected slots:
     /** @name Action signal slots.
      * @{ */
@@ -89,16 +105,6 @@ protected slots:
     void actToRelLog();
     /** @} */
 
-protected:
-    /**
-     * Popup context menu.
-     *
-     * @param  a_pEvt       The event.
-     */
-    virtual void contextMenuEvent(QContextMenuEvent *a_pEvt);
-
-protected:
-    typedef enum { eRefresh = 1, eReset, eExpand, eCollaps, eCopy, eLog, eLogRel } MenuId;
 
 protected:
     /** Pointer to the data model. */
@@ -181,6 +187,14 @@ public:
 
     /** Destructor. */
     virtual ~VBoxDbgStats();
+
+protected:
+    /**
+     * Destroy the widget on close.
+     *
+     * @param  a_pCloseEvt      The close event.
+     */
+    virtual void closeEvent(QCloseEvent *a_pCloseEvt);
 
 protected slots:
     /** Apply the activated combobox pattern. */
