@@ -37,7 +37,7 @@
 # include <qfont.h>
 # include <qtextview.h>
 # include <qlineedit.h>
-#endif 
+#endif
 
 #include <VBox/dbg.h>
 #include <VBox/cfgm.h>
@@ -66,9 +66,9 @@
 
 VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
 #ifdef VBOXDBG_USE_QT4
-    : QTextEdit(pParent), 
+    : QTextEdit(pParent),
 #else
-    : QTextEdit(pParent, pszName), 
+    : QTextEdit(pParent, pszName),
 #endif
       m_uCurLine(0), m_uCurPos(0), m_hGUIThread(RTThreadNativeSelf())
 {
@@ -100,7 +100,7 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
 #else
     setPaper(QBrush(Qt::black));
     setColor(QColor(qRgb(0, 0xe0, 0)));
-#endif 
+#endif
     NOREF(pszName);
 }
 
@@ -127,7 +127,7 @@ void VBoxDbgConsoleOutput::appendText(const QString &rStr)
         int iPosNL = rStr.indexOf('\n', iPos);
 #else
         int iPosNL = rStr.find('\n', iPos);
-#endif 
+#endif
         int iPosEnd = iPosNL >= 0 ? iPosNL : cch;
         if ((unsigned)iPosNL != iPos)
         {
@@ -139,7 +139,7 @@ void VBoxDbgConsoleOutput::appendText(const QString &rStr)
                 insertPlainText(Str);
 #else
                 insertAt(Str, m_uCurLine, m_uCurPos);
-#endif 
+#endif
             if (iPosNL >= 0)
             {
                 m_uCurLine++;
@@ -173,20 +173,21 @@ void VBoxDbgConsoleOutput::appendText(const QString &rStr)
 
 VBoxDbgConsoleInput::VBoxDbgConsoleInput(QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
 #ifdef VBOXDBG_USE_QT4
-    : QComboBox(pParent), 
+    : QComboBox(pParent),
 #else
-    : QComboBox(true, pParent, pszName), 
-#endif 
+    : QComboBox(true, pParent, pszName),
+#endif
       m_iBlankItem(0), m_hGUIThread(RTThreadNativeSelf())
 {
 #ifdef VBOXDBG_USE_QT4
     insertItem(m_iBlankItem, "");
     setEditable(true);
     setInsertPolicy(NoInsert);
+    setAutoCompletion(false);
 #else
     insertItem("", m_iBlankItem);
     setInsertionPolicy(NoInsertion);
-#endif 
+#endif
     setMaxCount(50);
     const QLineEdit *pEdit = lineEdit();
     if (pEdit)
@@ -236,7 +237,7 @@ void VBoxDbgConsoleInput::returnPressed()
 
     clearEdit();
     setCurrentItem(m_iBlankItem);
-#endif 
+#endif
 }
 
 
@@ -279,7 +280,7 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     QLabel *pLabel = new QLabel(      "11111111111111111111111111111111111111111111111111111111111111111111111111111112222222222", this);
 #else
     QLabel *pLabel = new QLabel(NULL, "11111111111111111111111111111111111111111111111111111111111111111111111111111112222222222", this); /// @todo
-#endif 
+#endif
     pLabel->setFont(m_pOutput->font());
     QSize Size = pLabel->sizeHint();
     delete pLabel;
@@ -305,7 +306,7 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     connect(m_pInput, SIGNAL(commandSubmitted(const QString &)), this, SLOT(commandSubmitted(const QString &)));
 
 # if 0//def Q_WS_MAC
-    pLabel = new QLabel("  "); 
+    pLabel = new QLabel("  ");
     pLayout->addWidget(pLabel);
     pLabel->setMaximumSize(20, m_pInput->sizeHint().height() + 6);
     pLabel->setMinimumSize(20, m_pInput->sizeHint().height() + 6);
@@ -342,7 +343,7 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     pVLayout->addWidget(m_pOutput);
     pVLayout->addWidget(pHBox);
     setLayout(pVLayout);
-#endif 
+#endif
 
     /*
      * The tab order is from input to output, not the otherway around as it is by default.
@@ -423,7 +424,7 @@ void VBoxDbgConsole::commandSubmitted(const QString &rCommand)
 #ifdef VBOXDBG_USE_QT4
     QByteArray Utf8Array = rCommand.toUtf8();
     const char *psz = Utf8Array.constData();
-#else                               
+#else
     const char *psz = rCommand;//.utf8();
 #endif
     size_t cb = strlen(psz);
@@ -456,7 +457,7 @@ void VBoxDbgConsole::commandSubmitted(const QString &rCommand)
     m_pOutput->ensureCursorVisible();
 #else
     m_pOutput->scrollToBottom();
-#endif 
+#endif
 
     m_fInputRestoreFocus = m_pInput->hasFocus();    /* dirty focus hack */
     m_pInput->setEnabled(false);
@@ -668,7 +669,7 @@ bool VBoxDbgConsole::event(QEvent *pGenEvent)
                     m_pTimer->start(10);
 #else
                     m_pTimer->start(10, true /* single shot */);
-#endif 
+#endif
                 }
                 break;
 
@@ -699,6 +700,6 @@ bool VBoxDbgConsole::event(QEvent *pGenEvent)
     return QWidget::event(pGenEvent);
 #else
     return QVBox::event(pGenEvent);
-#endif 
+#endif
 }
 
