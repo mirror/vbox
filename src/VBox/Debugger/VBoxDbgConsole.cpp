@@ -75,10 +75,15 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
 {
     setReadOnly(true);
     setUndoRedoEnabled(false);
-    setOverwriteMode(true);
 #ifdef VBOXDBG_USE_QT4
+    setOverwriteMode(false);
     setPlainText("");
+    setTextInteractionFlags(Qt::TextBrowserInteraction);
+    setAutoFormatting(QTextEdit::AutoAll);
+    setTabChangesFocus(true);
+    setAcceptRichText(false);
 #else
+    setOverwriteMode(true);
     setTextFormat(PlainText);   /* minimal HTML: setTextFormat(LogText); */
 #endif
 
@@ -105,12 +110,15 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     NOREF(pszName);
 }
 
+
 VBoxDbgConsoleOutput::~VBoxDbgConsoleOutput()
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
 }
 
-void VBoxDbgConsoleOutput::appendText(const QString &rStr)
+
+void
+VBoxDbgConsoleOutput::appendText(const QString &rStr)
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
 
@@ -136,11 +144,14 @@ void VBoxDbgConsoleOutput::appendText(const QString &rStr)
             if (m_uCurPos == 0)
                 append(Str);
             else
+            {
 #ifdef VBOXDBG_USE_QT4
+                moveCursor(QTextCursor::End); /* make sure we append the text */
                 insertPlainText(Str);
 #else
                 insertAt(Str, m_uCurLine, m_uCurPos);
 #endif
+            }
             if (iPosNL >= 0)
             {
                 m_uCurLine++;
@@ -154,6 +165,7 @@ void VBoxDbgConsoleOutput::appendText(const QString &rStr)
             m_uCurLine++;
             m_uCurPos = 0;
         }
+
         /* next */
         iPos = iPosEnd + 1;
     }
@@ -766,3 +778,4 @@ VBoxDbgConsole::actFocusToOutput()
         m_pOutput->setFocus();
 #endif
 }
+
