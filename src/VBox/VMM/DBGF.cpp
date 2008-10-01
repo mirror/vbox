@@ -878,29 +878,15 @@ DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
 
     /*
-     * If we're in the wrong mode, wait a wee bit first to avoid speaking
-     * out of turn and racing EMT. We shouldn't  linger too long though,
-     * because we might be in a screwed up state.
+     * Try send the detach command.
+     * Keep in mind that we might be racing EMT, so, be extra careful.
      */
-    if (RTSemPongShouldWait(&pVM->dbgf.s.PingPong))
-        RTSemPongWait(&pVM->dbgf.s.PingPong, 5000);
-
-    /*
-     * Send detach command.
-     * This may or may not be in response to an EMT termination event.
-     */
-    DBGFCMD enmCmd;
+    DBGFCMD enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
     if (RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong))
     {
-        enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
         rc = RTSemPong(&pVM->dbgf.s.PingPong);
         AssertMsgRCReturn(rc, ("Failed to signal emulation thread. rc=%Rrc\n", rc), rc);
-        Log(("DBGFR3Detach: enmCmd=%d (pong -> ping)\n", enmCmd));
-    }
-    else
-    {
-        enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
-        LogRel(("DBGFR3Detach: enmCmd=%d (ping)\n", enmCmd));
+        LogRel(("DBGFR3Detach: enmCmd=%d (pong -> ping)\n", enmCmd));
     }
 
     /*
