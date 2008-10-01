@@ -263,6 +263,8 @@ protected:
     VBoxDbgConsoleOutput *m_pOutput;
     /** The input widget. */
     VBoxDbgConsoleInput *m_pInput;
+    /** Whether we should send the kInputEnable event or not. */
+    bool m_fInputNeedsEnabling;
     /** A hack to restore focus to the combobox after a command execution. */
     bool m_fInputRestoreFocus;
     /** The input buffer. */
@@ -322,7 +324,7 @@ protected:
 class VBoxDbgConsoleEvent : public QEvent
 {
 public:
-    typedef enum  { kUpdate, kInputRestoreFocus, kTerminated } VBoxDbgConsoleEventType;
+    typedef enum  { kUpdate, kInputEnable, kTerminatedUser, kTerminatedOther } VBoxDbgConsoleEventType;
     enum { kEventNumber = QEvent::User + 42 };
 
     VBoxDbgConsoleEvent(VBoxDbgConsoleEventType enmCommand)

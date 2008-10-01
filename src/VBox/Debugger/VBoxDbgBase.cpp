@@ -19,10 +19,10 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DBGG
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include "VBoxDbgBase.h"
