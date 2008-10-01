@@ -78,6 +78,7 @@ PROGRAMS += \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
+	tstSemPingPong \
 	tstStrFormat \
 	tstStrToNum \
 	tstSystemQueryOsInfo \
@@ -283,6 +284,8 @@ tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 tstRTProcWait_SOURCES = tstRTProcWait.cpp
 
 tstSemMutex_SOURCES = tstSemMutex.cpp
+
+tstSemPingPong_SOURCES = tstSemPingPong.cpp
 
 tstSems_SOURCES = tstSems.cpp
 
