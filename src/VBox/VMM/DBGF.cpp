@@ -94,6 +94,7 @@
 *******************************************************************************/
 static int dbgfR3VMMWait(PVM pVM);
 static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pfResumeExecution);
+static DECLCALLBACK(int) dbgfR3Attach(PVM pVM);
 
 
 /**
@@ -152,52 +153,49 @@ DBGFR3DECL(int) DBGFR3Term(PVM pVM)
     int rc;
 
     /*
-     * Send a termination event to any attached debuggers.
+     * Send a termination event to any attached debugger.
      */
-    /* wait for any pending events or whatever */
+    /* wait to become the speaker (we should already be that). */
     if (    pVM->dbgf.s.fAttached
-        &&  pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG)
-    {
-        RTThreadSleep(32); /* Don't want that assertion if we can help it. */
-        while (   pVM->dbgf.s.fAttached
-               && pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG)
-            if (RTSemPingWait(&pVM->dbgf.s.PingPong, 5000) != VERR_TIMEOUT)
-                break;
-    }
+        &&  RTSemPingShouldWait(&pVM->dbgf.s.PingPong))
+        RTSemPingWait(&pVM->dbgf.s.PingPong, 5000);
 
-    /* now, send the event */
+    /* now, send the event if we're the speaker. */
     if (    pVM->dbgf.s.fAttached
-        &&  pVM->dbgf.s.PingPong.enmSpeaker != RTPINGPONGSPEAKER_PONG)
+        &&  RTSemPingIsSpeaker(&pVM->dbgf.s.PingPong))
     {
-        pVM->dbgf.s.DbgEvent.enmType = DBGFEVENT_TERMINATING;
-        pVM->dbgf.s.DbgEvent.enmCtx  = DBGFEVENTCTX_OTHER;
-        rc = RTSemPing(&pVM->dbgf.s.PingPong);
-        if (VBOX_SUCCESS(rc))
+        DBGFCMD enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
+        if (enmCmd == DBGFCMD_DETACH_DEBUGGER)
+            /* the debugger beat us to initiating the detaching. */
+            rc = VINF_SUCCESS;
+        else
         {
-            /*
-             * Waits for the debugger to detach.
-             */
-            while (pVM->dbgf.s.fAttached)
-            {
-                /*
-                 * Wait.
-                 */
-                rc = RTSemPingWait(&pVM->dbgf.s.PingPong, 1000);
+            /* ignore the command (if any). */
+            enmCmd = DBGFCMD_NO_COMMAND;
+            pVM->dbgf.s.DbgEvent.enmType = DBGFEVENT_TERMINATING;
+            pVM->dbgf.s.DbgEvent.enmCtx  = DBGFEVENTCTX_OTHER;
+            rc = RTSemPing(&pVM->dbgf.s.PingPong);
+        }
 
-                /*
-                 * Process the command.
-                 */
-                DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
-                DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
-                if (enmCmd != DBGFCMD_NO_COMMAND)
-                {
-                    bool fResumeExecution = false;
-                    rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
-                    if (enmCmd == DBGFCMD_DETACH_DEBUGGER)
-                        break;
-                }
-                else if (VBOX_FAILURE(rc))
-                    break;
+        /*
+         * Process commands until we get a detached command.
+         */
+        while (RT_SUCCESS(rc) && enmCmd != DBGFCMD_DETACHED_DEBUGGER)
+        {
+            if (enmCmd != DBGFCMD_NO_COMMAND)
+            {
+                /* process command */
+                bool fResumeExecution;
+                DBGFCMDDATA CmdData = pVM->dbgf.s.VMMCmdData;
+                rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
+                enmCmd = DBGFCMD_NO_COMMAND;
+            }
+            else
+            {
+                /* wait for new command. */
+                rc = RTSemPingWait(&pVM->dbgf.s.PingPong, RT_INDEFINITE_WAIT);
+                if (RT_SUCCESS(rc))
+                    enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
             }
         }
     }
@@ -726,11 +724,21 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
          */
         case DBGFCMD_DETACH_DEBUGGER:
         {
+            ASMAtomicWriteBool(&pVM->dbgf.s.fAttached, false);
             pVM->dbgf.s.DbgEvent.enmType = DBGFEVENT_DETACH_DONE;
             pVM->dbgf.s.DbgEvent.enmCtx  = DBGFEVENTCTX_OTHER;
-            VM_FF_CLEAR(pVM, VM_FF_DBGF);
-            pVM->dbgf.s.fAttached = false;
             fSendEvent = true;
+            fResume = true;
+            break;
+        }
+
+        /*
+         * The debugger has detached successfully.
+         * There is no reply to this event.
+         */
+        case DBGFCMD_DETACHED_DEBUGGER:
+        {
+            fSendEvent = false;
             fResume = true;
             break;
         }
@@ -784,8 +792,6 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
 }
 
 
-
-
 /**
  * Attaches a debugger to the specified VM.
  *
@@ -797,11 +803,45 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
 DBGFR3DECL(int) DBGFR3Attach(PVM pVM)
 {
     /*
-     * Check if already attached.
+     * Some validations first.
      */
+    if (!VALID_PTR(pVM))
+    {
+        Log(("DBGFR3Attach: bad VM handle: %p\n", pVM));
+        return VERR_INVALID_HANDLE;
+    }
+    VMSTATE enmVMState = pVM->enmVMState;
+    if (    enmVMState >= VMSTATE_DESTROYING
+        ||  enmVMState <  VMSTATE_CREATING)
+    {
+        Log(("DBGFR3Attach: Invalid VM state: %s\n", VMGetStateName(enmVMState)));
+        return VERR_INVALID_HANDLE;
+    }
+
+    /*
+     * Call the VM, use EMT for serialization.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3Attach, 1, pVM);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
+}
+
+
+/**
+ * EMT worker for DBGFR3Attach.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ */
+static DECLCALLBACK(int) dbgfR3Attach(PVM pVM)
+{
     if (pVM->dbgf.s.fAttached)
     {
-        AssertMsgFailed(("Already attached\n"));
+        Log(("dbgR3Attach: Debugger already attached\n"));
         return VERR_DBGF_ALREADY_ATTACHED;
     }
 
@@ -809,13 +849,12 @@ DBGFR3DECL(int) DBGFR3Attach(PVM pVM)
      * Create the Ping-Pong structure.
      */
     int rc = RTSemPingPongInit(&pVM->dbgf.s.PingPong);
-    if (rc)
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Set the attached flag.
      */
-    pVM->dbgf.s.fAttached = true;
+    ASMAtomicWriteBool(&pVM->dbgf.s.fAttached, true);
     return VINF_SUCCESS;
 }
 
@@ -830,61 +869,57 @@ DBGFR3DECL(int) DBGFR3Attach(PVM pVM)
  */
 DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
 {
-    LogFlowFunc(("\n"));
+    LogFlow(("DBGFR3Detach:\n"));
+    int rc;
 
     /*
      * Check if attached.
      */
-    if (!pVM->dbgf.s.fAttached)
-    {
-        AssertMsgFailed(("Not attached to VM!\n"));
-        return VERR_DBGF_NOT_ATTACHED;
-    }
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+
+    /*
+     * If we're in the wrong mode, wait a wee bit first to avoid speaking
+     * out of turn and racing EMT. We shouldn't  linger too long though,
+     * because we might be in a screwed up state.
+     */
+    if (RTSemPongShouldWait(&pVM->dbgf.s.PingPong))
+        RTSemPongWait(&pVM->dbgf.s.PingPong, 5000);
 
     /*
      * Send detach command.
+     * This may or may not be in response to an EMT termination event.
      */
     DBGFCMD enmCmd;
-    if (pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG)
+    if (RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong))
     {
         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
-        int rc = RTSemPong(&pVM->dbgf.s.PingPong);
-        if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("Failed to signal emulation thread. rc=%d\n", rc));
-            return rc;
-        }
-        LogFunc(("enmCmd=%d (pong -> ping)\n", enmCmd));
+        rc = RTSemPong(&pVM->dbgf.s.PingPong);
+        AssertMsgRCReturn(rc, ("Failed to signal emulation thread. rc=%Rrc\n", rc), rc);
+        Log(("DBGFR3Detach: enmCmd=%d (pong -> ping)\n", enmCmd));
     }
     else
     {
         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACH_DEBUGGER);
-        LogFunc(("enmCmd=%d (ping)\n", enmCmd));
+        LogRel(("DBGFR3Detach: enmCmd=%d (ping)\n", enmCmd));
     }
 
     /*
-     * Wait for the ok event.
+     * Wait for the OK event.
      */
     PCDBGFEVENT pEvent;
-    int rc = DBGFR3EventWait(pVM, RT_INDEFINITE_WAIT, &pEvent);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Wait on detach command failed, rc=%d\n", rc));
-        return rc;
-    }
+    rc = DBGFR3EventWait(pVM, RT_INDEFINITE_WAIT, &pEvent);
+    AssertLogRelMsgRCReturn(rc, ("Wait on detach command failed, rc=%Rrc\n", rc), rc);
 
     /*
-     * Destroy the ping-pong construct and return.
+     * Send the notification command indicating that we're really done.
      */
-    ASMAtomicWriteBool(&pVM->dbgf.s.fAttached, false);
-    RTThreadSleep(10);
-    rc = RTSemPingPongDestroy(&pVM->dbgf.s.PingPong);
-    AssertRC(rc);
+    enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_DETACHED_DEBUGGER);
+    rc = RTSemPong(&pVM->dbgf.s.PingPong);
+    AssertMsgRCReturn(rc, ("Failed to signal emulation thread. rc=%Rrc\n", rc), rc);
 
     LogFlowFunc(("returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
-
 
 
 /**
@@ -900,11 +935,7 @@ DBGFR3DECL(int) DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent
     /*
      * Check state.
      */
-    if (!pVM->dbgf.s.fAttached)
-    {
-        AssertMsgFailed(("Not attached to VM!\n"));
-        return VERR_DBGF_NOT_ATTACHED;
-    }
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     *ppEvent = NULL;
 
     /*
@@ -936,13 +967,10 @@ DBGFR3DECL(int) DBGFR3Halt(PVM pVM)
     /*
      * Check state.
      */
-    if (!pVM->dbgf.s.fAttached)
-    {
-        AssertMsgFailed(("Not attached to VM!\n"));
-        return VERR_DBGF_NOT_ATTACHED;
-    }
-    if (    pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG
-        ||  pVM->dbgf.s.PingPong.enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED)
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+    RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
+    if (   enmSpeaker == RTPINGPONGSPEAKER_PONG
+        || enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED)
         return VWRN_DBGF_ALREADY_HALTED;
 
     /*
@@ -963,12 +991,10 @@ DBGFR3DECL(int) DBGFR3Halt(PVM pVM)
  */
 DBGFR3DECL(bool) DBGFR3IsHalted(PVM pVM)
 {
-    AssertMsg(pVM->dbgf.s.fAttached, ("Not attached to VM!\n"));
-
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
-    return pVM->dbgf.s.fAttached
-        && (    enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED
-            ||  enmSpeaker == RTPINGPONGSPEAKER_PONG);
+    return enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED
+        || enmSpeaker == RTPINGPONGSPEAKER_PONG;
 }
 
 
@@ -983,13 +1009,8 @@ DBGFR3DECL(bool) DBGFR3IsHalted(PVM pVM)
  */
 DBGFR3DECL(bool) DBGFR3CanWait(PVM pVM)
 {
-    AssertMsg(pVM->dbgf.s.fAttached, ("Not attached to VM!\n"));
-
-    RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
-    return pVM->dbgf.s.fAttached
-        && (    enmSpeaker == RTPINGPONGSPEAKER_PING
-            ||  enmSpeaker == RTPINGPONGSPEAKER_PING_SIGNALED
-            ||  enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED);
+    AssertReturn(pVM->dbgf.s.fAttached, false);
+    return RTSemPongShouldWait(&pVM->dbgf.s.PingPong);
 }
 
 
@@ -1006,16 +1027,8 @@ DBGFR3DECL(int) DBGFR3Resume(PVM pVM)
     /*
      * Check state.
      */
-    if (!pVM->dbgf.s.fAttached)
-    {
-        AssertMsgFailed(("Not attached to VM!\n"));
-        return VERR_DBGF_NOT_ATTACHED;
-    }
-    if (pVM->dbgf.s.PingPong.enmSpeaker != RTPINGPONGSPEAKER_PONG)
-    {
-        AssertMsgFailed(("Speaking out of turn!\n"));
-        return VERR_SEM_OUT_OF_TURN;
-    }
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+    AssertReturn(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong), VERR_SEM_OUT_OF_TURN);
 
     /*
      * Send the ping back to the emulation thread telling it to run.
@@ -1042,16 +1055,8 @@ DBGFR3DECL(int) DBGFR3Step(PVM pVM)
     /*
      * Check state.
      */
-    if (!pVM->dbgf.s.fAttached)
-    {
-        AssertMsgFailed(("Not attached to VM!\n"));
-        return VERR_DBGF_NOT_ATTACHED;
-    }
-    if (pVM->dbgf.s.PingPong.enmSpeaker != RTPINGPONGSPEAKER_PONG)
-    {
-        AssertMsgFailed(("Speaking out of turn!\n"));
-        return VERR_SEM_OUT_OF_TURN;
-    }
+    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+    AssertReturn(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong), VERR_SEM_OUT_OF_TURN);
 
     /*
      * Send the ping back to the emulation thread telling it to run.

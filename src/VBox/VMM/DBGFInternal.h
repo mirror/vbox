@@ -73,8 +73,11 @@ typedef enum DBGFCMD
 
     /** Detaches the debugger.
      * Disabling all breakpoints, watch points and the like. */
-    DBGFCMD_DETACH_DEBUGGER = 0x7fffffff
-
+    DBGFCMD_DETACH_DEBUGGER = 0x7ffffffe,
+    /** Detached the debugger.
+     * The isn't a command as such, it's just that it's necessary for the
+     * detaching protocol to be racefree. */
+    DBGFCMD_DETACHED_DEBUGGER = 0x7fffffff
 } DBGFCMD;
 
 /**
