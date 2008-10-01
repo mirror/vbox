@@ -2587,9 +2587,9 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxD
     /*
      * Set the model and view defaults.
      */
-    setModel(m_pModel);
-    setRootIndex(QModelIndex());
     setRootIsDecorated(true);
+    setModel(m_pModel);
+    setRootIndex(m_pModel->getRootIndex());
     setItemsExpandable(true);
     setSelectionBehavior(SelectRows);
     setSelectionMode(SingleSelection);
@@ -2675,7 +2675,7 @@ VBoxDbgStatsView::updateStats(const QString &rPatStr)
 {
     m_PatStr = rPatStr;
     if (m_pModel->updateStatsByPattern(rPatStr))
-        setRootIndex(QModelIndex()); /* hack */
+        setRootIndex(m_pModel->getRootIndex()); /* hack */
 }
 
 
@@ -2761,7 +2761,7 @@ VBoxDbgStatsView::actRefresh()
     if (!Idx.isValid() || Idx == m_pModel->getRootIndex())
     {
         if (m_pModel->updateStatsByPattern(m_PatStr))
-            setRootIndex(QModelIndex()); /* hack */
+            setRootIndex(m_pModel->getRootIndex()); /* hack */
     }
     else
         m_pModel->updateStatsByIndex(Idx);
@@ -2885,7 +2885,6 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     for (int i = 0; i <= 8; i++)
         m_pView->resizeColumnToContents(i);
     m_pView->collapseAll();
-    m_pView->expandToDepth(0);
 
     /*
      * Create a refresh timer and start it.
