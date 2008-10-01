@@ -175,6 +175,15 @@ protected slots:
      */
     void updateOutput();
 
+    /**
+     * Changes the focus to the input field.
+     */
+    void actFocusToInput();
+
+    /**
+     * Changes the focus to the output viewer widget.
+     */
+    void actFocusToOutput();
 
 protected:
     /**
@@ -295,7 +304,14 @@ protected:
      * Converts a pointer to VBoxDbgConsole::m_Back to VBoxDbgConsole pointer.
      * @todo find a better way because offsetof is undefined on objects and g++ gets very noisy because of that.
      */
-    #define VBOXDBGCONSOLE_FROM_DBGCBACK(pBack) ( ((struct VBoxDbgConsoleBack *)(pBack))->pSelf )
+#   define VBOXDBGCONSOLE_FROM_DBGCBACK(pBack) ( ((struct VBoxDbgConsoleBack *)(pBack))->pSelf )
+
+#ifdef VBOXDBG_USE_QT4
+    /** Change focus to the input field. */
+    QAction *m_pFocusToInput;
+    /** Change focus to the output viewer widget. */
+    QAction *m_pFocusToOutput;
+#endif
 };
 
 
