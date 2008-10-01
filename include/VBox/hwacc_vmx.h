@@ -40,111 +40,250 @@
  * @{
  */
 
-/**
- * Extended Page Directory Pointer. Bit view.
+/** @name VMX EPT paging structures
+ * @{
  */
-#pragma pack(1)
-typedef struct VTXEPTPBITS
-{
-    /** EPT Table Memory Type. */
-    uint64_t    u3ETMT          : 3;
-    /** Guest Address Width. */
-    uint64_t    u3GAW           : 3;
-    /** Reserved. */
-    uint64_t    u6Reserved      : 6;
-    /** Address Space Root; page frame address of the first level EPT page. Actual width depends on the maximum physical address width of the CPU. */
-    uint64_t    u52ASR          : 52;
-} VTXEPTPBITS;
-#pragma pack()
-/** Pointer to an extended page directory pointer. */
-typedef VTXEPTPBITS *PVTXEPTPBITS;
-/** Pointer to a const extended page directory pointer. */
-typedef const VTXEPTPBITS *PCVTXEPTPBITS;
 
 /**
- * Extended Page Directory Pointer.
+ * Number of page table entries in the EPT. (PDPTE/PDE/PTE)
  */
-#pragma pack(1)
-typedef union VTXEPTP
-{
-    VTXEPTPBITS n;
-    /** 64 bit unsigned integer view. */
-    uint64_t    au64[1];
-} VTXEPTP;
-#pragma pack()
-/** Pointer to an extended page directory pointer. */
-typedef VTXEPTP *PVTXEPTP;
-/** Pointer to a const extended page directory pointer. */
-typedef const VTXEPTP *PCVTXEPTP;
-
+#define EPT_PG_ENTRIES                  512
 
 /**
- * Extended Page Directory Table Entry. Bit view.
+ * EPT Page Directory Pointer Entry. Bit view.
  */
 #pragma pack(1)
-typedef union VTXEPTEBITS
+typedef struct EPTPML4EBITS
 {
-    /** Readable bit. */
-    uint64_t    u1Readable      : 1;
+    /** Present bit. */
+    uint64_t    u1Present       : 1;
     /** Writable bit. */
-    uint64_t    u1Writable      : 1;
+    uint64_t    u1Write         : 1;
     /** Executable bit. */
-    uint64_t    u1Executable    : 1;
-    /** EPT Table Memory Type. MBZ for non-leaf nodes. */
-    uint64_t    u3EMT           : 3;
-    /** IGMT (Ignore Guest Memory Type) (leaf nodes). MBZ for non-leaf nodes. */
-    uint64_t    u1IGMT          : 1;
-    /** Super page (non-leaf) / available (leaf). */
-    uint64_t    u1SP            : 1;
+    uint64_t    u1Execute       : 1;
+    /** Reserved (must be 0). */
+    uint64_t    u4Reserved      : 4;
     /** Available for software. */
     uint64_t    u4Available     : 4;
-    /** Physical address of next leaf/super page. Restricted by maximum physical address width of the cpu. */
-    uint64_t    u45PhysAddr     : 45;
-    /** Reserved (MBZ). */
-    uint64_t    u5Reserved      : 5;
+    /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
+    uint64_t    u40PhysAddr     : 36;
     /** Availabe for software. */
-    uint64_t    u2Available     : 2;
-} VTXEPTEBITS;
+    uint64_t    u12Available    : 12;
+} EPTPML4EBITS;
 #pragma pack()
-/** Pointer to an extended page table entry. */
-typedef VTXEPTEBITS *PVTXEPTEBITS;
-/** Pointer to a const extended table entry. */
-typedef const VTXEPTEBITS *PCVTXEPTEBITS;
 
 /**
- * Extended Page Directory Table Entry.
+ * EPT PML4.
  */
 #pragma pack(1)
-typedef union VTXEPTE
+typedef union EPTPML4
 {
-    VTXEPTEBITS n;
+    EPTPML4EBITS n;
     /** 64 bit unsigned integer view. */
     uint64_t    au64[1];
-} VTXEPTE;
+} EPTPML4;
 #pragma pack()
-/** Pointer to an extended page table entry. */
-typedef VTXEPTE *PVTXEPTE;
-/** Pointer to a const extended table entry. */
-typedef const VTXEPTE *PCVTXEPTE;
+/** Pointer to a PML4 table. */
+typedef EPTPML4 *PEPTPML4;
+/** Pointer to a const PML4 table. */
+typedef const EPTPML4 *PCEPTPML4;
 
 /**
- * Number of page table entries in the EPT.
- */
-#define VTX_PT_ENTRIES                  512
-
-/**
- * Extended Page Directory Table.
+ * EPT Page Directory Pointer Entry. Bit view.
  */
 #pragma pack(1)
-typedef union VTXEPT
+typedef struct EPTPDPTEBITS
 {
-    VTXEPTE     a[VTX_PT_ENTRIES];
-} VTXEPT;
+    /** Present bit. */
+    uint64_t    u1Present       : 1;
+    /** Writable bit. */
+    uint64_t    u1Write         : 1;
+    /** Executable bit. */
+    uint64_t    u1Execute       : 1;
+    /** Reserved (must be 0). */
+    uint64_t    u4Reserved      : 4;
+    /** Available for software. */
+    uint64_t    u4Available     : 4;
+    /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
+    uint64_t    u40PhysAddr     : 36;
+    /** Availabe for software. */
+    uint64_t    u12Available    : 12;
+} EPTPDPTEBITS;
+#pragma pack()
+
+/**
+ * EPT Page Directory Pointer.
+ */
+#pragma pack(1)
+typedef union EPTPDPTE
+{
+    EPTPDPTEBITS n;
+    /** 64 bit unsigned integer view. */
+    uint64_t    au64[1];
+} EPTPDPTE;
+#pragma pack()
+/** Pointer to an EPT Page Directory Pointer Entry. */
+typedef EPTPDPTE *PEPTPDPTE;
+/** Pointer to a const EPT Page Directory Pointer Entry. */
+typedef const EPTPDPTE *PCEPTPDPTE;
+
+/**
+ * EPT Page Directory Pointer Table.
+ */
+#pragma pack(1)
+typedef union EPTPDPT
+{
+    EPTPDPTE    a[EPT_PG_ENTRIES];
+} EPTPDPT;
+#pragma pack()
+/** Pointer to an EPT Page Directory Pointer Table. */
+typedef EPTPDPT *PEPTPDPT;
+/** Pointer to a const EPT Page Directory Pointer Table. */
+typedef const EPTPDPT *PCEPTPDPT;
+
+
+/**
+ * EPT Page Directory Table Entry. Bit view.
+ */
+typedef union EPTPDEBITS
+{
+    /** Present bit. */
+    uint64_t    u1Present       : 1;
+    /** Writable bit. */
+    uint64_t    u1Write         : 1;
+    /** Executable bit. */
+    uint64_t    u1Execute       : 1;
+    /** Reserved (must be 0). */
+    uint64_t    u4Reserved      : 4;
+    /** Big page (must be 0 here). */
+    uint64_t    u1Big           : 1;
+    /** Available for software. */
+    uint64_t    u4Available     : 4;
+    /** Physical address of page table. Restricted by maximum physical address width of the cpu. */
+    uint64_t    u40PhysAddr     : 36;
+    /** Availabe for software. */
+    uint64_t    u12Available    : 12;
+} EPTPDEBITS;
+#pragma pack()
+
+/**
+ * EPT 2MB Page Directory Table Entry. Bit view.
+ */
+#pragma pack(1)
+typedef union EPTPDE2MBITS
+{
+    /** Present bit. */
+    uint64_t    u1Present       : 1;
+    /** Writable bit. */
+    uint64_t    u1Write         : 1;
+    /** Executable bit. */
+    uint64_t    u1Execute       : 1;
+    /** EPT Table Memory Type. MBZ for non-leaf nodes. */
+    uint64_t    u3EMT           : 3;
+    /** Ignore PAT memory type */
+    uint64_t    u1IgnorePAT     : 1;
+    /** Big page (must be 1 here). */
+    uint64_t    u1Big           : 1;
+    /** Available for software. */
+    uint64_t    u4Available     : 4;
+    /** Reserved (must be 0). */
+    uint64_t    u9Reserved      : 9;
+    /** Physical address of the 2MB page. Restricted by maximum physical address width of the cpu. */
+    uint64_t    u32PhysAddr     : 27;
+    /** Availabe for software. */
+    uint64_t    u12Available    : 12;
+} EPTPDE2MBITS;
+#pragma pack()
+
+/**
+ * EPT Page Directory Table Entry.
+ */
+#pragma pack(1)
+typedef union EPTPDE
+{
+    EPTPDEBITS      n;
+    EPTPDE2MBITS    b;
+    /** 64 bit unsigned integer view. */
+    uint64_t        au64[1];
+} EPTPDE;
+#pragma pack()
+/** Pointer to an EPT Page Directory Table Entry. */
+typedef EPTPDE *PEPTPDE;
+/** Pointer to a const EPT Page Directory Table Entry. */
+typedef const EPTPDE *PCEPTPDE;
+
+/**
+ * EPT Page Directory Table.
+ */
+#pragma pack(1)
+typedef union EPTPD
+{
+    EPTPDE      a[EPT_PG_ENTRIES];
+} EPTPD;
+#pragma pack()
+/** Pointer to an EPT Page Directory Table. */
+typedef EPTPD *PEPTPD;
+/** Pointer to a const EPT Page Directory Table. */
+typedef const EPTPD *PCEPTPD;
+
+
+/**
+ * EPT Page Table Entry. Bit view.
+ */
+#pragma pack(1)
+typedef union EPTPTEBITS
+{
+    /** Present bit. */
+    uint64_t    u1Present       : 1;
+    /** Writable bit. */
+    uint64_t    u1Write         : 1;
+    /** Executable bit. */
+    uint64_t    u1Execute       : 1;
+    /** EPT Table Memory Type. MBZ for non-leaf nodes. */
+    uint64_t    u3EMT           : 3;
+    /** Ignore PAT memory type */
+    uint64_t    u1IgnorePAT     : 1;
+    /** Available for software. */
+    uint64_t    u5Available     : 5;
+    /** Physical address of page. Restricted by maximum physical address width of the cpu. */
+    uint64_t    u40PhysAddr     : 36;
+    /** Availabe for software. */
+    uint64_t    u12Available    : 12;
+} EPTPTEBITS;
+#pragma pack()
+
+/**
+ * EPT Page Table Entry.
+ */
+#pragma pack(1)
+typedef union EPTPTE
+{
+    EPTPTEBITS      n;
+    /** 64 bit unsigned integer view. */
+    uint64_t        au64[1];
+} EPTPTE;
+#pragma pack()
+/** Pointer to an EPT Page Directory Table Entry. */
+typedef EPTPTE *PEPTPTE;
+/** Pointer to a const EPT Page Directory Table Entry. */
+typedef const EPTPTE *PCEPTPTE;
+
+/**
+ * EPT Page Table.
+ */
+#pragma pack(1)
+typedef union EPTPT
+{
+    EPTPTE      a[EPT_PG_ENTRIES];
+} EPTPT;
 #pragma pack()
 /** Pointer to an extended page table. */
-typedef VTXEPT *PVTXEPT;
+typedef EPTPT *PEPTPT;
 /** Pointer to a const extended table. */
-typedef const VTXEPT *PCVTXEPT;
+typedef const EPTPT *PCEPTPT;
+
+/** @} */
+
 
 /** @name VMX Basic Exit Reasons.
  * @{
@@ -234,9 +373,26 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_EXIT_ERR_MACHINE_CHECK  41
 /** 43 TPR below threshold. Guest software executed MOV to CR8. */
 #define VMX_EXIT_TPR                43
+/** 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
+#define VMX_EXIT_APIC_ACCESS        44
+/** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT, SGDT, or SIDT. */
+#define VMX_EXIT_XDTR_ACCESS        46
+/** 47 Access to LDTR or TR. Guest software attempted to execute LLDT, LTR, SLDT, or STR. */
+#define VMX_EXIT_TR_ACCESS          47
+/** 48 EPT violation. An attempt to access memory with a guest-physical address was disallowed by the configuration of the EPT paging structures. */
+#define VMX_EXIT_EPT_VIOLATION      48
+/** 49 EPT misconfiguration. An attempt to access memory with a guest-physical address encountered a misconfigured EPT paging-structure entry. */
+#define VMX_EXIT_EPT_MISCONFIG      49
+/** 50 INVEPT. Guest software attempted to execute INVEPT. */
+#define VMX_EXIT_INVEPT             50
+/** 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
+#define VMX_EXIT_PREEMPTION_TIMER   52
+/** 53 INVVPID. Guest software attempted to execute INVVPID. */
+#define VMX_EXIT_INVVPID            53
 /** 54 WBINVD. Guest software attempted to execute WBINVD. */
 #define VMX_EXIT_WBINVD             54
-
+/** 55 XSETBV. Guest software attempted to execute XSETBV. */
+#define VMX_EXIT_XSETBV             55
 /** @} */
 
 
@@ -648,6 +804,7 @@ typedef const VTXEPT *PCVTXEPT;
 #define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE                   0x4824
 #define VMX_VMCS_GUEST_ACTIVITY_STATE                           0x4826
 #define VMX_VMCS_GUEST_SYSENTER_CS                              0x482A  /**< MSR IA32_SYSENTER_CS */
+#define VMX_VMCS_GUEST_PREEMPTION_TIMER_VALUE                   0x482E
 /** @} */
 
 
