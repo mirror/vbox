@@ -643,6 +643,18 @@ typedef DECLCALLBACK(int) FNDBGCBACKWRITE(PDBGCBACK pBack, const void *pvBuf, si
 /** Pointer to a FNDBGCBACKWRITE() callback. */
 typedef FNDBGCBACKWRITE *PFNDBGCBACKWRITE;
 
+/**
+ * Ready / busy notification.
+ *
+ * @param   pBack       Pointer to the backend structure supplied by
+ *                      the backend. The backend can use this to find
+ *                      it's instance data.
+ * @param   fReady      Whether it's ready (true) or busy (false).
+ */
+typedef DECLCALLBACK(void) FNDBGCBACKSETREADY(PDBGCBACK pBack, bool fReady);
+/** Pointer to a FNDBGCBACKSETREADY() callback. */
+typedef FNDBGCBACKSETREADY *PFNDBGCBACKSETREADY;
+
 
 /**
  * The communication backend provides the console with a number of callbacks
@@ -656,6 +668,8 @@ typedef struct DBGCBACK
     PFNDBGCBACKREAD     pfnRead;
     /** Write output. */
     PFNDBGCBACKWRITE    pfnWrite;
+    /** Ready / busy notification. */
+    PFNDBGCBACKSETREADY pfnSetReady;
 } DBGCBACK;
 
 

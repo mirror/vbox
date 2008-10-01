@@ -275,8 +275,7 @@ VBoxDbgConsoleInput::returnPressed()
 
 
 VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
-    : VBoxDbgBase(pVM), m_pOutput(NULL), m_pInput(NULL),
-    m_fInputNeedsEnabling(false), m_fInputRestoreFocus(false),
+    : VBoxDbgBase(pVM), m_pOutput(NULL), m_pInput(NULL), m_fInputRestoreFocus(false),
     m_pszInputBuf(NULL), m_cbInputBuf(0), m_cbInputBufAlloc(0),
     m_pszOutputBuf(NULL), m_cbOutputBuf(0), m_cbOutputBufAlloc(0),
     m_pTimer(NULL), m_fUpdatePending(false), m_Thread(NIL_RTTHREAD), m_EventSem(NIL_RTSEMEVENT), m_fTerminate(false)
@@ -379,9 +378,10 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     /*
      * Init the backend structure.
      */
-    m_Back.Core.pfnInput = backInput;
-    m_Back.Core.pfnRead  = backRead;
-    m_Back.Core.pfnWrite = backWrite;
+    m_Back.Core.pfnInput   = backInput;
+    m_Back.Core.pfnRead    = backRead;
+    m_Back.Core.pfnWrite   = backWrite;
+    m_Back.Core.pfnSetReady = backSetReady;
     m_Back.pSelf = this;
 
     /*
@@ -505,7 +505,6 @@ VBoxDbgConsole::commandSubmitted(const QString &rCommand)
 #endif
 
     m_fInputRestoreFocus = m_pInput->hasFocus();    /* dirty focus hack */
-    m_fInputNeedsEnabling = true;
     m_pInput->setEnabled(false);
 
     Log(("VBoxDbgConsole::commandSubmitted: %s (input-enabled=%RTbool)\n", psz, m_pInput->isEnabled()));
@@ -567,16 +566,6 @@ VBoxDbgConsole::backInput(PDBGCBACK pBack, uint32_t cMillies)
     bool fRc = true;
     if (!pThis->m_cbInputBuf)
     {
-        /*
-         * Questing for input and not finding any means it's done processing
-         * any commands that we've queued. Re-enable the input field if required.
-         */
-        if (pThis->m_fInputNeedsEnabling)
-        {
-            pThis->m_fInputNeedsEnabling = false;
-            QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kInputEnable));
-        }
-
         /*
          * Wait outside the lock for the requested time, then check again.
          */
@@ -689,6 +678,15 @@ VBoxDbgConsole::backWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size
     pThis->unlock();
 
     return rc;
+}
+
+
+/*static*/ DECLCALLBACK(void)
+VBoxDbgConsole::backSetReady(PDBGCBACK pBack, bool fReady)
+{
+    VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
+    if (fReady)
+        QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(VBoxDbgConsoleEvent::kInputEnable));
 }
 
 
