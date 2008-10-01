@@ -747,10 +747,11 @@ VBoxDbgConsole::event(QEvent *pGenEvent)
 void
 VBoxDbgConsole::actFocusToInput()
 {
+    if (!m_pInput->hasFocus())
 #ifdef VBOXDBG_USE_QT4
-    m_pInput->setFocus(Qt::ShortcutFocusReason);
+        m_pInput->setFocus(Qt::ShortcutFocusReason);
 #else
-    m_pInput->setFocus();
+        m_pInput->setFocus();
 #endif
 }
 
@@ -758,9 +759,10 @@ VBoxDbgConsole::actFocusToInput()
 void
 VBoxDbgConsole::actFocusToOutput()
 {
+    if (!m_pOutput->hasFocus())
 #ifdef VBOXDBG_USE_QT4
-    m_pOutput->setFocus(Qt::ShortcutFocusReason);
+        m_pOutput->setFocus(Qt::ShortcutFocusReason);
 #else
-    m_pOutput->setFocus();
+        m_pOutput->setFocus();
 #endif
 }

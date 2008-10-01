@@ -2979,6 +2979,7 @@ VBoxDbgStats::setRefresh(int iRefresh)
 void
 VBoxDbgStats::actFocusToPat()
 {
-    m_pPatCB->setFocus();
+    if (!m_pInput->hasFocus())
+        m_pPatCB->setFocus(Qt::ShortcutFocusReason);
 }
 
