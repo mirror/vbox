@@ -31,6 +31,7 @@
 # include <QFont>
 # include <QLineEdit>
 # include <QHBoxLayout>
+# include <QAction>
 #else
 # include <qlabel.h>
 # include <qapplication.h>
@@ -377,7 +378,23 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
         m_Thread = NIL_RTTHREAD;
+
+#ifdef VBOXDBG_USE_QT4
+    /*
+     * Shortcuts.
+     */
+    m_pFocusToInput = new QAction("", this);
+    m_pFocusToInput->setShortcut(QKeySequence("Ctrl+L"));
+    addAction(m_pFocusToInput);
+    connect(m_pFocusToInput, SIGNAL(triggered(bool)), this, SLOT(actFocusToInput()));
+
+    m_pFocusToOutput = new QAction("", this);
+    m_pFocusToOutput->setShortcut(QKeySequence("Ctrl+O"));
+    addAction(m_pFocusToOutput);
+    connect(m_pFocusToOutput, SIGNAL(triggered(bool)), this, SLOT(actFocusToOutput()));
+#endif
 }
+
 
 VBoxDbgConsole::~VBoxDbgConsole()
 {
@@ -412,9 +429,18 @@ VBoxDbgConsole::~VBoxDbgConsole()
     }
     m_cbInputBuf = 0;
     m_cbInputBufAlloc = 0;
+
+#ifdef VBOXDBG_USE_QT4
+    delete m_pFocusToInput;
+    m_pFocusToInput = NULL;
+    delete m_pFocusToOutput;
+    m_pFocusToOutput = NULL;
+#endif
 }
 
-void VBoxDbgConsole::commandSubmitted(const QString &rCommand)
+
+void
+VBoxDbgConsole::commandSubmitted(const QString &rCommand)
 {
     Assert(isGUIThread());
 
@@ -465,7 +491,9 @@ void VBoxDbgConsole::commandSubmitted(const QString &rCommand)
     unlock();
 }
 
-void VBoxDbgConsole::updateOutput()
+
+void
+VBoxDbgConsole::updateOutput()
 {
     Assert(isGUIThread());
 
@@ -483,15 +511,18 @@ void VBoxDbgConsole::updateOutput()
 /**
  * Lock the object.
  */
-void VBoxDbgConsole::lock()
+void
+VBoxDbgConsole::lock()
 {
     RTCritSectEnter(&m_Lock);
 }
 
+
 /**
  * Unlocks the object.
  */
-void VBoxDbgConsole::unlock()
+void
+VBoxDbgConsole::unlock()
 {
     RTCritSectLeave(&m_Lock);
 }
@@ -506,7 +537,8 @@ void VBoxDbgConsole::unlock()
  * @param   pBack       Pointer to VBoxDbgConsole::m_Back.
  * @param   cMillies    Number of milliseconds to wait on input data.
  */
-/*static*/ DECLCALLBACK(bool) VBoxDbgConsole::backInput(PDBGCBACK pBack, uint32_t cMillies)
+/*static*/ DECLCALLBACK(bool)
+VBoxDbgConsole::backInput(PDBGCBACK pBack, uint32_t cMillies)
 {
     VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
     pThis->lock();
@@ -530,6 +562,7 @@ void VBoxDbgConsole::unlock()
     return fRc;
 }
 
+
 /**
  * Read input.
  *
@@ -541,7 +574,8 @@ void VBoxDbgConsole::unlock()
  *                      If NULL the entire buffer must be filled for a
  *                      successful return.
  */
-/*static*/ DECLCALLBACK(int) VBoxDbgConsole::backRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+/*static*/ DECLCALLBACK(int)
+VBoxDbgConsole::backRead(PDBGCBACK pBack, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
     VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
     Assert(pcbRead); /** @todo implement this bit */
@@ -571,6 +605,7 @@ void VBoxDbgConsole::unlock()
     return rc;
 }
 
+
 /**
  * Write (output).
  *
@@ -581,7 +616,8 @@ void VBoxDbgConsole::unlock()
  * @param   pcbWritten  Where to store the number of bytes actually written.
  *                      If NULL the entire buffer must be successfully written.
  */
-/*static*/ DECLCALLBACK(int) VBoxDbgConsole::backWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
+/*static*/ DECLCALLBACK(int)
+VBoxDbgConsole::backWrite(PDBGCBACK pBack, const void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
     VBoxDbgConsole *pThis = VBOXDBGCONSOLE_FROM_DBGCBACK(pBack);
     int rc = VINF_SUCCESS;
@@ -626,6 +662,7 @@ void VBoxDbgConsole::unlock()
     return rc;
 }
 
+
 /**
  * The Debugger Console Thread
  *
@@ -633,7 +670,8 @@ void VBoxDbgConsole::unlock()
  * @param   Thread      The thread handle.
  * @param   pvUser      Pointer to the VBoxDbgConsole object.s
  */
-/*static*/ DECLCALLBACK(int) VBoxDbgConsole::backThread(RTTHREAD Thread, void *pvUser)
+/*static*/ DECLCALLBACK(int)
+VBoxDbgConsole::backThread(RTTHREAD Thread, void *pvUser)
 {
     VBoxDbgConsole *pThis = (VBoxDbgConsole *)pvUser;
     LogFlow(("backThread: Thread=%p pvUser=%p\n", (void *)Thread, pvUser));
@@ -650,7 +688,9 @@ void VBoxDbgConsole::unlock()
     return rc;
 }
 
-bool VBoxDbgConsole::event(QEvent *pGenEvent)
+
+bool
+VBoxDbgConsole::event(QEvent *pGenEvent)
 {
     Assert(isGUIThread());
     if (pGenEvent->type() == (QEvent::Type)VBoxDbgConsoleEvent::kEventNumber)
@@ -703,3 +743,24 @@ bool VBoxDbgConsole::event(QEvent *pGenEvent)
 #endif
 }
 
+
+void
+VBoxDbgConsole::actFocusToInput()
+{
+#ifdef VBOXDBG_USE_QT4
+    m_pInput->setFocus(Qt::ShortcutFocusReason);
+#else
+    m_pInput->setFocus();
+#endif
+}
+
+
+void
+VBoxDbgConsole::actFocusToOutput()
+{
+#ifdef VBOXDBG_USE_QT4
+    m_pOutput->setFocus(Qt::ShortcutFocusReason);
+#else
+    m_pOutput->setFocus();
+#endif
+}
