@@ -186,6 +186,16 @@ protected slots:
     void actFocusToOutput();
 
 protected:
+#ifdef VBOXDBG_USE_QT4
+    /**
+     * Override the closeEvent so we can choose delete the window when
+     * it is closed.
+     *
+     * @param  a_pCloseEvt  The close event.
+     */
+    virtual void closeEvent(QCloseEvent *a_pCloseEvt);
+#endif
+
     /**
      * Lock the object.
      */
@@ -296,6 +306,10 @@ protected:
     RTCRITSECT m_Lock;
     /** When set the thread will cause the debug console thread to terminate. */
     bool volatile m_fTerminate;
+    /** Has the thread terminated?
+     * Used to do the right thing in closeEvent; the console is dead if the
+     * thread has terminated. */
+    bool volatile m_fThreadTerminated;
 
     /** The debug console backend structure.
      * Use VBOXDBGCONSOLE_FROM_DBGCBACK to convert the DBGCBACK pointer to a object pointer. */

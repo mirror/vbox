@@ -33,6 +33,7 @@
 # include <QLineEdit>
 # include <QHBoxLayout>
 # include <QAction>
+# include <QContextMenuEvent>
 #else
 # include <qlabel.h>
 # include <qapplication.h>
@@ -278,7 +279,8 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     : VBoxDbgBase(pVM), m_pOutput(NULL), m_pInput(NULL), m_fInputRestoreFocus(false),
     m_pszInputBuf(NULL), m_cbInputBuf(0), m_cbInputBufAlloc(0),
     m_pszOutputBuf(NULL), m_cbOutputBuf(0), m_cbOutputBufAlloc(0),
-    m_pTimer(NULL), m_fUpdatePending(false), m_Thread(NIL_RTTHREAD), m_EventSem(NIL_RTSEMEVENT), m_fTerminate(false)
+    m_pTimer(NULL), m_fUpdatePending(false), m_Thread(NIL_RTTHREAD), m_EventSem(NIL_RTSEMEVENT),
+    m_fTerminate(false), m_fThreadTerminated(false)
 {
 #ifdef VBOXDBG_USE_QT4
     setWindowTitle("VBoxDbg - Console");
@@ -351,6 +353,8 @@ VBoxDbgConsole::VBoxDbgConsole(PVM pVM, QWidget *pParent/* = NULL*/, const char 
     pLabel->setMinimumSize(20, m_pInput->sizeHint().height() + 6);
 # endif
 #endif /* QT3 */
+    m_pInput->setEnabled(false);    /* (we'll get a ready notification) */
+
 
 #ifdef VBOXDBG_USE_QT4
     /*
@@ -709,6 +713,8 @@ VBoxDbgConsole::backThread(RTTHREAD Thread, void *pvUser)
      * Create and execute the console.
      */
     int rc = pThis->dbgcCreate(&pThis->m_Back.Core, 0);
+
+    ASMAtomicUoWriteBool(&pThis->m_fThreadTerminated, true);
     if (!ASMAtomicUoReadBool(&pThis->m_fTerminate))
         QApplication::postEvent(pThis, new VBoxDbgConsoleEvent(rc == VINF_SUCCESS
                                                                ? VBoxDbgConsoleEvent::kTerminatedUser
@@ -757,6 +763,7 @@ VBoxDbgConsole::event(QEvent *pGenEvent)
             /* The thread terminated by user command (exit, quit, bye). */
             case VBoxDbgConsoleEvent::kTerminatedUser:
                 Log(("VBoxDbgConsole: kTerminatedUser (input-enabled=%RTbool)\n", m_pInput->isEnabled()));
+                m_pInput->setEnabled(false);
                 close();
                 break;
 
@@ -780,6 +787,19 @@ VBoxDbgConsole::event(QEvent *pGenEvent)
     return QVBox::event(pGenEvent);
 #endif
 }
+
+
+#ifdef VBOXDBG_USE_QT4
+void
+VBoxDbgConsole::closeEvent(QCloseEvent *a_pCloseEvt)
+{
+    if (m_fThreadTerminated)
+    {
+        a_pCloseEvt->accept();
+        delete this;
+    }
+}
+#endif
 
 
 void

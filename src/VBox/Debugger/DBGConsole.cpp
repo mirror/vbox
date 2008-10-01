@@ -1861,6 +1861,12 @@ static int dbgcProcessLog(PDBGC pDbgc)
 int dbgcRun(PDBGC pDbgc)
 {
     /*
+     * We're ready for commands now.
+     */
+    pDbgc->fReady = true;
+    pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
+
+    /*
      * Main Debugger Loop.
      *
      * This loop will either block on waiting for input or on waiting on
@@ -2086,15 +2092,18 @@ DBGDECL(int) DBGCCreate(PVM pVM, PDBGCBACK pBack, unsigned fFlags)
         {
             pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, " %s", s_aPlugIns[i]->szName);
             rc = DBGFR3OSRegister(pVM, s_aPlugIns[i]);
-            if (RT_FAILURE(rc) && rc != VERR_ALREADY_LOADED)
+            if (rc == VERR_ALREADY_LOADED)
+                rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "[*]", rc);
+            else if (RT_FAILURE(rc))
                 pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "->%Rrc", rc);
         }
         pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\n");
     }
 
     if (RT_SUCCESS(rc))
-        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL,
-                                     "VBoxDbg> ");
+        rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
+    else
+        pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\nDBGCCreate error: %Rrc\n", rc);
 
     /*
      * Run the debugger main loop.
