@@ -32,6 +32,11 @@ if test "$currentzone" = "global"; then
     echo "Configuring VirtualBox kernel module(s)..."
     /opt/VirtualBox/vboxdrv.sh stopall silentunload
     /opt/VirtualBox/vboxdrv.sh start
+    rc=$?
+    if test "$rc" -ne 0; then
+        echo "## Kernel module configuration failed! Aborting installation..."
+        exit 2
+    fi
 
     if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
         /opt/VirtualBox/vboxdrv.sh fltstart
