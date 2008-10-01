@@ -291,7 +291,12 @@ QString darwinSystemLanguage()
     /* Some cleanup */
     CFRelease (supportedLocales);
     CFRelease (preferredLocales);
-    return QString (localeName);
+    QString id(localeName);
+    /* Check for some misbehavior */
+    if (id.isEmpty() ||
+        id.toLower() == "english")
+        id = "en";
+    return id;
 }
 
 bool darwinIsMenuOpen()
