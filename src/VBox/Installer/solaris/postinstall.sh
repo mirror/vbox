@@ -29,7 +29,7 @@ fi
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    echo "Configuring VirtualBox kernel module(s)..."
+    echo "Configuring VirtualBox Host kernel module(s)..."
     /opt/VirtualBox/vboxdrv.sh stopall silentunload
     /opt/VirtualBox/vboxdrv.sh start
     rc=$?
