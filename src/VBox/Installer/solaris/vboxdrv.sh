@@ -91,7 +91,17 @@ vboxflt_module_loaded()
 
 check_root()
 {
-    if test `/usr/xpg4/bin/id -u` -ne 0; then
+    idbin=/usr/xpg4/bin/id
+    if test ! -f "$idbin"; then
+        found=`which id | grep "no id"`
+        if test ! -z "$found"; then
+            abort "Failed to find a suitable user id binary! Aborting"
+        else
+            idbin=$found
+        fi
+    fi
+
+    if test `$idbin -u` -ne 0; then
         abort "This program must be run with administrator privileges.  Aborting"
     fi
 }
@@ -212,5 +222,5 @@ fltstop)
     exit 1
 esac
 
-exit
+exit 0
 
