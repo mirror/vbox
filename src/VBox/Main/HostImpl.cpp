@@ -51,7 +51,7 @@
 # include <errno.h>
 # include <limits.h>
 # include <stdio.h>
-# ifdef VBOX_SOLARIS_USE_DEVINFO
+# ifdef VBOX_SOLARIS_NSL_RESOLVED
 #  include <libdevinfo.h>
 # else
 #  include <net/if.h>
@@ -70,6 +70,7 @@
 #  include "vbox-libhal.h"
 extern "C" char *getfullrawname(char *);
 # endif
+# include "solaris/DynLoadLibSolaris.h"
 #endif /* RT_OS_SOLARIS */
 
 #ifdef RT_OS_WINDOWS
@@ -530,9 +531,10 @@ static bool IsTAPDevice(const char *guid)
 #endif /* RT_OS_WINDOWS */
 
 #ifdef RT_OS_SOLARIS
-static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, void *pvArg)
+static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, void *pvHostNetworkInterfaceList)
 {
-    std::list <ComObjPtr <HostNetworkInterface> > *pList = (std::list <ComObjPtr <HostNetworkInterface> > *)pvArg;
+    std::list<ComObjPtr <HostNetworkInterface> > *pList = (std::list<ComObjPtr <HostNetworkInterface> > *)pvHostNetworkInterfaceList;
+    Assert(pList);
 
     typedef std::map <std::string, std::string> NICMap;
     typedef std::pair <std::string, std::string> NICPair;
@@ -605,8 +607,39 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, 
         pList->push_back(IfObj);
 }
 
-# ifdef VBOX_SOLARIS_USE_DEVINFO
-static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *pvArg)
+static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostNetworkInterfaceList)
+{
+    /*
+     * Clip off the instance number from the interface name.
+     */
+    int cbInstance = 0;
+    int cbIface = strlen(pszIface);
+    const char *pszEnd = pszIface + cbIface - 1;
+    for (int i = 0; i < cbIface - 1; i++)
+    {
+        if (!RT_C_IS_DIGIT(*pszEnd))
+            break;
+        cbInstance++;
+        pszEnd--;
+    }
+
+    /*
+     * Add the interface.
+     */
+    char szIfaceName[128];
+    strncpy(szIfaceName, pszIface, cbIface - cbInstance);
+    szIfaceName[cbIface - cbInstance] = '\0';
+    int Instance = atoi(pszEnd + 1);
+    vboxSolarisAddHostIface(szIfaceName, Instance, NULL, pvHostNetworkInterfaceList);
+
+    /*
+     * Continue walking...
+     */
+    return _B_FALSE;
+}
+
+# ifdef VBOX_SOLARIS_NSL_RESOLVED
+static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *pvHostNetworkInterfaceList)
 {
 	/*
 	 * Skip aggregations.
@@ -620,7 +653,7 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
 	if (!strcmp(di_driver_name(Node), "softmac"))
 		return DI_WALK_CONTINUE;
 
-    vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), NULL, pvArg);
+    vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), NULL, pvHostNetworkInterfaceList);
 	return DI_WALK_CONTINUE;
 }
 # endif /* VBOX_SOLARIS_USE_DEVINFO */
@@ -660,10 +693,10 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
 # elif defined(RT_OS_SOLARIS)
 
-#ifdef VBOX_SOLARIS_USE_DEVINFO
+#ifdef VBOX_SOLARIS_NSL_RESOLVED
+
     /*
      * Use libdevinfo for determining all physical interfaces.
-     * @todo Try using libdlpi instead and using links rather than physical interfaces.
      */
     di_node_t Root;
     Root = di_init("/", DINFOCACHE);
@@ -672,6 +705,13 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         di_walk_minor(Root, DDI_NT_NET, 0, &list, vboxSolarisAddPhysHostIface);
     	di_fini(Root);
     }
+
+    /*
+     * Use libdlpi for determining all DLPI interfaces.
+     */
+    if (VBoxSolarisLibDlpiFound())
+        g_pfnLibDlpiWalk(vboxSolarisAddLinkHostIface, &list, 0);
+
 #else
     /*
      * This gets only the list of all plumbed logical interfaces.
@@ -727,30 +767,8 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                         char szNICDesc[LIFNAMSIZ + 256];
                         char *pszIface = Ifaces[i].lifr_name;
                         strcpy(szNICDesc, pszIface);
-
-                        /*
-                         * Clip off the instance number from the interface name.
-                         */
-                        int cbInstance = 0;
-                        int cbIface = strlen(pszIface);
-                        char *pszEnd = pszIface + cbIface - 1;
-                        for (int i = 0; i < cbIface - 1; i++)
-                        {
-                            if (!RT_C_IS_DIGIT(*pszEnd))
-                                break;
-                            cbInstance++;
-                            pszEnd--;
-                        }
-
-                        /*
-                         * Add the interface.
-                         */
-                        char szIfaceName[LIFNAMSIZ + 1];
-                        strncpy(szIfaceName, pszIface, cbIface - cbInstance);
-                        szIfaceName[cbIface - cbInstance] = '\0';
-
-                        int Instance = atoi(pszEnd + 1);
-                        vboxSolarisAddHostIface(szIfaceName, Instance, &Mac, &list);
+                        
+                        vboxSolarisAddLinkHostIface(pszIface, &list);
                     }
                 }
             }
