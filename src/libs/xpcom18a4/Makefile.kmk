@@ -1745,7 +1745,7 @@ $(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/in
 $(VBOX_XPIDL): $$(PATH_VBox-xpcom-string)/idl_ts
 
 ## @todo workaround for the DLL dependency bug in kBuild
-$(TARGET_VBoxXPCOM): $(XPCOM_C_NAMESPACE_MAP)
+$$(TARGET_VBoxXPCOM): $(XPCOM_C_NAMESPACE_MAP)
 
 # Generate linker map file filtering out unwanted global symbols.
 # Never used on windows, so we can use pipes as we wish.
