@@ -1343,6 +1343,7 @@ extern "C" int main(void)
 #if QT_VERSION >= 0x040300
   printf(", OK.\n");
   return 0;
+#else
   printf(", expected version 4.3.0 or higher\n");
   return 1;
 #endif
@@ -1375,6 +1376,7 @@ extern "C" int main(void)
 #if QT_VERSION >= 0x040300
   printf(", OK.\n");
   return 0;
+#else
   printf(", expected version 4.3.0 or higher\n");
   return 1;
 #endif
