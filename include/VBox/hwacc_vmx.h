@@ -145,6 +145,7 @@ typedef const EPTPDPT *PCEPTPDPT;
 /**
  * EPT Page Directory Table Entry. Bit view.
  */
+#pragma pack(1)
 typedef union EPTPDEBITS
 {
     /** Present bit. */
