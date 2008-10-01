@@ -1975,7 +1975,7 @@ int
 VBoxDbgStatsModel::rowCount(const QModelIndex &a_rParent) const
 {
     PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
-    return pParent ? pParent->cChildren : 0;
+    return pParent ? pParent->cChildren : 1 /* root */;
 }
 
 
@@ -1983,19 +1983,21 @@ bool
 VBoxDbgStatsModel::hasChildren(const QModelIndex &a_rParent) const
 {
     PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
-    return pParent
-        && pParent->cChildren > 0;
+    return pParent ? pParent->cChildren > 0 : true /* root */;
 }
 
 
 QModelIndex
-VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &r_pParent) const
+VBoxDbgStatsModel::index(int iRow, int iColumn, const QModelIndex &a_rParent) const
 {
-    PDBGGUISTATSNODE pParent = nodeFromIndex(r_pParent);
+    PDBGGUISTATSNODE pParent = nodeFromIndex(a_rParent);
     if (!pParent)
     {
-        Log(("index: iRow=%d iColumn=%d invalid parent\n", iRow, iColumn));
-        return QModelIndex(); /* bug? */
+        /* root */
+        AssertReturn(!a_rParent.isValid(), QModelIndex());
+        AssertReturn(!iRow, QModelIndex());
+        AssertReturn((unsigned)iColumn < DBGGUI_STATS_COLUMNS, QModelIndex());
+        return createIndex(0, iColumn, m_pRoot);
     }
     if ((unsigned)iRow >= pParent->cChildren)
     {
@@ -2023,7 +2025,7 @@ VBoxDbgStatsModel::parent(const QModelIndex &a_rChild) const
     }
     PDBGGUISTATSNODE pParent = pChild->pParent;
     if (!pParent)
-        return QModelIndex(); /* we're root */
+        return QModelIndex(); /* ultimate root */
 
     return createIndex(pParent->iSelf, 0, pParent);
 }
@@ -2792,7 +2794,7 @@ VBoxDbgStatsView::VBoxDbgStatsView(PVM a_pVM, VBoxDbgStatsModel *a_pModel, VBoxD
      * Set the model and view defaults.
      */
     setModel(m_pModel);
-    setRootIndex(m_pModel->getRootIndex());
+    setRootIndex(QModelIndex());
     setRootIsDecorated(true);
     setItemsExpandable(true);
     setSelectionBehavior(SelectRows);
@@ -3407,14 +3409,17 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     QVBoxLayout *pVLayout = new QVBoxLayout;
     pVLayout->addWidget(pHBox);
     pVLayout->addWidget(m_pView);
-    this->setLayout(pVLayout);
+    setLayout(pVLayout);
 
     /*
-     * Expand all and resize columns...
+     * Resize the columns.
+     * Seems this has to be done with all nodes expanded.
      */
     m_pView->expandAll();
     for (int i = 0; i <= 8; i++)
         m_pView->resizeColumnToContents(i);
+    m_pView->collapseAll();
+    m_pView->expandToDepth(0);
 
     /*
      * Create a refresh timer and start it.
