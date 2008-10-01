@@ -223,7 +223,7 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
     bool fEnabled;
     int rc = CFGMR3QueryBool(pKey, "Enabled", &fEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
-#if defined(VBOX_WITH_DEBUGGER) && !defined(__L4ENV__) && !defined(DEBUG_dmik)
+#if defined(VBOX_WITH_DEBUGGER) && defined(VBOX_WITH_DEBUGGER_TCP_BY_DEFAULT) && !defined(__L4ENV__) && !defined(DEBUG_dmik)
         fEnabled = true;
 #else
         fEnabled = false;
