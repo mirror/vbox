@@ -491,7 +491,7 @@ INST_PATH=$(INST_VIRTUALBOX)Contents/MacOS/accessible/
 ifeq ($(KBUILD_TARGET),win)
 PREFIX=
 SUFFIX=4
-INST_PATH=accessible/
+INST_PATH=bin/accessible/
 endif
 # Add the accessible plugin as a install target
 INSTALLS += accessible
