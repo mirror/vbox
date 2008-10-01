@@ -195,7 +195,6 @@ typedef struct DBGC
     bool                fInputOverflow;
     /** Indicates whether or we're ready for input. */
     bool                fReady;
-
     /** Scratch buffer position. */
     char               *pszScratch;
     /** Scratch buffer. */

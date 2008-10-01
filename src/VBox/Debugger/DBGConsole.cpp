@@ -1604,7 +1604,7 @@ int dbgcProcessInput(PDBGC pDbgc, bool fNoExecute)
      * We know there's input ready, so let's read it first.
      */
     int rc = dbgcInputRead(pDbgc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -1612,15 +1612,20 @@ int dbgcProcessInput(PDBGC pDbgc, bool fNoExecute)
      */
     if (pDbgc->cInputLines)
     {
-        /** @todo this fReady stuff is broken. */
+        pDbgc->pBack->pfnSetReady(pDbgc->pBack, false);
         pDbgc->fReady = false;
         rc = dbgcProcessCommands(pDbgc, fNoExecute);
-        if (VBOX_SUCCESS(rc) && rc != VWRN_DBGC_CMD_PENDING)
+        if (RT_SUCCESS(rc) && rc != VWRN_DBGC_CMD_PENDING)
             pDbgc->fReady = true;
-        if (    VBOX_SUCCESS(rc)
+
+        if (    RT_SUCCESS(rc)
             &&  pDbgc->iRead == pDbgc->iWrite
             &&  pDbgc->fReady)
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
+
+        if (    RT_SUCCESS(rc)
+            &&  pDbgc->fReady)
+            pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
     }
     else
         /* Received nonsense; just skip it. */
@@ -1795,13 +1800,15 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         case DBGFEVENT_INVALID_COMMAND:
         {
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Invalid command event!\n");
-            fPrintPrompt = !pDbgc->fReady;
             break;
         }
 
         case DBGFEVENT_TERMINATING:
         {
+            pDbgc->fReady = false;
+            pDbgc->pBack->pfnSetReady(pDbgc->pBack, false);
             pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\nVM is terminating!\n");
+            fPrintPrompt = false;
             rc = VERR_GENERAL_FAILURE;
             break;
         }
@@ -1810,7 +1817,6 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
         default:
         {
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf/dbgc error: Unknown event %d!\n", pEvent->enmType);
-            fPrintPrompt = !pDbgc->fReady;
             break;
         }
     }
@@ -1821,6 +1827,9 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
     if (fPrintPrompt && VBOX_SUCCESS(rc))
     {
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
+        pDbgc->fReady = true;
+        if (RT_SUCCESS(rc))
+            pDbgc->pBack->pfnSetReady(pDbgc->pBack, true);
     }
 
     return rc;
