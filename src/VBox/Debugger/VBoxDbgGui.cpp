@@ -153,7 +153,7 @@ VBoxDbgGui::showStatistics()
 {
     if (!m_pDbgStats)
     {
-        m_pDbgStats = new VBoxDbgStats(m_pVM);
+        m_pDbgStats = new VBoxDbgStats(m_pVM, "*");
         connect(m_pDbgStats, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionStatistics();
     }

@@ -1779,6 +1779,7 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
         PDBGGUISTATSNODE const pLast = prevDataNode(m_pUpdateParent->papChildren[m_iUpdateChild]);
         if (!pLast)
         {
+            /* nuking the whole tree. */
             setRootNode(createRootNode());
             m_fUpdateInsertRemove = true;
         }
@@ -2569,7 +2570,7 @@ VBoxDbgStatsView::updateStats(const QString &rPatStr)
 {
     m_PatStr = rPatStr;
     if (m_pModel->updateStatsByPattern(rPatStr))
-        setRootIndex(m_pModel->getRootIndex()); /// @todo this is a hack?
+        setRootIndex(QModelIndex()); /* hack */
 }
 
 
@@ -2653,7 +2654,10 @@ VBoxDbgStatsView::actRefresh()
 {
     QModelIndex Idx = m_pCurMenu ? m_CurIndex : currentIndex();
     if (!Idx.isValid() || Idx == m_pModel->getRootIndex())
-        m_pModel->updateStatsByPattern(m_PatStr);
+    {
+        if (m_pModel->updateStatsByPattern(m_PatStr))
+            setRootIndex(QModelIndex()); /* hack */
+    }
     else
         m_pModel->updateStatsByIndex(Idx);
 }
@@ -2724,6 +2728,7 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     pLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
     m_pPatCB = new QComboBox();
+    m_pPatCB->setAutoCompletion(false);
     pHLayout->addWidget(m_pPatCB);
     if (!m_PatStr.isEmpty())
         m_pPatCB->addItem(m_PatStr);
@@ -2784,6 +2789,7 @@ VBoxDbgStats::VBoxDbgStats(PVM pVM, const char *pszPat/* = NULL*/, unsigned uRef
     connect(m_pTimer, SIGNAL(timeout()), this, SLOT(refresh()));
     setRefresh(uRefreshRate);
 }
+
 
 VBoxDbgStats::~VBoxDbgStats()
 {
