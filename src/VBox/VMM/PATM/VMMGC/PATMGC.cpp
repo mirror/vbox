@@ -200,6 +200,9 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                         rc = PATMAddBranchToLookupCache(pVM, (RTRCPTR)pRegFrame->edi, (RTRCPTR)pRegFrame->edx, pRelAddr);
                         if (rc == VINF_SUCCESS)
                         {
+                            Log(("Patch block %VRv called as function\n", pRec->patch.pPrivInstrGC));
+                            pRec->patch.flags |= PATMFL_CODE_REFERENCED;
+
                             pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                             pRegFrame->eax = pRelAddr;
                             STAM_COUNTER_INC(&pVM->patm.s.StatFunctionFound);
@@ -217,15 +220,6 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 }
                 else
                 {
-#if 0
-                    if (pRegFrame->edx == 0x806eca98) 
-                    {
-                        pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
-                        pRegFrame->eax = 0;     /* make it fault */
-                        STAM_COUNTER_INC(&pVM->patm.s.StatFunctionNotFound);
-                        return VINF_SUCCESS;
-                    } 
-#endif
                     STAM_COUNTER_INC(&pVM->patm.s.StatFunctionNotFound);
                     return VINF_PATM_DUPLICATE_FUNCTION;
                 }

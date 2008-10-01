@@ -1047,7 +1047,8 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
         {
             /* Special case: call function replacement patch from this patch block.
              */
-            if (PATMQueryFunctionPatch(pVM, pRec->pTargetGC) == 0)
+            PPATMPATCHREC pFunctionRec = PATMQueryFunctionPatch(pVM, pRec->pTargetGC);
+            if (!pFunctionRec)
             {
                 int rc;
 
@@ -1079,6 +1080,12 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
                     continue;
                 }
             }
+            else
+            {
+                Log(("Patch block %VRv called as function\n", pFunctionRec->patch.pPrivInstrGC));
+                pFunctionRec->patch.flags |= PATMFL_CODE_REFERENCED;
+            }
+
             pBranchTargetGC = PATMR3QueryPatchGCPtr(pVM, pRec->pTargetGC);
         }
         else
@@ -4078,7 +4085,9 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
                     return VERR_PATM_ALREADY_PATCHED;    /* already done once */
                 }
             }
-            PATMR3RemovePatch(pVM, pInstrGC);
+            rc = PATMR3RemovePatch(pVM, pInstrGC);
+            if (VBOX_FAILURE(rc))
+                return VERR_PATCHING_REFUSED;
         }
         else
         {
@@ -4726,10 +4735,11 @@ loop_start:
                             /* The guest is about to overwrite the 5 byte jump to patch code. Remove the patch. */
                             Log(("PATMR3PatchWrite: overwriting jump to patch code -> remove patch.\n"));
                             int rc = PATMR3RemovePatch(pVM, pPatch->pPrivInstrGC);
-                            AssertRC(rc);
+                            if (rc == VINF_SUCCESS)
+                                /** @note jump back to the start as the pPatchPage has been deleted or changed */
+                                goto loop_start;
 
-                            /** @note jump back to the start as the pPatchPage has been deleted or changed */
-                            goto loop_start;
+                            continue;
                         }
 
                         /* Find the closest instruction from below; the above quick check ensured that we are indeed in patched code */
@@ -5231,7 +5241,8 @@ PATMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
                         Log(("PATMR3EnablePatch: Can't enable a patch who's guest code has changed!!\n"));
                         STAM_COUNTER_INC(&pVM->patm.s.StatOverwritten);
                         /* Remove it completely */
-                        PATMR3RemovePatch(pVM, pInstrGC);
+                        rc = PATMR3RemovePatch(pVM, pInstrGC);
+                        AssertRC(rc);
                         return VERR_PATCH_NOT_FOUND;
                     }
 
@@ -5268,7 +5279,8 @@ PATMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
                 {
                     Log(("PATMR3EnablePatch: Can't enable a patch who's guest code has changed!!\n"));
                     STAM_COUNTER_INC(&pVM->patm.s.StatOverwritten);
-                    PATMR3RemovePatch(pVM, pInstrGC);
+                    rc = PATMR3RemovePatch(pVM, pInstrGC);
+                    AssertRC(rc);
                     return VERR_PATCH_NOT_FOUND;
                 }
 
@@ -5310,7 +5322,12 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
     pPatch = &pPatchRec->patch;
 
     /* Strictly forbidden to remove such patches. There can be dependencies!! */
-    AssertReturn(fForceRemove || !(pPatch->flags & (PATMFL_DUPLICATE_FUNCTION)), VERR_ACCESS_DENIED);
+    if (!fForceRemove && (pPatch->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CODE_REFERENCED)))
+    {
+        Log(("PATMRemovePatch %VRv REFUSED!\n", pPatch->pPrivInstrGC));
+        return VERR_ACCESS_DENIED;
+    }
+    Log(("PATMRemovePatch %VRv\n", pPatch->pPrivInstrGC));
 
     /** @note NEVER EVER REUSE PATCH MEMORY */
     /** @note PATMR3DisablePatch put a breakpoint (0xCC) at the entry of this patch */
@@ -5463,6 +5480,9 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
 
         LogRel(("PATM: patmR3RefreshPatch: succeeded to refresh patch at %VRv \n", pInstrGC));
         STAM_COUNTER_INC(&pVM->patm.s.StatPatchRefreshSuccess);
+
+        /* Used by another patch, so don't remove it! */
+        pNewPatchRec->patch.flags |= PATMFL_CODE_REFERENCED;
     }
 
 failure:
@@ -5984,10 +6004,12 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *
     {
         pPatch = PATM_PATCHREC_FROM_COREOFFSET(pvPatchCoreOffset);
 
+        Assert(offset >= pPatch->patch.pPatchBlockOffset && offset < pPatch->patch.pPatchBlockOffset + pPatch->patch.cbPatchBlockSize);
+
         if (pPatch->patch.uState == PATCH_DIRTY)
         {
             Log(("PATMR3HandleTrap: trap in dirty patch at %VRv\n", pEip));
-            if (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CALLABLE_AS_FUNCTION))
+            if (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CODE_REFERENCED))
             {
                 /* Function duplication patches set fPIF to 1 on entry */
                 pVM->patm.s.pGCStateHC->fPIF = 1;
@@ -5997,7 +6019,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *
         if (pPatch->patch.uState == PATCH_DISABLED)
         {
             Log(("PATMR3HandleTrap: trap in disabled patch at %VRv\n", pEip));
-            if (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CALLABLE_AS_FUNCTION))
+            if (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CODE_REFERENCED))
             {
                 /* Function duplication patches set fPIF to 1 on entry */
                 pVM->patm.s.pGCStateHC->fPIF = 1;

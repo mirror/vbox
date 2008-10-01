@@ -78,6 +78,7 @@
 #define PATMFL_MUST_INSTALL_PATCHJMP        RT_BIT_64(31) /** Need to patch guest code in order to activate patch. */
 #define PATMFL_INT3_REPLACEMENT_BLOCK       RT_BIT_64(32) /** int 3 replacement block */
 #define PATMFL_EXTERNAL_JUMP_INSIDE         RT_BIT_64(33) /** A trampoline patch was created that jumps to an instruction in the patch block */
+#define PATMFL_CODE_REFERENCED              RT_BIT_64(34) /** patch block referenced (called, jumped to) by another patch. */
 
 #define SIZEOF_NEARJUMP8                   2 //opcode byte + 1 byte relative offset
 #define SIZEOF_NEARJUMP16                  3 //opcode byte + 2 byte relative offset
