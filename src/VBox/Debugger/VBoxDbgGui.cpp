@@ -19,7 +19,9 @@
  * additional information or have any questions.
  */
 
-
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define VBOX_COM_NO_ATL
 #include <VBox/com/defs.h>
 #include <VBox/vm.h>
@@ -33,6 +35,8 @@
 # include <qdesktopwidget.h>
 # include <qapplication.h>
 #endif
+
+
 
 
 VBoxDbgGui::VBoxDbgGui() :
@@ -144,7 +148,8 @@ VBoxDbgGui::~VBoxDbgGui()
 }
 
 
-int VBoxDbgGui::showStatistics()
+int
+VBoxDbgGui::showStatistics()
 {
     if (!m_pDbgStats)
     {
@@ -156,7 +161,9 @@ int VBoxDbgGui::showStatistics()
     return VINF_SUCCESS;
 }
 
-void VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
+
+void
+VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
 {
     if (m_pDbgStats)
     {
@@ -169,7 +176,8 @@ void VBoxDbgGui::repositionStatistics(bool fResize/* = true*/)
 }
 
 
-int VBoxDbgGui::showConsole()
+int
+VBoxDbgGui::showConsole()
 {
     if (!m_pDbgConsole)
     {
@@ -182,7 +190,8 @@ int VBoxDbgGui::showConsole()
 }
 
 
-void VBoxDbgGui::repositionConsole(bool fResize/* = true*/)
+void
+VBoxDbgGui::repositionConsole(bool fResize/* = true*/)
 {
     if (m_pDbgConsole)
     {
@@ -195,7 +204,8 @@ void VBoxDbgGui::repositionConsole(bool fResize/* = true*/)
 }
 
 
-void VBoxDbgGui::updateDesktopSize()
+void
+VBoxDbgGui::updateDesktopSize()
 {
     QRect Rct(0, 0, 1600, 1200);
     QDesktopWidget *pDesktop = QApplication::desktop();
@@ -208,7 +218,8 @@ void VBoxDbgGui::updateDesktopSize()
 }
 
 
-void VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
+void
+VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
 {
     const bool fResize = cx != m_cx || cy != m_cy;
     const bool fMoved  = x  != m_x  || y  != m_y;
@@ -225,7 +236,8 @@ void VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
 }
 
 
-/*static*/ void VBoxDbgGui::resizeWidget(QWidget *pWidget, unsigned cx, unsigned cy)
+/*static*/ void
+VBoxDbgGui::resizeWidget(QWidget *pWidget, unsigned cx, unsigned cy)
 {
     QSize FrameSize = pWidget->frameSize();
     QSize WidgetSize = pWidget->size();
@@ -233,7 +245,8 @@ void VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
                     cy - (FrameSize.height() - WidgetSize.height()));
 }
 
-void VBoxDbgGui::notifyChildDestroyed(QObject *pObj)
+void
+VBoxDbgGui::notifyChildDestroyed(QObject *pObj)
 {
     if (m_pDbgStats == pObj)
         m_pDbgStats = NULL;

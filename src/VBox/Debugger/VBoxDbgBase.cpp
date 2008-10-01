@@ -29,7 +29,8 @@
 
 
 
-VBoxDbgBase::VBoxDbgBase(PVM pVM) : m_pVM(pVM), m_hGUIThread(RTThreadNativeSelf())
+VBoxDbgBase::VBoxDbgBase(PVM pVM)
+    : m_pVM(pVM), m_hGUIThread(RTThreadNativeSelf())
 {
     /*
      * Register
@@ -38,60 +39,71 @@ VBoxDbgBase::VBoxDbgBase(PVM pVM) : m_pVM(pVM), m_hGUIThread(RTThreadNativeSelf(
     AssertRC(rc);
 }
 
+
 VBoxDbgBase::~VBoxDbgBase()
 {
     /*
      * If the VM is still around.
      */
-    if (m_pVM)
+    /** @todo need to do some locking here?  */
+    PVM pVM = (PVM)ASMAtomicXchgPtr((void * volatile *)&m_pVM, NULL);
+    if (pVM)
     {
-        int rc = VMR3AtStateDeregister(m_pVM, atStateChange, this);
+        int rc = VMR3AtStateDeregister(pVM, atStateChange, this);
         AssertRC(rc);
-        m_pVM = NULL;
     }
 }
 
-int VBoxDbgBase::stamReset(const QString &rPat)
+
+int
+VBoxDbgBase::stamReset(const QString &rPat)
 {
 #ifdef VBOXDBG_USE_QT4
     QByteArray Utf8Array = rPat.toUtf8();
     const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
 #else
     const char *pszPat = !rPat.isEmpty() ? rPat : NULL;
-#endif 
+#endif
     if (m_pVM)
         return STAMR3Reset(m_pVM, pszPat);
     return VERR_INVALID_HANDLE;
 }
 
-int VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
+
+int
+VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 {
 #ifdef VBOXDBG_USE_QT4
     QByteArray Utf8Array = rPat.toUtf8();
     const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
 #else
     const char *pszPat = !rPat.isEmpty() ? rPat : NULL;
-#endif 
+#endif
     if (m_pVM)
         return STAMR3Enum(m_pVM, pszPat, pfnEnum, pvUser);
     return VERR_INVALID_HANDLE;
 }
 
-int VBoxDbgBase::dbgcCreate(PDBGCBACK pBack, unsigned fFlags)
+
+int
+VBoxDbgBase::dbgcCreate(PDBGCBACK pBack, unsigned fFlags)
 {
     if (m_pVM)
         return DBGCCreate(m_pVM, pBack, fFlags);
     return VERR_INVALID_HANDLE;
 }
 
-/*static*/ DECLCALLBACK(void) VBoxDbgBase::atStateChange(PVM /*pVM*/, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
+
+/*static*/ DECLCALLBACK(void)
+VBoxDbgBase::atStateChange(PVM pVM, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
 {
     VBoxDbgBase *pThis = (VBoxDbgBase *)pvUser;
     switch (enmState)
     {
         case VMSTATE_TERMINATED:
-            pThis->sigTerminated();
-            pThis->m_pVM = NULL;
+            /** @todo need to do some locking here?  */
+            if (ASMAtomicCmpXchgPtr((void * volatile *)&pThis->m_pVM, NULL, pVM))
+                pThis->sigTerminated();
             break;
 
         default:
@@ -99,7 +111,9 @@ int VBoxDbgBase::dbgcCreate(PDBGCBACK pBack, unsigned fFlags)
     }
 }
 
-void VBoxDbgBase::sigTerminated()
+
+void
+VBoxDbgBase::sigTerminated()
 {
 }
 
