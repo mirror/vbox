@@ -210,6 +210,11 @@ protected slots:
      */
     void setRefresh(int iRefresh);
 
+    /**
+     * Change the focus to the pattern combo box.
+     */
+    void actFocusToPat();
+
 protected:
 
     /** The current selection pattern. */
@@ -223,6 +228,9 @@ protected:
     QTimer             *m_pTimer;
     /** The tree view widget. */
     VBoxDbgStatsView   *m_pView;
+
+    /** Move to pattern field action. */
+    QAction *m_pFocusToPat;
 };
 
 
