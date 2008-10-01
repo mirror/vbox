@@ -64,6 +64,8 @@ static const DBGGUIVT g_dbgGuiVT =
     DBGGuiAdjustRelativePos,
     DBGGuiShowStatistics,
     DBGGuiShowCommandLine,
+    DBGGuiSetParent,
+    DBGGuiSetMenu,
     DBGGUIVT_VERSION
 };
 
@@ -217,5 +219,38 @@ DBGDECL(int) DBGGuiShowCommandLine(PDBGGUI pGui)
     AssertReturn(pGui, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pGui->u32Magic == DBGGUI_MAGIC, ("u32Magic=%#x\n", pGui->u32Magic), VERR_INVALID_PARAMETER);
     return pGui->pVBoxDbgGui->showConsole();
+}
+
+
+/**
+ * Sets the parent windows.
+ *
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   pvParent    Pointer to a QWidget object.
+ *
+ * @remarks This will no affect any existing windows, so call it right after
+ *          creating the thing.
+ */
+DBGDECL(void) DBGGuiSetParent(PDBGGUI pGui, void *pvParent)
+{
+    return pGui->pVBoxDbgGui->setParent((QWidget *)pvParent);
+}
+
+
+/**
+ * Sets the debug menu object.
+ *
+ * @param   pGui        The instance returned by DBGGuiCreate().
+ * @param   pvMenu      Pointer to a QMenu object.
+ *
+ * @remarks Call right after creation or risk losing menu item.
+ */
+DBGDECL(void) DBGGuiSetMenu(PDBGGUI pGui, void *pvMenu)
+{
+#ifdef VBOXDBG_USE_QT4
+    return pGui->pVBoxDbgGui->setMenu((QMenu *)pvMenu);
+#else
+    return pGui->pVBoxDbgGui->setMenu((QPopupMenu *)pvMenu);
+#endif
 }
 
