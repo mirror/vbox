@@ -504,17 +504,35 @@ endif
 ifeq ($(KBUILD_TARGET),darwin)
 #
 # For the application menu it is necessary to have all supported language at
-# least as a project directory in the bundle. Create them all based on the nls
-# files we have.
+# least as a project directory in the bundle. Create them all based on the
+# nls/ApprovedLanguages.txt file.
+# @todo: It seems it isn't possible to let kBuild generate a directory in the
+# install target without installing something. So we install an empty file for
+# that.
 #
-## @todo r=bird: Convert this to an INSTALLS target. Please, do avoid using the OTHERS targets if possible.
-## @todo r=bird: This doesn't actually work on the build boxes. there is no nls/VirtualBox_*.ts there since
-##               the makefile is loaded from the root of the trunk... Please fix.
-VBOX_SUPPORTED_LANG = $(patsubst nls/VirtualBox_%.ts,%.lproj,$(wildcard nls/VirtualBox_*.ts))
-VBOX_LANG_INSTALL = \
-		$(patsubst %,$(PATH_BIN)/../Resources/%,$(VBOX_SUPPORTED_LANG)) \
-		$(patsubst %,$(PATH_BIN)/../Resources/VirtualBoxVM.app/Contents/Resources/%,$(VBOX_SUPPORTED_LANG))
-OTHERS += $(VBOX_LANG_INSTALL)
+# Figure out which languages we support
+VBOX_SUPPORTED_LANG = $(shell $(CAT_EXT) $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.txt)
+# For the .lproj directories
+VBOX_INSTALL_LANG_LPROJ = $(addsuffix .lproj,$(VBOX_SUPPORTED_LANG))
+
+define def_gen_lproj_dir
+INSTALLS += $(lang_name)
+$(lang_name)_INST = dist/VirtualBox.app/Contents/Resources/$(lang_name)
+# The install TEMPLATE needs something to install; use a emtpy file for that.
+# @todo: How could this be prevented?
+$(lang_name)_SOURCES = \
+	$(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/.empty
+# Symlink for the VirtualBoxVM.app
+$(lang_name)_SYMLINKS = \
+	../VirtualBoxVM.app/Contents/Resources/$(lang_name)=>../../../$(lang_name)
+endef
+$(foreach lang_name,$(VBOX_INSTALL_LANG_LPROJ),$(eval $(def_gen_lproj_dir)))
+
+# Rule for generating an empty file
+BLDDIRS += $(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/
+CLEAN += $(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/.empty
+$(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/.empty:: | $$(dir $$@)
+	$(QUIET)$(APPEND) $@ ''
 
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
@@ -617,12 +635,4 @@ updatenls:: \
 		-ts \
 		$(filter-out nls/qt_%.ts,$(VirtualBox4_QT_TRANSLATIONS)) \
 		nls/VirtualBox_xx_YY.ts
-
-define def_create_lang_dir
-$(language):
-	$(RM) -Rf $(language)
-	$(MKDIR) -p \
-		$(language)
-endef
-$(foreach language,$(VBOX_LANG_INSTALL),$(eval $(def_create_lang_dir)))
 
