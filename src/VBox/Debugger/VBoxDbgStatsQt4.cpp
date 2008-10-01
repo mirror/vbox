@@ -2262,18 +2262,116 @@ VBoxDbgStatsModel::data(const QModelIndex &a_rIndex, int a_eRole) const
 /*static*/ void
 VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a_rString)
 {
-    NOREF(a_pNode);
-    a_rString = "todo";
+    /*
+     * Get the path, padding it to 32-chars and add it to the string.
+     */
+    char szBuf[1024];
+    int32_t off = getNodePath(a_pNode, szBuf, sizeof(szBuf) - 2);
+    AssertReturnVoid(off >= 0);
+    if (off < 32)
+    {
+        memset(&szBuf[off], ' ', 32 - off);
+        szBuf[32] = '\0';
+        off = 32;
+    }
+    szBuf[off++] = ' ';
+    szBuf[off]   = '\0';
+    a_rString += szBuf;
+
+    /*
+     * The following is derived from stamR3PrintOne, except
+     * we print to szBuf, do no visibility checks and can skip
+     * the path bit.
+     */
+    switch (a_pNode->enmType)
+    {
+        case STAMTYPE_COUNTER:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8llu %s", a_pNode->Data.Counter.c, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+        {
+            uint64_t u64 = a_pNode->Data.Profile.cPeriods ? a_pNode->Data.Profile.cPeriods : 1;
+            RTStrPrintf(szBuf, sizeof(szBuf),
+                        "%8llu %s (%12llu ticks, %7llu times, max %9llu, min %7lld)",
+                        a_pNode->Data.Profile.cTicks / u64, STAMR3GetUnit(a_pNode->enmUnit),
+                        a_pNode->Data.Profile.cTicks, a_pNode->Data.Profile.cPeriods, a_pNode->Data.Profile.cTicksMax, a_pNode->Data.Profile.cTicksMin);
+            break;
+        }
+
+        case STAMTYPE_RATIO_U32:
+        case STAMTYPE_RATIO_U32_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf),
+                        "%8u:%-8u %s",
+                        a_pNode->Data.RatioU32.u32A, a_pNode->Data.RatioU32.u32B, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_CALLBACK:
+            if (a_pNode->Data.pStr)
+                a_rString += *a_pNode->Data.pStr;
+            RTStrPrintf(szBuf, sizeof(szBuf), " %s", STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8u %s", a_pNode->Data.u8, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8x %s", a_pNode->Data.u8, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8u %s", a_pNode->Data.u16, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8x %s", a_pNode->Data.u16, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8u %s", a_pNode->Data.u32, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8x %s", a_pNode->Data.u32, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8llu %s", a_pNode->Data.u64, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%8llx %s", a_pNode->Data.u64, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        default:
+            AssertMsgFailed(("enmType=%d\n", a_pNode->enmType));
+            return;
+    }
+
+    a_rString += szBuf;
 }
 
 
 /*static*/ void
 VBoxDbgStatsModel::stringifyNode(PDBGGUISTATSNODE a_pNode, QString &a_rString)
 {
-    /* this node */
-    if (!a_rString.isEmpty())
-        a_rString += "\n";
-    stringifyNodeNoRecursion(a_pNode, a_rString);
+    /* this node (if it has data) */
+    if (a_pNode->enmType != STAMTYPE_INVALID)
+    {
+        if (!a_rString.isEmpty())
+            a_rString += "\n";
+        stringifyNodeNoRecursion(a_pNode, a_rString);
+    }
 
     /* the children */
     uint32_t const cChildren = a_pNode->cChildren;
