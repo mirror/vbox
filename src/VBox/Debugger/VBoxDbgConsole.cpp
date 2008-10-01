@@ -94,7 +94,7 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     /* green on black */
 #ifdef VBOXDBG_USE_QT4
     QPalette Pal(palette());
-    Pal.setColor(QPalette::Active, QPalette::Base, QColor(Qt::black));
+    Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::black));
     setPalette(Pal);
     setTextColor(QColor(qRgb(0, 0xe0, 0)));
 #else
