@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="hu">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -69,17 +70,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Új hozzárendelés készíthető kétszeres kattintással</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Merevlemez</translation>
+        <translation>Merevlemez</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Slot</source>
-        <translation type="unfinished"></translation>
+        <translation>Slot</translation>
     </message>
 </context>
 <context>
@@ -100,7 +101,7 @@
     <message>
         <location filename="../src/QIHelpButton.cpp" line="120"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">Sú&amp;gó</translation>
+        <translation>Sú&amp;gó</translation>
     </message>
 </context>
 <context>
@@ -163,162 +164,162 @@
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="349"/>
         <source>Alt Gr</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="350"/>
         <source>Caps Lock</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="351"/>
         <source>Scroll Lock</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="574"/>
         <source>&lt;key_%1&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;key_%1&gt;</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="298"/>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="299"/>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="301"/>
         <source>F1</source>
-        <translation type="unfinished">F1</translation>
+        <translation>F1</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="302"/>
         <source>F2</source>
-        <translation type="unfinished">F2</translation>
+        <translation>F2</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="303"/>
         <source>F3</source>
-        <translation type="unfinished">F3</translation>
+        <translation>F3</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="304"/>
         <source>F4</source>
-        <translation type="unfinished">F4</translation>
+        <translation>F4</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="305"/>
         <source>F5</source>
-        <translation type="unfinished">F5</translation>
+        <translation>F5</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="306"/>
         <source>F6</source>
-        <translation type="unfinished">F6</translation>
+        <translation>F6</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="307"/>
         <source>F7</source>
-        <translation type="unfinished">F7</translation>
+        <translation>F7</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="308"/>
         <source>F8</source>
-        <translation type="unfinished">F8</translation>
+        <translation>F8</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="309"/>
         <source>F9</source>
-        <translation type="unfinished">F9</translation>
+        <translation>F9</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="310"/>
         <source>F10</source>
-        <translation type="unfinished">F10</translation>
+        <translation>F10</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="311"/>
         <source>F11</source>
-        <translation type="unfinished">F11</translation>
+        <translation>F11</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="312"/>
         <source>F12</source>
-        <translation type="unfinished">F12</translation>
+        <translation>F12</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="313"/>
         <source>F13</source>
-        <translation type="unfinished">F13</translation>
+        <translation>F13</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="314"/>
         <source>F14</source>
-        <translation type="unfinished">F14</translation>
+        <translation>F14</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="315"/>
         <source>F15</source>
-        <translation type="unfinished">F15</translation>
+        <translation>F15</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="316"/>
         <source>F16</source>
-        <translation type="unfinished">F16</translation>
+        <translation>F16</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="317"/>
         <source>F17</source>
-        <translation type="unfinished">F17</translation>
+        <translation>F17</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="318"/>
         <source>F18</source>
-        <translation type="unfinished">F18</translation>
+        <translation>F18</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="319"/>
         <source>F19</source>
-        <translation type="unfinished">F19</translation>
+        <translation>F19</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="320"/>
         <source>F20</source>
-        <translation type="unfinished">F20</translation>
+        <translation>F20</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="321"/>
         <source>F21</source>
-        <translation type="unfinished">F21</translation>
+        <translation>F21</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="322"/>
         <source>F22</source>
-        <translation type="unfinished">F22</translation>
+        <translation>F22</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="323"/>
         <source>F23</source>
-        <translation type="unfinished">F23</translation>
+        <translation>F23</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="324"/>
         <source>F24</source>
-        <translation type="unfinished">F24</translation>
+        <translation>F24</translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="326"/>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="327"/>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/QIHotKeyEdit.cpp" line="328"/>
@@ -331,7 +332,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Má&amp;solás</translation>
     </message>
 </context>
 <context>
@@ -412,7 +413,7 @@
     <message>
         <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;VirtualBox Grafikus felület, verzió %1&lt;br&gt; %2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -420,13 +421,14 @@
     <message>
         <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="38"/>
         <source>VirtualBox - About</source>
-        <translation type="unfinished">VirtualBox - Névjegy</translation>
+        <translation>VirtualBox - Névjegy</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="39"/>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox Grafikus felület
+Verzió %1</translation>
     </message>
 </context>
 <context>
@@ -631,12 +633,12 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A Power gomb megnyomásának megfelelő ACPI jelet küld a gépnek.&lt;/p&gt;&lt;p&gt;Alapértelmezetten a vendég rendszer észleli ezt az eseményt, és elindítja a rendes rendszer-leállítási folyamatot. Ez az ajánlott mód a virtuális gép kikapcsolására, mert annak így lehetősége van az adatok és beállítások elmentésére.&lt;/p&gt;&lt;p&gt;Ha a gép nem reagál semmit erre, akkor valószínűleg nem ismeri ezt az ACPI eseményt, vagy az ACPI-nek konfigurációs problémái vannak. Ebben az esetben válaszd a &lt;b&gt;Kikapcsolni a gépet&lt;/b&gt; gombot a gép leállításához.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kikapcsolja a virtuális gépet.&lt;/p&gt;&lt;p&gt;Ez a művelet azonnal kikapcsolja a virtuális gépet. így a vendég rendszer képtelen lesz rendesen leállítani a gépet. Ennek &lt;i&gt;adat vesztés&lt;/i&gt; lehet az eredménye a virtuális gépen  belül. Ez a művelet csak akkor ajánlott, ha a virtuális gép nem válaszol a &lt;b&gt;Gép leállítása&lt;/b&gt; gomb megnyomására.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1098,12 +1100,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1454"/>
         <source>Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Aszta&amp;l integráció</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1455"/>
         <source>Switch to seamless desktop integration mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Átkapcsolás asztal integrációs módra</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -1263,49 +1265,49 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1433"/>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1503"/>
         <source>Session I&amp;nformation Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkamenet i&amp;nformációk</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1505"/>
         <source>Show Session Information Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkamenet információk megjelenítése</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1544"/>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">&amp;Statisztika...</translation>
+        <translation>&amp;Statisztika...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1546"/>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paran&amp;cssor...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1581"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelzi, hogy a vendég képernyőjének átméretezése engedélyezett (&lt;img src=:/auto_resize_on_16px.png/&gt;) vagy sem (&lt;img src=:/auto_resize_off_16px.png/&gt;). Ez a finkció a Guest Additions telepítését igényli a vendég gépen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelzi, hogy az egér a vendég gép fogságában van:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér integráció be&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér integráció ki, egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér integráció ki, egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;Az egér integráció csak akkor működik, ha a vendég rendszerre fel van téve a Guest Additions.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelzi, hogy a billentyűzetet elkapta-e a vendég OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) vagy nem (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1839"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=:/vrdp_16px.png/&gt;) vagy sem (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
 </context>
 <context>
@@ -1399,12 +1401,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">Ú&amp;j...</translation>
+        <translation>Ú&amp;j...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">Hozzá&amp;ad...</translation>
+        <translation>Hozzá&amp;ad...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
@@ -1644,37 +1646,37 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden virtuális lemez (*.vdi; *.vmdk);;VirtualBox lemezkép (*.vdi);;VMware lemezkép (*.vmdk);;Minden fájl (*)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Merevlemezek</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Hely:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Lemez típusa:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Tároló típusa:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Csatlakoztatva:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Pillanatkép:&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1725,67 +1727,67 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="210"/>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az aktuális alapértelmezés akkor lesz kijelezve, ha a változásokat elfogadod, és ezt az ablakot újra megnyitod.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="216"/>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished">&lt;nincs kiválasztva&gt;</translation>
+        <translation>&lt;nincs kiválasztva&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Használd a &lt;b&gt;Más...&lt;/b&gt; elemet a legördülő listából a kívánt útvonal megadásához.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="230"/>
         <source>Other...</source>
-        <translation type="unfinished"></translation>
+        <translation>Más...</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="234"/>
         <source>Reset</source>
-        <translation type="unfinished">Reset</translation>
+        <translation>Reset</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="241"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyit egy ablakot az egy másik mappa kiválasztásához.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="244"/>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszaállítja a mappa útvonalát az alapértelmezésre.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="249"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyit egy ablakot az egy másik fájl kiválasztásához.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="252"/>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszaállítja a fájl útvonalát az alapértelmezésre.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="260"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Má&amp;solás</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="410"/>
         <source>Please type the desired folder path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Írd be a kívánt mappa útvonalát.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="411"/>
         <source>Please type the desired file path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Írd be a kívánt fájl útvonalát.</translation>
     </message>
 </context>
 <context>
@@ -1793,32 +1795,32 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="156"/>
         <source>General</source>
-        <translation type="unfinished">Általános</translation>
+        <translation>Általános</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="159"/>
         <source>Input</source>
-        <translation type="unfinished"></translation>
+        <translation> Bevitel</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítés</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
         <source>Language</source>
-        <translation type="unfinished">Nyelv</translation>
+        <translation>Nyelv</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="169"/>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="183"/>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1</translation>
     </message>
 </context>
 <context>
@@ -1826,32 +1828,32 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="76"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished">Megmutatja az aktuális alapértelmezett VDI mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális lemez készítésekor/regisztrálásakor.</translation>
+        <translation>Megmutatja az aktuális alapértelmezett VDI mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális lemez készítésekor/regisztrálásakor.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="80"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">Megmutatja az aktuális alapértelmezett virtuális gép mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális gép készítésekor.</translation>
+        <translation>Megmutatja az aktuális alapértelmezett virtuális gép mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális gép készítésekor.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket authentikálja. </translation>
+        <translation>Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket authentikálja. </translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Alapértelmezett &amp;lemez mappa:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Alapértelmezett &amp;gép mappa:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;RDP azonosítási könyvtár:</translation>
     </message>
 </context>
 <context>
@@ -1859,22 +1861,22 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gazda-billentyű:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished">Megmutatja az aktuális gazda-billentyűt. Aktiválja a beviteli mezőt, és üsse le az új gazda-billentyűt. Az alfanumerikus, kurzormozgató és szerkesztéssegítő billentyűk nem használhatók gazda-billentyűként.</translation>
+        <translation>Megmutatja az aktuális gazda-billentyűt. Kattints a beviteli mezőre, és üsd le az új gazda-billentyűt. Az alfanumerikus, kurzormozgató és szerkesztéssegítő billentyűk nem használhatók gazda-billentyűként.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">Ha engedélyezed, a billentyűzet mindig elfogásra kerül ha a gép ablaka aktív lesz. Ha a billentyűzet el van fogva, akkor minden billentyűzet-eseményt a virtuális gép kap meg (pl. az Alt-Tab kombinációt is).</translation>
+        <translation>Ha engedélyezed, a billentyűzet mindig elfogásra kerül ha a gép ablaka aktív lesz. Ha a billentyűzet el van fogva, akkor minden billentyűzet-eseményt a virtuális gép kap meg (pl. az Alt-Tab kombinációt is).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Automata billentyűzet-elkapás</translation>
     </message>
 </context>
 <context>
@@ -1883,65 +1885,65 @@ Version %1</source>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"> (beépített)</translation>
+        <translation> (beépített)</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="115"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;elérhetetlen&gt;</translation>
+        <translation>&lt;elérhetetlen&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="116"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;ismeretlen&gt;</translation>
+        <translation>&lt;ismeretlen&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="129"/>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">Alappértelmezett</translation>
+        <translation>Alappértelmezett</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
-        <translation type="unfinished">Nyelv:</translation>
+        <translation>Nyelv:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>Felüle&amp;t nyelve:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megmutatja az elérhető nyelveket. A jelenleg kiválasztott nyelv &lt;b&gt;vastag betűvel&lt;/b&gt; van jelölve. Válaszd az &lt;i&gt;Alapértelmezett&lt;/i&gt; opciót a rendszer nyelve alapján történő nyelvválasztáshoz.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
         <source>Name</source>
-        <translation type="unfinished">Név</translation>
+        <translation>Név</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="99"/>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation>Azonosító</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="104"/>
         <source>Language</source>
-        <translation type="unfinished">Nyelv</translation>
+        <translation>Nyelv</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="109"/>
         <source>Author</source>
-        <translation type="unfinished"></translation>
+        <translation>Szerző</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished">Szerző(k):</translation>
+        <translation>Szerző(k):</translation>
     </message>
 </context>
 <context>
@@ -1949,27 +1951,27 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a VirtualBox időnként ellenőrizni fogja a weben, hogy elérhető-e újabb verzió a jelenleginél.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
         <source>&amp;Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítések elle&amp;nőrzése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sűrűsé&amp;g:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Megadhatod, hogy a VirtualBox milyen sűrűn nézzen frissítések után. Ha azt szeretnéd, hogy egyáltalán ne keressen frissítést, tiltsd le a pipadobozban.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation type="unfinished"></translation>
+        <translation>Következő ellenőrzés:</translation>
     </message>
 </context>
 <context>
@@ -2427,7 +2429,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2608"/>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
-        <translation>Tartás</translation>
+        <translation>Elfogás</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -2665,7 +2667,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2601"/>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
-        <translation>Gazda pipe</translation>
+        <translation>Gazda cső</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2603"/>
@@ -2689,253 +2691,253 @@ Version %1</source>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="438"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1533"/>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="412"/>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation>Engedélyezve</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="413"/>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation>Letiltva</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1657"/>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation>Engedélyezve</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1657"/>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation>Letiltva</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1755"/>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Gazda eszköz</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1758"/>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vezérlő</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1876"/>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1884"/>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation>Letiltva</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1893"/>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Párhuzamos portok</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2553"/>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2554"/>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Osztott mappák</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2557"/>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2559"/>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2563"/>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Elsődleges</translation>
+        <translation>Elsődleges</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2565"/>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Másodlagos</translation>
+        <translation>Másodlagos</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2570"/>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Master</translation>
+        <translation>Master</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2571"/>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
-        <translation type="unfinished">Slave</translation>
+        <translation>Slave</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2567"/>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2589"/>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox lemezkép</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2615"/>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2625"/>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2628"/>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2630"/>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2633"/>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2635"/>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2637"/>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2660"/>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2662"/>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2639"/>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1413"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Gyártó ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1418"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Termék ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1423"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Revízió: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1428"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Termék: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1433"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Gyártó: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1438"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1443"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1450"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Állapot: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1789"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>gazda interfész, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1792"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>belső háló, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="179"/>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1. eszköz</translation>
     </message>
 </context>
 <context>
@@ -3373,17 +3375,17 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="unfinished">Elfog&amp;adom</translation>
+        <translation>Elfog&amp;adom</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished">El&amp;utasítom</translation>
+        <translation>El&amp;utasítom</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
         <source>VirtualBox License</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -3462,42 +3464,42 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="561"/>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">VirtualBox gazda interfész %1</translation>
+        <translation>VirtualBox gazda interfész %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="622"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Biztosan eltávolítod a kiválasztott (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) gazda interfészt?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Figyelem:&lt;/b&gt; Ezt az interfészt több virtuális gép hálókártyája is használhatja. Ha eltávolítod, ezek a kártyák nem fognak rendesen működni addig, amíg nem választasz számukra másik gazda interfészt, vagy másik kapcsolódási módot. &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="654"/>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished">Gazda &amp;interface-k</translation>
+        <translation>Gazda &amp;interface-k</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished">Minden elérhető gazda interface listázása.</translation>
+        <translation>Minden elérhető gazda interface listázása.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="659"/>
         <source>A&amp;dd New Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazda interfész hozzáa&amp;dása</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="660"/>
         <source>&amp;Remove Selected Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott interface tö&amp;rlése</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished">Gazda interfész hozzáadása.</translation>
+        <translation>Gazda interfész hozzáadása.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished">A kiválasztott interface törlése.</translation>
+        <translation>A kiválasztott interface törlése.</translation>
     </message>
 </context>
 <context>
@@ -3542,7 +3544,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding image</source>
-        <translation>&amp;Dinamikusan növekvő fájl</translation>
+        <translation>&amp;Dinamikusan növekvő</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -3552,7 +3554,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size image</source>
-        <translation>&amp;Fix méretű fájl</translation>
+        <translation>&amp;Fix méretű</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -3652,71 +3654,71 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ez a varázsló végig fog vezetni egy új virtuális merevlemez elkészítésének lépésein.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Tovább&lt;/b&gt; gombbal tudsz a következő, a &lt;b&gt;Vissza&lt;/b&gt; gombbal az előző lépésre ugrani.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Vissza</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tovább &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Válaszd ki az elkészítendő virtuális merevlemez típusát.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dinamikusan növekvő&lt;/b&gt; egy kis fájlt hoz létre a lemezen, mely később az igények szerint növekszik (a beállított méretig). A &lt;b&gt;fix méretű&lt;/b&gt; nem növekszik. Ez egy nagyjából akkora fájl lesz, amekkora méretet itt megadtál a virtuális merevlemez méreteként. A fix méretű virtuális merevlemez elkészítése egy kis időt vehet igénybe, függően az itt megadott mérettől és a valódi merevlemez irási sebességétől.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nyomd meg a &lt;b&gt;Kiválaszt&lt;/b&gt; gombot a virtuális merevlemez képmás helyének és a fájl nevének a megadásához. Megadhatod a pontos útvonal beírásával is.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Add meg a virtuális lemez méretét megabyte-ban. Ezt a méretet fogja a virtuális gép látni a lemezből&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha a fenti beállítások megfelelőek, nyomd meg a &lt;b&gt;Befejezés&lt;/b&gt; gombot. Ha megnyomtad, az új lemezkép azonnal létrejön.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Befejezés</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Típus</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="205"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Hely</translation>
+        <translation>Hely</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="206"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Méret</translation>
+        <translation>Méret</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="207"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bájt</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished">Mégsem</translation>
+        <translation>Mégsem</translation>
     </message>
 </context>
 <context>
@@ -3758,7 +3760,7 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="547"/>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Adja meg a fizikai memória (RAM) mennyiségét megabájtban, amelyet hozzá akar rendelni ehhez a virtuális géphez.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Add meg a fizikai memória (RAM) mennyiségét megabájtban, amelyet hozzá akarsz rendelni ehhez a virtuális géphez.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="585"/>
@@ -3906,77 +3908,77 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ez a varázsló végig fog vezetni egy új virtuális gép készítésének lépésein.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Előre&lt;/b&gt; gombbal tudsz a következő, a &lt;b&gt;Vissza&lt;/b&gt; gombbal az előző lépésre ugrani.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1169"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Vissza</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tovább &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Írjd be az új gép nevét és válaszd ki, milyen típusú operációs rendszert telepítenél bele.&lt;/p&gt;&lt;p&gt;A név általában utal a gép hardver és/vagy szoftverkonfigurációjára. Ez a név lesz a gép azonosítására használva minden VirtualBox komponensben.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Válaszd ki a merevlemez képfájlt amit boot eszköznek szeretnél használni a virtuális gépben.Készíthetsz új merevlemezt is az &lt;b&gt;Új&lt;/b&gt; gomb megnyomásával, vagy választhatsz egy létezőt a legördülő menüből,esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;/p&gt;&lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később beállíthatod.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1070"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A virtuális lemezkép az alábbi paraméterekkel lesz létrehozva:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ha a fentiek megfelelőek, nyomd meg a &lt;b&gt;Befejezés&lt;/b&gt; gombot. Ha megnyomtad, a virtuális gép létre lesz hozva. &lt;/p&gt;&lt;p&gt;Bármikor meg lehet ezeket a  beállításokat változtatni a főablakból elérhető &lt;b&gt;Beállítás&lt;/b&gt; panelen.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1176"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Befejezés</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">Név</translation>
+        <translation>Név</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">OS típusa</translation>
+        <translation>OS típusa</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">Alapmemória</translation>
+        <translation>Alapmemória</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Boot merevlemez</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
         <source>Cancel</source>
-        <translation type="unfinished">Mégsem</translation>
+        <translation>Mégsem</translation>
     </message>
 </context>
 <context>
@@ -4120,12 +4122,12 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1059"/>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Biztos, hogy véglegesen törlöd a(z) &lt;b&gt;%1&lt;/b&gt; virtuális gépet?&lt;/p&gt;&lt;p&gt;Ezt később nem lehet ám visszavonni!&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1072"/>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Biztos, hogy eltávolítod ezt az elérhetetlen &lt;b&gt;%1&lt;/b&gt; virtuális gépet?&lt;/p&gt;&lt;p&gt;Többé nem lehet majd visszaregisztrálni ezt a gépet a GUI-ról!&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1088"/>
@@ -4410,7 +4412,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1611"/>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Gratulálunk! Sikeresen regisztráltad magadat, mint VirtualBox felhasználó.&lt;/p&gt;&lt;p&gt;Köszönjük, hogy szakítottál időt a regisztrációs űrlap kitöltésére!&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1614"/>
@@ -4446,25 +4448,25 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1060"/>
         <source>Delete</source>
         <comment>machine</comment>
-        <translation type="unfinished">Törlés</translation>
+        <translation>Törlés</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1073"/>
         <source>Unregister</source>
         <comment>machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>Eltávolítás</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1090"/>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation type="unfinished">Eldobás</translation>
+        <translation>Eldobás</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1102"/>
         <source>Continue</source>
         <comment>detach image</comment>
-        <translation type="unfinished"></translation>
+        <translation>Folytat</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
@@ -4475,13 +4477,13 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>Delete</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Törlés</translation>
+        <translation>Törlés</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1157"/>
         <source>Unregister</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Eltávolítás</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1167"/>
@@ -4492,7 +4494,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1169"/>
         <source>Disable</source>
         <comment>hard disk</comment>
-        <translation type="unfinished">Letilt</translation>
+        <translation>Letilt</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1208"/>
@@ -4508,13 +4510,13 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1522"/>
         <source>Download</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Letölt</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1537"/>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Csatol</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1702"/>
@@ -4526,7 +4528,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1674"/>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation type="unfinished"></translation>
+        <translation>Elfog</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1790"/>
@@ -4537,7 +4539,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1795"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ellenőrzés</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
@@ -4548,31 +4550,31 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1838"/>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Menté&amp;s</translation>
+        <translation>Menté&amp;s</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1839"/>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Backup</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1840"/>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Mégsem</translation>
+        <translation>Mégsem</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1862"/>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Átvált</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1884"/>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation type="unfinished"></translation>
+        <translation>Átvált</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1962"/>
@@ -4583,24 +4585,24 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1964"/>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation type="unfinished">Reset</translation>
+        <translation>Reset</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1983"/>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Folytat</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1984"/>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vissza</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="588"/>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült másolni ezt: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ide: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1180"/>
@@ -4611,13 +4613,13 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <location filename="../src/VBoxProblemReporter.cpp" line="1185"/>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ú&amp;j</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1186"/>
         <source>Select</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kiválaszt</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1026"/>
@@ -4667,67 +4669,67 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Tartalom...</translation>
+        <translation>&amp;Tartalom...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="272"/>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Súgó megjelenítése</translation>
+        <translation>Súgó megjelenítése</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="274"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation>A &amp;VirtualBox weboldala...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="276"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished"></translation>
+        <translation>Böngésző megnyitása a VirtualBox weboldalával</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="278"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden figyelmeztetés &amp;alaphelyzetbe</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="280"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">Minden figyelmeztetés meg fog jelenni újra</translation>
+        <translation>Minden figyelmeztetés meg fog jelenni újra</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="282"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished">VirtualBox r&amp;egisztrálása....</translation>
+        <translation>VirtualBox r&amp;egisztrálása....</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="284"/>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished">A regisztrációs űrlap megnyitása</translation>
+        <translation>A regisztrációs űrlap megnyitása</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="286"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítések elle&amp;nőrzése...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="288"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished"></translation>
+        <translation>Új VirtualBox verzió keresése</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="290"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished"></translation>
+        <translation>A VirtualBox név&amp;jegye...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="292"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy ablak mutatása a termékinformációkkal</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1625"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Elérhető a VirtualBox egy újabb verziója! A(z) &lt;b&gt;%1&lt;/b&gt; -s verzió elérhető a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; weboldalon.&lt;/p&gt;&lt;p&gt;Közvetlenül pedig erről a linkről töltheted le:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4795,27 +4797,27 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="400"/>
         <source>Could not perform connection handshake.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kapcsolódási próbálkozás sikertelen volt.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="115"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kérlek töltsd ki ezt a regisztrációs űrlapot, hogy tudjuk, hogy használod a VirtualBox-ot. Ha akarod, a friss VirtualBox-os hírekről és frissítésekről is értesítünk.&lt;/p&gt;&lt;p&gt;Add meg a nevedet ékezet nélkül, és az e-mail címedet az alábbi mezőkben. A Sun Microsystems ezeket az adatokat csakis statisztikai célokra és hírlevél küldésére használja. Természetesen a Sun Microsystems vállalja, hogy harmadik fél számára ezeket az adatokat nem továbbítja. Adatkezelési szabályainkról bővebben a VirtualBox kézikönyv &lt;b&gt;Privacy Policy&lt;/b&gt; részében olvashatsz, vagy a VirtualBox &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; oldalán.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="177"/>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Akkor engedélyezd ezt, ha nem szeretnél levelet kapni az Sun Microsystems-től erre az e-mail címre.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
         <source>C&amp;onfirm</source>
-        <translation type="unfinished"></translation>
+        <translation>Meg&amp;erősítés</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>Cancel</source>
-        <translation type="unfinished">Mégsem</translation>
+        <translation>Mégsem</translation>
     </message>
 </context>
 <context>
@@ -4977,7 +4979,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1173"/>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Eldobja a mentett állapotát a kiválasztott virtuális gépnek</translation>
+        <translation> A kiválasztott virtuális gép mentett állapotának eldobása</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1175"/>
@@ -5142,32 +5144,32 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1113"/>
         <source>Sun xVM VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1273"/>
         <source>R&amp;esume</source>
-        <translation type="unfinished">&amp;Folytat</translation>
+        <translation>&amp;Folytat</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1276"/>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">A megállított gép működésének folytatása</translation>
+        <translation>A megállított gép működésének folytatása</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1283"/>
         <source>&amp;Pause</source>
-        <translation type="unfinished">Megá&amp;llít</translation>
+        <translation>Megá&amp;llít</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1286"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Átmenetileg felfüggeszti a virtuális gép működését</translation>
+        <translation>Átmenetileg felfüggeszti a virtuális gép működését</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;A VirtualBox üdvözöl!&lt;/h3&gt;&lt;p&gt;Az ablak bal oldali részében a virtuális gépeid listáját látod. Ez jelenleg üres, hiszen most indítod ezt a programot először.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Új virtuális gép létrehozásához kattints az &lt;b&gt;Új&lt;/b&gt; gombra az eszköztáron.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;F1&lt;/b&gt; billentyű megnyomásával azonnali segítséget kérhetsz, vagy látogass el a &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; címre a legfrissebb információkért és hírekért.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5175,17 +5177,17 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Válassz egy kategóriát a bal oldali listából és vidd az egeret a beállítás fölé bővebb információért&lt;i&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="132"/>
         <source>Invalid settings detected</source>
-        <translation type="unfinished">Hibás beállításokat találtam</translation>
+        <translation>Hibás beállításokat találtam</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="204"/>
         <source>Settings</source>
-        <translation type="unfinished">Beállítások</translation>
+        <translation>Beállítások</translation>
     </message>
 </context>
 <context>
@@ -5377,7 +5379,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="39"/>
         <source>Snapshot Details</source>
-        <translation type="unfinished"></translation>
+        <translation> Pillanatkép részletek </translation>
     </message>
 </context>
 <context>
@@ -5405,7 +5407,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished">Pillanatkép el&amp;dobása</translation>
+        <translation>Pillanatkép el&amp;dobása</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5425,7 +5427,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="unfinished">&amp;Pillanatfelvétel készítése</translation>
+        <translation>&amp;Pillanatfelvétel készítése</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5455,7 +5457,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished">A pilla&amp;natnyi állapot és a pillanatkép eldobása</translation>
+        <translation>A pilla&amp;natnyi állapot és a pillanatkép eldobása</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5470,7 +5472,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="unfinished">&amp;Részletek</translation>
+        <translation>&amp;Részletek</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5543,7 +5545,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="unfinished">Eldobja a kiválasztott állapotát a gépnek</translation>
+        <translation>Eldobja a kiválasztott állapotát a gépnek</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5553,7 +5555,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished">Pillanatfelvétel a virtuális gép aktuális állapotáról</translation>
+        <translation>Pillanatfelvétel a virtuális gép aktuális állapotáról</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5563,7 +5565,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="unfinished">Vissza a mos&amp;tani pillanatfelvételhez</translation>
+        <translation>Vissza a mos&amp;tani pillanatfelvételhez</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5573,7 +5575,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="unfinished">A gép állapotának visszaállítása az aktuális pillanatképre</translation>
+        <translation>A gép állapotának visszaállítása az aktuális pillanatképre</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5583,12 +5585,12 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="unfinished">Eldobja az aktuális pillanatképet, és a gépet visszaállítja a pillanatkép felvétele előtti állapotra</translation>
+        <translation>Eldobja az aktuális pillanatképet, és a gépet visszaállítja a pillanatkép felvétele előtti állapotra</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="unfinished">A kiválasztott pillanatkép részletei</translation>
+        <translation>A kiválasztott pillanatkép részletei</translation>
     </message>
 </context>
 <context>
@@ -5776,119 +5778,121 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
         <source>1 day</source>
-        <translation type="unfinished"></translation>
+        <translation>Naponta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
         <source>2 days</source>
-        <translation type="unfinished"></translation>
+        <translation>2 naponta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="86"/>
         <source>3 days</source>
-        <translation type="unfinished"></translation>
+        <translation>3 naponta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="87"/>
         <source>4 days</source>
-        <translation type="unfinished"></translation>
+        <translation>4 naponta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
         <source>5 days</source>
-        <translation type="unfinished"></translation>
+        <translation>5 naponta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
         <source>6 days</source>
-        <translation type="unfinished"></translation>
+        <translation>6 naponta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="92"/>
         <source>1 week</source>
-        <translation type="unfinished"></translation>
+        <translation>Hetente</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
         <source>2 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>2 hetente</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="94"/>
         <source>3 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>3 hetente</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="97"/>
         <source>1 month</source>
-        <translation type="unfinished"></translation>
+        <translation>Havonta</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="144"/>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>Sosem</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
         <source>Connection timed out.</source>
-        <translation type="unfinished">A kapcsolat időtúllépés miatt megszakadt.</translation>
+        <translation>A kapcsolat időtúllépés miatt megszakadt.</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="334"/>
         <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem találom a legújabb verziók adatainak a fájlját a szerveren (a szerver válasza: %1).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="191"/>
         <source>Chec&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ellenőrzés</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="390"/>
         <source>&amp;Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Be&amp;zár</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
         <source>VirtualBox Update Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox frissítési varázsló</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítések ellenőrzése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
 &lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ez a varázsló ellenőrzi a VirtualBox weboldalán, hogy elérhető-e újabb verzió a jelenleginél.&lt;/p&gt;
+&lt;p&gt;Nyomd meg az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombot a frissítések kereséséhez. A &lt;b&gt;Mégsem&lt;/b&gt; gombbal kiléphetsz a varázslóból az ellenőrzés lefutása nélkül.&lt;/p&gt;
+&lt;p&gt;Ezt a varázslót bármikor elindíthatpd a &lt;b&gt;Súgó&lt;/b menü &lt;b&gt;Frissítések ellenőrzése...&lt;/b&gt; menüpontjával.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
         <source>Cancel</source>
-        <translation type="unfinished">Mégsem</translation>
+        <translation>Mégsem</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
         <source>Summary</source>
-        <translation type="unfinished">Összegzés</translation>
+        <translation>Összegzés</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Elérhető a VirtualBox egy újabb verziója! A(z) &lt;b&gt;%1&lt;/b&gt; -s verzió elérhető a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; weboldalon.&lt;/p&gt;&lt;p&gt;Közvetlenül pedig erről a linkről töltheted le:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nem lehet letölteni az új verziók információit a következő hálózati probléma miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs a jelenleginél újabb VirtualBox verzió. Később azonban érdemes lenne újra megnézni.</translation>
     </message>
 </context>
 <context>
@@ -5896,7 +5900,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="325"/>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Nincs leírás. A Szerkesztés gomb segítségével adhatja meg.</translation>
+        <translation>Nincs leírás. Nyomd meg a szerkesztés gombot, és írj egyet.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="327"/>
@@ -5927,32 +5931,32 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="30"/>
         <source>First Run Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Első indítási varázsló</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="121"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Először indítod el ezt a gépet. Ez a varázsló segít a választott operációs rendszer telepítésének előkészítésében.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Tovább&lt;/b&gt; gombbal jutsz át a következő lapra, és a &lt;b&gt;Vissza&lt;/b&gt; gombbal az előzőre. A &lt;b&gt;Mégsem&lt;/b&gt; gomb megnyomásával kiléphetsz a varázslóból.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="63"/>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Első indítás varázsló üdvözöl!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="307"/>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Jelöld ki a telepítési média típusát.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="348"/>
         <source>Media Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Média típusa</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="363"/>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5962,7 +5966,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="379"/>
         <source>&amp;Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Floppy</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5972,22 +5976,22 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="401"/>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Jelöld ki a választott operációs rendszer telepítőjét tartalmazó médiát. Ennek a médiának bootolhatónak kell lennie, különben a telepítőprogram nem fog tudni elindulni.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="439"/>
         <source>Media Source</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítőmédia</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="450"/>
         <source>&amp;Host Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gazda eszköz </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="479"/>
         <source>&amp;Image File</source>
-        <translation type="unfinished">&amp;Képfájl</translation>
+        <translation>&amp;Képfájl</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -5997,32 +6001,32 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="249"/>
         <source>Select Installation Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítőmédia kijelölése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="651"/>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ezt a médiát választottad a telepítéshez: &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="593"/>
         <source>Summary</source>
-        <translation type="unfinished">Összegzés</translation>
+        <translation>Összegzés</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="94"/>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="95"/>
         <source>Floppy Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Floppy</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="98"/>
         <source>Host Drive %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazda eszköz %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="146"/>
@@ -6052,12 +6056,12 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; &amp;Vissza</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tovább &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -6072,24 +6076,24 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Befejezés</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="106"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Típus</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Média</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation type="unfinished">Mégsem</translation>
+        <translation>Mégsem</translation>
     </message>
 </context>
 <context>
@@ -6097,12 +6101,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="155"/>
         <source>%1 - Session Information</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Munkamenet információk</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="44"/>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Részletek</translation>
+        <translation>&amp;Részletek</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="79"/>
@@ -6112,32 +6116,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="203"/>
         <source>DMA Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>DMA átvitelek</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="174"/>
         <source>PIO Transfers</source>
-        <translation type="unfinished"></translation>
+        <translation>PIO átvitelek</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="205"/>
         <source>Data Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Olvasott adat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="207"/>
         <source>Data Written</source>
-        <translation type="unfinished"></translation>
+        <translation>Írt adat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="243"/>
         <source>Data Transmitted</source>
-        <translation type="unfinished"></translation>
+        <translation>Küldött adat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="245"/>
         <source>Data Received</source>
-        <translation type="unfinished"></translation>
+        <translation>Fogadott adat</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
@@ -6157,17 +6161,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="437"/>
         <source>Screen Resolution</source>
-        <translation type="unfinished"></translation>
+        <translation>Felbontás</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="493"/>
         <source>CD/DVD-ROM Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM statisztika</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="503"/>
         <source>Network Adapter Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Hálózati adapter statisztika</translation>
     </message>
     <message>
         <location filename="" line="543516788"/>
@@ -6178,56 +6182,56 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="420"/>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Verzió: %1.%2</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="421"/>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nem található</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="424"/>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ismeretlen</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="440"/>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Guest Additions</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="441"/>
         <source>Guest OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Vendég OS típusa</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="449"/>
         <source>Hard Disk Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Merevlemez statisztika</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="486"/>
         <source>No Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincsenek merevlemezek</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="520"/>
         <source>No Network Adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincsenek hálózati adapterek</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation>Engedélyezve</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation>Letiltva</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="439"/>
@@ -6237,7 +6241,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
         <source>VBoxVMInformationDlg</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -6265,19 +6269,19 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="151"/>
         <source>Inaccessible</source>
-        <translation type="unfinished">Elérhetetlen</translation>
+        <translation>Elérhetetlen</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="171"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3 óta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Munkamenet %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 %3 óta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Munkamenet %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="182"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Elérhetetlen %2 óta&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Elérhetetlen %2 óta&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6510,11 +6514,6 @@ p, li { white-space: pre-wrap; }
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">A TAP interface beállításához használt parancs.</translation>
     </message>
-    <message>
-        <location filename="" line="543516788"/>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="obsolete">Az adapter MAC címe. Ez pontosan 12 karakteres lehet, és csal a (0-9,A-F) betűkből állhat. A második karakternek páratlan számjegynek kell lenni.</translation>
-    </message>
 </context>
 <context>
     <name>VBoxVMParallelPortSettings</name>
@@ -6627,32 +6626,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished">Ha engedélyezed, a virtuális PCI hangkártya be lesz helyezve a virtuális gépbe, így az képes lesz kommunikálni a gazda hangkártyájával.</translation>
+        <translation>Ha engedélyezed, a virtuális PCI hangkártya be lesz helyezve a virtuális gépbe, így az képes lesz kommunikálni a gazda hangkártyájával.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Audió &amp;engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazda au&amp;dió vezérlő:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az audio kimenet driver beállítása. A &lt;b&gt;Null Audio Driver&lt;/b&gt; hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a gazda gépen.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>Audió &amp;vezérlő:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális hangkártya kiválasztása. A választott hangkártyát fogja a VirtualBox mutatni a virtuális gép felé.</translation>
     </message>
 </context>
 <context>
@@ -6660,67 +6659,67 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="174"/>
         <source>Host CD/DVD drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs kiválaszva CD/DVD eszköz</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="176"/>
         <source>CD/DVD image file is not selected</source>
-        <translation type="unfinished">Nincs kiválaszva CD/DVD képfájl </translation>
+        <translation>Nincs kiválaszva CD/DVD képfájl </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="unfinished">Ha engedélyezed, a megadott CD/DVD be lesz helyezve a virtuális eszközbe. A CD/DVD eszköz mindig a másodlagos IDE vezérlő Mester portjára van kötve.</translation>
+        <translation>Ha engedélyezed, a megadott CD/DVD be lesz helyezve a virtuális eszközbe. A CD/DVD eszköz mindig a másodlagos IDE vezérlő Mester portjára van kötve.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="unfinished">&amp;CD/DVD-ROM csatolása</translation>
+        <translation>&amp;CD/DVD-ROM csatolása</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="83"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">A megadott CD/DVD eszköz felcsatolása a virtuális CD/DVD eszközbe.</translation>
+        <translation>A megadott CD/DVD eszköz felcsatolása a virtuális CD/DVD eszközbe.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="86"/>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation type="unfinished">&amp;Gazda CD/DVD eszköz </translation>
+        <translation>&amp;Gazda CD/DVD eszköz </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="112"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">A gazda CD/DVD meghajtóinak megjelenítése.</translation>
+        <translation>A gazda CD/DVD meghajtóinak megjelenítése.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished">Ha engedélyezed, a vendég közvetlenül tud ATAPI parancsokat küldeni a gazda eszköznek, így lehetőség nyílik CD/DVD írók használatára a virtuális gépből. Audio CD-k írása még nem támogatott.</translation>
+        <translation>Ha engedélyezed, a vendég közvetlenül tud ATAPI parancsokat küldeni a gazda eszköznek, így lehetőség nyílik CD/DVD írók használatára a virtuális gépből. Audio CD-k írása még nem támogatott.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
         <source>Enable &amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>Közvetlen át&amp;vitel engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">A megadott CD/DVD eszköz felcsatolása a virtuális CD/DVD eszközbe.</translation>
+        <translation>A megadott CD/DVD eszköz felcsatolása a virtuális CD/DVD eszközbe.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="138"/>
         <source>&amp;ISO Image File</source>
-        <translation type="unfinished">CD képfá&amp;jl</translation>
+        <translation>CD képfá&amp;jl</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="148"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">Megmutatja a behelyezett CD/DVD lemezt, és gyors váltást tesz lehetővé.</translation>
+        <translation>Megmutatja a behelyezett CD/DVD lemezt, és gyors váltást tesz lehetővé.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished">Elindítja a Virtuális lemezkezelőt, hogy kiválaszthass egy CD/DVD képfájlt csatolásra.</translation>
+        <translation>Elindítja a Virtuális lemezkezelőt, hogy kiválaszthass egy CD/DVD képfájlt csatolásra.</translation>
     </message>
 </context>
 <context>
@@ -7658,72 +7657,72 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="411"/>
         <source>General</source>
-        <translation type="unfinished">Általános</translation>
+        <translation>Általános</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="414"/>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Tároló</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="417"/>
         <source>Hard Disks</source>
-        <translation type="unfinished">Merevlemezek</translation>
+        <translation>Merevlemezek</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="420"/>
         <source>CD/DVD-ROM</source>
-        <translation type="unfinished">CD/DVD-ROM</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="423"/>
         <source>Floppy</source>
-        <translation type="unfinished">Floppy</translation>
+        <translation>Floppy</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="426"/>
         <source>Audio</source>
-        <translation type="unfinished">Audió</translation>
+        <translation>Audió</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="429"/>
         <source>Network</source>
-        <translation type="unfinished">Hálózat</translation>
+        <translation>Hálózat</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="434"/>
         <source>Ports</source>
-        <translation type="unfinished"></translation>
+        <translation>Portok</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="437"/>
         <source>Serial Ports</source>
-        <translation type="unfinished">Soros portok</translation>
+        <translation>Soros portok</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="442"/>
         <source>Parallel Ports</source>
-        <translation type="unfinished"></translation>
+        <translation>Párhuzamos portok</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="447"/>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="450"/>
         <source>Shared Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Osztott mappák</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="453"/>
         <source>Remote Display</source>
-        <translation type="unfinished">Távoli képernyő</translation>
+        <translation>Távoli képernyő</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="474"/>
         <source>%1 - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2</translation>
     </message>
 </context>
 <context>
@@ -7731,57 +7730,57 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="172"/>
         <source>Host floppy drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs kiválaszva floppy eszköz</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="174"/>
         <source>Floppy image file is not selected</source>
-        <translation type="unfinished">Nincs kiválasztva floppy képfájl</translation>
+        <translation>Nincs kiválasztva floppy képfájl</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished">Ha engedélyezed, a megadott floppy be lesz helyezve a virtuális eszközbe.</translation>
+        <translation>Ha engedélyezed, a megadott floppy be lesz helyezve a virtuális eszközbe.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
         <source>&amp;Mount Floppy Drive</source>
-        <translation type="unfinished">&amp;Floppy csatolása</translation>
+        <translation>&amp;Floppy csatolása</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="83"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="unfinished">A megadott floppy eszköz felcsatolása a vrtuális floppy eszközbe.</translation>
+        <translation>A megadott floppy eszköz felcsatolása a virtuális floppy eszközbe.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="86"/>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="unfinished">&amp;Gazda floppy eszköz </translation>
+        <translation>&amp;Gazda floppy eszköz </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="112"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">A gazda floppy meghajtóinak megjelenítése.</translation>
+        <translation>A gazda floppy meghajtóinak megjelenítése.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="119"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation type="unfinished">A megadott floppy eszköz felcsatolása a vrtuális floppy eszközbe.</translation>
+        <translation>A megadott floppy eszköz felcsatolása a vrtuális floppy eszközbe.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="122"/>
         <source>&amp;Image File</source>
-        <translation type="unfinished">&amp;Képfájl</translation>
+        <translation>&amp;Képfájl</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="132"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">Megmutatja a behelyezett floppy lemezt, és gyors váltást tesz lehetővé.</translation>
+        <translation>Megmutatja a behelyezett floppy lemezt, és gyors váltást tesz lehetővé.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished">Elindítja a Virtuális lemezkezelőt, hogy kiválaszthass egy floppy képfájlt csatolásra.</translation>
+        <translation>Elindítja a Virtuális lemezkezelőt, hogy kiválaszthass egy floppy képfájlt csatolásra.</translation>
     </message>
 </context>
 <context>
@@ -7789,212 +7788,212 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="351"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="379"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished">A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
+        <translation>A gépről készített pillanatképek útvonala. A pillanatképek egy picit sok helyet foglalnak el.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="37"/>
         <source>&amp;Basic</source>
-        <translation type="unfinished">&amp;Alap</translation>
+        <translation>&amp;Alap</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="49"/>
         <source>Identification</source>
-        <translation type="unfinished"></translation>
+        <translation>Azonosítás</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="74"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Név:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="87"/>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished">A virtuális gép neve.</translation>
+        <translation>A virtuális gép neve.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
         <source>OS &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>OS &amp;típusa: </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">A tervezett vendég operációs rendszer típusa.</translation>
+        <translation>A tervezett vendég operációs rendszer típusa.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="125"/>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">Alap&amp;memória mérete</translation>
+        <translation>Alap&amp;memória mérete</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="251"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gp nem indul el.</translation>
+        <translation>A virtuális gép memóriahasználatát állítja be. Ha túl magas az értek, a virtuális gép nem indul el.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="370"/>
         <source>&lt;</source>
-        <translation type="unfinished">&lt;</translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="396"/>
         <source>&gt;</source>
-        <translation type="unfinished">&gt;</translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="439"/>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="300"/>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished">&amp;Videómemória mérete</translation>
+        <translation>&amp;Videómemória mérete</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="426"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">Megadhatod a virtuális gép videomemóriájának méretét.</translation>
+        <translation>Megadhatod a virtuális gép videomemóriájának méretét.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="483"/>
         <source>&amp;Advanced</source>
-        <translation type="unfinished">To&amp;vábbi</translation>
+        <translation>To&amp;vábbi</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="489"/>
         <source>Boo&amp;t Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Boo&amp;t sorrend: </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="543"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">Meghatározza a bootsorrendet. Használja ezt az opciót a boot eszközök engedélyezésére/tiltására. Mozgassa fel vagy le az elemeket a pontos sorrendhez.</translation>
+        <translation>Meghatározza a bootsorrendet. A pipadobozok segítségével lehetőség nyílik a boot eszközök engedélyezésére/tiltására, illetve az elemek fel-le mozgatásával a bootolási sorrend meghatározására.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="562"/>
         <source>[device]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="583"/>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">Fel (Ctrl+Fel)</translation>
+        <translation>Fel (Ctrl+Fel)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="586"/>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">A kiválasztott eszközt feljebb teszi.</translation>
+        <translation>A kiválasztott eszközt feljebb teszi.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="605"/>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Le (Ctrl+Le)</translation>
+        <translation>Le (Ctrl+Le)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="608"/>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">A kiválasutott eszközt lejjebb teszi.</translation>
+        <translation>A kiválasztott eszközt lejjebb teszi.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bővített képességek:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="666"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális gép támogatni fogja az Advanced Configuration and Power Management Interface-t (ACPI). &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="669"/>
         <source>Enable A&amp;CPI</source>
-        <translation type="unfinished">A&amp;CPI engedélyezése</translation>
+        <translation>A&amp;CPI engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="682"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális gép támogatni fogja az Input Output APIC-t (IO APIC), amely egy picit visszafogja a virtuális gép teljesítményét. &lt;b&gt;Figyelem:&lt;/b&gt; ne tiltsd le, ha már telepítettél egy Windows vendég rendszert!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="685"/>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished">IO A&amp;PIC engedélyezése</translation>
+        <translation>IO A&amp;PIC engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="698"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális gép megpróbálja kihasználni a gazdagép processzorának hardveres virtualizációs képességét (pl. Intel VT-x vagy AMD-V).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="701"/>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">&amp;VT-x/AMD-V engedélyezése</translation>
+        <translation>&amp;VT-x/AMD-V engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="714"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a processzorod Physycal Address  Extension (PAE) képessége ki lesz használva ennél a virtuális gépnél.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="717"/>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished"></translation>
+        <translation>PA&amp;E/NX engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished"></translation>
+        <translation>O&amp;sztott vágólap:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="749"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished">A vágólap megosztásának módját állíthatod itt be a gazda és a vendég rendszer közt. Ez a virtuális gépen a Guest Additions telepítését igénlyi.</translation>
+        <translation>A vágólap megosztásának módját állíthatod itt be a gazda és a vendég rendszer közt. Ez a virtuális gépen a Guest Additions telepítését igénlyi.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="762"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális IDE vezérlő típusa. Ezzel a beállítással lehet megadni, hogy a VirtualBox milyen IDE eszközöket mutasson a vendég rendszer felé.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="789"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IDE vezérlő típusa:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="802"/>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilla&amp;natkép mappa:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="839"/>
         <source>&amp;Description</source>
-        <translation type="unfinished"></translation>
+        <translation>L&amp;eírás</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="845"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished">A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
+        <translation>A virtuális gép leírása. A leírás mező hasznos a konfiguráció részleteinek megadásakor.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="856"/>
         <source>&amp;Other</source>
-        <translation type="unfinished"></translation>
+        <translation>T&amp;ovábbi</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation type="unfinished">Ha engedélyezed, minden lemezcsere után az új beállítások elmentődnek a beállítófájlba, így megőrződnek két indítás között.</translation>
+        <translation>Ha engedélyezed, minden lemezcsere után az új beállítások elmentődnek a beállítófájlba, így megőrződnek két indítás között.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="894"/>
         <source>&amp;Remember Mounted Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Emlékezzen a csatolt médiák&amp;ra</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
@@ -8052,7 +8051,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="36"/>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>SATA vezérlő &amp;engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
@@ -8070,127 +8069,127 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="289"/>
         <source>Select TAP setup application</source>
-        <translation type="unfinished">Válassza ki a TAP beállító alkalmazást</translation>
+        <translation>Válassza ki a TAP beállító alkalmazást</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="298"/>
         <source>Select TAP terminate application</source>
-        <translation type="unfinished">Válassza ki a TAP leállító alkalmazást</translation>
+        <translation>Válassza ki a TAP leállító alkalmazást</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="33"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished">Ha engedélyezed, a kábel be lesz dugba a virtuális gép hálókártyájába.</translation>
+        <translation>Ha engedélyezed, a kábel be lesz dugba a virtuális gép hálókártyájába.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="36"/>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">Hálózati adapter &amp;engedélyezése</translation>
+        <translation>Hálózati adapter &amp;engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kárt&amp;ya típusa:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális hálókártya kiválasztása. A választott hálókártyát fogja a VirtualBox mutatni a virtuális gép felé.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Cs&amp;atlakoztatva ide:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished">Megadhathatod, hogyan legyen a virtuális adapter a valódi hálózathoz csatlakoztatva.</translation>
+        <translation>Megadhathatod, hogyan legyen a virtuális adapter a valódi hálózathoz csatlakoztatva.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>&amp;Network Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hálózat &amp;neve:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ehhez az adapterhez kiválasztott belső hálózat neve.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;MAC cím:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">Az adapter MAC címe. Ez pontosan 12 karakteres lehet, és csal a (0-9,A-F) betűkből állhat. A második karakternek páratlan számjegynek kell lenni.</translation>
+        <translation>Az adapter MAC címe. Ez pontosan 12 karakteres lehet, és csak a (0-9,A-F) betűkből állhat. A második karakternek páratlan számjegynek kell lenni.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="166"/>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Véletlen MAC cím generálása.</translation>
+        <translation>Véletlen MAC cím generálása.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="169"/>
         <source>&amp;Generate</source>
-        <translation type="unfinished">&amp;Generál</translation>
+        <translation>&amp;Generál</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="176"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">Jelzi, hogy a virtuális hálózati kábel be lesz-e dugva a gépbe induláskor vagy sem.</translation>
+        <translation>Jelzi, hogy a virtuális hálózati kábel be lesz-e dugva a gépbe induláskor vagy sem.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished">Kábel &amp;bedugva</translation>
+        <translation>Kábel &amp;bedugva</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Interfész neve:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished">A TAP interface neve.</translation>
+        <translation>A TAP interface neve.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállító alkalmazá&amp;s:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
         <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="unfinished">A TAP interface beállításához használt parancs.</translation>
+        <translation>A TAP interface beállításához használt parancs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="248"/>
         <source>Selects the setup application.</source>
-        <translation type="unfinished">A beállító alkalmazás kiválasztása.</translation>
+        <translation>A beállító alkalmazás kiválasztása.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="258"/>
         <source>&amp;Terminate Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>Leállí&amp;tó alkalmazás:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="277"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished">A TAP interface leállításához használt parancs.</translation>
+        <translation>A TAP interface leállításához használt parancs.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="284"/>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished">A leállító alkalmazás kiválasztása.</translation>
+        <translation>A leállító alkalmazás kiválasztása.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
         <source>Host Interface Settings</source>
-        <translation type="unfinished">Gazda interfész beállítása</translation>
+        <translation>Gazda interfész beállítása</translation>
     </message>
 </context>
 <context>
@@ -8198,12 +8197,12 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="808"/>
         <source>No host network interface is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs hálózati kártya kiválasztva</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="815"/>
         <source>Internal network name is not set</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs kiválasztva belső hálózat</translation>
     </message>
 </context>
 <context>
@@ -8212,57 +8211,57 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="113"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="33"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, ez a soros port látható lesz a virtuális gép számára.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="36"/>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Párhuzamos port &amp;engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port szá&amp;m:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished"></translation>
+        <translation>A párhuzamos port száma. Választhatsz standard soros portot, vagy válaszd az &lt;b&gt;Egyéni&lt;/b&gt;-t és add meg a port paramétereit kézzel.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>A párhuzamos port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>A párhuzamos port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Port útvonal:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished"></translation>
+        <translation>A párhuzamos port neve.</translation>
     </message>
 </context>
 <context>
@@ -8270,17 +8269,17 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="223"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">Kettős portszám van kiválasztva </translation>
+        <translation>Kettős portszám van kiválasztva </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="239"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished"></translation>
+        <translation>A port útvonala nincs megadva </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="240"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">Kétszer van ugyanaz az útvonal megadva </translation>
+        <translation>Kétszer van ugyanaz az útvonal megadva </translation>
     </message>
 </context>
 <context>
@@ -8288,72 +8287,72 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="183"/>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Osztott mappa hozzá&amp;adása</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="184"/>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott osztott mapa sz&amp;erkesztése</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="185"/>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>A kiválasztott osztott mappa tö&amp;rlése</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="198"/>
         <source>Adds a new shared folder definition.</source>
-        <translation type="unfinished">Új osztott mappa hozzáadása.</translation>
+        <translation>Új osztott mappa hozzáadása.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="199"/>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished">A kiválasztott osztott mappa szerkesztése.</translation>
+        <translation>A kiválasztott osztott mappa szerkesztése.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="200"/>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="unfinished">Osztott mappa törlése.</translation>
+        <translation>Osztott mappa törlése.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="252"/>
         <source> Machine Folders</source>
-        <translation type="unfinished"> Gép mappák</translation>
+        <translation> A géphez tartozó megosztások</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="259"/>
         <source> Transient Folders</source>
-        <translation type="unfinished"> Átmeneti mappák</translation>
+        <translation> Átmeneti mappák</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="359"/>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>Teljes hozzáférés</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="360"/>
         <source>Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Csak olvasható</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden a gép számára elérhető osztott mappa listázása. A &apos;net use x: \\vboxsvr\share&apos; parancs segítségével használható a &lt;i&gt;share&lt;/i&gt; nevű megosztás a DOS-szerű OS-ekból, a &apos;mount -t vboxsf share mount_point&apos; paranccsal pedig Linux-alapú OS-ekből. Guest Additions szükséges hozzá.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
         <source>Name</source>
-        <translation type="unfinished">Név</translation>
+        <translation>Név</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="78"/>
         <source>Path</source>
-        <translation type="unfinished">Útvonal</translation>
+        <translation>Útvonal</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="83"/>
         <source>Access</source>
-        <translation type="unfinished"></translation>
+        <translation>Hozzáférés</translation>
     </message>
 </context>
 <context>
@@ -8361,47 +8360,47 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="120"/>
         <source>Add Share</source>
-        <translation type="unfinished">Megosztás hozzáadása</translation>
+        <translation>Megosztás hozzáadása</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="123"/>
         <source>Edit Share</source>
-        <translation type="unfinished">Megosztás szerkesztése</translation>
+        <translation>Megosztás szerkesztése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="30"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Dialog</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa útvonala:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa neve:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished">A mappa virtuális gépben megjelenő neve.</translation>
+        <translation>A mappa virtuális gépben megjelenő neve.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="66"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a vendég rendszer nem lesz képes írni az osztott mappába.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="69"/>
         <source>&amp;Read-only</source>
-        <translation type="unfinished"></translation>
+        <translation>Csak &amp;olvasható</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="76"/>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">Legyen tartó&amp;s</translation>
+        <translation>Legyen tartó&amp;s</translation>
     </message>
 </context>
 <context>
@@ -8410,77 +8409,77 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="127"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="33"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="unfinished">Ha engedélyezed, lesz soros port a virtuális gépben.</translation>
+        <translation>Ha engedélyezed, ez a soros port látható lesz a virtuális gép számára.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="36"/>
         <source>&amp;Enable Serial Port</source>
-        <translation type="unfinished">Soros port &amp;engedélyezése</translation>
+        <translation>Soros port &amp;engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port szá&amp;m:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished">A soros port száma. Választhatsz standard soros portot, vagy válaszd az &lt;b&gt;Egyéni&lt;/b&gt;-t és add meg a port paramétereit kézzel.</translation>
+        <translation>A soros port száma. Választhatsz standard soros portot, vagy válaszd az &lt;b&gt;Egyéni&lt;/b&gt;-t és add meg a port paramétereit kézzel.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished">A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
+        <translation>A soros port megszakításának száma. Bármely szám lehet &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;255&lt;/tt&gt; között. Ha az &lt;b&gt;IO APIC&lt;/b&gt; engedélyezve van, a &lt;tt&gt;15&lt;/tt&gt; feletti megszakítások foglaltak.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished">A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
+        <translation>A soros port I/O báziscíme. Bármely cím érvényes &lt;tt&gt;0&lt;/tt&gt; és &lt;tt&gt;0xFFFF&lt;/tt&gt; között.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port &amp;mód:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished">A soros port működési módja. Ha a &lt;b&gt;Lekapcsolva&lt;/b&gt; módot választod, a vendég rendszer érzékeli majd a soros portot, de használni nem fogja tudni (nem lesz benne kábel).</translation>
+        <translation>A soros port működési módja. Ha a &lt;b&gt;Lekapcsolva&lt;/b&gt; módot választod, a vendég rendszer érzékeli majd a soros portot, de használni nem fogja tudni (nem lesz benne kábel).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished">Ha engedélyezed, egy cső fog létrejönni a &lt;b&gt;Port útvonal&lt;/b&gt; mezőben megadott helyen a virtuális gép indulásakor. Egyébként a virtuális gép megpróbálja felhasználni a már létező csövet.</translation>
+        <translation>Ha engedélyezed, egy cső fog létrejönni a &lt;b&gt;Port útvonal&lt;/b&gt; mezőben megadott helyen a virtuális gép indulásakor. Egyébként a virtuális gép megpróbálja felhasználni a már létező csövet.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="179"/>
         <source>&amp;Create Pipe</source>
-        <translation type="unfinished">&amp;Cső készítése</translation>
+        <translation>&amp;Cső készítése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Port útvonal:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="unfinished">A port útvonala ha a port &lt;b&gt;Gazda cső&lt;/b&gt; üzemmódban működik, vagy a gazda soros portjának neve ha a port &lt;b&gt;Gazda eszköz&lt;/b&gt; üzemmódban működik.</translation>
+        <translation>A port útvonala, ha a port &lt;b&gt;Gazda cső&lt;/b&gt; üzemmódban működik, vagy a gazda soros portjának neve ha a port &lt;b&gt;Gazda eszköz&lt;/b&gt; üzemmódban működik.</translation>
     </message>
 </context>
 <context>
@@ -8488,17 +8487,17 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="258"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">Kettős portszám van kiválasztva </translation>
+        <translation>Kettős portszám van kiválasztva </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="276"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished"></translation>
+        <translation>A port útvonala nincs megadva </translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="277"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">Kétszer van ugyanaz az útvonal megadva </translation>
+        <translation>Kétszer van ugyanaz az útvonal megadva </translation>
     </message>
 </context>
 <context>
@@ -8506,103 +8505,103 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="235"/>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Üres szűrő hozzá&amp;adása</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="236"/>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Szűrő hozzáa&amp;dása eszköz alapján</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="237"/>
         <source>&amp;Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Szűrő sz&amp;erkesztése</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="238"/>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Szűrő tö&amp;rlése</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Feljebb</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lejjebb</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="258"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished">Egy teljesen üres USB szűrőt hoz létre. Ez a szűrő minden csatlakoztatott eszközre illeszkedni fog.</translation>
+        <translation>Egy teljesen üres USB szűrőt hoz létre. Ez a szűrő minden csatlakoztatott eszközre illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="261"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">Egy teljesen új USB szűrő létrehozása a kiválasztott USB eszköz paraméterei alapján.</translation>
+        <translation>Egy teljesen új USB szűrő létrehozása a kiválasztott USB eszköz paraméterei alapján.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
         <source>Edits the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kijelölt szűrő szerkesztése.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="263"/>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Törli a kiválasztott USB szűrőt.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="264"/>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished">A kijelölt USB filtert feljebb tolja.</translation>
+        <translation>A kijelölt USB szűrőt feljebb tolja.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="265"/>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished">A kijelölt USB filtert lejjebb tolja.</translation>
+        <translation>A kijelölt USB szűrőt lejjebb tolja.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">Új szűrő %1</translation>
+        <translation>Új szűrő %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="33"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">Ha engedélyezed, lesz USB vezérlő a virtuális gépben.</translation>
+        <translation>Ha engedélyezed, lesz USB vezérlő a virtuális gépben.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="36"/>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished">&amp;USB vezérlő engedélyezése</translation>
+        <translation>&amp;USB vezérlő engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha engedélyezed, a virtuális USB EHCI vezérlő használható lesz ebben a virtuális gépben. Az USB EHCI vezérlő USB 2.0 támogatással is rendelkezik.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 (E&amp;HCI) vezérlő engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="87"/>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished">USB eszközök és &amp;szűrők</translation>
+        <translation>USB eszközök és &amp;szűrők</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ehhez a géphez rendelt USB szűrők mutatása. Engedélyezd, ha látni szeretnéd, hogy egy adott szűrő engedélyezett vagy sem. A felbukkanó menü vagy a gombok használatával lehet szűrőt készíteni és törölni.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
         <source>[filter]</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -8611,124 +8610,124 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="62"/>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished">Bármely</translation>
+        <translation>Bárhol</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="63"/>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">Igen</translation>
+        <translation>Igen</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="64"/>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">Nem</translation>
+        <translation>Nem</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Név:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
         <source>Displays the filter name.</source>
-        <translation type="unfinished">Filter neve.</translation>
+        <translation>Filter neve.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>Gyártó &amp;ID:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gyártó ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Ha a mező üres, a szűrő bármely azonosítóra illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>Termé&amp;k ID:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Termék ID alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;XXXX&lt;/tt&gt;, ahol &lt;tt&gt;X&lt;/tt&gt; egy hexadecimális szám. Ha a mező üres, a szűrő bármely azonosítóra illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Revizió:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Revízió szám alapú szűrőt készít. A &lt;i&gt;pontos illeszkedéshez&lt;/i&gt; szükséges formátum &lt;tt&gt;IIFF&lt;/tt&gt;, ahol &lt;tt&gt;I&lt;/tt&gt; az egész rész egy számjegye, &lt;tt&gt;F&lt;/tt&gt; pedig a törtrész számjegye. Ha a mező üres, a szűrő minden revízióra illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gyártó:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gyártó alapú szűrőt készít a gyártó &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden gyártóra illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished"></translation>
+        <translation>Te&amp;rmék:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Termék alapú szűrőt készít a termék &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden termékre illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sorozatszám:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorozatszám alapú szűrőt készít a sorozatszám alapján. Ha a mező üres, a szűrő minden sorozatszámra illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
         <source>Por&amp;t:</source>
-        <translation type="unfinished"></translation>
+        <translation>Por&amp;t:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gazda port alapú szűrőt készít a port &lt;i&gt;pontos&lt;/i&gt; neve alapján. Ha a mező üres, a szűrő minden portra illeszkedni fog.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Távoli:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>A csatlakoztatás módjára épülő szűrőt határoz meg, azaz hogy az USB eszköz helyileg (&lt;i&gt;Nem&lt;/i&gt;), a VRDP kliens gépen  (&lt;i&gt;Igen&lt;/i&gt;) van csatlakoztatva, vagy mindegy  (&lt;i&gt;Bárhol&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
         <source>&amp;Action:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Akció:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Azt határozza meg, hogy milyen műveletet kell végrehajtani a szabálynak megfelelő eszköz csatlakoztatása esetén: adja át a gazdagépnek (&lt;i&gt;Kihagyás&lt;/i&gt;) vagy csatlakoztassa a virtuális géphez (&lt;i&gt;Elfogás&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>USB szűrő adatai</translation>
     </message>
 </context>
 <context>
@@ -8736,42 +8735,42 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="33"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Ha engedélyezed, a virtuális gép RDP szerverré válik, lehetővé téve a virtuális gép kezelését egy egyszerű RDP kliensből.</translation>
+        <translation>Ha engedélyezed, a virtuális gép RDP szerverré válik, lehetővé téve a virtuális gép kezelését egy egyszerű RDP kliensből.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="36"/>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="unfinished">VRDP szerver &amp;engedélyezése</translation>
+        <translation>VRDP szerver &amp;engedélyezése</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>Szerver &amp;port:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>A VRDP szerver portszáma. Ha &lt;tt&gt;0&lt;/tt&gt;-t (nulla) adsz meg, az alapértelmezés lép érvényre.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished"></translation>
+        <translation>Authentikációs &amp;metódus:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">A VRDP authentikációs metódus.</translation>
+        <translation>A VRDP authentikációs metódus.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>Authentikációs &amp;időkorlát:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">Időkorlát a vendég authentikálásához, millisec-ben.</translation>
+        <translation>Időkorlát a vendég authentikálásához, millisec-ben.</translation>
     </message>
 </context>
 </TS>
