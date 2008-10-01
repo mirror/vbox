@@ -39,27 +39,27 @@
 #include <iprt/err.h>
 
 
-
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /**
- * Validates a pPP handle passed to one of the PP functions.
+ * Validation macro returns if invalid parameter.
  *
- * @returns true if valid, false if invalid.
- * @param   pPP     Pointe to the ping-pong structure.
+ * Expects a enmSpeaker variable to be handy and will set it to the current
+ * enmSpeaker value.
  */
-inline bool rtsemPPValid(PRTPINGPONG  pPP)
-{
-    if (!VALID_PTR(pPP))
-        return false;
+#define RTSEMPP_VALIDATE_RETURN(pPP) \
+    do { \
+        AssertPtrReturn(pPP, VERR_INVALID_PARAMETER); \
+        ASMAtomicUoReadSize(&pPP->enmSpeaker, &enmSpeaker); \
+        AssertMsgReturn(    enmSpeaker == RTPINGPONGSPEAKER_PING \
+                        ||  enmSpeaker == RTPINGPONGSPEAKER_PONG \
+                        ||  enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED \
+                        ||  enmSpeaker == RTPINGPONGSPEAKER_PING_SIGNALED, \
+                        ("enmSpeaker=%d\n", enmSpeaker), \
+                        VERR_INVALID_PARAMETER); \
+    } while (0)
 
-    RTPINGPONGSPEAKER enmSpeaker = pPP->enmSpeaker;
-    if (    enmSpeaker != RTPINGPONGSPEAKER_PING
-        &&  enmSpeaker != RTPINGPONGSPEAKER_PONG
-        &&  enmSpeaker != RTPINGPONGSPEAKER_PONG_SIGNALED
-        &&  enmSpeaker != RTPINGPONGSPEAKER_PING_SIGNALED)
-        return false;
-
-    return true;
-}
 
 /**
  * Init a Ping-Pong construct.
@@ -94,21 +94,20 @@ RTR3DECL(int) RTSemPingPongInit(PRTPINGPONG pPP)
  * @param   pPP         Pointer to the ping-pong structure which is to be destroyed.
  *                      (I.e. put into uninitialized state.)
  */
-RTR3DECL(int) RTSemPingPongDestroy(PRTPINGPONG pPP)
+RTR3DECL(int) RTSemPingPongDelete(PRTPINGPONG pPP)
 {
     /*
      * Validate input
      */
-    if (!rtsemPPValid(pPP))
-    {
-        AssertMsgFailed(("Invalid input %p\n", pPP));
-        return VERR_INVALID_PARAMETER;
-    }
+    if (!pPP)
+        return VINF_SUCCESS;
+    RTPINGPONGSPEAKER enmSpeaker;
+    RTSEMPP_VALIDATE_RETURN(pPP);
 
     /*
      * Invalidate the ping pong handle and destroy the event semaphores.
      */
-    ASMAtomicXchgSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_UNINITIALIZE);
+    ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_UNINITIALIZE);
     int rc = RTSemEventDestroy(pPP->Ping);
     int rc2 = RTSemEventDestroy(pPP->Pong);
     AssertRC(rc);
@@ -130,29 +129,22 @@ RTR3DECL(int) RTSemPing(PRTPINGPONG pPP)
     /*
      * Validate input
      */
-    if (!rtsemPPValid(pPP))
-    {
-        AssertMsgFailed(("Invalid input %p\n", pPP));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (pPP->enmSpeaker != RTPINGPONGSPEAKER_PING)
-    {
-        AssertMsgFailed(("Speaking out of turn!\n"));
-        return VERR_SEM_OUT_OF_TURN;
-    }
+    RTPINGPONGSPEAKER enmSpeaker;
+    RTSEMPP_VALIDATE_RETURN(pPP);
+    AssertMsgReturn(enmSpeaker == RTPINGPONGSPEAKER_PING,("Speaking out of turn! enmSpeaker=%d\n", enmSpeaker),
+                    VERR_SEM_OUT_OF_TURN);
 
     /*
      * Signal the other thread.
      */
-    ASMAtomicXchgSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PONG_SIGNALED);
+    ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PONG_SIGNALED);
     int rc = RTSemEventSignal(pPP->Pong);
     if (RT_SUCCESS(rc))
         return rc;
 
     /* restore the state. */
-    AssertMsgFailed(("Failed to signal pong sem %x. rc=%d\n",  pPP->Pong,  rc));
-    ASMAtomicXchgSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PING);
+    AssertMsgFailed(("Failed to signal pong sem %x. rc=%Rrc\n",  pPP->Pong,  rc));
+    ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PING);
     return rc;
 }
 
@@ -169,29 +161,22 @@ RTR3DECL(int) RTSemPong(PRTPINGPONG pPP)
     /*
      * Validate input
      */
-    if (!rtsemPPValid(pPP))
-    {
-        AssertMsgFailed(("Invalid input %p\n", pPP));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (pPP->enmSpeaker != RTPINGPONGSPEAKER_PONG)
-    {
-        AssertMsgFailed(("Speaking out of turn!\n"));
-        return VERR_SEM_OUT_OF_TURN;
-    }
+    RTPINGPONGSPEAKER enmSpeaker;
+    RTSEMPP_VALIDATE_RETURN(pPP);
+    AssertMsgReturn(enmSpeaker == RTPINGPONGSPEAKER_PONG,("Speaking out of turn! enmSpeaker=%d\n", enmSpeaker),
+                    VERR_SEM_OUT_OF_TURN);
 
     /*
      * Signal the other thread.
      */
-    ASMAtomicXchgSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PING_SIGNALED);
+    ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PING_SIGNALED);
     int rc = RTSemEventSignal(pPP->Ping);
     if (RT_SUCCESS(rc))
         return rc;
 
     /* restore the state. */
-    AssertMsgFailed(("Failed to signal ping sem %x. rc=%d\n",  pPP->Ping,  rc));
-    ASMAtomicXchgSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PONG);
+    AssertMsgFailed(("Failed to signal ping sem %x. rc=%Rrc\n",  pPP->Ping,  rc));
+    ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PONG);
     return rc;
 }
 
@@ -209,26 +194,20 @@ RTR3DECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies)
     /*
      * Validate input
      */
-    if (!rtsemPPValid(pPP))
-    {
-        AssertMsgFailed(("Invalid input %p\n", pPP));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (    pPP->enmSpeaker != RTPINGPONGSPEAKER_PONG
-        &&  pPP->enmSpeaker != RTPINGPONGSPEAKER_PONG_SIGNALED
-        &&  pPP->enmSpeaker != RTPINGPONGSPEAKER_PING_SIGNALED)
-    {
-        AssertMsgFailed(("Listening out of turn! enmSpeaker=%d\n", pPP->enmSpeaker));
-        return VERR_SEM_OUT_OF_TURN;
-    }
+    RTPINGPONGSPEAKER enmSpeaker;
+    RTSEMPP_VALIDATE_RETURN(pPP);
+    AssertMsgReturn(    enmSpeaker == RTPINGPONGSPEAKER_PONG
+                    ||  enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED
+                    ||  enmSpeaker == RTPINGPONGSPEAKER_PING_SIGNALED,
+                    ("Speaking out of turn! enmSpeaker=%d\n", enmSpeaker),
+                    VERR_SEM_OUT_OF_TURN);
 
     /*
      * Wait.
      */
     int rc = RTSemEventWait(pPP->Ping, cMillies);
     if (RT_SUCCESS(rc))
-        ASMAtomicXchgSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PING);
+        ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PING);
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
@@ -247,26 +226,20 @@ RTR3DECL(int) RTSemPongWait(PRTPINGPONG pPP, unsigned cMillies)
     /*
      * Validate input
      */
-    if (!rtsemPPValid(pPP))
-    {
-        AssertMsgFailed(("Invalid input %p\n", pPP));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (    pPP->enmSpeaker != RTPINGPONGSPEAKER_PING
-        &&  pPP->enmSpeaker != RTPINGPONGSPEAKER_PING_SIGNALED
-        &&  pPP->enmSpeaker != RTPINGPONGSPEAKER_PONG_SIGNALED)
-    {
-        AssertMsgFailed(("Listening out of turn! enmSpeaker=%d\n", pPP->enmSpeaker));
-        return VERR_SEM_OUT_OF_TURN;
-    }
+    RTPINGPONGSPEAKER enmSpeaker;
+    RTSEMPP_VALIDATE_RETURN(pPP);
+    AssertMsgReturn(    enmSpeaker == RTPINGPONGSPEAKER_PING
+                    ||  enmSpeaker == RTPINGPONGSPEAKER_PING_SIGNALED
+                    ||  enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED,
+                    ("Speaking out of turn! enmSpeaker=%d\n", enmSpeaker),
+                    VERR_SEM_OUT_OF_TURN);
 
     /*
      * Wait.
      */
     int rc = RTSemEventWait(pPP->Pong, cMillies);
     if (RT_SUCCESS(rc))
-        ASMAtomicXchgSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PONG);
+        ASMAtomicWriteSize(&pPP->enmSpeaker, RTPINGPONGSPEAKER_PONG);
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }

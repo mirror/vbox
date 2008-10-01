@@ -417,13 +417,13 @@ typedef RTPINGPONG *PRTPINGPONG;
 RTDECL(int) RTSemPingPongInit(PRTPINGPONG pPP);
 
 /**
- * Destroys a Ping-Pong construct.
+ * Deletes a Ping-Pong construct.
  *
  * @returns iprt status code.
  * @param   pPP         Pointer to the ping-pong structure which is to be destroyed.
  *                      (I.e. put into uninitialized state.)
  */
-RTDECL(int) RTSemPingPongDestroy(PRTPINGPONG pPP);
+RTDECL(int) RTSemPingPongDelete(PRTPINGPONG pPP);
 
 /**
  * Signals the pong thread in a ping-pong construct. (I.e. sends ping.)
@@ -462,6 +462,67 @@ RTDECL(int) RTSemPingWait(PRTPINGPONG pPP, unsigned cMillies);
  * @param   cMillies    Number of milliseconds to wait.
  */
 RTDECL(int) RTSemPongWait(PRTPINGPONG pPP, unsigned cMillies);
+
+
+/**
+ * Checks if the pong thread is speaking.
+ *
+ * @returns true / false.
+ * @param   pPP         Pointer to the ping-pong structure.
+ * @remark  This is NOT the same as !RTSemPongIsSpeaker().
+ */
+DECLINLINE(bool) RTSemPingIsSpeaker(PRTPINGPONG pPP)
+{
+    RTPINGPONGSPEAKER enmSpeaker = pPP->enmSpeaker;
+    return enmSpeaker == RTPINGPONGSPEAKER_PING;
+}
+
+
+/**
+ * Checks if the pong thread is speaking.
+ *
+ * @returns true / false.
+ * @param   pPP         Pointer to the ping-pong structure.
+ * @remark  This is NOT the same as !RTSemPingIsSpeaker().
+ */
+DECLINLINE(bool) RTSemPongIsSpeaker(PRTPINGPONG pPP)
+{
+    RTPINGPONGSPEAKER enmSpeaker = pPP->enmSpeaker;
+    return enmSpeaker == RTPINGPONGSPEAKER_PONG;
+}
+
+
+/**
+ * Checks whether the ping thread should wait.
+ *
+ * @returns true / false.
+ * @param   pPP         Pointer to the ping-pong structure.
+ * @remark  This is NOT the same as !RTSemPongShouldWait().
+ */
+DECLINLINE(bool) RTSemPingShouldWait(PRTPINGPONG pPP)
+{
+    RTPINGPONGSPEAKER enmSpeaker = pPP->enmSpeaker;
+    return enmSpeaker == RTPINGPONGSPEAKER_PONG
+        || enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED
+        || enmSpeaker == RTPINGPONGSPEAKER_PING_SIGNALED;
+}
+
+
+/**
+ * Checks whether the pong thread should wait.
+ *
+ * @returns true / false.
+ * @param   pPP         Pointer to the ping-pong structure.
+ * @remark  This is NOT the same as !RTSemPingShouldWait().
+ */
+DECLINLINE(bool) RTSemPongShouldWait(PRTPINGPONG pPP)
+{
+    RTPINGPONGSPEAKER enmSpeaker = pPP->enmSpeaker;
+    return enmSpeaker == RTPINGPONGSPEAKER_PING
+        || enmSpeaker == RTPINGPONGSPEAKER_PING_SIGNALED
+        || enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED;
+}
+
 
 /** @} */
 
