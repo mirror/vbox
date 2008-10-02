@@ -610,15 +610,12 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     /*
      * Check for the VirtualBox instance.
      */
-    if (RT_UNLIKELY(!g_VBoxNetFltSolarisInstance))
+    PVBOXNETFLTINS pThis = g_VBoxNetFltSolarisInstance;
+    if (!pThis)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to get VirtualBox instance.\n"));
         return ENOENT;
     }
-
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PVBOXNETFLTINS pThis = g_VBoxNetFltSolarisInstance;
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
     /*
      * Check VirtualBox stream type.
@@ -626,8 +623,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     if (g_VBoxNetFltSolarisStreamType == kUndefined)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode.\n"));
-
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
         return ENOENT;
     }
 
@@ -656,8 +651,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         if (RT_UNLIKELY(!pPromiscStream))
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to allocate promiscuous stream data.\n"));
-
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             return ENOMEM;
         }
 
@@ -678,8 +671,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         if (RT_UNLIKELY(!pStream))
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to allocate stream data.\n"));
-
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             return ENOMEM;
         }
     }
@@ -699,7 +690,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         case kPromiscStream:    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvPromiscStream, pStream);    break;
         default:    /* Heh. */
         {
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             AssertRelease(pStream->Type);
             break;
         }
@@ -714,7 +704,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     pStream->pNext = *ppPrevStream;
     *ppPrevStream = pStream;
 
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     qprocson(pQueue);
 
     /*
@@ -782,8 +771,6 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     vboxnetflt_stream_t *pStream = NULL;
     vboxnetflt_stream_t **ppPrevStream = NULL;
 
-    qprocsoff(pQueue);
-
     /*
      * Get instance data.
      */
@@ -794,9 +781,37 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         return ENXIO;
     }
 
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PVBOXNETFLTINS pThis = ASMAtomicUoReadPtr((void * volatile *)&pStream->pThis);
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    if (pStream->Type == kPromiscStream)
+    {
+        flushq(pQueue, FLUSHALL);
+        flushq(WR(pQueue), FLUSHALL);
+    }
+
+    qprocsoff(pQueue);
+
+    if (pStream->Type == kPromiscStream)
+    {
+        vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
+
+        int rc = RTSemFastMutexRequest(pStream->pThis->u.s.hFastMtx);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * Free-up loopback buffers.
+         */
+        PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
+        while (pCur)
+        {
+            PVBOXNETFLTPACKETID pNext = pCur->pNext;
+            RTMemFree(pCur);
+            pCur = pNext;
+        }
+        pPromiscStream->pHead = NULL;
+        pPromiscStream->pTail = NULL;
+        pPromiscStream->cLoopback = 0;
+
+        RTSemFastMutexRelease(pStream->pThis->u.s.hFastMtx);
+    }
 
     /*
      * Unlink it from the list of streams.
@@ -816,7 +831,6 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         case kPromiscStream:    ASMAtomicUoWritePtr(pStream->pThis->u.s.pvPromiscStream, NULL); break;
         default:    /* Heh. */
         {
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             AssertRelease(pStream->Type);
             break;
         }
@@ -828,8 +842,6 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
 
     NOREF(fOpenMode);
     NOREF(pCred);
-
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
     return 0;
 }
@@ -845,6 +857,9 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
  */
 static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
 {
+    if (!pMsg)
+        return 0;
+
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut pQueue=%p pMsg=%p\n", pQueue, pMsg));
 
     bool fSendUpstream = true;
@@ -855,8 +870,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
      * In the unlikely case where VirtualBox crashed and this filter
      * is somehow still in the host stream we must try not to panic the host.
      */
-    if (   pMsg
-        && pStream
+    if (   pStream
         && pStream->Type == kPromiscStream)
     {
         pThis = ASMAtomicUoReadPtr((void * volatile *)&pStream->pThis);
@@ -976,7 +990,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                 }
             }
 
-            vboxNetFltRelease(pThis, true);        
+            vboxNetFltRelease(pThis, true);
         }
         else
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Could not find VirtualBox instance!!\n"));
@@ -1566,28 +1580,6 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
  */
 static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-
-    vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
-    if (pPromiscStream)
-    {
-        /*
-         * Free-up loopback buffers.
-         */
-        PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
-        while (pCur)
-        {
-            PVBOXNETFLTPACKETID pNext = pCur->pNext;
-            RTMemFree(pCur);
-            pCur = pNext;
-        }
-        pPromiscStream->pHead = NULL;
-        pPromiscStream->pTail = NULL;
-        pPromiscStream->cLoopback = 0;
-    }
-
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
 }
 
@@ -2368,7 +2360,8 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
         pPromiscStream->cLoopback--;
         fIsOurPacket = true;
 
-        LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p cLoopback=%d\n", pMsg, pPromiscStream->cLoopback));
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p Checksum=%u cLoopbackQ=%d\n", pMsg, Checksum,
+                    pPromiscStream->cLoopback));
         break;
     }
 
@@ -2706,9 +2699,14 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     vboxnetflt_stream_t *pStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
     if (pStream)
     {
-        int rc = vboxNetFltSolarisPromiscReq(pStream->pReadQueue, fActive);
-        if (RT_FAILURE(rc))
-            LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive failed to request promiscuous mode! rc=%d\n", rc));
+        if (pStream->pReadQueue)
+        {
+            int rc = vboxNetFltSolarisPromiscReq(pStream->pReadQueue, fActive);
+            if (RT_FAILURE(rc))
+                LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive failed to request promiscuous mode! rc=%d\n", rc));
+        }
+        else
+            LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive queue not found!\n"));            
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive stream not found!\n"));
