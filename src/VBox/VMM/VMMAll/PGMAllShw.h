@@ -114,10 +114,10 @@ __END_DECLS
  */
 PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED
+#if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
     return VERR_PAGE_TABLE_NOT_PRESENT;
 
-#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
+#else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
     /*
      * Get the PDE.
      */
@@ -221,7 +221,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
         *pHCPhys = Pte.u & SHW_PTE_PG_MASK;
 
     return VINF_SUCCESS;
-#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
+#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
 }
 
 
@@ -241,10 +241,10 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
  */
 PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
-# if PGM_SHW_TYPE == PGM_TYPE_NESTED
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
     return VERR_PAGE_TABLE_NOT_PRESENT;
 
-# else /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
+# else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
     int rc;
 
     /*
@@ -319,6 +319,6 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
             iPTE++;
         }
     }
-# endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
+# endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
 }
 
