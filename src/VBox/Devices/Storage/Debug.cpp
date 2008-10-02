@@ -895,7 +895,7 @@ static struct
  * Return the plain text of an ATA command for debugging purposes.
  * Don't allocate the string as we use this function in Log() statements.
  */
-const char * const ATACmdText(uint8_t uCmd)
+const char * ATACmdText(uint8_t uCmd)
 {
     AssertCompile(RT_ELEMENTS(g_apszATACmdNames) == (1 << (8*sizeof(uCmd))));
     return g_apszATACmdNames[uCmd];
@@ -905,7 +905,7 @@ const char * const ATACmdText(uint8_t uCmd)
  * Return the plain text of a SCSI command for debugging purposes.
  * Don't allocate the string as we use this function in Log() statements.
  */
-const char * const SCSICmdText(uint8_t uCmd)
+const char * SCSICmdText(uint8_t uCmd)
 {
     AssertCompile(RT_ELEMENTS(g_apszSCSICmdNames) == (1 << (8*sizeof(uCmd))));
     return g_apszSCSICmdNames[uCmd];
@@ -915,7 +915,7 @@ const char * const SCSICmdText(uint8_t uCmd)
  * Return the plain text of a SCSI sense code.
  * Don't allocate the string as we use this function in Log() statements.
  */
-const char * const SCSISenseText(uint8_t uSense)
+const char * SCSISenseText(uint8_t uSense)
 {
     if (uSense < RT_ELEMENTS(g_apszSCSISenseNames))
         return g_apszSCSISenseNames[uSense];
@@ -927,7 +927,7 @@ const char * const SCSISenseText(uint8_t uSense)
  * Return the plain text of an extended SCSI sense key.
  * Don't allocate the string as we use this function in Log() statements.
  */
-const char * const SCSISenseExtText(uint8_t uASC, uint8_t uASCQ)
+const char * SCSISenseExtText(uint8_t uASC, uint8_t uASCQ)
 {
     unsigned iIdx;
 
