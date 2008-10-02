@@ -4581,7 +4581,7 @@ static DECLCALLBACK(void *) ataStatus_QueryInterface(PPDMIBASE pInterface, PDMIN
 static DECLCALLBACK(int) ataStatus_QueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
     PCIATAState *pThis = PDMILEDPORTS_2_PCIATASTATE(pInterface);
-    if (iLUN >= 0 && iLUN <= 4)
+    if (iLUN < 4)
     {
         switch (iLUN)
         {
@@ -4987,7 +4987,7 @@ static DECLCALLBACK(int) ataDestruct(PPDMDEVINS pDevIns)
         for (unsigned i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         {
             rc = RTThreadWait(pThis->aCts[i].AsyncIOThread, 30000 /* 30 s*/, NULL);
-            AssertMsg(RT_SUCCESS(rc) || rc == VERR_INVALID_HANDLE, ("rc=%Rrc i=%d\n", rc, i));
+            AssertMsgRC(rc || rc == VERR_INVALID_HANDLE, ("rc=%Rrc i=%d\n", rc, i));
         }
     }
     else
