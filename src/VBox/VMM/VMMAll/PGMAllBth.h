@@ -1395,9 +1395,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
 {
     if (PteSrc.n.u1Present)
     {
-#if PGM_SHW_TYPE == PGM_TYPE_EPT
-        AssertFailed();
-#endif
         /*
          * Find the ram range.
          */
@@ -1415,8 +1412,17 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
             {
                 /** @todo r=bird: Are we actually handling dirty and access bits for pages with access handlers correctly? No. */
                 if (!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
+                {
+#if PGM_SHW_TYPE == PGM_TYPE_EPT
+                    PteDst.u           = (HCPhys & EPT_PTE_PG_MASK);
+                    PteDst.n.u1Present = 1;
+                    PteDst.n.u1Execute = 1;
+                    /* PteDst.n.u1Write = 0 */
+#else
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT | X86_PTE_RW))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
+#endif
+                }
                 else
                 {
                     LogFlow(("SyncPageWorker: monitored page (%VGp) -> mark not present\n", HCPhys));
@@ -1426,6 +1432,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
             }
             else
             {
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
                 /*
                  * If the page or page directory entry is not marked accessed,
                  * we mark the page not present.
@@ -1449,10 +1456,18 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                              | PGM_PTFLAGS_TRACK_DIRTY;
                 }
                 else
+#endif
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTXMID(Stat,DirtyPageSkipped));
+#if PGM_SHW_TYPE == PGM_TYPE_EPT
+                    PteDst.u           = (HCPhys & EPT_PTE_PG_MASK);
+                    PteDst.n.u1Present = 1;
+                    PteDst.n.u1Write   = 1;
+                    PteDst.n.u1Execute = 1;
+#else
                     PteDst.u = (PteSrc.u & ~(X86_PTE_PAE_PG_MASK | X86_PTE_AVL_MASK | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                              | (HCPhys & X86_PTE_PAE_PG_MASK);
+#endif
                 }
             }
 
