@@ -2584,7 +2584,7 @@ static Bool
 SetupMouse(InputInfoPtr pInfo)
 {
     MouseDevPtr pMse;
-    int i;
+    unsigned i;
     int protoPara[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
     const char *name = NULL;
     Bool automatic = FALSE;
