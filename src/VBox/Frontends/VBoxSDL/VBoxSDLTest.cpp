@@ -340,8 +340,10 @@ static void bench(unsigned long w, unsigned long h, unsigned long bpp)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-        for (guTextureWidth  = 32; guTextureWidth  < newWidth;  guTextureWidth  <<= 1);
-        for (guTextureHeight = 32; guTextureHeight < newHeight; guTextureHeight <<= 1);
+        for (guTextureWidth  = 32; guTextureWidth  < newWidth;  guTextureWidth  <<= 1)
+            ;
+        for (guTextureHeight = 32; guTextureHeight < newHeight; guTextureHeight <<= 1)
+            ;
         RTPrintf(", tex %ldx%ld\n", guTextureWidth, guTextureHeight);
 
         switch (guGuestBpp)
