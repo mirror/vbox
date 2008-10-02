@@ -480,38 +480,40 @@ VirtualBox4_CLEAN.win += $$(PATH_VirtualBox4)/VirtualBox4.rc
 endif # win
 
 
-# If there is the accessible plugin & we are using our home-made qt put it to
-# the output dir
-# @todo: fix this &| add it to the qt4 unit
-# @todo: solaris, all linux distros where we distribute Qt4 on our own
-if1of ($(KBUILD_TARGET),darwin win)
-PREFIX=lib
-SUFFIX=
-INST_PATH=$(INST_VIRTUALBOX)Contents/MacOS/accessible/
-ifeq ($(KBUILD_TARGET),win)
-PREFIX=
-SUFFIX=4
-INST_PATH=$(INST_BIN)accessible/
-endif
-# Add the accessible plugin as a install target
-INSTALLS += accessible
-accessible_INST = $(INST_PATH)
-accessible_MODE = 0644
-accessible_SOURCES = $(VBOX_VIRTUALBOX4_OUT_DIR)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL)
-
-BLDDIRS += $(VBOX_VIRTUALBOX4_OUT_DIR)/accessible
-# The rule to fix the accessible plugin
-$(VBOX_VIRTUALBOX4_OUT_DIR)/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL): $(VBOX_PATH_QT4)/plugins/accessible/$(PREFIX)qtaccessiblewidgets$(SUFFIX)$(SUFF_DLL) | $$(dir $$@)
-	$(QUIET)$(INSTALL) $< ${@}
-ifeq ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin win)
+ #
+ # Install the Qt accessible plugin.
+ #
+ ## @todo solaris, all linux distros where we distribute Qt4 on our own
+ ## @todo r=bird: Does this really have to be in <appdir>/accessible? Why can
+ #                it be put together with the other Qt files? That way it will
+ #                be more generic wrt to places where we don't install Qt. It also
+ #                means this installing should be moved and doesn't belong in qt4.kmk.
+ INSTALLS += VirtualBox4-accessible
+ VirtualBox4-accessible_INST = $(INST_BIN)accessible/
+ VirtualBox4-accessible_INST.darwin = $(INST_VIRTUALBOX)Contents/MacOS/accessible/
+ VirtualBox4-accessible_MODE = 0755
+ ifeq ($(KBUILD_TARGET),win)
+  VirtualBox4-accessible_SOURCES = $(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll
+ else ifneq ($(KBUILD_TARGET,darwin)
+  VirtualBox4-accessible_SOURCES = $(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets4$(SUFF_DLL)
+  $(error fixme)
+ else
+  # We need to fix the dep lib paths here, so a bit extra work.
+  ## @todo r=bird: does this magic actually work for the hardended builds too? or is that handled in the installer???
+  VirtualBox4-accessible_SOURCES = $(VBOX_VIRTUALBOX4_OUT_DIR)/accessible/libqtaccessiblewidgets.dylib
+  VirtualBox4-accessible_CLEAN   = $(VirtualBox4-accessible_SOURCES)
+  VirtualBox4-accessible_BLDDIRS = $(dir $(VirtualBox4-accessible_SOURCES))
+$(VirtualBox4-accessible_SOURCES): $(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib | $$(dir $$@)
 	$(call MSG_TOOL,install_name_tool,accessible,$<,$@)
+	$(QUIET)$(INSTALL) $< $@
 	$(QUIET)install_name_tool \
-       -change           QtCore.framework/Versions/4/QtCore \
-	   @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
-       -change           QtGui.framework/Versions/4/QtGui \
-	   @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
-	${@}
-endif
+		-change                         QtCore.framework/Versions/4/QtCore \
+		 @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
+		-change                         QtGui.framework/Versions/4/QtGui \
+		 @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
+		$@
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
@@ -519,7 +521,9 @@ ifeq ($(KBUILD_TARGET),darwin)
 # For the application menu it is necessary to have all supported language at
 # least as a project directory in the bundle. Create them all based on the
 # nls/ApprovedLanguages.txt file.
-# @todo: It seems it isn't possible to let kBuild generate a directory in the
+#
+
+## @todo: It seems it isn't possible to let kBuild generate a directory in the
 # install target without installing something. So we install an empty file for
 # that.
 #
