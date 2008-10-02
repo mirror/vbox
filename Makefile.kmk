@@ -159,6 +159,7 @@ endif
 ifdef VBOX_WITH_QT4_SUN
 #
 # Install our Qt DLLs / Shared Objects / Frameworks.
+# Note: The installer fixes the darwin .dylibs when hardening is enabled.
 #
  INSTALLS += qt4-bin
  qt4-bin_MODE = 755
@@ -169,7 +170,6 @@ ifdef VBOX_WITH_QT4_SUN
 	$(VBOX_PATH_QT4)/Frameworks/QtGui.framework/Versions/4/QtGui=>Frameworks/QtGui.framework/Versions/4/QtGui \
 	$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
   qt4-bin_CLEAN = $(PATH_qt4-bin)/libqtaccessiblewidgets.dylib
-## @todo r=bird: does this magic actually work for the hardended builds too? or is that handled in the installer???
 $$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib | $$(dir $$@)
 	$(call MSG_TOOL,install_name_tool,accessible,$<,$@)
 	$(QUIET)$(INSTALL) $< $@
