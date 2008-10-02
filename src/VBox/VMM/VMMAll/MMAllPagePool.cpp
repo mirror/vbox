@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * MM - Memory Monitor(/Manager) - Page Pool.
+ * MM - Memory Manager - Page Pool.
  *
  * @remarks     This file is NOT built for the raw-mode context.
  */

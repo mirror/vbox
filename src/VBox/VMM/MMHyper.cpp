@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * MM - Memory Monitor(/Manager) - Hypervisor Memory Area.
+ * MM - Memory Manager - Hypervisor Memory Area.
  */
 
 /*
@@ -924,7 +924,9 @@ MMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MMT
     if (VBOX_SUCCESS(rc))
     {
         RTGCPTR GCPtr;
-        rc = MMR3HyperMapHCRam(pVM, pvPages, cb, true, mmR3GetTagName(enmTag), &GCPtr);
+        rc = MMR3HyperMapHCRam(pVM, pvPages, cb, true,
+                               MMR3HeapAPrintf(pVM, MM_TAG_MM, "alloc once (%s)", mmR3GetTagName(enmTag)),
+                               &GCPtr);
         if (VBOX_SUCCESS(rc))
         {
             *ppv = pvPages;
