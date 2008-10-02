@@ -81,6 +81,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
      */
     if (fPreInited)
         return VINF_SUCCESS;
+    Assert(pThis->hDevice == NIL_RTFILE);
 
     /*
      * Check if madvise works.
@@ -94,14 +95,14 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Try open the device.
      */
-    pThis->hDevice = open(DEVICE_NAME, O_RDWR, 0);
-    if ((int)pThis->hDevice < 0)
+    int hDevice = open(DEVICE_NAME, O_RDWR, 0);
+    if (hDevice < 0)
     {
         /*
          * Try load the device.
          */
-        pThis->hDevice = open(DEVICE_NAME, O_RDWR, 0);
-        if ((int)pThis->hDevice < 0)
+        hDevice = open(DEVICE_NAME, O_RDWR, 0);
+        if (hDevice < 0)
         {
             int rc;
             switch (errno)
@@ -121,10 +122,9 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Mark the file handle close on exec.
      */
-    if (fcntl(pThis->hDevice, F_SETFD, FD_CLOEXEC) == -1)
+    if (fcntl(hDevice, F_SETFD, FD_CLOEXEC) == -1)
     {
-        close(pThis->hDevice);
-        pThis->hDevice = -1;
+        close(hDevice);
 #ifdef IN_SUP_HARDENED_R3
         return VERR_INTERNAL_ERROR;
 #else
@@ -135,6 +135,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * We're done.
      */
+    pThis->hDevice = hDevice;
     return VINF_SUCCESS;
 }
 
@@ -144,13 +145,13 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
 int     suplibOsTerm(PSUPLIBDATA pThis)
 {
     /*
-     * Check if we're initited at all.
+     * Close the device if it's actually open.
      */
-    if ((int)pThis->hDevice >= 0)
+    if (pThis->hDevice != NIL_RTFILE)
     {
         if (close(pThis->hDevice))
             AssertFailed();
-        pThis->hDevice = -1;
+        pThis->hDevice = NIL_RTFILE;
     }
 
     return 0;
