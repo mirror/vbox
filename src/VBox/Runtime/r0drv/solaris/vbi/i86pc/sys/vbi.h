@@ -27,8 +27,6 @@
 #ifndef _SYS_VBI_H
 #define	_SYS_VBI_H
 
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -290,6 +288,15 @@ extern void vbi_gtimer_end(vbi_gtimer_t *);
 
 
 /* end of interfaces defined for version 2 */
+
+/* begin interfaces defined for version 3 */
+
+/*
+ * returns non-zero if the thread might be preempted at any time
+ */
+extern int vbi_is_preempt_enabled(void);
+
+/* end of interfaces defined for version 3 */
 
 #ifdef	__cplusplus
 }

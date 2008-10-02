@@ -78,7 +78,7 @@ static void (*p_xc_call)() = (void (*)())xc_call;
 #pragma weak cpuset_only
 
 static struct modlmisc vbi_modlmisc = {
-	&mod_miscops, "Vbox Interfaces Ver 2"
+	&mod_miscops, "Vbox Interfaces Ver 3"
 };
 
 static struct modlinkage vbi_modlinkage = {
@@ -821,12 +821,10 @@ vbi_user_map(caddr_t *va, uint_t prot, uint64_t *palist, size_t len)
 	return (error);
 }
 
+
 /*
- * This is revision 2 of the interface. As more functions are added,
- * they should go after this point in the file and the revision level
- * increased.
+ * This is revision 2 of the interface.
  */
-uint_t vbi_revision_level = 2;
 
 struct vbi_cpu_watch {
 	void (*vbi_cpu_func)();
@@ -1038,4 +1036,17 @@ vbi_gtimer_end(vbi_gtimer_t *t)
 	mutex_exit(&cpu_lock);
 	kmem_free(t->g_counters, ncpus * sizeof (uint64_t));
 	kmem_free(t, sizeof (*t));
+}
+
+/*
+ * This is revision 3 of the interface. As more functions are added,
+ * they should go after this point in the file and the revision level
+ * increased.
+ */
+uint_t vbi_revision_level = 3;
+
+int
+vbi_is_preempt_enabled(void)
+{
+	return (curthread->t_preempt == 0);
 }
