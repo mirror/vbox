@@ -2,6 +2,82 @@ import traceback
 import sys
 import pdb
 
+class PerfCollector:
+    """ This class provides a wrapper over IPerformanceCollector in order to
+    get more 'pythonic' interface.
+
+    To begin collection of metrics use setup() method.
+
+    To get collected data use query() method.
+
+    It is possible to disable metric collection without changing collection
+    parameters with disable() method. The enable() method resumes metric
+    collection.
+    """
+
+    def __init__(self, vb):
+        """ Initializes the instance.
+        
+        Pass an instance of IVirtualBox as parameter.
+        """
+        self.collector = vb.performanceCollector 
+
+    def _update_metric_params(self):
+        metrics = self.collector.getMetrics(['*'], None)
+        self.metrics = {}
+        for m in metrics:
+            self.metrics[str(m.object) + "/" + str(m.metricName)] = m
+
+    def setup(self, names, objects, period, nsamples):
+        """ Discards all previously collected values for the specified
+        metrics, sets the period of collection and the number of retained
+        samples, enables collection.
+        """
+        self.collector.setupMetrics(names, objects, period, nsamples)
+        self._update_metric_params()
+
+    def enable(self, names, objects):
+        """ Resumes metric collection for the specified metrics.
+        """
+        self.collector.enableMetrics(names, objects)
+
+    def disable(self, names, objects):
+        """ Suspends metric collection for the specified metrics.
+        """
+        self.collector.disableMetrics(names, objects)
+
+    def query(self, names, objects):
+        """ Retrieves collected metric values as well as some auxiliary
+        information. Returns an array of dictionaries, one dictionary per
+        metric. Each dictionary contains the following entries:
+        'name': metric name
+        'object': managed object this metric associated with
+        'unit': unit of measurement
+        'scale': divide 'values' by this number to get float numbers
+        'values': collected data
+        'values_as_string': pre-processed values ready for 'print' statement
+        """
+        (values, names_out, objects_out, indices, lengths) = self.collector.queryMetricsData(names, objects)
+        out = []
+        for i in xrange(0, len(names_out)):
+            metric = self.metrics[str(objects_out[i]) + "/" + str(names_out[i])]
+            unit = str(metric.getUnit())
+            if unit == '%':
+                scale = 1000.
+                fmt = '%.2f%s'
+            else:
+                scale = 1
+                fmt = '%d %s'
+            out.append({
+                'name':str(names_out[i]),
+                'object':str(objects_out[i]),
+                'unit':str(metric.getUnit()),
+                'scale':scale,
+                'values':[int(values[j]) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))],
+                'values_as_string':'['+', '.join([fmt % (int(values[j])/scale, unit) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))])+']'
+            })
+        return out
+
 g_hasreadline = 1
 try:
     import readline
@@ -77,7 +153,7 @@ g_verbose = True
 def split_no_quotes(s):
    return s.split()
    
-def startVm(mgr,vb,mach,type):
+def startVm(mgr,vb,mach,type,perf):
     session = mgr.getSessionObject(vb)
     uuid = mach.id
     progress = vb.openRemoteSession(session, uuid, type, "")
@@ -85,9 +161,10 @@ def startVm(mgr,vb,mach,type):
     completed = progress.completed
     rc = progress.resultCode
     print "Completed:", completed, "rc:",rc
-    if rc == 0:
+    if int(rc) == 0:
+        # @todo Nikolay, what is the point in ignoring exceptions?
         try:
-            vb.performanceCollector.setupMetrics(['*'], [mach], 10, 15)
+            perf.setup(['*'], [mach], 10, 15)
         except:
             pass
     session.close()
@@ -102,14 +179,8 @@ def asState(var):
         return 'off'
 
 def guestStats(ctx,mach):
-    collector = ctx['vb'].performanceCollector
-    (vals, names, objs, idxs, lens) = collector.queryMetricsData(["*"], [mach])
-    for i in range(0,len(names)):
-        valsStr = '[ '
-        for j in range(0, lens[i]):
-            valsStr += str(vals[int(idxs[i])+j])+' '
-        valsStr += ']'
-        print names[i],valsStr
+    for metric in ctx['perf'].query(["*"], [mach]):
+        print metric['name'], metric['values_as_string']
 
 def cmdExistingVm(ctx,mach,cmd):
     mgr=ctx['mgr']
@@ -216,7 +287,7 @@ def startCmd(ctx, args):
         type = args[2]
     else:
         type = "gui"
-    startVm(ctx['mgr'], ctx['vb'], mach, type)
+    startVm(ctx['mgr'], ctx['vb'], mach, type, ctx['perf'])
     return 0
 
 def pauseCmd(ctx, args):
@@ -290,15 +361,8 @@ def hostCmd(ctx, args):
    for i in range(0,cnt):
       print "Processor #%d speed: %dMHz" %(i,host.getProcessorSpeed(i))
                 
-   collector = ctx['vb'].performanceCollector
-  
-   (vals, names, objs, idxs, lens) = collector.queryMetricsData(["*"], [host])
-   for i in range(0,len(names)):
-       valsStr = '[ '
-       for j in range(0, lens[i]):
-           valsStr += str(vals[int(idxs[i])+j])+' '
-       valsStr += ']'
-       print names[i],valsStr
+   for metric in ctx['perf'].query(["*"], [host]):
+       print metric['name'], metric['values_as_string']
 
    return 0
 
@@ -359,7 +423,7 @@ def interpret(ctx):
     # to allow to print actual host information, we collect info for
     # last 150 secs maximum, (sample every 10 secs and keep up to 15 samples)
     try:
-        vbox.performanceCollector.setupMetrics(['*'], [vbox.host], 10, 15)
+        ctx['perf'].setup(['*'], [vbox.host], 10, 15)
     except:
         pass
 
@@ -379,6 +443,7 @@ def interpret(ctx):
                 traceback.print_exc()
 
     try:
-        vbox.performanceCollector.disableMetrics(['*'], [vbox.host])
+        # There is no need to disable metric collection. This is just an example.
+        ctx['perf'].disable(['*'], [vbox.host])
     except:
         pass

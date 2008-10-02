@@ -10493,6 +10493,11 @@
           retained internally and data collection continues.
         </li>
       </ul>
+
+      For an example of usage refer to the following files in VirtualBox SDK:
+      <ul>
+        <li>Python: <tt>bindings/xpcom/python/sample/shellcommon.py</tt></li>
+      </ul>
     </desc>
 
     <attribute name="metricNames" type="wstring" readonly="yes" safearray="yes">
