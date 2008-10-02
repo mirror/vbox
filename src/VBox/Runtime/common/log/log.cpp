@@ -1947,12 +1947,12 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                     if (pLogger->fFlags & RTLOGFLAGS_REL_TS)
                     {
                         static volatile uint64_t s_u64LastTsc;
-                        uint64_t        u64DiffTsc = u64 - s_u64LastTsc;
+                        int64_t        i64DiffTsc = u64 - s_u64LastTsc;
                         s_u64LastTsc = u64;
                         /* We could have been preempted just before reading of s_u64LastTsc by
                          * another thread which wrote s_u64LastTsc. In that case the difference
                          * is negative which we simply ignore. */
-                        u64          = u64DiffTsc < 0 ? 0 : u64DiffTsc;
+                        u64          = i64DiffTsc < 0 ? 0 : i64DiffTsc;
                     }
                     /* 1E15 ticks at 4GHz = 69 hours */
                     psz += RTStrFormatNumber(psz, u64, iBase, 16, 0, fFlags);                       /* +17 */
