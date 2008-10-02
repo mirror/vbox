@@ -36,6 +36,7 @@
 #include <VBox/rem.h>
 #include <VBox/em.h>
 #include <VBox/hwaccm.h>
+#include <VBox/hwacc_vmx.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
 #include <iprt/assert.h>
@@ -226,9 +227,7 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_REAL
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_REAL(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -237,9 +236,7 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_PROT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_PROT(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -248,11 +245,7 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_32BIT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_32BIT(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_32BIT_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -261,11 +254,7 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_PAE
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PAE(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_PAE(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -274,11 +263,7 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_AMD64(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
@@ -297,7 +282,7 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_REAL
 #define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_REAL(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
@@ -308,7 +293,7 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_PROT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PROT(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
 #include "PGMAllBth.h"
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
@@ -319,10 +304,8 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_32BIT
 #define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_32BIT(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_32BIT_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
@@ -332,10 +315,8 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_PAE
 #define PGM_GST_NAME(name)          PGM_GST_NAME_PAE(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PAE(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
@@ -345,10 +326,8 @@ typedef struct PGMHVUSTATE
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_AMD64(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
 #include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
 #undef BTH_PGMPOOLKIND_PT_FOR_PT
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE

@@ -2648,6 +2648,10 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
             /* GCPhys >> PAGE_SHIFT is the index here */
             break;
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            break;
         case PGMPOOLKIND_ROOT_NESTED:
             Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
             break;
@@ -2669,13 +2673,15 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
 
         /* 64-bit entries */
-        case PGMPOOLKIND_ROOT_PAE_PD:
-        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
+        case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_ROOT_PAE_PD:
+        case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_NESTED:
             u.pau64[pUser->iUserTable] = 0;
             break;
