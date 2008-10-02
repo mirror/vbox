@@ -108,6 +108,9 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
 	VBoxSettings.so \
+	VBoxSharedClipboard.so \
+	VBoxSharedFolders.so \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so) \
 	VBoxSVC \
 	VBoxDDU.so \
 	VBoxVMM.so \
@@ -117,7 +120,9 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxTunctl \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
-	components/VBoxXPCOMIPCC.so
+	components/VBoxXPCOMIPCC.so \
+	$(if $(VBOX_OSE),,VRDPAuth.so)
+
 
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
@@ -128,22 +133,19 @@ VBOX_LNX_STRIP_OBJ = \
 	VMMGC.gc \
 	VMMR0.r0
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
-VBOX_LNX_STRIP_OBJ += \
+ VBOX_LNX_STRIP_OBJ += \
 	VBoxREM2.rel
 endif
 
 # Do not strip anything of these files
 VBOX_LNX_NO_STRIP = \
 	$(if $(VBOX_OSE),,LICENSE) \
-	$(if $(VBOX_WITH_QT4GUI),\
-	  $(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html)) \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
         VBoxSysInfo.sh \
 	VBox.sh \
 	VBox.png \
 	VBoxAddIF.sh \
-	$(if $(VBOX_WITH_QT4GUI),VirtualBox.desktop,) \
 	src
 
 # Qt4 GUI
@@ -152,8 +154,11 @@ ifdef VBOX_WITH_QT4GUI
  VBOX_LNX_STRIP_BIN += \
  	VBoxKeyboard.so \
  	VirtualBox \
- 	$(if $(VBOX_WITH_HARDENING),VirtualBox.so)
+ 	$(if $(VBOX_WITH_HARDENING),VirtualBox.so) \
+	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so)
  VBOX_LNX_NO_STRIP += \
+	VirtualBox.desktop \
+	$(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html) \
  	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
 endif
@@ -164,20 +169,8 @@ ifdef VBOX_WITH_ADDITIONS_PACKING
  	additions/VBoxGuestAdditions.iso
 endif
 
-# Shared Folders
-VBOX_LNX_STRIP_BIN += \
-	VBoxSharedFolders.so \
-	$(if $(VBOX_OSE),,VRDPAuth.so)
 
-# Shared Clipboard
-VBOX_LNX_STRIP_BIN += \
-	VBoxSharedClipboard.so \
-	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg3.so,)
-
-# Shared Info Services
-VBOX_LNX_STRIP_BIN += \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so)
-
+# Documentation
 ifdef VBOX_WITH_DOCS_PACKING
  VBOX_LNX_NO_STRIP += \
 	UserManual.pdf
@@ -190,6 +183,8 @@ ifdef VBOX_WITH_DOCS_PACKING
 	VirtualBox.chm
  endif
 endif
+
+# VRDP
 ifdef VBOX_WITH_VRDP
  VBOX_LNX_STRIP_BIN += \
 	VBoxVRDP.so
@@ -204,11 +199,15 @@ ifdef VBOX_WITH_VRDP
 	rdesktop-vrdp
  endif
 endif
+
+# Headless
 ifdef VBOX_WITH_HEADLESS
  VBOX_LNX_STRIP_BIN += \
 	VBoxHeadless \
 	$(if $(VBOX_WITH_HARDENING),VBoxHeadless.so)
 endif
+
+# Webservices
 ifdef VBOX_WITH_WEBSERVICES
  VBOX_LNX_STRIP_BIN += \
 	vboxwebsrv \
