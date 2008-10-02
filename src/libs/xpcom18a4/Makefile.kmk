@@ -26,7 +26,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # symbol namespace pollution, causing trouble with system libraries.
 XPCOM_C_NAMESPACE_MAP = $(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
- VBOX_NM=nm$(HOSTSUFF_EXE)
+ VBOX_NM = nm$(HOSTSUFF_EXE)
  # At the moment, only Solaris uses the generated map file. GNU ld is smart
  # enough to handle symbol wildcards itself.
  if1of ($(KBUILD_TARGET), solaris)
@@ -1133,11 +1133,9 @@ VBoxXPCOM_NAME = $(basename $(notdir $(LIB_XPCOM)))
 VBoxXPCOM_DEFS = BUILD_DCONNECT="1" _IMPL_NS_COM
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
  VBoxXPCOM_LDFLAGS.linux    = -Wl,--version-script=$(XPCOM_C_NAMESPACE_MAP)
-## @todo DEPS for DLLs are busted, they end up in the wrong place, workaround below
-# VBoxXPCOM_DEPS.linux      += $(XPCOM_C_NAMESPACE_MAP)
+ VBoxXPCOM_LNK_DEPS.linux  += $(XPCOM_C_NAMESPACE_MAP)
  VBoxXPCOM_LDFLAGS.solaris  = -Wl,-M,$(XPCOM_C_NAMESPACE_MAP)
-## @todo DEPS for DLLs are busted, they end up in the wrong place, workaround below
-# VBoxXPCOM_DEPS.solaris    += $(XPCOM_C_NAMESPACE_MAP)
+ VBoxXPCOM_LNK_DEPS.solaris+= $(XPCOM_C_NAMESPACE_MAP)
 endif
 VBoxXPCOM_SOURCES = \
 	xpcom/build/nsXPComInit.cpp \
@@ -1744,11 +1742,26 @@ $(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/in
 # Make sure main doesn't start using xpidl before we're done with the idl files here.
 $(VBOX_XPIDL): $$(PATH_VBox-xpcom-string)/idl_ts
 
-## @todo workaround for the DLL dependency bug in kBuild
-$$(TARGET_VBoxXPCOM): $(XPCOM_C_NAMESPACE_MAP)
 
+#
 # Generate linker map file filtering out unwanted global symbols.
-# Never used on windows, so we can use pipes as we wish.
-$(PATH_TARGET)/xpcom-namespace-cleanup.map: $$(VBoxXPCOM_LIBS) $$(VBoxXPCOM_OBJS_)
+#
+$(PATH_TARGET)/xpcom-namespace-cleanup.map foo.map: $$(VBoxXPCOM_LIBS) $$(VBoxXPCOM_OBJS_)
 	$(call MSG_L1, Creating linker map $@ for scrubbing the symbol namespace)
-	$(QUIET)$(VBOX_NM) -p -g $^ | ( $(ECHO_EXT) '{ local: *; global: '; $(SED) -n -e '/^$$/b' -e '/:$$/b' -e '/ U /b' -e 's/^[^ ]* [A-Z] \(.*\)$$/\1/' -e 's/\<_Z[^ ]*$$/&;/p' -e 's/\<VBoxNs[^ ]*$$/&;/p' -e 's/\<_edata$$/&;/p' -e 's/\<_end$$/&;/p' -e 's/\<_etext$$/&;/p' -e 's/\<_fini$$/&;/p' -e 's/\<_init$$/&;/p'; $(ECHO_EXT) '};' ) > $@
+	$(QUIET)$(APPEND) -t $@ '{ local: *; global: '
+	$(QUIET)$(VBOX_NM) -p -g $^ \
+	| $(SED) -n \
+		-e '/^$$/b' \
+		-e '/:$$/b' \
+		-e '/ U /b' \
+		-e 's/^[^ ]* [A-Z] \(.*\)$$/\1/' \
+		-e 's/\<_Z[^ ]*$$/&;/p' \
+		-e 's/\<VBoxNs[^ ]*$$/&;/p' \
+		-e 's/\<_edata$$/&;/p' \
+		-e 's/\<_end$$/&;/p' \
+		-e 's/\<_etext$$/&;/p'\
+		-e 's/\<_fini$$/&;/p' \
+		-e 's/\<_init$$/&;/p' \
+		--append $@
+	$(QUIET)$(APPEND) $@ '};'
+
