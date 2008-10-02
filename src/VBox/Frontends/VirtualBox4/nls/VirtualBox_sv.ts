@@ -5611,8 +5611,7 @@ serial ports</comment>
     <message>
         <location filename="" line="0"/>
         <source>New Filter %1</source>
-        <comment>
-usb</comment>
+        <comment>usb</comment>
         <translation>Nytt filter %1</translation>
     </message>
     <message>
@@ -5656,22 +5655,19 @@ usb</comment>
     <message>
         <location filename="" line="0"/>
         <source>Any</source>
-        <comment>
-remote</comment>
+        <comment>remote</comment>
         <translation>Alla</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>Yes</source>
-        <comment>
-remote</comment>
+        <comment>remote</comment>
         <translation>Ja</translation>
     </message>
     <message>
         <location filename="" line="0"/>
         <source>No</source>
-        <comment>
-remote</comment>
+        <comment>remote</comment>
         <translation>Nej</translation>
     </message>
     <message>
