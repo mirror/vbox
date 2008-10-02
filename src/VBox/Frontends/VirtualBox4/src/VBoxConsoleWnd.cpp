@@ -886,7 +886,9 @@ void VBoxConsoleWnd::finalizeOpenView()
     }
 
     /* start the VM */
-    CProgress progress = cconsole.PowerUp();
+    CProgress progress = vboxGlobal().isDebuggerAutoShowEnabled()
+                       ? cconsole.PowerUpPaused()
+                       : cconsole.PowerUp();
 
     /* check for an immediate failure */
     if (!cconsole.isOk())
