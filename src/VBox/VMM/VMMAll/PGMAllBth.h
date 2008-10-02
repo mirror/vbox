@@ -3141,7 +3141,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
     Assert(pPDSrc);
 #   ifndef IN_GC
-    Assert(MMPhysGCPhys2HCVirt(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
+    Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 #   endif
 #  endif
 

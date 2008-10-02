@@ -1055,7 +1055,7 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
          */
         PX86PD pPD = pVM->pgm.s.pGuestPDHC;
         Assert(pPD);
-        Assert(pPD == (PX86PD)MMPhysGCPhys2HCVirt(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
+        Assert(pPD == (PX86PD)PGMPhysGCPhys2HCPtrAssert(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
 
         for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
         {

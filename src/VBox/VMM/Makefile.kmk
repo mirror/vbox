@@ -98,7 +98,6 @@ VMMR3_SOURCES   = \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
 	VMMAll/MMAllPagePool.cpp \
-	VMMAll/MMAllPhys.cpp \
 	VMMAll/PDMAll.cpp \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllQueue.cpp \
@@ -384,7 +383,6 @@ VMMR0_SOURCES   = \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
 	VMMAll/MMAllPagePool.cpp \
-	VMMAll/MMAllPhys.cpp \
 	VMMAll/PDMAll.cpp \
 	VMMAll/PDMAllCritSect.cpp \
 	VMMAll/PDMAllQueue.cpp \
