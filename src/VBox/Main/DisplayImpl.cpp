@@ -1904,7 +1904,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
 
     AssertReturn (that, VERR_INVALID_PARAMETER);
     AssertReturn (aFB || aInternal, VERR_INVALID_PARAMETER);
-    AssertReturn (uScreenId >= 0 && uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
+    AssertReturn (uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
 
     /// @todo (r=dmik) AutoCaller
 
