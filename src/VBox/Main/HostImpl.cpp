@@ -665,10 +665,7 @@ static bool vboxSolarisSameNIC(ComObjPtr <HostNetworkInterface> Iface1, ComObjPt
     Bstr Iface2Str;
     (*Iface2).COMGETTER(Name) (Iface2Str.asOutParam());
 
-    if (Iface1Str == Iface2Str)
-        return true;
-
-    return false;
+    return (Iface1Str == Iface2Str);
 }
 
 # endif /* VBOX_SOLARIS_USE_DEVINFO */
