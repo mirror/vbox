@@ -1566,14 +1566,22 @@ static void ioapic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t va
 #ifdef VBOX
                         /* According to IOAPIC spec, vectors should be from 0x10 to 0xfe */
                         uint8_t vec = val & 0xff;
-                        if ((vec >= 0x10) && (vec < 0xff))
+                        if ((val & APIC_LVT_MASKED) ||
+                            ((vec >= 0x10) && (vec < 0xff)))
                         {
                             s->ioredtbl[index] &= ~0xffffffffULL;
                             s->ioredtbl[index] |= val;
                         }
                         else
                         {
-                            LogRel(("IOAPIC BUG: bad vector writing %x(sel=%x) to %d\n", val, s->ioregsel, index));
+                            /*
+                             * Linux 2.6 kernels has pretty strange function 
+                             * unlock_ExtINT_logic() which writes
+                             * absolutely bogus (all 0) value into the vector
+                             * with pretty vague explanation why.
+                             * So we just ignore such writes.
+                             */
+                            LogRel(("IOAPIC GUEST BUG: bad vector writing %x(sel=%x) to %d\n", val, s->ioregsel, index));
                         }
                     }
 #else
