@@ -148,16 +148,14 @@ VBOX_LNX_NO_STRIP = \
 
 # Qt4 GUI
 ifdef VBOX_WITH_QT4GUI
-  VBOX_LNX_STRIP_BIN += \
-	VBoxKeyboard.so \
-	VirtualBox \
-	$(if $(VBOX_WITH_HARDENING),VirtualBox.so)
-  VBOX_LNX_NO_STRIP += \
-	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
-	$(foreach f,\
-	  $(shell $(CAT_EXT) \
-	    $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.txt),\
-	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
+ include $(PATH_SUB_CURRENT)/../../Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
+ VBOX_LNX_STRIP_BIN += \
+ 	VBoxKeyboard.so \
+ 	VirtualBox \
+ 	$(if $(VBOX_WITH_HARDENING),VirtualBox.so)
+ VBOX_LNX_NO_STRIP += \
+ 	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
+ 	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
 endif
 
 # Guest Additions

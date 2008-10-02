@@ -153,11 +153,10 @@ SOLARIS_EXTRAS = \
 	vbox.copyright \
 	ReadMe.txt
 
-SOLARIS_NLS = \
-	$(if $(VBOX_WITH_QT4GUI),$(foreach f,\
-	  $(shell $(CAT_EXT) \
-		$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/nls/ApprovedLanguages.txt),\
-	  nls/VirtualBox_$(f).qm nls/qt_$(f).qm),)
+ifdef VBOX_WITH_QT4GUI
+ include $(PATH_SUB_CURRENT)/../../Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
+ SOLARIS_NLS := $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
+endif
 
 ifdef VBOX_WITH_DOCS_PACKING
  SOLARIS_NO_STRIP += \

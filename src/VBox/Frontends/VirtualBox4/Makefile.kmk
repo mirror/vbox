@@ -59,6 +59,12 @@ INSTALLS += VirtualBox4.nls
 
 
 #
+# Include the language lists.
+#
+include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
+
+
+#
 # VBoxKeyboard - keyboard library for X11.
 #
 VBoxKeyboard_TEMPLATE = VBOXR3
@@ -485,14 +491,10 @@ ifeq ($(KBUILD_TARGET),darwin)
 # Create directories for each approved language or the application
 # menu won't be translated.
 #
-## @todo CAT is BAD, make ApprovedLanguages.txt includable!
 INSTALLS += VirtualBox4.lproj
 VirtualBox4.lproj_INST = $(INST_VIRTUALBOX)Contents/Resources/
 VirtualBox4.lproj_MODE = 755
-VirtualBox4.lproj_DIRS := $(addsuffix .lproj,$(shell $(CAT_EXT) $(VBOX_VIRTUALBOX4_SRC)/nls/ApprovedLanguages.txt))
-# Hope we don't have to do this.
-#VirtualBox4.lproj_SYMLINKS := \
-#	$(foreach lang, $(VirtualBox4.lproj_DIRS),../VirtualBoxVM.app/Contents/Resources/$(lang)=>../../../$(lang))
+VirtualBox4.lproj_DIRS := $(addsuffix .lproj,$(VBOX_APPROVED_GUI_LANGUAGES_ALL))
 
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
@@ -522,7 +524,6 @@ VirtualBox4VM.app_MODE = 644
 VirtualBox4VM.app_SOURCES = \
 	src/darwin/VM-PkgInfo=>PkgInfo \
 	$(PATH_VirtualBox4VM.app)/VM-Info.plist=>Info.plist
-#	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns - hope the link works.
 VirtualBox4VM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/ \
 	Resources=>../../../Resources/
