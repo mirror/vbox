@@ -4416,7 +4416,8 @@ HRESULT Console::powerDown()
     PCFGMNODE pFlags = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Flags/");
     /* Count the number of entries we have */
     unsigned cValues = 0;
-    for (PCFGMLEAF pValue = CFGMR3GetFirstValue (pValues); pValue != NULL;
+    PCFGMLEAF pValue;
+    for (pValue = CFGMR3GetFirstValue (pValues); pValue != NULL;
          pValue = CFGMR3GetNextValue (pValue))
         ++cValues;
     /* And pack them into safe arrays */
@@ -4424,7 +4425,7 @@ HRESULT Console::powerDown()
     com::SafeArray <BSTR> values(cValues);
     com::SafeArray <ULONG64> timestamps(cValues);
     com::SafeArray <BSTR> flags(cValues);
-    PCFGMLEAF pValue = CFGMR3GetFirstValue (pValues);
+    pValue = CFGMR3GetFirstValue (pValues);
     vrc = VINF_SUCCESS;
     unsigned iProp = 0;
     while (pValue != NULL && RT_SUCCESS(vrc))
