@@ -416,9 +416,58 @@ const char * AggregateMax::getName()
 Filter::Filter(ComSafeArrayIn(INPTR BSTR, metricNames),
                ComSafeArrayIn(IUnknown *, objects))
 {
-    com::SafeArray <INPTR BSTR> nameArray(ComSafeArrayInArg(metricNames));
+    /*
+     * Let's work around null/empty safe array mess. I am not sure there is
+     * a way to pass null arrays via webservice, I haven't found one. So I
+     * guess the users will be forced to use empty arrays instead. Constructing
+     * an empty SafeArray is a bit awkward, so what we do in this method is
+     * actually convert null arrays to empty arrays and pass them down to
+     * init() method. If someone knows how to do it better, please be my guest,
+     * fix it.
+     */
+    if (ComSafeArrayInIsNull(metricNames))
+    {
+        com::SafeArray <BSTR> nameArray;
+        if (ComSafeArrayInIsNull(objects))
+        {
+            com::SafeIfaceArray <IUnknown> objectArray;
+            objectArray.reset(0);
+            init(ComSafeArrayAsInParam(nameArray),
+                 ComSafeArrayAsInParam(objectArray));
+        }
+        else
+        {
+            com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
+            init(ComSafeArrayAsInParam(nameArray),
+                 ComSafeArrayAsInParam(objectArray));
+        }
+    }
+    else
+    {
+        com::SafeArray <INPTR BSTR> nameArray(ComSafeArrayInArg(metricNames));
+        if (ComSafeArrayInIsNull(objects))
+        {
+            com::SafeIfaceArray <IUnknown> objectArray;
+            objectArray.reset(0);
+            init(ComSafeArrayAsInParam(nameArray),
+                 ComSafeArrayAsInParam(objectArray));
+        }
+        else
+        {
+            com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
+            init(ComSafeArrayAsInParam(nameArray),
+                 ComSafeArrayAsInParam(objectArray));
+        }
+    }
+}
 
-    if (ComSafeArrayInIsNull(objects))
+void Filter::init(ComSafeArrayIn(INPTR BSTR, metricNames),
+                  ComSafeArrayIn(IUnknown *, objects))
+{
+    com::SafeArray <INPTR BSTR> nameArray(ComSafeArrayInArg(metricNames));
+    com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
+
+    if (!objectArray.size())
     {
         if (nameArray.size())
         {
@@ -430,8 +479,7 @@ Filter::Filter(ComSafeArrayIn(INPTR BSTR, metricNames),
     }
     else
     {
-        com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
-
+ 
         for (size_t i = 0; i < objectArray.size(); ++i)
             switch (nameArray.size())
             {
