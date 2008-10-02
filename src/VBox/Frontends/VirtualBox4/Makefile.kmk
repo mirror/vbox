@@ -482,37 +482,17 @@ endif # win
 
 ifeq ($(KBUILD_TARGET),darwin)
 #
-# For the application menu it is necessary to have all supported language at
-# least as a project directory in the bundle. Create them all based on the
-# nls/ApprovedLanguages.txt file.
+# Create directories for each approved language or the application
+# menu won't be translated.
 #
-
-## @todo: It seems it isn't possible to let kBuild generate a directory in the
-# install target without installing something. So we install an empty file for that.
-
-# Figure out which languages we support
-VBOX_SUPPORTED_LANG = $(shell $(CAT_EXT) $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.txt)
-# For the .lproj directories
-VBOX_INSTALL_LANG_LPROJ = $(addsuffix .lproj,$(VBOX_SUPPORTED_LANG))
-
-define def_gen_lproj_dir
-INSTALLS += $(lang_name)
-$(lang_name)_INST = dist/VirtualBox.app/Contents/Resources/$(lang_name)
-# The install TEMPLATE needs something to install; use a emtpy file for that.
-# @todo: How could this be prevented?
-$(lang_name)_SOURCES = \
-	$(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/.empty
-# Symlink for the VirtualBoxVM.app
-$(lang_name)_SYMLINKS = \
-	../VirtualBoxVM.app/Contents/Resources/$(lang_name)=>../../../$(lang_name)
-endef
-$(foreach lang_name,$(VBOX_INSTALL_LANG_LPROJ),$(eval $(def_gen_lproj_dir)))
-
-# Rule for generating an empty file
-BLDDIRS += $(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/
-CLEAN += $(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/.empty
-$(VBOX_VIRTUALBOX4_OUT_DIR)/lproj/.empty:: | $$(dir $$@)
-	$(QUIET)$(APPEND) $@ ''
+## @todo CAT is BAD, make ApprovedLanguages.txt includable!
+INSTALLS += VirtualBox4.lproj
+VirtualBox4.lproj_INST = $(INST_VIRTUALBOX)Contents/Resources/
+VirtualBox4.lproj_MODE = 755
+VirtualBox4.lproj_DIRS := $(addsuffix .lproj,$(shell $(CAT_EXT) $(VBOX_VIRTUALBOX4_SRC)/nls/ApprovedLanguages.txt))
+# Hope we don't have to do this.
+#VirtualBox4.lproj_SYMLINKS := \
+#	$(foreach lang, $(VirtualBox4.lproj_DIRS),../VirtualBoxVM.app/Contents/Resources/$(lang)=>../../../$(lang))
 
 #
 # On OS X (darwin) we need to install icon resources and compulsory bundle contents.
@@ -541,10 +521,11 @@ VirtualBox4VM.app_INST = $(VirtualBox4.app_INST)Resources/VirtualBoxVM.app/Conte
 VirtualBox4VM.app_MODE = 644
 VirtualBox4VM.app_SOURCES = \
 	src/darwin/VM-PkgInfo=>PkgInfo \
-	$(PATH_VirtualBox4VM.app)/VM-Info.plist=>Info.plist \
-	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns
+	$(PATH_VirtualBox4VM.app)/VM-Info.plist=>Info.plist
+#	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns - hope the link works.
 VirtualBox4VM.app_SYMLINKS = \
-	MacOS=>../../../MacOS/
+	MacOS=>../../../MacOS/ \
+	Resources=>../../../Resources/
 
 $$(PATH_VirtualBox4VM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox4VM.app,$<,$@)
