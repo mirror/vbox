@@ -87,6 +87,7 @@ typedef union EPTPML4
 typedef EPTPML4 *PEPTPML4;
 /** Pointer to a const PML4 table. */
 typedef const EPTPML4 *PCEPTPML4;
+AssertCompileSize(EPTPML4, 8);
 
 /**
  * EPT Page Directory Pointer Entry. Bit view.
@@ -126,6 +127,7 @@ typedef union EPTPDPTE
 typedef EPTPDPTE *PEPTPDPTE;
 /** Pointer to a const EPT Page Directory Pointer Entry. */
 typedef const EPTPDPTE *PCEPTPDPTE;
+AssertCompileSize(EPTPDPTE, 8);
 
 /**
  * EPT Page Directory Pointer Table.
@@ -212,6 +214,7 @@ typedef union EPTPDE
 typedef EPTPDE *PEPTPDE;
 /** Pointer to a const EPT Page Directory Table Entry. */
 typedef const EPTPDE *PCEPTPDE;
+AssertCompileSize(EPTPDE, 8);
 
 /**
  * EPT Page Directory Table.
@@ -268,6 +271,7 @@ typedef union EPTPTE
 typedef EPTPTE *PEPTPTE;
 /** Pointer to a const EPT Page Directory Table Entry. */
 typedef const EPTPTE *PCEPTPTE;
+AssertCompileSize(EPTPTE, 8);
 
 /**
  * EPT Page Table.
