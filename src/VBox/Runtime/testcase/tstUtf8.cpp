@@ -196,7 +196,8 @@ static void test1(void)
         if (rc == 0)
         {
             int i;
-            for (i = 0; pwszRand[i] == pwsz[i] && pwsz[i] != 0; i++);
+            for (i = 0; pwszRand[i] == pwsz[i] && pwsz[i] != 0; i++)
+                ;
             if (pwsz[i] == 0 && i >= 8)
                 RTPrintf("tstUtf8: Random UTF-16 -> fixed length UTF-8 -> UTF-16 successful.\n");
             else
@@ -238,7 +239,8 @@ static void test1(void)
         if (rc == 0)
         {
             int i;
-            for (i = 0; pwszRand[i] == pwsz2Buf[i] && pwsz2Buf[i] != 0; i++);
+            for (i = 0; pwszRand[i] == pwsz2Buf[i] && pwsz2Buf[i] != 0; i++)
+                ;
             if (pwszRand[i] == 0 && pwsz2Buf[i] == 0)
                 RTPrintf("tstUtf8: Random UTF-16 -> UTF-8 -> fixed length UTF-16 successful.\n");
             else
