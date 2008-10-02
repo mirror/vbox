@@ -3188,8 +3188,8 @@ ps2WakeupHandler(pointer data, int i, pointer LastSelectMask)
 #  define AP_DBG(x) { ErrorF("Autoprobe: "); ErrorF x; }
 #  define AP_DBGC(x) ErrorF x ;
 # else
-#  define AP_DBG(x)
-#  define AP_DBGC(x)
+#  define AP_DBG(x)  do {} while (0)
+#  define AP_DBGC(x) do {} while (0)
 #endif
 
 MouseProtocolID hardProtocolList[] = { 	PROT_MSC, PROT_MM, PROT_LOGI,
