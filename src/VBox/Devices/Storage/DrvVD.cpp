@@ -887,7 +887,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         if (pThis->fAsyncIOSupported)
         {
             rc = RTCacheCreate(&pThis->pCache, 0, sizeof(DRVVDASYNCTASK), RTOBJCACHE_PROTECT_INSERT);
-            AssertMsg(RT_SUCCESS(rc), ("Failed to create cache rc=%Rrc\n", rc));
+            AssertMsgRC(rc, ("Failed to create cache rc=%Rrc\n", rc));
         }
     }
 
