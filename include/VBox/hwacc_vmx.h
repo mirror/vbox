@@ -72,6 +72,9 @@ typedef struct EPTPML4EBITS
 } EPTPML4EBITS;
 #pragma pack()
 
+/** Bits 12-51 - - EPT - Physical Page number of the next level. */
+#define EPT_PML4E_PG_MASK       ( 0x000ffffffffff000ULL )
+
 /**
  * EPT PML4.
  */
@@ -111,6 +114,9 @@ typedef struct EPTPDPTEBITS
     uint64_t    u12Available    : 12;
 } EPTPDPTEBITS;
 #pragma pack()
+
+/** Bits 12-51 - - EPT - Physical Page number of the next level. */
+#define EPT_PDPTE_PG_MASK       ( 0x000ffffffffff000ULL )
 
 /**
  * EPT Page Directory Pointer.
@@ -169,6 +175,9 @@ typedef union EPTPDEBITS
 } EPTPDEBITS;
 #pragma pack()
 
+/** Bits 12-51 - - EPT - Physical Page number of the next level. */
+#define EPT_PDE_PG_MASK         ( 0x000ffffffffff000ULL )
+
 /**
  * EPT 2MB Page Directory Table Entry. Bit view.
  */
@@ -197,6 +206,9 @@ typedef union EPTPDE2MBITS
     uint64_t    u12Available    : 12;
 } EPTPDE2MBITS;
 #pragma pack()
+
+/** Bits 21-51 - - EPT - Physical Page number of the next level. */
+#define EPT_PDE2M_PG_MASK       ( 0x000fffffffe00000ULL )
 
 /**
  * EPT Page Directory Table Entry.
