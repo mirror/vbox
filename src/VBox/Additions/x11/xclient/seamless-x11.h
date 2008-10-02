@@ -223,7 +223,8 @@ public:
         /* We use post-increment in the operation to prevent the iterator from being invalidated. */
         try
         {
-            for (iterator it = begin(); it != end(); removeWindow(it++));
+            for (iterator it = begin(); it != end(); removeWindow(it++))
+                ;
         }
         catch(...) {}
     }
