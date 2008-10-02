@@ -119,17 +119,17 @@ int main(int argc, char **argv)
   }
   else {
     /* emulate behaviour prior to TUNSETGROUP */
-    if(owner == -1 && group == -1) {
+    if(owner == (uid_t)-1 && group == (gid_t)-1) {
       owner = geteuid();
     }
 
-    if(owner != -1) {
+    if(owner != (uid_t)-1) {
       if(ioctl(tap_fd, TUNSETOWNER, owner) < 0){
       	perror("TUNSETOWNER");
       	exit(1);
       }
     }
-    if(group != -1) {
+    if(group != (gid_t)-1) {
       if(ioctl(tap_fd, TUNSETGROUP, group) < 0){
       	perror("TUNSETGROUP");
       	exit(1);
@@ -145,9 +145,9 @@ int main(int argc, char **argv)
       printf("%s\n", ifr.ifr_name);
     else {
       printf("Set '%s' persistent and owned by", ifr.ifr_name);
-      if(owner != -1)
+      if(owner != (uid_t)-1)
           printf(" uid %d", owner);
-      if(group != -1)
+      if(group != (gid_t)-1)
           printf(" gid %d", group);
       printf("\n");
     }
