@@ -80,10 +80,10 @@ typedef struct EPTPML4EBITS
 #define EPT_PML4_MASK           X86_PML4_MASK
 
 /**
- * EPT PML4.
+ * EPT PML4E.
  */
 #pragma pack(1)
-typedef union EPTPML4
+typedef union EPTPML4E
 {
     /** Normal view. */
     EPTPML4EBITS    n;
@@ -93,13 +93,27 @@ typedef union EPTPML4
     uint64_t        au64[1];
     /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
+} EPTPML4E;
+#pragma pack()
+/** Pointer to a PML4 table entry. */
+typedef EPTPML4E *PEPTPML4E;
+/** Pointer to a const PML4 table entry. */
+typedef const EPTPML4E *PCEPTPML4E;
+AssertCompileSize(EPTPML4E, 8);
+
+/**
+ * EPT PML4 Table.
+ */
+#pragma pack(1)
+typedef union EPTPML4
+{
+    EPTPML4E    a[EPT_PG_ENTRIES];
 } EPTPML4;
 #pragma pack()
-/** Pointer to a PML4 table. */
+/** Pointer to an EPT PML4 Table. */
 typedef EPTPML4 *PEPTPML4;
-/** Pointer to a const PML4 table. */
+/** Pointer to a const EPT PML4 Table. */
 typedef const EPTPML4 *PCEPTPML4;
-AssertCompileSize(EPTPML4, 8);
 
 /**
  * EPT Page Directory Pointer Entry. Bit view.

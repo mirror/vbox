@@ -161,17 +161,15 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  endif
 
     rc = PGMShwSyncLongModePDPtr(pVM, (RTGCUINTPTR)pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
     Assert(pPDDst);
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPDDst = (((RTGCUINTPTR)pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
-    PX86PDPAE       pPDDst;
+    PEPTPD          pPDDst;
 
-    AssertFailed();
+    rc = PGMShwGetEPTPDPtr(pVM, (RTGCUINTPTR)pvFault, NULL, &pPDDst);
+    AssertRCReturn(rc, rc);
+    Assert(pPDDst);
 # endif
 
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
@@ -1397,6 +1395,9 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
 {
     if (PteSrc.n.u1Present)
     {
+#if PGM_SHW_TYPE == PGM_TYPE_EPT
+        AssertFailed();
+#endif
         /*
          * Find the ram range.
          */
@@ -1830,9 +1831,14 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     Assert(pPDDst && pPdptDst);
     PdeDst = pPDDst->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
-    const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
-    X86PDE          PdeDst = pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
-    AssertFailed();
+    const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    PEPTPD          pPDDst;
+    EPTPDE          PdeDst;
+
+    int rc = PGMShwGetEPTPDPtr(pVM, GCPtrPage, NULL, &pPDDst);
+    AssertRCReturn(rc, rc);
+    Assert(pPDDst);
+    PdeDst = pPDDst->a[iPDDst];
 # endif
     Assert(PdeDst.n.u1Present);
     PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
@@ -2670,21 +2676,25 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
     Assert(pPDDst);
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpte].u & X86_PDPE_PG_MASK);
     Assert(pShwPde);
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
-    const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
-    PEPTPD          pPDDst = NULL;
+    const unsigned  iPdpte = (GCPtrPage >> EPT_PDPT_SHIFT) & EPT_PDPT_MASK;
+    const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    PEPTPD          pPDDst;
+    PEPTPDPT        pPdptDst;
 
-    AssertFailed();
+    rc = PGMShwGetEPTPDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    AssertRCReturn(rc, rc);
+    Assert(pPDDst);
+
+    /* Fetch the pgm pool shadow descriptor. */
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpte].u & X86_PDPE_PG_MASK);
+    Assert(pShwPde);
 # endif
     PSHWPDE         pPdeDst = &pPDDst->a[iPDDst];
     SHWPDE          PdeDst = *pPdeDst;
@@ -2708,7 +2718,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 
     /* Virtual address = physical address */
     GCPhys = GCPtrPage & X86_PAGE_4K_BASE_MASK;
-# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64 || PGM_SHW_TYPE == PGM_TYPE_EPT
     rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, pShwPde->idx,    iPDDst, &pShwPage);
 # else
     rc = pgmPoolAlloc(pVM, GCPhys & ~(RT_BIT_64(SHW_PD_SHIFT) - 1), BTH_PGMPOOLKIND_PT_FOR_PT, SHW_POOL_ROOT_IDX, iPDDst, &pShwPage);
