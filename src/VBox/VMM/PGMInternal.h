@@ -196,16 +196,18 @@
 /** @} */
 
 /** Macro for checking if the guest is using paging.
- * @param uType     PGM_TYPE_*
+ * @param uGstType     PGM_TYPE_*
+ * @param uShwType     PGM_TYPE_*
  * @remark  ASSUMES certain order of the PGM_TYPE_* values.
  */
-#define PGM_WITH_PAGING(uType)  ((uType) >= PGM_TYPE_32BIT && (uType) != PGM_TYPE_NESTED && (uType) != PGM_TYPE_EPT)
+#define PGM_WITH_PAGING(uGstType, uShwType)  ((uGstType) >= PGM_TYPE_32BIT && (uShwType) != PGM_TYPE_NESTED && (uShwType) != PGM_TYPE_EPT)
 
 /** Macro for checking if the guest supports the NX bit.
- * @param uType     PGM_TYPE_*
+ * @param uGstType     PGM_TYPE_*
+ * @param uShwType     PGM_TYPE_*
  * @remark  ASSUMES certain order of the PGM_TYPE_* values.
  */
-#define PGM_WITH_NX(uType)  ((uType) >= PGM_TYPE_PAE && (uType) != PGM_TYPE_NESTED && (uType) != PGM_TYPE_EPT)
+#define PGM_WITH_NX(uGstType, uShwType)  ((uGstType) >= PGM_TYPE_PAE && (uShwType) != PGM_TYPE_NESTED && (uShwType) != PGM_TYPE_EPT)
 
 
 /** @def PGM_HCPHYS_2_PTR
@@ -1381,6 +1383,13 @@ typedef enum PGMPOOLKIND
 
     /** Shw: 64-bit PML4;   Gst: 64-bit PML4. */
     PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4,
+
+    /** Shw: EPT page directory pointer table; Gst: no paging  */
+    PGMPOOLKIND_EPT_PDPT_FOR_PHYS,
+    /** Shw: EPT page directory table; Gst: no paging  */
+    PGMPOOLKIND_EPT_PD_FOR_PHYS,
+    /** Shw: EPT page table; Gst: no paging  */
+    PGMPOOLKIND_EPT_PT_FOR_PHYS,
 
     /** Shw: Root 32-bit page directory. */
     PGMPOOLKIND_ROOT_32BIT_PD,

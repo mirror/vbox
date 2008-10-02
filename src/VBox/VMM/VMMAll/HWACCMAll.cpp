@@ -139,6 +139,6 @@ HWACCMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  */
 HWACCMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
 {
-    return pVM->hwaccm.s.Event.fPending;
+    return !!pVM->hwaccm.s.Event.fPending;
 }
 

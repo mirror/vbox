@@ -59,6 +59,26 @@
 # define SHW_PT_SHIFT           X86_PT_SHIFT
 # define SHW_PT_MASK            X86_PT_MASK
 # define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PD
+#elif PGM_SHW_TYPE == PGM_TYPE_EPT
+# define SHWPT                  EPTPT
+# define PSHWPT                 PEPTPT
+# define SHWPTE                 EPTPTE
+# define PSHWPTE                PEPTPTE
+# define SHWPD                  EPTPD
+# define PSHWPD                 PEPTPD
+# define SHWPDE                 EPTPDE
+# define PSHWPDE                PEPTPDE
+# define SHW_PDE_PG_MASK        EPT_PDE_PG_MASK
+# define SHW_PD_SHIFT           EPT_PD_SHIFT
+# define SHW_PD_MASK            EPT_PD_MASK
+# define SHW_PTE_PG_MASK        EPT_PTE_PG_MASK
+# define SHW_PT_SHIFT           EPT_PT_SHIFT
+# define SHW_PT_MASK            EPT_PT_MASK
+# define SHW_PDPT_SHIFT         EPT_PDPT_SHIFT
+# define SHW_PDPT_MASK          EPT_PDPT_MASK
+# define SHW_PDPE_PG_MASK       EPT_PDPE_PG_MASK
+# define SHW_TOTAL_PD_ENTRIES   (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
+# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_NESTED_ROOT      /* do not use! exception is real mode & protected mode without paging. */
 #else
 # define SHWPT                  X86PTPAE
 # define PSHWPT                 PX86PTPAE
@@ -210,7 +230,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     {
         *pfFlags = (Pte.u & ~SHW_PTE_PG_MASK)
                  & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
-# if PGM_WITH_NX(PGM_SHW_TYPE)
+# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
         /* The NX bit is determined by a bitwise OR between the PT and PD */
         if (fNoExecuteBitValid)
             *pfFlags |= (Pte.u & Pde.u & X86_PTE_PAE_NX);
