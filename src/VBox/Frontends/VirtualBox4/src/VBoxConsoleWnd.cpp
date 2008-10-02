@@ -870,16 +870,6 @@ void VBoxConsoleWnd::finalizeOpenView()
     /* Notify the console scroll-view about the console-window is opened. */
     console->onViewOpened();
 
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* open debugger windows if requested */
-    if (vboxGlobal().isDebuggerAutoShowEnabled())
-    {
-        move (QPoint (0, 0));
-        dbgShowStatistics();
-        dbgShowCommandLine();
-    }
-#endif
-
     bool saved = machine_state == KMachineState_Saved;
 
     CMachine cmachine = csession.GetMachine();
@@ -959,6 +949,22 @@ void VBoxConsoleWnd::finalizeOpenView()
         && mIsSeamlessSupported
         && mIsGraphicsSupported)
         toggleFullscreenMode (true, true);
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Open the debugger in "full screen" mode requested by the user. */
+    else if (vboxGlobal().isDebuggerAutoShowEnabled())
+    {
+        /* console in upper left corner of the desktop. */
+        QRect rct(0, 0, 0, 0);
+        QDesktopWidget *desktop = QApplication::desktop();
+        if (desktop)
+            rct = desktop->availableGeometry(pos());
+        move (QPoint (rct.x(), rct.y()));
+
+        dbgShowStatistics();
+        dbgShowCommandLine();
+    }
+#endif
+
     mIsOpenViewFinished = true;
     LogFlowFuncLeave();
 
@@ -3497,7 +3503,8 @@ bool VBoxConsoleWnd::dbgCreated()
     int rc = RTLdrGetSymbol (hLdrMod, "DBGGuiCreate", (void **)&pfnGuiCreate);
     if (RT_SUCCESS (rc))
     {
-        rc = pfnGuiCreate (csession.iface(), &mDbgGui, &mDbgGuiVT);
+        ISession *pISession = csession.iface();
+        rc = pfnGuiCreate (pISession, &mDbgGui, &mDbgGuiVT);
         if (RT_SUCCESS (rc))
         {
             if (    DBGGUIVT_ARE_VERSIONS_COMPATIBLE (mDbgGuiVT->u32Version, DBGGUIVT_VERSION)
