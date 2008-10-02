@@ -4236,7 +4236,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="d5a1cbda-f5d7-4824-9afe-d640c94c7dcf"
+     uuid="3acbd337-925f-497d-a624-465c8a99ae5a"
      wsmap="managed"
      >
     <desc>
@@ -4385,6 +4385,19 @@
         </note>
 
         <see>#saveState</see>
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="powerUpPaused">
+      <desc>
+        Identical to powerUp save that the VM will enter the
+	<link to="MachineState::Paused"/> state, instead of
+	<link to="MachineState::Running"/>.
+
+        <see>#powerUp</see>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
