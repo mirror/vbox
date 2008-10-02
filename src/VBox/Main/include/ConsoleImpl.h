@@ -124,6 +124,7 @@ public:
 
     // IConsole methods
     STDMETHOD(PowerUp) (IProgress **aProgress);
+    STDMETHOD(PowerUpPaused) (IProgress **aProgress);
     STDMETHOD(PowerDown)();
     STDMETHOD(Reset)();
     STDMETHOD(Pause)();
@@ -397,6 +398,7 @@ private:
 
     HRESULT consoleInitReleaseLog (const ComPtr <IMachine> aMachine);
 
+    HRESULT powerUpCommon (IProgress **aProgress, bool aPaused);
     HRESULT powerDown();
 
     HRESULT callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,

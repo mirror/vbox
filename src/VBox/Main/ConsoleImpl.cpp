@@ -185,12 +185,13 @@ struct VMPowerUpTask : public VMProgressTask
 {
     VMPowerUpTask (Console *aConsole, Progress *aProgress)
         : VMProgressTask (aConsole, aProgress, false /* aUsesVMPtr */)
-        , mSetVMErrorCallback (NULL), mConfigConstructor (NULL) {}
+        , mSetVMErrorCallback (NULL), mConfigConstructor (NULL), mStartPaused (false) {}
 
     PFNVMATERROR mSetVMErrorCallback;
     PFNCFGMCONSTRUCTOR mConfigConstructor;
     Utf8Str mSavedStateFile;
     Console::SharedFolderDataMap mSharedFolders;
+    bool mStartPaused;
 };
 
 struct VMSaveTask : public VMProgressTask
@@ -620,7 +621,7 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
     BOOL allowMultiConnection = FALSE;
     hrc = mVRDPServer->COMGETTER(AllowMultiConnection) (&allowMultiConnection);
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
-    
+
     BOOL reuseSingleConnection = FALSE;
     hrc = mVRDPServer->COMGETTER(ReuseSingleConnection) (&reuseSingleConnection);
     AssertComRCReturn (hrc, VERR_ACCESS_DENIED);
@@ -1191,6 +1192,26 @@ Console::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 
 STDMETHODIMP Console::PowerUp (IProgress **aProgress)
 {
+    return powerUpCommon (aProgress, false /* aPaused */);
+}
+
+STDMETHODIMP Console::PowerUpPaused (IProgress **aProgress)
+{
+    return powerUpCommon (aProgress, true /* aPaused */);
+}
+
+/**
+ * Common worker for PowerUp and PowerUpPaused.
+ *
+ * @returns COM status code.
+ *
+ * @param   aProgress       Where to return the progress object.
+ * @param   aPaused         true if PowerUpPaused called.
+ *
+ * @todo move down to powerDown();
+ */
+HRESULT Console::powerUpCommon (IProgress **aProgress, bool aPaused)
+{
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
 
@@ -1396,6 +1417,7 @@ STDMETHODIMP Console::PowerUp (IProgress **aProgress)
     task->mSetVMErrorCallback = setVMErrorCallback;
     task->mConfigConstructor = configConstructor;
     task->mSharedFolders = sharedFolders;
+    task->mStartPaused = aPaused;
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
 
@@ -1543,7 +1565,11 @@ STDMETHODIMP Console::Resume()
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
-    int vrc = VMR3Resume (mpVM);
+    int vrc;
+    if (VMR3GetState(mpVM) == VMSTATE_CREATED)
+        vrc = VMR3PowerOn (mpVM); /* (PowerUpPaused) */
+    else
+        vrc = VMR3Resume (mpVM);
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
@@ -5160,11 +5186,12 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                  *  Change the machine state from Starting, Restoring or Paused
                  *  to Running
                  */
-                Assert ((that->mMachineState == MachineState_Starting &&
-                         aOldState == VMSTATE_CREATED) ||
-                        ((that->mMachineState == MachineState_Restoring ||
-                          that->mMachineState == MachineState_Paused) &&
-                         aOldState == VMSTATE_SUSPENDED));
+                Assert (   (   (   that->mMachineState == MachineState_Starting
+                                || that->mMachineState == MachineState_Paused)
+                            && aOldState == VMSTATE_CREATED)
+                        || (   (   that->mMachineState == MachineState_Restoring
+                                || that->mMachineState == MachineState_Paused)
+                            && aOldState == VMSTATE_SUSPENDED));
 
                 that->setMachineState (MachineState_Running);
             }
@@ -6372,11 +6399,17 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                                     Console::stateProgressCallback,
                                     static_cast <VMProgressTask *> (task.get()));
 
-                    /* Start/Resume the VM execution */
                     if (VBOX_SUCCESS (vrc))
                     {
-                        vrc = VMR3Resume (pVM);
-                        AssertRC (vrc);
+                        if (task->mStartPaused)
+                            /* done */
+                            console->setMachineState (MachineState_Paused);
+                        else
+                        {
+                            /* Start/Resume the VM execution */
+                            vrc = VMR3Resume (pVM);
+                            AssertRC (vrc);
+                        }
                     }
 
                     /* Power off in case we failed loading or resuming the VM */
@@ -6386,6 +6419,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                         AssertRC (vrc2);
                     }
                 }
+                else if (task->mStartPaused)
+                    /* done */
+                    console->setMachineState (MachineState_Paused);
                 else
                 {
                     /* Power on the VM (i.e. start executing) */
