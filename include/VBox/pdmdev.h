@@ -3115,6 +3115,11 @@ DECLINLINE(int) PDMDeviceDBGFStop(PPDMDEVINS pDevIns, RT_SRC_POS_DECL, const cha
     return VINF_EM_DBG_STOP;
 # endif
 #else
+    NOREF(pDevIns);
+    NOREF(pszFile);
+    NOREF(iLine);
+    NOREF(pszFunction);
+    NOREF(pszFormat);
     return VINF_SUCCESS;
 #endif
 }
