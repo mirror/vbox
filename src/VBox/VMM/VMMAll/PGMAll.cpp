@@ -1001,6 +1001,92 @@ PGMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPd
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
 }
+
+/**
+ * Syncs the SHADOW EPT page directory pointer for the specified address. Allocates
+ * backing pages in case the PDPT or PML4 entry is missing. 
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPtr       The address.
+ * @param   ppPdpt      Receives address of pdpt
+ * @param   ppPD        Receives address of page directory
+ */
+PGMDECL(int)    PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
+{
+    PPGM           pPGM   = &pVM->pgm.s;
+    const unsigned iPml4e = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PEPTPML4       pPml4  = (PEPTPML4)pPGM->pHCNestedRoot;
+    PEPTPML4E      pPml4e;
+    PPGMPOOLPAGE   pShwPage;
+    int            rc;
+
+    Assert(HWACCMIsNestedPagingActive(pVM));
+    Assert(pPml4);
+
+    /* Allocate page directory pointer table if not present. */
+    pPml4e = &pPml4->a[iPml4e];
+    if (    !pPml4e->n.u1Present
+        &&  !(pPml4e->u & EPT_PML4E_PG_MASK))
+    {
+        Assert(!(pPml4e->u & EPT_PML4E_PG_MASK));
+
+        rc = pgmPoolAlloc(pVM, (GCPtr & EPT_PML4E_PG_MASK) + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4e, &pShwPage);
+        if (rc == VERR_PGM_POOL_FLUSHED)
+        {
+            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
+            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            return VINF_PGM_SYNC_CR3;
+        }
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        pShwPage = pgmPoolGetPage(pPool, pPml4e->u & EPT_PML4E_PG_MASK);
+        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    }
+    /* The PDPT was cached or created; hook it up now and fill with the default value. */
+    pPml4e->u           = pShwPage->Core.Key;
+    pPml4e->n.u1Present = 1;
+    pPml4e->n.u1Write   = 1;
+    pPml4e->n.u1Execute = 1;
+
+    const unsigned iPdPt = (GCPtr >> EPT_PDPT_SHIFT) & EPT_PDPT_MASK;
+    PEPTPDPT  pPdpt = (PEPTPDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    PEPTPDPTE pPdpe = &pPdpt->a[iPdPt];
+
+    if (ppPdpt)
+        *ppPdpt = pPdpt;
+
+    /* Allocate page directory if not present. */
+    if (    !pPdpe->n.u1Present
+        &&  !(pPdpe->u & EPT_PDPTE_PG_MASK))
+    {
+        rc = pgmPoolAlloc(pVM, (GCPtr & EPT_PDPTE_PG_MASK) + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
+        if (rc == VERR_PGM_POOL_FLUSHED)
+        {
+            Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
+            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            return VINF_PGM_SYNC_CR3;
+        }
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    }
+    /* The PD was cached or created; hook it up now and fill with the default value. */
+    pPdpe->u            = pShwPage->Core.Key;
+    pPdpe->n.u1Present  = 1;
+    pPdpe->n.u1Write    = 1;
+    pPdpe->n.u1Execute  = 1;
+
+    *ppPD = (PEPTPD)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    return VINF_SUCCESS;
+}
+
 #endif
 
 /**

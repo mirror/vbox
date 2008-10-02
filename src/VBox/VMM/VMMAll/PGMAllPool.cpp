@@ -34,6 +34,7 @@
 #include "PGMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/disopcode.h>
+#include <VBox/hwacc_vmx.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -1151,6 +1152,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
             return true;
 
         /*
@@ -1173,6 +1177,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PT_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -1198,6 +1205,9 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PT_FOR_PHYS:
                     return true;
                 default:
                     return false;
@@ -1422,6 +1432,9 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
                 case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PT_FOR_PHYS:
                 case PGMPOOLKIND_ROOT_NESTED:
                     break;
                 default:
@@ -1471,6 +1484,9 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
@@ -1556,6 +1572,9 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
             /* Nothing to monitor here. */
             return VINF_SUCCESS;
@@ -2283,6 +2302,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetShadowEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
             return 8;
 
         default:
@@ -2326,6 +2348,9 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
         case PGMPOOLKIND_ROOT_NESTED:
             /** @todo can we return 0? (nobody is calling this...) */
             AssertFailed();
@@ -2652,6 +2677,12 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
             Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
             break;
+
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            break;
+
         case PGMPOOLKIND_ROOT_NESTED:
             Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
             break;
@@ -2683,6 +2714,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_ROOT_PAE_PD:
         case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_NESTED:
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
             u.pau64[pUser->iUserTable] = 0;
             break;
 
@@ -3248,6 +3281,70 @@ DECLINLINE(void) pgmPoolTrackDerefPML464Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
     }
 }
 
+/**
+ * Clear references to shadowed pages in an EPT page table.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPML4    The shadow page directory pointer table (mapping of the page).
+ */
+DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPT pShwPT)
+{
+    RTGCPHYS GCPhys = pPage->GCPhys;
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPT->a); i++, GCPhys += PAGE_SIZE)
+        if (pShwPT->a[i].n.u1Present)
+        {
+            Log4(("pgmPoolTrackDerefPTEPT: i=%d pte=%RX64 GCPhys=%RX64\n",
+                  i, pShwPT->a[i].u & EPT_PTE_PG_MASK, pPage->GCPhys));
+            pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & EPT_PTE_PG_MASK, GCPhys);
+        }
+}
+
+/**
+ * Clear references to shadowed pages in an EPT page directory.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPD      The shadow page directory (mapping of the page).
+ */
+DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPD pShwPD)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
+    {
+        if (pShwPD->a[i].n.u1Present)
+        {
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPD->a[i].u & EPT_PDE_PG_MASK);
+            if (pSubPage)
+                pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+            else
+                AssertFatalMsgFailed(("%RX64\n", pShwPD->a[i].u & EPT_PDE_PG_MASK));
+            /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
+        }
+    }
+}
+
+/**
+ * Clear references to shadowed pages in an EPT page directory pointer table.
+ *
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPDPT   The shadow page directory pointer table (mapping of the page).
+ */
+DECLINLINE(void) pgmPoolTrackDerefPDPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPTPDPT pShwPDPT)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPDPT->a); i++)
+    {
+        if (pShwPDPT->a[i].n.u1Present)
+        {
+            PPGMPOOLPAGE pSubPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, pShwPDPT->a[i].u & EPT_PDPTE_PG_MASK);
+            if (pSubPage)
+                pgmPoolTrackFreeUser(pPool, pSubPage, pPage->idx, i);
+            else
+                AssertFatalMsgFailed(("%RX64\n", pShwPDPT->a[i].u & EPT_PDPTE_PG_MASK));
+            /** @todo 64-bit guests: have to ensure that we're not exhausting the dynamic mappings! */
+        }
+    }
+}
 
 /**
  * Clears all references made by this page.
@@ -3305,7 +3402,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
             break;
         }
 
-        case PGMPOOLKIND_PAE_PT_FOR_PHYS:   /* treat it like a 4 MB page */
+        case PGMPOOLKIND_PAE_PT_FOR_PHYS:   /* treat it like a 2 MB page */
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
         {
@@ -3341,6 +3438,18 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
             pgmPoolTrackDerefPML464Bit(pPool, pPage, (PX86PML4)pvShw);
+            break;
+
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
+            pgmPoolTrackDerefPTEPT(pPool, pPage, (PEPTPT)pvShw);
+            break;
+
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+            pgmPoolTrackDerefPDEPT(pPool, pPage, (PEPTPD)pvShw);
+            break;
+
+        case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+            pgmPoolTrackDerefPDPTEPT(pPool, pPage, (PEPTPDPT)pvShw);
             break;
 
         default:
