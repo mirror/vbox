@@ -692,6 +692,11 @@ DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *
     va_end(va);
     return rc;
 #else
+    NOREF(pUsbIns);
+    NOREF(pszFile);
+    NOREF(iLine);
+    NOREF(pszFunction);
+    NOREF(pszFormat);
     return VINF_SUCCESS;
 #endif
 }
