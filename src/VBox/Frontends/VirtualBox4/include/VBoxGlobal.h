@@ -240,6 +240,8 @@ public:
     bool isDebuggerEnabled() const { return mDbgEnabled; }
     bool isDebuggerAutoShowEnabled() const { return mDbgAutoShow; }
     RTLDRMOD getDebuggerModule() const { return mhVBoxDbg; }
+#else
+    bool isDebuggerAutoShowEnabled() const { return false; }
 #endif
 
     /* VBox enum to/from string/icon/color convertors */
