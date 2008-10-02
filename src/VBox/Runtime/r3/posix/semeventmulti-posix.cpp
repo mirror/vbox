@@ -177,7 +177,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
             break;
         pthread_cond_broadcast(&pThis->Cond);
         usleep(1000);
-    } while (rc == EBUSY);
+    };
     if (rc)
     {
         AssertMsgFailed(("Failed to destroy event sem %p, rc=%d.\n", EventMultiSem, rc));

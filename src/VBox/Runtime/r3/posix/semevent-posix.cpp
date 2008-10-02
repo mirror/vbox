@@ -188,7 +188,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
             break;
         pthread_cond_broadcast(&pIntEventSem->Cond);
         usleep(1000);
-    } while (rc == EBUSY);
+    };
     if (rc)
     {
         AssertMsgFailed(("Failed to destroy event sem %p, rc=%d.\n", EventSem, rc));
