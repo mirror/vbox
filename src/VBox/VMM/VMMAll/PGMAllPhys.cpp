@@ -903,6 +903,24 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
 
 
 /**
+ * PGMPhysGCPhys2HCPtr convenience for use with assertions.
+ *
+ * @returns The HCPtr, NIL_RTHCPTR on failure.
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The GC Physical addresss.
+ * @param   cbRange     Physical range.
+ */
+PGMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
+{
+    RTHCPTR HCPtr;
+    int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, &HCPtr);
+    if (VBOX_SUCCESS(rc))
+        return HCPtr;
+    return NIL_RTHCPTR;
+}
+
+
+/**
  * Converts a guest pointer to a GC physical address.
  *
  * This uses the current CR3/CR0/CR4 of the guest.

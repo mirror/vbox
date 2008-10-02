@@ -303,7 +303,6 @@ MMDECL(RTHCPHYS)    MMPage2Phys(PVM pVM, void *pvPage);
 MMDECL(void *)      MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage);
 MMDECL(int)         MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
 MMDECL(int)         MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
-MMDECL(void *)      MMPhysGCPhys2HCVirt(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
 
 
 /** @def MMHYPER_RC_ASSERT_RCPTR
