@@ -1737,9 +1737,14 @@ $(foreach idl, $(XPCOM_IDLFILES), $(eval $(def_IDL)))
 $(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include/,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES))))
 	$(call MSG_L1,IDL processing completed.)
 	$(QUIET)$(MKDIR) -p $(dir $@)
-	$(QUIET)$(ECHO_EXT) > $@
+	$(QUIET)$(APPEND) -t $@
 
-# Make sure main doesn't start using xpidl before we're done with the idl files here.
+#
+# HACK ALERT! Make sure main doesn't start using xpidl before we're done
+# with the idl files here. The trick here is that we're using TARGET_xpidl,
+# i.e. the copy residing in obj/, while VBOX_XPIDL is pointing to
+# INSTARGET_xpidl which is the one in bin/.
+#
 $(VBOX_XPIDL): $$(PATH_VBox-xpcom-string)/idl_ts
 
 
