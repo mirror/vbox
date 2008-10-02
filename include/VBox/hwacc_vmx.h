@@ -62,11 +62,11 @@ typedef struct EPTPML4EBITS
     /** Executable bit. */
     uint64_t    u1Execute       : 1;
     /** Reserved (must be 0). */
-    uint64_t    u4Reserved      : 4;
+    uint64_t    u5Reserved      : 5;
     /** Available for software. */
     uint64_t    u4Available     : 4;
     /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
-    uint64_t    u40PhysAddr     : 36;
+    uint64_t    u40PhysAddr     : 40;
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPML4EBITS;
@@ -101,11 +101,11 @@ typedef struct EPTPDPTEBITS
     /** Executable bit. */
     uint64_t    u1Execute       : 1;
     /** Reserved (must be 0). */
-    uint64_t    u4Reserved      : 4;
+    uint64_t    u5Reserved      : 5;
     /** Available for software. */
     uint64_t    u4Available     : 4;
     /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
-    uint64_t    u40PhysAddr     : 36;
+    uint64_t    u40PhysAddr     : 40;
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPDPTEBITS;
@@ -161,7 +161,7 @@ typedef union EPTPDEBITS
     /** Available for software. */
     uint64_t    u4Available     : 4;
     /** Physical address of page table. Restricted by maximum physical address width of the cpu. */
-    uint64_t    u40PhysAddr     : 36;
+    uint64_t    u40PhysAddr     : 40;
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPDEBITS;
@@ -190,7 +190,7 @@ typedef union EPTPDE2MBITS
     /** Reserved (must be 0). */
     uint64_t    u9Reserved      : 9;
     /** Physical address of the 2MB page. Restricted by maximum physical address width of the cpu. */
-    uint64_t    u32PhysAddr     : 27;
+    uint64_t    u31PhysAddr     : 31;
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPDE2MBITS;
@@ -247,7 +247,7 @@ typedef union EPTPTEBITS
     /** Available for software. */
     uint64_t    u5Available     : 5;
     /** Physical address of page. Restricted by maximum physical address width of the cpu. */
-    uint64_t    u40PhysAddr     : 36;
+    uint64_t    u40PhysAddr     : 40;
     /** Availabe for software. */
     uint64_t    u12Available    : 12;
 } EPTPTEBITS;
