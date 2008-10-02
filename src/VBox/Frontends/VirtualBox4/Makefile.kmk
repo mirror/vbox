@@ -495,7 +495,7 @@ if1of ($(KBUILD_TARGET), darwin win)
  VirtualBox4-accessible_MODE = 0755
  ifeq ($(KBUILD_TARGET),win)
   VirtualBox4-accessible_SOURCES = $(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll
- else ifneq ($(KBUILD_TARGET,darwin)
+ else ifneq ($(KBUILD_TARGET,darwin))
   VirtualBox4-accessible_SOURCES = $(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets4$(SUFF_DLL)
   $(error fixme)
  else
@@ -524,9 +524,8 @@ ifeq ($(KBUILD_TARGET),darwin)
 #
 
 ## @todo: It seems it isn't possible to let kBuild generate a directory in the
-# install target without installing something. So we install an empty file for
-# that.
-#
+# install target without installing something. So we install an empty file for that.
+
 # Figure out which languages we support
 VBOX_SUPPORTED_LANG = $(shell $(CAT_EXT) $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.txt)
 # For the .lproj directories
