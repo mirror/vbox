@@ -51,9 +51,9 @@
 #define Log(a) printf a
 #define Log2(a) printf a
 #else
-#define LogFlow(a)
-#define Log(a)
-#define Log2(a)
+#define LogFlow(a) do {} while (0)
+#define Log(a)     do {} while (0)
+#define Log2(a)    do {} while (0)
 #endif
 
 #define LogRel(a) printf a
