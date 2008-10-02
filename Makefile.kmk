@@ -160,24 +160,39 @@ ifdef VBOX_WITH_QT4_SUN
 #
 # Install our Qt DLLs / Shared Objects / Frameworks.
 #
-## @todo move to the root Makefile.kmk, and remove qt4-bin from INSTALLS below.
  INSTALLS += qt4-bin
- qt4-bin_MODE = 644
+ qt4-bin_MODE = 755
  ifeq ($(KBUILD_TARGET),darwin)
-  qt4-bin_INST = $(INST_VIRTUALBOX)Contents/Frameworks/
+  qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
   qt4-bin_SOURCES = \
-	$(VBOX_PATH_QT4)/Frameworks/QtCore.framework/Versions/4/QtCore=>QtCore.framework/Versions/4/QtCore \
-	$(VBOX_PATH_QT4)/Frameworks/QtGui.framework/Versions/4/QtGui=>QtGui.framework/Versions/4/QtGui
+	$(VBOX_PATH_QT4)/Frameworks/QtCore.framework/Versions/4/QtCore=>Frameworks/QtCore.framework/Versions/4/QtCore \
+	$(VBOX_PATH_QT4)/Frameworks/QtGui.framework/Versions/4/QtGui=>Frameworks/QtGui.framework/Versions/4/QtGui \
+	$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
+  ## @todo r=bird: does this magic actually work for the hardended builds too? or is that handled in the installer???
+  qt4-bin_CLEAN = $(PATH_qt4-bin)/libqtaccessiblewidgets.dylib
+$$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib | $$(dir $$@)
+	$(call MSG_TOOL,install_name_tool,accessible,$<,$@)
+	$(QUIET)$(INSTALL) $< $@
+	$(QUIET)install_name_tool \
+		-change                         QtCore.framework/Versions/4/QtCore \
+		 @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
+		-change                         QtGui.framework/Versions/4/QtGui \
+		 @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
+		$@
+
  else ifeq ($(KBUILD_TARGET),win)
   qt4-bin_INST = $(INST_BIN)
   qt4-bin_SOURCES = \
 	$(VBOX_PATH_QT4_LIB)/VBoxQtCore4.dll \
-	$(VBOX_PATH_QT4_LIB)/VBoxQtGui4.dll
+	$(VBOX_PATH_QT4_LIB)/VBoxQtGui4.dll \
+	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll=>accessible/qtaccessiblewidgets4.dll
+
  else
   qt4-bin_INST = $(INST_BIN)
   qt4-bin_SOURCES = \
 	$(VBOX_PATH_QT4_LIB)/libVBoxQtCore.so.4 \
-	$(VBOX_PATH_QT4_LIB)/libVBoxQtGui.so.4
+	$(VBOX_PATH_QT4_LIB)/libVBoxQtGui.so.4 \
+	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets4$(SUFF_DLL)=>accessible/libqtaccessiblewidgets4$(SUFF_DLL)
  endif
 endif # VBOX_WITH_QT4_SUN
 
