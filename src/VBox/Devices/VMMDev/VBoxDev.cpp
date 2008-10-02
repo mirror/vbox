@@ -1605,7 +1605,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
     VMMDevState *pThis = PCIDEV_2_VMMDEVSTATE(pPciDev);
     int rc;
 
-    AssertReturn(iRegion <= 2 && enmType == PCI_ADDRESS_SPACE_MEM || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
+    AssertReturn((iRegion <= 2 && enmType == PCI_ADDRESS_SPACE_MEM) || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
     Assert(pThis->pVMMDevRAMR3 != NULL);
     Assert(pThis->pVMMDevHeapR3 != NULL);
 
@@ -1629,8 +1629,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
             rc = VINF_SUCCESS;
         }
     }
-    else
-    if (iRegion == 2)
+    else if (iRegion == 2)
     {
         if (GCPhysAddress != NIL_RTGCPHYS)
         {
@@ -1653,6 +1652,8 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
             rc = VINF_SUCCESS;
         }
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
 
     return rc;
 }
