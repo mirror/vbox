@@ -268,7 +268,8 @@ int main(int argc, char *argv[])
         return 1;
     }
     start = RTTimeMilliTS();
-    while(RTTimeMilliTS() - start < 5000); // Loop for 5 seconds
+    while(RTTimeMilliTS() - start < 5000)
+        ; // Loop for 5 seconds
     rc = collector->preCollect(hints);
     if (RT_FAILURE(rc))
     {
