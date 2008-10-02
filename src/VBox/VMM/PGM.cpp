@@ -984,8 +984,6 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_SHW_NAME_GC_STR
 #undef PGM_SHW_NAME_R0_STR
 
-
-#ifdef PGM_WITH_EPT
 /*
  * Shadow - EPT
  */
@@ -1100,7 +1098,6 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_SHW_NAME
 #undef PGM_SHW_NAME_GC_STR
 #undef PGM_SHW_NAME_R0_STR
-#endif /* PGM_WITH_EPT */
 
 /**
  * Initiates the paging of VM.
@@ -2810,7 +2807,6 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
         break;
     }
 
-#ifdef PGM_WITH_EPT
     /* Extended paging (EPT) / Intel VT-x */
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_EPT, PGM_TYPE_REAL)];
     pModeData->uShwType = PGM_TYPE_EPT;
@@ -2846,7 +2842,6 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     rc = PGM_SHW_NAME_EPT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_AMD64(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
-#endif /* PGM_WITH_EPT */
     return VINF_SUCCESS;
 }
 
@@ -3221,11 +3216,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             case PGMMODE_NESTED:
                 rc = PGM_SHW_NAME_NESTED(Enter)(pVM);
                 break;
-#ifdef PGM_WITH_EPT
             case PGMMODE_EPT:
                 rc = PGM_SHW_NAME_EPT(Enter)(pVM);
                 break;
-#endif
             case PGMMODE_REAL:
             case PGMMODE_PROTECTED:
             default:
@@ -3279,11 +3272,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_NESTED:
                     rc2 = PGM_BTH_NAME_NESTED_REAL(Enter)(pVM, NIL_RTGCPHYS);
                     break;
-#ifdef PGM_WITH_EPT
                 case PGMMODE_EPT:
                     rc2 = PGM_BTH_NAME_EPT_REAL(Enter)(pVM, NIL_RTGCPHYS);
                     break;
-#endif
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
                     AssertMsgFailed(("Should use PAE shadow mode!\n"));
@@ -3305,11 +3296,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_NESTED:
                     rc2 = PGM_BTH_NAME_NESTED_PROT(Enter)(pVM, NIL_RTGCPHYS);
                     break;
-#ifdef PGM_WITH_EPT
                 case PGMMODE_EPT:
                     rc2 = PGM_BTH_NAME_EPT_PROT(Enter)(pVM, NIL_RTGCPHYS);
                     break;
-#endif
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
                     AssertMsgFailed(("Should use PAE shadow mode!\n"));
@@ -3332,11 +3321,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_NESTED:
                     rc2 = PGM_BTH_NAME_NESTED_32BIT(Enter)(pVM, GCPhysCR3);
                     break;
-#ifdef PGM_WITH_EPT
                 case PGMMODE_EPT:
                     rc2 = PGM_BTH_NAME_EPT_32BIT(Enter)(pVM, GCPhysCR3);
                     break;
-#endif
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
                     AssertMsgFailed(("Should use PAE shadow mode!\n"));
@@ -3372,11 +3359,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_NESTED:
                     rc2 = PGM_BTH_NAME_NESTED_PAE(Enter)(pVM, GCPhysCR3);
                     break;
-#ifdef PGM_WITH_EPT
                 case PGMMODE_EPT:
                     rc2 = PGM_BTH_NAME_EPT_PAE(Enter)(pVM, GCPhysCR3);
                     break;
-#endif
                 case PGMMODE_32_BIT:
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
@@ -3399,11 +3384,9 @@ PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 case PGMMODE_NESTED:
                     rc2 = PGM_BTH_NAME_NESTED_AMD64(Enter)(pVM, GCPhysCR3);
                     break;
-#ifdef PGM_WITH_EPT
                 case PGMMODE_EPT:
                     rc2 = PGM_BTH_NAME_EPT_AMD64(Enter)(pVM, GCPhysCR3);
                     break;
-#endif
                 case PGMMODE_32_BIT:
                 case PGMMODE_PAE:
                 case PGMMODE_PAE_NX:

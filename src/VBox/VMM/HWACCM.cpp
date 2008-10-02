@@ -517,6 +517,11 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACCM: TPR shadow physaddr           = %VHp\n", pVM->hwaccm.s.vmx.pAPICPhys));
             LogRel(("HWACCM: MSR bitmap physaddr           = %VHp\n", pVM->hwaccm.s.vmx.pMSRBitmapPhys));
 
+#ifdef HWACCM_VTX_WITH_EPT
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
+                pVM->hwaccm.s.fNestedPaging = pVM->hwaccm.s.fAllowNestedPaging;
+#endif
+
             /* Only try once. */
             pVM->hwaccm.s.fInitialized = true;
 
@@ -552,6 +557,8 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
 #endif
                 LogRel(("HWACCM: VMX enabled!\n"));
+                if (pVM->hwaccm.s.fNestedPaging)
+                    LogRel(("HWACCM:    Enabled nested paging\n"));
             }
             else
             {

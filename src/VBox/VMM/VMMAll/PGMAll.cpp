@@ -286,8 +286,6 @@ typedef struct PGMHVUSTATE
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
 
-
-#ifdef PGM_WITH_EPT
 /*
  * Shadow - EPT
  */
@@ -358,7 +356,6 @@ typedef struct PGMHVUSTATE
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
-#endif /* PGM_WITH_EPT */
 
 #endif
 
