@@ -192,7 +192,7 @@ $$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessi
   qt4-bin_SOURCES = \
 	$(VBOX_PATH_QT4_LIB)/libVBoxQtCore.so.4 \
 	$(VBOX_PATH_QT4_LIB)/libVBoxQtGui.so.4 \
-	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets4$(SUFF_DLL)=>accessible/libqtaccessiblewidgets4$(SUFF_DLL)
+	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
  endif
 endif # VBOX_WITH_QT4_SUN
 
