@@ -154,7 +154,7 @@ SOLARIS_EXTRAS = \
 	ReadMe.txt
 
 ifdef VBOX_WITH_QT4GUI
- include $(PATH_SUB_CURRENT)/../../Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
+ include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
  SOLARIS_NLS := $(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
 endif
 

@@ -148,7 +148,7 @@ VBOX_LNX_NO_STRIP = \
 
 # Qt4 GUI
 ifdef VBOX_WITH_QT4GUI
- include $(PATH_SUB_CURRENT)/../../Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
+ include $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/nls/ApprovedLanguages.kmk
  VBOX_LNX_STRIP_BIN += \
  	VBoxKeyboard.so \
  	VirtualBox \
