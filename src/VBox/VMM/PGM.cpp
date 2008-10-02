@@ -2625,7 +2625,7 @@ DECLINLINE(unsigned) pgmModeToType(PGMMODE pgmMode)
  */
 DECLINLINE(unsigned) pgmModeDataIndex(unsigned uShwType, unsigned uGstType)
 {
-    Assert(uShwType >= PGM_TYPE_32BIT && uShwType <= PGM_TYPE_EPT);
+    Assert(uShwType >= PGM_TYPE_32BIT && uShwType <= PGM_TYPE_MAX);
     Assert(uGstType >= PGM_TYPE_REAL  && uGstType <= PGM_TYPE_AMD64);
     return (uShwType - PGM_TYPE_32BIT) * (PGM_TYPE_AMD64 - PGM_TYPE_REAL + 1)
          + (uGstType - PGM_TYPE_REAL);
@@ -2653,7 +2653,7 @@ DECLINLINE(unsigned) pgmModeDataIndexByMode(PGMMODE enmShw, PGMMODE enmGst)
  */
 DECLINLINE(unsigned) pgmModeDataMaxIndex(void)
 {
-    return pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_AMD64) + 1;
+    return pgmModeDataIndex(PGM_TYPE_MAX, PGM_TYPE_AMD64) + 1;
 }
 
 
