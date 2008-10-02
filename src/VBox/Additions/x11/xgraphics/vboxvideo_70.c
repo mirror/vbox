@@ -577,7 +577,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         do {
             maxSize = trySize;
             trySize += 128;
-        } while (trySize * trySize * pScrn->bitsPerPixel / 8 < pScrn->videoRam * 1024);
+        } while (trySize * trySize * pScrn->bitsPerPixel / 8 < (unsigned)pScrn->videoRam * 1024);
 
         /* I don't know exactly what these are for (and they are only used in a couple
            of places in the X server code). */
