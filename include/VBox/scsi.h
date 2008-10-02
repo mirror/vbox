@@ -223,9 +223,9 @@ typedef const SCSIINQUIRYDATA *PCSCSIINQUIRYDATA;
 /** @} */
 
 #if defined(DEBUG) && defined(IN_RING3)
-const char * const SCSICmdText(uint8_t uCmd);
-const char * const SCSISenseText(uint8_t uSense);
-const char * const SCSISenseExtText(uint8_t uASC, uint8_t uASCQ);
+const char * SCSICmdText(uint8_t uCmd);
+const char * SCSISenseText(uint8_t uSense);
+const char * SCSISenseExtText(uint8_t uASC, uint8_t uASCQ);
 #endif
 
 #endif
