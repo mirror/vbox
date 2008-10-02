@@ -77,6 +77,7 @@ MMGCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
     TRPMGCSetTempHandler(pVM, 0xe, mmGCRamTrap0eHandler);
 }
 
+
 /**
  * Remove MMGCRam Hypervisor page fault handler.
  * See description of MMGCRamRegisterTrapHandler call.
@@ -113,6 +114,7 @@ MMGCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
     return rc;
 }
 
+
 /**
  * Write data in guest context with #PF control.
  *
@@ -124,12 +126,10 @@ MMGCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
  */
 MMGCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
 {
-    int rc;
-
     TRPMSaveTrap(pVM);  /* save the current trap info, because it will get trashed if our access failed. */
 
     MMGCRamRegisterTrapHandler(pVM);
-    rc = MMGCRamWriteNoTrapHandler(pDst, pSrc, cb);
+    int rc = MMGCRamWriteNoTrapHandler(pDst, pSrc, cb);
     MMGCRamDeregisterTrapHandler(pVM);
     if (VBOX_FAILURE(rc))
         TRPMRestoreTrap(pVM);
@@ -157,7 +157,7 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamReadNoTrapHandler_EndProc)
     {
         /* Must be a read violation. */
-        AssertReturn(!(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW), VERR_INTERNAL_ERROR); 
+        AssertReturn(!(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW), VERR_INTERNAL_ERROR);
         pRegFrame->eip = (uintptr_t)&MMGCRamRead_Error;
         return VINF_SUCCESS;
     }
@@ -169,7 +169,7 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamWriteNoTrapHandler_EndProc)
     {
         /* Must be a write violation. */
-        AssertReturn(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW, VERR_INTERNAL_ERROR); 
+        AssertReturn(TRPMGetErrorCode(pVM) & X86_TRAP_PF_RW, VERR_INTERNAL_ERROR);
         pRegFrame->eip = (uintptr_t)&MMGCRamWrite_Error;
         return VINF_SUCCESS;
     }
@@ -254,8 +254,8 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         return VINF_SUCCESS;
     }
 
-    /* 
-     * #PF is not handled - cause guru meditation. 
+    /*
+     * #PF is not handled - cause guru meditation.
      */
     return VERR_INTERNAL_ERROR;
 }
