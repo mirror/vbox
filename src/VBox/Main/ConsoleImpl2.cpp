@@ -1163,8 +1163,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 if (SUCCEEDED(hrc))
                 {
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-                    Assert (pConsole->maTapFD[ulInstance] >= 0);
-                    if (pConsole->maTapFD[ulInstance] >= 0)
+                    Assert ((int)pConsole->maTapFD[ulInstance] >= 0);
+                    if ((int)pConsole->maTapFD[ulInstance] >= 0)
                     {
                         if (fSniffer)
                         {
