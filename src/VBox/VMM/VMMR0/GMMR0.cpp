@@ -2352,8 +2352,8 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t c
         return VERR_NOT_OWNER;
 
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cBalloonedPages >= 0 && cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cPagesToFree >= 0 && cPagesToFree <= cBalloonedPages, ("%#x\n", cPagesToFree), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPagesToFree <= cBalloonedPages, ("%#x\n", cPagesToFree), VERR_INVALID_PARAMETER);
 
     for (unsigned iPage = 0; iPage < cPagesToFree; iPage++)
         AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
@@ -2463,7 +2463,7 @@ GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, uint32_t cPages)
     if (pGVM->hEMT != RTThreadNativeSelf())
         return VERR_NOT_OWNER;
 
-    AssertMsgReturn(cPages >= 0 && cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
 
     /*
      * Take the sempahore and do some more validations.
