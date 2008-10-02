@@ -513,9 +513,9 @@ TMR3DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatPostponedR0,       STAMTYPE_COUNTER,       "/TM/PostponedR0",      STAMUNIT_OCCURENCES,        "Postponed due to unschedulable state, in ring-0.");
     STAM_REG(pVM, &pVM->tm.s.StatPostponedGC,       STAMTYPE_COUNTER,       "/TM/PostponedGC",      STAMUNIT_OCCURENCES,        "Postponed due to unschedulable state, in GC.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneGC,     STAMTYPE_PROFILE,       "/TM/ScheduleOneGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.\n");
-    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneR0,     STAMTYPE_PROFILE,       "/TM/ScheduleOneR0",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.\n");
-    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneR3,     STAMTYPE_PROFILE,       "/TM/ScheduleOneR3",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.\n");
+    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneGC,     STAMTYPE_PROFILE,       "/TM/ScheduleOneGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
+    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneR0,     STAMTYPE_PROFILE,       "/TM/ScheduleOneR0",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
+    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneR3,     STAMTYPE_PROFILE,       "/TM/ScheduleOneR3",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
     STAM_REG(pVM, &pVM->tm.s.StatScheduleSetFF,     STAMTYPE_COUNTER,       "/TM/ScheduleSetFF",    STAMUNIT_OCCURENCES,        "The number of times the timer FF was set instead of doing scheduling.");
 
     STAM_REG(pVM, &pVM->tm.s.StatTimerSetGC,        STAMTYPE_PROFILE,       "/TM/TimerSetGC",       STAMUNIT_TICKS_PER_CALL,    "Profiling TMTimerSet calls made in GC.");
