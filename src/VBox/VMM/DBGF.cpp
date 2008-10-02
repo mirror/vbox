@@ -976,7 +976,7 @@ DBGFR3DECL(int) DBGFR3Halt(PVM pVM)
  */
 DBGFR3DECL(bool) DBGFR3IsHalted(PVM pVM)
 {
-    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+    AssertReturn(pVM->dbgf.s.fAttached, false);
     RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
     return enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED
         || enmSpeaker == RTPINGPONGSPEAKER_PONG;
