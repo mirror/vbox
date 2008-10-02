@@ -1678,7 +1678,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     /*
      * Understandable output
      */
-    if (iVerbosity && cExtMax >= 0)
+    if (iVerbosity)
     {
         Guest = pVM->cpum.s.aGuestCpuIdExt[0];
         pHlp->pfnPrintf(pHlp,
@@ -1968,7 +1968,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     /*
      * Understandable output
      */
-    if (iVerbosity && cCentaurMax >= 0)
+    if (iVerbosity)
     {
         Guest = pVM->cpum.s.aGuestCpuIdCentaur[0];
         pHlp->pfnPrintf(pHlp,
