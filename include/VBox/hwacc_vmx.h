@@ -47,7 +47,7 @@
 /**
  * Number of page table entries in the EPT. (PDPTE/PDE/PTE)
  */
-#define EPT_PG_ENTRIES                  512
+#define EPT_PG_ENTRIES          X86_PG_PAE_ENTRIES
 
 /**
  * EPT Page Directory Pointer Entry. Bit view.
@@ -73,7 +73,11 @@ typedef struct EPTPML4EBITS
 #pragma pack()
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PML4E_PG_MASK       ( 0x000ffffffffff000ULL )
+#define EPT_PML4E_PG_MASK       X86_PML4E_PG_MASK_FULL
+/** The page shift to get the PML4 index. */
+#define EPT_PML4_SHIFT          X86_PML4_SHIFT
+/** The PML4 index mask (apply to a shifted page address). */
+#define EPT_PML4_MASK           X86_PML4_MASK
 
 /**
  * EPT PML4.
@@ -81,9 +85,14 @@ typedef struct EPTPML4EBITS
 #pragma pack(1)
 typedef union EPTPML4
 {
-    EPTPML4EBITS n;
+    /** Normal view. */
+    EPTPML4EBITS    n;
+    /** Unsigned integer view. */
+    X86PGUINT       u;
     /** 64 bit unsigned integer view. */
-    uint64_t    au64[1];
+    uint64_t        au64[1];
+    /** 32 bit unsigned integer view. */
+    uint32_t        au32[2];
 } EPTPML4;
 #pragma pack()
 /** Pointer to a PML4 table. */
@@ -116,7 +125,11 @@ typedef struct EPTPDPTEBITS
 #pragma pack()
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PDPTE_PG_MASK       ( 0x000ffffffffff000ULL )
+#define EPT_PDPTE_PG_MASK       X86_PDPE_PG_MASK_FULL
+/** The page shift to get the PDPT index. */
+#define EPT_PDPT_SHIFT          X86_PDPT_SHIFT
+/** The PDPT index mask (apply to a shifted page address). */
+#define EPT_PDPT_MASK           X86_PDPT_MASK_AMD64
 
 /**
  * EPT Page Directory Pointer.
@@ -124,9 +137,14 @@ typedef struct EPTPDPTEBITS
 #pragma pack(1)
 typedef union EPTPDPTE
 {
-    EPTPDPTEBITS n;
+    /** Normal view. */
+    EPTPDPTEBITS    n;
+    /** Unsigned integer view. */
+    X86PGUINT       u;
     /** 64 bit unsigned integer view. */
-    uint64_t    au64[1];
+    uint64_t        au64[1];
+    /** 32 bit unsigned integer view. */
+    uint32_t        au32[2];
 } EPTPDPTE;
 #pragma pack()
 /** Pointer to an EPT Page Directory Pointer Entry. */
@@ -176,7 +194,11 @@ typedef union EPTPDEBITS
 #pragma pack()
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
-#define EPT_PDE_PG_MASK         ( 0x000ffffffffff000ULL )
+#define EPT_PDE_PG_MASK         X86_PDE_PAE_PG_MASK_FULL
+/** The page shift to get the PD index. */
+#define EPT_PD_SHIFT            X86_PD_PAE_SHIFT
+/** The PD index mask (apply to a shifted page address). */
+#define EPT_PD_MASK             X86_PD_PAE_MASK
 
 /**
  * EPT 2MB Page Directory Table Entry. Bit view.
@@ -216,10 +238,16 @@ typedef union EPTPDE2MBITS
 #pragma pack(1)
 typedef union EPTPDE
 {
+    /** Normal view. */
     EPTPDEBITS      n;
+    /** 2MB view (big). */
     EPTPDE2MBITS    b;
+    /** Unsigned integer view. */
+    X86PGUINT       u;
     /** 64 bit unsigned integer view. */
     uint64_t        au64[1];
+    /** 32 bit unsigned integer view. */
+    uint32_t        au32[2];
 } EPTPDE;
 #pragma pack()
 /** Pointer to an EPT Page Directory Table Entry. */
@@ -268,15 +296,27 @@ typedef union EPTPTEBITS
 } EPTPTEBITS;
 #pragma pack()
 
+/** Bits 12-51 - - EPT - Physical Page number of the next level. */
+#define EPT_PTE_PG_MASK         X86_PTE_PAE_PG_MASK_FULL
+/** The page shift to get the EPT PTE index. */
+#define EPT_PT_SHIFT            X86_PT_PAE_SHIFT
+/** The EPT PT index mask (apply to a shifted page address). */
+#define EPT_PT_MASK             X86_PT_PAE_MASK
+
 /**
  * EPT Page Table Entry.
  */
 #pragma pack(1)
 typedef union EPTPTE
 {
+    /** Normal view. */
     EPTPTEBITS      n;
+    /** Unsigned integer view. */
+    X86PGUINT       u;
     /** 64 bit unsigned integer view. */
     uint64_t        au64[1];
+    /** 32 bit unsigned integer view. */
+    uint32_t        au32[2];
 } EPTPTE;
 #pragma pack()
 /** Pointer to an EPT Page Directory Table Entry. */
