@@ -2156,8 +2156,6 @@ static inline void vboxNetFltSolarisInitPacketId(PVBOXNETFLTPACKETID pTag, mblk_
     PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
     size_t cbMsg = MBLKL(pMsg);
 
-    AssertRelease(cbMsg > 0);   /** Yeah, die otherwise! */
-    pTag->pNext = NULL;
     pTag->cbPacket = cbMsg;
     pTag->Checksum = RTCrc32(pMsg->b_rptr, cbMsg);
     bcopy(&pEthHdr->SrcMac, &pTag->SrcMac, sizeof(RTMAC));
@@ -2200,7 +2198,9 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
     AssertRCReturn(rc, rc);
 
     PVBOXNETFLTPACKETID pCur = NULL;
-    if (pPromiscStream->cLoopback < VBOXNETFLT_LOOPBACK_SIZE)
+    if (pPromiscStream->cLoopback < VBOXNETFLT_LOOPBACK_SIZE
+        || (   pPromiscStream->pHead
+            && pPromiscStream->pHead->cbPacket == 0))
     {
         do
         {
@@ -2215,6 +2215,7 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
 
                 vboxNetFltSolarisInitPacketId(pCur, pMsg);
 
+                pCur->pNext = NULL;
                 pPromiscStream->pHead = pCur;
                 pPromiscStream->pTail = pCur;
                 pPromiscStream->cLoopback++;
@@ -2223,18 +2224,17 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
                         pPromiscStream->pHead->Checksum));
                 break;
             }
-            else if (   pPromiscStream->pTail
-                     && pPromiscStream->pTail->cbPacket == 0)
+            else if (   pPromiscStream->pHead
+                     && pPromiscStream->pHead->cbPacket == 0)
             {
-                pCur = pPromiscStream->pTail;
+                pCur = pPromiscStream->pHead;
                 vboxNetFltSolarisInitPacketId(pCur, pMsg);
-                pPromiscStream->cLoopback++;
 
-                LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback re-used tail checksum=%u cLoopback=%d.\n",
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback re-used head checksum=%u cLoopback=%d.\n",
                         pCur->Checksum, pPromiscStream->cLoopback));
                 break;
             }
-            else if (pPromiscStream->pTail)
+            else
             {
                 pCur = RTMemAlloc(sizeof(VBOXNETFLTPACKETID));
                 if (RT_UNLIKELY(!pCur))
@@ -2245,11 +2245,11 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
 
                 vboxNetFltSolarisInitPacketId(pCur, pMsg);
 
-                pPromiscStream->pTail->pNext = pCur;
-                pPromiscStream->pTail = pCur;
+                pCur->pNext = pPromiscStream->pHead;
+                pPromiscStream->pHead = pCur;
                 pPromiscStream->cLoopback++;
 
-                LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback added tail checksum=%u cLoopback=%d.\n", pCur->Checksum,
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback added head checksum=%u cLoopback=%d.\n", pCur->Checksum,
                         pPromiscStream->cLoopback));
                 break;
             }
@@ -2258,21 +2258,31 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
     else
     {
         /*
-         * Maximum loopback queue size reached. Re-use head as tail.
+         * Maximum loopback queue size reached. Re-use tail as head.
          */
         Assert(pPromiscStream->pHead);
         Assert(pPromiscStream->pTail);
 
+        /*
+         * Find tail's previous item.
+         */
+        PVBOXNETFLTPACKETID pPrev = NULL;
         pCur = pPromiscStream->pHead;
-        pPromiscStream->pHead = pPromiscStream->pHead->pNext;
-        pPromiscStream->pTail->pNext = pCur;
-        pPromiscStream->pTail = pCur;
-        pCur->pNext = NULL;
-        pCur->cbPacket = 0;
-        pPromiscStream->cLoopback--;
+
+        /** @todo consider if this is worth switching to a double linked list... */
+        while (pCur != pPromiscStream->pTail)
+        {
+            pPrev = pCur;
+            pCur = pCur->pNext;
+        }
+
+        pPromiscStream->pTail = pPrev;
+        pPromiscStream->pTail->pNext = NULL;
+        pCur->pNext = pPromiscStream->pHead;
+        pPromiscStream->pHead = pCur;
 
         vboxNetFltSolarisInitPacketId(pCur, pMsg);
-        LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback recycled head!! checksum=%u cLoopback=%d\n", pCur->Checksum,
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback recycled tail!! checksum=%u cLoopback=%d\n", pCur->Checksum,
                 pPromiscStream->cLoopback));
     }
 
@@ -2347,20 +2357,18 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
 
         /*
          * Yes, it really is our own packet, mark it as handled
-         * and move it to the tail and return it's found.
+         * and move it as a "free slot" to the head and return success.
          */
         pCur->cbPacket = 0;
         if (pPrev)
         {
             pPrev->pNext = pCur->pNext;
-            pPromiscStream->pTail->pNext = pCur;
-            pPromiscStream->pTail = pCur;
-            pCur->pNext = NULL;
+            pCur->pNext = pPromiscStream->pHead;
+            pPromiscStream->pHead = pCur;
         }
-        pPromiscStream->cLoopback--;
         fIsOurPacket = true;
 
-        LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p Checksum=%u cLoopbackQ=%d\n", pMsg, Checksum,
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk found packet %p Checksum=%u cLoopback=%d\n", pMsg, Checksum,
                     pPromiscStream->cLoopback));
         break;
     }
@@ -2706,7 +2714,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
                 LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive failed to request promiscuous mode! rc=%d\n", rc));
         }
         else
-            LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive queue not found!\n"));            
+            LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive queue not found!\n"));
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltPortOsSetActive stream not found!\n"));
