@@ -325,7 +325,7 @@ HWACCMR0DECL(int) HWACCMR0Init(void)
                 if (VBOX_SUCCESS(rc))
                     rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
-                AssertMsg(VBOX_SUCCESS(rc), ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, rc));
+                AssertMsgRC(rc, ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, rc));
 
                 if (VBOX_SUCCESS(rc))
                 {
@@ -425,7 +425,7 @@ HWACCMR0DECL(int) HWACCMR0Term(void)
     /* Free the per-cpu pages used for VT-x and AMD-V */
     for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
     {
-        AssertMsg(VBOX_SUCCESS(aRc[i]), ("HWACCMR0DisableCPU failed for cpu %d with rc=%d\n", i, aRc[i]));
+        AssertMsgRC(aRc[i], ("HWACCMR0DisableCPU failed for cpu %d with rc=%d\n", i, aRc[i]));
         if (HWACCMR0Globals.aCpuInfo[i].pMemObj != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(HWACCMR0Globals.aCpuInfo[i].pMemObj, false);
@@ -554,7 +554,7 @@ HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
         if (VBOX_SUCCESS(rc))
             rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
-        AssertMsg(VBOX_SUCCESS(rc), ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", idCpu, rc));
+        AssertMsgRC(rc, ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", idCpu, rc));
         return rc;
     }
 

@@ -1106,7 +1106,7 @@ ioctl_error:
     RTFileClose(pData->DeviceFile);
     /* Open again to make use after suspend possible again. */
     rc = RTFileOpen(&pData->DeviceFile, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
-    AssertMsg(RT_SUCCESS(rc), ("Opening device file again failed rc=%Vrc\n", rc));
+    AssertMsgRC(rc, ("Opening device file again failed rc=%Vrc\n", rc));
 
     if (RT_FAILURE(rc))
         PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",

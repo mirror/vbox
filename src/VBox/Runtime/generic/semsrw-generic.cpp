@@ -205,11 +205,11 @@ RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem)
              * can be a little bit busy.
              */
             rc = RTSemEventMultiDestroy(pIntRWSem->ReadEvent);
-            AssertMsg(RT_SUCCESS(rc), ("RTSemEventMultiDestroy failed! rc=%d\n", rc)); NOREF(rc);
+            AssertMsgRC(rc, ("RTSemEventMultiDestroy failed! rc=%d\n", rc));
             pIntRWSem->ReadEvent = NIL_RTSEMEVENTMULTI;
 
             rc = RTSemEventDestroy(pIntRWSem->WriteEvent);
-            AssertMsg(RT_SUCCESS(rc), ("RTSemEventDestroy failed! rc=%d\n", rc)); NOREF(rc);
+            AssertMsgRC(rc, ("RTSemEventDestroy failed! rc=%d\n", rc));
             pIntRWSem->WriteEvent = NIL_RTSEMEVENT;
 
             RTSemMutexRelease(pIntRWSem->Mutex);
@@ -220,7 +220,7 @@ RTDECL(int)   RTSemRWDestroy(RTSEMRW RWSem)
                     break;
                 RTThreadSleep(1);
             }
-            AssertMsg(RT_SUCCESS(rc), ("RTSemMutexDestroy failed! rc=%d\n", rc)); NOREF(rc);
+            AssertMsgRC(rc, ("RTSemMutexDestroy failed! rc=%d\n", rc));
             pIntRWSem->Mutex = (RTSEMMUTEX)0;
 
             RTMemFree(pIntRWSem);
@@ -285,7 +285,7 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
             {
                 AssertMsgFailed(("Too many requests for one thread!\n"));
                 rc = RTSemMutexRelease(pIntRWSem->Mutex);
-                AssertMsg(RT_SUCCESS(rc), ("RTSemMutexRelease failed rc=%d\n", rc));
+                AssertMsgRC(rc, ("RTSemMutexRelease failed rc=%d\n", rc));
                 return VERR_TOO_MANY_SEM_REQUESTS;
             }
         }
@@ -324,7 +324,7 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
             else
             {
                 rc = RTSemEventMultiReset(pIntRWSem->ReadEvent);
-                AssertMsg(RT_SUCCESS(rc), ("RTSemEventMultiReset failed on RWSem %p, rc=%d\n", RWSem, rc));
+                AssertMsgRC(rc, ("RTSemEventMultiReset failed on RWSem %p, rc=%d\n", RWSem, rc));
             }
             #endif
         }
@@ -419,7 +419,7 @@ RTDECL(int)   RTSemRWReleaseRead(RTSEMRW RWSem)
                         &&  pIntRWSem->cReaders == 0)
                     {
                         rc = RTSemEventSignal(pIntRWSem->WriteEvent);
-                        AssertMsg(RT_SUCCESS(rc), ("Failed to signal writers on rwsem %p, rc=%d\n", RWSem, rc));
+                        AssertMsgRC(rc, ("Failed to signal writers on rwsem %p, rc=%d\n", RWSem, rc));
                     }
                 }
                 else
@@ -551,7 +551,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
         int rc2 = RTSemMutexRequest(pIntRWSem->Mutex, RTSEM_INDEFINITE_WAIT);
         if (RT_FAILURE(rc) || RT_FAILURE(rc2))
         {
-            AssertMsg(RT_SUCCESS(rc2), ("RTSemMutexRequest failed on rwsem %p, rc=%d\n", RWSem, rc2));
+            AssertMsgRC(rc2, ("RTSemMutexRequest failed on rwsem %p, rc=%d\n", RWSem, rc2));
             if (RT_SUCCESS(rc))
                 rc = rc2;
             else
@@ -580,7 +580,7 @@ RTDECL(int) RTSemRWRequestWrite(RTSEMRW RWSem, unsigned cMillies)
      */
     ASMAtomicXchgPtr((void * volatile *)&pIntRWSem->WROwner, (void *)Self);
     rc = RTSemMutexRelease(pIntRWSem->Mutex);
-    AssertMsg(RT_SUCCESS(rc), ("RTSemMutexRelease failed. rc=%d\n", rc)); NOREF(rc);
+    AssertMsgRC(rc, ("RTSemMutexRelease failed. rc=%d\n", rc));
 
     return VINF_SUCCESS;
 #endif
@@ -645,10 +645,10 @@ RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW RWSem)
     if (!pIntRWSem->cWriters)
     {
         rc = RTSemEventMultiSignal(pIntRWSem->ReadEvent);
-        AssertMsg(RT_SUCCESS(rc), ("RTSemEventMultiSignal failed for rwsem %p, rc=%d.\n", RWSem, rc)); NOREF(rc);
+        AssertMsgRC(rc, ("RTSemEventMultiSignal failed for rwsem %p, rc=%d.\n", RWSem, rc));
     }
     rc = RTSemMutexRelease(pIntRWSem->Mutex);
-    AssertMsg(RT_SUCCESS(rc), ("RTSemEventMultiSignal failed for rwsem %p, rc=%d.\n", RWSem, rc)); NOREF(rc);
+    AssertMsgRC(rc, ("RTSemEventMultiSignal failed for rwsem %p, rc=%d.\n", RWSem, rc));
 
     return VINF_SUCCESS;
 #endif
