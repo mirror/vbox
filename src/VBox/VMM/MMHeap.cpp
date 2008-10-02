@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * MM - Memory Monitor(/Manager) - Heap.
+ * MM - Memory Manager - Heap.
  */
 
 /*
@@ -566,6 +566,86 @@ MMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
 MMR3DECL(char *) MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz)
 {
     return MMR3HeapStrDupU(pVM->pUVM, enmTag, psz);
+}
+
+
+/**
+ * Allocating string printf.
+ *
+ * @returns Pointer to the string.
+ * @param   pVM         The VM
+ * @param   enmTag      The statistics tag.
+ * @param   pszFormat   The format string.
+ * @param   ...         Format arguments.
+ */
+MMR3DECL(char *)    MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    char *psz = MMR3HeapAPrintfVU(pVM->pUVM, enmTag, pszFormat, va);
+    va_end(va);
+    return psz;
+}
+
+
+/**
+ * Allocating string printf.
+ *
+ * @returns Pointer to the string.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   enmTag      The statistics tag.
+ * @param   pszFormat   The format string.
+ * @param   ...         Format arguments.
+ */
+MMR3DECL(char *)    MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    char *psz = MMR3HeapAPrintfVU(pUVM, enmTag, pszFormat, va);
+    va_end(va);
+    return psz;
+}
+
+
+/**
+ * Allocating string printf.
+ *
+ * @returns Pointer to the string.
+ * @param   pVM         The VM
+ * @param   enmTag      The statistics tag.
+ * @param   pszFormat   The format string.
+ * @param   va          Format arguments.
+ */
+MMR3DECL(char *)    MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va)
+{
+    return MMR3HeapAPrintfVU(pVM->pUVM, enmTag, pszFormat, va);
+}
+
+
+/**
+ * Allocating string printf.
+ *
+ * @returns Pointer to the string.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   enmTag      The statistics tag.
+ * @param   pszFormat   The format string.
+ * @param   va          Format arguments.
+ */
+MMR3DECL(char *)    MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va)
+{
+    /*
+     * The lazy bird way.
+     */
+    char *psz;
+    int cch = RTStrAPrintfV(&psz, pszFormat, va);
+    if (cch < 0)
+        return NULL;
+    Assert(psz[cch] == '\0');
+    char *pszRet = (char *)MMR3HeapAllocU(pUVM, enmTag, cch + 1);
+    if (pszRet)
+        memcpy(pszRet, psz, cch + 1);
+    RTStrFree(psz);
+    return pszRet;
 }
 
 

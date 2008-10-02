@@ -33,6 +33,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/x86.h>
+#include <iprt/stdarg.h>
 #include <VBox/sup.h>
 
 
@@ -401,6 +402,10 @@ MMR3DECL(int)       MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, vo
 MMR3DECL(void *)    MMR3HeapRealloc(void *pv, size_t cbNewSize);
 MMR3DECL(char *)    MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz);
 MMR3DECL(char *)    MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz);
+MMR3DECL(char *)    MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...);
+MMR3DECL(char *)    MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...);
+MMR3DECL(char *)    MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va);
+MMR3DECL(char *)    MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va);
 MMR3DECL(void)      MMR3HeapFree(void *pv);
 /** @} */
 

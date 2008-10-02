@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * MM - Memory Monitor(/Manager).
+ * MM - Memory Manager.
  */
 
 /*
@@ -20,61 +20,120 @@
  */
 
 
-/** @page pg_mm     MM - The Memory Monitor/Manager
+/** @page pg_mm     MM - The Memory Manager
  *
- * WARNING: THIS IS SOMEWHAT OUTDATED!
- *
- * It seems like this is going to be the entity taking care of memory allocations
- * and the locking of physical memory for a VM. MM will track these allocations and
- * pinnings so pointer conversions, memory read and write, and correct clean up can
- * be done.
- *
- * Memory types:
- *      - Hypervisor Memory Area (HMA).
- *      - Page tables.
- *      - Physical pages.
- *
- * The first two types are not accessible using the generic conversion functions
- * for GC memory, there are special functions for these.
+ * The memory manager is in charge of the following memory:
+ *      - Hypervisor Memory Area (HMA) - Address space management.
+ *      - Hypervisor Heap - A memory heap that lives in all contexts.
+ *      - Tagged ring-3 heap.
+ *      - Page pools - Primarily used by PGM for shadow page tables.
+ *      - Locked process memory - Guest RAM and other. (reduce/obsolete this)
+ *      - Physical guest memory (RAM & ROM) - Moving to PGM. (obsolete this)
  *
  *
- * A decent structure for this component need to be eveloped as we see usage. One
- * or two rewrites is probabaly needed to get it right...
+ * @section sec_mm_hma  Hypervisor Memory Area
+ *
+ * The HMA is used when executing in raw-mode. We borrow, with the help of
+ * PGMMap, some unused space (one or more page directory entries to be precise)
+ * in the guest's virtual memory context. PGM will monitor the guest's virtual
+ * address space for changes and relocate the HMA when required.
+ *
+ * To give some idea what's in the HMA, study the 'info hma' output:
+ * @verbatim
+VBoxDbg> info hma
+Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
+00000000a05cc000-00000000a05cd000                  DYNAMIC                  fence
+00000000a05c4000-00000000a05cc000                  DYNAMIC                  Dynamic mapping
+00000000a05c3000-00000000a05c4000                  DYNAMIC                  fence
+00000000a05b8000-00000000a05c3000                  DYNAMIC                  Paging
+00000000a05b6000-00000000a05b8000                  MMIO2   0000000000000000 PCNetShMem
+00000000a0536000-00000000a05b6000                  MMIO2   0000000000000000 VGA VRam
+00000000a0523000-00000000a0536000 00002aaab3d0c000 LOCKED  autofree         alloc once (PDM_DEVICE)
+00000000a0522000-00000000a0523000                  DYNAMIC                  fence
+00000000a051e000-00000000a0522000 00002aaab36f5000 LOCKED  autofree         VBoxDD2GC.gc
+00000000a051d000-00000000a051e000                  DYNAMIC                  fence
+00000000a04eb000-00000000a051d000 00002aaab36c3000 LOCKED  autofree         VBoxDDGC.gc
+00000000a04ea000-00000000a04eb000                  DYNAMIC                  fence
+00000000a04e9000-00000000a04ea000 00002aaab36c2000 LOCKED  autofree         ram range (High ROM Region)
+00000000a04e8000-00000000a04e9000                  DYNAMIC                  fence
+00000000a040e000-00000000a04e8000 00002aaab2e6d000 LOCKED  autofree         VMMGC.gc
+00000000a0208000-00000000a040e000 00002aaab2c67000 LOCKED  autofree         alloc once (PATM)
+00000000a01f7000-00000000a0208000 00002aaaab92d000 LOCKED  autofree         alloc once (SELM)
+00000000a01e7000-00000000a01f7000 00002aaaab5e8000 LOCKED  autofree         alloc once (SELM)
+00000000a01e6000-00000000a01e7000                  DYNAMIC                  fence
+00000000a01e5000-00000000a01e6000 00002aaaab5e7000 HCPHYS  00000000c363c000 Core Code
+00000000a01e4000-00000000a01e5000                  DYNAMIC                  fence
+00000000a01e3000-00000000a01e4000 00002aaaaab26000 HCPHYS  00000000619cf000 GIP
+00000000a01a2000-00000000a01e3000 00002aaaabf32000 LOCKED  autofree         alloc once (PGM_PHYS)
+00000000a016b000-00000000a01a2000 00002aaab233f000 LOCKED  autofree         alloc once (PGM_POOL)
+00000000a016a000-00000000a016b000                  DYNAMIC                  fence
+00000000a0165000-00000000a016a000                  DYNAMIC                  CR3 mapping
+00000000a0164000-00000000a0165000                  DYNAMIC                  fence
+00000000a0024000-00000000a0164000 00002aaab215f000 LOCKED  autofree         Heap
+00000000a0023000-00000000a0024000                  DYNAMIC                  fence
+00000000a0001000-00000000a0023000 00002aaab1d24000 LOCKED  pages            VM
+00000000a0000000-00000000a0001000                  DYNAMIC                  fence
+ @endverbatim
  *
  *
+ * @section sec_mm_hyperheap    Hypervisor Heap
  *
- * @section         Hypervisor Memory Area
+ * The heap is accessible from ring-3, ring-0 and the raw-mode context. That
+ * said, it's not necessarily mapped into ring-0 on if that's possible since we
+ * don't wish to waste kernel address space without a good reason.
  *
- * The hypervisor is give 4MB of space inside the guest, we assume that we can
- * steal an page directory entry from the guest OS without cause trouble. In
- * addition to these 4MB we'll be mapping memory for the graphics emulation,
- * but that will be an independant mapping.
+ * Allocations within the heap are always in the same relative position in all
+ * contexts, so, it's possible to use offset based linking. In fact, the heap is
+ * internally using offset based linked lists tracking heap blocks. We use
+ * offset linked AVL trees and lists in a lot of places where share structures
+ * between RC, R3 and R0, so this is a strict requirement of the heap. However
+ * this means that we cannot easily extend the heap since the extension won't
+ * necessarily be in the continuation of the current heap memory in all (or any)
+ * context.
  *
- * The 4MBs are divided into two main parts:
- *      -# The static code and data
- *      -# The shortlived page mappings.
- *
- * The first part is used for the VM structure, the core code (VMMSwitch),
- * GC modules, and the alloc-only-heap. The size will be determined at a
- * later point but initially we'll say 2MB of locked memory, most of which
- * is non contiguous physically.
- *
- * The second part is used for mapping pages to the hypervisor. We'll be using
- * a simple round robin when doing these mappings. This means that no-one can
- * assume that a mapping hangs around for very long, while the managing of the
- * pages are very simple.
+ * All allocations are tagged. Per tag allocation statistics will be maintaing
+ * and exposed thru STAM when VBOX_WITH_STATISTICS is defined.
  *
  *
+ * @section sec_mm_r3heap   Tagged Ring-3 Heap
  *
- * @section         Page Pool
+ * The ring-3 heap is a wrapper around the RTMem API adding allocation
+ * statistics and automatic cleanup on VM destruction.
  *
- * The MM manages a per VM page pool from which other components can allocate
- * locked, page aligned and page granular memory objects. The pool provides
- * facilities to convert back and forth between physical and virtual addresses
- * (within the pool of course). Several specialized interfaces are provided
- * for the most common alloctions and convertions to save the caller from
- * bothersome casting and extra parameter passing.
+ * Per tag allocation statistics will be maintaing and exposed thru STAM when
+ * VBOX_WITH_STATISTICS is defined.
  *
+ *
+ * @section sec_mm_page     Page Pool
+ *
+ * The MM manages a page pool from which other components can allocate locked,
+ * page aligned and page sized memory objects. The pool provides facilities to
+ * convert back and forth between (host) physical and virtual addresses (within
+ * the pool of course). Several specialized interfaces are provided for the most
+ * common alloctions and convertions to save the caller from bothersome casting
+ * and extra parameter passing.
+ *
+ *
+ * @section sec_mm_locked   Locked Process Memory
+ *
+ * MM manages the locked process memory. This is used for a bunch of things
+ * (count the LOCKED entries in the'info hma' output found in @ref sec_mm_hma),
+ * but the main consumer of memory is currently for guest RAM. There is an
+ * ongoing rewrite that will move all the guest RAM allocation to PGM and
+ * GMM.
+ *
+ * The locking of memory is something doing in cooperation with the VirtualBox
+ * support driver, SUPDrv (aka. VBoxDrv), thru the support library API,
+ * SUPR3 (aka. SUPLib).
+ *
+ *
+ * @section sec_mm_phys     Physical Guest Memory
+ *
+ * MM is currently managing the physical memory for the guest. It relies heavily
+ * on PGM for this. There is an ongoing rewrite that will move this to PGM. (The
+ * rewrite is driven by the need for more flexible guest ram allocation, but
+ * also motivated by the fact that MMPhys is just adding stupid bureaucracy and
+ * that MMR3PhysReserve is a totally weird artifact that must go away.)
  *
  */
 

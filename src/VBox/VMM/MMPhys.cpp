@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * MM - Memory Monitor(/Manager) - Physical Memory.
+ * MM - Memory Manager - Physical Memory.
  *
  * @remarks This will will be eliminated ASAP, all physical memory management
  *          is done by PGM now.

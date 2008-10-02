@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * MM - Memory Monitor(/Manager) - Any Context.
+ * MM - Memory Manager - Any Context.
  */
 
 /*

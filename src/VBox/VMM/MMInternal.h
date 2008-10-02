@@ -346,7 +346,7 @@ typedef MMHYPERHEAP *PMMHYPERHEAP;
 /**
  * Page sub pool
  *
- * About the allocation of this structrue. To keep the number of heap blocks,
+ * About the allocation of this structure. To keep the number of heap blocks,
  * the number of heap calls, and fragmentation low we allocate all the data
  * related to a MMPAGESUBPOOL node in one chunk. That means that after the
  * bitmap (which is of variable size) comes the SUPPAGE records and then
@@ -666,7 +666,7 @@ typedef struct MM
 
     /** Lookup list for the Hypervisor Memory Area.
      * The offset is relative to the start of the heap.
-     * Use pHyperHeapHC or pHyperHeapGC to calculate the address.
+     * Use pHyperHeapR3, pHyperHeapR0 or pHypeRHeapRC to calculate the address.
      */
     RTUINT                      offLookupHyper;
 

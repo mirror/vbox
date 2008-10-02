@@ -1736,7 +1736,9 @@ PGMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         rc = SUPPageAlloc(cbRam >> PAGE_SHIFT, (void **)&pNew);
         if (VBOX_SUCCESS(rc))
         {
-            rc = MMR3HyperMapHCRam(pVM, pNew, cbRam, true, pszDesc, &GCPtrNew);
+            rc = MMR3HyperMapHCRam(pVM, pNew, cbRam, true,
+                                   MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS, "ram range (%s)", pszDesc),
+                                   &GCPtrNew);
             if (VBOX_SUCCESS(rc))
             {
                 Assert(MMHyperHC2GC(pVM, pNew) == GCPtrNew);
