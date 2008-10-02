@@ -192,6 +192,7 @@
 #define PGM_TYPE_AMD64      5
 #define PGM_TYPE_NESTED     6
 #define PGM_TYPE_EPT        7
+#define PGM_TYPE_MAX        PGM_TYPE_EPT
 /** @} */
 
 /** Macro for checking if the guest is using paging.
