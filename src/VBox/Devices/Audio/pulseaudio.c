@@ -368,7 +368,7 @@ static int pulse_run_out (HWVoiceOut *hw)
     pa_threaded_mainloop_lock(g_pMainLoop);
 
     cbAvail = pa_stream_writable_size (pulse->pStream);
-    if (cbAvail == -1)
+    if (cbAvail == (size_t)-1)
     {
         LogRel(("Pulse: Failed to determine the writable size: %s\n",
                 pa_strerror(pa_context_errno(g_pContext))));

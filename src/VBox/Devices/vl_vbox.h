@@ -145,14 +145,14 @@ DECLINLINE(unsigned) qemu_get_be32(QEMUFile *f)
 {
     uint32_t u32;
     int rc = SSMR3GetU32(f, &u32);
-    return RT_SUCCESS(rc) ? u32 : ~0;
+    return RT_SUCCESS(rc) ? u32 : ~0U;
 }
 
 DECLINLINE(int64_t) qemu_get_be64(QEMUFile *f)
 {
     uint64_t u64;
     int rc = SSMR3GetU64(f, &u64);
-    return RT_SUCCESS(rc) ? u64 : ~0;
+    return RT_SUCCESS(rc) ? (int64_t)u64 : ~0;
 }
 
 #define qemu_put_timer(f, ts)   TMR3TimerSave((ts), (f))
