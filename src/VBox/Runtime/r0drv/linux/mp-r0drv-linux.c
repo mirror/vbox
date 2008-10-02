@@ -49,13 +49,13 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < NR_CPUS ? idCpu : -1;
+    return idCpu < NR_CPUS ? (int)idCpu : -1;
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
-    return iCpu < NR_CPUS ? iCpu : NIL_RTCPUID;
+    return iCpu < NR_CPUS ? (RTCPUID)iCpu : NIL_RTCPUID;
 }
 
 
