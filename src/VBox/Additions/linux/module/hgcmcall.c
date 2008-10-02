@@ -79,7 +79,7 @@ static int vbox_hgcm_get_r3_params(VBoxGuestHGCMCallInfo *hgcmR3,
     VBoxGuestHGCMCallInfo *hgcmR0;
     uint8_t *pu8PointerData;
     size_t cbPointerData = 0, offPointerData = 0;
-    int i;
+    unsigned i;
 
     /* Allocate the structure which we will pass to the kernel space HGCM call. */
     hgcmR0 = kmalloc(sizeof(*hgcmR0) + hgcmR3->cParms * sizeof(HGCMFunctionParameter),
@@ -238,7 +238,7 @@ static void vbox_hgcm_dump_params(VBoxGuestHGCMCallInfo *hgcmR0)
 static int vbox_hgcm_return_r0_struct(VBoxGuestHGCMCallInfo *hgcmR3, void *pUser,
                                       VBoxGuestHGCMCallInfo *hgcmR0)
 {
-   int i;
+    unsigned i;
 
     for (i = 0; i < hgcmR3->cParms; ++i)
     {
