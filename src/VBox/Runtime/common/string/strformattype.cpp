@@ -329,7 +329,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
  */
 RTDECL(int) RTStrFormatTypeDeregister(const char *pszType)
 {
-    uint32_t i;
+    int32_t i;
 
     /*
      * Validate input.
