@@ -231,17 +231,7 @@ typedef DECLCALLBACK(int) FNPDMDEVINITCOMPLETE(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVINITCOMPLETE() function. */
 typedef FNPDMDEVINITCOMPLETE *PFNPDMDEVINITCOMPLETE;
 
-/**
- * APIC version.
- */
-typedef enum
-{
-    APIC_NONE = 0,
-    APIC_XAPIC,
-    APIC_X2APIC,
-    /** The usual 32-bit paranoia. */
-    PDMAPICVERSION_32BIT_HACK = 0x7fffffff
-} PDMAPICVERSION;
+
 
 /** PDM Device Registration Structure,
  * This structure is used when registering a device from
@@ -1053,6 +1043,24 @@ typedef PDMAPICREG *PPDMAPICREG;
 
 
 /**
+ * APIC version argument for pfnChangeFeature.
+ */
+typedef enum PDMAPICVERSION
+{
+    /** Invalid 0 entry. */
+    PDMAPICVERSION_INVALID = 0,
+    /** No APIC. */
+    PDMAPICVERSION_NONE,
+    /** Standard APIC (X86_CPUID_FEATURE_EDX_APIC). */
+    PDMAPICVERSION_APIC,
+    /** Intel X2APIC (X86_CPUID_FEATURE_ECX_X2APIC). */
+    PDMAPICVERSION_X2APIC,
+    /** The usual 32-bit paranoia. */
+    PDMAPICVERSION_32BIT_HACK = 0x7fffffff
+} PDMAPICVERSION;
+
+
+/**
  * APIC RC helpers.
  */
 typedef struct PDMAPICHLPRC
@@ -1080,9 +1088,9 @@ typedef struct PDMAPICHLPRC
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   version         Supported APIC version.
+     * @param   enmVersion      Supported APIC version.
      */
-    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION version));
+    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
 
     /**
      * Acquires the PDM lock.
@@ -1148,9 +1156,9 @@ typedef struct PDMAPICHLPR0
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   version         Supported APIC version.
+     * @param   enmVersion      Supported APIC version.
      */
-    DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION version));
+    DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
 
     /**
      * Acquires the PDM lock.
@@ -1215,9 +1223,9 @@ typedef struct PDMAPICHLPR3
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   version         Supported APIC version.
+     * @param   enmVersion      Supported APIC version.
      */
-    DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION version));
+    DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
 
     /**
      * Acquires the PDM lock.
