@@ -1722,7 +1722,7 @@ const PDMDEVREG g_DeviceICHAC97 =
     /* pszDescription */
     "ICH AC'97 Audio Controller",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS,
     /* fClass */
     PDM_DEVREG_CLASS_AUDIO,
     /* cMaxInstances */

@@ -955,7 +955,7 @@ const PDMDEVREG g_DeviceDMA =
     /* pszDescription */
     "DMA Controller Device",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS,
     /* fClass */
     PDM_DEVREG_CLASS_DMA,
     /* cMaxInstances */

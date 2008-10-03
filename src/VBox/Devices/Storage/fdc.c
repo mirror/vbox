@@ -2945,7 +2945,7 @@ const PDMDEVREG g_DeviceFloppyController =
     /* pszDescription */
     "Floppy drive controller (Intel 82078)",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS,
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */

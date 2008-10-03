@@ -262,7 +262,7 @@ const PDMDEVREG g_DeviceAudioSniffer =
     /* pszDescription */
     "Audio Sniffer device. Redirects audio data to sniffer driver.",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS,
     /* fClass */
     PDM_DEVREG_CLASS_AUDIO,
     /* cMaxInstances */
