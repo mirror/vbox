@@ -350,23 +350,23 @@ typedef MMHYPERHEAP *PMMHYPERHEAP;
  * the number of heap calls, and fragmentation low we allocate all the data
  * related to a MMPAGESUBPOOL node in one chunk. That means that after the
  * bitmap (which is of variable size) comes the SUPPAGE records and then
- * follows the lookup tree nodes.
+ * follows the lookup tree nodes. (The heap in question is the hyper heap.)
  */
 typedef struct MMPAGESUBPOOL
 {
     /** Pointer to next sub pool. */
-    struct MMPAGESUBPOOL   *pNext;
+    R3R0PTRTYPE(struct MMPAGESUBPOOL *) pNext;
     /** Pointer to next sub pool in the free chain.
      * This is NULL if we're not in the free chain or at the end of it. */
-    struct MMPAGESUBPOOL   *pNextFree;
+    R3R0PTRTYPE(struct MMPAGESUBPOOL *) pNextFree;
     /** Pointer to array of lock ranges.
      * This is allocated together with the MMPAGESUBPOOL and thus needs no freeing.
      * It follows immediately after the bitmap.
      * The reserved field is a pointer to this structure.
      */
-    PSUPPAGE                paPhysPages;
+    R3R0PTRTYPE(PSUPPAGE)   paPhysPages;
     /** Pointer to the first page. */
-    void                   *pvPages;
+    R3R0PTRTYPE(void *)     pvPages;
     /** Size of the subpool. */
     unsigned                cPages;
     /** Number of free pages. */
@@ -386,19 +386,19 @@ typedef MMPAGESUBPOOL *PMMPAGESUBPOOL;
 typedef struct MMPAGEPOOL
 {
     /** List of subpools. */
-    PMMPAGESUBPOOL          pHead;
+    R3R0PTRTYPE(PMMPAGESUBPOOL) pHead;
     /** Head of subpools with free pages. */
-    PMMPAGESUBPOOL          pHeadFree;
+    R3R0PTRTYPE(PMMPAGESUBPOOL) pHeadFree;
     /** AVLPV tree for looking up HC virtual addresses.
      * The tree contains MMLOOKUPVIRTPP records.
      */
-    PAVLPVNODECORE          pLookupVirt;
+    R3R0PTRTYPE(PAVLPVNODECORE) pLookupVirt;
     /** Tree for looking up HC physical addresses.
      * The tree contains MMLOOKUPPHYSHC records.
      */
-    AVLHCPHYSTREE           pLookupPhys;
+    R3R0PTRTYPE(AVLHCPHYSTREE)  pLookupPhys;
     /** Pointer to the VM this pool belongs. */
-    PVM                     pVM;
+    R3R0PTRTYPE(PVM)        pVM;
     /** Flag indicating the allocation method.
      * Set: SUPLowAlloc().
      * Clear: SUPPageAlloc() + SUPPageLock(). */
@@ -600,6 +600,7 @@ typedef struct MMLOOKUPHYPER
             /** Host context pointer. */
             R3PTRTYPE(void *)       pvR3;
             /** Host context ring-0 pointer. */
+            /** @todo #1865: Check if this actually works (doubt it) */
             RTR0PTR                 pvR0;
             /** Pointer to the locked mem record. */
             R3PTRTYPE(PMMLOCKEDMEM) pLockedMem;
@@ -610,6 +611,7 @@ typedef struct MMLOOKUPHYPER
         {
             /** Host context pointer. */
             R3PTRTYPE(void *)       pvR3;
+            /** @todo #1865: Add a pvR0 here! */
             /** HC physical address corresponding to pvR3. */
             RTHCPHYS                HCPhys;
         } HCPhys;

@@ -30,6 +30,10 @@
  *      - Locked process memory - Guest RAM and other. (reduce/obsolete this)
  *      - Physical guest memory (RAM & ROM) - Moving to PGM. (obsolete this)
  *
+ * The global memory manager (GMM) is the global counter part / partner of MM.
+ * MM will provide therefore ring-3 callable interfaces for some of the GMM APIs
+ * related to resource tracking (PGM is the user).
+ *
  *
  * @section sec_mm_hma  Hypervisor Memory Area
  *
@@ -138,7 +142,6 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -172,6 +175,8 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
 *******************************************************************************/
 static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+
+
 
 
 /**
@@ -211,7 +216,7 @@ MMR3DECL(int) MMR3InitUVM(PUVM pUVM)
  *
  * MM determins the virtual address of the hypvervisor memory area by
  * checking for location at previous run. If that property isn't available
- * it will choose a default starting location, currently 0xe0000000.
+ * it will choose a default starting location, currently 0xa0000000.
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
@@ -459,7 +464,7 @@ MMR3DECL(int) MMR3Term(PVM pVM)
     pVM->mm.s.pHyperHeapRC   = NIL_RTRCPTR; /* freed above. */
     pVM->mm.s.offVM          = 0;           /* init assertion on this */
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -554,7 +559,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         return rc;
     if (cPages != pVM->mm.s.cBasePages)
     {
-        Log(("mmR3Load: Memory configuration has changed. cPages=%#RX64 saved=%#RX64\n", pVM->mm.s.cBasePages, cPages));
+        LogRel(("mmR3Load: Memory configuration has changed. cPages=%#RX64 saved=%#RX64\n", pVM->mm.s.cBasePages, cPages));
         return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
     }
 
@@ -571,7 +576,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         return rc;
     if (cb != pVM->mm.s.cbRamBase)
     {
-        Log(("mmR3Load: Memory configuration has changed. cbRamBase=%#RX64 save=%#RX64\n", pVM->mm.s.cbRamBase, cb));
+        LogRel(("mmR3Load: Memory configuration has changed. cbRamBase=%#RX64 save=%#RX64\n", pVM->mm.s.cbRamBase, cb));
         return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
     }
 
@@ -804,6 +809,10 @@ int mmR3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage
  * @param   HCPhys      The host context virtual address.
  * @param   ppv         Where to store the resulting address.
  * @thread  The Emulation Thread.
+ *
+ * @remarks Avoid whenever possible.
+ *          Intended for the debugger facility only.
+ * @todo    Rename to indicate the special usage.
  */
 MMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
@@ -842,6 +851,9 @@ MMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  * @param   pvDst       Destination address (HC of course).
  * @param   GCPtr       GC virtual address.
  * @param   cb          Number of bytes to read.
+ *
+ * @remarks Intended for the debugger facility only.
+ * @todo    Move to DBGF, it's only selecting which functions to use!
  */
 MMR3DECL(int) MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
 {
@@ -859,6 +871,9 @@ MMR3DECL(int) MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
  * @param   GCPtrDst    GC virtual address.
  * @param   pvSrc       The source address (HC of course).
  * @param   cb          Number of bytes to read.
+ *
+ * @remarks Intended for the debugger facility only.
+ * @todo    Move to DBGF, it's only selecting which functions to use!
  */
 MMR3DECL(int) MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {

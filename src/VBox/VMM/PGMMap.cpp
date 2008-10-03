@@ -1121,6 +1121,10 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
  * @param   pvDst       The destination address (HC of course).
  * @param   GCPtrSrc    The source address (GC virtual address).
  * @param   cb          Number of bytes to read.
+ *
+ * @remarks The is indirectly for DBGF only.
+ * @todo    Consider renaming it to indicate it's special usage, or just
+ *          reimplement it in MMR3HyperReadGCVirt.
  */
 PGMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {

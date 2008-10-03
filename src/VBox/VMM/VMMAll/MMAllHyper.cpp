@@ -153,7 +153,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap);
 
 
 /**
- * Allocates memory in the Hypervisor (GC VMM) area.
+ * Allocates memory in the Hypervisor (RC VMM) area.
  * The returned memory is of course zeroed.
  *
  * @returns VBox status code.

@@ -20,8 +20,6 @@
  */
 
 
-
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -47,6 +45,8 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
 static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap);
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+
+
 
 
 /**
@@ -514,8 +514,6 @@ MMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, R
 }
 
 
-
-
 /**
  * Locks and Maps HC virtual memory into the hypervisor region in the GC.
  *
@@ -786,7 +784,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
     const uint32_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
     void *pv;
-    int rc = SUPPageAlloc(cbAligned >> PAGE_SHIFT, &pv);
+    int rc = SUPPageAlloc(cbAligned >> PAGE_SHIFT, &pv); /** @todo #1865: heap allocation must be changed for osx (only). */
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1059,6 +1057,8 @@ MMR3DECL(int)   MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  * @param   pvDst       Destination address (HC of course).
  * @param   GCPtr       GC virtual address.
  * @param   cb          Number of bytes to read.
+ *
+ * @remarks For DBGF only.
  */
 MMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
 {
