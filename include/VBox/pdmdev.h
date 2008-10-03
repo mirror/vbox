@@ -300,7 +300,7 @@ typedef PDMDEVREG *PPDMDEVREG;
 typedef PDMDEVREG const *PCPDMDEVREG;
 
 /** Current DEVREG version number. */
-#define PDM_DEVREG_VERSION  0xc0020000
+#define PDM_DEVREG_VERSION                      0xc0020000
 
 /** PDM Device Flags.
  * @{ */
@@ -339,6 +339,9 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 /** The guest bit count mask. */
 #define PDM_DEVREG_FLAGS_GUEST_BITS_MASK        0x00000300
 
+/** A convenience. */
+#define PDM_DEVREG_FLAGS_DEFAULT_BITS           (PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT)
+
 /** Indicates that the devices support PAE36 on a 32-bit guest. */
 #define PDM_DEVREG_FLAGS_PAE36                  0x00001000
 /** @} */
@@ -348,43 +351,43 @@ typedef PDMDEVREG const *PCPDMDEVREG;
  * The order is important, lower bit earlier instantiation.
  * @{ */
 /** Architecture device. */
-#define PDM_DEVREG_CLASS_ARCH           RT_BIT(0)
+#define PDM_DEVREG_CLASS_ARCH                   RT_BIT(0)
 /** Architecture BIOS device. */
-#define PDM_DEVREG_CLASS_ARCH_BIOS      RT_BIT(1)
+#define PDM_DEVREG_CLASS_ARCH_BIOS              RT_BIT(1)
 /** PCI bus brigde. */
-#define PDM_DEVREG_CLASS_BUS_PCI        RT_BIT(2)
+#define PDM_DEVREG_CLASS_BUS_PCI                RT_BIT(2)
 /** ISA bus brigde. */
-#define PDM_DEVREG_CLASS_BUS_ISA        RT_BIT(3)
+#define PDM_DEVREG_CLASS_BUS_ISA                RT_BIT(3)
 /** Input device (mouse, keyboard, joystick, HID, ...). */
-#define PDM_DEVREG_CLASS_INPUT          RT_BIT(4)
+#define PDM_DEVREG_CLASS_INPUT                  RT_BIT(4)
 /** Interrupt controller (PIC). */
-#define PDM_DEVREG_CLASS_PIC            RT_BIT(5)
+#define PDM_DEVREG_CLASS_PIC                    RT_BIT(5)
 /** Interval controoler (PIT). */
-#define PDM_DEVREG_CLASS_PIT            RT_BIT(6)
+#define PDM_DEVREG_CLASS_PIT                    RT_BIT(6)
 /** RTC/CMOS. */
-#define PDM_DEVREG_CLASS_RTC            RT_BIT(7)
+#define PDM_DEVREG_CLASS_RTC                    RT_BIT(7)
 /** DMA controller. */
-#define PDM_DEVREG_CLASS_DMA            RT_BIT(8)
+#define PDM_DEVREG_CLASS_DMA                    RT_BIT(8)
 /** VMM Device. */
-#define PDM_DEVREG_CLASS_VMM_DEV        RT_BIT(9)
+#define PDM_DEVREG_CLASS_VMM_DEV                RT_BIT(9)
 /** Graphics device, like VGA. */
-#define PDM_DEVREG_CLASS_GRAPHICS       RT_BIT(10)
+#define PDM_DEVREG_CLASS_GRAPHICS               RT_BIT(10)
 /** Storage controller device. */
-#define PDM_DEVREG_CLASS_STORAGE        RT_BIT(11)
+#define PDM_DEVREG_CLASS_STORAGE                RT_BIT(11)
 /** Network interface controller. */
-#define PDM_DEVREG_CLASS_NETWORK        RT_BIT(12)
+#define PDM_DEVREG_CLASS_NETWORK                RT_BIT(12)
 /** Audio. */
-#define PDM_DEVREG_CLASS_AUDIO          RT_BIT(13)
+#define PDM_DEVREG_CLASS_AUDIO                  RT_BIT(13)
 /** USB HIC. */
-#define PDM_DEVREG_CLASS_BUS_USB        RT_BIT(14)
+#define PDM_DEVREG_CLASS_BUS_USB                RT_BIT(14)
 /** ACPI. */
-#define PDM_DEVREG_CLASS_ACPI           RT_BIT(15)
+#define PDM_DEVREG_CLASS_ACPI                   RT_BIT(15)
 /** Serial controller device. */
-#define PDM_DEVREG_CLASS_SERIAL         RT_BIT(16)
+#define PDM_DEVREG_CLASS_SERIAL                 RT_BIT(16)
 /** Parallel controller device */
-#define PDM_DEVREG_CLASS_PARALLEL       RT_BIT(17)
+#define PDM_DEVREG_CLASS_PARALLEL               RT_BIT(17)
 /** Misc devices (always last). */
-#define PDM_DEVREG_CLASS_MISC           RT_BIT(31)
+#define PDM_DEVREG_CLASS_MISC                   RT_BIT(31)
 /** @} */
 
 
@@ -392,11 +395,11 @@ typedef PDMDEVREG const *PCPDMDEVREG;
  * @{
  */
 /** Assert the IRQ (can assume value 1). */
-#define PDM_IRQ_LEVEL_HIGH          RT_BIT(0)
+#define PDM_IRQ_LEVEL_HIGH                      RT_BIT(0)
 /** Deassert the IRQ (can assume value 0). */
 #define PDM_IRQ_LEVEL_LOW           0
 /** flip-flop - assert and then deassert it again immediately. */
-#define PDM_IRQ_LEVEL_FLIP_FLOP     (RT_BIT(1) | PDM_IRQ_LEVEL_HIGH)
+#define PDM_IRQ_LEVEL_FLIP_FLOP                 (RT_BIT(1) | PDM_IRQ_LEVEL_HIGH)
 /** @} */
 
 
