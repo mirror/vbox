@@ -262,9 +262,9 @@ static inline int audio_ring_dist (int dst, int src, int len)
 
 #ifndef VBOX
 static void GCC_ATTR dolog (const char *fmt, ...)
-#else 
+#else
 DECLINLINE(void) GCC_ATTR dolog (const char *fmt, ...) /* shuts up unused warnings. */
-#endif 
+#endif
 {
     va_list ap;
 
@@ -274,7 +274,7 @@ DECLINLINE(void) GCC_ATTR dolog (const char *fmt, ...) /* shuts up unused warnin
 }
 
 #ifdef DEBUG
-static void GCC_ATTR ldebug (const char *fmt, ...)
+DECLINLINE(void) GCC_ATTR ldebug (const char *fmt, ...)
 {
     va_list ap;
 
@@ -292,7 +292,7 @@ static void GCC_ATTR ldebug (const char *fmt, ...)
 static void GCC_ATTR ldebug (const char *fmt, ...)
 #else
 DECLINLINE(void) GCC_ATTR ldebug (const char *fmt, ...)  /* shuts up unused warnings. */
-#endif 
+#endif
 {
     (void) fmt;
 }

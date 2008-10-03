@@ -315,7 +315,7 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     AssertReleaseMsgRC(rc, ("rc=%Vrc when resolving g_pdmRCDevHlp\n", rc));
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
+        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
         {
             pDevIns->pDevHlpRC = pDevHlpRC;
             pDevIns->pvInstanceDataRC = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);

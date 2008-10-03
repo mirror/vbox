@@ -5869,7 +5869,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "piix3ide",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
@@ -5881,7 +5881,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
     "  LUN #3 is secondary slave.\n"
     "  LUN #999 is the LED/Status connector.",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
@@ -5913,7 +5913,11 @@ const PDMDEVREG g_DevicePIIX3IDE =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    ataPowerOff
+    ataPowerOff,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

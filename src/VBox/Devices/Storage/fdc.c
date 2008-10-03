@@ -2938,7 +2938,7 @@ const PDMDEVREG g_DeviceFloppyController =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "i82078",
-    /* szGCMod */
+    /* szRCMod */
     "",
     /* szR0Mod */
     "",
@@ -2973,7 +2973,15 @@ const PDMDEVREG g_DeviceFloppyController =
     /* pfnDetach */
     fdcDetach,
     /* pfnQueryInterface. */
-    NULL
+    NULL,
+    /* pfnInitComplete */
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 
 #endif /* VBOX */

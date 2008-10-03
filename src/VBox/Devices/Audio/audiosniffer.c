@@ -255,7 +255,7 @@ const PDMDEVREG g_DeviceAudioSniffer =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "AudioSniffer",
-    /* szGCMod */
+    /* szRCMod */
     "",
     /* szR0Mod */
     "",
@@ -292,5 +292,10 @@ const PDMDEVREG g_DeviceAudioSniffer =
     /* pfnQueryInterface */
     NULL,
     /* pfnInitComplete */
-    NULL
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    PDM_DEVREG_VERSION
 };

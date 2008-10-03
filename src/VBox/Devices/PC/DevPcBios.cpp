@@ -1756,7 +1756,7 @@ const PDMDEVREG g_DevicePcBios =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "pcbios",
-    /* szGCMod */
+    /* szRCMod */
     "",
     /* szR0Mod */
     "",
@@ -1793,6 +1793,12 @@ const PDMDEVREG g_DevicePcBios =
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete. */
-    pcbiosInitComplete
+    pcbiosInitComplete,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 

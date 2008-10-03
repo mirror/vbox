@@ -867,7 +867,7 @@ int pdmR3DevInit(PVM pVM)
         size_t cb = RT_OFFSETOF(PDMDEVINS, achInstanceData[paDevs[i].pDev->pDevReg->cbInstance]);
         cb = RT_ALIGN_Z(cb, 16);
         PPDMDEVINS pDevIns;
-        if (paDevs[i].pDev->pDevReg->fFlags & (PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0))
+        if (paDevs[i].pDev->pDevReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0))
             rc = MMR3HyperAllocOnceNoRel(pVM, cb, 0, MM_TAG_PDM_DEVICE, (void **)&pDevIns);
         else
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, cb, (void **)&pDevIns);
@@ -903,7 +903,7 @@ int pdmR3DevInit(PVM pVM)
         pDevIns->pCfgHandle                     = pConfigNode;
         pDevIns->iInstance                      = paDevs[i].iInstance;
         pDevIns->pvInstanceDataR3               = &pDevIns->achInstanceData[0];
-        pDevIns->pvInstanceDataRC               = pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC
+        pDevIns->pvInstanceDataRC               = pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC
                                                 ? MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3) : NIL_RTRCPTR;
         pDevIns->pvInstanceDataR0               = pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0
                                                 ? MMHyperR3ToR0(pVM, pDevIns->pvInstanceDataR3) : NIL_RTR0PTR;
@@ -1082,11 +1082,11 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
         AssertMsgFailed(("Invalid name '%s'\n", pDevReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (    (pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
-        &&  (   !pDevReg->szGCMod[0]
-             || strlen(pDevReg->szGCMod) >= sizeof(pDevReg->szGCMod)))
+    if (    (pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
+        &&  (   !pDevReg->szRCMod[0]
+             || strlen(pDevReg->szRCMod) >= sizeof(pDevReg->szRCMod)))
     {
-        AssertMsgFailed(("Invalid GC module name '%s' - (Device %s)\n", pDevReg->szGCMod, pDevReg->szDeviceName));
+        AssertMsgFailed(("Invalid GC module name '%s' - (Device %s)\n", pDevReg->szRCMod, pDevReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
     if (    (pDevReg->fFlags & PDM_DEVREG_FLAGS_R0)
@@ -1116,7 +1116,7 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
         AssertMsgFailed(("Max instances %u! (Device %s)\n", pDevReg->cMaxInstances, pDevReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (pDevReg->cbInstance > (RTUINT)(pDevReg->fFlags & (PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M))
+    if (pDevReg->cbInstance > (RTUINT)(pDevReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M))
     {
         AssertMsgFailed(("Instance size %d bytes! (Device %s)\n", pDevReg->cbInstance, pDevReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
@@ -1132,6 +1132,9 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
         Log(("PDM: Rejected device '%s' because it didn't match the guest bits.\n", pDevReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_GUEST_BITS;
     }
+    AssertLogRelMsg(pDevReg->u32VersionEnd == PDM_DEVREG_VERSION,
+                    ("u32VersionEnd=%#x, expected %#x. (szDeviceName=%s)\n",
+                     pDevReg->u32VersionEnd, PDM_DEVREG_VERSION, pDevReg->szDeviceName));
 
     /*
      * Check for duplicate and find FIFO entry at the same time.
@@ -1256,32 +1259,32 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPO
      * Resolve the functions (one of the can be NULL).
      */
     int rc = VINF_SUCCESS;
-    if (    pDevIns->pDevReg->szGCMod[0]
-        &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC))
+    if (    pDevIns->pDevReg->szRCMod[0]
+        &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC))
     {
         RTGCPTR32 GCPtrIn = 0;
         if (pszIn)
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szGCMod, pszIn, &GCPtrIn);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pDevReg->szGCMod, pszIn));
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszIn, &GCPtrIn);
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pDevReg->szRCMod, pszIn));
         }
         RTGCPTR32 GCPtrOut = 0;
         if (pszOut && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szGCMod, pszOut, &GCPtrOut);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pDevReg->szGCMod, pszOut));
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszOut, &GCPtrOut);
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pDevReg->szRCMod, pszOut));
         }
         RTGCPTR32 GCPtrInStr = 0;
         if (pszInStr && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szGCMod, pszInStr, &GCPtrInStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pDevReg->szGCMod, pszInStr));
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszInStr, &GCPtrInStr);
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pDevReg->szRCMod, pszInStr));
         }
         RTGCPTR32 GCPtrOutStr = 0;
         if (pszOutStr && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szGCMod, pszOutStr, &GCPtrOutStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pDevReg->szGCMod, pszOutStr));
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszOutStr, &GCPtrOutStr);
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pDevReg->szRCMod, pszOutStr));
         }
 
         if (VBOX_SUCCESS(rc))
@@ -1401,27 +1404,27 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS
      * Not all function have to present, leave it to IOM to enforce this.
      */
     int rc = VINF_SUCCESS;
-    if (    pDevIns->pDevReg->szGCMod[0]
-        &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC))
+    if (    pDevIns->pDevReg->szRCMod[0]
+        &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC))
     {
         RTGCPTR32 GCPtrWrite = 0;
         if (pszWrite)
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szGCMod, pszWrite, &GCPtrWrite);
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszWrite, &GCPtrWrite);
         RTGCPTR32 GCPtrRead = 0;
         int rc2 = VINF_SUCCESS;
         if (pszRead)
-            rc2 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szGCMod, pszRead, &GCPtrRead);
+            rc2 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszRead, &GCPtrRead);
         RTGCPTR32 GCPtrFill = 0;
         int rc3 = VINF_SUCCESS;
         if (pszFill)
-            rc3 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szGCMod, pszFill, &GCPtrFill);
+            rc3 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszFill, &GCPtrFill);
         if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(rc2) && VBOX_SUCCESS(rc3))
             rc = IOMR3MMIORegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, GCPtrWrite, GCPtrRead, GCPtrFill);
         else
         {
-            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pDevReg->szGCMod, pszWrite));
-            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pDevReg->szGCMod, pszRead));
-            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pDevReg->szGCMod, pszFill));
+            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pDevReg->szRCMod, pszWrite));
+            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pDevReg->szRCMod, pszRead));
+            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pDevReg->szRCMod, pszFill));
             if (VBOX_FAILURE(rc2) && VBOX_SUCCESS(rc))
                 rc = rc2;
             if (VBOX_FAILURE(rc3) && VBOX_SUCCESS(rc))
@@ -1609,12 +1612,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     int rc;
     if (pBus)
     {
-        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
+        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
             pDevIns->Internal.s.pPciBusR0 = MMHyperR3ToR0(pVM, pDevIns->Internal.s.pPciBusR3);
         else
             pDevIns->Internal.s.pPciBusR0 = NIL_RTR0PTR;
 
-        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
+        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
             pDevIns->Internal.s.pPciBusRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusR3);
         else
             pDevIns->Internal.s.pPciBusRC = NIL_RTRCPTR;
@@ -1673,7 +1676,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
             else
                 pDevIns->Internal.s.pPciDeviceR0 = NIL_RTR0PTR;
 
-            if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
+            if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
                 pDevIns->Internal.s.pPciDeviceRC = MMHyperR3ToRC(pVM, pPciDev);
             else
                 pDevIns->Internal.s.pPciDeviceRC = NIL_RTRCPTR;
@@ -2455,8 +2458,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
      */
     if (pPciBusReg->pszSetIrqRC)
     {
-        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pPciBusReg->pszSetIrqRC, &pPciBus->pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pPciBusReg->pszSetIrqRC, rc));
+        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pPciBusReg->pszSetIrqRC, &pPciBus->pfnSetIrqRC);
+        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pPciBusReg->pszSetIrqRC, rc));
         if (VBOX_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
@@ -2552,9 +2555,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
         return VERR_INVALID_PARAMETER;
     }
     if (    pPicReg->pszSetIrqRC
-        &&  !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC))
+        &&  !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC))
     {
-        Assert(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC);
+        Assert(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC);
         LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc (RC flag)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -2588,12 +2591,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
      */
     if (pPicReg->pszSetIrqRC)
     {
-        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pPicReg->pszSetIrqRC, &pVM->pdm.s.Pic.pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pPicReg->pszSetIrqRC, rc));
+        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pPicReg->pszSetIrqRC, &pVM->pdm.s.Pic.pfnSetIrqRC);
+        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pPicReg->pszSetIrqRC, rc));
         if (VBOX_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pPicReg->pszGetInterruptRC, &pVM->pdm.s.Pic.pfnGetInterruptRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pPicReg->pszGetInterruptRC, rc));
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pPicReg->pszGetInterruptRC, &pVM->pdm.s.Pic.pfnGetInterruptRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pPicReg->pszGetInterruptRC, rc));
         }
         if (VBOX_FAILURE(rc))
         {
@@ -2767,37 +2770,37 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
      */
     if (pApicReg->pszGetInterruptRC)
     {
-        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszGetInterruptRC, &pVM->pdm.s.Apic.pfnGetInterruptRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszGetInterruptRC, rc));
+        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszGetInterruptRC, &pVM->pdm.s.Apic.pfnGetInterruptRC);
+        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetInterruptRC, rc));
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszHasPendingIrqRC, &pVM->pdm.s.Apic.pfnHasPendingIrqRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszHasPendingIrqRC, rc));
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszHasPendingIrqRC, &pVM->pdm.s.Apic.pfnHasPendingIrqRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszHasPendingIrqRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszSetBaseRC, &pVM->pdm.s.Apic.pfnSetBaseRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszSetBaseRC, rc));
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszSetBaseRC, &pVM->pdm.s.Apic.pfnSetBaseRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszSetBaseRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszGetBaseRC, &pVM->pdm.s.Apic.pfnGetBaseRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszGetBaseRC, rc));
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszGetBaseRC, &pVM->pdm.s.Apic.pfnGetBaseRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetBaseRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszSetTPRRC, &pVM->pdm.s.Apic.pfnSetTPRRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszSetTPRRC, rc));
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszSetTPRRC, &pVM->pdm.s.Apic.pfnSetTPRRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszSetTPRRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszGetTPRRC, &pVM->pdm.s.Apic.pfnGetTPRRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszGetTPRRC, rc));
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszGetTPRRC, &pVM->pdm.s.Apic.pfnGetTPRRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetTPRRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pApicReg->pszBusDeliverRC, &pVM->pdm.s.Apic.pfnBusDeliverRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pApicReg->pszBusDeliverRC, rc));
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszBusDeliverRC, &pVM->pdm.s.Apic.pfnBusDeliverRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszBusDeliverRC, rc));
         }
         if (VBOX_FAILURE(rc))
         {
@@ -2974,8 +2977,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
      */
     if (pIoApicReg->pszSetIrqRC)
     {
-        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, pIoApicReg->pszSetIrqRC, &pVM->pdm.s.IoApic.pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szGCMod, pIoApicReg->pszSetIrqRC, rc));
+        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pIoApicReg->pszSetIrqRC, &pVM->pdm.s.IoApic.pfnSetIrqRC);
+        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pIoApicReg->pszSetIrqRC, rc));
         if (VBOX_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));

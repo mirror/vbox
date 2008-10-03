@@ -1558,14 +1558,14 @@ const PDMDEVREG g_DevicePCI =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "pci",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
     "i440FX PCI bridge and PIIX3 ISA bridge.",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32 | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_BUS_PCI | PDM_DEVREG_CLASS_BUS_ISA,
     /* cMaxInstances */
@@ -1595,7 +1595,14 @@ const PDMDEVREG g_DevicePCI =
     /* pfnQueryInterface */
     NULL,
     /* pfnInitComplete */
-    NULL
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
+
 };
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

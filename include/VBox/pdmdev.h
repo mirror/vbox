@@ -244,11 +244,11 @@ typedef struct PDMDEVREG
     uint32_t            u32Version;
     /** Device name. */
     char                szDeviceName[32];
-    /** Name of guest context module (no path).
-     * Only evalutated if PDM_DEVREG_FLAGS_GC is set. */
-    char                szGCMod[32];
-    /** Name of guest context module (no path).
-     * Only evalutated if PDM_DEVREG_FLAGS_GC is set. */
+    /** Name of the raw-mode context module (no path).
+     * Only evalutated if PDM_DEVREG_FLAGS_RC is set. */
+    char                szRCMod[32];
+    /** Name of the ring-0 module (no path).
+     * Only evalutated if PDM_DEVREG_FLAGS_R0 is set. */
     char                szR0Mod[32];
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
@@ -289,6 +289,10 @@ typedef struct PDMDEVREG
     PFNPDMDEVINITCOMPLETE   pfnInitComplete;
     /** Power off notification - optional. */
     PFNPDMDEVPOWEROFF   pfnPowerOff;
+    /** @todo */
+    PFNRT               pfnSoftReset;
+    /** Initialization safty marker. */
+    uint32_t            u32VersionEnd;
 } PDMDEVREG;
 /** Pointer to a PDM Device Structure. */
 typedef PDMDEVREG *PPDMDEVREG;
@@ -296,33 +300,33 @@ typedef PDMDEVREG *PPDMDEVREG;
 typedef PDMDEVREG const *PCPDMDEVREG;
 
 /** Current DEVREG version number. */
-#define PDM_DEVREG_VERSION  0xc0010000
+#define PDM_DEVREG_VERSION  0xc0020000
 
 /** PDM Device Flags.
  * @{ */
-/** This flag is used to indicate that the device has a GC component. */
-#define PDM_DEVREG_FLAGS_GC                     0x00000001
+/** This flag is used to indicate that the device has a RC component. */
+#define PDM_DEVREG_FLAGS_RC                     0x00000001
 /** This flag is used to indicate that the device has a R0 component. */
-#define PDM_DEVREG_FLAGS_R0                     0x00010000
+#define PDM_DEVREG_FLAGS_R0                     0x00000002
 
 /** @def PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT
  * The bit count for the current host. */
 #if HC_ARCH_BITS == 32
-# define PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT     0x00000002
+# define PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT     0x00000010
 #elif HC_ARCH_BITS == 64
-# define PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT     0x00000004
+# define PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT     0x00000020
 #else
 # error Unsupported HC_ARCH_BITS value.
 #endif
 /** The host bit count mask. */
-#define PDM_DEVREG_FLAGS_HOST_BITS_MASK         0x00000006
+#define PDM_DEVREG_FLAGS_HOST_BITS_MASK         0x00000030
 
 /** The device support only 32-bit guests. */
-#define PDM_DEVREG_FLAGS_GUEST_BITS_32          0x00000008
+#define PDM_DEVREG_FLAGS_GUEST_BITS_32          0x00000100
 /** The device support only 64-bit guests. */
-#define PDM_DEVREG_FLAGS_GUEST_BITS_64          0x00000010
+#define PDM_DEVREG_FLAGS_GUEST_BITS_64          0x00000200
 /** The device support both 32-bit & 64-bit guests. */
-#define PDM_DEVREG_FLAGS_GUEST_BITS_32_64       0x00000018
+#define PDM_DEVREG_FLAGS_GUEST_BITS_32_64       0x00000300
 /** @def PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT
  * The guest bit count for the current compilation. */
 #if GC_ARCH_BITS == 32
@@ -333,10 +337,10 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 # error Unsupported GC_ARCH_BITS value.
 #endif
 /** The guest bit count mask. */
-#define PDM_DEVREG_FLAGS_GUEST_BITS_MASK        0x00000018
+#define PDM_DEVREG_FLAGS_GUEST_BITS_MASK        0x00000300
 
 /** Indicates that the devices support PAE36 on a 32-bit guest. */
-#define PDM_DEVREG_FLAGS_PAE36                  0x00000020
+#define PDM_DEVREG_FLAGS_PAE36                  0x00001000
 /** @} */
 
 
@@ -351,7 +355,7 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 #define PDM_DEVREG_CLASS_BUS_PCI        RT_BIT(2)
 /** ISA bus brigde. */
 #define PDM_DEVREG_CLASS_BUS_ISA        RT_BIT(3)
-/** Input device (mouse, keyboard, joystick,..). */
+/** Input device (mouse, keyboard, joystick, HID, ...). */
 #define PDM_DEVREG_CLASS_INPUT          RT_BIT(4)
 /** Interrupt controller (PIC). */
 #define PDM_DEVREG_CLASS_PIC            RT_BIT(5)

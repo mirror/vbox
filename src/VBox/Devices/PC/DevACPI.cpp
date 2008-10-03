@@ -1952,14 +1952,14 @@ const PDMDEVREG g_DeviceACPI =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "acpi",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
     "Advanced Configuration and Power Interface",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_ACPI,
     /* cMaxInstances */
@@ -1987,7 +1987,15 @@ const PDMDEVREG g_DeviceACPI =
     /* pfnDetach */
     NULL,
     /* pfnQueryInterface. */
-    NULL
+    NULL,
+    /* pfnInitComplete */
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 
 #endif /* IN_RING3 */
