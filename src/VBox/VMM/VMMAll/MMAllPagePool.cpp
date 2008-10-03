@@ -94,7 +94,7 @@ MMDECL(RTHCPHYS) mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv)
  */
 MMDECL(void *) mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
 {
-#if 0 /** @todo have to fix the debugger, but until then this is going on my nevers. */
+#if 0 /** @todo have to fix the debugger, but until then this is going on my nerves. */
 #ifdef IN_RING3
     VM_ASSERT_EMT(pPool->pVM);
 #endif
@@ -220,3 +220,4 @@ MMDECL(int) MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
     *ppvPage = pvPage;
     return VINF_SUCCESS;
 }
+
