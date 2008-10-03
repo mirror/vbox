@@ -52,7 +52,7 @@
 /** @def PDMINS_2_DATA_RCPTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a RC pointer to the instance data.
  */
-#define PDMINS_2_DATA_RCPTR(pIns)   ( (pIns)->pvInstanceDataGC )
+#define PDMINS_2_DATA_RCPTR(pIns)   ( (pIns)->pvInstanceDataRC )
 
 /** @def PDMINS_2_DATA_R3PTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a HC pointer to the instance data.
