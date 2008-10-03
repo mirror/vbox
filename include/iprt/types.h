@@ -895,9 +895,9 @@ typedef const RTGCUINTREG  *PCRTGCUINTREG;
  * @{
  */
 
-/** Raw mode context pointer; a 32 bits guest context pointer
+/** Raw mode context pointer; a 32 bits guest context pointer.
  * Keep in mind that this type is an unsigned integer in
- * HC and void pointer in GC.
+ * HC and void pointer in RC.
  */
 #ifdef IN_GC
 typedef void *          RTRCPTR;
@@ -912,14 +912,28 @@ typedef const RTRCPTR  *PCRTRCPTR;
  * NIL RC pointer.
  */
 #define NIL_RTRCPTR    ((RTRCPTR)0)
-
 /** @def RTRCPTR_MAX
  * The maximum value a RTRCPTR can have. Mostly used as INVALID value.
  */
-#define RTRCPTR_MAX    ((RTRCPTR)~0)
+#define RTRCPTR_MAX    ((RTRCPTR)UINT32_MAX)
 
-typedef int32_t       RTRCINTPTR;
-typedef uint32_t      RTRCUINTPTR;
+/** Raw mode context pointer, unsigned integer variant. */
+typedef int32_t         RTRCINTPTR;
+/** @def RTRCUINPTR_MAX
+ * The maximum value a RTRCUINPTR can have.
+ */
+#define RTRCUINTPTR_MAX ((RTRCUINTPTR)UINT32_MAX)
+
+/** Raw mode context pointer, signed integer variant. */
+typedef uint32_t        RTRCUINTPTR;
+/** @def RTRCINPTR_MIN
+ * The minimum value a RTRCINPTR can have.
+ */
+#define RTRCINTPTR_MIN ((RTRCINTPTR)INT32_MIN)
+/** @def RTRCINPTR_MAX
+ * The maximum value a RTRCINPTR can have.
+ */
+#define RTRCINTPTR_MAX ((RTRCINTPTR)INT32_MAX)
 
 /** @} */
 

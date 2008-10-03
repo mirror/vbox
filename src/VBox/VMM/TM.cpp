@@ -733,34 +733,34 @@ TMR3DECL(int) TMR3InitFinalize(PVM pVM)
 {
     int rc;
 
-    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
     AssertRCReturn(rc, rc);
-    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
     AssertRCReturn(rc, rc);
     if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
     else
         AssertFatalFailed();
     AssertRCReturn(rc, rc);
 
-    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
+    rc = PDMR3LdrGetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
     AssertRCReturn(rc, rc);
-    rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
+    rc = PDMR3LdrGetSymbolR0Lazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
     AssertRCReturn(rc, rc);
     if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
-        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawR0);
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawR0);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
-        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawR0);
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawR0);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
-        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawR0);
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawR0);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
-        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawR0);
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawR0);
     else
         AssertFatalFailed();
     AssertRCReturn(rc, rc);
@@ -788,19 +788,19 @@ TMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
     pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     AssertFatal(pVM->tm.s.VirtualGetRawDataGC.pu64Prev);
-    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
     AssertFatalRC(rc);
-    rc = PDMR3GetSymbolGCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
     AssertFatalRC(rc);
 
     if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
     else
         AssertFatalFailed();
     AssertFatalRC(rc);

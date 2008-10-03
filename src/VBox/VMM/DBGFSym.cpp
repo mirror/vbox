@@ -763,19 +763,19 @@ DBGFR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR pof
     if (MMHyperIsInsideArea(pVM, Address))
     {
         char        szModName[64];
-        RTGCPTR     GCPtrMod;
+        RTRCPTR     RCPtrMod;
         char        szNearSym1[260];
-        RTGCPTR     GCPtrNearSym1;
+        RTRCPTR     RCPtrNearSym1;
         char        szNearSym2[260];
-        RTGCPTR     GCPtrNearSym2;
-        int rc = PDMR3QueryModFromEIP(pVM, Address,
-                                      &szModName[0],  sizeof(szModName),  &GCPtrMod,
-                                      &szNearSym1[0], sizeof(szNearSym1), &GCPtrNearSym1,
-                                      &szNearSym2[0], sizeof(szNearSym2), &GCPtrNearSym2);
+        RTRCPTR     RCPtrNearSym2;
+        int rc = PDMR3LdrQueryRCModFromPC(pVM, Address,
+                                          &szModName[0],  sizeof(szModName),  &RCPtrMod,
+                                          &szNearSym1[0], sizeof(szNearSym1), &RCPtrNearSym1,
+                                          &szNearSym2[0], sizeof(szNearSym2), &RCPtrNearSym2);
         if (VBOX_SUCCESS(rc) && szNearSym1[0])
         {
-            pSymbol->Value = GCPtrNearSym1;
-            pSymbol->cb = GCPtrNearSym2 > GCPtrNearSym1 ? GCPtrNearSym2 - GCPtrNearSym1 : 0;
+            pSymbol->Value = RCPtrNearSym1;
+            pSymbol->cb = RCPtrNearSym2 > RCPtrNearSym1 ? RCPtrNearSym2 - RCPtrNearSym1 : 0;
             pSymbol->fFlags = 0;
             pSymbol->szName[0] = '\0';
             strncat(pSymbol->szName, szNearSym1,  sizeof(pSymbol->szName) - 1);
