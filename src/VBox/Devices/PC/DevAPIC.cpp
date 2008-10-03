@@ -321,13 +321,13 @@ DECLINLINE(VMCPUID) getCpuFromLapic(APICDeviceInfo* dev, APICState *s)
 
 DECLINLINE(void) cpuSetInterrupt(APICDeviceInfo* dev, APICState *s)
 {
-    dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns), 
+    dev->CTX_SUFF(pApicHlp)->pfnSetInterruptFF(dev->CTX_SUFF(pDevIns),
                                                getCpuFromLapic(dev, s));
 }
 
 DECLINLINE(void) cpuClearInterrupt(APICDeviceInfo* dev, APICState *s)
 {
-    dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns), 
+    dev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(dev->CTX_SUFF(pDevIns),
                                                  getCpuFromLapic(dev, s));
 }
 
@@ -1558,7 +1558,7 @@ static void ioapic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t va
                 return;
             default:
                 index = (s->ioregsel - 0x10) >> 1;
-                if (index >= 0 && index < IOAPIC_NUM_PINS) {                    
+                if (index >= 0 && index < IOAPIC_NUM_PINS) {
                     if (s->ioregsel & 1) {
                         s->ioredtbl[index] &= 0xffffffff;
                         s->ioredtbl[index] |= (uint64_t)val << 32;
@@ -1575,7 +1575,7 @@ static void ioapic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t va
                         else
                         {
                             /*
-                             * Linux 2.6 kernels has pretty strange function 
+                             * Linux 2.6 kernels has pretty strange function
                              * unlock_ExtINT_logic() which writes
                              * absolutely bogus (all 0) value into the vector
                              * with pretty vague explanation why.
@@ -1986,8 +1986,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszBusDeliverR0     = NULL;
     }
 
-    Assert(pDevIns->pDevHlp->pfnAPICRegister);
-    rc = pDevIns->pDevHlp->pfnAPICRegister(pDevIns, &ApicReg, &pThis->pApicHlpR3);
+    Assert(pDevIns->pDevHlpR3->pfnAPICRegister);
+    rc = pDevIns->pDevHlpR3->pfnAPICRegister(pDevIns, &ApicReg, &pThis->pApicHlpR3);
     if (RT_FAILURE(rc))
     {
         AssertLogRelMsgFailed(("APICRegister -> %Rrc\n", rc));
@@ -2285,7 +2285,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     IoApicReg.pfnSetIrqR3 = ioapicSetIrq;
     IoApicReg.pszSetIrqRC = fGCEnabled ? "ioapicSetIrq" : NULL;
     IoApicReg.pszSetIrqR0 = fR0Enabled ? "ioapicSetIrq" : NULL;
-    rc = pDevIns->pDevHlp->pfnIOAPICRegister(pDevIns, &IoApicReg, &s->pIoApicHlpR3);
+    rc = pDevIns->pDevHlpR3->pfnIOAPICRegister(pDevIns, &IoApicReg, &s->pIoApicHlpR3);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("IOAPICRegister -> %Rrc\n", rc));

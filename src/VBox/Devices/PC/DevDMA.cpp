@@ -925,8 +925,8 @@ static DECLCALLBACK(int) DMAConstruct(PPDMDEVINS pDevIns,
     reg.pfnSetDREQ        = set_DREQ_wrapper;
     reg.pfnGetChannelMode = get_mode_wrapper;
 
-    Assert(pDevIns->pDevHlp->pfnDMARegister);
-    rc = pDevIns->pDevHlp->pfnDMACRegister (pDevIns, &reg, &s->pHlp);
+    Assert(pDevIns->pDevHlpR3->pfnDMARegister);
+    rc = pDevIns->pDevHlpR3->pfnDMACRegister (pDevIns, &reg, &s->pHlp);
     if (RT_FAILURE (rc)) {
         return rc;
     }

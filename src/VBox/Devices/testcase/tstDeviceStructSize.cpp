@@ -212,7 +212,7 @@ int main()
     /*
      * Misc alignment checks.
      */
-    CHECK_MEMBER_ALIGNMENT(PDMDEVINS, achInstanceData, 32);
+    CHECK_MEMBER_ALIGNMENT(PDMDEVINS, achInstanceData, 64);
     CHECK_MEMBER_ALIGNMENT(PCIDEVICE, Int.s, 16);
     CHECK_MEMBER_ALIGNMENT(PCIDEVICE, Int.s.aIORegions, 16);
     CHECK_MEMBER_ALIGNMENT(PCIBUS, devices, 16);

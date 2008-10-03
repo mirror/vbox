@@ -4887,7 +4887,7 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
     fVMLocked = VMMR3LockIsOwner(PDMDevHlpGetVM(pDevIns));
 
     if (fVMLocked)
-        pDevIns->pDevHlp->pfnUnlockVM(pDevIns);
+        pDevIns->pDevHlpR3->pfnUnlockVM(pDevIns);
     /*
      * Wait for any pending async operation to finish
      */
@@ -4912,7 +4912,7 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
     }
 
     if (fVMLocked)
-        pDevIns->pDevHlp->pfnLockVM(pDevIns);
+        pDevIns->pDevHlpR3->pfnLockVM(pDevIns);
 
     if (!fAllIdle)
         LogRel(("PIIX3 ATA: Ctl#%d is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",

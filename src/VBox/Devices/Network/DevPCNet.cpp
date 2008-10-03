@@ -1431,7 +1431,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pThis)
                                           g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
                                           pThis->pDevInsHC->pvInstanceDataHC,
                                           g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
-                                          pThis->pDevInsHC->pvInstanceDataGC,
+                                          pThis->pDevInsHC->pvInstanceDataRC,
                                           "PCNet receive ring write access handler");
         AssertRC(rc);
 
@@ -1470,7 +1470,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pThis)
                                               g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
                                               pThis->pDevInsHC->pvInstanceDataHC,
                                               g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
-                                              pThis->pDevInsHC->pvInstanceDataGC,
+                                              pThis->pDevInsHC->pvInstanceDataRC,
                                               "PCNet transmit ring write access handler");
             AssertRC(rc);
 
