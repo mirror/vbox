@@ -94,16 +94,16 @@ int main()
     /* misc */
     GEN_CHECK_SIZE(PDMDEVINS);
     GEN_CHECK_OFF(PDMDEVINS, Internal);
-    GEN_CHECK_OFF(PDMDEVINS, pDevHlp);
-    GEN_CHECK_OFF(PDMDEVINS, pDevHlpGC);
-    GEN_CHECK_OFF(PDMDEVINS, pDevHlpR0);
     GEN_CHECK_OFF(PDMDEVINS, pDevReg);
     GEN_CHECK_OFF(PDMDEVINS, pCfgHandle);
     GEN_CHECK_OFF(PDMDEVINS, iInstance);
-    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataR3);
-    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataGC);
-    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataR0);
     GEN_CHECK_OFF(PDMDEVINS, IBase);
+    GEN_CHECK_OFF(PDMDEVINS, pDevHlpR3);
+    GEN_CHECK_OFF(PDMDEVINS, pDevHlpR0);
+    GEN_CHECK_OFF(PDMDEVINS, pDevHlpRC);
+    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataR3);
+    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataR0);
+    GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataRC);
     GEN_CHECK_OFF(PDMDEVINS, achInstanceData);
 
     /* DevPCI.cpp */

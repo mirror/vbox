@@ -4793,7 +4793,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
                                               GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
                                               vgaR3LFBAccessHandler, pThis,
                                               g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pDevIns->pvInstanceDataR0,
-                                              g_DeviceVga.szGCMod, "vgaGCLFBAccessHandler", pDevIns->pvInstanceDataGC,
+                                              g_DeviceVga.szGCMod, "vgaGCLFBAccessHandler", pDevIns->pvInstanceDataRC,
                                               "VGA LFB");
             AssertRC(rc);
             if (RT_SUCCESS(rc))
