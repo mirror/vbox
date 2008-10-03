@@ -480,7 +480,7 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
 
         /* Clear any pending APIC interrupt action flag. */
         cpuClearInterrupt(dev, s);
-        dev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, false);
+        dev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, APIC_NONE);
     }
     /* APIC_UNLOCK(dev); */
 }
@@ -1831,7 +1831,7 @@ static DECLCALLBACK(void) apicReset(PPDMDEVINS pDevIns)
     s->arb_id = 0;
     /* Reset should re-enable the APIC. */
     s->apicbase = 0xfee00000 | MSR_IA32_APICBASE_BSP | MSR_IA32_APICBASE_ENABLE;
-    dev->pApicHlpR3->pfnChangeFeature(dev->pDevInsR3, true);
+    dev->pApicHlpR3->pfnChangeFeature(dev->pDevInsR3, APIC_XAPIC);
     /* Clear any pending APIC interrupt action flag. */
     cpuClearInterrupt(dev, s);
     APIC_UNLOCK(dev);
@@ -2010,7 +2010,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                       && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */))
         {
             LogRel(("Activating Local APIC\n"));
-            pThis->pApicHlpR3->pfnChangeFeature(pDevIns, true);
+            pThis->pApicHlpR3->pfnChangeFeature(pDevIns, APIC_XAPIC);
         }
     }
 

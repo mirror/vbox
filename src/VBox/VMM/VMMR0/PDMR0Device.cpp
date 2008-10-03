@@ -100,7 +100,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns);
  */
 static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
 static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
-static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled);
+static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION version);
 static DECLCALLBACK(int) pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
@@ -419,14 +419,27 @@ static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCP
 
 
 /** @copydoc PDMAPICHLPR0::pfnChangeFeature */
-static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, bool fEnabled)
+static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION version)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR0ApicHlp_ChangeFeature: caller=%p/%d: fEnabled=%RTbool\n", pDevIns, pDevIns->iInstance, fEnabled));
-    if (fEnabled)
-        CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
-    else
-        CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
+    LogFlow(("pdmR0ApicHlp_ChangeFeature: caller=%p/%d: version=%d\n", pDevIns, pDevIns->iInstance, version));
+    switch (version)
+    {
+        case APIC_NONE:
+            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
+            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_X2APIC);
+            break;
+        case APIC_XAPIC:
+            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
+            CPUMClearGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_X2APIC);
+            break;
+        case APIC_X2APIC:
+            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_X2APIC);
+            CPUMSetGuestCpuIdFeature(pDevIns->Internal.s.pVMR0, CPUMCPUIDFEATURE_APIC);
+            break;
+        default:
+            AssertMsgFailed(("Unknown APIC version: %d\n", (int)version));
+    }
 }
 
 
