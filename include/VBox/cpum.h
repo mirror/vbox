@@ -581,6 +581,8 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_LONG_MODE,
     /** The PAT feature bit. (Std+Ext) */
     CPUMCPUIDFEATURE_PAT,
+    /** The x2APIC  feature bit. (Std) */
+    CPUMCPUIDFEATURE_X2APIC,
     /** 32bit hackishness. */
     CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;
