@@ -231,7 +231,17 @@ typedef DECLCALLBACK(int) FNPDMDEVINITCOMPLETE(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVINITCOMPLETE() function. */
 typedef FNPDMDEVINITCOMPLETE *PFNPDMDEVINITCOMPLETE;
 
-
+/**
+ * APIC version.
+ */
+typedef enum
+{
+    APIC_NONE = 0,
+    APIC_XAPIC,
+    APIC_X2APIC,
+    /** The usual 32-bit paranoia. */
+    PDMAPICVERSION_32BIT_HACK = 0x7fffffff
+} PDMAPICVERSION;
 
 /** PDM Device Registration Structure,
  * This structure is used when registering a device from
@@ -1067,12 +1077,12 @@ typedef struct PDMAPICHLPRC
     DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
-     * Sets or clears the APIC bit in the CPUID feature masks.
+     * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   fEnabled        If true the bit is set, else cleared.
+     * @param   version         Supported APIC version.
      */
-    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
+    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION version));
 
     /**
      * Acquires the PDM lock.
@@ -1135,12 +1145,12 @@ typedef struct PDMAPICHLPR0
     DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
-     * Sets or clears the APIC bit in the CPUID feature masks.
+     * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   fEnabled        If true the bit is set, else cleared.
+     * @param   version         Supported APIC version.
      */
-    DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
+    DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION version));
 
     /**
      * Acquires the PDM lock.
@@ -1202,12 +1212,12 @@ typedef struct PDMAPICHLPR3
     DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
-     * Sets or clears the APIC bit in the CPUID feature masks.
+     * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
-     * @param   fEnabled        If true the bit is set, else cleared.
+     * @param   version         Supported APIC version.
      */
-    DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, bool fEnabled));
+    DECLR3CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION version));
 
     /**
      * Acquires the PDM lock.
