@@ -84,33 +84,41 @@ typedef struct PDMDEVINSINT
 {
     /** Pointer to the next instance (HC Ptr).
      * (Head is pointed to by PDM::pDevInstances.) */
-    R3PTRTYPE(PPDMDEVINS)           pNextHC;
+    R3PTRTYPE(PPDMDEVINS)           pNextR3;
     /** Pointer to the next per device instance (HC Ptr).
      * (Head is pointed to by PDMDEV::pInstances.) */
-    R3PTRTYPE(PPDMDEVINS)           pPerDeviceNextHC;
-
+    R3PTRTYPE(PPDMDEVINS)           pPerDeviceNextR3;
     /** Pointer to device structure - HC Ptr. */
-    R3PTRTYPE(PPDMDEV)              pDevHC;
-
-    /** Pointer to the VM this instance was created for - HC Ptr. */
-    R3R0PTRTYPE(PVM)                pVMHC;
+    R3PTRTYPE(PPDMDEV)              pDevR3;
     /** Pointer to the list of logical units associated with the device. (FIFO) */
-    R3PTRTYPE(PPDMLUN)              pLunsHC;
+    R3PTRTYPE(PPDMLUN)              pLunsR3;
     /** Configuration handle to the instance node. */
     R3PTRTYPE(PCFGMNODE)            pCfgHandle;
-    /** HC pointer to associated PCI device structure. */
-    R3R0PTRTYPE(struct PCIDevice *) pPciDeviceHC;
-    /** HC pointer to associated PCI bus structure. */
-    R3R0PTRTYPE(PPDMPCIBUS)         pPciBusHC;
 
-    /** GC pointer to associated PCI device structure. */
-    RCPTRTYPE(struct PCIDevice *)   pPciDeviceGC;
-    /** Pointer to the VM this instance was created for - GC Ptr. */
-    RCPTRTYPE(PVM)                  pVMGC;
-    /** GC pointer to associated PCI bus structure. */
-    RCPTRTYPE(PPDMPCIBUS)           pPciBusGC;
+    /** R3 pointer to the VM this instance was created for. */
+    PVMR3                           pVMR3;
+    /** R3 pointer to associated PCI device structure. */
+    R3PTRTYPE(struct PCIDevice *)   pPciDeviceR3;
+    /** R3 pointer to associated PCI bus structure. */
+    R3PTRTYPE(PPDMPCIBUS)           pPciBusR3;
+
+    /** R0 pointer to the VM this instance was created for. */
+    PVMR0                           pVMR0;
+    /** R0 pointer to associated PCI device structure. */
+    R0PTRTYPE(struct PCIDevice *)   pPciDeviceR0;
+    /** R0 pointer to associated PCI bus structure. */
+    R0PTRTYPE(PPDMPCIBUS)           pPciBusR0;
     /** Alignment padding. */
-    uint32_t                        Alignment0;
+    RTR0PTR                         Alignment0;
+
+    /** RC pointer to the VM this instance was created for. */
+    PVMRC                           pVMRC;
+    /** RC pointer to associated PCI device structure. */
+    RCPTRTYPE(struct PCIDevice *)   pPciDeviceRC;
+    /** RC pointer to associated PCI bus structure. */
+    RCPTRTYPE(PPDMPCIBUS)           pPciBusRC;
+    /** Alignment padding. */
+    RTRCPTR                         Alignment1;
 } PDMDEVINSINT;
 
 
@@ -160,21 +168,21 @@ typedef struct PDMDRVINSINT
 {
     /** Pointer to the driver instance above.
      * This is NULL for the topmost drive. */
-    PPDMDRVINS          pUp;
+    PPDMDRVINS                      pUp;
     /** Pointer to the driver instance below.
      * This is NULL for the bottommost driver. */
-    PPDMDRVINS          pDown;
+    PPDMDRVINS                      pDown;
     /** Pointer to the logical unit this driver chained on. */
-    PPDMLUN             pLun;
+    PPDMLUN                         pLun;
     /** Pointer to driver structure from which this was instantiated. */
-    PPDMDRV             pDrv;
+    PPDMDRV                         pDrv;
     /** Pointer to the VM this instance was created for. */
-    PVM                 pVM;
+    PVM                             pVM;
     /** Flag indicating that the driver is being detached and destroyed.
      * (Helps detect potential recursive detaching.) */
-    bool                fDetaching;
+    bool                            fDetaching;
     /** Configuration handle to the instance node. */
-    PCFGMNODE           pCfgHandle;
+    PCFGMNODE                       pCfgHandle;
 
 } PDMDRVINSINT;
 
@@ -185,34 +193,34 @@ typedef struct PDMDRVINSINT
 typedef struct PDMCRITSECTINT
 {
     /** The critical section core which is shared with IPRT. */
-    RTCRITSECT          Core;
+    RTCRITSECT                      Core;
     /** Pointer to the next critical section.
      * This chain is used for relocating pVMGC and device cleanup. */
     R3PTRTYPE(struct PDMCRITSECTINT *) pNext;
     /** Owner identifier.
      * This is pDevIns if the owner is a device. Similarily for a driver or service.
      * PDMR3CritSectInit() sets this to point to the critsect itself. */
-    RTR3PTR             pvKey;
+    RTR3PTR                         pvKey;
     /** Pointer to the VM - R3Ptr. */
-    R3PTRTYPE(PVM)      pVMR3;
+    R3PTRTYPE(PVM)                  pVMR3;
     /** Pointer to the VM - R0Ptr. */
-    R0PTRTYPE(PVM)      pVMR0;
+    R0PTRTYPE(PVM)                  pVMR0;
     /** Pointer to the VM - GCPtr. */
-    RCPTRTYPE(PVM)      pVMGC;
+    RCPTRTYPE(PVM)                  pVMGC;
 #if HC_ARCH_BITS == 64
     uint32_t            padding;
 #endif
     /** Event semaphore that is scheduled to be signaled upon leaving the
      * critical section. This is Ring-3 only of course. */
-    RTSEMEVENT          EventToSignal;
+    RTSEMEVENT                      EventToSignal;
     /** R0/GC lock contention. */
-    STAMCOUNTER         StatContentionR0GCLock;
+    STAMCOUNTER                     StatContentionR0GCLock;
     /** R0/GC unlock contention. */
-    STAMCOUNTER         StatContentionR0GCUnlock;
+    STAMCOUNTER                     StatContentionR0GCUnlock;
     /** R3 lock contention. */
-    STAMCOUNTER         StatContentionR3;
+    STAMCOUNTER                     StatContentionR3;
     /** Profiling the time the section is locked. */
-    STAMPROFILEADV      StatLocked;
+    STAMPROFILEADV                  StatLocked;
 } PDMCRITSECTINT, *PPDMCRITSECTINT;
 
 
@@ -276,7 +284,7 @@ __BEGIN_DECLS
  * This typically the representation of a physical port on a
  * device, like for instance the PS/2 keyboard port on the
  * keyboard controller device. The LUNs are chained on the
- * device the belong to (PDMDEVINSINT::pLunsHC).
+ * device the belong to (PDMDEVINSINT::pLunsR3).
  */
 typedef struct PDMLUN
 {

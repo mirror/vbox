@@ -310,21 +310,20 @@ PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Devices.
      */
-    RCPTRTYPE(PCPDMDEVHLPGC) pDevHlpGC;
-    int rc = PDMR3GetSymbolGC(pVM, NULL, "g_pdmGCDevHlp", &pDevHlpGC);
-    AssertReleaseMsgRC(rc, ("rc=%Vrc when resolving g_pdmGCDevHlp\n", rc));
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
+    PCPDMDEVHLPRC pDevHlpRC;
+    int rc = PDMR3GetSymbolGC(pVM, NULL, "g_pdmRCDevHlp", &pDevHlpRC);
+    AssertReleaseMsgRC(rc, ("rc=%Vrc when resolving g_pdmRCDevHlp\n", rc));
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
         if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_GC)
         {
-            pDevIns->pDevHlpGC = pDevHlpGC;
-            pDevIns->pvInstanceDataGC = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
-            pDevIns->pvInstanceDataR0 = MMHyperR3ToR0(pVM, pDevIns->pvInstanceDataR3);
-            pDevIns->Internal.s.pVMGC = pVM->pVMGC;
-            if (pDevIns->Internal.s.pPciBusHC)
-                pDevIns->Internal.s.pPciBusGC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusHC);
-            if (pDevIns->Internal.s.pPciDeviceHC)
-                pDevIns->Internal.s.pPciDeviceGC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciDeviceHC);
+            pDevIns->pDevHlpRC = pDevHlpRC;
+            pDevIns->pvInstanceDataRC = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
+            pDevIns->Internal.s.pVMRC = pVM->pVMRC;
+            if (pDevIns->Internal.s.pPciBusR3)
+                pDevIns->Internal.s.pPciBusRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusR3);
+            if (pDevIns->Internal.s.pPciDeviceR3)
+                pDevIns->Internal.s.pPciDeviceRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciDeviceR3);
             if (pDevIns->pDevReg->pfnRelocate)
             {
                 LogFlow(("PDMR3Relocate: Relocating device '%s'/%d\n",
@@ -415,9 +414,9 @@ PDMR3DECL(int) PDMR3Term(PVM pVM)
     }
 
     /* then the 'normal' ones. */
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        pdmR3TermLuns(pVM, pDevIns->Internal.s.pLunsHC, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance);
+        pdmR3TermLuns(pVM, pDevIns->Internal.s.pLunsR3, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance);
 
         if (pDevIns->pDevReg->pfnDestruct)
         {
@@ -507,7 +506,7 @@ static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     /** @todo We might have to filter out some device classes, like USB attached devices. */
     uint32_t i = 0;
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC, i++)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3, i++)
     {
         SSMR3PutU32(pSSM, i);
         SSMR3PutStrZ(pSSM, pDevIns->pDevReg->szDeviceName);
@@ -625,7 +624,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      */
     uint32_t i = 0;
     PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances;
-    for (;;pDevIns = pDevIns->Internal.s.pNextHC, i++)
+    for (;;pDevIns = pDevIns->Internal.s.pNextR3, i++)
     {
         /* Get the separator / terminator. */
         uint32_t    u32Sep;
@@ -693,9 +692,9 @@ PDMR3DECL(void) PDMR3PowerOn(PVM pVM)
      * Iterate the device instances.
      * The attached drivers are processed first.
      */
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnPowerOn)
@@ -766,9 +765,9 @@ PDMR3DECL(void) PDMR3Reset(PVM pVM)
      * Iterate the device instances.
      * The attached drivers are processed first.
      */
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             /** @todo Inverse the order here? */
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnReset)
@@ -825,9 +824,9 @@ PDMR3DECL(void) PDMR3Suspend(PVM pVM)
      * Iterate the device instances.
      * The attached drivers are processed first.
      */
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnSuspend)
                 {
@@ -888,9 +887,9 @@ PDMR3DECL(void) PDMR3Resume(PVM pVM)
      * Iterate the device instances.
      * The attached drivers are processed first.
      */
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnResume)
                 {
@@ -951,9 +950,9 @@ PDMR3DECL(void) PDMR3PowerOff(PVM pVM)
      * Iterate the device instances.
      * The attached drivers are processed first.
      */
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextHC)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsHC; pLun; pLun = pLun->pNext)
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
                 if (pDrvIns->pDrvReg->pfnPowerOff)
                 {
@@ -1030,7 +1029,7 @@ PDMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstan
             /*
              * Iterate device instances.
              */
-            for (PPDMDEVINS pDevIns = pDev->pInstances; pDevIns; pDevIns = pDevIns->Internal.s.pPerDeviceNextHC)
+            for (PPDMDEVINS pDevIns = pDev->pInstances; pDevIns; pDevIns = pDevIns->Internal.s.pPerDeviceNextR3)
             {
                 if (pDevIns->iInstance == iInstance)
                 {

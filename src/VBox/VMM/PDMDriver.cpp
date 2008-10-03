@@ -1086,7 +1086,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
 }
 
 
-/** @copydoc PDMDEVHLP::pfnVMState */
+/** @copydoc PDMDEVHLPR3::pfnVMState */
 static DECLCALLBACK(VMSTATE) pdmR3DrvHlp_VMState(PPDMDRVINS pDrvIns)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
