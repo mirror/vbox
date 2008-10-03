@@ -42,13 +42,15 @@ namespace pm
         CircularBuffer() : mData(0), mLength(0), mEnd(0), mWrapped(false) {};
         void init(ULONG length);
         ULONG length();
+        ULONG getSequenceNumber() { return mSequenceNumber; }
         void put(ULONG value);
         void copyTo(ULONG *data);
     private:
         ULONG *mData;
         ULONG  mLength;
         ULONG  mEnd;
-        bool           mWrapped;
+        ULONG  mSequenceNumber;
+        bool   mWrapped;
     };
 
     class SubMetric : public CircularBuffer
@@ -163,6 +165,7 @@ namespace pm
         virtual const char *getUnit() = 0;
         virtual ULONG getMinValue() = 0;
         virtual ULONG getMaxValue() = 0;
+        virtual ULONG getScale() = 0;
 
         bool collectorBeat(uint64_t nowAt);
 
@@ -197,6 +200,7 @@ namespace pm
         const char *getUnit() { return "%"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
+        ULONG getScale() { return PM_CPU_LOAD_MULTIPLIER / 100; }
 
     protected:
         SubMetric *mUser;
@@ -230,6 +234,7 @@ namespace pm
         const char *getUnit() { return "MHz"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
     private:
         SubMetric *mMHz;
     };
@@ -246,6 +251,7 @@ namespace pm
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
     private:
         SubMetric *mTotal;
         SubMetric *mUsed;
@@ -263,6 +269,7 @@ namespace pm
         const char *getUnit() { return "%"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
+        ULONG getScale() { return PM_CPU_LOAD_MULTIPLIER / 100; }
     protected:
         RTPROCESS  mProcess;
         SubMetric *mUser;
@@ -295,6 +302,7 @@ namespace pm
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
     private:
         RTPROCESS  mProcess;
         SubMetric *mUsed;
@@ -359,7 +367,8 @@ namespace pm
         ULONG getPeriod() { return mBaseMetric->getPeriod(); };
         ULONG getLength()
             { return mAggregate ? 1 : mBaseMetric->getLength(); };
-        void query(ULONG **data, ULONG *count);
+        ULONG getScale() { return mBaseMetric->getScale(); }
+        void query(ULONG **data, ULONG *count, ULONG *sequenceNumber);
 
     private:
         std::string mName;

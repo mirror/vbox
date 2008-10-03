@@ -152,6 +152,14 @@ public:
                               ComSafeArrayIn (IUnknown *, objects));
     STDMETHOD(DisableMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
                                ComSafeArrayIn (IUnknown *, objects));
+    STDMETHOD(QueryMetricsData) (ComSafeArrayIn (INPTR BSTR, metricNames),
+                                 ComSafeArrayIn (IUnknown *, objects),
+                                 ComSafeArrayOut (BSTR, outMetricNames),
+                                 ComSafeArrayOut (IUnknown *, outObjects),
+                                 ComSafeArrayOut (ULONG, outDataIndices),
+                                 ComSafeArrayOut (ULONG, outDataLengths),
+                                 ComSafeArrayOut (LONG, outData));
+
     STDMETHOD(SetupMetricsEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
                                ComSafeArrayIn (IUnknown *, objects),
                                ULONG aPeriod, ULONG aCount,
@@ -165,13 +173,16 @@ public:
                                  ComSafeArrayIn (IUnknown *, objects),
                                  ComSafeArrayOut (IPerformanceMetric *,
                                                   outMetrics));
-    STDMETHOD(QueryMetricsData) (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                 ComSafeArrayIn (IUnknown *, objects),
-                                 ComSafeArrayOut (BSTR, outMetricNames),
-                                 ComSafeArrayOut (IUnknown *, outObjects),
-                                 ComSafeArrayOut (ULONG, outDataIndices),
-                                 ComSafeArrayOut (ULONG, outDataLengths),
-                                 ComSafeArrayOut (LONG, outData));
+    STDMETHOD(QueryMetricsDataEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
+                                   ComSafeArrayIn (IUnknown *, objects),
+                                   ComSafeArrayOut (BSTR, outMetricNames),
+                                   ComSafeArrayOut (IUnknown *, outObjects),
+                                   ComSafeArrayOut (BSTR, outUnits),
+                                   ComSafeArrayOut (ULONG, outScales),
+                                   ComSafeArrayOut (ULONG, outSequenceNumbers),
+                                   ComSafeArrayOut (ULONG, outDataIndices),
+                                   ComSafeArrayOut (ULONG, outDataLengths),
+                                   ComSafeArrayOut (LONG, outData));
 
     // public methods only for internal purposes
 

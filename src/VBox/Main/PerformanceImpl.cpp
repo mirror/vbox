@@ -473,6 +473,33 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
                                         ComSafeArrayOut (ULONG, outDataLengths),
                                         ComSafeArrayOut (LONG, outData))
 {
+    com::SafeArray <BSTR> tmpUnits;
+    com::SafeArray <ULONG> tmpScales;
+    com::SafeArray <ULONG> tmpSequenceNumbers;
+    return QueryMetricsDataEx(ComSafeArrayInArg(metricNames),
+                              ComSafeArrayInArg(objects),
+                              ComSafeArrayOutArg(outMetricNames),
+                              ComSafeArrayOutArg(outObjects),
+                              ComSafeArrayAsOutParam(tmpUnits),
+                              ComSafeArrayAsOutParam(tmpScales),
+                              ComSafeArrayAsOutParam(tmpSequenceNumbers),
+                              ComSafeArrayOutArg(outDataIndices),
+                              ComSafeArrayOutArg(outDataLengths),
+                              ComSafeArrayOutArg(outData));
+}
+
+STDMETHODIMP
+PerformanceCollector::QueryMetricsDataEx (ComSafeArrayIn (INPTR BSTR, metricNames),
+                                          ComSafeArrayIn (IUnknown *, objects),
+                                          ComSafeArrayOut (BSTR, outMetricNames),
+                                          ComSafeArrayOut (IUnknown *, outObjects),
+                                          ComSafeArrayOut (BSTR, outUnits),
+                                          ComSafeArrayOut (ULONG, outScales),
+                                          ComSafeArrayOut (ULONG, outSequenceNumbers),
+                                          ComSafeArrayOut (ULONG, outDataIndices),
+                                          ComSafeArrayOut (ULONG, outDataLengths),
+                                          ComSafeArrayOut (LONG, outData))
+{
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -497,22 +524,28 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
     size_t numberOfMetrics = filteredMetrics.size();
     com::SafeArray <BSTR> retNames (numberOfMetrics);
     com::SafeIfaceArray <IUnknown> retObjects (numberOfMetrics);
+    com::SafeArray <BSTR> retUnits (numberOfMetrics);
+    com::SafeArray <ULONG> retScales (numberOfMetrics);
+    com::SafeArray <ULONG> retSequenceNumbers (numberOfMetrics);
     com::SafeArray <ULONG> retIndices (numberOfMetrics);
     com::SafeArray <ULONG> retLengths (numberOfMetrics);
     com::SafeArray <LONG> retData (flatSize);
 
     for (it = filteredMetrics.begin(); it != filteredMetrics.end(); ++it, ++i)
     {
-        /* @todo Filtering goes here! */
-        ULONG *values, length;
+        ULONG *values, length, sequenceNumber;
         /* @todo We may want to revise the query method to get rid of excessive alloc/memcpy calls. */
-        (*it)->query(&values, &length);
+        (*it)->query(&values, &length, &sequenceNumber);
         LogFlow (("PerformanceCollector::QueryMetricsData() querying metric %s "
                   "returned %d values.\n", (*it)->getName(), length));
         memcpy(retData.raw() + flatIndex, values, length * sizeof(*values));
         Bstr tmp((*it)->getName());
         tmp.detachTo(&retNames[i]);
         (*it)->getObject().queryInterfaceTo (&retObjects[i]);
+        tmp = (*it)->getUnit();
+        tmp.detachTo(&retUnits[i]);
+        retScales[i] = (*it)->getScale();
+        retSequenceNumbers[i] = sequenceNumber;
         retLengths[i] = length;
         retIndices[i] = flatIndex;
         flatIndex += length;
@@ -520,6 +553,9 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
 
     retNames.detachTo (ComSafeArrayOutArg (outMetricNames));
     retObjects.detachTo (ComSafeArrayOutArg (outObjects));
+    retUnits.detachTo (ComSafeArrayOutArg (outUnits));
+    retScales.detachTo (ComSafeArrayOutArg (outScales));
+    retSequenceNumbers.detachTo (ComSafeArrayOutArg (outSequenceNumbers));
     retIndices.detachTo (ComSafeArrayOutArg (outDataIndices));
     retLengths.detachTo (ComSafeArrayOutArg (outDataLengths));
     retData.detachTo (ComSafeArrayOutArg (outData));
