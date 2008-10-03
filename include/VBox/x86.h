@@ -349,6 +349,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_CX16      RT_BIT(13)
 /** ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
 #define X86_CPUID_FEATURE_ECX_TPRUPDATE RT_BIT(14)
+/** ECX Bit 21 - x2APIC support. */
+#define X86_CPUID_FEATURE_ECX_X2APIC    RT_BIT(21)
 /** ECX Bit 23 - POPCOUNT instruction. */
 #define X86_CPUID_FEATURE_ECX_POPCOUNT  RT_BIT(23)
 

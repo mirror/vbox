@@ -289,6 +289,8 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_FEATURE_ECX_CX16
                                        /* ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
                                        //| X86_CPUID_FEATURE_ECX_TPRUPDATE
+                                       /* ECX Bit 21 - x2APIC support - not yet. */
+                                       // | X86_CPUID_FEATURE_ECX_X2APIC
                                        /* ECX Bit 23 - POPCOUNT instruction. */
                                        //| X86_CPUID_FEATURE_ECX_POPCOUNT
                                        | 0;

@@ -1156,6 +1156,15 @@ CPUMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             LogRel(("CPUMSetGuestCpuIdFeature: Enabled APIC\n"));
             break;
 
+       /*
+        * Set the x2APIC bit in the standard feature mask.
+         */
+        case CPUMCPUIDFEATURE_X2APIC:
+            if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
+                pVM->cpum.s.aGuestCpuIdStd[1].ecx |= X86_CPUID_FEATURE_ECX_X2APIC;
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled x2APIC\n"));
+            break;
+
         /*
          * Set the sysenter/sysexit bit in the standard feature mask.
          * Assumes the caller knows what it's doing! (host must support these)
