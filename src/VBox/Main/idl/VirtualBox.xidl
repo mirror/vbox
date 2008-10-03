@@ -10414,7 +10414,7 @@
 
   <interface
     name="IPerformanceCollector" extends="$unknown"
-    uuid="840f887a-18b4-4af9-9608-d6a1813fe6ac"
+    uuid="4cbdd29e-e801-4fd1-b721-42a1c22b2d95"
     wsmap="managed"
   >
     <desc>
@@ -10781,6 +10781,81 @@
         </desc>
       </param>
     </method>
+
+    <method name="queryMetricsDataEx">
+      <desc>
+        Queries collected metrics data for a set of objects.
+
+        Indentical to <link to="IPerformanceCollector::queryMetricsData" /> except
+        that it returns three additional arrays: <tt>returnUnits</tt>,
+        <tt>returnScales</tt>, <tt>returnSequenceNumbers</tt>. All additional
+        arrays have the same size as <tt>returnMetricNames</tt>.
+        <note>
+          @c Null metrics array means all applicable metrics. @c Null object
+          array means all existing objects.
+        </note>
+      </desc>
+      <param name="metricNames" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Metric name filter. Currently, only a comma-separated list of metrics
+          is supported.
+        </desc>
+      </param>
+      <param name="objects" type="$unknown" dir="in" safearray="yes">
+        <desc>
+          Set of objects to query metrics for.
+        </desc>
+      </param>
+      <param name="returnMetricNames" type="wstring" dir="out" safearray="yes">
+        <desc>
+          Names of metrics returned in @c returnData.
+        </desc>
+      </param>
+      <param name="returnObjects" type="$unknown" dir="out" safearray="yes">
+        <desc>
+          Objects associated with metrics returned in @c returnData.
+        </desc>
+      </param>
+     <param name="returnUnits" type="wstring" dir="out" safearray="yes">
+        <desc>
+          Units of measurement for each returned metric.
+        </desc>
+      </param>
+      <param name="returnScales" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          Divisor that should be applied to return values in order to get
+          floating point values. For example:
+          <tt>(double)returnData[returnDataIndices[0]+i] / returnScales[0]</tt>
+          will retrieve the floating point value of i-th sample of the first
+          metric.
+        </desc>
+      </param>
+      <param name="returnSequenceNumbers" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          Sequence numbers of the first elements of value sequences of particular metrics
+          returned in @c returnData. For aggregate metrics it is the sequence number of
+          the sample the aggregate started calculation from.
+        </desc>
+      </param>
+      <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          Indices of the first elements of value sequences of particular metrics
+          returned in @c returnData.
+        </desc>
+      </param>
+      <param name="returnDataLengths" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          Lengths of value sequences of particular metrics.
+        </desc>
+      </param>
+      <param name="returnData" type="long" dir="return" safearray="yes">
+        <desc>
+          Flattened array of all metric data containing sequences of values for
+          each metric.
+        </desc>
+      </param>
+   </method>
+
 
   </interface>
 

@@ -304,6 +304,7 @@ void CircularBuffer::init(ULONG length)
         mData = NULL;
     mWrapped = false;
     mEnd = 0;
+    mSequenceNumber = 0;
 }
 
 ULONG CircularBuffer::length()
@@ -321,6 +322,7 @@ void CircularBuffer::put(ULONG value)
             mEnd = 0;
             mWrapped = true;
         }
+        ++mSequenceNumber;
     }
 }
 
@@ -342,12 +344,13 @@ void SubMetric::query(ULONG *data)
     copyTo(data);
 }
 
-void Metric::query(ULONG **data, ULONG *count)
+void Metric::query(ULONG **data, ULONG *count, ULONG *sequenceNumber)
 {
     ULONG length;
     ULONG *tmpData;
 
     length = mSubMetric->length();
+    *sequenceNumber = mSubMetric->getSequenceNumber() - length;
     if (length)
     {
         tmpData = (ULONG*)RTMemAlloc(sizeof(*tmpData)*length);
