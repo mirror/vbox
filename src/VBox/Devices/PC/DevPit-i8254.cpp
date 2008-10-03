@@ -1052,14 +1052,14 @@ const PDMDEVREG g_DeviceI8254 =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "i8254",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
     "Intel 8254 Programmable Interval Timer (PIT) And Dummy Speaker Device",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_PIT,
     /* cMaxInstances */
@@ -1087,7 +1087,15 @@ const PDMDEVREG g_DeviceI8254 =
     /* pfnDetach */
     NULL,
     /* pfnQueryInterface. */
-    NULL
+    NULL,
+    /* pfnInitComplete */
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 
 #endif /* IN_RING3 */

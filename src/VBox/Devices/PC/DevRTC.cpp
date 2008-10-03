@@ -930,14 +930,14 @@ const PDMDEVREG g_DeviceMC146818 =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "mc146818",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
     "Motorola MC146818 RTC/CMOS Device.",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_RTC,
     /* cMaxInstances */
@@ -967,7 +967,13 @@ const PDMDEVREG g_DeviceMC146818 =
     /* pfnQueryInterface */
     NULL,
     /* pfnInitComplete */
-    rtcInitComplete
+    rtcInitComplete,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

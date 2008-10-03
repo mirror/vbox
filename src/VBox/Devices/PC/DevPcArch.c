@@ -277,7 +277,7 @@ const PDMDEVREG g_DevicePcArch =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "pcarch",
-    /* szGCMod */
+    /* szRCMod */
     "",
     /* szR0Mod */
     "",
@@ -314,6 +314,12 @@ const PDMDEVREG g_DevicePcArch =
     /* pfnQueryInterface. */
     NULL,
     /* pfnInitComplete. */
-    NULL
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 

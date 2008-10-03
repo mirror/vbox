@@ -1715,7 +1715,7 @@ const PDMDEVREG g_DeviceICHAC97 =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "ichac97",
-    /* szGCMod */
+    /* szRCMod */
     "",
     /* szR0Mod */
     "",
@@ -1750,5 +1750,13 @@ const PDMDEVREG g_DeviceICHAC97 =
     /* pfnDetach */
     NULL,
     /* pfnQueryInterface. */
-    NULL
+    NULL,
+    /* pfnInitComplete */
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };

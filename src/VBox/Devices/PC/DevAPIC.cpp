@@ -2088,14 +2088,14 @@ const PDMDEVREG g_DeviceAPIC =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "apic",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDD2GC.gc",
     /* szR0Mod */
     "VBoxDD2R0.r0",
     /* pszDescription */
     "Advanced Programmable Interrupt Controller (APIC) Device",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_PIC,
     /* cMaxInstances */
@@ -2123,7 +2123,15 @@ const PDMDEVREG g_DeviceAPIC =
     /* pfnDetach */
     NULL,
     /* pfnQueryInterface. */
-    NULL
+    NULL,
+    /* pfnInitComplete */
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 
 #endif /* IN_RING3 */
@@ -2347,14 +2355,14 @@ const PDMDEVREG g_DeviceIOAPIC =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "ioapic",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDD2GC.gc",
     /* szR0Mod */
     "VBoxDD2R0.r0",
     /* pszDescription */
     "I/O Advanced Programmable Interrupt Controller (IO-APIC) Device",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_PIC,
     /* cMaxInstances */
@@ -2386,7 +2394,11 @@ const PDMDEVREG g_DeviceIOAPIC =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    NULL
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 
 #endif /* IN_RING3 */

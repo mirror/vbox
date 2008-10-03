@@ -4793,7 +4793,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
                                               GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
                                               vgaR3LFBAccessHandler, pThis,
                                               g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pDevIns->pvInstanceDataR0,
-                                              g_DeviceVga.szGCMod, "vgaGCLFBAccessHandler", pDevIns->pvInstanceDataRC,
+                                              g_DeviceVga.szRCMod, "vgaGCLFBAccessHandler", pDevIns->pvInstanceDataRC,
                                               "VGA LFB");
             AssertRC(rc);
             if (RT_SUCCESS(rc))
@@ -5223,10 +5223,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PCIDevSetHeaderType(&pThis->Dev,   0x00);
 
     /* The LBF access handler - error handling is better here than in the map function.  */
-    rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szGCMod, "vgaGCLFBAccessHandler", &pThis->RCPtrLFBHandler);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, "vgaGCLFBAccessHandler", &pThis->RCPtrLFBHandler);
     if (RT_FAILURE(rc))
     {
-        AssertReleaseMsgFailed(("PDMR3LdrGetSymbolRC(, %s, \"vgaGCLFBAccessHandler\",) -> %Rrc\n", pDevIns->pDevReg->szGCMod, rc));
+        AssertReleaseMsgFailed(("PDMR3LdrGetSymbolRC(, %s, \"vgaGCLFBAccessHandler\",) -> %Rrc\n", pDevIns->pDevReg->szRCMod, rc));
         return rc;
     }
 
@@ -5844,14 +5844,14 @@ const PDMDEVREG g_DeviceVga =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "vga",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
     "VGA Adaptor with VESA extensions.",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_GRAPHICS,
     /* cMaxInstances */
@@ -5881,7 +5881,13 @@ const PDMDEVREG g_DeviceVga =
     /* pfnQueryInterface */
     NULL,
     /* pfnInitComplete */
-    NULL
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 
 #endif /* !IN_RING3 */

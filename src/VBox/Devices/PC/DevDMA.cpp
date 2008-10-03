@@ -948,7 +948,7 @@ const PDMDEVREG g_DeviceDMA =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "8237A",
-    /* szGCMod */
+    /* szRCMod */
     "",
     /* szR0Mod */
     "",
@@ -987,6 +987,10 @@ const PDMDEVREG g_DeviceDMA =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    NULL
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 #endif /* VBOX */

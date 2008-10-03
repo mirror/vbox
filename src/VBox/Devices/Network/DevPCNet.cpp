@@ -1430,7 +1430,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pThis)
                                           pcnetHandleRingWrite, pDevIns,
                                           g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
                                           pThis->pDevInsHC->pvInstanceDataHC,
-                                          g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
+                                          g_DevicePCNet.szRCMod, "pcnetHandleRingWrite",
                                           pThis->pDevInsHC->pvInstanceDataRC,
                                           "PCNet receive ring write access handler");
         AssertRC(rc);
@@ -1469,7 +1469,7 @@ static void pcnetUpdateRingHandlers(PCNetState *pThis)
                                               pcnetHandleRingWrite, pDevIns,
                                               g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
                                               pThis->pDevInsHC->pvInstanceDataHC,
-                                              g_DevicePCNet.szGCMod, "pcnetHandleRingWrite",
+                                              g_DevicePCNet.szRCMod, "pcnetHandleRingWrite",
                                               pThis->pDevInsHC->pvInstanceDataRC,
                                               "PCNet transmit ring write access handler");
             AssertRC(rc);
@@ -5016,7 +5016,7 @@ const PDMDEVREG g_DevicePCNet =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "pcnet",
-    /* szGCMod */
+    /* szRCMod */
 #ifdef PCNET_GC_ENABLED
     "VBoxDDGC.gc",
     "VBoxDDR0.r0",
@@ -5028,7 +5028,7 @@ const PDMDEVREG g_DevicePCNet =
     "AMD PC-Net II Ethernet controller.\n",
     /* fFlags */
 #ifdef PCNET_GC_ENABLED
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
 #else
     PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
 #endif
@@ -5063,7 +5063,11 @@ const PDMDEVREG g_DevicePCNet =
     /* pfnInitComplete. */
     NULL,
     /* pfnPowerOff. */
-    pcnetPowerOff
+    pcnetPowerOff,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
 };
 
 #endif /* IN_RING3 */
