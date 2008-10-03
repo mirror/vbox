@@ -202,28 +202,28 @@ static DECLCALLBACK(int) doit(PVM pVM)
     /*
      * Loading the module and resolve the entry point.
      */
-    int rc = PDMR3LoadGC(pVM, NULL, "tstMicroGC.gc");
+    int rc = PDMR3LdrLoadRC(pVM, NULL, "tstMicroGC.gc");
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to load tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
     RTGCPTR32 GCPtrEntry;
-    rc = PDMR3GetSymbolGC(pVM, "tstMicroGC.gc", "tstMicroGC", &GCPtrEntry);
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGC", &GCPtrEntry);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGC' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
     RTGCPTR32 GCPtrStart;
-    rc = PDMR3GetSymbolGC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &GCPtrStart);
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &GCPtrStart);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmStart' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
     RTGCPTR32 GCPtrEnd;
-    rc = PDMR3GetSymbolGC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &GCPtrEnd);
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &GCPtrEnd);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmEnd' entry point in tstMicroGC.gc, rc=%Vra\n", rc);

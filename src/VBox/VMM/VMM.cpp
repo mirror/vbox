@@ -697,7 +697,7 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
      *      -# do a generic hypervisor call.
      */
     RTGCPTR32 GCPtrEP;
-    int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
         CPUMHyperSetCtxCore(pVM, NULL);
@@ -856,10 +856,10 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Get other GC entry points.
      */
-    int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMGCResumeGuest);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMGCResumeGuest);
     AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Vra\n", rc));
 
-    rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuestV86", &pVM->vmm.s.pfnCPUMGCResumeGuestV86);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuestV86", &pVM->vmm.s.pfnCPUMGCResumeGuestV86);
     AssertReleaseMsgRC(rc, ("CPUMGCResumeGuestV86 not found! rc=%Vra\n", rc));
 
     /*
@@ -889,14 +889,14 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
 #endif
        )
     {
-        rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerFlush", &GCPtrLoggerFlush);
+        rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerFlush", &GCPtrLoggerFlush);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerFlush not found! rc=%Vra\n", rc));
     }
 
     if (pVM->vmm.s.pLoggerHC)
     {
         RTGCPTR32 GCPtrLoggerWrapper = 0;
-        rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &GCPtrLoggerWrapper);
+        rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &GCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Vra\n", rc));
         pVM->vmm.s.pLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pLoggerHC);
         rc = RTLogCloneRC(NULL /* default */, pVM->vmm.s.pLoggerHC, pVM->vmm.s.cbLoggerGC,
@@ -908,7 +908,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
     if (pVM->vmm.s.pRelLoggerHC)
     {
         RTGCPTR32 GCPtrLoggerWrapper = 0;
-        rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &GCPtrLoggerWrapper);
+        rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &GCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Vra\n", rc));
         pVM->vmm.s.pRelLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pRelLoggerHC);
         rc = RTLogCloneRC(RTLogRelDefaultInstance(), pVM->vmm.s.pRelLoggerHC, pVM->vmm.s.cbRelLoggerGC,
@@ -927,11 +927,11 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
         if (!pR0Logger->fCreated)
         {
             RTR0PTR pfnLoggerWrapper = NIL_RTR0PTR;
-            rc = PDMR3GetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerWrapper", &pfnLoggerWrapper);
+            rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerWrapper", &pfnLoggerWrapper);
             AssertReleaseMsgRCReturn(rc, ("VMMLoggerWrapper not found! rc=%Vra\n", rc), rc);
 
             RTR0PTR pfnLoggerFlush = NIL_RTR0PTR;
-            rc = PDMR3GetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
+            rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
             AssertReleaseMsgRCReturn(rc, ("VMMLoggerFlush not found! rc=%Vra\n", rc), rc);
 
             rc = RTLogCreateForR0(&pR0Logger->Logger, pR0Logger->cbLogger,
@@ -1583,7 +1583,7 @@ DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg1(PVM pVM)
 {
     RTGCPTR32 GCPtr;
-    int rc = PDMR3GetSymbolGC(pVM, NULL, "g_szRTAssertMsg1", &GCPtr);
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg1", &GCPtr);
     if (VBOX_SUCCESS(rc))
         return (const char *)MMHyperGC2HC(pVM, GCPtr);
     return NULL;
@@ -1599,7 +1599,7 @@ VMMR3DECL(const char *) VMMR3GetGCAssertMsg1(PVM pVM)
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg2(PVM pVM)
 {
     RTGCPTR32 GCPtr;
-    int rc = PDMR3GetSymbolGC(pVM, NULL, "g_szRTAssertMsg2", &GCPtr);
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg2", &GCPtr);
     if (VBOX_SUCCESS(rc))
         return (const char *)MMHyperGC2HC(pVM, GCPtr);
     return NULL;
@@ -2556,23 +2556,23 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                 else
                 {   /* ask PDM */  /** @todo ask DBGFR3Sym later? */
                     char        szModName[64];
-                    RTGCPTR     GCPtrMod;
+                    RTRCPTR     RCPtrMod;
                     char        szNearSym1[260];
-                    RTGCPTR     GCPtrNearSym1;
+                    RTRCPTR     RCPtrNearSym1;
                     char        szNearSym2[260];
-                    RTGCPTR     GCPtrNearSym2;
-                    int rc = PDMR3QueryModFromEIP(pVM, uEIP,
-                                                &szModName[0],  sizeof(szModName),  &GCPtrMod,
-                                                &szNearSym1[0], sizeof(szNearSym1), &GCPtrNearSym1,
-                                                &szNearSym2[0], sizeof(szNearSym2), &GCPtrNearSym2);
+                    RTRCPTR     RCPtrNearSym2;
+                    int rc = PDMR3LdrQueryRCModFromPC(pVM, uEIP,
+                                                      &szModName[0],  sizeof(szModName),  &RCPtrMod,
+                                                      &szNearSym1[0], sizeof(szNearSym1), &RCPtrNearSym1,
+                                                      &szNearSym2[0], sizeof(szNearSym2), &RCPtrNearSym2);
                     if (VBOX_SUCCESS(rc))
                         pHlp->pfnPrintf(pHlp,
-                                        "!! EIP in %s (%RGv) at rva %x near symbols:\n"
-                                        "!!    %RGv rva %RGv off %08x  %s\n"
-                                        "!!    %RGv rva %RGv off -%08x %s\n",
-                                        szModName,  GCPtrMod, (unsigned)(uEIP - GCPtrMod),
-                                        GCPtrNearSym1, GCPtrNearSym1 - GCPtrMod, (unsigned)(uEIP - GCPtrNearSym1), szNearSym1,
-                                        GCPtrNearSym2, GCPtrNearSym2 - GCPtrMod, (unsigned)(GCPtrNearSym2 - uEIP), szNearSym2);
+                                        "!! EIP in %s (%RRv) at rva %x near symbols:\n"
+                                        "!!    %RRv rva %RRv off %08x  %s\n"
+                                        "!!    %RRv rva %RRv off -%08x %s\n",
+                                        szModName,  RCPtrMod, (unsigned)(uEIP - RCPtrMod),
+                                        RCPtrNearSym1, RCPtrNearSym1 - RCPtrMod, (unsigned)(uEIP - RCPtrNearSym1), szNearSym1,
+                                        RCPtrNearSym2, RCPtrNearSym2 - RCPtrMod, (unsigned)(RCPtrNearSym2 - uEIP), szNearSym2);
                     else
                         pHlp->pfnPrintf(pHlp,
                                         "!! EIP is not in any code known to VMM!\n");

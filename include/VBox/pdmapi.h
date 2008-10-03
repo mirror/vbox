@@ -42,90 +42,15 @@ __BEGIN_DECLS
  * @{
  */
 
-/**
- * Gets the pending interrupt.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pu8Interrupt    Where to store the interrupt on success.
- */
-PDMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt);
-
-/**
- * Sets the pending ISA interrupt.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   u8Irq           The IRQ line.
- * @param   u8Level         The new level. See the PDM_IRQ_LEVEL_* \#defines.
- */
-PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
-
-/**
- * Sets the pending I/O APIC interrupt.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   u8Irq           The IRQ line.
- * @param   u8Level         The new level. See the PDM_IRQ_LEVEL_* \#defines.
- */
-PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
-
-/**
- * Check if the APIC has a pending interrupt/if a TPR change would active one.
- *
- * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
- * @param   pDevIns         Device instance of the APIC.
- * @param   pfPending       Pending state (out).
- */
-PDMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
-
-/**
- * Set the APIC base.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   u64Base         The new base.
- */
-PDMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base);
-
-/**
- * Get the APIC base.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pu64Base        Where to store the APIC base.
- */
-PDMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
-
-/**
- * Set the TPR (task priority register).
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   u8TPR           The new TPR.
- */
-PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR);
-
-/**
- * Get the TPR (task priority register).
- *
- * @returns The current TPR.
- * @param   pVM             VM handle.
- * @param   pu8TPR          Where to store the TRP.
- * @param   pfPending       Pending state (out).
- */
-PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending);
-
-/**
- * Converts ring 3 VMM heap pointer to a guest physical address
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pv              Ring-3 pointer.
- * @param   pGCPhys         GC phys address (out).
- */
-PDMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
+PDMDECL(int)    PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt);
+PDMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
+PDMDECL(int)    PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
+PDMDECL(int)    PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
+PDMDECL(int)    PDMApicSetBase(PVM pVM, uint64_t u64Base);
+PDMDECL(int)    PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
+PDMDECL(int)    PDMApicSetTPR(PVM pVM, uint8_t u8TPR);
+PDMDECL(int)    PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending);
+PDMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 
 #ifdef IN_RING3
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
@@ -133,187 +58,17 @@ PDMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
  * @{
  */
 
-PDMR3DECL(int) PDMR3InitUVM(PUVM pUVM);
-PDMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM);
-
-/**
- * Initializes the PDM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-PDMR3DECL(int) PDMR3Init(PVM pVM);
-
-/**
- * This function will notify all the devices and their
- * attached drivers about the VM now being powered on.
- *
- * @param   pVM     VM Handle.
- */
+PDMR3DECL(int)  PDMR3InitUVM(PUVM pUVM);
+PDMR3DECL(int)  PDMR3LdrLoadVMMR0U(PUVM pUVM);
+PDMR3DECL(int)  PDMR3Init(PVM pVM);
 PDMR3DECL(void) PDMR3PowerOn(PVM pVM);
-
-/**
- * This function will notify all the devices and their
- * attached drivers about the VM now being reset.
- *
- * @param   pVM     VM Handle.
- */
 PDMR3DECL(void) PDMR3Reset(PVM pVM);
-
-/**
- * This function will notify all the devices and their
- * attached drivers about the VM now being suspended.
- *
- * @param   pVM     VM Handle.
- */
 PDMR3DECL(void) PDMR3Suspend(PVM pVM);
-
-/**
- * This function will notify all the devices and their
- * attached drivers about the VM now being resumed.
- *
- * @param   pVM     VM Handle.
- */
 PDMR3DECL(void) PDMR3Resume(PVM pVM);
-
-/**
- * This function will notify all the devices and their
- * attached drivers about the VM being powered off.
- *
- * @param   pVM     VM Handle.
- */
 PDMR3DECL(void) PDMR3PowerOff(PVM pVM);
-
-
-/**
- * Applies relocations to GC modules.
- *
- * This must be done very early in the relocation
- * process so that components can resolve GC symbols during relocation.
- *
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   offDelta    Relocation delta relative to old location.
- */
-PDMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
-
-/**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
- *
- * @param   pVM         VM handle.
- * @param   offDelta    Relocation delta relative to old location.
- */
 PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-
-/**
- * Terminates the PDM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-PDMR3DECL(int) PDMR3Term(PVM pVM);
+PDMR3DECL(int)  PDMR3Term(PVM pVM);
 PDMR3DECL(void) PDMR3TermUVM(PUVM pUVM);
-
-
-/**
- * Get the address of a symbol in a given HC ring-3 module.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pszModule       Module name.
- * @param   pszSymbol       Symbol name. If it's value is less than 64k it's treated like a
- *                          ordinal value rather than a string pointer.
- * @param   ppvValue        Where to store the symbol value.
- */
-PDMR3DECL(int) PDMR3GetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
-
-/**
- * Get the address of a symbol in a given HC ring-0 module.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pszModule       Module name. If NULL the main R0 module (VMMR0.r0) is assumed.
- * @param   pszSymbol       Symbol name. If it's value is less than 64k it's treated like a
- *                          ordinal value rather than a string pointer.
- * @param   ppvValue        Where to store the symbol value.
- */
-PDMR3DECL(int) PDMR3GetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
-
-/**
- * Same as PDMR3GetSymbolR0 except that the module will be attempted loaded if not found.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pszModule       Module name. If NULL the main R0 module (VMMR0.r0) is assumed.
- * @param   pszSymbol       Symbol name. If it's value is less than 64k it's treated like a
- *                          ordinal value rather than a string pointer.
- * @param   ppvValue        Where to store the symbol value.
- */
-PDMR3DECL(int) PDMR3GetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
-
-/**
- * Loads a module into the guest context (i.e. into the Hypervisor memory region).
- *
- * The external (to PDM) use of this interface is to load VMMGC.gc.
- *
- * @returns VBox status code.
- * @param   pVM             The VM to load it into.
- * @param   pszFilename     Filename of the module binary.
- * @param   pszName         Module name. Case sensitive and the length is limited!
- */
-PDMR3DECL(int) PDMR3LoadGC(PVM pVM, const char *pszFilename, const char *pszName);
-
-/**
- * Get the address of a symbol in a given GC module.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pszModule       Module name. If NULL the main GC module (VMMGC.gc) is assumed.
- * @param   pszSymbol       Symbol name. If it's value is less than 64k it's treated like a
- *                          ordinal value rather than a string pointer.
- * @param   pGCPtrValue     Where to store the symbol value.
- */
-PDMR3DECL(int) PDMR3GetSymbolGC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pGCPtrValue);
-
-/**
- * Same as PDMR3GetSymbolGC except that the module will be attempted loaded if not found.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pszModule       Module name. If NULL the main GC module (VMMGC.gc) is assumed.
- * @param   pszSymbol       Symbol name. If it's value is less than 64k it's treated like a
- *                          ordinal value rather than a string pointer.
- * @param   pGCPtrValue     Where to store the symbol value.
- */
-PDMR3DECL(int) PDMR3GetSymbolGCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pGCPtrValue);
-
-/**
- * Queries module information from an EIP.
- *
- * This is typically used to locate a crash address.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle
- * @param   uEIP        EIP to locate.
- * @param   pszModName  Where to store the module name.
- * @param   cchModName  Size of the module name buffer.
- * @param   pMod        Base address of the module.
- * @param   pszNearSym1 Name of the closes symbol from below.
- * @param   cchNearSym1 Size of the buffer pointed to by pszNearSym1.
- * @param   pNearSym1   The address of pszNearSym1.
- * @param   pszNearSym2 Name of the closes symbol from below.
- * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2.
- * @param   pNearSym2   The address of pszNearSym2.
- */
-PDMR3DECL(int) PDMR3QueryModFromEIP(PVM pVM, uint32_t uEIP,
-                                    char *pszModName,  unsigned cchModName,  RTGCPTR *pMod,
-                                    char *pszNearSym1, unsigned cchNearSym1, RTGCPTR *pNearSym1,
-                                    char *pszNearSym2, unsigned cchNearSym2, RTGCPTR *pNearSym2);
-
 
 /**
  * Module enumeration callback function.
@@ -332,157 +87,31 @@ PDMR3DECL(int) PDMR3QueryModFromEIP(PVM pVM, uint32_t uEIP,
 typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fGC);
 /** Pointer to a FNPDMR3ENUM() function. */
 typedef FNPDMR3ENUM *PFNPDMR3ENUM;
+PDMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
+PDMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
+PDMR3DECL(int)  PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
+PDMR3DECL(int)  PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
+PDMR3DECL(int)  PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
+PDMR3DECL(int)  PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName);
+PDMR3DECL(int)  PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+PDMR3DECL(int)  PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+PDMR3DECL(int)  PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
+                                         char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
+                                         char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
+                                         char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2);
 
-
-/**
- * Enumerate all PDM modules.
- *
- * @returns VBox status.
- * @param   pVM             VM Handle.
- * @param   pfnCallback     Function to call back for each of the modules.
- * @param   pvArg           User argument.
- */
-PDMR3DECL(int)  PDMR3EnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
-
-
-/**
- * Queries the base interace of a device instance.
- *
- * The caller can use this to query other interfaces the device implements
- * and use them to talk to the device.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pszDevice       Device name.
- * @param   iInstance       Device instance.
- * @param   ppBase          Where to store the pointer to the base device interface on success.
- * @remark  We're not doing any locking ATM, so don't try call this at times when the
- *          device chain is known to be updated.
- */
-PDMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
-
-/**
- * Queries the base interface of a device LUN.
- *
- * This differs from PDMR3QueryLun by that it returns the interface on the
- * device and not the top level driver.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pszDevice       Device name.
- * @param   iInstance       Device instance.
- * @param   iLun            The Logical Unit to obtain the interface of.
- * @param   ppBase          Where to store the base interface pointer.
- * @remark  We're not doing any locking ATM, so don't try call this at times when the
- *          device chain is known to be updated.
- */
-PDMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-
-/**
- * Query the interface of the top level driver on a LUN.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pszDevice       Device name.
- * @param   iInstance       Device instance.
- * @param   iLun            The Logical Unit to obtain the interface of.
- * @param   ppBase          Where to store the base interface pointer.
- * @remark  We're not doing any locking ATM, so don't try call this at times when the
- *          device chain is known to be updated.
- */
-PDMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-
-/**
- * Attaches a preconfigured driver to an existing device instance.
- *
- * This is used to change drivers and suchlike at runtime.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pszDevice       Device name.
- * @param   iInstance       Device instance.
- * @param   iLun            The Logical Unit to obtain the interface of.
- * @param   ppBase          Where to store the base interface pointer. Optional.
- * @thread  EMT
- */
-PDMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-
-/**
- * Detaches a driver chain from an existing device instance.
- *
- * This is used to change drivers and suchlike at runtime.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pszDevice       Device name.
- * @param   iInstance       Device instance.
- * @param   iLun            The Logical Unit to obtain the interface of.
- * @thread  EMT
- */
-PDMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun);
-
-/**
- * Executes pending DMA transfers.
- * Forced Action handler.
- *
- * @param   pVM             VM handle.
- */
+PDMR3DECL(int)  PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
+PDMR3DECL(int)  PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+PDMR3DECL(int)  PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+PDMR3DECL(int)  PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+PDMR3DECL(int)  PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun);
 PDMR3DECL(void) PDMR3DmaRun(PVM pVM);
-
-/**
- * Call polling function.
- *
- * @param   pVM             VM handle.
- */
 PDMR3DECL(void) PDMR3Poll(PVM pVM);
-
-/**
- * Service a VMMCALLHOST_PDM_LOCK call.
- *
- * @returns VBox status code.
- * @param   pVM     The VM handle.
- */
-PDMR3DECL(int) PDMR3LockCall(PVM pVM);
-
-
-/**
- * Registers the VMM device heap
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   GCPhys          The physical address.
- * @param   pvHeap          Ring-3 pointer.
- * @param   cbSize          Size of the heap.
- */
-PDMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
-
-/**
- * Allocates memory from the VMM device heap
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   cbSize          Allocation size.
- * @param   ppv             Ring-3 pointer. (out)
- */
-PDMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv);
-
-/**
- * Frees memory from the VMM device heap
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   pv              Ring-3 pointer. 
- */
-PDMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv);
-
-/**
- * Unregisters the VMM device heap
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   GCPhys          The physical address.
- */
-PDMR3DECL(int) PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
+PDMR3DECL(int)  PDMR3LockCall(PVM pVM);
+PDMR3DECL(int)  PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
+PDMR3DECL(int)  PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv);
+PDMR3DECL(int)  PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv);
+PDMR3DECL(int)  PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
 
 /** @} */
 #endif

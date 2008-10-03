@@ -321,7 +321,7 @@ static int pdmR3DrvLoad(PVM pVM, PPDMDRVREGCBINT pRegCB, const char *pszFilename
          * Get the registration export and call it.
          */
         FNPDMVBOXDRIVERSREGISTER *pfnVBoxDriversRegister;
-        rc = PDMR3GetSymbolR3(pVM, pszName, "VBoxDriversRegister", (void **)&pfnVBoxDriversRegister);
+        rc = PDMR3LdrGetSymbolR3(pVM, pszName, "VBoxDriversRegister", (void **)&pfnVBoxDriversRegister);
         if (VBOX_SUCCESS(rc))
         {
             Log(("PDM: Calling VBoxDriversRegister (%p) of %s (%s)\n", pfnVBoxDriversRegister, pszName, pszFilename));

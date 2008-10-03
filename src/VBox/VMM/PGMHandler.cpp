@@ -105,7 +105,7 @@ PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
     R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0 = NIL_RTR0PTR;
     int rc = VINF_SUCCESS;
     if (pszHandlerR0)
-        rc = PDMR3GetSymbolR0Lazy(pVM, pszModR0, pszHandlerR0, &pfnHandlerR0);
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, pszModR0, pszHandlerR0, &pfnHandlerR0);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -113,7 +113,7 @@ PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
          */
         RTGCPTR32 pfnHandlerGC = NIL_RTGCPTR;
         if (pszHandlerGC)
-            rc = PDMR3GetSymbolGCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
 
         if (VBOX_SUCCESS(rc))
             return PGMHandlerPhysicalRegisterEx(pVM, enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3,
@@ -250,7 +250,7 @@ PGMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
      * Resolve the GC handler.
      */
     RTGCPTR32 pfnHandlerGC;
-    int rc = PDMR3GetSymbolGCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
+    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
     if (VBOX_SUCCESS(rc))
         return PGMHandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateHC, pfnHandlerHC, pfnHandlerGC, pszDesc);
 

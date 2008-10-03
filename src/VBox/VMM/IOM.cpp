@@ -1378,9 +1378,9 @@ IOMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      */
     if (pVM->iom.s.pfnMMIOHandlerR0 == NIL_RTR0PTR)
     {
-        rc = PDMR3GetSymbolGCLazy(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerRC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerRC);
         AssertLogRelRCReturn(rc, rc);
-        rc = PDMR3GetSymbolR0Lazy(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerR0);
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerR0);
         AssertLogRelRCReturn(rc, rc);
     }
 

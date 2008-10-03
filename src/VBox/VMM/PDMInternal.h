@@ -542,8 +542,8 @@ typedef struct PDMRTC
  */
 typedef enum PDMMODTYPE
 {
-    /** Guest context module. */
-    PDMMOD_TYPE_GC,
+    /** Raw-mode (RC) context module. */
+    PDMMOD_TYPE_RC,
     /** Ring-0 (host) context module. */
     PDMMOD_TYPE_R0,
     /** Ring-3 (host) context module. */

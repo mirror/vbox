@@ -56,7 +56,7 @@
 static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariation)
 {
     RTGCPTR32 GCPtrEP;
-    int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -93,7 +93,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     RTPrintf("VMM: testing 0%x / %d - %s\n", u8Trap, uVariation, pszDesc);
 
     RTGCPTR32 GCPtrEP;
-    int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -128,7 +128,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     else if (pszFaultEIP)
     {
         RTGCPTR32 GCPtrFault;
-        int rc2 = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, pszFaultEIP, &GCPtrFault);
+        int rc2 = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, pszFaultEIP, &GCPtrFault);
         if (VBOX_FAILURE(rc2))
             RTPrintf("VMM: FAILURE - Failed to resolve symbol '%s', %Vrc!\n", pszFaultEIP, rc);
         else if (GCPtrFault != CPUMGetHyperEIP(pVM))
@@ -183,7 +183,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
      * Setup stack for calling VMMGCEntry().
      */
     RTGCPTR32 GCPtrEP;
-    int rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
@@ -494,7 +494,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
      * Setup stack for calling VMMGCEntry().
      */
     RTGCPTR32 GCPtrEP;
-    rc = PDMR3GetSymbolGC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
