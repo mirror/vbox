@@ -195,33 +195,34 @@ typedef struct PDMCRITSECTINT
     /** The critical section core which is shared with IPRT. */
     RTCRITSECT                      Core;
     /** Pointer to the next critical section.
-     * This chain is used for relocating pVMGC and device cleanup. */
+     * This chain is used for relocating pVMRC and device cleanup. */
     R3PTRTYPE(struct PDMCRITSECTINT *) pNext;
     /** Owner identifier.
      * This is pDevIns if the owner is a device. Similarily for a driver or service.
      * PDMR3CritSectInit() sets this to point to the critsect itself. */
     RTR3PTR                         pvKey;
     /** Pointer to the VM - R3Ptr. */
-    R3PTRTYPE(PVM)                  pVMR3;
+    PVMR3                           pVMR3;
     /** Pointer to the VM - R0Ptr. */
-    R0PTRTYPE(PVM)                  pVMR0;
+    PVMR0                           pVMR0;
     /** Pointer to the VM - GCPtr. */
-    RCPTRTYPE(PVM)                  pVMGC;
+    PVMRC                           pVMRC;
 #if HC_ARCH_BITS == 64
-    uint32_t            padding;
+    RTRCPTR                         padding;
 #endif
     /** Event semaphore that is scheduled to be signaled upon leaving the
      * critical section. This is Ring-3 only of course. */
     RTSEMEVENT                      EventToSignal;
-    /** R0/GC lock contention. */
-    STAMCOUNTER                     StatContentionR0GCLock;
-    /** R0/GC unlock contention. */
-    STAMCOUNTER                     StatContentionR0GCUnlock;
+    /** R0/RC lock contention. */
+    STAMCOUNTER                     StatContentionRZLock;
+    /** R0/RC unlock contention. */
+    STAMCOUNTER                     StatContentionRZUnlock;
     /** R3 lock contention. */
     STAMCOUNTER                     StatContentionR3;
     /** Profiling the time the section is locked. */
     STAMPROFILEADV                  StatLocked;
-} PDMCRITSECTINT, *PPDMCRITSECTINT;
+} PDMCRITSECTINT;
+typedef PDMCRITSECTINT *PPDMCRITSECTINT;
 
 
 /**

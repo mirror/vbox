@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PDM Critical Sections
+ * PDM - Critical Sections, All Contexts.
  */
 
 /*
@@ -60,10 +60,10 @@ PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     STAM_STATS({ if (pCritSect->s.Core.cNestings == 1) STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l); });
     return rc;
 
-#else
+#else  /* !IN_RING3 */
     AssertMsgReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%RX32\n", pCritSect->s.Core.u32Magic),
                     VERR_SEM_DESTROYED);
-    PVM pVM = pCritSect->s.CTXALLSUFF(pVM);
+    PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
 
     /*
@@ -90,10 +90,10 @@ PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     /*
      * Failed.
      */
-    LogFlow(("PDMCritSectEnter: locked => HC (%Vrc)\n", rcBusy));
-    STAM_COUNTER_INC(&pCritSect->s.StatContentionR0GCLock);
+    LogFlow(("PDMCritSectEnter: locked => R3 (%Vrc)\n", rcBusy));
+    STAM_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
     return rcBusy;
-#endif
+#endif /* !IN_RING3 */
 }
 
 
@@ -156,7 +156,7 @@ PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
     Assert(pCritSect->s.Core.cNestings > 0);
     Assert(pCritSect->s.Core.cLockers >= 0);
-    PVM pVM = pCritSect->s.CTXALLSUFF(pVM);
+    PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
     Assert(pCritSect->s.Core.NativeThreadOwner == pVM->NativeThreadEMT);
 
@@ -197,8 +197,8 @@ PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     VM_FF_SET(pVM, VM_FF_PDM_CRITSECT);
     VM_FF_SET(pVM, VM_FF_TO_R3);
     STAM_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
-    STAM_COUNTER_INC(&pCritSect->s.StatContentionR0GCUnlock);
-#endif
+    STAM_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
+#endif /* !IN_RING3 */
 }
 
 
@@ -214,7 +214,7 @@ PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
 #ifdef IN_RING3
     return RTCritSectIsOwner(&pCritSect->s.Core);
 #else
-    PVM pVM = pCritSect->s.CTXALLSUFF(pVM);
+    PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
     return pCritSect->s.Core.NativeThreadOwner == pVM->NativeThreadEMT;
 #endif
