@@ -48,7 +48,6 @@
 #include <iprt/thread.h>
 
 
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -73,9 +72,9 @@ typedef const PDMDEVREGCBINT *PCPDMDEVREGCBINT;
 *   Internal Functions                                                         *
 *******************************************************************************/
 __BEGIN_DECLS
-static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pDevReg);
+static DECLCALLBACK(int)    pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pDevReg);
 static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, size_t cb);
-static DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem);
+static DECLCALLBACK(bool)   pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem);
 
 /* VSlick regex:
 search : \om/\*\*.+?\*\/\nDECLCALLBACKMEMBER\(([^,]*), *pfn([^)]*)\)\(
@@ -85,146 +84,146 @@ replace: \/\*\* @copydoc PDMDEVHLPR3::pfn\2 \*\/\nstatic DECLCALLBACK\(\1\) pdmR
 /** @name R3 DevHlp
  * @{
  */
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn, PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                         PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                         const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
-                                           const char *pszWrite, const char *pszRead, const char *pszFill,
-                                           const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
-                                           const char *pszWrite, const char *pszRead, const char *pszFill,
-                                           const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
-static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
-                                        PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
-                                        PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone);
-static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
+static DECLCALLBACK(int)    pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn, PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser, const char *pszOut, const char *pszIn, const char *pszOutStr, const char *pszInStr, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+                                                     PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                                     const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+                                                       const char *pszWrite, const char *pszRead, const char *pszFill,
+                                                       const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+                                                       const char *pszWrite, const char *pszRead, const char *pszFill,
+                                                       const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
+static DECLCALLBACK(int)    pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+                                                    PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
+                                                    PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone);
+static DECLCALLBACK(int)    pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
 static DECLCALLBACK(PTMTIMERR3) pdmR3DevHlp_TMTimerCreateExternal(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev);
-static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback);
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                                                            PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld);
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev);
+static DECLCALLBACK(int)    pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback);
+static DECLCALLBACK(void)   pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
+                                                              PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld);
+static DECLCALLBACK(void)   pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(void)   pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(void)   pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(void)   pdmR3DevHlp_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(int)    pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc);
 static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAlloc(PPDMDEVINS pDevIns, size_t cb);
 static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t cb);
-static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv);
-static DECLCALLBACK(int) pdmR3DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
-static DECLCALLBACK(int) pdmR3DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
-static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
-static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
-static DECLCALLBACK(bool) pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
-static DECLCALLBACK(bool) pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
-static DECLCALLBACK(int) pdmR3DevHlp_DBGFStopV(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction, const char *pszFormat, va_list args);
-static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler);
-static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
-static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...);
-static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args);
-static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName);
+static DECLCALLBACK(void)   pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv);
+static DECLCALLBACK(int)    pdmR3DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
+static DECLCALLBACK(int)    pdmR3DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
+static DECLCALLBACK(int)    pdmR3DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
+static DECLCALLBACK(int)    pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
+static DECLCALLBACK(bool)   pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
+static DECLCALLBACK(bool)   pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
+static DECLCALLBACK(int)    pdmR3DevHlp_DBGFStopV(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction, const char *pszFormat, va_list args);
+static DECLCALLBACK(int)    pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler);
+static DECLCALLBACK(void)   pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
+static DECLCALLBACK(void)   pdmR3DevHlp_STAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...);
+static DECLCALLBACK(void)   pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args);
+static DECLCALLBACK(int)    pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, const char *pszName);
 static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime);
-static DECLCALLBACK(int) pdmR3DevHlp_PDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
-                                                     PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
+static DECLCALLBACK(int)    pdmR3DevHlp_PDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
+                                                        PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
 
-static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp);
-static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PCPDMRTCHLP *ppRtcHlp);
-static DECLCALLBACK(int) pdmR3DevHlp_PDMQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, PPDMQUEUE *ppQueue);
-static DECLCALLBACK(void) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
-static DECLCALLBACK(void) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
-static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb);
-static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
-static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
+static DECLCALLBACK(PVM)    pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp);
+static DECLCALLBACK(int)    pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PCPDMRTCHLP *ppRtcHlp);
+static DECLCALLBACK(int)    pdmR3DevHlp_PDMQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, PPDMQUEUE *ppQueue);
+static DECLCALLBACK(void)   pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
+static DECLCALLBACK(void)   pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
+static DECLCALLBACK(int)    pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb);
+static DECLCALLBACK(int)    pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
+static DECLCALLBACK(int)    pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
 static DECLCALLBACK(VMSTATE) pdmR3DevHlp_VMState(PPDMDEVINS pDevIns);
-static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
-static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable);
-static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int)  pdmR3DevHlp_LockVM(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int)  pdmR3DevHlp_UnlockVM(PPDMDEVINS pDevIns);
-static DECLCALLBACK(bool) pdmR3DevHlp_AssertVMLock(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
-static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser);
-static DECLCALLBACK(int) pdmR3DevHlp_DMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbRead);
-static DECLCALLBACK(int) pdmR3DevHlp_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten);
-static DECLCALLBACK(int) pdmR3DevHlp_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel);
+static DECLCALLBACK(bool)   pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void)   pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable);
+static DECLCALLBACK(int)    pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_LockVM(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_UnlockVM(PPDMDEVINS pDevIns);
+static DECLCALLBACK(bool)   pdmR3DevHlp_AssertVMLock(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
+static DECLCALLBACK(int)    pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser);
+static DECLCALLBACK(int)    pdmR3DevHlp_DMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbRead);
+static DECLCALLBACK(int)    pdmR3DevHlp_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten);
+static DECLCALLBACK(int)    pdmR3DevHlp_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel);
 static DECLCALLBACK(uint8_t) pdmR3DevHlp_DMAGetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel);
-static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
-static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
-static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+static DECLCALLBACK(void)   pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
+static DECLCALLBACK(int)    pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
+static DECLCALLBACK(void)   pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
                                                uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
-static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
-static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr);
-static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
-static DECLCALLBACK(int) pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
+static DECLCALLBACK(int)    pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int)    pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr);
+static DECLCALLBACK(int)    pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
+static DECLCALLBACK(int)    pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
 
-static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp);
-static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
-static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
+static DECLCALLBACK(PVM)    pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp);
+static DECLCALLBACK(void)   pdmR3DevHlp_Untrusted_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
+static DECLCALLBACK(void)   pdmR3DevHlp_Untrusted_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_Obsolete_Phys2HCVirt(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR ppvHC);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_Obsolete_PhysGCPtr2HCPtr(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
 
-static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_A20IsEnabled(PPDMDEVINS pDevIns);
-static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_A20Set(PPDMDEVINS pDevIns, bool fEnable);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMPowerOff(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMSuspend(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int)  pdmR3DevHlp_Untrusted_LockVM(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int)  pdmR3DevHlp_Untrusted_UnlockVM(PPDMDEVINS pDevIns);
-static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_AssertVMLock(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbRead);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel);
+static DECLCALLBACK(bool)   pdmR3DevHlp_Untrusted_A20IsEnabled(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void)   pdmR3DevHlp_Untrusted_A20Set(PPDMDEVINS pDevIns, bool fEnable);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_VMPowerOff(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_VMSuspend(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_LockVM(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_UnlockVM(PPDMDEVINS pDevIns);
+static DECLCALLBACK(bool)   pdmR3DevHlp_Untrusted_AssertVMLock(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_DMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbRead);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel);
 static DECLCALLBACK(uint8_t) pdmR3DevHlp_Untrusted_DMAGetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel);
-static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_DMASchedule(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
-static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
-                                                         uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
-static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
+static DECLCALLBACK(void)   pdmR3DevHlp_Untrusted_DMASchedule(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value);
+static DECLCALLBACK(void)   pdmR3DevHlp_Untrusted_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
+                                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
+static DECLCALLBACK(int)    pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
 /** @} */
 
 
 /** @name HC PIC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
-static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void)   pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void)   pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
+static DECLCALLBACK(int)    pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc);
+static DECLCALLBACK(void)   pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMPICHLPRC) pdmR3PicHlp_GetRCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -233,11 +232,11 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @name HC APIC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
-static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
-static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion);
-static DECLCALLBACK(int) pdmR3ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void)   pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
+static DECLCALLBACK(void)   pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
+static DECLCALLBACK(void)   pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion);
+static DECLCALLBACK(int)    pdmR3ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
+static DECLCALLBACK(void)   pdmR3ApicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
@@ -247,10 +246,10 @@ static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns
 /** @name HC I/O APIC Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                        uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode);
-static DECLCALLBACK(int) pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void)   pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
+                                                          uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode);
+static DECLCALLBACK(int)    pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
+static DECLCALLBACK(void)   pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMIOAPICHLPRC) pdmR3IoApicHlp_GetRCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -259,11 +258,11 @@ static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDe
 /** @name HC PCI Bus Helpers
  * @{
  */
-static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys);
-static DECLCALLBACK(int) pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns);
+static DECLCALLBACK(void)   pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(void)   pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+static DECLCALLBACK(bool)   pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys);
+static DECLCALLBACK(int)    pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc);
+static DECLCALLBACK(void)   pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMPCIHLPRC) pdmR3PciHlp_GetRCHelpers(PPDMDEVINS pDevIns);
 static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 /** @} */
@@ -281,6 +280,8 @@ static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns);
 #else
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)
 #endif
+
+static int pdmR3DevLoadModules(PVM pVM);
 static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename, const char *pszName);
 
 
@@ -570,6 +571,7 @@ const PDMRTCHLP g_pdmR3DevRtcHlp =
 };
 
 
+
 /**
  * This function will initialize the devices for this VM instance.
  *
@@ -600,10 +602,24 @@ int pdmR3DevInit(PVM pVM)
     AssertRelease(sizeof(pVM->pdm.s.pDevInstances->Internal.s) <= sizeof(pVM->pdm.s.pDevInstances->Internal.padding));
 
     /*
+     * Load device modules.
+     */
+    int rc = pdmR3DevLoadModules(pVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+#ifdef VBOX_WITH_USB
+    /* ditto for USB Devices. */
+    rc = pdmR3UsbLoadModules(pVM);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+
+    /*
      * Get the RC & R0 devhlps and create the devhlp R3 task queue.
      */
     PCPDMDEVHLPRC pDevHlpRC;
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pDevHlpRC);
+    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pDevHlpRC);
     AssertReleaseRCReturn(rc, rc);
 
     PCPDMDEVHLPR0 pDevHlpR0;
@@ -616,126 +632,18 @@ int pdmR3DevInit(PVM pVM)
 
 
     /*
-     * Initialize the callback structure.
-     */
-    PDMDEVREGCBINT RegCB;
-    RegCB.Core.u32Version = PDM_DEVREG_CB_VERSION;
-    RegCB.Core.pfnRegister = pdmR3DevReg_Register;
-    RegCB.Core.pfnMMHeapAlloc = pdmR3DevReg_MMHeapAlloc;
-    RegCB.pVM = pVM;
-
-    /*
-     * Load the builtin module
-     */
-    PCFGMNODE pDevicesNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "PDM/Devices");
-    bool fLoadBuiltin;
-    rc = CFGMR3QueryBool(pDevicesNode, "LoadBuiltin", &fLoadBuiltin);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
-        fLoadBuiltin = true;
-    else if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Vrc\n", rc));
-        return rc;
-    }
-    if (fLoadBuiltin)
-    {
-        /* make filename */
-        char *pszFilename = pdmR3FileR3("VBoxDD", /* fShared = */ true);
-        if (!pszFilename)
-            return VERR_NO_TMP_MEMORY;
-        rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD");
-        RTMemTmpFree(pszFilename);
-        if (VBOX_FAILURE(rc))
-            return rc;
-
-        /* make filename */
-        pszFilename = pdmR3FileR3("VBoxDD2", /* fShared = */ true);
-        if (!pszFilename)
-            return VERR_NO_TMP_MEMORY;
-        rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD2");
-        RTMemTmpFree(pszFilename);
-        if (VBOX_FAILURE(rc))
-            return rc;
-    }
-
-    /*
-     * Load additional device modules.
-     */
-    PCFGMNODE pCur;
-    for (pCur = CFGMR3GetFirstChild(pDevicesNode); pCur; pCur = CFGMR3GetNextChild(pCur))
-    {
-        /*
-         * Get the name and path.
-         */
-        char szName[PDMMOD_NAME_LEN];
-        rc = CFGMR3GetName(pCur, &szName[0], sizeof(szName));
-        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-        {
-            AssertMsgFailed(("configuration error: The module name is too long, cchName=%d.\n", CFGMR3GetNameLen(pCur)));
-            return VERR_PDM_MODULE_NAME_TOO_LONG;
-        }
-        else if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("CFGMR3GetName -> %Vrc.\n", rc));
-            return rc;
-        }
-
-        /* the path is optional, if no path the module name + path is used. */
-        char szFilename[RTPATH_MAX];
-        rc = CFGMR3QueryString(pCur, "Path", &szFilename[0], sizeof(szFilename));
-        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            strcpy(szFilename, szName);
-        else if (VBOX_FAILURE(rc))
-        {
-            AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Vrc.\n", rc));
-            return rc;
-        }
-
-        /* prepend path? */
-        if (!RTPathHavePath(szFilename))
-        {
-            char *psz = pdmR3FileR3(szFilename);
-            if (!psz)
-                return VERR_NO_TMP_MEMORY;
-            size_t cch = strlen(psz) + 1;
-            if (cch > sizeof(szFilename))
-            {
-                RTMemTmpFree(psz);
-                AssertMsgFailed(("Filename too long! cch=%d '%s'\n", cch, psz));
-                return VERR_FILENAME_TOO_LONG;
-            }
-            memcpy(szFilename, psz, cch);
-            RTMemTmpFree(psz);
-        }
-
-        /*
-         * Load the module and register it's devices.
-         */
-        rc = pdmR3DevLoad(pVM, &RegCB, szFilename, szName);
-        if (VBOX_FAILURE(rc))
-            return rc;
-    }
-
-#ifdef VBOX_WITH_USB
-    /* ditto for USB Devices. */
-    rc = pdmR3UsbLoadModules(pVM);
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
-
-
-    /*
      *
      * Enumerate the device instance configurations
      * and come up with a instantiation order.
      *
      */
     /* Switch to /Devices, which contains the device instantiations. */
-    pDevicesNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices");
+    PCFGMNODE pDevicesNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "Devices");
 
     /*
      * Count the device instances.
      */
+    PCFGMNODE pCur;
     PCFGMNODE pInstanceNode;
     unsigned cDevs = 0;
     for (pCur = CFGMR3GetFirstChild(pDevicesNode); pCur; pCur = CFGMR3GetNextChild(pCur))
@@ -1013,6 +921,119 @@ PPDMDEV pdmR3DevLookup(PVM pVM, const char *pszName)
 
 
 /**
+ * Loads the device modules.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ */
+static int pdmR3DevLoadModules(PVM pVM)
+{
+    /*
+     * Initialize the callback structure.
+     */
+    PDMDEVREGCBINT RegCB;
+    RegCB.Core.u32Version = PDM_DEVREG_CB_VERSION;
+    RegCB.Core.pfnRegister = pdmR3DevReg_Register;
+    RegCB.Core.pfnMMHeapAlloc = pdmR3DevReg_MMHeapAlloc;
+    RegCB.pVM = pVM;
+
+    /*
+     * Load the builtin module
+     */
+    PCFGMNODE pDevicesNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "PDM/Devices");
+    bool fLoadBuiltin;
+    int rc = CFGMR3QueryBool(pDevicesNode, "LoadBuiltin", &fLoadBuiltin);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+        fLoadBuiltin = true;
+    else if (VBOX_FAILURE(rc))
+    {
+        AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Vrc\n", rc));
+        return rc;
+    }
+    if (fLoadBuiltin)
+    {
+        /* make filename */
+        char *pszFilename = pdmR3FileR3("VBoxDD", /* fShared = */ true);
+        if (!pszFilename)
+            return VERR_NO_TMP_MEMORY;
+        rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD");
+        RTMemTmpFree(pszFilename);
+        if (VBOX_FAILURE(rc))
+            return rc;
+
+        /* make filename */
+        pszFilename = pdmR3FileR3("VBoxDD2", /* fShared = */ true);
+        if (!pszFilename)
+            return VERR_NO_TMP_MEMORY;
+        rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD2");
+        RTMemTmpFree(pszFilename);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Load additional device modules.
+     */
+    PCFGMNODE pCur;
+    for (pCur = CFGMR3GetFirstChild(pDevicesNode); pCur; pCur = CFGMR3GetNextChild(pCur))
+    {
+        /*
+         * Get the name and path.
+         */
+        char szName[PDMMOD_NAME_LEN];
+        rc = CFGMR3GetName(pCur, &szName[0], sizeof(szName));
+        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+        {
+            AssertMsgFailed(("configuration error: The module name is too long, cchName=%d.\n", CFGMR3GetNameLen(pCur)));
+            return VERR_PDM_MODULE_NAME_TOO_LONG;
+        }
+        else if (VBOX_FAILURE(rc))
+        {
+            AssertMsgFailed(("CFGMR3GetName -> %Vrc.\n", rc));
+            return rc;
+        }
+
+        /* the path is optional, if no path the module name + path is used. */
+        char szFilename[RTPATH_MAX];
+        rc = CFGMR3QueryString(pCur, "Path", &szFilename[0], sizeof(szFilename));
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            strcpy(szFilename, szName);
+        else if (VBOX_FAILURE(rc))
+        {
+            AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Vrc.\n", rc));
+            return rc;
+        }
+
+        /* prepend path? */
+        if (!RTPathHavePath(szFilename))
+        {
+            char *psz = pdmR3FileR3(szFilename);
+            if (!psz)
+                return VERR_NO_TMP_MEMORY;
+            size_t cch = strlen(psz) + 1;
+            if (cch > sizeof(szFilename))
+            {
+                RTMemTmpFree(psz);
+                AssertMsgFailed(("Filename too long! cch=%d '%s'\n", cch, psz));
+                return VERR_FILENAME_TOO_LONG;
+            }
+            memcpy(szFilename, psz, cch);
+            RTMemTmpFree(psz);
+        }
+
+        /*
+         * Load the module and register it's devices.
+         */
+        rc = pdmR3DevLoad(pVM, &RegCB, szFilename, szName);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads one device module and call the registration entry point.
  *
  * @returns VBox status code.
@@ -1186,13 +1207,29 @@ static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, siz
 {
     Assert(pCallbacks);
     Assert(pCallbacks->u32Version == PDM_DEVREG_CB_VERSION);
-    LogFlow(("pdmR3DevReg_MMHeapAlloc: cb=%#x\n", cb));
 
     void *pv = MMR3HeapAlloc(((PPDMDEVREGCBINT)pCallbacks)->pVM, MM_TAG_PDM_DEVICE_USER, cb);
-
-    LogFlow(("pdmR3DevReg_MMHeapAlloc: returns %p\n", pv));
+    LogFlow(("pdmR3DevReg_MMHeapAlloc(,%#zx): returns %p\n", cb, pv));
     return pv;
 }
+
+
+
+
+
+/*
+ *
+ *
+ *
+ *
+ *   p d m R 3 D e v H l p
+ *   p d m R 3 D e v H l p
+ *   p d m R 3 D e v H l p
+ *
+ *
+ *
+ *
+ */
 
 
 /**
