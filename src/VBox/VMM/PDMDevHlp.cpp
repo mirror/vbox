@@ -395,6 +395,7 @@ static DECLCALLBACK(PTMTIMERR3) pdmR3DevHlp_TMTimerCreateExternal(PPDMDEVINS pDe
     return TMR3TimerCreateExternal(pDevIns->Internal.s.pVMR3, enmClock, pfnCallback, pvUser, pszDesc);
 }
 
+
 /** @copydoc PDMDEVHLPR3::pfnPCIRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
 {
@@ -822,9 +823,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                             Log(("PDM: Attached driver '%s'/%d to LUN#%d on device '%s'/%d.\n",
                                  pDrv->pDrvReg->szDriverName, pNew->iInstance, iLun, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
                             LogFlow(("pdmR3DevHlp_DriverAttach: caller '%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
-			    /*
-			     * Might return != VINF_SUCCESS (e.g. VINF_NAT_DNS) */
-                            return rc;
+
+                            return rc;  /* Might return != VINF_SUCCESS (e.g. VINF_NAT_DNS). */
                         }
 
                         /*
@@ -1313,7 +1313,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
             LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
-        pPciBus->pDevInsR0 = MMHyperR3ToR0(pVM, pDevIns);
+        pPciBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     }
     else
     {
@@ -1457,7 +1457,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
             LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
-        pVM->pdm.s.Pic.pDevInsR0 = MMHyperR3ToR0(pVM, pDevIns);
+        pVM->pdm.s.Pic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
         Assert(pVM->pdm.s.Pic.pDevInsR0);
     }
     else
@@ -1691,7 +1691,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
-        pVM->pdm.s.Apic.pDevInsR0 = MMHyperR3ToR0(pVM, pDevIns);
+        pVM->pdm.s.Apic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
         Assert(pVM->pdm.s.Apic.pDevInsR0);
     }
     else
@@ -1832,7 +1832,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
-        pVM->pdm.s.IoApic.pDevInsR0 = MMHyperR3ToR0(pVM, pDevIns);
+        pVM->pdm.s.IoApic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
         Assert(pVM->pdm.s.IoApic.pDevInsR0);
     }
     else
