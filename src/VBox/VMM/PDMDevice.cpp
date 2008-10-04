@@ -64,27 +64,21 @@ typedef struct PDMDEVREGCBINT
     uint32_t        u32[4];
     /** VM Handle. */
     PVM             pVM;
-} PDMDEVREGCBINT, *PPDMDEVREGCBINT;
+} PDMDEVREGCBINT;
+/** Pointer to a PDMDEVREGCBINT structure. */
+typedef PDMDEVREGCBINT *PPDMDEVREGCBINT;
+/** Pointer to a const PDMDEVREGCBINT structure. */
 typedef const PDMDEVREGCBINT *PCPDMDEVREGCBINT;
 
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-__BEGIN_DECLS
 static DECLCALLBACK(int)    pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pDevReg);
 static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, size_t cb);
+static int                  pdmR3DevLoadModules(PVM pVM);
+static int                  pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename, const char *pszName);
 
-static int pdmR3DevLoadModules(PVM pVM);
-static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename, const char *pszName);
-
-
-/*
- * Allow physical read and writes from any thread
- */
-#define PDM_PHYS_READWRITE_FROM_ANY_THREAD
-
-__END_DECLS
 
 
 
@@ -591,7 +585,6 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
         AssertMsgFailed(("Failed to load %s %s!\n", pszFilename, pszName));
     return rc;
 }
-
 
 
 /**
