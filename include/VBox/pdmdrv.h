@@ -920,13 +920,6 @@ typedef struct PDMDRVREGCB
  */
 typedef DECLCALLBACK(int) FNPDMVBOXDRIVERSREGISTER(PCPDMDRVREGCB pCallbacks, uint32_t u32Version);
 
-/**
- * Register external drivers
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pfnCallback Driver registration callback
- */
 PDMR3DECL(int) PDMR3RegisterDrivers(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnCallback);
 
 /** @} */
