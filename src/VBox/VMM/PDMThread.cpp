@@ -212,11 +212,12 @@ int pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, v
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
     {
-        (*ppThread)->pvUser = pvUser;
-        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_DEVICE;
-        (*ppThread)->u.Dev.pDevIns = pDevIns;
-        (*ppThread)->u.Dev.pfnThread = pfnThread;
-        (*ppThread)->u.Dev.pfnWakeUp = pfnWakeUp;
+        PPDMTHREAD pThread = *ppThread;
+        pThread->pvUser = pvUser;
+        pThread->Internal.s.enmType = PDMTHREADTYPE_DEVICE;
+        pThread->u.Dev.pDevIns = pDevIns;
+        pThread->u.Dev.pfnThread = pfnThread;
+        pThread->u.Dev.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -244,11 +245,12 @@ int pdmR3ThreadCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
     {
-        (*ppThread)->pvUser = pvUser;
-        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_USB;
-        (*ppThread)->u.Usb.pUsbIns = pUsbIns;
-        (*ppThread)->u.Usb.pfnThread = pfnThread;
-        (*ppThread)->u.Usb.pfnWakeUp = pfnWakeUp;
+        PPDMTHREAD pThread = *ppThread;
+        pThread->pvUser = pvUser;
+        pThread->Internal.s.enmType = PDMTHREADTYPE_USB;
+        pThread->u.Usb.pUsbIns = pUsbIns;
+        pThread->u.Usb.pfnThread = pfnThread;
+        pThread->u.Usb.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -276,11 +278,12 @@ int pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, v
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
     {
-        (*ppThread)->pvUser = pvUser;
-        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_DRIVER;
-        (*ppThread)->u.Drv.pDrvIns = pDrvIns;
-        (*ppThread)->u.Drv.pfnThread = pfnThread;
-        (*ppThread)->u.Drv.pfnWakeUp = pfnWakeUp;
+        PPDMTHREAD pThread = *ppThread;
+        pThread->pvUser = pvUser;
+        pThread->Internal.s.enmType = PDMTHREADTYPE_DRIVER;
+        pThread->u.Drv.pDrvIns = pDrvIns;
+        pThread->u.Drv.pfnThread = pfnThread;
+        pThread->u.Drv.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -307,10 +310,11 @@ PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PF
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
     {
-        (*ppThread)->pvUser = pvUser;
-        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_INTERNAL;
-        (*ppThread)->u.Int.pfnThread = pfnThread;
-        (*ppThread)->u.Int.pfnWakeUp = pfnWakeUp;
+        PPDMTHREAD pThread = *ppThread;
+        pThread->pvUser = pvUser;
+        pThread->Internal.s.enmType = PDMTHREADTYPE_INTERNAL;
+        pThread->u.Int.pfnThread = pfnThread;
+        pThread->u.Int.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
@@ -337,10 +341,11 @@ PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pv
     int rc = pdmR3ThreadNew(pVM, ppThread);
     if (RT_SUCCESS(rc))
     {
-        (*ppThread)->pvUser = pvUser;
-        (*ppThread)->Internal.s.enmType = PDMTHREADTYPE_EXTERNAL;
-        (*ppThread)->u.Ext.pfnThread = pfnThread;
-        (*ppThread)->u.Ext.pfnWakeUp = pfnWakeUp;
+        PPDMTHREAD pThread = *ppThread;
+        pThread->pvUser = pvUser;
+        pThread->Internal.s.enmType = PDMTHREADTYPE_EXTERNAL;
+        pThread->u.Ext.pfnThread = pfnThread;
+        pThread->u.Ext.pfnWakeUp = pfnWakeUp;
         rc = pdmR3ThreadInit(pVM, ppThread, cbStack, enmType, pszName);
     }
     return rc;
