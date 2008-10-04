@@ -50,12 +50,14 @@ typedef struct PDMQUEUEITEMCORE *PPDMQUEUEITEMCORE;
  */
 typedef struct PDMQUEUEITEMCORE
 {
-    /** Pointer to the next item in the pending list - HC Pointer. */
-    R3R0PTRTYPE(PPDMQUEUEITEMCORE)  pNextHC;
-    /** Pointer to the next item in the pending list - GC Pointer. */
-    RCPTRTYPE(PPDMQUEUEITEMCORE)    pNextGC;
+    /** Pointer to the next item in the pending list - R3 Pointer. */
+    R3PTRTYPE(PPDMQUEUEITEMCORE)    pNextR3;
+    /** Pointer to the next item in the pending list - R0 Pointer. */
+    R0PTRTYPE(PPDMQUEUEITEMCORE)    pNextR0;
+    /** Pointer to the next item in the pending list - RC Pointer. */
+    RCPTRTYPE(PPDMQUEUEITEMCORE)    pNextRC;
 #if HC_ARCH_BITS == 64
-    uint32_t                        Alignment0;
+    RTRCPTR                         Alignment0;
 #endif
 } PDMQUEUEITEMCORE;
 
@@ -127,8 +129,6 @@ PDMDECL(PPDMQUEUEITEMCORE)    PDMQueueAlloc(PPDMQUEUE pQueue);
 PDMDECL(void)                 PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem);
 PDMDECL(void)                 PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay);
 PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue);
-/** @todo eliminate PDMQueueGCPtr */
-#define PDMQueueGCPtr(pQueue) PDMQueueRCPtr(pQueue)
 PDMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue);
 
 /** @} */
