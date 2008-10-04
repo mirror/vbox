@@ -48,7 +48,7 @@
  */
 PDMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
 {
-    Assert(VALID_PTR(pQueue) && pQueue->CTXSUFF(pVM));
+    Assert(VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
     PPDMQUEUEITEMCORE pNew;
     uint32_t iNext;
     uint32_t i;
@@ -57,7 +57,7 @@ PDMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
         i = pQueue->iFreeTail;
         if (i == pQueue->iFreeHead)
             return NULL;
-        pNew = pQueue->aFreeItems[i].CTXSUFF(pItem);
+        pNew = pQueue->aFreeItems[i].CTX_SUFF(pItem);
         iNext = (i + 1) % (pQueue->cItems + PDMQUEUE_FREE_SLACK);
     } while (!ASMAtomicCmpXchgU32(&pQueue->iFreeTail, iNext, i));
     return pNew;
@@ -75,19 +75,19 @@ PDMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
  */
 PDMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 {
-    Assert(VALID_PTR(pQueue) && pQueue->CTXSUFF(pVM));
+    Assert(VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
     Assert(VALID_PTR(pItem));
 
     PPDMQUEUEITEMCORE pNext;
     do
     {
-        pNext = pQueue->CTXSUFF(pPending);
-        pItem->CTXSUFF(pNext) = pNext;
-    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->CTXSUFF(pPending), pItem, pNext));
+        pNext = pQueue->CTX_SUFF(pPending);
+        pItem->CTX_SUFF(pNext) = pNext;
+    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->CTX_SUFF(pPending), pItem, pNext));
 
     if (!pQueue->pTimer)
     {
-        PVM pVM = pQueue->CTXSUFF(pVM);
+        PVM pVM = pQueue->CTX_SUFF(pVM);
         Log2(("PDMQueueInsert: VM_FF_PDM_QUEUES %d -> 1\n", VM_FF_ISSET(pVM, VM_FF_PDM_QUEUES)));
         VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
 #ifdef IN_RING3
@@ -113,7 +113,7 @@ PDMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
 {
     PDMQueueInsert(pQueue, pItem);
 #ifdef IN_GC
-    PVM pVM = pQueue->CTXSUFF(pVM);
+    PVM pVM = pQueue->CTX_SUFF(pVM);
     /** @todo figure out where to put this, the next bit should go there too.
     if (NanoMaxDelay)
     {
@@ -139,11 +139,11 @@ PDMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
 PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
-    Assert(pQueue->pVMHC && pQueue->pVMGC);
+    Assert(pQueue->pVMR3 && pQueue->pVMRC);
 #ifdef IN_GC
     return pQueue;
 #else
-    return MMHyperCCToRC(pQueue->pVMHC, pQueue);
+    return MMHyperCCToRC(pQueue->CTX_SUFF(pVM), pQueue);
 #endif
 }
 
@@ -158,11 +158,11 @@ PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
 PDMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
-    Assert(pQueue->pVMHC && pQueue->pVMGC);
+    Assert(pQueue->pVMR3 && pQueue->pVMR0);
 #ifdef IN_RING0
     return pQueue;
 #else
-    return MMHyperCCToR0(pQueue->CTXSUFF(pVM), pQueue);
+    return MMHyperCCToR0(pQueue->CTX_SUFF(pVM), pQueue);
 #endif
 }
 
@@ -175,14 +175,19 @@ PDMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
 PDMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
-    Assert(pQueue->pVMHC && pQueue->pVMGC);
-    PVM pVM = CTXSUFF(pQueue->pVM);
+    Assert(pQueue->pVMR3);
+    PVM pVM = pQueue->CTX_SUFF(pVM);
+
 #ifdef IN_GC
-    pVM->pdm.s.CTXSUFF(pQueueFlush) = pQueue;
+    Assert(pQueue->pVMRC);
+    pVM->pdm.s.CTX_SUFF(pQueueFlush) = pQueue;
     VMMGCCallHost(pVM, VMMCALLHOST_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
+
 #elif defined(IN_RING0)
-    pVM->pdm.s.CTXSUFF(pQueueFlush) = pQueue;
+    Assert(pQueue->pVMR0);
+    pVM->pdm.s.CTX_SUFF(pQueueFlush) = pQueue;
     VMMR0CallHost(pVM, VMMCALLHOST_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
+
 #else /* IN_RING3: */
     PVMREQ pReq;
     VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PDMR3QueueFlushWorker, 2, pVM, pQueue);

@@ -39,22 +39,6 @@
 
 
 /*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** @def PDMDEV_ASSERT_DEVINS
- * Asserts the validity of the driver instance.
- */
-#ifdef VBOX_STRICT
-# define PDMDEV_ASSERT_DEVINS(pDevIns)   do { Assert(VALID_PTR(pDevIns)); \
-                                              Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); \
-                                              Assert(pDevIns->pvInstanceDataRC == (void *)&pDevIns->achInstanceData[0]); \
-                                         } while (0)
-#else
-# define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)
-#endif
-
-
-/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 __BEGIN_DECLS
@@ -230,15 +214,15 @@ static DECLCALLBACK(void) pdmGCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
     else
     {
         /* queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueGC);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueRC);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_PCI_SET_IRQ;
-            pTask->pDevInsHC = MMHyperGC2HC(pVM, pDevIns);
+            pTask->pDevInsR3 = PDMDEVINS_2_R3PTR(pDevIns);
             pTask->u.SetIRQ.iIrq = iIrq;
             pTask->u.SetIRQ.iLevel = iLevel;
 
-            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueGC, &pTask->Core, 0);
+            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueRC, &pTask->Core, 0);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
@@ -552,15 +536,15 @@ static void pdmGCIsaSetIrq(PVM pVM, int iIrq, int iLevel)
     else
     {
         /* queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueGC);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueRC);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_ISA_SET_IRQ;
-            pTask->pDevInsHC = 0; /* not required */
+            pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
             pTask->u.SetIRQ.iIrq = iIrq;
             pTask->u.SetIRQ.iLevel = iLevel;
 
-            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueGC, &pTask->Core, 0);
+            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueRC, &pTask->Core, 0);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
@@ -586,15 +570,15 @@ static void pdmGCIoApicSetIrq(PVM pVM, int iIrq, int iLevel)
     else if (pVM->pdm.s.IoApic.pDevInsR3)
     {
         /* queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueGC);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueRC);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_IRQ;
-            pTask->pDevInsHC = 0; /* not required */
+            pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
             pTask->u.SetIRQ.iIrq = iIrq;
             pTask->u.SetIRQ.iLevel = iLevel;
 
-            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueGC, &pTask->Core, 0);
+            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueRC, &pTask->Core, 0);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));

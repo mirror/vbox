@@ -3127,7 +3127,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
 DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 {
     PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)pItem;
-    LogFlow(("pdmR3DevHlpQueueConsumer: enmOp=%d pDevIns=%p\n", pTask->enmOp, pTask->pDevInsHC));
+    LogFlow(("pdmR3DevHlpQueueConsumer: enmOp=%d pDevIns=%p\n", pTask->enmOp, pTask->pDevInsR3));
     switch (pTask->enmOp)
     {
         case PDMDEVHLPTASKOP_ISA_SET_IRQ:
@@ -3135,7 +3135,7 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
             break;
 
         case PDMDEVHLPTASKOP_PCI_SET_IRQ:
-            pdmR3DevHlp_PCISetIrq(pTask->pDevInsHC, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel);
+            pdmR3DevHlp_PCISetIrq(pTask->pDevInsR3, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel);
             break;
 
         case PDMDEVHLPTASKOP_IOAPIC_SET_IRQ:

@@ -290,22 +290,22 @@ __BEGIN_DECLS
 typedef struct PDMLUN
 {
     /** The LUN - The Logical Unit Number. */
-    RTUINT              iLun;
+    RTUINT                          iLun;
     /** Pointer to the next LUN. */
-    PPDMLUN             pNext;
+    PPDMLUN                         pNext;
     /** Pointer to the top driver in the driver chain. */
-    PPDMDRVINS          pTop;
+    PPDMDRVINS                      pTop;
     /** Pointer to the bottom driver in the driver chain. */
-    PPDMDRVINS          pBottom;
+    PPDMDRVINS                      pBottom;
     /** Pointer to the device instance which the LUN belongs to.
      * Either this is set or pUsbIns is set. Both is never set at the same time. */
-    PPDMDEVINS          pDevIns;
+    PPDMDEVINS                      pDevIns;
     /** Pointer to the USB device instance which the LUN belongs to. */
-    PPDMUSBINS          pUsbIns;
+    PPDMUSBINS                      pUsbIns;
     /** Pointer to the device base interface. */
-    PPDMIBASE           pBase;
+    PPDMIBASE                       pBase;
     /** Description of this LUN. */
-    const char         *pszDesc;
+    const char                     *pszDesc;
 } PDMLUN;
 
 
@@ -314,16 +314,16 @@ typedef struct PDMLUN
  */
 typedef struct PDMDEV
 {
-    /** Pointer to the next device (HC Ptr). */
-    R3PTRTYPE(PPDMDEV)                  pNext;
+    /** Pointer to the next device (R3 Ptr). */
+    R3PTRTYPE(PPDMDEV)              pNext;
     /** Device name length. (search optimization) */
-    RTUINT                              cchName;
+    RTUINT                          cchName;
     /** Registration structure. */
     R3PTRTYPE(const struct PDMDEVREG *) pDevReg;
     /** Number of instances. */
-    RTUINT                              cInstances;
-    /** Pointer to chain of instances (HC Ptr). */
-    R3PTRTYPE(PPDMDEVINS)               pInstances;
+    RTUINT                          cInstances;
+    /** Pointer to chain of instances (R3 Ptr). */
+    PPDMDEVINSR3                    pInstances;
 } PDMDEV;
 
 
@@ -333,15 +333,15 @@ typedef struct PDMDEV
 typedef struct PDMUSB
 {
     /** Pointer to the next device (R3 Ptr). */
-    R3PTRTYPE(PPDMUSB)                  pNext;
+    R3PTRTYPE(PPDMUSB)              pNext;
     /** Device name length. (search optimization) */
-    RTUINT                              cchName;
+    RTUINT                          cchName;
     /** Registration structure. */
     R3PTRTYPE(const struct PDMUSBREG *) pUsbReg;
     /** Next instance number. */
-    RTUINT                              iNextInstance;
+    RTUINT                          iNextInstance;
     /** Pointer to chain of instances (R3 Ptr). */
-    R3PTRTYPE(PPDMUSBINS)               pInstances;
+    R3PTRTYPE(PPDMUSBINS)           pInstances;
 } PDMUSB;
 
 
@@ -351,11 +351,11 @@ typedef struct PDMUSB
 typedef struct PDMDRV
 {
     /** Pointer to the next device. */
-    PPDMDRV                             pNext;
+    PPDMDRV                         pNext;
     /** Registration structure. */
-    const struct PDMDRVREG *            pDrvReg;
+    const struct PDMDRVREG *        pDrvReg;
     /** Number of instances. */
-    RTUINT                              cInstances;
+    RTUINT                          cInstances;
 } PDMDRV;
 
 
@@ -365,27 +365,27 @@ typedef struct PDMDRV
 typedef struct PDMPIC
 {
     /** Pointer to the PIC device instance - R3. */
-    R3PTRTYPE(PPDMDEVINS)   pDevInsR3;
+    PPDMDEVINSR3                    pDevInsR3;
     /** @copydoc PDMPICREG::pfnSetIrqR3 */
-    DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
     /** @copydoc PDMPICREG::pfnGetInterruptR3 */
-    DECLR3CALLBACKMEMBER(int, pfnGetInterruptR3,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(int,       pfnGetInterruptR3,(PPDMDEVINS pDevIns));
 
     /** Pointer to the PIC device instance - R0. */
-    R0PTRTYPE(PPDMDEVINS)   pDevInsR0;
+    PPDMDEVINSR0                    pDevInsR0;
     /** @copydoc PDMPICREG::pfnSetIrqR3 */
-    DECLR0CALLBACKMEMBER(void, pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
     /** @copydoc PDMPICREG::pfnGetInterruptR3 */
-    DECLR0CALLBACKMEMBER(int, pfnGetInterruptR0,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(int,       pfnGetInterruptR0,(PPDMDEVINS pDevIns));
 
     /** Pointer to the PIC device instance - RC. */
-    RCPTRTYPE(PPDMDEVINS)   pDevInsRC;
+    PPDMDEVINSRC                    pDevInsRC;
     /** @copydoc PDMPICREG::pfnSetIrqR3 */
-    DECLRCCALLBACKMEMBER(void, pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
     /** @copydoc PDMPICREG::pfnGetInterruptR3 */
-    DECLRCCALLBACKMEMBER(int, pfnGetInterruptRC,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(int,       pfnGetInterruptRC,(PPDMDEVINS pDevIns));
     /** Alignment padding. */
-    RTRCPTR                 RCPtrPadding;
+    RTRCPTR                         RCPtrPadding;
 } PDMPIC;
 
 
@@ -412,8 +412,8 @@ typedef struct PDMAPIC
     DECLR3CALLBACKMEMBER(void,      pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
 
-    /** Pointer to the APIC device instance - R0. */
-    R0PTRTYPE(PPDMDEVINS)           pDevInsR0;
+    /** Pointer to the APIC device instance - R0 Ptr. */
+    PPDMDEVINSR0                    pDevInsR0;
     /** @copydoc PDMAPICREG::pfnGetInterruptR3 */
     DECLR0CALLBACKMEMBER(int,       pfnGetInterruptR0,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnHasPendingIrqR3 */
@@ -461,7 +461,7 @@ typedef struct PDMIOAPIC
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /** Pointer to the PIC device instance - R0. */
-    R0PTRTYPE(PPDMDEVINS)   pDevInsR0;
+    PPDMDEVINSR0                    pDevInsR0;
     /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
@@ -519,9 +519,9 @@ typedef struct PDMPCIBUS
 typedef struct PDMDMAC
 {
     /** Pointer to the DMAC device instance. */
-    PPDMDEVINS      pDevIns;
+    PPDMDEVINSR3                    pDevIns;
     /** Copy of the registration structure. */
-    PDMDMACREG      Reg;
+    PDMDMACREG                      Reg;
 } PDMDMAC;
 
 
@@ -531,9 +531,9 @@ typedef struct PDMDMAC
 typedef struct PDMRTC
 {
     /** Pointer to the RTC device instance. */
-    PPDMDEVINS      pDevIns;
+    PPDMDEVINSR3                    pDevIns;
     /** Copy of the registration structure. */
-    PDMRTCREG       Reg;
+    PDMRTCREG                       Reg;
 } PDMRTC;
 
 #endif /* IN_RING3 */
@@ -549,11 +549,11 @@ typedef enum PDMMODTYPE
     PDMMOD_TYPE_R0,
     /** Ring-3 (host) context module. */
     PDMMOD_TYPE_R3
-} PDMMODTYPE, *PPDMMODTYPE;
+} PDMMODTYPE;
 
 
 /** The module name length including the terminator. */
-#define PDMMOD_NAME_LEN     32
+#define PDMMOD_NAME_LEN             32
 
 /**
  * Loaded module instance.
@@ -562,25 +562,25 @@ typedef struct PDMMOD
 {
     /** Module name. This is used for refering to
      * the module internally, sort of like a handle. */
-    char            szName[PDMMOD_NAME_LEN];
+    char                            szName[PDMMOD_NAME_LEN];
     /** Module type. */
-    PDMMODTYPE      eType;
+    PDMMODTYPE                      eType;
     /** Loader module handle. Not used for R0 modules. */
-    RTLDRMOD        hLdrMod;
+    RTLDRMOD                        hLdrMod;
     /** Loaded address.
      * This is the 'handle' for R0 modules. */
-    RTUINTPTR       ImageBase;
+    RTUINTPTR                       ImageBase;
     /** Old loaded address.
      * This is used during relocation of GC modules. Not used for R0 modules. */
-    RTUINTPTR       OldImageBase;
+    RTUINTPTR                       OldImageBase;
     /** Where the R3 HC bits are stored.
      * This can be equal to ImageBase but doesn't have to. Not used for R0 modules. */
-    void           *pvBits;
+    void                           *pvBits;
 
     /** Pointer to next module. */
-    struct PDMMOD  *pNext;
+    struct PDMMOD                  *pNext;
     /** Module filename. */
-    char            szFilename[1];
+    char                            szFilename[1];
 } PDMMOD;
 /** Pointer to loaded module instance. */
 typedef PDMMOD *PPDMMOD;
@@ -588,7 +588,7 @@ typedef PDMMOD *PPDMMOD;
 
 
 /** Extra space in the free array. */
-#define PDMQUEUE_FREE_SLACK     16
+#define PDMQUEUE_FREE_SLACK         16
 
 /**
  * Queue type.
@@ -614,7 +614,7 @@ typedef struct PDMQUEUE *PPDMQUEUE;
 typedef struct PDMQUEUE
 {
     /** Pointer to the next queue in the list. */
-    R3PTRTYPE(PPDMQUEUE)    pNext;
+    R3PTRTYPE(PPDMQUEUE)            pNext;
     /** Type specific data. */
     union
     {
@@ -650,42 +650,49 @@ typedef struct PDMQUEUE
         } Ext;
     } u;
     /** Queue type. */
-    PDMQUEUETYPE                            enmType;
+    PDMQUEUETYPE                    enmType;
     /** The interval between checking the queue for events.
      * The realtime timer below is used to do the waiting.
      * If 0, the queue will use the VM_FF_PDM_QUEUE forced action. */
-    uint32_t                                cMilliesInterval;
+    uint32_t                        cMilliesInterval;
     /** Interval timer. Only used if cMilliesInterval is non-zero. */
-    PTMTIMERR3                              pTimer;
-    /** Pointer to the VM. */
-    R3R0PTRTYPE(PVM)                        pVMHC;
-    /** LIFO of pending items - HC. */
-    R3R0PTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingHC;
+    PTMTIMERR3                      pTimer;
+    /** Pointer to the VM - R3. */
+    PVMR3                           pVMR3;
+    /** LIFO of pending items - R3. */
+    R3PTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingR3;
+    /** Pointer to the VM - R0. */
+    PVMR0                           pVMR0;
+    /** LIFO of pending items - R0. */
+    R0PTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingR0;
     /** Pointer to the GC VM and indicator for GC enabled queue.
      * If this is NULL, the queue cannot be used in GC.
      */
-    RCPTRTYPE(PVM)                          pVMGC;
+    PVMRC                           pVMRC;
     /** LIFO of pending items - GC. */
-    RCPTRTYPE(PPDMQUEUEITEMCORE)            pPendingGC;
+    RCPTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingRC;
     /** Item size (bytes). */
-    RTUINT                                  cbItem;
+    RTUINT                          cbItem;
     /** Number of items in the queue. */
-    RTUINT                                  cItems;
+    RTUINT                          cItems;
     /** Index to the free head (where we insert). */
-    uint32_t volatile                       iFreeHead;
+    uint32_t volatile               iFreeHead;
     /** Index to the free tail (where we remove). */
-    uint32_t volatile                       iFreeTail;
+    uint32_t volatile               iFreeTail;
+
     /** Array of pointers to free items. Variable size. */
     struct PDMQUEUEFREEITEM
     {
         /** Pointer to the free item - HC Ptr. */
-        R3R0PTRTYPE(PPDMQUEUEITEMCORE) volatile pItemHC;
+        R3PTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemR3;
+        /** Pointer to the free item - HC Ptr. */
+        R0PTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemR0;
         /** Pointer to the free item - GC Ptr. */
-        RCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemGC;
+        RCPTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemRC;
 #if HC_ARCH_BITS == 64
-        uint32_t                              Alignment0;
+        RTRCPTR                                 Alignment0;
 #endif
-    }                                       aFreeItems[1];
+    }                               aFreeItems[1];
 } PDMQUEUE;
 
 
@@ -712,13 +719,13 @@ typedef enum PDMDEVHLPTASKOP
 typedef struct PDMDEVHLPTASK
 {
     /** The queue item core (don't touch). */
-    PDMQUEUEITEMCORE        Core;
-    /** Pointer to the device instance (HC Ptr). */
-    R3R0PTRTYPE(PPDMDEVINS) pDevInsHC;
+    PDMQUEUEITEMCORE                Core;
+    /** Pointer to the device instance (R3 Ptr). */
+    PPDMDEVINSR3                    pDevInsR3;
     /** This operation to perform. */
-    PDMDEVHLPTASKOP         enmOp;
+    PDMDEVHLPTASKOP                 enmOp;
 #if HC_ARCH_BITS == 64
-    uint32_t                Alignment0;
+    uint32_t                        Alignment0;
 #endif
     /** Parameters to the operation. */
     union PDMDEVHLPTASKPARAMS
@@ -729,9 +736,9 @@ typedef struct PDMDEVHLPTASK
         struct PDMDEVHLPTASKSETIRQ
         {
             /** The IRQ */
-            int iIrq;
+            int                     iIrq;
             /** The new level. */
-            int iLevel;
+            int                     iLevel;
         } SetIRQ;
     } u;
 } PDMDEVHLPTASK;
@@ -749,18 +756,18 @@ typedef struct PDMUSBHUB
 {
     /** The USB versions this hub support.
      * Note that 1.1 hubs can take on 2.0 devices. */
-    uint32_t            fVersions;
+    uint32_t                        fVersions;
     /** The number of ports on the hub. */
-    uint32_t            cPorts;
+    uint32_t                        cPorts;
     /** The number of available ports (0..cPorts). */
-    uint32_t            cAvailablePorts;
+    uint32_t                        cAvailablePorts;
     /** The driver instance of the hub. */
-    PPDMDRVINS          pDrvIns;
+    PPDMDRVINS                      pDrvIns;
     /** Copy of the to the registration structure. */
-    PDMUSBHUBREG        Reg;
+    PDMUSBHUBREG                    Reg;
 
     /** Pointer to the next hub in the list. */
-    struct PDMUSBHUB   *pNext;
+    struct PDMUSBHUB               *pNext;
 } PDMUSBHUB;
 
 /** Pointer to a const USB HUB registration record. */
@@ -818,28 +825,33 @@ typedef struct PDM
     /** The registered USB HUBs. (FIFO) */
     R3PTRTYPE(PPDMUSBHUB)           pUsbHubs;
 
-    /** Queue in which devhlp tasks are queued for R3 execution - HC Ptr. */
-    R3R0PTRTYPE(PPDMQUEUE)          pDevHlpQueueHC;
-    /** Queue in which devhlp tasks are queued for R3 execution - GC Ptr. */
-    RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueGC;
+    /** Queue in which devhlp tasks are queued for R3 execution - R3 Ptr. */
+    R3PTRTYPE(PPDMQUEUE)            pDevHlpQueueR3;
+    /** Queue in which devhlp tasks are queued for R3 execution - R0 Ptr. */
+    R0PTRTYPE(PPDMQUEUE)            pDevHlpQueueR0;
+    /** Queue in which devhlp tasks are queued for R3 execution - RC Ptr. */
+    RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueRC;
 
     /** The number of entries in the apQueuedCritSectsLeaves table that's currnetly in use. */
     RTUINT                          cQueuedCritSectLeaves;
-    /** Critical sections queued in GC/R0 because of contention preventing leave to complete. (R3 Ptrs)
-     * We will return to Ring-3 ASAP, so this queue doesn't has to be very long. */
+    /** Critical sections queued in RC/R0 because of contention preventing leave to complete. (R3 Ptrs)
+     * We will return to Ring-3 ASAP, so this queue doesn't have to be very long. */
     R3PTRTYPE(PPDMCRITSECT)         apQueuedCritSectsLeaves[8];
 
     /** Linked list of timer driven PDM queues. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
     /** Linked list of force action driven PDM queues. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
-    /** Pointer to the queue which should be manually flushed - HCPtr.
+    /** Pointer to the queue which should be manually flushed - R3 Ptr.
      * Only touched by EMT. */
-    R3R0PTRTYPE(struct PDMQUEUE *)  pQueueFlushHC;
-    /** Pointer to the queue which should be manually flushed - GCPtr. */
-    RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushGC;
+    R3PTRTYPE(struct PDMQUEUE *)    pQueueFlushR3;
+    /** Pointer to the queue which should be manually flushed - R0 Ptr.
+     * Only touched by EMT. */
+    R0PTRTYPE(struct PDMQUEUE *)    pQueueFlushR0;
+    /** Pointer to the queue which should be manually flushed - RC Ptr. */
+    RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushRC;
 #if HC_ARCH_BITS == 64
-    uint32_t                        padding0;
+    RTRCPTR                         padding0;
 #endif
 
     /** Head of the PDM Thread list. (singly linked) */
