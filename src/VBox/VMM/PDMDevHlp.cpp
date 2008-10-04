@@ -46,8 +46,8 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/*
- * Allow physical read and writes from any thread
+/** Allow physical read and writes from any thread.
+ * (pdmR3DevHlp_PhysRead and pdmR3DevHlp_PhysWrite.)
  */
 #define PDM_PHYS_READWRITE_FROM_ANY_THREAD
 
