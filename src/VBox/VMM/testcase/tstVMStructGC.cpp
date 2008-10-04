@@ -307,7 +307,6 @@ int main()
     GEN_CHECK_OFF(PDM, apQueuedCritSectsLeaves);
     GEN_CHECK_OFF(PDM, pQueuesTimer);
     GEN_CHECK_OFF(PDM, pQueuesForced);
-    GEN_CHECK_OFF(PDM, pQueueFlushR3);
     GEN_CHECK_OFF(PDM, pQueueFlushR0);
     GEN_CHECK_OFF(PDM, pQueueFlushRC);
     GEN_CHECK_OFF(PDM, pThreads);

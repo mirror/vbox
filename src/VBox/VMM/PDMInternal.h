@@ -842,13 +842,11 @@ typedef struct PDM
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
     /** Linked list of force action driven PDM queues. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
-    /** Pointer to the queue which should be manually flushed - R3 Ptr.
-     * Only touched by EMT. */
-    R3PTRTYPE(struct PDMQUEUE *)    pQueueFlushR3;
     /** Pointer to the queue which should be manually flushed - R0 Ptr.
      * Only touched by EMT. */
     R0PTRTYPE(struct PDMQUEUE *)    pQueueFlushR0;
-    /** Pointer to the queue which should be manually flushed - RC Ptr. */
+    /** Pointer to the queue which should be manually flushed - RC Ptr.
+     * Only touched by EMT. */
     RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushRC;
 #if HC_ARCH_BITS == 64
     RTRCPTR                         padding0;

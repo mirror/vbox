@@ -573,7 +573,7 @@ void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)
             {
                 pQueue->pVMRC = pVM->pVMRC;
 
-                /* Pending GC items. */
+                /* Pending RC items. */
                 if (pQueue->pPendingRC)
                 {
                     pQueue->pPendingRC += offDelta;
@@ -788,16 +788,16 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
  * This is a worker function used by PDMQueueFlush to perform the
  * flush in ring-3.
  *
- * The queue which should be flushed is pointed to by either pQueueFlushGC,
- * pQueueFlushHC, or pQueueue. This function will flush that queue and
- * recalc the queue FF.
+ * The queue which should be flushed is pointed to by either pQueueFlushRC,
+ * pQueueFlushR0, or pQueue. This function will flush that queue and recalc
+ * the queue FF.
  *
  * @param   pVM     The VM handle.
  * @param   pQueue  The queue to flush. Only used in Ring-3.
  */
 PDMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
 {
-    Assert(pVM->pdm.s.pQueueFlushR3 || pVM->pdm.s.pQueueFlushR0 || pVM->pdm.s.pQueueFlushRC || pQueue);
+    Assert(pVM->pdm.s.pQueueFlushR0 || pVM->pdm.s.pQueueFlushRC || pQueue);
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -813,18 +813,13 @@ PDMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
         pQueue = (PPDMQUEUE)MMHyperR0ToR3(pVM, pVM->pdm.s.pQueueFlushR0);
         pVM->pdm.s.pQueueFlushR0 = NIL_RTR0PTR;
     }
-    else if (!pQueue)
-    {
-        pQueue = pVM->pdm.s.pQueueFlushR3;
-        pVM->pdm.s.pQueueFlushR3 = NULL;
-    }
-    Assert(!pVM->pdm.s.pQueueFlushR3 && !pVM->pdm.s.pQueueFlushR0 && !pVM->pdm.s.pQueueFlushRC);
+    Assert(!pVM->pdm.s.pQueueFlushR0 && !pVM->pdm.s.pQueueFlushRC);
 
     if (    !pQueue
         ||  pdmR3QueueFlush(pQueue))
     {
         /*
-         * Recalc the FF.
+         * Recalc the FF (for the queues using force action).
          */
         VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
         for (pQueue = pVM->pdm.s.pQueuesForced; pQueue; pQueue = pQueue->pNext)
