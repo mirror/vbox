@@ -68,6 +68,8 @@ VMMR3_SOURCES   = \
 	MMPhys.cpp \
 	PDM.cpp \
 	PDMDevice.cpp \
+	PDMDevHlp.cpp \
+	PDMDevMiscHlp.cpp \
 	PDMDriver.cpp \
 	PDMLdr.cpp \
 	PDMCritSect.cpp \
