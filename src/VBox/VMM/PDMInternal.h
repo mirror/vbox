@@ -905,7 +905,33 @@ typedef PDMUSERPERVM *PPDMUSERPERVM;
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef IN_RING3
-extern const PDMDRVHLP g_pdmR3DrvHlp;
+extern const PDMDRVHLP      g_pdmR3DrvHlp;
+extern const PDMDEVHLPR3    g_pdmR3DevHlpTrusted;
+extern const PDMDEVHLPR3    g_pdmR3DevHlpUnTrusted;
+extern const PDMPICHLPR3    g_pdmR3DevPicHlp;
+extern const PDMAPICHLPR3   g_pdmR3DevApicHlp;
+extern const PDMIOAPICHLPR3 g_pdmR3DevIoApicHlp;
+extern const PDMPCIHLPR3    g_pdmR3DevPciHlp;
+extern const PDMDMACHLP     g_pdmR3DevDmacHlp;
+extern const PDMRTCHLP      g_pdmR3DevRtcHlp;
+#endif
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def PDMDEV_ASSERT_DEVINS
+ * Asserts the validity of the device instance.
+ */
+#ifdef VBOX_STRICT
+# define PDMDEV_ASSERT_DEVINS(pDevIns)   \
+    do { \
+        AssertPtr(pDevIns); \
+        Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); \
+        Assert(pDevIns->CTX_SUFF(pvInstanceData) == (void *)&pDevIns->achInstanceData[0]); \
+    } while (0)
+#else
+# define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)
 #endif
 
 
@@ -922,6 +948,7 @@ int         pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns);
 int         pdmR3DevInit(PVM pVM);
 PPDMDEV     pdmR3DevLookup(PVM pVM, const char *pszName);
 int         pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun);
+DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem);
 
 int         pdmR3UsbLoadModules(PVM pVM);
 int         pdmR3UsbInstantiateDevices(PVM pVM);
