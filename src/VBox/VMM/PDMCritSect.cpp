@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PDM Critical Sections
+ * PDM - Critical Sections, Ring-3.
  */
 
 /*
@@ -18,7 +18,6 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-
 
 
 /*******************************************************************************
@@ -70,7 +69,7 @@ void pdmR3CritSectRelocate(PVM pVM)
     for (PPDMCRITSECTINT pCur = pVM->pdm.s.pCritSects;
          pCur;
          pCur = pCur->pNext)
-        pCur->pVMGC = pVM->pVMGC;
+        pCur->pVMRC = pVM->pVMRC;
 }
 
 
@@ -116,16 +115,16 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
     {
         pCritSect->pVMR3 = pVM;
         pCritSect->pVMR0 = (RTR0PTR)pVM;//pVM->pVMR0;
-        pCritSect->pVMGC = pVM->pVMGC;
+        pCritSect->pVMRC = pVM->pVMRC;
         pCritSect->pvKey = pvKey;
         pCritSect->EventToSignal = NIL_RTSEMEVENT;
         pCritSect->pNext = pVM->pdm.s.pCritSects;
         pVM->pdm.s.pCritSects = pCritSect;
 #ifdef VBOX_WITH_STATISTICS
-        STAMR3RegisterF(pVM, &pCritSect->StatContentionR0GCLock,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR0GCLock", pszName);
-        STAMR3RegisterF(pVM, &pCritSect->StatContentionR0GCUnlock, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR0GCUnlock", pszName);
-        STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pszName);
-        STAMR3RegisterF(pVM, &pCritSect->StatLocked,           STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pszName);
+        STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pszName);
+        STAMR3RegisterF(pVM, &pCritSect->StatContentionRZUnlock,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZUnlock", pszName);
+        STAMR3RegisterF(pVM, &pCritSect->StatContentionR3,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionR3", pszName);
+        STAMR3RegisterF(pVM, &pCritSect->StatLocked,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, NULL, "/PDM/CritSects/%s/Locked", pszName);
 #endif
     }
     return rc;
@@ -190,15 +189,15 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PPDMCRITSECTINT pCritSect, PPDMCRITSE
 
     /* delete */
     pCritSect->pNext = NULL;
-    pCritSect->pVMGC = 0;
+    pCritSect->pvKey = NULL;
     pCritSect->pVMR3 = NULL;
     pCritSect->pVMR0 = NIL_RTR0PTR;
-    pCritSect->pvKey = NULL;
+    pCritSect->pVMRC = NIL_RTRCPTR;
 #ifdef VBOX_WITH_STATISTICS
     if (!fFinal)
     {
-        STAMR3Deregister(pVM, &pCritSect->StatContentionR0GCLock);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionR0GCUnlock);
+        STAMR3Deregister(pVM, &pCritSect->StatContentionRZLock);
+        STAMR3Deregister(pVM, &pCritSect->StatContentionRZUnlock);
         STAMR3Deregister(pVM, &pCritSect->StatContentionR3);
         STAMR3Deregister(pVM, &pCritSect->StatLocked);
     }

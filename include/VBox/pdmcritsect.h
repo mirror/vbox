@@ -58,118 +58,16 @@ typedef PDMCRITSECT *PPDMCRITSECT;
 /** Pointer to a const PDM critical section. */
 typedef const PDMCRITSECT *PCPDMCRITSECT;
 
-/**
- * Initializes a PDM critical section for internal use.
- *
- * The PDM critical sections are derived from the IPRT critical sections, but
- * works in GC as well.
- *
- * @returns VBox status code.
- * @param   pVM             The VM handle.
- * @param   pDevIns         Device instance.
- * @param   pCritSect       Pointer to the critical section.
- * @param   pszName         The name of the critical section (for statistics).
- */
-PDMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName);
-
-/**
- * Enters a PDM critical section.
- *
- * @returns VINF_SUCCESS if entered successfully.
- * @returns rcBusy when encountering a busy critical section in GC/R0.
- * @returns VERR_SEM_DESTROYED if the critical section is dead.
- *
- * @param   pCritSect           The PDM critical section to enter.
- * @param   rcBusy              The status code to return when we're in GC or R0
- *                              and the section is busy.
- */
-PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
-
-/**
- * Enters a PDM critical section.
- *
- * @returns VINF_SUCCESS if entered successfully.
- * @returns rcBusy when encountering a busy critical section in GC/R0.
- * @returns VERR_SEM_DESTROYED if the critical section is dead.
- *
- * @param   pCritSect           The PDM critical section to enter.
- * @param   fCallHost           Whether this is a VMMGCCallHost() or VMMR0CallHost() request.
- */
-PDMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost);
-
-/**
- * Leaves a critical section entered with PDMCritSectEnter().
- *
- * @param   pCritSect           The PDM critical section to leave.
- */
-PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect);
-
-/**
- * Checks the caller is the owner of the critical section.
- *
- * @returns true if owner.
- * @returns false if not owner.
- * @param   pCritSect   The critical section.
- */
-PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
-
-/**
- * Checks if a critical section is initialized or not.
- *
- * @returns true if initialized.
- * @returns false if not initialized.
- * @param   pCritSect   The critical section.
- */
-PDMDECL(bool) PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
-
-/**
- * Try enter a critical section.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_SEM_BUSY if the critsect was owned.
- * @returns VERR_SEM_NESTED if nested enter on a no nesting section. (Asserted.)
- * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- * @param   pCritSect   The critical section.
- */
-PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
-
-/**
- * Schedule a event semaphore for signalling upon critsect exit.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_TOO_MANY_SEMAPHORES if an event was already scheduled.
- * @returns VERR_NOT_OWNER if we're not the critsect owner.
- * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- * @param   pCritSect       The critical section.
- * @param   EventToSignal     The semapore that should be signalled.
- */
-PDMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
-
-/**
- * Deletes the critical section.
- *
- * @returns VBox status code.
- * @param   pCritSect           The PDM critical section to destroy.
- */
-PDMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
-
-/**
- * Deletes all remaining critical sections.
- *
- * This is called at the end of the termination process.
- *
- * @returns VBox status.
- *          First error code, rest is lost.
- * @param   pVM         The VM handle.
- * @remark  Don't confuse this with PDMR3CritSectDelete.
- */
-PDMDECL(int) PDMR3CritSectTerm(PVM pVM);
-
-/**
- * Process the critical sections queued for ring-3 'leave'.
- *
- * @param   pVM         The VM handle.
- */
+PDMR3DECL(int)  PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName);
+PDMDECL(int)    PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
+PDMR3DECL(int)  PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost);
+PDMDECL(void)   PDMCritSectLeave(PPDMCRITSECT pCritSect);
+PDMDECL(bool)   PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
+PDMDECL(bool)   PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
+PDMR3DECL(int)  PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
+PDMR3DECL(int)  PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
+PDMR3DECL(int)  PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
+PDMDECL(int)    PDMR3CritSectTerm(PVM pVM);
 PDMR3DECL(void) PDMR3CritSectFF(PVM pVM);
 
 /** @} */
