@@ -20,75 +20,88 @@
  */
 
 
-/** @page   pg_pdm      PDM - The Pluggable Device Manager
+/** @page   pg_pdm      PDM - The Pluggable Device & Driver Manager
  *
- * VBox is designed to be very configurable, i.e. the ability to select
- * virtual devices and configure them uniquely for a VM. For this reason
- * virtual devices are not statically linked with the VMM but loaded and
- * linked at runtime thru the Configuration Manager (CFGM). PDM will use
- * CFGM to enumerate devices which needs loading and instantiation.
+ * VirtualBox is designed to be very configurable, i.e. the ability to select
+ * virtual devices and configure them uniquely for a VM. For this reason virtual
+ * devices are not statically linked with the VMM but loaded, linked and
+ * instantiated at runtime by PDM using the information found in the
+ * Configuration Manager (CFGM).
+ *
+ * While the chief purpose of PDM is to manager of devices their drivers, it
+ * also serves as somewhere to put usful things like cross context queues, cross
+ * context synchronization (like critsect), VM centric thread management,
+ * asynchronous I/O framework, and so on.
  *
  *
- * @section sec_pdm_dev      The Pluggable Device
+ * @section sec_pdm_dev      The Pluggable Devices
  *
- * Devices register themselves when the module containing them is loaded.
- * PDM will call an entry point 'VBoxDevicesRegister' when loading a device
- * module. The device module will then use the supplied callback table to
- * check the VMM version and to register its devices. Each device have an
- * unique (for the configured VM) name (string). The name is not only used
- * in PDM but in CFGM - to organize device and device instance settings - and
- * by anyone who wants to do ioctls to the device.
+ * Devices register themselves when the module containing them is loaded. PDM
+ * will call the entry point 'VBoxDevicesRegister' when loading a device module.
+ * The device module will then use the supplied callback table to check the VMM
+ * version and to register its devices. Each device have an unique (for the
+ * configured VM) name. The name is not only used in PDM but also in CFGM (to
+ * organize device and device instance settings) and by anyone who wants to talk
+ * to a specific device instance.
  *
  * When all device modules have been successfully loaded PDM will instantiate
- * those devices which are configured for the VM. Mark that this might mean
- * creating several instances of some devices. When instantiating a device
- * PDM provides device instance memory and a callback table with the VM APIs
- * which the device instance is trusted with.
+ * those devices which are configured for the VM. Note that a device may have
+ * more than one instance, see network adaptors for instance. When instantiating
+ * a device PDM provides device instance memory and a callback table (aka Device
+ * Helpers / DevHlp) with the VM APIs which the device instance is trusted with.
  *
- * Some devices are trusted devices, most are not. The trusted devices are
- * an integrated part of the VM and can obtain the VM handle from their
- * device instance handles, thus enabling them to call any VM api. Untrusted
- * devices are can only use the callbacks provided during device
- * instantiation.
+ * Some devices are trusted devices, most are not. The trusted devices are an
+ * integrated part of the VM and can obtain the VM handle from their device
+ * instance handles, thus enabling them to call any VM api. Untrusted devices
+ * can only use the callbacks provided during device instantiation.
  *
- * The guest context extention (optional) of a device is initialized as part
- * of the GC init. A device marks in it's registration structure that it have
- * a GC part, in which module and which name the entry point have. PDM will
- * use its loader facilities to load this module into GC and to find the
- * specified entry point.
+ * The main purpose in having DevHlps rather than just giving all the devices
+ * the VM handle and let them call the internal VM APIs directly, is both to
+ * create a binary interface that can be supported accross releases and to
+ * create a barrier between devices and the VM. (The trusted / untrusted bit
+ * hasn't turned out to be of much use btw., but it's easy to maintain so there
+ * isn't any point in removing it.)
  *
- * When writing a GC extention the programmer must keep in mind that this
- * code will be relocated, so that using global/static pointer variables
- * won't work.
+ * A device can provide a ring-0 and/or a raw-mode context extension to improve
+ * the VM performance by handling exits and traps (respectively) without
+ * requiring context switches (to ring-3). Callbacks for MMIO and I/O ports can
+ * needs to be registered specifically for the additional contexts for this to
+ * make sense. Also, the device has to be trusted to be loaded into R0/RC
+ * because of the extra privilege it entails. Note that raw-mode code and data
+ * will be subject to relocation.
  *
  *
  * @section sec_pdm_drv      The Pluggable Drivers
  *
- * The VM devices are often accessing host hardware or OS facilities. For
- * most devices these facilities can be abstracted in one or more levels.
- * These abstractions are called drivers.
+ * The VM devices are often accessing host hardware or OS facilities.  For most
+ * devices these facilities can be abstracted in one or more levels.  These
+ * abstractions are called drivers.
  *
- * For instance take a DVD/CD drive. This can be connected to a SCSI
- * controller, EIDE controller or SATA controller. The basics of the
- * DVD/CD drive implementation remains the same - eject, insert,
- * read, seek, and such. (For the scsi case, you might wanna speak SCSI
- * directly to, but that can of course be fixed.) So, it makes much sense to
- * have a generic CD/DVD driver which implements this.
+ * For instance take a DVD/CD drive.  This can be connected to a SCSI
+ * controller, an ATA controller or a SATA controller.  The basics of the DVD/CD
+ * drive implementation remains the same - eject, insert, read, seek, and such.
+ * (For the scsi case, you might wanna speak SCSI directly to, but that can of
+ * course be fixed - see SCSI passthru.)  So, it
+ * makes much sense to have a generic CD/DVD driver which implements this.
  *
- * Then the media 'inserted' into the DVD/CD drive can be a ISO image, or
- * it can be read from a real CD or DVD drive (there are probably other
- * custom formats someone could desire to read or construct too). So, it
- * would make sense to have abstracted interfaces for dealing with this
- * in a generic way so the cdrom unit doesn't have to implement it all.
- * Thus we have created the CDROM/DVD media driver family.
+ * Then the media 'inserted' into the DVD/CD drive can be a ISO image, or it can
+ * be read from a real CD or DVD drive (there are probably other custom formats
+ * someone could desire to read or construct too).  So, it would make sense to
+ * have abstracted interfaces for dealing with this in a generic way so the
+ * cdrom unit doesn't have to implement it all.  Thus we have created the
+ * CDROM/DVD media driver family.
  *
  * So, for this example the IDE controller #1 (i.e. secondary) will have
- * the DVD/CD Driver attached to it's LUN #0 (master). When a media is mounted
- * the DVD/CD Driver will have a ISO, NativeCD, NativeDVD or RAW (media) Driver
- * attached.
+ * the DVD/CD Driver attached to it's LUN #0 (master).  When a media is mounted
+ * the DVD/CD Driver will have a ISO, HostDVD or RAW (media) Driver attached.
  *
  * It is possible to configure many levels of drivers inserting filters, loggers,
- * or whatever you desire into the chain.
+ * or whatever you desire into the chain. We're using this for network sniffing
+ * for instance.
+ *
+ * The drivers are loaded in a similar manner to that of the device, namely by
+ * iterating a keyspace in CFGM, load the modules listed there and call
+ * 'VBoxDriversRegister' with a callback table.
  *
  *
  * @subsection sec_pdm_drv_interfaces   Interfaces
@@ -96,9 +109,36 @@
  * The pluggable drivers exposes one standard interface (callback table) which
  * is used to construct, destruct, attach, detach, and query other interfaces.
  * A device will query the interfaces required for it's operation during init
- * and hotplug. PDM will query some interfaces during runtime mounting too.
+ * and hotplug.  PDM will query some interfaces during runtime mounting too.
  *
  * ... list interfaces ...
+ *
+ *
+ * @section sec_pdm_utils       Utilities
+ *
+ * @todo
+ *
+ *
+ * @subsection sec_pdm_thread       Async I/O
+ *
+ * @todo
+ *
+ *
+ * @subsection sec_pdm_thread       Critical Section
+ *
+ * @todo
+ *
+ *
+ * @subsection sec_pdm_thread       Queue
+ *
+ * @todo
+ *
+ *
+ * @subsection sec_pdm_thread       Task - not implemented yet
+ *
+ * @todo
+ *
+ * @subsection sec_pdm_thread       Thread
  *
  */
 
