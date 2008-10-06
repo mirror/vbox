@@ -2301,11 +2301,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
     Assert(pPDDst);
 # endif
 
