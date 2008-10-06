@@ -130,7 +130,7 @@ int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, ui
     RTStrAPrintf(&pszName, "/proc/%d/usage", process);
     Log(("Opening %s...\n", pszName));
     int h = open(pszName, O_RDONLY);
-    RTMemFree(pszName);
+    RTStrFree(pszName);
 
     if (h != -1)
     {
@@ -200,7 +200,7 @@ int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
     RTStrAPrintf(&pszName, "/proc/%d/psinfo", process);
     Log(("Opening %s...\n", pszName));
     int h = open(pszName, O_RDONLY);
-    RTMemFree(pszName);
+    RTStrFree(pszName);
 
     if (h != -1)
     {
