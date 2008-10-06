@@ -324,7 +324,7 @@
     <message>
         <location filename="../src/QIMessageBox.cpp" line="244"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <location filename="../src/QIMessageBox.cpp" line="245"/>
@@ -410,7 +410,7 @@ Version %1</source>
     <message>
         <location filename="../include/VBoxSettingsUtils.h" line="136"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
 </context>
 <context>
@@ -649,36 +649,6 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1538"/>
         <source>Mount the Guest Additions installation image</source>
         <translation>Подключить установочный образ CD c пакетом Дополнений гостевой ОС</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1588"/>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation type="obsolete">&amp;Веб-страница VirtualBox...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="obsolete">Открыть браузер и перейти на сайт программы VirtualBox</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1600"/>
-        <source>&amp;About VirtualBox...</source>
-        <translation type="obsolete">&amp;О программе...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1601"/>
-        <source>Show a dialog with product information</source>
-        <translation type="obsolete">Показать диалоговое окно с информацией о программе VirtualBox</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1603"/>
-        <source>&amp;Reset All Warnings</source>
-        <translation type="obsolete">&amp;Разрешить все предупреждения</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1605"/>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="obsolete">Включить отображение всех отключенных ранее предупреждений и сообщений</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1555"/>
@@ -939,26 +909,6 @@ Version %1</source>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нет общих папок&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1584"/>
-        <source>&amp;Contents...</source>
-        <translation type="obsolete">&amp;Содержание...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1586"/>
-        <source>Show the online help contents</source>
-        <translation type="obsolete">Показать содержание оперативной справки</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1592"/>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation type="obsolete">&amp;Зарегистрировать VirtualBox...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1594"/>
-        <source>Open VirtualBox registration form</source>
-        <translation type="obsolete">Открыть регистрационную форму VirtualBox</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1433"/>
         <source>Sun xVM VirtualBox</source>
         <translation></translation>
@@ -984,16 +934,6 @@ Version %1</source>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation>&amp;Командная строка...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
-        <source>C&amp;heck for a new version...</source>
-        <translation type="obsolete">&amp;Проверить обновления...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
-        <source>Check for a new VirtualBox version</source>
-        <translation type="obsolete">Проверить наличие новой версии VirtualBox через Интернет</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1581"/>
@@ -1073,31 +1013,6 @@ Version %1</source>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="783"/>
         <source>Re&amp;fresh</source>
         <translation>Об&amp;новить</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="785"/>
-        <source>Ctrl+N</source>
-        <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="786"/>
-        <source>Ctrl+A</source>
-        <translation type="obsolete">Ctrl+A</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="788"/>
-        <source>Ctrl+D</source>
-        <translation type="obsolete">Ctrl+D</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="789"/>
-        <source>Ctrl+L</source>
-        <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="790"/>
-        <source>Ctrl+R</source>
-        <translation type="obsolete">Ctrl+R</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="776"/>
@@ -1235,16 +1150,6 @@ Version %1</source>
         <translation>Образы дискет (*.img);;Все файлы (*)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
-        <source>&amp;New</source>
-        <translation type="obsolete">&amp;Создать...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
-        <source>&amp;Add</source>
-        <translation type="obsolete">&amp;Добавить...</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
         <translation>Все образы жестких дисков (*.vdi *.vmdk *.vhd);;Образы VDI (*.vdi);;Образы VMDK (*.vmdk);;Образы VHD (*.vhd);;Все файлы (*)</translation>
@@ -1295,7 +1200,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="178"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
@@ -1520,11 +1425,6 @@ Version %1</source>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
         <translation>Язык:</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
-        <source>Author:</source>
-        <translation type="obsolete">Автор(ы):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
@@ -1901,7 +1801,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2541"/>
         <source>Discarding</source>
         <comment>MachineState</comment>
-        <translation>Отбрасывается</translation>
+        <translation>Cбрасывается</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2543"/>
@@ -2735,11 +2635,6 @@ Version %1</source>
         <translation>&amp;Далее &gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Выберите тип образа виртуального жесткого диска, который Вы хотите создать.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамически расширяющийся образ&lt;/b&gt; первоначально занимает очень маломеста на физическом жестком диске. Он будет динамически расти (до заданного размера) по мере того, как гостевая ОС использует дисковое пространство.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Образ фиксированного размера&lt;/b&gt; не увеличивается. Он хранится в файле примерно того же размера, что и размер виртуального жесткого диска. Создание жесткого диска фиксированного размера может занять длительное время, в зависимости от размера образа и производительности физического диска.&lt;/p&gt;</translation>
@@ -2791,7 +2686,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
 </context>
 <context>
@@ -2867,11 +2762,6 @@ Version %1</source>
         <translation>Итог</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="162"/>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;МБ&lt;/qt&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="152"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Рекомендуемый размер основной памяти: &lt;b&gt;%1&lt;/b&gt; Мб.</translation>
@@ -2880,16 +2770,6 @@ Version %1</source>
         <location filename="../src/VBoxNewVMWzd.cpp" line="155"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Рекомендуемый размер загрузочного жесткого диска: &lt;b&gt;%1&lt;/b&gt; Мб.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="172"/>
-        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Name:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;OS Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Base Memory:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Имя:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Тип ОС:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Основная память:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;МБ&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
-        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Boot Hard Disk:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Загрузочный жесткий диск:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
@@ -2905,11 +2785,6 @@ Version %1</source>
         <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Далее &gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Отменить</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
@@ -2969,7 +2844,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
 </context>
 <context>
@@ -3088,7 +2963,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="911"/>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось отменить сохраненное состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось сбросить сохраненное состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="951"/>
@@ -3123,7 +2998,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1088"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите отменить (удалить) сохраненное состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Эта операция равносильна перезапуску или выключению питания машины без надлежащей остановки средствами гостевой ОС.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите сбросить (удалить) сохраненное состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Эта операция равносильна перезапуску или выключению питания машины без надлежащей остановки средствами гостевой ОС.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1100"/>
@@ -3451,7 +3326,7 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="1090"/>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation>Отменить</translation>
+        <translation>Сбросить</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1102"/>
@@ -3462,7 +3337,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Хотите ли Вы удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то файл образа будет физически удален после удаления виртуального жесткого диска из списка. Эту операцию отменить нельзя.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Отменить регистрацию&lt;/b&gt;, то виртуальный жесткий диск будет удален из списка зарегистрированных носителей, но файл образа останется на физическом жестком диске (и сможет быть впоследствии зарегистрирован вновь).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то файл образа будет физически удален после удаления виртуального жесткого диска из списка. Эту операцию отменить нельзя.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Дерегистрировать&lt;/b&gt;, то виртуальный жесткий диск будет удален из списка зарегистрированных носителей, но файл образа останется на физическом жестком диске (и сможет быть впоследствии зарегистрирован вновь).&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
@@ -3535,7 +3410,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Нижеперечисленные файлы настроек VirtualBox были автоматически преобразованы в новый формат версии &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Однако, результаты преобразования пока еще не были сохранены обратно  на диск. Пожалуйста, нажмите:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Сохранить&lt;/b&gt;, чтобы сохранить все преобразованные файлы настроек прямо сейчас (Вы больше не сможете использовать эти файлы с предыдущими версиями VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Скопировать&lt;/b&gt;, чтобы создать резервные копии файлов настроек в старом формате перед сохранением их в новом формате;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Отменить&lt;/b&gt;, чтобы не сохранять преобразованные файлы настроек.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Учтите, что если Вы выберете &lt;b&gt;Отменить&lt;/b&gt;, то преобразованные файлы все равно будут неявно записаны на диск в новом формате, как только Вы измение какую-либо настройку или запустите виртуальную машину, но резервные копии в таком случае созданы &lt;b&gt;не будут&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Нижеперечисленные файлы настроек VirtualBox были автоматически преобразованы в новый формат версии &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Однако, результаты преобразования пока еще не были сохранены обратно  на диск. Пожалуйста, нажмите:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Сохранить&lt;/b&gt;, чтобы сохранить все преобразованные файлы настроек прямо сейчас (Вы больше не сможете использовать эти файлы с предыдущими версиями VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Скопировать&lt;/b&gt;, чтобы создать резервные копии файлов настроек в старом формате перед сохранением их в новом формате;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Отмена&lt;/b&gt;, чтобы не сохранять преобразованные файлы настроек.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Учтите, что если Вы выберете &lt;b&gt;Отмена&lt;/b&gt;, то преобразованные файлы все равно будут неявно записаны на диск в новом формате, как только Вы измение какую-либо настройку или запустите виртуальную машину, но резервные копии в таком случае созданы &lt;b&gt;не будут&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1838"/>
@@ -3553,7 +3428,7 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="1840"/>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1862"/>
@@ -3620,12 +3495,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1041"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось переключить дисплей гостевой ОС в полноэкранный режим из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртаульной машины.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы переключиться в полноэкранный режим в любом случае, или нажмите &lt;b&gt;Отменить&lt;/b&gt; для отмены операции.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1532"/>
-        <source>&lt;p&gt;There is a new version of VirtualBox found on the VirtualBox web-site: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you want to download and install this version please proceed with the following link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;На веб-сайте VirtualBox обнаружена новая версия программы VirtualBox: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Если Вы хотите скачать и установить эту версию, пожалуйста, воспользуйтесь следующей ссылкой:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось переключить дисплей гостевой ОС в полноэкранный режим из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртаульной машины.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы переключиться в полноэкранный режим в любом случае, или нажмите &lt;b&gt;Отмена&lt;/b&gt; для отмены операции.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1634"/>
@@ -3797,13 +3667,8 @@ Version %1</source>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
 </context>
 <context>
@@ -3832,11 +3697,6 @@ Version %1</source>
         <translation>&amp;Менеджер виртуальных дисков...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1170"/>
-        <source>Ctrl+D</source>
-        <translation type="obsolete">Ctrl+D</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1125"/>
         <source>Display the Virtual Disk Manager dialog</source>
         <translation>Открыть диалог Менеджера виртуальных дисков</translation>
@@ -3846,11 +3706,6 @@ Version %1</source>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
         <translation>&amp;Настройки...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1193"/>
-        <source>Ctrl+G</source>
-        <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1148"/>
@@ -3863,11 +3718,6 @@ Version %1</source>
         <translation>&amp;Выход</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1197"/>
-        <source>Ctrl+Q</source>
-        <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1152"/>
         <source>Close application</source>
         <translation>Закрыть приложение</translation>
@@ -3878,11 +3728,6 @@ Version %1</source>
         <translation>&amp;Создать...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1201"/>
-        <source>Ctrl+N</source>
-        <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1156"/>
         <source>Create a new virtual machine</source>
         <translation>Создать новую виртуальную машину</translation>
@@ -3891,11 +3736,6 @@ Version %1</source>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1160"/>
         <source>&amp;Settings...</source>
         <translation>С&amp;войства...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1205"/>
-        <source>Ctrl+S</source>
-        <translation type="obsolete">Ctrl+S</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1162"/>
@@ -3915,12 +3755,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1171"/>
         <source>D&amp;iscard</source>
-        <translation>&amp;Отменить</translation>
+        <translation>Сб&amp;росить</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1173"/>
         <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Отменить сохраненное состояние выбранной виртуальной машины</translation>
+        <translation>Сбросить (удалить) сохраненное состояние выбранной виртуальной машины</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1175"/>
@@ -3928,54 +3768,9 @@ Version %1</source>
         <translation>О&amp;бновить</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1218"/>
-        <source>Ctrl+R</source>
-        <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1178"/>
         <source>Refresh the accessibility state of the selected virtual machine</source>
         <translation>Перепроверить доступность выбранной виртуальной машины</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1227"/>
-        <source>&amp;Contents...</source>
-        <translation type="obsolete">&amp;Содержание...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1229"/>
-        <source>Show the online help contents</source>
-        <translation type="obsolete">Показать содержание оперативной справки</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1231"/>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation type="obsolete">&amp;Веб-страница VirtualBox...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1233"/>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="obsolete">Открыть браузер и перейти на сайт программы VirtualBox</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1243"/>
-        <source>&amp;About VirtualBox...</source>
-        <translation type="obsolete">&amp;О программе...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1244"/>
-        <source>Show a dialog with product information</source>
-        <translation type="obsolete">Показать диалоговое окно с информацией о программе VirtualBox</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1246"/>
-        <source>&amp;Reset All Warnings</source>
-        <translation type="obsolete">&amp;Разрешить все предупреждения</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1248"/>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="obsolete">Включить отображение всех отключенных ранее предупреждений и сообщений</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1187"/>
@@ -4033,24 +3828,9 @@ Version %1</source>
         <translation>Показать &amp;журнал...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1223"/>
-        <source>Ctrl+L</source>
-        <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1183"/>
         <source>Show the log files of the selected virtual machine</source>
         <translation>Показать файлы журналов выбранной виртуальной машины</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1235"/>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation type="obsolete">&amp;Зарегистрировать VirtualBox...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1237"/>
-        <source>Open VirtualBox registration form</source>
-        <translation type="obsolete">Открыть регистрационную форму VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1113"/>
@@ -4076,16 +3856,6 @@ Version %1</source>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1286"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Приостановить работу виртуальной машины</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
-        <source>C&amp;heck for update...</source>
-        <translation type="obsolete">&amp;Проверить обновления...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
-        <source>Check server for VirtualBox updates</source>
-        <translation type="obsolete">Проверить наличие новой версии VirtualBox через Интернет</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
@@ -4159,7 +3929,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation>От&amp;менить снимок</translation>
+        <translation>Cб&amp;росить снимок</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
@@ -4169,7 +3939,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>О&amp;тменить текущий снимок и состояние</translation>
+        <translation>Сб&amp;росить текущий снимок и состояние</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
@@ -4242,7 +4012,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation>Отменить (удалить) выбранный снимок виртуальной машины</translation>
+        <translation>Сбросить (удалить) выбранный снимок виртуальной машины</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
@@ -4262,7 +4032,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation>Отменить (удалить) текущий снимок и вернуть машину к состоянию, в котором она была перед его созданием</translation>
+        <translation>Сбросить (удалить) текущий снимок и вернуть машину к состоянию, в котором она была перед его созданием</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
@@ -4384,44 +4154,9 @@ Version %1</source>
         <translation>Не удалось обнаружить список последних версий на сервере (ответ: %1).</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
-        <source>VirtualBox New Version Notifier</source>
-        <translation type="obsolete">Уведомление о новой версии VirtualBox</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
-        <source>Check for a new version</source>
-        <translation type="obsolete">Проверить обновления</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="191"/>
         <source>Chec&amp;k</source>
         <translation>&amp;Проверить</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="215"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Отменить</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="236"/>
-        <source>Check Results</source>
-        <translation type="obsolete">Проверка результатов</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="290"/>
-        <source>&lt;p&gt;New VirtualBox %1 version available to download from:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Новая версия VirtualBox %1 доступна для скачивания со следующего адреса:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="312"/>
-        <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Невозможно получить информацию о версии из-за следующей сетевой ошибки: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="334"/>
-        <source>You have already installed the latest VirtualBox version, there is no newer version currently available.</source>
-        <translation type="obsolete">Вы уже установили последнюю версию программы VirtualBox. Более новых версий не обнаружено.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="390"/>
@@ -4448,7 +4183,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
@@ -4487,11 +4222,6 @@ Version %1</source>
         <location filename="../src/VBoxSelectorWnd.cpp" line="329"/>
         <source>Edit (Ctrl+E)</source>
         <translation>Изменить (Ctrl+E)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="328"/>
-        <source>Ctrl+E</source>
-        <translation type="obsolete">Ctrl+E</translation>
     </message>
 </context>
 <context>
@@ -4615,11 +4345,6 @@ Version %1</source>
         <translation>&lt;p&gt;Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. После этого, указанный носитель будет подключен к виртуальной машине, и машина начнет загрузку с этого носителя.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="105"/>
-        <source>&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Тип:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Носитель:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Назад</translation>
@@ -4628,11 +4353,6 @@ Version %1</source>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Далее &gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">Отменить</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -4664,7 +4384,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation>Отменить</translation>
+        <translation>Отмена</translation>
     </message>
 </context>
 <context>
@@ -4795,21 +4515,6 @@ p, li { white-space: pre-wrap; }
         <translation>Функция Nested Paging</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
-        <source>Enabled</source>
-        <translation type="obsolete">Включена</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
-        <source>Disabled</source>
-        <translation type="obsolete">Выключена</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="646"/>
-        <source>Hardware Virtualization</source>
-        <translation type="obsolete">Аппаратная визуализация</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
         <source>VBoxVMInformationDlg</source>
         <translation></translation>
@@ -4833,20 +4538,6 @@ p, li { white-space: pre-wrap; }
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Недоступна с %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMListView.cpp" line="533"/>
-        <source>%1 (%2)
- %3</source>
-        <comment>Accessible string of the list view item</comment>
-        <translation type="obsolete">%1 (%2)
- %3</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMListView.cpp" line="583"/>
-        <source>VM</source>
-        <comment>Horizontal header description</comment>
-        <translation type="obsolete">VM</translation>
     </message>
 </context>
 <context>
@@ -5332,11 +5023,6 @@ p, li { white-space: pre-wrap; }
         <translation>П&amp;рочие</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
-        <source>R&amp;untime:</source>
-        <translation type="obsolete">Работа:</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>Если стоит галочка, то любое изменение подключенных CD/DVD-носителей или гибких дисков, произведенное во время работы машины, будет сохранено в файле настроек для восстановления конфигурации подключенных носителей при последующих запусках.</translation>
@@ -5408,11 +5094,6 @@ p, li { white-space: pre-wrap; }
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
         <source>&amp;Attachments</source>
         <translation>&amp;Подключения</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
-        <source>Lists all hard disks attached to this machine. Use a mouse click or the F2 key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="obsolete">Перечисляет все жесткие диски, подсоединенные к этой машине. Дважды щелкние мышью или нажмите клавишу F2 на выбранном элементе для выбора нужного значения из выпадающего списка. Используйте контекстное меню или кнопки справа для добавления или удаления подключений.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
@@ -5501,11 +5182,6 @@ p, li { white-space: pre-wrap; }
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
         <translation>&amp;Кабель подключен</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="189"/>
-        <source>&amp;Host Interface Settings</source>
-        <translation type="obsolete">Настройки хост-интерфейса </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
@@ -5984,11 +5660,6 @@ p, li { white-space: pre-wrap; }
         <source>No</source>
         <comment>remote</comment>
         <translation>Нет</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
-        <source>Filter details</source>
-        <translation type="obsolete">Свойства фильтра</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
