@@ -192,7 +192,7 @@ static const STAMR0SAMPLE g_aGVMMStats[] =
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-STAMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
+VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
 {
     LogFlow(("STAMR3Init\n"));
 
@@ -235,7 +235,7 @@ STAMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
  *
  * @param   pUVM        Pointer to the user mode VM structure.
  */
-STAMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
+VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
 {
     /*
      * Free used memory and the RWLock.
@@ -277,7 +277,7 @@ STAMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
  * @param   enmUnit     Sample unit.
  * @param   pszDesc     Sample description.
  */
-STAMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+VMMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
     AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
     return stamR3RegisterU(pUVM, pvSample, NULL, NULL, enmType, enmVisibility, pszName, enmUnit, pszDesc);
@@ -306,7 +306,7 @@ STAMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, ST
  * @param   enmUnit     Sample unit.
  * @param   pszDesc     Sample description.
  */
-STAMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
     AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
     return stamR3RegisterU(pVM->pUVM, pvSample, NULL, NULL, enmType, enmVisibility, pszName, enmUnit, pszDesc);
@@ -327,8 +327,8 @@ STAMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMV
  * @param   pszName     The sample name format string.
  * @param   ...         Arguments to the format string.
  */
-STAMR3DECL(int)  STAMR3RegisterFU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                  const char *pszDesc, const char *pszName, ...)
+VMMR3DECL(int)  STAMR3RegisterFU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                 const char *pszDesc, const char *pszName, ...)
 {
     va_list args;
     va_start(args, pszName);
@@ -352,8 +352,8 @@ STAMR3DECL(int)  STAMR3RegisterFU(PUVM pUVM, void *pvSample, STAMTYPE enmType, S
  * @param   pszName     The sample name format string.
  * @param   ...         Arguments to the format string.
  */
-STAMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                 const char *pszDesc, const char *pszName, ...)
+VMMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                const char *pszDesc, const char *pszName, ...)
 {
     va_list args;
     va_start(args, pszName);
@@ -377,8 +377,8 @@ STAMR3DECL(int)  STAMR3RegisterF(PVM pVM, void *pvSample, STAMTYPE enmType, STAM
  * @param   pszName     The sample name format string.
  * @param   args        Arguments to the format string.
  */
-STAMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                  const char *pszDesc, const char *pszName, va_list args)
+VMMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                 const char *pszDesc, const char *pszName, va_list args)
 {
     AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
 
@@ -407,8 +407,8 @@ STAMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, S
  * @param   pszName     The sample name format string.
  * @param   args        Arguments to the format string.
  */
-STAMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                 const char *pszDesc, const char *pszName, va_list args)
+VMMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                const char *pszDesc, const char *pszName, va_list args)
 {
     return STAMR3RegisterVU(pVM->pUVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
 }
@@ -430,9 +430,9 @@ STAMR3DECL(int)  STAMR3RegisterV(PVM pVM, void *pvSample, STAMTYPE enmType, STAM
  * @param   ...         Arguments to the format string.
  * @remark  There is currently no device or driver variant of this API. Add one if it should become necessary!
  */
-STAMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                        PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
-                                        const char *pszDesc, const char *pszName, ...)
+VMMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                       PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
+                                       const char *pszDesc, const char *pszName, ...)
 {
     va_list args;
     va_start(args, pszName);
@@ -457,9 +457,9 @@ STAMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY 
  * @param   args        Arguments to the format string.
  * @remark  There is currently no device or driver variant of this API. Add one if it should become necessary!
  */
-STAMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
-                                         PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
-                                         const char *pszDesc, const char *pszName, va_list args)
+VMMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
+                                        PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
+                                        const char *pszDesc, const char *pszName, va_list args)
 {
     char *pszFormattedName;
     RTStrAPrintfV(&pszFormattedName, pszName, args);
@@ -615,7 +615,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   pvSample    Pointer to the sample registered with STAMR3Register().
  */
-STAMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
+VMMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
 {
     STAM_LOCK_WR(pUVM);
 
@@ -661,7 +661,7 @@ STAMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
  * @param   pVM         The VM handle.
  * @param   pvSample    Pointer to the sample registered with STAMR3Register().
  */
-STAMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
+VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
 {
     return STAMR3DeregisterU(pVM->pUVM, pvSample);
 }
@@ -677,7 +677,7 @@ STAMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
  *                      If NULL all samples are reset.
  * @remarks Don't confuse this with the other 'XYZR3Reset' methods, it's not called at VM reset.
  */
-STAMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
 {
     int rc = VINF_SUCCESS;
 
@@ -754,7 +754,7 @@ STAMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat)
  *                      If NULL all samples are reset.
  * @remarks Don't confuse this with the other 'XYZR3Reset' methods, it's not called at VM reset.
  */
-STAMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
 {
     return STAMR3ResetU(pVM->pUVM, pszPat);
 }
@@ -851,7 +851,7 @@ static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg)
  *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
  * @param   pcchSnapshot    Where to store the size of the snapshot data. (Excluding the trailing '\0')
  */
-STAMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
+VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
 {
     STAMR3SNAPSHOTONE State = { NULL, NULL, NULL, pUVM->pVM, 0, VINF_SUCCESS, fWithDesc };
 
@@ -904,7 +904,7 @@ STAMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapsh
  *                          The returned pointer must be freed by calling STAMR3SnapshotFree().
  * @param   pcchSnapshot    Where to store the size of the snapshot data. (Excluding the trailing '\0')
  */
-STAMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
+VMMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc)
 {
     return STAMR3SnapshotU(pVM->pUVM, pszPat, ppszSnapshot, pcchSnapshot, fWithDesc);
 }
@@ -1146,7 +1146,7 @@ static int stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat,
  * @param   pszSnapshot     The snapshot data pointer returned by STAMR3Snapshot().
  *                          NULL is allowed.
  */
-STAMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot)
+VMMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot)
 {
     if (!pszSnapshot)
         RTMemFree(pszSnapshot);
@@ -1162,7 +1162,7 @@ STAMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot)
  * @param   pszSnapshot     The snapshot data pointer returned by STAMR3Snapshot().
  *                          NULL is allowed.
  */
-STAMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot)
+VMMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot)
 {
     return STAMR3SnapshotFreeU(pVM->pUVM, pszSnapshot);
 }
@@ -1176,7 +1176,7 @@ STAMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot)
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
-STAMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat)
 {
     STAMR3PRINTONEARGS Args;
     Args.pVM = pUVM->pVM;
@@ -1198,7 +1198,7 @@ STAMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat)
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
-STAMR3DECL(int)  STAMR3Dump(PVM pVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3Dump(PVM pVM, const char *pszPat)
 {
     return STAMR3DumpU(pVM->pUVM, pszPat);
 }
@@ -1229,7 +1229,7 @@ static DECLCALLBACK(void) stamR3EnumLogPrintf(PSTAMR3PRINTONEARGS pArgs, const c
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
-STAMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat)
 {
     STAMR3PRINTONEARGS Args;
     Args.pVM = pUVM->pVM;
@@ -1251,7 +1251,7 @@ STAMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat)
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are written to the log.
  */
-STAMR3DECL(int)  STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat)
 {
     return STAMR3DumpToReleaseLogU(pVM->pUVM, pszPat);
 }
@@ -1282,7 +1282,7 @@ static DECLCALLBACK(void) stamR3EnumRelLogPrintf(PSTAMR3PRINTONEARGS pArgs, cons
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
  */
-STAMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat)
 {
     STAMR3PRINTONEARGS Args;
     Args.pVM = pUVM->pVM;
@@ -1304,7 +1304,7 @@ STAMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat)
  * @param   pszPat          The name matching pattern. See somewhere_where_this_is_described_in_detail.
  *                          If NULL all samples are reset.
  */
-STAMR3DECL(int)  STAMR3Print(PVM pVM, const char *pszPat)
+VMMR3DECL(int)  STAMR3Print(PVM pVM, const char *pszPat)
 {
     return STAMR3PrintU(pVM->pUVM, pszPat);
 }
@@ -1452,7 +1452,7 @@ static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg)
  * @param   pfnEnum     The callback function.
  * @param   pvUser      The pvUser argument of the callback function.
  */
-STAMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
+VMMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 {
     STAMR3ENUMONEARGS Args;
     Args.pVM     = pUVM->pVM;
@@ -1476,7 +1476,7 @@ STAMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum
  * @param   pfnEnum     The callback function.
  * @param   pvUser      The pvUser argument of the callback function.
  */
-STAMR3DECL(int) STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
+VMMR3DECL(int) STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 {
     return STAMR3EnumU(pVM->pUVM, pszPat, pfnEnum, pvUser);
 }
@@ -1805,7 +1805,7 @@ static void stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExp
  * @returns Pointer to read only unit string.
  * @param   enmUnit     The unit.
  */
-STAMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
+VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
 {
     switch (enmUnit)
     {

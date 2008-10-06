@@ -90,7 +90,7 @@ static DECLCALLBACK(int) selmGuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3Init(PVM pVM)
+VMMR3DECL(int) SELMR3Init(PVM pVM)
 {
     LogFlow(("SELMR3Init\n"));
 
@@ -205,7 +205,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
-SELMR3DECL(int) SELMR3InitFinalize(PVM pVM)
+VMMR3DECL(int) SELMR3InitFinalize(PVM pVM)
 {
     /*
      * Make Double Fault work with WP enabled?
@@ -346,7 +346,7 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
  *
  * @param   pVM     The VM.
  */
-SELMR3DECL(void) SELMR3Relocate(PVM pVM)
+VMMR3DECL(void) SELMR3Relocate(PVM pVM)
 {
     PX86DESC paGdt = pVM->selm.s.paGdtHC;
     LogFlow(("SELMR3Relocate\n"));
@@ -461,7 +461,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM)
  *
  * @param   pVM       The VM handle
  */
-SELMR3DECL(void) SELMR3PagingModeChanged(PVM pVM)
+VMMR3DECL(void) SELMR3PagingModeChanged(PVM pVM)
 {
     pVM->selm.s.Tss.cr3       = PGMGetHyperCR3(pVM);
     pVM->selm.s.TssTrap08.cr3 = PGMGetInterGCCR3(pVM);
@@ -477,7 +477,7 @@ SELMR3DECL(void) SELMR3PagingModeChanged(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3Term(PVM pVM)
+VMMR3DECL(int) SELMR3Term(PVM pVM)
 {
     return 0;
 }
@@ -491,7 +491,7 @@ SELMR3DECL(int) SELMR3Term(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3Reset(PVM pVM)
+VMMR3DECL(void) SELMR3Reset(PVM pVM)
 {
     LogFlow(("SELMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
@@ -550,7 +550,7 @@ SELMR3DECL(void) SELMR3Reset(PVM pVM)
  *
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
+VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
 {
     /*
      * Uninstall guest GDT/LDT/TSS write access handlers.
@@ -755,7 +755,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
+VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
@@ -1384,7 +1384,7 @@ static DECLCALLBACK(int) selmGuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
+VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
 {
     int rc;
 
@@ -1554,7 +1554,7 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM Handle.
  */
-SELMR3DECL(int) SELMR3DebugCheck(PVM pVM)
+VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
 {
 #ifdef VBOX_STRICT
     /*
@@ -1690,7 +1690,7 @@ SELMR3DECL(int) SELMR3DebugCheck(PVM pVM)
  * @returns false and assertions on mismatch..
  * @param   pVM     VM Handle.
  */
-SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
+VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 {
 #ifdef VBOX_STRICT
 
@@ -1782,7 +1782,7 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
  * @param   ppvLdt    Where to store the flat address of LDT.
  * @param   pcbLimit  Where to store LDT limit.
  */
-SELMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit)
+VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit)
 {
     /* Get guest GDTR. */
     VBOXGDTR GDTR;
@@ -1926,7 +1926,7 @@ static int selmr3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
+VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
 {
     Assert(pSelInfo);
 
@@ -2051,7 +2051,7 @@ SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-SELMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
+VMMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
 {
     Assert(pSelInfo);
 
@@ -2195,7 +2195,7 @@ static void selmR3FormatDescriptor(X86DESC Desc, RTSEL Sel, char *pszOutput, siz
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-SELMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg)
+VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg)
 {
     char szOutput[128];
     selmR3FormatDescriptor(Desc, Sel, &szOutput[0], sizeof(szOutput));
@@ -2356,7 +2356,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM)
+VMMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM)
 {
     DBGFR3Info(pVM, "gdt", NULL, NULL);
 }
@@ -2366,7 +2366,7 @@ SELMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM)
+VMMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM)
 {
     DBGFR3Info(pVM, "ldt", NULL, NULL);
 }
@@ -2376,7 +2376,7 @@ SELMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM)
+VMMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM)
 {
     DBGFR3Info(pVM, "gdtguest", NULL, NULL);
 }
@@ -2386,7 +2386,7 @@ SELMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpGuestLDT(PVM pVM)
+VMMR3DECL(void) SELMR3DumpGuestLDT(PVM pVM)
 {
     DBGFR3Info(pVM, "ldtguest", NULL, NULL);
 }

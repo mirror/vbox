@@ -70,7 +70,7 @@ static void VMXR0CheckError(PVM pVM, int rc)
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -111,7 +111,7 @@ HWACCMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu,
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
@@ -134,7 +134,7 @@ HWACCMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHY
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
+VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 {
     int rc;
 
@@ -202,7 +202,7 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0TermVM(PVM pVM)
+VMMR0DECL(int) VMXR0TermVM(PVM pVM)
 {
     if (pVM->hwaccm.s.vmx.pMemObjVMCS != NIL_RTR0MEMOBJ)
     {
@@ -234,7 +234,7 @@ HWACCMR0DECL(int) VMXR0TermVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM)
+VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 {
     int rc = VINF_SUCCESS;
     uint32_t val;
@@ -475,7 +475,7 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
 #ifdef HWACCM_VMX_EMULATE_REALMODE
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
-        /* Injecting events doesn't work right with real mode emulation.  
+        /* Injecting events doesn't work right with real mode emulation.
          * (#GP if we try to inject external hardware interrupts)
          * Fake an 'int x' instruction. Note that we need to take special precautions when
          * the inject is interrupted as the normal pending event method seems to be broken in this case.
@@ -636,7 +636,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
+VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
@@ -748,7 +748,7 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
  */
-HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTGCUINTPTR val;
@@ -1229,7 +1229,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_GP);
 # endif /* HWACCM_VMX_EMULATE_REALMODE */
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
-    AssertRC(rc);    
+    AssertRC(rc);
 #endif
 
     /* Done. */
@@ -1245,7 +1245,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
  */
-HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTCCUINTREG val, valShadow;
@@ -2636,7 +2636,7 @@ end:
  * @param   pVM         The VM to operate on.
  * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
+VMMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
@@ -2664,7 +2664,7 @@ HWACCMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
  * @param   pVM         The VM to operate on.
  * @param   pCtx        CPU context
  */
-HWACCMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 

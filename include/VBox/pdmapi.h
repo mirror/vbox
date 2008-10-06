@@ -42,15 +42,15 @@ __BEGIN_DECLS
  * @{
  */
 
-PDMDECL(int)    PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt);
-PDMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
-PDMDECL(int)    PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
-PDMDECL(int)    PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
-PDMDECL(int)    PDMApicSetBase(PVM pVM, uint64_t u64Base);
-PDMDECL(int)    PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
-PDMDECL(int)    PDMApicSetTPR(PVM pVM, uint8_t u8TPR);
-PDMDECL(int)    PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending);
-PDMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
+VMMDECL(int)    PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt);
+VMMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
+VMMDECL(int)    PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
+VMMDECL(int)    PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
+VMMDECL(int)    PDMApicSetBase(PVM pVM, uint64_t u64Base);
+VMMDECL(int)    PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
+VMMDECL(int)    PDMApicSetTPR(PVM pVM, uint8_t u8TPR);
+VMMDECL(int)    PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending);
+VMMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 
 #ifdef IN_RING3
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
@@ -58,17 +58,17 @@ PDMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
  * @{
  */
 
-PDMR3DECL(int)  PDMR3InitUVM(PUVM pUVM);
-PDMR3DECL(int)  PDMR3LdrLoadVMMR0U(PUVM pUVM);
-PDMR3DECL(int)  PDMR3Init(PVM pVM);
-PDMR3DECL(void) PDMR3PowerOn(PVM pVM);
-PDMR3DECL(void) PDMR3Reset(PVM pVM);
-PDMR3DECL(void) PDMR3Suspend(PVM pVM);
-PDMR3DECL(void) PDMR3Resume(PVM pVM);
-PDMR3DECL(void) PDMR3PowerOff(PVM pVM);
-PDMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-PDMR3DECL(int)  PDMR3Term(PVM pVM);
-PDMR3DECL(void) PDMR3TermUVM(PUVM pUVM);
+VMMR3DECL(int)  PDMR3InitUVM(PUVM pUVM);
+VMMR3DECL(int)  PDMR3LdrLoadVMMR0U(PUVM pUVM);
+VMMR3DECL(int)  PDMR3Init(PVM pVM);
+VMMR3DECL(void) PDMR3PowerOn(PVM pVM);
+VMMR3DECL(void) PDMR3Reset(PVM pVM);
+VMMR3DECL(void) PDMR3Suspend(PVM pVM);
+VMMR3DECL(void) PDMR3Resume(PVM pVM);
+VMMR3DECL(void) PDMR3PowerOff(PVM pVM);
+VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3DECL(int)  PDMR3Term(PVM pVM);
+VMMR3DECL(void) PDMR3TermUVM(PUVM pUVM);
 
 /**
  * Module enumeration callback function.
@@ -87,31 +87,31 @@ PDMR3DECL(void) PDMR3TermUVM(PUVM pUVM);
 typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fGC);
 /** Pointer to a FNPDMR3ENUM() function. */
 typedef FNPDMR3ENUM *PFNPDMR3ENUM;
-PDMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
-PDMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
-PDMR3DECL(int)  PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
-PDMR3DECL(int)  PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
-PDMR3DECL(int)  PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
-PDMR3DECL(int)  PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName);
-PDMR3DECL(int)  PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-PDMR3DECL(int)  PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-PDMR3DECL(int)  PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
+VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
+VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
+VMMR3DECL(int)  PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
+VMMR3DECL(int)  PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
+VMMR3DECL(int)  PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
+VMMR3DECL(int)  PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName);
+VMMR3DECL(int)  PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+VMMR3DECL(int)  PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+VMMR3DECL(int)  PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
                                          char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
                                          char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
                                          char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2);
 
-PDMR3DECL(int)  PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
-PDMR3DECL(int)  PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-PDMR3DECL(int)  PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-PDMR3DECL(int)  PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
-PDMR3DECL(int)  PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun);
-PDMR3DECL(void) PDMR3DmaRun(PVM pVM);
-PDMR3DECL(void) PDMR3Poll(PVM pVM);
-PDMR3DECL(int)  PDMR3LockCall(PVM pVM);
-PDMR3DECL(int)  PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
-PDMR3DECL(int)  PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv);
-PDMR3DECL(int)  PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv);
-PDMR3DECL(int)  PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
+VMMR3DECL(int)  PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
+VMMR3DECL(int)  PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+VMMR3DECL(int)  PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+VMMR3DECL(int)  PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
+VMMR3DECL(int)  PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun);
+VMMR3DECL(void) PDMR3DmaRun(PVM pVM);
+VMMR3DECL(void) PDMR3Poll(PVM pVM);
+VMMR3DECL(int)  PDMR3LockCall(PVM pVM);
+VMMR3DECL(int)  PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize);
+VMMR3DECL(int)  PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv);
+VMMR3DECL(int)  PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv);
+VMMR3DECL(int)  PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
 
 /** @} */
 #endif

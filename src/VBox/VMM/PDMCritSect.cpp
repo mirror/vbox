@@ -83,7 +83,7 @@ void pdmR3CritSectRelocate(PVM pVM)
  * @param   pVM         The VM handle.
  * @remark  Don't confuse this with PDMR3CritSectDelete.
  */
-PDMDECL(int) PDMR3CritSectTerm(PVM pVM)
+VMMDECL(int) PDMR3CritSectTerm(PVM pVM)
 {
     int rc = VINF_SUCCESS;
     while (pVM->pdm.s.pCritSects)
@@ -143,7 +143,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
  * @param   pCritSect       Pointer to the critical section.
  * @param   pszName         The name of the critical section (for statistics).
  */
-PDMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName)
+VMMR3DECL(int) PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName)
 {
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     AssertCompile(sizeof(pCritSect->padding) >= sizeof(pCritSect->s));
@@ -261,7 +261,7 @@ int pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns)
  * @returns VBox status code.
  * @param   pCritSect           The PDM critical section to destroy.
  */
-PDMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
+VMMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
 {
     if (!RTCritSectIsInitialized(&pCritSect->s.Core))
         return VINF_SUCCESS;
@@ -292,7 +292,7 @@ PDMR3DECL(int) PDMR3CritSectDelete(PPDMCRITSECT pCritSect)
  *
  * @param   pVM         The VM handle.
  */
-PDMR3DECL(void) PDMR3CritSectFF(PVM pVM)
+VMMR3DECL(void) PDMR3CritSectFF(PVM pVM)
 {
     Assert(pVM->pdm.s.cQueuedCritSectLeaves > 0);
 
@@ -319,7 +319,7 @@ PDMR3DECL(void) PDMR3CritSectFF(PVM pVM)
  * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
  * @param   pCritSect   The critical section.
  */
-PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect)
+VMMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect)
 {
     return RTCritSectTryEnter(&pCritSect->s.Core);
 }
@@ -335,7 +335,7 @@ PDMR3DECL(int) PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect)
  * @param   pCritSect       The critical section.
  * @param   EventToSignal     The semapore that should be signalled.
  */
-PDMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal)
+VMMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal)
 {
     Assert(EventToSignal != NIL_RTSEMEVENT);
     if (RT_UNLIKELY(!RTCritSectIsOwner(&pCritSect->s.Core)))

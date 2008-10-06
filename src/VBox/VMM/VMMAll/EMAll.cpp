@@ -78,7 +78,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
  *
  * @returns Current status.
  */
-EMDECL(EMSTATE) EMGetState(PVM pVM)
+VMMDECL(EMSTATE) EMGetState(PVM pVM)
 {
     return pVM->em.s.enmState;
 }
@@ -91,7 +91,7 @@ EMDECL(EMSTATE) EMGetState(PVM pVM)
  *
  * @todo    This doesn't belong here, it should go in REMAll.cpp!
  */
-EMDECL(void) EMFlushREMTBs(PVM pVM)
+VMMDECL(void) EMFlushREMTBs(PVM pVM)
 {
     Log(("EMFlushREMTBs\n"));
     pVM->em.s.fREMFlushTBs = true;
@@ -160,7 +160,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, DISCPUSTATE *pCpu, RTGCUINTPTR InstrGC, ui
  * @param   pCpu            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-EMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
+VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
 {
     RTGCPTR GCPtrInstr;
     int rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
@@ -185,7 +185,7 @@ EMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pC
  * @param   pCpu            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-EMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
+VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr)
 {
     int rc = DISCoreOneEx(GCPtrInstr, SELMGetCpuModeFromSelector(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
 #ifdef IN_GC
@@ -219,7 +219,7 @@ EMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     RTGCPTR pbCode;
 
@@ -271,7 +271,7 @@ EMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFa
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-EMDECL(int) EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(int) EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     STAM_PROFILE_START(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     int rc = emInterpretInstructionCPU(pVM, pCpu, pRegFrame, pvFault, pcbSize);
@@ -294,7 +294,7 @@ EMDECL(int) EMInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE p
  * @param   cbOp        The size of the instruction.
  * @remark  This may raise exceptions.
  */
-EMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp)
+VMMDECL(int) EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp)
 {
     /*
      * Hand it on to IOM.
@@ -1702,7 +1702,7 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
  * @param   pRegFrame   The register frame.
  *
  */
-EMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretIret(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
     RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs, uMask;
@@ -1767,7 +1767,7 @@ static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
  * @param   pAddrGC     Operand address
  *
  */
-EMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
+VMMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
 {
     int rc;
 
@@ -1840,7 +1840,7 @@ static int emInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
  * @param   pRegFrame   The register frame.
  *
  */
-EMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     uint32_t iLeaf = pRegFrame->eax; NOREF(iLeaf);
 
@@ -1871,7 +1871,7 @@ static int emInterpretCpuId(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  * @param   SrcRegCRx   CRx register index (USE_REG_CR*)
  *
  */
-EMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
+VMMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
 {
     int      rc;
     uint64_t val64;
@@ -1910,7 +1910,7 @@ EMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestReg
  * @param   u16Data     LMSW source data.
  *
  */
-EMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
+VMMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
 {
     uint64_t OldCr0 = CPUMGetGuestCR0(pVM);
 
@@ -1934,7 +1934,7 @@ EMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
  * @param   pVM         The VM handle.
  *
  */
-EMDECL(int) EMInterpretCLTS(PVM pVM)
+VMMDECL(int) EMInterpretCLTS(PVM pVM)
 {
     uint64_t cr0 = CPUMGetGuestCR0(pVM);
     if (!(cr0 & X86_CR0_TS))
@@ -1961,7 +1961,7 @@ static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
-EMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
+VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
 {
     uint64_t val;
     uint64_t oldval;
@@ -2122,7 +2122,7 @@ static int emInterpretMovCRx(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
-EMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
+VMMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen)
 {
     uint64_t val;
     int      rc;
@@ -2160,7 +2160,7 @@ EMDECL(int) EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
  * @param   SrcRegDRx   DRx register index (USE_REG_DR*)
  *
  */
-EMDECL(int) EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
+VMMDECL(int) EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx)
 {
     uint64_t val64;
 
@@ -2333,7 +2333,7 @@ static int emInterpretHlt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
  * @param   pRegFrame   The register frame.
  *
  */
-EMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     unsigned uCR4 = CPUMGetGuestCR4(pVM);
 
@@ -2483,7 +2483,7 @@ static const char *emMSRtoString(uint32_t uMsr)
  * @param   pRegFrame   The register frame.
  *
  */
-EMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32Features, cpl;
     uint64_t val;
@@ -2604,7 +2604,7 @@ static int emInterpretRdmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
  * @param   pVM         The VM handle.
  * @param   pRegFrame   The register frame.
  */
-EMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32Features, cpl;
     uint64_t val;
@@ -2899,7 +2899,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
  * @param   pVM         The VM handle.
  * @param   PC          The PC.
  */
-EMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, RTGCUINTPTR PC)
+VMMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, RTGCUINTPTR PC)
 {
     pVM->em.s.GCPtrInhibitInterrupts = PC;
     VM_FF_SET(pVM, VM_FF_INHIBIT_INTERRUPTS);
@@ -2919,7 +2919,7 @@ EMDECL(void) EMSetInhibitInterruptsPC(PVM pVM, RTGCUINTPTR PC)
  * @param   pVM         VM handle.
  *
  */
-EMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVM pVM)
+VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVM pVM)
 {
     return pVM->em.s.GCPtrInhibitInterrupts;
 }

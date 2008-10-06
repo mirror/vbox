@@ -48,7 +48,7 @@ __BEGIN_DECLS
  * @returns Hypervisor's Trap 08 (\#DF) selector.
  * @param   pVM     VM Handle.
  */
-SELMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM);
+VMMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM);
 
 /**
  * Sets EIP of Hypervisor's Trap 08 (\#DF) TSS.
@@ -56,7 +56,7 @@ SELMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM);
  * @param   pVM     VM Handle.
  * @param   u32EIP  EIP of Trap 08 handler.
  */
-SELMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
+VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
 
 /**
  * Sets ss:esp for ring1 in main Hypervisor's TSS.
@@ -65,7 +65,7 @@ SELMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
  * @param   ss      Ring1 SS register value.
  * @param   esp     Ring1 ESP register value.
  */
-SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
+VMMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
 
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
@@ -75,49 +75,49 @@ SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
-SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp);
+VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp);
 
 /**
  * Returns Guest TSS pointer
  *
  * @param   pVM     VM Handle.
  */
-SELMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM);
+VMMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM);
 
 /**
  * Gets the hypervisor code selector (CS).
  * @returns CS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperCS(PVM pVM);
+VMMDECL(RTSEL) SELMGetHyperCS(PVM pVM);
 
 /**
  * Gets the 64-mode hypervisor code selector (CS64).
  * @returns CS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperCS64(PVM pVM);
+VMMDECL(RTSEL) SELMGetHyperCS64(PVM pVM);
 
 /**
  * Gets the hypervisor data selector (DS).
  * @returns DS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperDS(PVM pVM);
+VMMDECL(RTSEL) SELMGetHyperDS(PVM pVM);
 
 /**
  * Gets the hypervisor TSS selector.
  * @returns TSS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperTSS(PVM pVM);
+VMMDECL(RTSEL) SELMGetHyperTSS(PVM pVM);
 
 /**
  * Gets the hypervisor TSS Trap 8 selector.
  * @returns TSS Trap 8 selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM);
+VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM);
 
 /**
  * Gets the address for the hypervisor GDT.
@@ -127,7 +127,7 @@ SELMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM);
  * @remark  This is intended only for very special use, like in the world
  *          switchers. Don't exploit this API!
  */
-SELMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM);
+VMMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM);
 
 /**
  * Gets info about the current TSS.
@@ -141,7 +141,7 @@ SELMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM);
  * @param   pcbTss              Where to store the TSS size limit.
  * @param   pfCanHaveIOBitmap   Where to store the can-have-I/O-bitmap indicator. (optional)
  */
-SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
+VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
 
 /**
  * Converts a GC selector based address to a flat address.
@@ -155,7 +155,7 @@ SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTs
  * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
+VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
 
 /**
  * Converts a GC selector based address to a flat address.
@@ -170,7 +170,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, 
  * @param   Sel     Selector part.
  * @param   Addr    Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
+VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
 
 /** Flags for SELMToFlatEx().
  * @{ */
@@ -206,13 +206,13 @@ SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
  *                      GDT entires are valid.
  * @param   ppvGC       Where to store the GC flat address.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC);
+VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC);
 
 /**
  * Converts a GC selector based address to a flat address.
  *
  * Some basic checking is done, but not all kinds yet.
- * 
+ *
  * Note: Obsolete: DO NOT USE
  *
  * @returns VBox status
@@ -227,7 +227,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, R
  * @param   pcb         Where to store the bytes from *ppvGC which can be accessed according to
  *                      the selector. NULL is allowed.
  */
-SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
+VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb);
 
 /**
  * Validates and converts a GC selector based code address to a flat address.
@@ -242,7 +242,7 @@ SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Ad
  * @param   Addr         Address part.
  * @param   ppvFlat      Where to store the flat address.
  */
-SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat);
+VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat);
 
 /**
  * Validates and converts a GC selector based code address to a flat address.
@@ -261,7 +261,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelC
  * @param   ppvFlat      Where to store the flat address.
  * @param   pcBits       Where to store the 64-bit/32-bit/16-bit indicator.
  */
-SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits);
+VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits);
 
 /**
  * Return the cpu mode corresponding to the (CS) selector
@@ -272,7 +272,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSE
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel);
+VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel);
 
 /**
  * Returns flat address and limit of LDT by LDT selector.
@@ -285,7 +285,7 @@ SELMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL
  * @param   ppvLdt    Where to store the flat address of LDT.
  * @param   pcbLimit  Where to store LDT limit.
  */
-SELMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit);
+VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned *pcbLimit);
 
 
 /**
@@ -322,7 +322,7 @@ typedef const SELMSELINFO *PCSELMSELINFO;
  * @param   pSelInfo    Pointer to the selector information for the CS selector.
  * @param   SelCPL      The selector defining the CPL (SS).
  */
-SELMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL);
+VMMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL);
 
 /** @def SELMSelInfoIsExpandDown
  * Tests whether the selector info describes an expand-down selector or now.
@@ -351,7 +351,7 @@ SELMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3Init(PVM pVM);
+VMMR3DECL(int) SELMR3Init(PVM pVM);
 
 /**
  * Finalizes HMA page attributes.
@@ -359,7 +359,7 @@ SELMR3DECL(int) SELMR3Init(PVM pVM);
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
-SELMR3DECL(int) SELMR3InitFinalize(PVM pVM);
+VMMR3DECL(int) SELMR3InitFinalize(PVM pVM);
 
 /**
  * Applies relocations to data and code managed by this
@@ -368,7 +368,7 @@ SELMR3DECL(int) SELMR3InitFinalize(PVM pVM);
  *
  * @param   pVM     The VM.
  */
-SELMR3DECL(void) SELMR3Relocate(PVM pVM);
+VMMR3DECL(void) SELMR3Relocate(PVM pVM);
 
 /**
  * Notification callback which is called whenever there is a chance that a CR3
@@ -377,7 +377,7 @@ SELMR3DECL(void) SELMR3Relocate(PVM pVM);
  *
  * @param   pVM       The VM handle
  */
-SELMR3DECL(void) SELMR3PagingModeChanged(PVM pVM);
+VMMR3DECL(void) SELMR3PagingModeChanged(PVM pVM);
 
 /**
  * Terminates the SELM.
@@ -388,7 +388,7 @@ SELMR3DECL(void) SELMR3PagingModeChanged(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3Term(PVM pVM);
+VMMR3DECL(int) SELMR3Term(PVM pVM);
 
 /**
  * The VM is being reset.
@@ -398,7 +398,7 @@ SELMR3DECL(int) SELMR3Term(PVM pVM);
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3Reset(PVM pVM);
+VMMR3DECL(void) SELMR3Reset(PVM pVM);
 
 /**
  * Updates the Guest GDT & LDT virtualization based on current CPU state.
@@ -406,7 +406,7 @@ SELMR3DECL(void) SELMR3Reset(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM);
+VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM);
 
 /**
  * Compares the Guest GDT and LDT with the shadow tables.
@@ -415,7 +415,7 @@ SELMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM Handle.
  */
-SELMR3DECL(int) SELMR3DebugCheck(PVM pVM);
+VMMR3DECL(int) SELMR3DebugCheck(PVM pVM);
 #ifdef VBOX_STRICT
 # define SELMR3DEBUGCHECK(pVM)     SELMR3DebugCheck(pVM)
 #else
@@ -428,7 +428,7 @@ SELMR3DECL(int) SELMR3DebugCheck(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(int) SELMR3SyncTSS(PVM pVM);
+VMMR3DECL(int) SELMR3SyncTSS(PVM pVM);
 
 /**
  * Gets information about a selector.
@@ -446,7 +446,7 @@ SELMR3DECL(int) SELMR3SyncTSS(PVM pVM);
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo);
+VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo);
 
 /**
  * Gets information about a selector from the shadow tables.
@@ -465,7 +465,7 @@ SELMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-SELMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo);
+VMMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo);
 
 /**
  * Validates the RawR0 TSS values against the one in the Guest TSS.
@@ -474,7 +474,7 @@ SELMR3DECL(int) SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PSELMSELINFO pSe
  * @returns false and assertions on mismatch..
  * @param   pVM     VM Handle.
  */
-SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM);
+VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM);
 
 
 /**
@@ -482,7 +482,7 @@ SELMR3DECL(bool) SELMR3CheckTSS(PVM pVM);
  *
  * @param   pVM         The VM to operate on.
  */
-SELMR3DECL(void) SELMR3DisableMonitoring(PVM pVM);
+VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM);
 
 
 /**
@@ -492,35 +492,35 @@ SELMR3DECL(void) SELMR3DisableMonitoring(PVM pVM);
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-SELMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);
+VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);
 
 /**
  * Dumps the hypervisor GDT.
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM);
+VMMR3DECL(void) SELMR3DumpHyperGDT(PVM pVM);
 
 /**
  * Dumps the hypervisor LDT.
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM);
+VMMR3DECL(void) SELMR3DumpHyperLDT(PVM pVM);
 
 /**
  * Dumps the guest GDT.
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM);
+VMMR3DECL(void) SELMR3DumpGuestGDT(PVM pVM);
 
 /**
  * Dumps the guest LDT.
  *
  * @param   pVM     VM handle.
  */
-SELMR3DECL(void) SELMR3DumpGuestLDT(PVM pVM);
+VMMR3DECL(void) SELMR3DumpGuestLDT(PVM pVM);
 
 /** @} */
 #endif

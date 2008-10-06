@@ -42,7 +42,7 @@
  * @param   pVM             VM handle.
  * @param   pu8Interrupt    Where to store the interrupt on success.
  */
-PDMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
+VMMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
 {
     pdmLock(pVM);
 
@@ -97,7 +97,7 @@ PDMDECL(int) PDMGetInterrupt(PVM pVM, uint8_t *pu8Interrupt)
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
  */
-PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
+VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
 {
     pdmLock(pVM);
 
@@ -129,7 +129,7 @@ PDMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
  */
-PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
+VMMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
 {
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
@@ -150,7 +150,7 @@ PDMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
  * @param   pVM             VM handle.
  * @param   u64Base         The new base.
  */
-PDMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
+VMMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
@@ -171,7 +171,7 @@ PDMDECL(int) PDMApicSetBase(PVM pVM, uint64_t u64Base)
  * @param   pVM             VM handle.
  * @param   pu64Base        Where to store the APIC base.
  */
-PDMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
+VMMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
@@ -193,7 +193,7 @@ PDMDECL(int) PDMApicGetBase(PVM pVM, uint64_t *pu64Base)
  * @param   pDevIns         Device instance of the APIC.
  * @param   pfPending       Pending state (out).
  */
-PDMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
+VMMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
@@ -214,7 +214,7 @@ PDMDECL(int) PDMApicHasPendingIrq(PVM pVM, bool *pfPending)
  * @param   pVM             VM handle.
  * @param   u8TPR           The new TPR.
  */
-PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
+VMMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
@@ -236,7 +236,7 @@ PDMDECL(int) PDMApicSetTPR(PVM pVM, uint8_t u8TPR)
  * @param   pu8TPR          Where to store the TRP.
  * @param   pfPending       Pending interrupt state (out).
 */
-PDMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending)
+VMMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
@@ -311,7 +311,7 @@ void pdmUnlock(PVM pVM)
  * @param   pv              Ring-3 pointer.
  * @param   pGCPhys         GC phys address (out).
  */
-PDMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
+VMMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
 {
     AssertReturn(pv >= pVM->pdm.s.pvVMMDevHeap && (RTR3UINTPTR)pv < (RTR3UINTPTR)pVM->pdm.s.pvVMMDevHeap + pVM->pdm.s.cbVMMDevHeap, VERR_INVALID_PARAMETER);
 

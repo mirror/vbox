@@ -59,7 +59,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR3DECL(int) HWACCMR3Init(PVM pVM)
+VMMR3DECL(int) HWACCMR3Init(PVM pVM)
 {
     LogFlow(("HWACCMR3Init\n"));
 
@@ -243,7 +243,7 @@ static void hwaccmR3DisableRawMode(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  */
-HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
+VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 {
     int rc;
 
@@ -664,7 +664,7 @@ HWACCMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
  *
  * @param   pVM     The VM.
  */
-HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
+VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
 {
     Log(("HWACCMR3Relocate to %VGv\n", MMHyperGetArea(pVM, 0)));
     return;
@@ -676,7 +676,7 @@ HWACCMR3DECL(void) HWACCMR3Relocate(PVM pVM)
  * @returns boolean
  * @param   pVM         The VM to operate on.
  */
-HWACCMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
+VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
 {
     return pVM->hwaccm.s.fAllowed;
 }
@@ -690,7 +690,7 @@ HWACCMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
  * @param   pVM            The VM to operate on.
  * @param   enmShadowMode  New paging mode.
  */
-HWACCMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode)
+VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode)
 {
     pVM->hwaccm.s.enmShadowMode = enmShadowMode;
 }
@@ -704,7 +704,7 @@ HWACCMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
+VMMR3DECL(int) HWACCMR3Term(PVM pVM)
 {
     if (pVM->hwaccm.s.vmx.pRealModeTSS)
     {
@@ -728,7 +728,7 @@ HWACCMR3DECL(int) HWACCMR3Term(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-HWACCMR3DECL(void) HWACCMR3Reset(PVM pVM)
+VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 {
     LogFlow(("HWACCMR3Reset:\n"));
 
@@ -756,7 +756,7 @@ HWACCMR3DECL(void) HWACCMR3Reset(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Partial VM execution context
  */
-HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
+VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 {
     Assert(pVM->fHWACCMEnabled);
 
@@ -845,7 +845,7 @@ HWACCMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
  * @returns boolean
  * @param   pVM         The VM to operate on.
  */
-HWACCMR3DECL(bool) HWACCMR3IsActive(PVM pVM)
+VMMR3DECL(bool) HWACCMR3IsActive(PVM pVM)
 {
     return pVM->hwaccm.s.fActive;
 }
@@ -856,7 +856,7 @@ HWACCMR3DECL(bool) HWACCMR3IsActive(PVM pVM)
  * @returns boolean
  * @param   pVM         The VM to operate on.
  */
-HWACCMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM)
+VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM)
 {
     return pVM->hwaccm.s.fNestedPaging;
 }
@@ -867,7 +867,7 @@ HWACCMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM)
  * @returns boolean
  * @param   pVM         The VM to operate on.
  */
-HWACCMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
+VMMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
 {
     return HWACCMIsEnabled(pVM) && pVM->hwaccm.s.Event.fPending;
 }
@@ -879,7 +879,7 @@ HWACCMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   iStatusCode VBox status code
  */
-HWACCMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
+VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
 {
     switch(iStatusCode)
     {

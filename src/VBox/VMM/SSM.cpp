@@ -416,7 +416,7 @@ static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-SSMR3DECL(int) SSMR3Register(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3Register(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
     PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
     PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
@@ -456,7 +456,7 @@ SSMR3DECL(int) SSMR3Register(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, u
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-SSMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
     PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
     PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
@@ -495,7 +495,7 @@ SSMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszN
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-SSMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
     PFNSSMINTSAVEPREP pfnSavePrep, PFNSSMINTSAVEEXEC pfnSaveExec, PFNSSMINTSAVEDONE pfnSaveDone,
     PFNSSMINTLOADPREP pfnLoadPrep, PFNSSMINTLOADEXEC pfnLoadExec, PFNSSMINTLOADDONE pfnLoadDone)
 {
@@ -534,7 +534,7 @@ SSMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32I
  * @param   pfnLoadDone     Done load callback, optional.
  * @param   pvUser          User argument.
  */
-SSMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
     PFNSSMEXTSAVEPREP pfnSavePrep, PFNSSMEXTSAVEEXEC pfnSaveExec, PFNSSMEXTSAVEDONE pfnSaveDone,
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser)
 {
@@ -567,7 +567,7 @@ SSMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32I
  *                          This must together with the name be unique.
  * @remark  Only for dynmaic data units and dynamic unloaded modules.
  */
-SSMR3DECL(int) SSMR3Deregister(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance)
+VMMR3DECL(int) SSMR3Deregister(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance)
 {
     /*
      * Validate input.
@@ -641,7 +641,7 @@ SSMR3DECL(int) SSMR3Deregister(PVM pVM, PPDMDEVINS pDevIns, const char *pszName,
  *                          This must together with the name be unique. Ignored if pszName is NULL.
  * @remark  Only for dynmaic data units and dynamic unloaded modules.
  */
-SSMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance)
+VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance)
 {
     /*
      * Validate input.
@@ -766,7 +766,7 @@ static int ssmR3DeregisterByNameAndType(PVM pVM, const char *pszName, SSMUNITTYP
  * @param   pszName         Data unit name.
  * @remark  Only for dynmaic data units.
  */
-SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
+VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
 {
     return ssmR3DeregisterByNameAndType(pVM, pszName, SSMUNITTYPE_INTERNAL);
 }
@@ -780,7 +780,7 @@ SSMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
  * @param   pszName         Data unit name.
  * @remark  Only for dynmaic data units.
  */
-SSMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
+VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
 {
     return ssmR3DeregisterByNameAndType(pVM, pszName, SSMUNITTYPE_EXTERNAL);
 }
@@ -878,7 +878,7 @@ static void ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance)
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
-SSMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("SSMR3Save: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
 
@@ -1362,7 +1362,7 @@ static PSSMUNIT ssmr3Find(PVM pVM, const char *pszName, uint32_t u32Instance)
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  */
-SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("SSMR3Load: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
 
@@ -1751,7 +1751,7 @@ SSMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  * @returns VBox status code on other failures.
  * @param   pszFilename     The path to the file to validate.
  */
-SSMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
+VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
 {
     LogFlow(("SSMR3ValidateFile: pszFilename=%p:{%s}\n", pszFilename, pszFilename));
 
@@ -1781,7 +1781,7 @@ SSMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
  * @param   fFlags          Open flags. Reserved, must be 0.
  * @param   ppSSM           Where to store the SSM handle.
  */
-SSMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM)
+VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM)
 {
     LogFlow(("SSMR3Open: pszFilename=%p:{%s} fFlags=%#x ppSSM=%p\n", pszFilename, pszFilename, fFlags, ppSSM));
 
@@ -1847,7 +1847,7 @@ SSMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
  * @returns VBox status code.
  * @param   pSSM            The SSM handle returned by SSMR3Open().
  */
-SSMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
+VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
 {
     LogFlow(("SSMR3Close: pSSM=%p\n", pSSM));
 
@@ -1881,7 +1881,7 @@ SSMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
  * @param   iInstance       The instance number.
  * @param   piVersion       Where to store the version number. (Optional)
  */
-SSMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion)
+VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion)
 {
     LogFlow(("SSMR3Seek: pSSM=%p pszUnit=%p:{%s} iInstance=%RU32 piVersion=%p\n",
              pSSM, pszUnit, pszUnit, iInstance, piVersion));
@@ -2098,7 +2098,7 @@ static DECLCALLBACK(int) ssmr3WriteOut(void *pvSSM, const void *pvBuf, size_t cb
  * @param   paFields        The array of structure fields descriptions.
  *                          The array must be terminated by a SSMFIELD_ENTRY_TERM().
  */
-SSMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD paFields)
+VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD paFields)
 {
     /* begin marker. */
     int rc = SSMR3PutU32(pSSM, SSMR3STRUCT_BEGIN);
@@ -2127,7 +2127,7 @@ SSMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
  * @param   pSSM            SSM operation handle.
  * @param   fBool           Item to save.
  */
-SSMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
+VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
     {
@@ -2145,7 +2145,7 @@ SSMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
  * @param   pSSM            SSM operation handle.
  * @param   u8              Item to save.
  */
-SSMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
+VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u8, sizeof(u8));
@@ -2160,7 +2160,7 @@ SSMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
  * @param   pSSM            SSM operation handle.
  * @param   i8              Item to save.
  */
-SSMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
+VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i8, sizeof(i8));
@@ -2175,7 +2175,7 @@ SSMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
  * @param   pSSM            SSM operation handle.
  * @param   u16             Item to save.
  */
-SSMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
+VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u16, sizeof(u16));
@@ -2190,7 +2190,7 @@ SSMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
  * @param   pSSM            SSM operation handle.
  * @param   i16             Item to save.
  */
-SSMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
+VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i16, sizeof(i16));
@@ -2205,7 +2205,7 @@ SSMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
  * @param   pSSM            SSM operation handle.
  * @param   u32             Item to save.
  */
-SSMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
+VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u32, sizeof(u32));
@@ -2220,7 +2220,7 @@ SSMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
  * @param   pSSM            SSM operation handle.
  * @param   i32             Item to save.
  */
-SSMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
+VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i32, sizeof(i32));
@@ -2235,7 +2235,7 @@ SSMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
  * @param   pSSM            SSM operation handle.
  * @param   u64             Item to save.
  */
-SSMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
+VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u64, sizeof(u64));
@@ -2250,7 +2250,7 @@ SSMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
  * @param   pSSM            SSM operation handle.
  * @param   i64             Item to save.
  */
-SSMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
+VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i64, sizeof(i64));
@@ -2265,7 +2265,7 @@ SSMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
  * @param   pSSM            SSM operation handle.
  * @param   u128            Item to save.
  */
-SSMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
+VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u128, sizeof(u128));
@@ -2280,7 +2280,7 @@ SSMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
  * @param   pSSM            SSM operation handle.
  * @param   i128            Item to save.
  */
-SSMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
+VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i128, sizeof(i128));
@@ -2295,7 +2295,7 @@ SSMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
  * @param   pSSM            SSM operation handle.
  * @param   u               Item to save.
  */
-SSMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
+VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u, sizeof(u));
@@ -2311,7 +2311,7 @@ SSMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
  * @param   pSSM            SSM operation handle.
  * @param   i               Item to save.
  */
-SSMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
+VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i, sizeof(i));
@@ -2327,7 +2327,7 @@ SSMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
  * @param   pSSM            SSM operation handle.
  * @param   u               Item to save.
  */
-SSMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
+VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u, sizeof(u));
@@ -2343,7 +2343,7 @@ SSMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
  * @param   pSSM            SSM operation handle.
  * @param   i               Item to save.
  */
-SSMR3DECL(int) SSMR3PutGCSInt(PSSMHANDLE pSSM, RTGCINT i)
+VMMR3DECL(int) SSMR3PutGCSInt(PSSMHANDLE pSSM, RTGCINT i)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i, sizeof(i));
@@ -2359,7 +2359,7 @@ SSMR3DECL(int) SSMR3PutGCSInt(PSSMHANDLE pSSM, RTGCINT i)
  * @param   pSSM            SSM operation handle.
  * @param   GCPhys          The item to save
  */
-SSMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
+VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &GCPhys, sizeof(GCPhys));
@@ -2375,7 +2375,7 @@ SSMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
  * @param   pSSM            SSM operation handle.
  * @param   GCPhys          The item to save
  */
-SSMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
+VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &GCPhys, sizeof(GCPhys));
@@ -2391,7 +2391,7 @@ SSMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
  * @param   pSSM            SSM operation handle.
  * @param   GCPhys          The item to save
  */
-SSMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
+VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &GCPhys, sizeof(GCPhys));
@@ -2407,7 +2407,7 @@ SSMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
  * @param   pSSM            SSM operation handle.
  * @param   GCPtr           The item to save.
  */
-SSMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
+VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &GCPtr, sizeof(GCPtr));
@@ -2423,7 +2423,7 @@ SSMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
  * @param   pSSM            SSM operation handle.
  * @param   RCPtr           The item to save.
  */
-SSMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
+VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &RCPtr, sizeof(RCPtr));
@@ -2439,7 +2439,7 @@ SSMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
  * @param   pSSM            SSM operation handle.
  * @param   GCPtr           The item to save.
  */
-SSMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
+VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &GCPtr, sizeof(GCPtr));
@@ -2455,7 +2455,7 @@ SSMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
  * @param   pSSM            SSM operation handle.
  * @param   u               Item to save.
  */
-SSMR3DECL(int) SSMR3PutHCUInt(PSSMHANDLE pSSM, RTHCUINT u)
+VMMR3DECL(int) SSMR3PutHCUInt(PSSMHANDLE pSSM, RTHCUINT u)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &u, sizeof(u));
@@ -2471,7 +2471,7 @@ SSMR3DECL(int) SSMR3PutHCUInt(PSSMHANDLE pSSM, RTHCUINT u)
  * @param   pSSM            SSM operation handle.
  * @param   i               Item to save.
  */
-SSMR3DECL(int) SSMR3PutHCSInt(PSSMHANDLE pSSM, RTHCINT i)
+VMMR3DECL(int) SSMR3PutHCSInt(PSSMHANDLE pSSM, RTHCINT i)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &i, sizeof(i));
@@ -2487,7 +2487,7 @@ SSMR3DECL(int) SSMR3PutHCSInt(PSSMHANDLE pSSM, RTHCINT i)
  * @param   pSSM            SSM operation handle.
  * @param   IOPort          The item to save.
  */
-SSMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
+VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &IOPort, sizeof(IOPort));
@@ -2503,7 +2503,7 @@ SSMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
  * @param   pSSM            SSM operation handle.
  * @param   Sel             The item to save.
  */
-SSMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
+VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, &Sel, sizeof(Sel));
@@ -2520,7 +2520,7 @@ SSMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
  * @param   pv              Item to save.
  * @param   cb              Size of the item.
  */
-SSMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
+VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
         return ssmr3Write(pSSM, pv, cb);
@@ -2535,7 +2535,7 @@ SSMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
  * @param   pSSM            SSM operation handle.
  * @param   psz             Item to save.
  */
-SSMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
+VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
     {
@@ -2657,7 +2657,7 @@ static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, siz
  * @param   paFields        The array of structure fields descriptions.
  *                          The array must be terminated by a SSMFIELD_ENTRY_TERM().
  */
-SSMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFields)
+VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFields)
 {
     /* begin marker. */
     uint32_t u32Magic;
@@ -2694,7 +2694,7 @@ SSMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
  * @param   pSSM            SSM operation handle.
  * @param   pfBool          Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
+VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
     {
@@ -2718,7 +2718,7 @@ SSMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
  * @param   pSSM            SSM operation handle.
  * @param   pu8             Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
+VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pu8, sizeof(*pu8));
@@ -2733,7 +2733,7 @@ SSMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
  * @param   pSSM            SSM operation handle.
  * @param   pi8             Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
+VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pi8, sizeof(*pi8));
@@ -2748,7 +2748,7 @@ SSMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
  * @param   pSSM            SSM operation handle.
  * @param   pu16            Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
+VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pu16, sizeof(*pu16));
@@ -2763,7 +2763,7 @@ SSMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
  * @param   pSSM            SSM operation handle.
  * @param   pi16            Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
+VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pi16, sizeof(*pi16));
@@ -2778,7 +2778,7 @@ SSMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
  * @param   pSSM            SSM operation handle.
  * @param   pu32            Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
+VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pu32, sizeof(*pu32));
@@ -2793,7 +2793,7 @@ SSMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
  * @param   pSSM            SSM operation handle.
  * @param   pi32            Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
+VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pi32, sizeof(*pi32));
@@ -2808,7 +2808,7 @@ SSMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
  * @param   pSSM            SSM operation handle.
  * @param   pu64            Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
+VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pu64, sizeof(*pu64));
@@ -2823,7 +2823,7 @@ SSMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
  * @param   pSSM            SSM operation handle.
  * @param   pi64            Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
+VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pi64, sizeof(*pi64));
@@ -2838,7 +2838,7 @@ SSMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
  * @param   pSSM            SSM operation handle.
  * @param   pu128           Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
+VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pu128, sizeof(*pu128));
@@ -2854,7 +2854,7 @@ SSMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
  * @param   pSSM            SSM operation handle.
  * @param   pi128           Where to store the item.
  */
-SSMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
+VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pi128, sizeof(*pi128));
@@ -2870,7 +2870,7 @@ SSMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
  * @param   pSSM            SSM operation handle.
  * @param   pu              Where to store the integer.
  */
-SSMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
+VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pu, sizeof(*pu));
@@ -2886,7 +2886,7 @@ SSMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
  * @param   pSSM            SSM operation handle.
  * @param   pi              Where to store the integer.
  */
-SSMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
+VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pi, sizeof(*pi));
@@ -2902,7 +2902,7 @@ SSMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
  * @param   pSSM            SSM operation handle.
  * @param   pu              Where to store the integer.
  */
-SSMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
+VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
 {
     Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
 
@@ -2930,7 +2930,7 @@ SSMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
  * @param   pSSM            SSM operation handle.
  * @param   pi              Where to store the integer.
  */
-SSMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi)
+VMMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi)
 {
     Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
 
@@ -2958,7 +2958,7 @@ SSMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi)
  * @param   pSSM            SSM operation handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
-SSMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
+VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
@@ -2974,7 +2974,7 @@ SSMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
  * @param   pSSM            SSM operation handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
-SSMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
+VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
@@ -2990,7 +2990,7 @@ SSMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
  * @param   pSSM            SSM operation handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
-SSMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
+VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
@@ -3014,7 +3014,7 @@ SSMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
  * @param   pSSM            SSM operation handle.
  * @param   cbGCPtr         Size of RTGCPTR
  */
-SSMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
+VMMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
 {
     Assert(cbGCPtr == sizeof(RTGCPTR32) || cbGCPtr == sizeof(RTGCPTR64));
     Log(("SSMR3SetGCPtrSize %d bytes\n", cbGCPtr));
@@ -3029,7 +3029,7 @@ SSMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
  * @param   pSSM            SSM operation handle.
  * @param   pGCPtr          Where to store the GC virtual address.
  */
-SSMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
+VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
 {
     Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
 
@@ -3056,7 +3056,7 @@ SSMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
  * @param   pSSM            SSM operation handle.
  * @param   pRCPtr          Where to store the RC virtual address.
  */
-SSMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
+VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pRCPtr, sizeof(*pRCPtr));
@@ -3072,7 +3072,7 @@ SSMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
  * @param   pSSM            SSM operation handle.
  * @param   pGCPtr          Where to store the GC virtual address.
  */
-SSMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
+VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
 {
     Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
 
@@ -3100,7 +3100,7 @@ SSMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
  * @param   pSSM            SSM operation handle.
  * @param   pIOPort         Where to store the I/O port address.
  */
-SSMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
+VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pIOPort, sizeof(*pIOPort));
@@ -3116,7 +3116,7 @@ SSMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
  * @param   pSSM            SSM operation handle.
  * @param   pSel            Where to store the selector.
  */
-SSMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
+VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pSel, sizeof(*pSel));
@@ -3133,7 +3133,7 @@ SSMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
  * @param   pv              Where to store the item.
  * @param   cb              Size of the item.
  */
-SSMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
+VMMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmr3Read(pSSM, pv, cb);
@@ -3150,7 +3150,7 @@ SSMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
  * @param   psz             Where to store the item.
  * @param   cbMax           Max size of the item (including '\\0').
  */
-SSMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
+VMMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
 {
     return SSMR3GetStrZEx(pSSM, psz, cbMax, NULL);
 }
@@ -3165,7 +3165,7 @@ SSMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
  * @param   cbMax           Max size of the item (including '\\0').
  * @param   pcbStr          The length of the loaded string excluding the '\\0'. (optional)
  */
-SSMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *pcbStr)
+VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *pcbStr)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
     {
@@ -3202,7 +3202,7 @@ SSMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *
  * @returns SSMAFTER enum value.
  * @param   pSSM            SSM operation handle.
  */
-SSMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
+VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
 {
     return pSSM->rc;
 }
@@ -3218,7 +3218,7 @@ SSMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
  * @param   pSSM            SSM operation handle.
  * @param   iStatus         Failure status code. This MUST be a VERR_*.
  */
-SSMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
+VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
 {
     if (VBOX_FAILURE(iStatus))
     {
@@ -3237,7 +3237,7 @@ SSMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
  * @returns SSMAFTER enum value.
  * @param   pSSM            SSM operation handle.
  */
-SSMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
+VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
 {
     return pSSM->enmAfter;
 }

@@ -176,7 +176,7 @@
  * @param   GCPhys      GC Physical address of the page.
  * @param   ppv         Where to store the address of the mapping.
  */
-PGMGCDECL(int) PGMGCDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+VMMRCDECL(int) PGMGCDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 {
     AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("GCPhys=%VGp\n", GCPhys));
 
@@ -216,7 +216,7 @@ PGMGCDECL(int) PGMGCDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
  * @param   GCPhys      GC Physical address within the page to be mapped.
  * @param   ppv         Where to store the address of the mapping address corresponding to GCPhys.
  */
-PGMGCDECL(int) PGMGCDynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+VMMRCDECL(int) PGMGCDynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 {
     /*
      * Get the ram range.
@@ -252,7 +252,7 @@ PGMGCDECL(int) PGMGCDynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv)
  * @param   HCPhys      HC Physical address of the page.
  * @param   ppv         Where to store the address of the mapping.
  */
-PGMGCDECL(int) PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
+VMMRCDECL(int) PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%VHp\n", HCPhys));
 
@@ -314,7 +314,7 @@ PGMGCDECL(int) PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  * @param   pVM         VM handle.
  * @param   GCPtrPage   Page to invalidate.
  */
-PGMGCDECL(int) PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
+VMMRCDECL(int) PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
     LogFlow(("PGMGCInvalidatePage: GCPtrPage=%VGv\n", GCPtrPage));
 

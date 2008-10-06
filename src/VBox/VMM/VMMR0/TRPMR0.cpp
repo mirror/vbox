@@ -39,7 +39,7 @@
  * @param   pVM     The VM handle.
  * @remark  Must be called with interrupts disabled.
  */
-TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
+VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
 {
     RTUINT uActiveVector = pVM->trpm.s.uActiveVector;
     pVM->trpm.s.uActiveVector = ~0;
@@ -114,7 +114,7 @@ TRPMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   pvRet       Pointer to the return address of VMMR0Entry() on the stack.
  */
-TRPMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
+VMMR0DECL(void) TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet)
 {
     RTUINT uActiveVector = pVM->trpm.s.uActiveVector;
     pVM->trpm.s.uActiveVector = ~0;

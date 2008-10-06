@@ -130,7 +130,7 @@ typedef FNPDMASYNCCOMPLETEINT *PFNPDMASYNCCOMPLETEINT;
  * @param   pfnCompleted    The completion callback routine.
  * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted, const char *pszDesc);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDEV pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for a driver instance.
@@ -144,7 +144,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDevice(PVM pVM, PPDMDEVINS pDev
  * @param   pfnCompleted    The completion callback routine.
  * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEDRV pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for a USB device instance.
@@ -158,7 +158,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrv
  * @param   pfnCompleted    The completion callback routine.
  * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted, const char *pszDesc);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEUSB pfnCompleted, const char *pszDesc);
 
 /**
  * Creates a async completion template for internally by the VMM.
@@ -172,7 +172,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns
  * @param   pvUser2         The 2nd user argument for the callback.
  * @param   pszDesc         Description.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateInternal(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEINT pfnCompleted, void *pvUser2, const char *pszDesc);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateInternal(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PFNPDMASYNCCOMPLETEINT pfnCompleted, void *pvUser2, const char *pszDesc);
 
 /**
  * Destroys the specified async completion template.
@@ -183,7 +183,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateCreateInternal(PVM pVM, PPPDMASYNCCOM
  *
  * @param   pTemplate       The template in question.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateDestroy(PPDMASYNCCOMPLETIONTEMPLATE pTemplate);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroy(PPDMASYNCCOMPLETIONTEMPLATE pTemplate);
 
 /**
  * Destroys all the specified async completion templates for the given device instance.
@@ -195,7 +195,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateDestroy(PPDMASYNCCOMPLETIONTEMPLATE p
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pDevIns         The device instance.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 
 /**
  * Destroys all the specified async completion templates for the given driver instance.
@@ -207,7 +207,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDe
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pDrvIns         The driver instance.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 
 /**
  * Destroys all the specified async completion templates for the given USB device instance.
@@ -219,7 +219,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDr
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pUsbIns         The USB device instance.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
+VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
 
 /**
  * Async completion task type
@@ -240,7 +240,7 @@ typedef enum PDMASYNCCOMPLETIONTASKTYPE
  * @returns Name of the backend.
  * @param   enmTaskType    The task type to get the backend name from.
  */
-PDMR3DECL(const char *) PDMR3AsyncCompletionGetBackendName(PDMASYNCCOMPLETIONTASKTYPE enmTaskType);
+VMMR3DECL(const char *) PDMR3AsyncCompletionGetBackendName(PDMASYNCCOMPLETIONTASKTYPE enmTaskType);
 
 /**
  * Creates a completion task.
@@ -252,7 +252,7 @@ PDMR3DECL(const char *) PDMR3AsyncCompletionGetBackendName(PDMASYNCCOMPLETIONTAS
  * @param   pvCtx           The task specific context.
  * @param   pvUser          The user argument for the callback.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskCreate(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, PDMASYNCCOMPLETIONTASKTYPE enmType, void *pvCtx, void *pvUser);
+VMMR3DECL(int) PDMR3AsyncCompletionTaskCreate(PPPDMASYNCCOMPLETIONTASK ppTask, PPDMASYNCCOMPLETIONTEMPLATE pTemplate, PDMASYNCCOMPLETIONTASKTYPE enmType, void *pvCtx, void *pvUser);
 
 /**
  * Submit an array of tasks for processing
@@ -262,7 +262,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTaskCreate(PPPDMASYNCCOMPLETIONTASK ppTask, P
  * @param   apTasks  Array of tasks which should be processed.
  * @param   cTasks   Number of tasks in the array which should be processed.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskSubmit(PPDMASYNCCOMPLETIONTASK apTasks[], unsigned cTasks);
+VMMR3DECL(int) PDMR3AsyncCompletionTaskSubmit(PPDMASYNCCOMPLETIONTASK apTasks[], unsigned cTasks);
 
 /**
  * Sets the user argument of a completion task.
@@ -271,7 +271,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTaskSubmit(PPDMASYNCCOMPLETIONTASK apTasks[],
  * @param   pTask           The async completion task.
  * @param   pvUser          The user argument for the callback.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskSetUserArg(PPDMASYNCCOMPLETIONTASK pTask, void *pvUser);
+VMMR3DECL(int) PDMR3AsyncCompletionTaskSetUserArg(PPDMASYNCCOMPLETIONTASK pTask, void *pvUser);
 
 /**
  * Suspends a async completion task.
@@ -282,7 +282,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTaskSetUserArg(PPDMASYNCCOMPLETIONTASK pTask,
  * @retval  VERR_INVALID_HANDLE if pTask is invalid (asserts).
  * @param   pTask           The async completion task.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskSuspend(PPDMASYNCCOMPLETIONTASK pTask);
+VMMR3DECL(int) PDMR3AsyncCompletionTaskSuspend(PPDMASYNCCOMPLETIONTASK pTask);
 
 /**
  * Suspends a async completion task.
@@ -293,7 +293,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTaskSuspend(PPDMASYNCCOMPLETIONTASK pTask);
  * @retval  VERR_INVALID_HANDLE if pTask is invalid (asserts).
  * @param   pTask           The async completion task.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskResume(PPDMASYNCCOMPLETIONTASK pTask);
+VMMR3DECL(int) PDMR3AsyncCompletionTaskResume(PPDMASYNCCOMPLETIONTASK pTask);
 
 /**
  * Cancels a async completion task.
@@ -302,7 +302,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTaskResume(PPDMASYNCCOMPLETIONTASK pTask);
  * @returns VBox status code
  * @param   pTask The Task to cancel.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask);
+VMMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask);
 
 /**
  * Destroys a async completion task.
@@ -314,7 +314,7 @@ PDMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask);
  * @retval  VERR_INVALID_HANDLE if pTask is invalid but not NIL (asserts).
  * @param   pTask           The async completion task.
  */
-PDMR3DECL(int) PDMR3AsyncCompletionTaskDestroy(PPDMASYNCCOMPLETIONTASK pTask);
+VMMR3DECL(int) PDMR3AsyncCompletionTaskDestroy(PPDMASYNCCOMPLETIONTASK pTask);
 
 /*
  * Host specific wrapper functions for the above API

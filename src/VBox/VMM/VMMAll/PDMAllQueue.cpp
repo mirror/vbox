@@ -47,7 +47,7 @@
  * @param   pQueue      The queue handle.
  * @thread  Any thread.
  */
-PDMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
+VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
     PPDMQUEUEITEMCORE pNew;
@@ -74,7 +74,7 @@ PDMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
  * @param   pItem       The item to insert.
  * @thread  Any thread.
  */
-PDMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
+VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 {
     Assert(VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
     Assert(VALID_PTR(pItem));
@@ -110,7 +110,7 @@ PDMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
  *                          This applies only to GC.
  * @thread  Any thread.
  */
-PDMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay)
+VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay)
 {
     PDMQueueInsert(pQueue, pItem);
 #ifdef IN_GC
@@ -137,7 +137,7 @@ PDMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
  * @returns NULL if pQueue is invalid.
  * @param   pQueue          The queue handle.
  */
-PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
+VMMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
     Assert(pQueue->pVMR3 && pQueue->pVMRC);
@@ -156,7 +156,7 @@ PDMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
  * @returns NULL if pQueue is invalid.
  * @param   pQueue          The queue handle.
  */
-PDMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
+VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
     Assert(pQueue->pVMR3 && pQueue->pVMR0);
@@ -173,7 +173,7 @@ PDMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
  *
  * @param   pQueue          The queue handle.
  */
-PDMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
+VMMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
     Assert(pQueue->pVMR3);

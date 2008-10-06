@@ -65,7 +65,7 @@ static uint32_t const g_aIOSize[4] = {1, 2, 0, 4};
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -98,7 +98,7 @@ HWACCMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu,
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
@@ -124,7 +124,7 @@ HWACCMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHY
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
+VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 {
     int rc;
 
@@ -217,7 +217,7 @@ HWACCMR0DECL(int) SVMR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0TermVM(PVM pVM)
+VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 {
     if (pVM->hwaccm.s.svm.pMemObjVMCB != NIL_RTR0MEMOBJ)
     {
@@ -256,7 +256,7 @@ HWACCMR0DECL(int) SVMR0TermVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0SetupVM(PVM pVM)
+VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 {
     int         rc = VINF_SUCCESS;
     SVM_VMCB   *pVMCB;
@@ -524,7 +524,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) SVMR0SaveHostState(PVM pVM)
+VMMR0DECL(int) SVMR0SaveHostState(PVM pVM)
 {
     /* Nothing to do here. */
     return VINF_SUCCESS;
@@ -539,7 +539,7 @@ HWACCMR0DECL(int) SVMR0SaveHostState(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
  */
-HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 {
     RTGCUINTPTR val;
     SVM_VMCB *pVMCB;
@@ -798,7 +798,7 @@ HWACCMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
  */
-HWACCMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
 {
     int         rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
@@ -2054,7 +2054,7 @@ end:
  * @param   pVM         The VM to operate on.
  * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
+VMMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.svm.fSupported);
 
@@ -2075,7 +2075,7 @@ HWACCMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
  * @param   pVM         The VM to operate on.
  * @param   pCtx        CPU context
  */
-HWACCMR0DECL(int) SVMR0Leave(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(int) SVMR0Leave(PVM pVM, PCPUMCTX pCtx)
 {
     SVM_VMCB *pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
 
@@ -2192,7 +2192,7 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
  * @param   pVM         The VM to operate on.
  * @param   GCVirt      Page to invalidate
  */
-HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
+VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
     bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.svm.fForceTLBFlush;
 
@@ -2224,7 +2224,7 @@ HWACCMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
  * @param   pVM         The VM to operate on.
  * @param   GCPhys      Page to invalidate
  */
-HWACCMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
     bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.svm.fForceTLBFlush;
 

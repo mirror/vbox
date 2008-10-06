@@ -62,7 +62,7 @@
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     pVM->patm.s.pvFaultMonitor = (RTRCPTR)pvFault;
     return VINF_PATM_CHECK_PATCH_PAGE;
@@ -80,7 +80,7 @@ PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
  * @param   cbWrite     Nr of bytes to write
  *
  */
-PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite)
+VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite)
 {
     RTGCUINTPTR          pWritePageStart, pWritePageEnd;
     PPATMPATCHPAGE       pPatchPage;
@@ -154,7 +154,7 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     PPATMPATCHREC pRec;
     int rc;
@@ -285,15 +285,15 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 rc = EMInterpretIret(pVM, pRegFrame);
                 if (VBOX_SUCCESS(rc))
                 {
-                    STAM_COUNTER_INC(&pVM->patm.s.StatEmulIret); 
+                    STAM_COUNTER_INC(&pVM->patm.s.StatEmulIret);
 
                     /* We are no longer executing PATM code; set PIF again. */
                     pVM->patm.s.CTXSUFF(pGCState)->fPIF = 1;
                     CPUMGCCallV86Code(pRegFrame);
                     /* does not return */
                 }
-                else 
-                    STAM_COUNTER_INC(&pVM->patm.s.StatEmulIretFailed); 
+                else
+                    STAM_COUNTER_INC(&pVM->patm.s.StatEmulIretFailed);
                 return rc;
             }
 
@@ -442,7 +442,7 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     PPATMPATCHREC pRec;
     int rc;

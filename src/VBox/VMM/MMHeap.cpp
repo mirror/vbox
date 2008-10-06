@@ -137,7 +137,7 @@ void mmR3HeapDestroy(PMMHEAP pHeap)
  *                      identify how memory is used by the VM.
  * @param   cbSize      Size of the block.
  */
-MMR3DECL(void *) MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
+VMMR3DECL(void *) MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
 {
     Assert(pUVM->mm.s.pHeap);
     return mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, false);
@@ -161,7 +161,7 @@ MMR3DECL(void *) MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
  *                      identify how memory is used by the VM.
  * @param   cbSize      Size of the block.
  */
-MMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
+VMMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
 {
     return mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, false);
 }
@@ -178,7 +178,7 @@ MMR3DECL(void *) MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize)
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
-MMR3DECL(int) MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv)
+VMMR3DECL(int) MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
     Assert(pUVM->mm.s.pHeap);
     void *pv = mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, false);
@@ -202,7 +202,7 @@ MMR3DECL(int) MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **pp
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
-MMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
+VMMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
     void *pv = mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, false);
     if (pv)
@@ -224,7 +224,7 @@ MMR3DECL(int) MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
  *                      identify how memory is used by the VM.
  * @param   cbSize      Size of the block.
  */
-MMR3DECL(void *) MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
+VMMR3DECL(void *) MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
 {
     return mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, true);
 }
@@ -240,7 +240,7 @@ MMR3DECL(void *) MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize)
  *                      identify how memory is used by the VM.
  * @param   cbSize      Size of the block.
  */
-MMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
+VMMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
 {
     return mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, true);
 }
@@ -257,7 +257,7 @@ MMR3DECL(void *) MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize)
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
-MMR3DECL(int) MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv)
+VMMR3DECL(int) MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
     Assert(pUVM->mm.s.pHeap);
     void *pv = mmR3HeapAlloc(pUVM->mm.s.pHeap, enmTag, cbSize, true);
@@ -281,7 +281,7 @@ MMR3DECL(int) MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **p
  * @param   cbSize      Size of the block.
  * @param   ppv         Where to store the pointer to the allocated memory on success.
  */
-MMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
+VMMR3DECL(int) MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv)
 {
     void *pv = mmR3HeapAlloc(pVM->pUVM->mm.s.pHeap, enmTag, cbSize, true);
     if (pv)
@@ -439,7 +439,7 @@ void *mmR3HeapAlloc(PMMHEAP pHeap, MMTAG enmTag, size_t cbSize, bool fZero)
  *                      Must not be NULL!
  * @param   cbNewSize   New block size.
  */
-MMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize)
+VMMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize)
 {
     AssertMsg(pv, ("Invalid pointer pv=%p\n", pv));
     if (!pv)
@@ -538,7 +538,7 @@ MMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize)
  *                      identify how memory is used by the VM.
  * @param   psz         The string to duplicate. NULL is allowed.
  */
-MMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
+VMMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
 {
     if (!psz)
         return NULL;
@@ -563,7 +563,7 @@ MMR3DECL(char *) MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz)
  *                      identify how memory is used by the VM.
  * @param   psz         The string to duplicate. NULL is allowed.
  */
-MMR3DECL(char *) MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz)
+VMMR3DECL(char *) MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz)
 {
     return MMR3HeapStrDupU(pVM->pUVM, enmTag, psz);
 }
@@ -578,7 +578,7 @@ MMR3DECL(char *) MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz)
  * @param   pszFormat   The format string.
  * @param   ...         Format arguments.
  */
-MMR3DECL(char *)    MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...)
+VMMR3DECL(char *)    MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -597,7 +597,7 @@ MMR3DECL(char *)    MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat
  * @param   pszFormat   The format string.
  * @param   ...         Format arguments.
  */
-MMR3DECL(char *)    MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...)
+VMMR3DECL(char *)    MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...)
 {
     va_list va;
     va_start(va, pszFormat);
@@ -616,7 +616,7 @@ MMR3DECL(char *)    MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFor
  * @param   pszFormat   The format string.
  * @param   va          Format arguments.
  */
-MMR3DECL(char *)    MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va)
+VMMR3DECL(char *)    MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va)
 {
     return MMR3HeapAPrintfVU(pVM->pUVM, enmTag, pszFormat, va);
 }
@@ -631,7 +631,7 @@ MMR3DECL(char *)    MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszForma
  * @param   pszFormat   The format string.
  * @param   va          Format arguments.
  */
-MMR3DECL(char *)    MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va)
+VMMR3DECL(char *)    MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va)
 {
     /*
      * The lazy bird way.
@@ -654,7 +654,7 @@ MMR3DECL(char *)    MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFo
  *
  * @param   pv          Pointer to the memory block to free.
  */
-MMR3DECL(void) MMR3HeapFree(void *pv)
+VMMR3DECL(void) MMR3HeapFree(void *pv)
 {
     /* Ignore NULL pointers. */
     if (!pv)

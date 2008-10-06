@@ -49,7 +49,7 @@
  * @param   rcBusy              The status code to return when we're in GC or R0
  *                              and the section is busy.
  */
-PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
+VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
 {
     Assert(pCritSect->s.Core.cNestings < 8);  /* useful to catch incorrect locking */
 #ifdef IN_RING3
@@ -108,7 +108,7 @@ PDMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
  * @param   pCritSect           The PDM critical section to enter.
  * @param   fCallHost           Whether this is a VMMGCCallHost() or VMMR0CallHost() request.
  */
-PDMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost)
+VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost)
 {
     int rc = PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
     if (    rc == VINF_SUCCESS
@@ -128,7 +128,7 @@ PDMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost)
  *
  * @param   pCritSect           The PDM critical section to leave.
  */
-PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
+VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
 {
 #ifdef IN_RING3
 # ifdef VBOX_WITH_STATISTICS
@@ -209,7 +209,7 @@ PDMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
  * @returns false if not owner.
  * @param   pCritSect   The critical section.
  */
-PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
+VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
 {
 #ifdef IN_RING3
     return RTCritSectIsOwner(&pCritSect->s.Core);
@@ -228,7 +228,7 @@ PDMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
  * @returns false if not initialized.
  * @param   pCritSect   The critical section.
  */
-PDMDECL(bool) PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect)
+VMMDECL(bool) PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect)
 {
     return pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC;
 }

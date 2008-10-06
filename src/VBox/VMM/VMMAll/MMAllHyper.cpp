@@ -167,7 +167,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap);
  *                      memory.
  * @remark  This is assumed not to be used at times when serialization is required.
  */
-MMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
+VMMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
 {
     AssertMsg(cb >= 8, ("Hey! Do you really mean to allocate less than 8 bytes?! cb=%d\n", cb));
 
@@ -704,7 +704,7 @@ static void mmR3HyperStatRegisterOne(PVM pVM, PMMHYPERSTAT pStat)
  * @param   pv          The memory to free.
  * @remark  Try avoid free hyper memory.
  */
-MMDECL(int) MMHyperFree(PVM pVM, void *pv)
+VMMDECL(int) MMHyperFree(PVM pVM, void *pv)
 {
     Log2(("MMHyperFree: pv=%p\n", pv));
     if (!pv)
@@ -1113,7 +1113,7 @@ static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
  *
  * @param   pVM         Pointer to the shared VM structure.
  */
-MMDECL(void) MMHyperHeapCheck(PVM pVM)
+VMMDECL(void) MMHyperHeapCheck(PVM pVM)
 {
 #ifdef MMHYPER_HEAP_STRICT
     mmHyperHeapCheck(pVM->mm.s.CTX_SUFF(pHyperHeap));
@@ -1126,7 +1126,7 @@ MMDECL(void) MMHyperHeapCheck(PVM pVM)
  * Dumps the hypervisor heap to Log.
  * @param pVM       VM Handle.
  */
-MMDECL(void) MMHyperHeapDump(PVM pVM)
+VMMDECL(void) MMHyperHeapDump(PVM pVM)
 {
     Log(("MMHyperHeapDump: *** heap dump - start ***\n"));
     PMMHYPERHEAP pHeap = pVM->mm.s.CTX_SUFF(pHyperHeap);
@@ -1150,7 +1150,7 @@ MMDECL(void) MMHyperHeapDump(PVM pVM)
  *
  * @returns Number of free bytes in the hypervisor heap.
  */
-MMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM)
+VMMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM)
 {
     return pVM->mm.s.CTX_SUFF(pHyperHeap)->cbFree;
 }
@@ -1160,7 +1160,7 @@ MMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM)
  *
  * @returns The size of the hypervisor heap in bytes.
  */
-MMDECL(size_t) MMHyperHeapGetSize(PVM pVM)
+VMMDECL(size_t) MMHyperHeapGetSize(PVM pVM)
 {
     return pVM->mm.s.CTX_SUFF(pHyperHeap)->cbHeap;
 }
@@ -1173,7 +1173,7 @@ MMDECL(size_t) MMHyperHeapGetSize(PVM pVM)
  * @param   pVM         VM Handle.
  * @param   pcb         Where to store the size of the hypervisor area. (out)
  */
-MMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
+VMMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
 {
     if (pcb)
         *pcb = pVM->mm.s.cbHyperArea;
@@ -1189,7 +1189,7 @@ MMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
  * @param   pVM         VM handle.
  * @param   GCPtr       The pointer to check.
  */
-MMDECL(bool) MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr)
+VMMDECL(bool) MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr)
 {
     return (RTGCUINTPTR)GCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC < pVM->mm.s.cbHyperArea;
 }

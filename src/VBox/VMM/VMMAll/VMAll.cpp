@@ -48,7 +48,7 @@
  * @param   ...             Error message arguments.
  * @thread  Any
  */
-VMDECL(int) VMSetError(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+VMMDECL(int) VMSetError(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
@@ -72,7 +72,7 @@ VMDECL(int) VMSetError(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, 
  * @param   args            Error message arguments.
  * @thread  Any
  */
-VMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args)
+VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args)
 {
 #ifdef IN_RING3
     /*
@@ -224,7 +224,7 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
  *
  *                  Also, why a string ID and not an enum?
  */
-VMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,
+VMMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,
                               const char *pszFormat, ...)
 {
     va_list args;
@@ -249,7 +249,7 @@ VMDECL(int) VMSetRuntimeError(PVM pVM, bool fFatal, const char *pszErrorID,
  *
  * @thread  Any
  */
-VMDECL(int) VMSetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID,
+VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID,
                                const char *pszFormat, va_list args)
 {
 #ifdef IN_RING3
@@ -356,7 +356,7 @@ void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID,
  * @returns Pointer to a read-only string with the state name.
  * @param   enmState    The state.
  */
-VMDECL(const char *) VMGetStateName(VMSTATE enmState)
+VMMDECL(const char *) VMGetStateName(VMSTATE enmState)
 {
     switch (enmState)
     {

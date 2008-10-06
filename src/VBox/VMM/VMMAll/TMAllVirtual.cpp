@@ -356,7 +356,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
  *          influenced by power saving (SpeedStep, PowerNow!), while the former
  *          makes use of TSC and kernel timers.
  */
-TMDECL(uint64_t) TMVirtualGet(PVM pVM)
+VMMDECL(uint64_t) TMVirtualGet(PVM pVM)
 {
     return TMVirtualGetEx(pVM, true /* check timers */);
 }
@@ -374,7 +374,7 @@ TMDECL(uint64_t) TMVirtualGet(PVM pVM)
  *          influenced by power saving (SpeedStep, PowerNow!), while the former
  *          makes use of TSC and kernel timers.
  */
-TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
+VMMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
 {
     return tmVirtualGet(pVM, fCheckTimers);
 }
@@ -388,7 +388,7 @@ TMDECL(uint64_t) TMVirtualGetEx(PVM pVM, bool fCheckTimers)
  * @param   fCheckTimers    Check timers or not
  * @thread  EMT.
  */
-TMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
+VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
 {
     VM_ASSERT_EMT(pVM);
 
@@ -508,7 +508,7 @@ TMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
  * @param   pVM             VM handle.
  * @thread  EMT.
  */
-TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
+VMMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
 {
     return TMVirtualSyncGetEx(pVM, true /* check timers */);
 }
@@ -520,7 +520,7 @@ TMDECL(uint64_t) TMVirtualSyncGet(PVM pVM)
  * @return  The current lag.
  * @param   pVM     VM handle.
  */
-TMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
+VMMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
 {
     return pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp;
 }
@@ -532,7 +532,7 @@ TMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
  * @return  The current catch0up percent. 0 means running at the same speed as the virtual clock.
  * @param   pVM     VM handle.
  */
-TMDECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
+VMMDECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
 {
     if (pVM->tm.s.fVirtualSyncCatchUp)
         return pVM->tm.s.u32VirtualSyncCatchUpPercentage;
@@ -546,7 +546,7 @@ TMDECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
  * @returns The freqency.
  * @param   pVM     VM handle.
  */
-TMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
+VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
 {
     return TMCLOCK_FREQ_VIRTUAL;
 }
@@ -559,7 +559,7 @@ TMDECL(uint64_t) TMVirtualGetFreq(PVM pVM)
  * @returns VINF_INTERNAL_ERROR and VBOX_STRICT assertion if called out of order.
  * @param   pVM     VM handle.
  */
-TMDECL(int) TMVirtualResume(PVM pVM)
+VMMDECL(int) TMVirtualResume(PVM pVM)
 {
     if (!pVM->tm.s.fVirtualTicking)
     {
@@ -584,7 +584,7 @@ TMDECL(int) TMVirtualResume(PVM pVM)
  * @returns VINF_INTERNAL_ERROR and VBOX_STRICT assertion if called out of order.
  * @param   pVM     VM handle.
  */
-TMDECL(int) TMVirtualPause(PVM pVM)
+VMMDECL(int) TMVirtualPause(PVM pVM)
 {
     if (pVM->tm.s.fVirtualTicking)
     {
@@ -606,7 +606,7 @@ TMDECL(int) TMVirtualPause(PVM pVM)
  * @returns The warp drive percent.
  * @param   pVM         The VM handle.
  */
-TMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM)
+VMMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM)
 {
     return pVM->tm.s.u32VirtualWarpDrivePercentage;
 }
@@ -619,7 +619,7 @@ TMDECL(uint32_t) TMVirtualGetWarpDrive(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   u32Percent  The new percentage. 100 means normal operation.
  */
-TMDECL(int) TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
+VMMDECL(int) TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
 {
 /** @todo This isn't a feature specific to virtual time, move to TM level. (It
  * should affect the TMR3UCTNow as well! */
@@ -693,7 +693,7 @@ static DECLCALLBACK(int) tmVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
  * @remark  There could be rounding errors here. We just do a simple integere divide
  *          without any adjustments.
  */
-TMDECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
+VMMDECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64VirtualTicks;
@@ -709,7 +709,7 @@ TMDECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
  * @remark  There could be rounding errors here. We just do a simple integere divide
  *          without any adjustments.
  */
-TMDECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
+VMMDECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64VirtualTicks / 1000;
@@ -725,7 +725,7 @@ TMDECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
  * @remark  There could be rounding errors here. We just do a simple integere divide
  *          without any adjustments.
  */
-TMDECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
+VMMDECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
 {
         AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64VirtualTicks / 1000000;
@@ -740,7 +740,7 @@ TMDECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
  * @param   u64NanoTS       The nanosecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-TMDECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS)
+VMMDECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64NanoTS;
@@ -755,7 +755,7 @@ TMDECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS)
  * @param   u64MicroTS      The microsecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-TMDECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS)
+VMMDECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64MicroTS * 1000;
@@ -770,7 +770,7 @@ TMDECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS)
  * @param   u64MilliTS      The millisecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-TMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS)
+VMMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64MilliTS * 1000000;

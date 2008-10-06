@@ -27,10 +27,6 @@
 #include <VBox/x86.h>
 
 
-#if !defined(IN_CPUM_R3) && !defined(IN_CPUM_R0) && !defined(IN_CPUM_GC)
-# error "Not in CPUM! This is an internal header!"
-#endif
-
 
 /** @defgroup grp_cpum_int   Internals
  * @ingroup grp_cpum

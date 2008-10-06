@@ -72,7 +72,7 @@ DECLASM(void) MMGCRamWrite_Error(void);
  *
  * @param   pVM         VM handle.
  */
-MMGCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
+VMMRCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
 {
     TRPMGCSetTempHandler(pVM, 0xe, mmGCRamTrap0eHandler);
 }
@@ -84,7 +84,7 @@ MMGCDECL(void) MMGCRamRegisterTrapHandler(PVM pVM)
  *
  * @param   pVM         VM handle.
  */
-MMGCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
+VMMRCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
 {
     TRPMGCSetTempHandler(pVM, 0xe, NULL);
 }
@@ -99,7 +99,7 @@ MMGCDECL(void) MMGCRamDeregisterTrapHandler(PVM pVM)
  * @param   pSrc        Pointer to the data to read.
  * @param   cb          Size of data to read, only 1/2/4/8 is valid.
  */
-MMGCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
+VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
 {
     int rc;
 
@@ -124,7 +124,7 @@ MMGCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
  * @param   pSrc        Pointer to the data to write.
  * @param   cb          Size of data to write, only 1/2/4 is valid.
  */
-MMGCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
+VMMRCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
 {
     TRPMSaveTrap(pVM);  /* save the current trap info, because it will get trashed if our access failed. */
 

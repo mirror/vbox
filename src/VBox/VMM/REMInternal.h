@@ -32,9 +32,6 @@
 #endif
 
 
-#if !defined(IN_REM_R3) && !defined(IN_REM_R0) && !defined(IN_REM_GC)
-# error "Not in REM! This is an internal header!"
-#endif
 
 /** @defgroup grp_rem_int   Internals
  * @ingroup grp_rem

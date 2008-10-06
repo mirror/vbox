@@ -135,7 +135,7 @@ static struct
  *
  * @returns VBox status code.
  */
-HWACCMR0DECL(int) HWACCMR0Init(void)
+VMMR0DECL(int) HWACCMR0Init(void)
 {
     int        rc;
 
@@ -414,7 +414,7 @@ static int hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pid
  *
  * @returns VBox status code.
  */
-HWACCMR0DECL(int) HWACCMR0Term(void)
+VMMR0DECL(int) HWACCMR0Term(void)
 {
     int aRc[RTCPUSET_MAX_CPUS];
 
@@ -511,7 +511,7 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
  * @param   enmNewHwAccmState   New hwaccm state
  *
  */
-HWACCMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
+VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
 {
     Assert(sizeof(HWACCMR0Globals.enmHwAccmState) == sizeof(uint32_t));
     if (ASMAtomicCmpXchgU32((volatile uint32_t *)&HWACCMR0Globals.enmHwAccmState, enmNewHwAccmState, HWACCMSTATE_UNINITIALIZED))
@@ -648,7 +648,7 @@ static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void 
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
+VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -695,7 +695,7 @@ HWACCMR0DECL(int) HWACCMR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0TermVM(PVM pVM)
+VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -714,7 +714,7 @@ HWACCMR0DECL(int) HWACCMR0TermVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
+VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -733,7 +733,7 @@ HWACCMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
+VMMR0DECL(int) HWACCMR0Enter(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
@@ -784,7 +784,7 @@ HWACCMR0DECL(int) HWACCMR0Enter(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
+VMMR0DECL(int) HWACCMR0Leave(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
@@ -824,7 +824,7 @@ HWACCMR0DECL(int) HWACCMR0Leave(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
+VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 {
     CPUMCTX *pCtx;
     int      rc;
@@ -847,7 +847,7 @@ HWACCMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
  * @returns cpu structure pointer
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu()
+VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu()
 {
     RTCPUID  idCpu = RTMpCpuId();
 
@@ -863,7 +863,7 @@ HWACCMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu()
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
+VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
 {
     /*
      * Make variable description string.
@@ -984,7 +984,7 @@ HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const cha
  * @param   pVM         The VM to operate on.
  * @param   pCtx        The context to format.
  */
-HWACCMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
 {
     /*
      * Format the flags.
@@ -1126,52 +1126,52 @@ HWACCMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
 #endif /* VBOX_STRICT */
 
 /* Dummy callback handlers. */
-HWACCMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu)
+VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, PCPUMCTX pCtx)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM)
+VMMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM)
+VMMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM)
+VMMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM)
+VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM)
 {
     return VINF_SUCCESS;
 }
 
-HWACCMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx)
 {
     return VINF_SUCCESS;
 }

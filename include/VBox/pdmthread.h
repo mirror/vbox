@@ -283,16 +283,16 @@ typedef struct PDMTHREAD
 #define PDMTHREAD_VERSION   0xef010000
 
 #ifdef IN_RING3
-PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
+VMMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
                                  PFNPDMTHREADWAKEUPINT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
-PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
+VMMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
                                          PFNPDMTHREADWAKEUPEXT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
-PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread);
-PDMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread);
-PDMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread);
-PDMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies);
-PDMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread);
-PDMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread);
+VMMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread);
+VMMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread);
+VMMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread);
+VMMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies);
+VMMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread);
+VMMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread);
 #endif /* IN_RING3 */
 
 /** @} */

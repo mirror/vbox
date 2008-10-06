@@ -53,7 +53,7 @@
  * @param   pv      The address to convert.
  * @thread  The Emulation Thread.
  */
-MMDECL(RTHCPHYS) mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv)
+VMMDECL(RTHCPHYS) mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv)
 {
 #ifdef IN_RING3
     VM_ASSERT_EMT(pPool->pVM);
@@ -92,7 +92,7 @@ MMDECL(RTHCPHYS) mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv)
  * @param   HCPhys      The address to convert.
  * @thread  The Emulation Thread.
  */
-MMDECL(void *) mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
+VMMDECL(void *) mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
 {
 #if 0 /** @todo have to fix the debugger, but until then this is going on my nerves. */
 #ifdef IN_RING3
@@ -126,7 +126,7 @@ MMDECL(void *) mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
  * @param   pvPage      Page which physical address we query.
  * @thread  The Emulation Thread.
  */
-MMDECL(RTHCPHYS) MMPage2Phys(PVM pVM, void *pvPage)
+VMMDECL(RTHCPHYS) MMPage2Phys(PVM pVM, void *pvPage)
 {
     RTHCPHYS HCPhys = mmPagePoolPtr2Phys(pVM->mm.s.CTX_SUFF(pPagePool), pvPage);
     if (HCPhys == NIL_RTHCPHYS)
@@ -152,7 +152,7 @@ MMDECL(RTHCPHYS) MMPage2Phys(PVM pVM, void *pvPage)
  * @param   HCPhysPage  The physical address of a page.
  * @thread  The Emulation Thread.
  */
-MMDECL(void *) MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage)
+VMMDECL(void *) MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage)
 {
     void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePool), HCPhysPage);
     if (!pvPage)
@@ -179,7 +179,7 @@ MMDECL(void *) MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage)
  * @param   ppvPage     Where to store the address corresponding to HCPhysPage.
  * @thread  The Emulation Thread.
  */
-MMDECL(int) MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
+VMMDECL(int) MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
 {
     void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePool), HCPhysPage);
     if (!pvPage)
@@ -208,7 +208,7 @@ MMDECL(int) MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
  * @param   ppvPage     Where to store the address corresponding to HCPhysPage.
  * @thread  The Emulation Thread.
  */
-MMDECL(int) MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
+VMMDECL(int) MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage)
 {
     void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.CTX_SUFF(pPagePool), HCPhysPage);
     if (!pvPage)

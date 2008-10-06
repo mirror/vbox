@@ -131,7 +131,7 @@ DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
  * @returns VBox status code.
  * @param   pVM     VM handle.
  */
-DBGFR3DECL(int) DBGFR3Init(PVM pVM)
+VMMR3DECL(int) DBGFR3Init(PVM pVM)
 {
     int rc = dbgfR3InfoInit(pVM);
     if (VBOX_SUCCESS(rc))
@@ -148,7 +148,7 @@ DBGFR3DECL(int) DBGFR3Init(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     VM Handle.
  */
-DBGFR3DECL(int) DBGFR3Term(PVM pVM)
+VMMR3DECL(int) DBGFR3Term(PVM pVM)
 {
     int rc;
 
@@ -217,7 +217,7 @@ DBGFR3DECL(int) DBGFR3Term(PVM pVM)
  * @param   pVM         VM handle.
  * @param   offDelta    Relocation delta relative to old location.
  */
-DBGFR3DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3DECL(void) DBGFR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
 }
 
@@ -280,7 +280,7 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
  * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happend.
  * @param   pVM         VM Handle.
  */
-DBGFR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
+VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
     /*
      * Clear the FF DBGF request flag.
@@ -423,7 +423,7 @@ static int dbgfR3SendEvent(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   enmEvent    The event to send.
  */
-DBGFR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
+VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
     if (VBOX_FAILURE(rc))
@@ -450,7 +450,7 @@ DBGFR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
  * @param   pszFormat   Message which accompanies the event.
  * @param   ...         Message arguments.
  */
-DBGFR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, ...)
+VMMR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
@@ -472,7 +472,7 @@ DBGFR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszF
  * @param   pszFormat   Message which accompanies the event.
  * @param   args        Message arguments.
  */
-DBGFR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, va_list args)
+VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, va_list args)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
     if (VBOX_FAILURE(rc))
@@ -511,7 +511,7 @@ DBGFR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *psz
  * @param   pszMsg1     First assertion message.
  * @param   pszMsg2     Second assertion message.
  */
-DBGFR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2)
+VMMR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
     if (VBOX_FAILURE(rc))
@@ -536,7 +536,7 @@ DBGFR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char
  * @param   pVM         The VM handle.
  * @param   enmEvent    DBGFEVENT_BREAKPOINT_HYPER or DBGFEVENT_BREAKPOINT.
  */
-DBGFR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
+VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
     if (VBOX_FAILURE(rc))
@@ -800,7 +800,7 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
  * @returns VBox status code.
  * @param   pVM     VM Handle.
  */
-DBGFR3DECL(int) DBGFR3Attach(PVM pVM)
+VMMR3DECL(int) DBGFR3Attach(PVM pVM)
 {
     /*
      * Some validations first.
@@ -867,7 +867,7 @@ static DECLCALLBACK(int) dbgfR3Attach(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     VM Handle.
  */
-DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
+VMMR3DECL(int) DBGFR3Detach(PVM pVM)
 {
     LogFlow(("DBGFR3Detach:\n"));
     int rc;
@@ -915,7 +915,7 @@ DBGFR3DECL(int) DBGFR3Detach(PVM pVM)
  * @param   cMillies    Number of millies to wait.
  * @param   ppEvent     Where to store the event pointer.
  */
-DBGFR3DECL(int) DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent)
+VMMR3DECL(int) DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent)
 {
     /*
      * Check state.
@@ -947,7 +947,7 @@ DBGFR3DECL(int) DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent
  * @returns VBox status.
  * @param   pVM     VM handle.
  */
-DBGFR3DECL(int) DBGFR3Halt(PVM pVM)
+VMMR3DECL(int) DBGFR3Halt(PVM pVM)
 {
     /*
      * Check state.
@@ -974,7 +974,7 @@ DBGFR3DECL(int) DBGFR3Halt(PVM pVM)
  * @returns False if not halted.
  * @param   pVM     VM handle.
  */
-DBGFR3DECL(bool) DBGFR3IsHalted(PVM pVM)
+VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM)
 {
     AssertReturn(pVM->dbgf.s.fAttached, false);
     RTPINGPONGSPEAKER enmSpeaker = pVM->dbgf.s.PingPong.enmSpeaker;
@@ -992,7 +992,7 @@ DBGFR3DECL(bool) DBGFR3IsHalted(PVM pVM)
  * @returns False if not waitable.
  * @param   pVM     VM handle.
  */
-DBGFR3DECL(bool) DBGFR3CanWait(PVM pVM)
+VMMR3DECL(bool) DBGFR3CanWait(PVM pVM)
 {
     AssertReturn(pVM->dbgf.s.fAttached, false);
     return RTSemPongShouldWait(&pVM->dbgf.s.PingPong);
@@ -1007,7 +1007,7 @@ DBGFR3DECL(bool) DBGFR3CanWait(PVM pVM)
  * @returns VBox status.
  * @param   pVM     VM handle.
  */
-DBGFR3DECL(int) DBGFR3Resume(PVM pVM)
+VMMR3DECL(int) DBGFR3Resume(PVM pVM)
 {
     /*
      * Check state.
@@ -1035,7 +1035,7 @@ DBGFR3DECL(int) DBGFR3Resume(PVM pVM)
  * @returns VBox status.
  * @param   pVM     VM handle.
  */
-DBGFR3DECL(int) DBGFR3Step(PVM pVM)
+VMMR3DECL(int) DBGFR3Step(PVM pVM)
 {
     /*
      * Check state.
@@ -1063,7 +1063,7 @@ DBGFR3DECL(int) DBGFR3Step(PVM pVM)
  * @returns VINF_EM_DBG_STEP
  * @thread  EMT
  */
-DBGFR3DECL(int) DBGFR3PrgStep(PVM pVM)
+VMMR3DECL(int) DBGFR3PrgStep(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
 

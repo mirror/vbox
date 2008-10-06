@@ -212,18 +212,18 @@ typedef enum MMTAG
  * @ingroup grp_mm
  * @{ */
 
-MMDECL(RTR3PTR)     MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
-MMDECL(RTRCPTR)     MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr);
+VMMDECL(RTR3PTR)    MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
+VMMDECL(RTRCPTR)    MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr);
 #ifndef IN_RING0
-MMDECL(void *)      MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr);
+VMMDECL(void *)     MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr);
 #endif
-MMDECL(RTR0PTR)     MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr);
-MMDECL(RTRCPTR)     MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr);
-MMDECL(RTR3PTR)     MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr);
-MMDECL(RTR0PTR)     MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr);
+VMMDECL(RTR0PTR)    MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr);
+VMMDECL(RTRCPTR)    MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr);
+VMMDECL(RTR3PTR)    MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr);
+VMMDECL(RTR0PTR)    MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr);
 
 #ifndef IN_RING3
-MMDECL(void *)      MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr);
+VMMDECL(void *)     MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr);
 #else
 DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 {
@@ -234,7 +234,7 @@ DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 
 
 #ifndef IN_GC
-MMDECL(void *)      MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr);
+VMMDECL(void *)     MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr);
 #else
 DECLINLINE(void *)  MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
 {
@@ -244,7 +244,7 @@ DECLINLINE(void *)  MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
 #endif
 
 #ifndef IN_RING3
-MMDECL(RTR3PTR)     MMHyperCCToR3(PVM pVM, void *pv);
+VMMDECL(RTR3PTR)    MMHyperCCToR3(PVM pVM, void *pv);
 #else
 DECLINLINE(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
 {
@@ -254,7 +254,7 @@ DECLINLINE(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
 #endif
 
 #ifndef IN_RING0
-MMDECL(RTR0PTR)     MMHyperCCToR0(PVM pVM, void *pv);
+VMMDECL(RTR0PTR)    MMHyperCCToR0(PVM pVM, void *pv);
 #else
 DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 {
@@ -264,7 +264,7 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 #endif
 
 #ifndef IN_GC
-MMDECL(RTRCPTR)     MMHyperCCToRC(PVM pVM, void *pv);
+VMMDECL(RTRCPTR)    MMHyperCCToRC(PVM pVM, void *pv);
 #else
 DECLINLINE(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 {
@@ -275,7 +275,7 @@ DECLINLINE(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 
 
 #ifdef IN_GC
-MMDECL(RTHCPTR)     MMHyper2HC(PVM pVM, uintptr_t Ptr);
+VMMDECL(RTHCPTR)    MMHyper2HC(PVM pVM, uintptr_t Ptr);
 #else
 DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 {
@@ -288,22 +288,22 @@ DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
 #define MMHyperGC2HC(pVM, RCPtr) MMHyperRCToR3((pVM), (RCPtr)) /**< @deprecated */
 
 
-MMDECL(int)         MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
-MMDECL(int)         MMHyperFree(PVM pVM, void *pv);
-MMDECL(void)        MMHyperHeapCheck(PVM pVM);
+VMMDECL(int)        MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+VMMDECL(int)        MMHyperFree(PVM pVM, void *pv);
+VMMDECL(void)       MMHyperHeapCheck(PVM pVM);
 #ifdef DEBUG
-MMDECL(void)        MMHyperHeapDump(PVM pVM);
+VMMDECL(void)       MMHyperHeapDump(PVM pVM);
 #endif
-MMDECL(size_t)      MMHyperHeapGetFreeSize(PVM pVM);
-MMDECL(size_t)      MMHyperHeapGetSize(PVM pVM);
-MMDECL(RTGCPTR)     MMHyperGetArea(PVM pVM, size_t *pcb);
-MMDECL(bool)        MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
+VMMDECL(size_t)     MMHyperHeapGetFreeSize(PVM pVM);
+VMMDECL(size_t)     MMHyperHeapGetSize(PVM pVM);
+VMMDECL(RTGCPTR)    MMHyperGetArea(PVM pVM, size_t *pcb);
+VMMDECL(bool)       MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
 
 
-MMDECL(RTHCPHYS)    MMPage2Phys(PVM pVM, void *pvPage);
-MMDECL(void *)      MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage);
-MMDECL(int)         MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
-MMDECL(int)         MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
+VMMDECL(RTHCPHYS)   MMPage2Phys(PVM pVM, void *pvPage);
+VMMDECL(void *)     MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage);
+VMMDECL(int)        MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
+VMMDECL(int)        MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
 
 
 /** @def MMHYPER_RC_ASSERT_RCPTR
@@ -326,87 +326,87 @@ MMDECL(int)         MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvP
  * @{
  */
 
-MMR3DECL(int)       MMR3InitUVM(PUVM pUVM);
-MMR3DECL(int)       MMR3Init(PVM pVM);
-MMR3DECL(int)       MMR3InitPaging(PVM pVM);
-MMR3DECL(int)       MMR3HyperInitFinalize(PVM pVM);
-MMR3DECL(int)       MMR3Term(PVM pVM);
-MMR3DECL(void)      MMR3TermUVM(PUVM pUVM);
-MMR3DECL(void)      MMR3Reset(PVM pVM);
-MMR3DECL(int)       MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
-MMR3DECL(int)       MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);
-MMR3DECL(int)       MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
+VMMR3DECL(int)      MMR3InitUVM(PUVM pUVM);
+VMMR3DECL(int)      MMR3Init(PVM pVM);
+VMMR3DECL(int)      MMR3InitPaging(PVM pVM);
+VMMR3DECL(int)      MMR3HyperInitFinalize(PVM pVM);
+VMMR3DECL(int)      MMR3Term(PVM pVM);
+VMMR3DECL(void)     MMR3TermUVM(PUVM pUVM);
+VMMR3DECL(void)     MMR3Reset(PVM pVM);
+VMMR3DECL(int)      MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
+VMMR3DECL(int)      MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);
+VMMR3DECL(int)      MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
 
-MMR3DECL(int)       MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-MMR3DECL(int)       MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
-MMR3DECL(int)       MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
+VMMR3DECL(int)      MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+VMMR3DECL(int)      MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
+VMMR3DECL(int)      MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 
 
 /** @defgroup grp_mm_r3_hyper  Hypervisor Memory Manager (HC R3 Portion)
  * @ingroup grp_mm_r3
  * @{ */
-MMDECL(int)         MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
-MMR3DECL(int)       MMR3HyperMapHCPhys(PVM pVM, void *pvHC, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
-MMR3DECL(int)       MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
-MMR3DECL(int)       MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr);
-MMR3DECL(int)       MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr);
-MMR3DECL(int)       MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr);
-MMR3DECL(int)       MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGCPTR pGCPtr);
-MMR3DECL(RTHCPHYS)  MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC);
-MMR3DECL(int)       MMR3HyperHCVirt2HCPhysEx(PVM pVM, void *pvHC, PRTHCPHYS pHCPhys);
-MMR3DECL(void *)    MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys);
-MMR3DECL(int)       MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-MMR3DECL(int)       MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
+VMMDECL(int)        MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+VMMR3DECL(int)      MMR3HyperMapHCPhys(PVM pVM, void *pvHC, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
+VMMR3DECL(int)      MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr);
+VMMR3DECL(int)      MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr);
+VMMR3DECL(int)      MMR3HyperMapHCRam(PVM pVM, void *pvHC, size_t cb, bool fFree, const char *pszDesc, PRTGCPTR pGCPtr);
+VMMR3DECL(int)      MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages, const char *pszDesc, PRTGCPTR pGCPtr);
+VMMR3DECL(int)      MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGCPTR pGCPtr);
+VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC);
+VMMR3DECL(int)      MMR3HyperHCVirt2HCPhysEx(PVM pVM, void *pvHC, PRTHCPHYS pHCPhys);
+VMMR3DECL(void *)   MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys);
+VMMR3DECL(int)      MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+VMMR3DECL(int)      MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb);
 /** @} */
 
 
 /** @defgroup grp_mm_phys   Guest Physical Memory Manager
  * @ingroup grp_mm_r3
  * @{ */
-MMR3DECL(int)       MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc);
+VMMR3DECL(int)      MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc);
 #ifndef VBOX_WITH_NEW_PHYS_CODE
-MMR3DECL(int)       MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
+VMMR3DECL(int)      MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc);
 #endif
-MMR3DECL(int)       MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
-MMR3DECL(int)       MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
-MMR3DECL(int)       MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
-MMR3DECL(uint64_t)  MMR3PhysGetRamSize(PVM pVM);
+VMMR3DECL(int)      MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary, bool fShadow, const char *pszDesc);
+VMMR3DECL(int)      MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
+VMMR3DECL(int)      MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc);
+VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM);
 /** @} */
 
 
 /** @defgroup grp_mm_page   Physical Page Pool
  * @ingroup grp_mm_r3
  * @{ */
-MMR3DECL(void *)    MMR3PageAlloc(PVM pVM);
-MMR3DECL(RTHCPHYS)  MMR3PageAllocPhys(PVM pVM);
-MMR3DECL(void)      MMR3PageFree(PVM pVM, void *pvPage);
-MMR3DECL(void *)    MMR3PageAllocLow(PVM pVM);
-MMR3DECL(void)      MMR3PageFreeLow(PVM pVM, void *pvPage);
-MMR3DECL(void)      MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage);
-MMR3DECL(void *)    MMR3PageDummyHCPtr(PVM pVM);
-MMR3DECL(RTHCPHYS)  MMR3PageDummyHCPhys(PVM pVM);
+VMMR3DECL(void *)   MMR3PageAlloc(PVM pVM);
+VMMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM);
+VMMR3DECL(void)     MMR3PageFree(PVM pVM, void *pvPage);
+VMMR3DECL(void *)   MMR3PageAllocLow(PVM pVM);
+VMMR3DECL(void)     MMR3PageFreeLow(PVM pVM, void *pvPage);
+VMMR3DECL(void)     MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage);
+VMMR3DECL(void *)   MMR3PageDummyHCPtr(PVM pVM);
+VMMR3DECL(RTHCPHYS) MMR3PageDummyHCPhys(PVM pVM);
 /** @} */
 
 
 /** @defgroup grp_mm_heap   Heap Manager
  * @ingroup grp_mm_r3
  * @{ */
-MMR3DECL(void *)    MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize);
-MMR3DECL(void *)    MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize);
-MMR3DECL(int)       MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
-MMR3DECL(int)       MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv);
-MMR3DECL(void *)    MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize);
-MMR3DECL(void *)    MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize);
-MMR3DECL(int)       MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
-MMR3DECL(int)       MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv);
-MMR3DECL(void *)    MMR3HeapRealloc(void *pv, size_t cbNewSize);
-MMR3DECL(char *)    MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz);
-MMR3DECL(char *)    MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz);
-MMR3DECL(char *)    MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...);
-MMR3DECL(char *)    MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...);
-MMR3DECL(char *)    MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va);
-MMR3DECL(char *)    MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va);
-MMR3DECL(void)      MMR3HeapFree(void *pv);
+VMMR3DECL(void *)   MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize);
+VMMR3DECL(void *)   MMR3HeapAllocU(PUVM pUVM, MMTAG enmTag, size_t cbSize);
+VMMR3DECL(int)      MMR3HeapAllocEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
+VMMR3DECL(int)      MMR3HeapAllocExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv);
+VMMR3DECL(void *)   MMR3HeapAllocZ(PVM pVM, MMTAG enmTag, size_t cbSize);
+VMMR3DECL(void *)   MMR3HeapAllocZU(PUVM pUVM, MMTAG enmTag, size_t cbSize);
+VMMR3DECL(int)      MMR3HeapAllocZEx(PVM pVM, MMTAG enmTag, size_t cbSize, void **ppv);
+VMMR3DECL(int)      MMR3HeapAllocZExU(PUVM pUVM, MMTAG enmTag, size_t cbSize, void **ppv);
+VMMR3DECL(void *)   MMR3HeapRealloc(void *pv, size_t cbNewSize);
+VMMR3DECL(char *)   MMR3HeapStrDup(PVM pVM, MMTAG enmTag, const char *psz);
+VMMR3DECL(char *)   MMR3HeapStrDupU(PUVM pUVM, MMTAG enmTag, const char *psz);
+VMMR3DECL(char *)   MMR3HeapAPrintf(PVM pVM, MMTAG enmTag, const char *pszFormat, ...);
+VMMR3DECL(char *)   MMR3HeapAPrintfU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, ...);
+VMMR3DECL(char *)   MMR3HeapAPrintfV(PVM pVM, MMTAG enmTag, const char *pszFormat, va_list va);
+VMMR3DECL(char *)   MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFormat, va_list va);
+VMMR3DECL(void)     MMR3HeapFree(void *pv);
 /** @} */
 
 /** @} */
@@ -420,12 +420,12 @@ MMR3DECL(void)      MMR3HeapFree(void *pv);
  * @{
  */
 
-MMGCDECL(void)      MMGCRamRegisterTrapHandler(PVM pVM);
-MMGCDECL(void)      MMGCRamDeregisterTrapHandler(PVM pVM);
-MMGCDECL(int)       MMGCRamReadNoTrapHandler(void *pDst, void *pSrc, size_t cb);
-MMGCDECL(int)       MMGCRamWriteNoTrapHandler(void *pDst, void *pSrc, size_t cb);
-MMGCDECL(int)       MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb);
-MMGCDECL(int)       MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
+VMMRCDECL(void)     MMGCRamRegisterTrapHandler(PVM pVM);
+VMMRCDECL(void)     MMGCRamDeregisterTrapHandler(PVM pVM);
+VMMRCDECL(int)      MMGCRamReadNoTrapHandler(void *pDst, void *pSrc, size_t cb);
+VMMRCDECL(int)      MMGCRamWriteNoTrapHandler(void *pDst, void *pSrc, size_t cb);
+VMMRCDECL(int)      MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb);
+VMMRCDECL(int)      MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
 
 /** @} */
 #endif /* IN_GC */

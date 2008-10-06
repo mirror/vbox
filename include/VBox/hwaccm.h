@@ -65,14 +65,14 @@ __BEGIN_DECLS
  */
 #define HWACCMIsEnabled(a)    (a->fHWACCMEnabled)
 
-HWACCMDECL(int)     HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
-HWACCMDECL(bool)    HWACCMHasPendingIrq(PVM pVM);
+VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
+VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
 
 #ifndef IN_GC
-HWACCMDECL(int)     HWACCMFlushTLB(PVM pVM);
-HWACCMDECL(int)     HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
-HWACCMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);
-HWACCMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM);
+VMMDECL(int)    HWACCMFlushTLB(PVM pVM);
+VMMDECL(int)    HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+VMMDECL(bool)   HWACCMIsNestedPagingActive(PVM pVM);
+VMMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM);
 #else
 /* Nop in GC */
 # define HWACCMFlushTLB(pVM)                    do { } while (0)
@@ -84,11 +84,11 @@ HWACCMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM);
  * @ingroup grp_hwaccm
  * @{
  */
-HWACCMR0DECL(int)   HWACCMR0Init(void);
-HWACCMR0DECL(int)   HWACCMR0Term(void);
-HWACCMR0DECL(int)   HWACCMR0InitVM(PVM pVM);
-HWACCMR0DECL(int)   HWACCMR0TermVM(PVM pVM);
-HWACCMR0DECL(int)   HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState);
+VMMR0DECL(int)  HWACCMR0Init(void);
+VMMR0DECL(int)  HWACCMR0Term(void);
+VMMR0DECL(int)  HWACCMR0InitVM(PVM pVM);
+VMMR0DECL(int)  HWACCMR0TermVM(PVM pVM);
+VMMR0DECL(int)  HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState);
 /** @} */
 #endif /* IN_RING0 */
 
@@ -98,18 +98,18 @@ HWACCMR0DECL(int)   HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState
  * @ingroup grp_hwaccm
  * @{
  */
-HWACCMR3DECL(bool)  HWACCMR3IsEventPending(PVM pVM);
-HWACCMR3DECL(int)   HWACCMR3Init(PVM pVM);
-HWACCMR3DECL(int)   HWACCMR3InitFinalizeR0(PVM pVM);
-HWACCMR3DECL(void)  HWACCMR3Relocate(PVM pVM);
-HWACCMR3DECL(int)   HWACCMR3Term(PVM pVM);
-HWACCMR3DECL(void)  HWACCMR3Reset(PVM pVM);
-HWACCMR3DECL(void)  HWACCMR3CheckError(PVM pVM, int iStatusCode);
-HWACCMR3DECL(bool)  HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
-HWACCMR3DECL(bool)  HWACCMR3IsActive(PVM pVM);
-HWACCMR3DECL(bool)  HWACCMR3IsNestedPagingActive(PVM pVM);
-HWACCMR3DECL(bool)  HWACCMR3IsAllowed(PVM pVM);
-HWACCMR3DECL(void)  HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode);
+VMMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM);
+VMMR3DECL(int)  HWACCMR3Init(PVM pVM);
+VMMR3DECL(int)  HWACCMR3InitFinalizeR0(PVM pVM);
+VMMR3DECL(void) HWACCMR3Relocate(PVM pVM);
+VMMR3DECL(int)  HWACCMR3Term(PVM pVM);
+VMMR3DECL(void) HWACCMR3Reset(PVM pVM);
+VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode);
+VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
+VMMR3DECL(bool) HWACCMR3IsActive(PVM pVM);
+VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM);
+VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM);
+VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode);
 /** @} */
 #endif /* IN_RING3 */
 
@@ -117,12 +117,12 @@ HWACCMR3DECL(void)  HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode);
 /** @addtogroup grp_hwaccm_r0
  * @{
  */
-HWACCMR0DECL(int)   HWACCMR0SetupVM(PVM pVM);
-HWACCMR0DECL(int)   HWACCMR0RunGuestCode(PVM pVM);
-HWACCMR0DECL(int)   HWACCMR0Enter(PVM pVM);
-HWACCMR0DECL(int)   HWACCMR0Leave(PVM pVM);
-HWACCMR0DECL(int)   HWACCMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
-HWACCMR0DECL(int)   HWACCMR0FlushTLB(PVM pVM);
+VMMR0DECL(int)  HWACCMR0SetupVM(PVM pVM);
+VMMR0DECL(int)  HWACCMR0RunGuestCode(PVM pVM);
+VMMR0DECL(int)  HWACCMR0Enter(PVM pVM);
+VMMR0DECL(int)  HWACCMR0Leave(PVM pVM);
+VMMR0DECL(int)  HWACCMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
+VMMR0DECL(int)  HWACCMR0FlushTLB(PVM pVM);
 /** @} */
 #endif /* IN_RING0 */
 

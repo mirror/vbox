@@ -50,7 +50,7 @@
  * @param   Addr    Address part.
  * @remarks Don't use when in long mode.
  */
-SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
+VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 {
     Assert(!CPUMIsGuestInLongMode(pVM));    /* DON'T USE! */
 
@@ -85,7 +85,7 @@ SELMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
  * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
  */
-SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
+VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
 {
     PCPUMSELREGHID pHiddenSel;
     RTSEL          Sel;
@@ -146,7 +146,7 @@ SELMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, 
  *                      GDT entires are valid.
  * @param   ppvGC       Where to store the GC flat address.
  */
-SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
+VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
 {
     PCPUMSELREGHID pHiddenSel;
     RTSEL          Sel;
@@ -454,7 +454,7 @@ SELMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, R
  *                      the selector. NULL is allowed.
  * @remarks Don't use when in long mode.
  */
-SELMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
+VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
     Assert(!CPUMIsGuestInLongMode(pVM));    /* DON'T USE! */
 
@@ -829,7 +829,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
  * @param   ppvFlat      Where to store the flat address.
  * @param   pcBits       Where to store the 64-bit/32-bit/16-bit indicator.
  */
-SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits)
+VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits)
 {
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
@@ -854,7 +854,7 @@ SELMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSE
  * @param   Addr         Address part.
  * @param   ppvFlat      Where to store the flat address.
  */
-SELMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
+VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
     if (    CPUMIsGuestInRealMode(pVM)
         ||  eflags.Bits.u1VM)
@@ -901,7 +901,7 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, RTSEL Sel)
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-SELMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
+VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
 {
     if (!CPUMAreHiddenSelRegsValid(pVM))
     {
@@ -929,7 +929,7 @@ SELMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL
  * @returns Hypervisor's Trap 08 (\#DF) selector.
  * @param   pVM     VM Handle.
  */
-SELMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
+VMMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
 {
     return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
 }
@@ -941,7 +941,7 @@ SELMDECL(RTSEL) SELMGetTrap8Selector(PVM pVM)
  * @param   pVM     VM Handle.
  * @param   u32EIP  EIP of Trap 08 handler.
  */
-SELMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
+VMMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
 {
     pVM->selm.s.TssTrap08.eip = u32EIP;
 }
@@ -954,7 +954,7 @@ SELMDECL(void) SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP)
  * @param   ss      Ring1 SS register value.
  * @param   esp     Ring1 ESP register value.
  */
-SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
+VMMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 {
     pVM->selm.s.Tss.ss1  = ss;
     pVM->selm.s.Tss.esp1 = (uint32_t)esp;
@@ -969,7 +969,7 @@ SELMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
-SELMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
+VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 {
     if (pVM->selm.s.fSyncTSSRing0Stack)
     {
@@ -1042,7 +1042,7 @@ l_tryagain:
  *
  * @param   pVM     VM Handle.
  */
-SELMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM)
+VMMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM)
 {
     return (RTGCPTR)pVM->selm.s.GCPtrGuestTss;
 }
@@ -1055,7 +1055,7 @@ SELMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM)
  * @param   pSelInfo    Pointer to the selector information for the CS selector.
  * @param   SelCPL      The selector defining the CPL (SS).
  */
-SELMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL)
+VMMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL)
 {
     /*
      * Check if present.
@@ -1090,7 +1090,7 @@ SELMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL)
  * @returns CS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
+VMMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
 {
     return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS];
 }
@@ -1101,7 +1101,7 @@ SELMDECL(RTSEL) SELMGetHyperCS(PVM pVM)
  * @returns CS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
+VMMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
 {
     return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS64];
 }
@@ -1112,7 +1112,7 @@ SELMDECL(RTSEL) SELMGetHyperCS64(PVM pVM)
  * @returns DS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
+VMMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
 {
     return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
 }
@@ -1123,7 +1123,7 @@ SELMDECL(RTSEL) SELMGetHyperDS(PVM pVM)
  * @returns TSS selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
+VMMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
 {
     return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS];
 }
@@ -1134,7 +1134,7 @@ SELMDECL(RTSEL) SELMGetHyperTSS(PVM pVM)
  * @returns TSS Trap 8 selector.
  * @param   pVM     The VM handle.
  */
-SELMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
+VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
 {
     return pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08];
 }
@@ -1147,7 +1147,7 @@ SELMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
  * @remark  This is intended only for very special use, like in the world
  *          switchers. Don't exploit this API!
  */
-SELMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM)
+VMMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM)
 {
     /*
      * Always convert this from the HC pointer since. We're can be
@@ -1170,7 +1170,7 @@ SELMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM)
  * @param   pcbTss              Where to store the TSS size limit.
  * @param   pfCanHaveIOBitmap   Where to store the can-have-I/O-bitmap indicator. (optional)
  */
-SELMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap)
+VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap)
 {
     if (!CPUMAreHiddenSelRegsValid(pVM))
     {

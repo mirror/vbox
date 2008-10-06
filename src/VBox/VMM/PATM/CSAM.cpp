@@ -108,7 +108,7 @@ static const DBGCCMD    g_aCmds[] =
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CSAMR3DECL(int) CSAMR3Init(PVM pVM)
+VMMR3DECL(int) CSAMR3Init(PVM pVM)
 {
     int rc;
 
@@ -254,7 +254,7 @@ static int csamReinit(PVM pVM)
  * @param   pVM      The VM.
  * @param   offDelta Relocation delta.
  */
-CSAMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     if (offDelta)
     {
@@ -282,7 +282,7 @@ CSAMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CSAMR3DECL(int) CSAMR3Term(PVM pVM)
+VMMR3DECL(int) CSAMR3Term(PVM pVM)
 {
     int rc;
 
@@ -307,7 +307,7 @@ CSAMR3DECL(int) CSAMR3Term(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     The VM which is reset.
  */
-CSAMR3DECL(int) CSAMR3Reset(PVM pVM)
+VMMR3DECL(int) CSAMR3Reset(PVM pVM)
 {
     /* Clear page bitmaps. */
     for(int i=0;i<CSAM_PGDIRBMP_CHUNKS;i++)
@@ -1520,7 +1520,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
  * @param   pVM         The VM to operate on.
  * @param   addr        GC address of the page to flush
  */
-CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
+VMMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
 {
     return csamFlushPage(pVM, addr, true /* remove page record */);
 }
@@ -1532,7 +1532,7 @@ CSAMR3DECL(int) CSAMR3FlushPage(PVM pVM, RTRCPTR addr)
  * @param   pVM         The VM to operate on.
  * @param   addr        GC address of the page to flush
  */
-CSAMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
+VMMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
 {
     PCSAMPAGEREC pPageRec;
     int          rc;
@@ -1705,7 +1705,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
-CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
+VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 {
     PCSAMPAGEREC pPageRec = NULL;
     int          rc;
@@ -1827,7 +1827,7 @@ CSAMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
  * @param   pPageAddrGC The page to monitor
  * @param   enmTag      Monitor tag
  */
-CSAMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
+VMMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 {
     pPageAddrGC &= PAGE_BASE_GC_MASK;
 
@@ -2077,7 +2077,7 @@ static void csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint32_t opsi
  * @param   opsize      Instruction size
  * @param   fScanned    Mark as scanned or not
  */
-CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fScanned)
+VMMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fScanned)
 {
     PCSAMPAGE pPage = 0;
 
@@ -2104,7 +2104,7 @@ CSAMR3DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t opsize, bool fS
  * @param   pCtxCore    CPU context
  * @param   pInstrGC    Instruction pointer
  */
-CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC)
+VMMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC)
 {
     if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
@@ -2130,7 +2130,7 @@ CSAMR3DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstr
  * @param   pVM         The VM to operate on.
  * @param   pInstrGC    Instruction pointer (0:32 virtual address)
  */
-CSAMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
+VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
 {
     int rc;
     PCSAMPAGE pPage = NULL;
@@ -2235,7 +2235,7 @@ static int csamR3FlushCodePages(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CSAMR3DECL(int) CSAMR3DoPendingAction(PVM pVM)
+VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM)
 {
     csamR3FlushDirtyPages(pVM);
     csamR3FlushCodePages(pVM);
@@ -2252,7 +2252,7 @@ CSAMR3DECL(int) CSAMR3DoPendingAction(PVM pVM)
  * @param   iGate       Start gate
  * @param   cGates      Number of gates to check
  */
-CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
+VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 {
     uint16_t    cbIDT;
     RTRCPTR     GCPtrIDT = CPUMGetGuestIDTR(pVM, &cbIDT);
@@ -2472,7 +2472,7 @@ CSAMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
  * @param   pVM         The VM to operate on.
  * @param   GCPtrCall   Call address
  */
-CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall)
+VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall)
 {
     for (unsigned i=0;i<RT_ELEMENTS(pVM->csam.s.pvCallInstruction);i++)
     {
@@ -2496,7 +2496,7 @@ CSAMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall)
  * @returns 0 - disabled, 1 - enabled
  * @param   pVM         The VM to operate on.
  */
-CSAMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
+VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
 {
     return pVM->fCSAMEnabled;
 }

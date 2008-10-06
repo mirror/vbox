@@ -62,7 +62,7 @@
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     PPATMGCSTATE pPATMGCState;
     bool         fPatchCode = PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip);
@@ -78,7 +78,7 @@ CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 
     Assert(pPATMGCState->fPIF || fPatchCode);
     /** When patch code is executing instructions that must complete, then we must *never* interrupt it. */
-    if (!pPATMGCState->fPIF && fPatchCode)        
+    if (!pPATMGCState->fPIF && fPatchCode)
     {
         Log(("CSAMGCCodePageWriteHandler: fPIF=0 -> stack fault in patch generated code at %VGv!\n", pRegFrame->eip));
         /** @note there are cases when pages previously used for code are now used for stack; patch generated code will fault (pushf))
@@ -94,7 +94,7 @@ CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     }
 
     uint32_t cpl;
-    
+
     if (pRegFrame->eflags.Bits.u1VM)
         cpl = 3;
     else

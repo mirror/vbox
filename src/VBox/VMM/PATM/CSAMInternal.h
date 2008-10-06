@@ -28,11 +28,9 @@
 #include <VBox/dis.h>
 #include <VBox/log.h>
 
-#if !defined(IN_CSAM_R3) && !defined(IN_CSAM_R0) && !defined(IN_CSAM_GC)
-# error "Not in CSAM! This is an internal header!"
-#endif
 
-/** Page flags.
+
+/** @name Page flags.
  * These are placed in the three bits available for system programs in
  * the page entries.
  * @{ */
@@ -281,7 +279,7 @@ inline RTRCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 }
 
 __BEGIN_DECLS
-CSAMGCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 __END_DECLS
 
 #endif

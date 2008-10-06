@@ -542,7 +542,7 @@ VMMR0DECL(int) VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
  * @param   uArg        Argument to that operation.
  * @param   ...         Additional arguments.
  */
-VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
+VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
 
 /**
  * Switches from guest context to host context.
@@ -550,7 +550,7 @@ VMMGCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
  * @param   pVM         The VM handle.
  * @param   rc          The status code.
  */
-VMMGCDECL(void) VMMGCGuestToHost(PVM pVM, int rc);
+VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc);
 
 /**
  * Calls the ring-3 host code.
@@ -560,7 +560,7 @@ VMMGCDECL(void) VMMGCGuestToHost(PVM pVM, int rc);
  * @param   enmOperation    The operation.
  * @param   uArg            The argument to the operation.
  */
-VMMGCDECL(int) VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
+VMMRCDECL(int) VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 
 /** @} */
 #endif

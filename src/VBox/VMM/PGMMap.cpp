@@ -57,7 +57,7 @@ static void              pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, 
  * @param   pvUser          User argument to the callback.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc)
+VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc)
 {
     LogFlow(("PGMR3MapPT: GCPtr=%#x cb=%d pfnRelocate=%p pvUser=%p pszDesc=%s\n", GCPtr, cb, pfnRelocate, pvUser, pszDesc));
     AssertMsg(pVM->pgm.s.pInterPD && pVM->pgm.s.pHC32BitPD, ("Paging isn't initialized, init order problems!\n"));
@@ -215,7 +215,7 @@ PGMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
  * @param   pVM     VM Handle.
  * @param   GCPtr   Virtual Address. (Page table aligned!)
  */
-PGMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
+VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
 {
     LogFlow(("PGMR3UnmapPT: GCPtr=%#x\n", GCPtr));
 
@@ -278,7 +278,7 @@ PGMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
  * @param   pVM     The VM.
  * @param   pcb     Where to store the size.
  */
-PGMR3DECL(int) PGMR3MappingsSize(PVM pVM, uint32_t *pcb)
+VMMR3DECL(int) PGMR3MappingsSize(PVM pVM, uint32_t *pcb)
 {
     RTGCUINTPTR cb = 0;
     for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
@@ -299,7 +299,7 @@ PGMR3DECL(int) PGMR3MappingsSize(PVM pVM, uint32_t *pcb)
  * @param   GCPtrBase   The address of the reserved range of guest memory.
  * @param   cb          The size of the range starting at GCPtrBase.
  */
-PGMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
+VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
 {
     Log(("PGMR3MappingsFix: GCPtrBase=%#x cb=%#x\n", GCPtrBase, cb));
 
@@ -436,7 +436,7 @@ PGMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
  * @returns VBox status code.
  * @param   pVM         The VM.
  */
-PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
+VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
 {
     Log(("PGMR3MappingsUnfix: fMappingsFixed=%d\n", pVM->pgm.s.fMappingsFixed));
 
@@ -483,7 +483,7 @@ PGMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
  *
  * @remark  This API shall not be used to anything but mapping the switcher code.
  */
-PGMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages)
+VMMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages)
 {
     LogFlow(("PGMR3MapIntermediate: Addr=%RTptr HCPhys=%VHp cbPages=%#x\n", Addr, HCPhys, cbPages));
 
@@ -1035,7 +1035,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
  * @param   cr3         Guest context CR3 register.
  * @param   fRawR0      Whether RawR0 is enabled or not.
  */
-PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @todo how many HasConflict constructs do we really need? */
+VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @todo how many HasConflict constructs do we really need? */
 {
     /*
      * Can skip this if mappings are safely fixed.
@@ -1126,7 +1126,7 @@ PGMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
  * @todo    Consider renaming it to indicate it's special usage, or just
  *          reimplement it in MMR3HyperReadGCVirt.
  */
-PGMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
+VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
 /** @todo remove this simplicity hack */
     /*

@@ -496,27 +496,27 @@ typedef HWACCM *PHWACCM;
 
 #ifdef IN_RING0
 
-HWACCMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu();
+VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu();
 
 #ifdef VBOX_STRICT
-HWACCMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx);
-HWACCMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const char *pszMsg);
+VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx);
+VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const char *pszMsg);
 #else
 #define HWACCMDumpRegs(a, b)                do { } while (0)
 #define HWACCMR0DumpDescriptor(a, b, c)     do { } while (0)
 #endif
 
 /* Dummy callback handlers. */
-HWACCMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu);
-HWACCMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, CPUMCTX *pCtx);
-HWACCMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
-HWACCMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
-HWACCMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);
-HWACCMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM);
-HWACCMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM);
-HWACCMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx);
-HWACCMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM);
-HWACCMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx);
+VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu);
+VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, CPUMCTX *pCtx);
+VMMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);
+VMMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM);
+VMMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM);
+VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx);
+VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM);
+VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx);
 
 #endif /* IN_RING0 */
 
