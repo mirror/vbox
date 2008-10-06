@@ -1731,7 +1731,6 @@ static bool atapiGetEventStatusNotificationSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
 
-    LogRel(("atapiGetEventStatusNotificationSS\n"));
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 8);
 
@@ -2496,7 +2495,6 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
-            LogRel(("SCSI_GET_EVENT_STATUS_NOTIFICATION\n"));
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             if (ASMAtomicReadU32(&s->MediaEventStatus) != ATA_EVENT_STATUS_UNCHANGED)
             {
