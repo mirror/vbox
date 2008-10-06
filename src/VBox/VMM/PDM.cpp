@@ -23,8 +23,8 @@
 /** @page   pg_pdm      PDM - The Pluggable Device & Driver Manager
  *
  * VirtualBox is designed to be very configurable, i.e. the ability to select
- * virtual devices and configure them uniquely for a VM. For this reason virtual
- * devices are not statically linked with the VMM but loaded, linked and
+ * virtual devices and configure them uniquely for a VM.  For this reason
+ * virtual devices are not statically linked with the VMM but loaded, linked and
  * instantiated at runtime by PDM using the information found in the
  * Configuration Manager (CFGM).
  *
@@ -34,44 +34,83 @@
  * asynchronous I/O framework, and so on.
  *
  *
- * @section sec_pdm_dev      The Pluggable Devices
+ * @section sec_pdm_dev     The Pluggable Devices
  *
- * Devices register themselves when the module containing them is loaded. PDM
+ * Devices register themselves when the module containing them is loaded.  PDM
  * will call the entry point 'VBoxDevicesRegister' when loading a device module.
  * The device module will then use the supplied callback table to check the VMM
- * version and to register its devices. Each device have an unique (for the
- * configured VM) name. The name is not only used in PDM but also in CFGM (to
+ * version and to register its devices.  Each device have an unique (for the
+ * configured VM) name.  The name is not only used in PDM but also in CFGM (to
  * organize device and device instance settings) and by anyone who wants to talk
  * to a specific device instance.
  *
  * When all device modules have been successfully loaded PDM will instantiate
- * those devices which are configured for the VM. Note that a device may have
- * more than one instance, see network adaptors for instance. When instantiating
- * a device PDM provides device instance memory and a callback table (aka Device
- * Helpers / DevHlp) with the VM APIs which the device instance is trusted with.
+ * those devices which are configured for the VM.  Note that a device may have
+ * more than one instance, see network adaptors for instance.  When
+ * instantiating a device PDM provides device instance memory and a callback
+ * table (aka Device Helpers / DevHlp) with the VM APIs which the device
+ * instance is trusted with.
  *
- * Some devices are trusted devices, most are not. The trusted devices are an
+ * Some devices are trusted devices, most are not.  The trusted devices are an
  * integrated part of the VM and can obtain the VM handle from their device
- * instance handles, thus enabling them to call any VM api. Untrusted devices
+ * instance handles, thus enabling them to call any VM api.  Untrusted devices
  * can only use the callbacks provided during device instantiation.
  *
  * The main purpose in having DevHlps rather than just giving all the devices
  * the VM handle and let them call the internal VM APIs directly, is both to
  * create a binary interface that can be supported accross releases and to
- * create a barrier between devices and the VM. (The trusted / untrusted bit
+ * create a barrier between devices and the VM.  (The trusted / untrusted bit
  * hasn't turned out to be of much use btw., but it's easy to maintain so there
  * isn't any point in removing it.)
  *
  * A device can provide a ring-0 and/or a raw-mode context extension to improve
  * the VM performance by handling exits and traps (respectively) without
- * requiring context switches (to ring-3). Callbacks for MMIO and I/O ports can
+ * requiring context switches (to ring-3).  Callbacks for MMIO and I/O ports can
  * needs to be registered specifically for the additional contexts for this to
- * make sense. Also, the device has to be trusted to be loaded into R0/RC
- * because of the extra privilege it entails. Note that raw-mode code and data
+ * make sense.  Also, the device has to be trusted to be loaded into R0/RC
+ * because of the extra privilege it entails.  Note that raw-mode code and data
  * will be subject to relocation.
  *
  *
- * @section sec_pdm_drv      The Pluggable Drivers
+ * @section sec_pdm_special_devs    Special Devices
+ *
+ * Several kinds of devices interacts with the VMM and/or other device and PDM
+ * will work like a mediator for these. The typical pattern is that the device
+ * calls a special registration device helper with a set of callbacks, PDM
+ * responds by copying this and providing a pointer to a set helper callbacks
+ * for that particular kind of device. Unlike interfaces where the callback
+ * table pointer is used a 'this' pointer, these arrangements will use the
+ * device instance pointer (PPDMDEVINS) as a kind of 'this' pointer.
+ *
+ * For an example of this kind of setup, see the PIC. The PIC registers itself
+ * by calling PDMDEVHLPR3::pfnPICRegister.  PDM saves the device instance,
+ * copies the callback tables (PDMPICREG), resolving the ring-0 and raw-mode
+ * addresses in the process, and hands back the pointer to a set of helper
+ * methods (PDMPICHLPR3).  The PCI device then queries the ring-0 and raw-mode
+ * helpers using PDMPICHLPR3::pfnGetR0Helpers and PDMPICHLPR3::pfnGetRCHelpers.
+ * The PCI device repeates ths pfnGetRCHelpers call in it's relocation method
+ * since the address changes when RC is relocated.
+ *
+ *
+ *
+ * @section sec_pdm_usbdev  The Pluggable USB Devices
+ *
+ * USB devices are handled a little bit differently than other devices.  The
+ * general concepts wrt. pluggability are mostly the same, but the details
+ * varies.  The registration entry point is 'VBoxUsbRegister', the device
+ * instance is PDMUSBINS and the callbacks helpers are different.  Also, USB
+ * device are restricted to ring-3 and cannot have any ring-0 or raw-mode
+ * extensions (at least not yet).
+ *
+ * The way USB devices work differs greatly from other devices though since they
+ * aren't attaches directly to the PCI/ISA/whatever system buses but via a
+ * USB host control (OHCI, UHCI or EHCI).  USB devices handles USB requests
+ * (URBs) and does not register I/O ports, MMIO ranges or PCI bus
+ * devices/functions.
+ *
+ *
+ *
+ * @section sec_pdm_drv     The Pluggable Drivers
  *
  * The VM devices are often accessing host hardware or OS facilities.  For most
  * devices these facilities can be abstracted in one or more levels.  These
@@ -96,7 +135,7 @@
  * the DVD/CD Driver will have a ISO, HostDVD or RAW (media) Driver attached.
  *
  * It is possible to configure many levels of drivers inserting filters, loggers,
- * or whatever you desire into the chain. We're using this for network sniffing
+ * or whatever you desire into the chain.  We're using this for network sniffing
  * for instance.
  *
  * The drivers are loaded in a similar manner to that of the device, namely by
@@ -104,41 +143,86 @@
  * 'VBoxDriversRegister' with a callback table.
  *
  *
- * @subsection sec_pdm_drv_interfaces   Interfaces
  *
- * The pluggable drivers exposes one standard interface (callback table) which
- * is used to construct, destruct, attach, detach, and query other interfaces.
- * A device will query the interfaces required for it's operation during init
- * and hotplug.  PDM will query some interfaces during runtime mounting too.
+ * @section sec_pdm_ifs     Interfaces
  *
- * ... list interfaces ...
+ * The pluggable drivers and devices exposes one standard interface (callback
+ * table) which is used to construct, destruct, attach, detach,( ++,) and query
+ * other interfaces. A device will query the interfaces required for it's
+ * operation during init and hotplug.  PDM may query some interfaces during
+ * runtime mounting too.
+ *
+ * An interface here means a function table contained within the device or
+ * driver instance data. Its method are invoked with the function table pointer
+ * as the first argument and they will calculate the address of the device or
+ * driver instance data from it. (This is one of the aspects which *might* have
+ * been better done in C++.)
  *
  *
- * @section sec_pdm_utils       Utilities
  *
- * @todo
+ * @section sec_pdm_utils   Utilities
+ *
+ * As mentioned earlier, PDM is the location of any usful constrcts that doesn't
+ * quite fit into IPRT. The next subsections will discuss these.
+ *
+ * One thing these APIs all have in common is that resources will be associated
+ * with a device / driver and automatically freed after it has been destroyed if
+ * the destructor didn't do this.
  *
  *
  * @subsection sec_pdm_thread       Async I/O
  *
- * @todo
+ * The PDM Async I/O API provides a somewhat platform agnostic interface for
+ * asynchronous I/O.  For reasons of performance and complexcity this does not
+ * build upon any IPRT API.
+ *
+ * @todo more details.
  *
  *
  * @subsection sec_pdm_thread       Critical Section
  *
- * @todo
+ * The PDM Critical Section API is currently building on the IPRT API with the
+ * same name.  It adds the posibility to use critical sections in ring-0 and
+ * raw-mode as well as in ring-3.  There are certain restrictions on the RC and
+ * R0 usage though since we're not able to wait on it, nor wake up anyone that
+ * is waiting on it.  These restrictions origins with the use of a ring-3 event
+ * semaphore.  In a later incarnation we plan to replace the ring-3 event
+ * semaphore with a ring-0 one, thus enabling us to wake up waiters while
+ * exectuing in ring-0 and making the hardware assisted execution mode more
+ * efficient. (Raw-mode won't benefit much from this, naturally.)
  *
  *
  * @subsection sec_pdm_thread       Queue
  *
- * @todo
+ * The PDM Queue API is for queuing one or more tasks for later consumption in
+ * ring-3 by EMT, and optinally forcing a delayed or ASAP return to ring-3.  The
+ * queues can also be run on a timer basis as an alternative to the ASAP thing.
+ * The queue will be flushed at forced action time.
+ *
+ * A queue can also be used by another thread (a I/O worker for instance) to
+ * send work / events over to the EMT.
  *
  *
  * @subsection sec_pdm_thread       Task - not implemented yet
  *
- * @todo
+ * The PDM Task API is for flagging a task for execution at a later point when
+ * we're back in ring-3, optionally forcing the ring-3 return to happen ASAP.
+ * As you can see the concept is similar to queues only simpler.
+ *
+ * A task can also be scheduled by another thread (a I/O worker for instance) as
+ * a mean of getting something done in EMT.
+ *
  *
  * @subsection sec_pdm_thread       Thread
+ *
+ * The PDM Thread API is there to help devices and drivers manage their threads
+ * correctly wrt. power on, suspend, resume, power off and destruction.
+ *
+ * The general usage pattern for threads in the employ of devices and drivers is
+ * that they shuffle data or requests while the VM is running and stop doing
+ * this when the VM is paused or powered down. Rogue threads running while the
+ * VM is paused can cause the state to change during saving or have other
+ * unwanted side effects. The PDM Threads API ensures that this won't happen.
  *
  */
 
