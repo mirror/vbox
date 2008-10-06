@@ -47,7 +47,7 @@
 #ifdef WITH_DEBUG_SERIAL
 #define DEBUG_SERIAL(args) printf args;
 #else
-#define DEBUG_SERIAL(args)
+#define DEBUG_SERIAL(args) do {} while (0)
 #endif
 
 #define FILE_DEVICE_SERIAL_PORT		0x1b
