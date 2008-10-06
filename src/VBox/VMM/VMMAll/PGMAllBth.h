@@ -168,7 +168,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PEPTPD          pPDDst;
 
     rc = PGMShwGetEPTPDPtr(pVM, (RTGCUINTPTR)pvFault, NULL, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
     Assert(pPDDst);
 # endif
 
@@ -1852,7 +1852,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     EPTPDE          PdeDst;
 
     int rc = PGMShwGetEPTPDPtr(pVM, GCPtrPage, NULL, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
     Assert(pPDDst);
     PdeDst = pPDDst->a[iPDDst];
 # endif
@@ -2701,7 +2701,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PEPTPDPT        pPdptDst;
 
     rc = PGMShwGetEPTPDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
     Assert(pPDDst);
 
     /* Fetch the pgm pool shadow descriptor. */
