@@ -161,7 +161,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  endif
 
     rc = PGMShwSyncLongModePDPtr(pVM, (RTGCUINTPTR)pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
     Assert(pPDDst);
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPDDst = (((RTGCUINTPTR)pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -2837,11 +2837,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  endif
 
         int rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
-        if (rc != VINF_SUCCESS)
-        {
-            AssertRC(rc);
-            return rc;
-        }
+        AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
         Assert(pPDDst);
         PdeDst = pPDDst->a[iPDDst];
 # endif
@@ -2956,11 +2952,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 #  endif
 
     rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
-        return rc;
-    }
+    AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
     Assert(pPDDst);
     pPdeDst = &pPDDst->a[iPDDst];
 # endif
