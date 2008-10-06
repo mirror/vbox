@@ -67,6 +67,12 @@
 /** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS  1024
 
+/* MediaEventStatus */
+#define ATA_EVENT_STATUS_UNCHANGED              0    /**< medium event status not changed */
+#define ATA_EVENT_STATUS_MEDIA_NEW              1    /**< new medium inserted */
+#define ATA_EVENT_STATUS_MEDIA_REMOVED          2    /**< medium removed */
+#define ATA_EVENT_STATUS_MEDIA_CHANGED          3    /**< medium was removed + new medium was inserted */
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -155,6 +161,10 @@ typedef struct ATADevState {
     uint8_t abATAPISense[ATAPI_SENSE_SIZE];
     /** HACK: Countdown till we report a newly unmounted drive as mounted. */
     uint8_t cNotifiedMediaChange;
+    /** The same for GET_EVENT_STATUS for mechanism */
+    volatile uint32_t MediaEventStatus;
+
+    uint32_t Alignment0;
 
     /** The status LED state for this drive. */
     PDMLED Led;
@@ -167,9 +177,8 @@ typedef struct ATADevState {
     R0PTRTYPE(uint8_t *) pbIOBufferR0;
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *) pbIOBufferRC;
-#if 1 /*HC_ARCH_BITS == 64*/
-    RTRCPTR Aligmnent0; /**< Align the statistics at an 8-byte boundrary. */
-#endif
+    
+    RTRCPTR Aligmnent1; /**< Align the statistics at an 8-byte boundrary. */
 
     /*
      * No data that is part of the saved state after this point!!!!!
