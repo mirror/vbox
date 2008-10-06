@@ -245,8 +245,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
         STAM_PROFILE_START(&pVM->pgm.s.StatMapping, a);
-        PPGMMAPPING pMapping = CTXALLSUFF(pVM->pgm.s.pMappings);
-        for ( ; pMapping; pMapping = CTXALLSUFF(pMapping->pNext))
+        PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
+        for ( ; pMapping; pMapping = pMapping->CTX_SUFF(pNext))
         {
             if ((RTGCUINTPTR)pvFault < (RTGCUINTPTR)pMapping->GCPtr)
                 break;
@@ -3144,7 +3144,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     /* Only check mappings if they are supposed to be put into the shadow page table. */
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
-        pMapping      = pVM->pgm.s.CTXALLSUFF(pMappings);
+        pMapping      = pVM->pgm.s.CTX_SUFF(pMappings);
         iPdNoMapping  = (pMapping) ? (pMapping->GCPtr >> GST_PD_SHIFT) : ~0U;
     }
     else
@@ -3284,7 +3284,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 AssertMsg(&pVM->pgm.s.CTXMID(ap,PaePDs)[iPD * 2 / 512]->a[iPD * 2 % 512] == pPDEDst, ("%p vs %p\n", &pVM->pgm.s.CTXMID(ap,PaePDs)[iPD * 2 / 512]->a[iPD * 2 % 512], pPDEDst));
 #  endif
-                register GSTPDE PdeSrc = pPDSrc->a[iPD];
+                GSTPDE PdeSrc = pPDSrc->a[iPD];
                 if (    PdeSrc.n.u1Present
                     &&  (PdeSrc.n.u1User || fRawR0Enabled))
                 {
@@ -3307,7 +3307,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
                             iPD += cPTs - 1;
                             pPDEDst += cPTs + (PGM_GST_TYPE != PGM_SHW_TYPE) * cPTs;    /* Only applies to the pae shadow and 32 bits guest case */
-                            pMapping = pMapping->CTXALLSUFF(pNext);
+                            pMapping = pMapping->CTX_SUFF(pNext);
                             iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                             continue;
                         }
@@ -3476,7 +3476,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     if (pVM->pgm.s.fMappingsFixed)
                     {
                         /* It's fixed, just skip the mapping. */
-                        pMapping = pMapping->CTXALLSUFF(pNext);
+                        pMapping = pMapping->CTX_SUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                     }
                     else
@@ -3504,9 +3504,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                 /*
                                 * Update iPdNoMapping and pMapping.
                                 */
-                                pMapping = pVM->pgm.s.CTXALLSUFF(pMappings);
+                                pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
                                 while (pMapping && pMapping->GCPtr < (iPD << GST_PD_SHIFT))
-                                    pMapping = pMapping->CTXALLSUFF(pNext);
+                                    pMapping = pMapping->CTX_SUFF(pNext);
                                 iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                                 break;
 #   else
@@ -3517,7 +3517,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         }
                         if (iPdNoMapping == ~0U && pMapping)
                         {
-                            pMapping = pMapping->CTXALLSUFF(pNext);
+                            pMapping = pMapping->CTX_SUFF(pNext);
                             if (pMapping)
                                 iPdNoMapping = pMapping->GCPtr >> GST_PD_SHIFT;
                         }

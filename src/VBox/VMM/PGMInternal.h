@@ -311,7 +311,7 @@ typedef struct PGMMAPPING
     /** Pointer to next entry. */
     R0PTRTYPE(struct PGMMAPPING *)  pNextR0;
     /** Pointer to next entry. */
-    RCPTRTYPE(struct PGMMAPPING *)  pNextGC;
+    RCPTRTYPE(struct PGMMAPPING *)  pNextRC;
 #if GC_ARCH_BITS == 64
     RTRCPTR                         padding0;
 #endif
@@ -349,9 +349,9 @@ typedef struct PGMMAPPING
         /** The HC virtual address of the two PAE page table. (i.e 1024 entries instead of 512) */
         R3PTRTYPE(PX86PTPAE)    paPaePTsR3;
         /** The GC virtual address of the 32-bit page table. */
-        RCPTRTYPE(PX86PT)       pPTGC;
+        RCPTRTYPE(PX86PT)       pPTRC;
         /** The GC virtual address of the two PAE page table. */
-        RCPTRTYPE(PX86PTPAE)    paPaePTsGC;
+        RCPTRTYPE(PX86PTPAE)    paPaePTsRC;
         /** The GC virtual address of the 32-bit page table. */
         R0PTRTYPE(PX86PT)       pPTR0;
         /** The GC virtual address of the two PAE page table. */
@@ -2171,7 +2171,7 @@ typedef struct PGM
     /** Linked list of GC mappings - for GC.
      * The list is sorted ascending on address.
      */
-    RCPTRTYPE(PPGMMAPPING)          pMappingsGC;
+    RCPTRTYPE(PPGMMAPPING)          pMappingsRC;
     /** Linked list of GC mappings - for HC.
      * The list is sorted ascending on address.
      */

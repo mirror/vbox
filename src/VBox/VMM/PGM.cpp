@@ -1791,8 +1791,8 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     const uintptr_t off = pVM->pgm.s.pbDynPageMapBaseGC - pMapping->GCPtr;
     const unsigned iPT = off >> X86_PD_SHIFT;
     const unsigned iPG = (off >> X86_PT_SHIFT) & X86_PT_MASK;
-    pVM->pgm.s.paDynPageMap32BitPTEsGC = pMapping->aPTs[iPT].pPTGC      + iPG * sizeof(pMapping->aPTs[0].pPTR3->a[0]);
-    pVM->pgm.s.paDynPageMapPaePTEsGC   = pMapping->aPTs[iPT].paPaePTsGC + iPG * sizeof(pMapping->aPTs[0].paPaePTsR3->a[0]);
+    pVM->pgm.s.paDynPageMap32BitPTEsGC = pMapping->aPTs[iPT].pPTRC      + iPG * sizeof(pMapping->aPTs[0].pPTR3->a[0]);
+    pVM->pgm.s.paDynPageMapPaePTEsGC   = pMapping->aPTs[iPT].paPaePTsRC + iPG * sizeof(pMapping->aPTs[0].paPaePTsR3->a[0]);
 
     /* init cache */
     RTHCPHYS HCPhysDummy = MMR3PageDummyHCPhys(pVM);
@@ -1887,17 +1887,17 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * Update the two page directories with all page table mappings.
      * (One or more of them have changed, that's why we're here.)
      */
-    pVM->pgm.s.pMappingsGC = MMHyperHC2GC(pVM, pVM->pgm.s.pMappingsR3);
+    pVM->pgm.s.pMappingsRC = MMHyperHC2GC(pVM, pVM->pgm.s.pMappingsR3);
     for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur->pNextR3; pCur = pCur->pNextR3)
-        pCur->pNextGC = MMHyperHC2GC(pVM, pCur->pNextR3);
+        pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
 
     /* Relocate GC addresses of Page Tables. */
     for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
     {
         for (RTHCUINT i = 0; i < pCur->cPTs; i++)
         {
-            pCur->aPTs[i].pPTGC = MMHyperR3ToRC(pVM, pCur->aPTs[i].pPTR3);
-            pCur->aPTs[i].paPaePTsGC = MMHyperR3ToRC(pVM, pCur->aPTs[i].paPaePTsR3);
+            pCur->aPTs[i].pPTRC = MMHyperR3ToRC(pVM, pCur->aPTs[i].pPTR3);
+            pCur->aPTs[i].paPaePTsRC = MMHyperR3ToRC(pVM, pCur->aPTs[i].paPaePTsR3);
         }
     }
 
