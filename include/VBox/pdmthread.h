@@ -38,7 +38,7 @@
 
 __BEGIN_DECLS
 
-/** @group grp_pdm_thread       Threads
+/** @defgroup grp_pdm_thread    The PDM Threads API
  * @ingroup grp_pdm
  * @{
  */

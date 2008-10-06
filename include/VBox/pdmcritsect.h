@@ -35,7 +35,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_critsect      The PDM Critical Section
+/** @defgroup grp_pdm_critsect      The PDM Critical Section API
  * @ingroup grp_pdm
  * @{
  */

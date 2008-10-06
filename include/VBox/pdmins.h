@@ -30,7 +30,7 @@
 #ifndef ___VBox_pdmins_h
 #define ___VBox_pdmins_h
 
-/** @defgroup grp_pdm_ins       Common Instance Macros
+/** @defgroup grp_pdm_ins       Common PDM Instance Macros
  * @ingroup grp_pdm
  * @{
  */

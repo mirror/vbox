@@ -33,6 +33,8 @@
  * context synchronization (like critsect), VM centric thread management,
  * asynchronous I/O framework, and so on.
  *
+ * @see grp_pdm
+ *
  *
  * @section sec_pdm_dev     The Pluggable Devices
  *
@@ -91,6 +93,7 @@
  * The PCI device repeates ths pfnGetRCHelpers call in it's relocation method
  * since the address changes when RC is relocated.
  *
+ * @see grp_pdm_device
  *
  *
  * @section sec_pdm_usbdev  The Pluggable USB Devices
@@ -108,6 +111,7 @@
  * (URBs) and does not register I/O ports, MMIO ranges or PCI bus
  * devices/functions.
  *
+ * @see grp_pdm_usbdev
  *
  *
  * @section sec_pdm_drv     The Pluggable Drivers
@@ -142,6 +146,7 @@
  * iterating a keyspace in CFGM, load the modules listed there and call
  * 'VBoxDriversRegister' with a callback table.
  *
+ * @see grp_pdm_driver
  *
  *
  * @section sec_pdm_ifs     Interfaces
@@ -158,6 +163,7 @@
  * driver instance data from it. (This is one of the aspects which *might* have
  * been better done in C++.)
  *
+ * @see grp_pdm_interfaces
  *
  *
  * @section sec_pdm_utils   Utilities
@@ -170,7 +176,7 @@
  * the destructor didn't do this.
  *
  *
- * @subsection sec_pdm_thread       Async I/O
+ * @subsection sec_pdm_async_completion     Async I/O
  *
  * The PDM Async I/O API provides a somewhat platform agnostic interface for
  * asynchronous I/O.  For reasons of performance and complexcity this does not
@@ -178,8 +184,17 @@
  *
  * @todo more details.
  *
+ * @see grp_pdm_async_completion
  *
- * @subsection sec_pdm_thread       Critical Section
+ *
+ * @subsection sec_pdm_async_task   Async Task - not implemented
+ *
+ * @todo implement and describe
+ *
+ * @see grp_pdm_async_task
+ *
+ *
+ * @subsection sec_pdm_critsect     Critical Section
  *
  * The PDM Critical Section API is currently building on the IPRT API with the
  * same name.  It adds the posibility to use critical sections in ring-0 and
@@ -191,8 +206,10 @@
  * exectuing in ring-0 and making the hardware assisted execution mode more
  * efficient. (Raw-mode won't benefit much from this, naturally.)
  *
+ * @see grp_pdm_critsect
  *
- * @subsection sec_pdm_thread       Queue
+ *
+ * @subsection sec_pdm_queue        Queue
  *
  * The PDM Queue API is for queuing one or more tasks for later consumption in
  * ring-3 by EMT, and optinally forcing a delayed or ASAP return to ring-3.  The
@@ -202,8 +219,10 @@
  * A queue can also be used by another thread (a I/O worker for instance) to
  * send work / events over to the EMT.
  *
+ * @see grp_pdm_queue
  *
- * @subsection sec_pdm_thread       Task - not implemented yet
+ *
+ * @subsection sec_pdm_task        Task - not implemented yet
  *
  * The PDM Task API is for flagging a task for execution at a later point when
  * we're back in ring-3, optionally forcing the ring-3 return to happen ASAP.
@@ -211,6 +230,8 @@
  *
  * A task can also be scheduled by another thread (a I/O worker for instance) as
  * a mean of getting something done in EMT.
+ *
+ * @see grp_pdm_task
  *
  *
  * @subsection sec_pdm_thread       Thread
@@ -223,6 +244,8 @@
  * this when the VM is paused or powered down. Rogue threads running while the
  * VM is paused can cause the state to change during saving or have other
  * unwanted side effects. The PDM Threads API ensures that this won't happen.
+ *
+ * @see grp_pdm_thread
  *
  */
 

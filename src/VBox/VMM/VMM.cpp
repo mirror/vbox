@@ -77,6 +77,8 @@
  *        debugging the alternate reality execution.
  *
  *
+ * @see grp_vmm, grp_vm
+ *
  *
  * @section pg_vmm_s_use_cases          Use Cases
  *

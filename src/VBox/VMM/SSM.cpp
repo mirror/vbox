@@ -34,6 +34,8 @@
  * a execute and a what-now.
  *
  * The SSM provides a number of APIs for encoding and decoding the data.
+ *
+ * @see grp_ssm
  */
 
 

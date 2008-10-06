@@ -35,7 +35,7 @@
 __BEGIN_DECLS
 
 
-/** @defgroup grp_pdm_async_task    Async Task
+/** @defgroup grp_pdm_async_task    The PDM Async Task API
  * @ingroup grp_pdm
  * @{
  */

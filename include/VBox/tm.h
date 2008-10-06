@@ -1,5 +1,5 @@
 /** @file
- * TM - Time Monitor.
+ * TM - Time Manager.
  */
 
 /*
@@ -38,7 +38,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_tm        The Time Monitor API
+/** @defgroup grp_tm        The Time Manager API
  * @{
  */
 

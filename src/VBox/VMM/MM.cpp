@@ -34,6 +34,8 @@
  * MM will provide therefore ring-3 callable interfaces for some of the GMM APIs
  * related to resource tracking (PGM is the user).
  *
+ * @see grp_mm
+ *
  *
  * @section sec_mm_hma  Hypervisor Memory Area
  *

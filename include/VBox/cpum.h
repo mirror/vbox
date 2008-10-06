@@ -37,7 +37,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_cpum      The CPU Monitor(/Manager) API
+/** @defgroup grp_cpum      The CPU Monitor / Manager API
  * @{
  */
 

@@ -49,7 +49,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_driver    Drivers
+/** @defgroup grp_pdm_driver    The PDM Drivers API
  * @ingroup grp_pdm
  * @{
  */

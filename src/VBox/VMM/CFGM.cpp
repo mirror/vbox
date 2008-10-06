@@ -41,6 +41,8 @@
  * caller is in a better position to know the proper validation rules of the
  * individual properties.
  *
+ * @see grp_cfgm
+ *
  *
  * @section sec_cfgm_primitives     Data Primitives
  *
