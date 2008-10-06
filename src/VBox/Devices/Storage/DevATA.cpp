@@ -29,8 +29,9 @@
 /**
  * The SSM saved state versions.
  */
-#define ATA_SAVED_STATE_VERSION 17
+#define ATA_SAVED_STATE_VERSION 18
 #define ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE 16
+#define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS 17
 
 
 /*******************************************************************************
@@ -164,6 +165,7 @@ static bool ataWriteSectorsSS(ATADevState *);
 static bool ataExecuteDeviceDiagnosticSS(ATADevState *);
 static bool ataPacketSS(ATADevState *);
 static bool atapiGetConfigurationSS(ATADevState *);
+static bool atapiGetEventStatusNotificationSS(ATADevState *);
 static bool atapiIdentifySS(ATADevState *);
 static bool atapiInquirySS(ATADevState *);
 static bool atapiMechanismStatusSS(ATADevState *);
@@ -218,6 +220,7 @@ typedef enum ATAFNSS
     ATAFN_SS_EXECUTE_DEVICE_DIAGNOSTIC,
     ATAFN_SS_PACKET,
     ATAFN_SS_ATAPI_GET_CONFIGURATION,
+    ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION,
     ATAFN_SS_ATAPI_IDENTIFY,
     ATAFN_SS_ATAPI_INQUIRY,
     ATAFN_SS_ATAPI_MECHANISM_STATUS,
@@ -249,6 +252,7 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
     ataExecuteDeviceDiagnosticSS,
     ataPacketSS,
     atapiGetConfigurationSS,
+    atapiGetEventStatusNotificationSS,
     atapiIdentifySS,
     atapiInquirySS,
     atapiMechanismStatusSS,
@@ -1567,14 +1571,11 @@ static bool atapiPassthroughSS(ATADevState *s)
              * transfer size. But the I/O buffer size limits what can actually be
              * done in one transfer, so set the actual value of the buffer end. */
             s->cbElementaryTransfer = cbTransfer;
-            if (   s->aATAPICmd[0] == SCSI_INQUIRY
-                && !s->fATAPIPassthrough)
+            if (s->aATAPICmd[0] == SCSI_INQUIRY)
             {
                 /* Make sure that the real drive cannot be identified.
                  * Motivation: changing the VM configuration should be as
-                 *             invisible as possible to the guest.
-                 * Exception:  passthrough. Otherwise Windows will not detect
-                 *             CDR/CDRW burning capabilities */
+                 *             invisible as possible to the guest. */
                 Log3(("ATAPI PT inquiry data before (%d): %.*Vhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
@@ -1693,11 +1694,12 @@ static bool atapiReadTrackInformationSS(ATADevState *s)
 static bool atapiGetConfigurationSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+    uint16_t u16Sfn = ataBE2H_U16(&s->aATAPICmd[2]);
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 32);
     /* Accept valid request types only, and only starting feature 0. */
-    if ((s->aATAPICmd[1] & 0x03) == 3 || ataBE2H_U16(&s->aATAPICmd[2]) != 0)
+    if ((s->aATAPICmd[1] & 0x03) == 3 || u16Sfn != 0)
     {
         atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
         return false;
@@ -1719,6 +1721,72 @@ static bool atapiGetConfigurationSS(ATADevState *s)
     ataH2BE_U16(pbBuf + 16, 0x08); /* profile: read only CD */
     pbBuf[18] = (1 << 0); /* current profile */
     /* Other profiles we might want to add in the future: 0x40 (BD-ROM) and 0x50 (HDDVD-ROM) */
+    s->iSourceSink = ATAFN_SS_NULL;
+    atapiCmdOK(s);
+    return false;
+}
+
+
+static bool atapiGetEventStatusNotificationSS(ATADevState *s)
+{
+    uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+
+    LogRel(("atapiGetEventStatusNotificationSS\n"));
+    Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
+    Assert(s->cbElementaryTransfer <= 8);
+
+    if (!(s->aATAPICmd[1] & 1))
+    {
+        /* no asynchronous operation supported */
+        atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+        return false;
+    }
+
+    uint32_t OldStatus, NewStatus;
+    do
+    {
+        OldStatus = ASMAtomicReadU32(&s->MediaEventStatus);
+        NewStatus = ATA_EVENT_STATUS_UNCHANGED;
+        switch (OldStatus)
+        {
+            case ATA_EVENT_STATUS_MEDIA_NEW:
+            /* mount */
+                ataH2BE_U16(pbBuf + 0, 6);
+                pbBuf[2] = 0x04;
+                pbBuf[3] = 0x5e;
+                pbBuf[4] = 0x02;
+                pbBuf[5] = 0x02;
+                pbBuf[6] = 0x00;
+                pbBuf[7] = 0x00;
+                break;
+
+            case ATA_EVENT_STATUS_MEDIA_CHANGED:
+            case ATA_EVENT_STATUS_MEDIA_REMOVED:
+                /* umount */
+                ataH2BE_U16(pbBuf + 0, 6);
+                pbBuf[2] = 0x04;
+                pbBuf[3] = 0x5e;
+                pbBuf[4] = 0x03;
+                pbBuf[5] = 0x00;
+                pbBuf[6] = 0x00;
+                pbBuf[7] = 0x00;
+                if (OldStatus == ATA_EVENT_STATUS_MEDIA_CHANGED)
+                    NewStatus = ATA_EVENT_STATUS_MEDIA_NEW;
+                break;
+
+            case ATA_EVENT_STATUS_UNCHANGED:
+            default:
+                ataH2BE_U16(pbBuf + 0, 6);
+                pbBuf[2] = 0x01;
+                pbBuf[3] = 0x5e;
+                pbBuf[4] = 0x00;
+                pbBuf[5] = 0x00;
+                pbBuf[6] = 0x00;
+                pbBuf[7] = 0x00;
+                break;
+        }
+    } while (!ASMAtomicCmpXchgU32(&s->MediaEventStatus, NewStatus, OldStatus));
+
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
     return false;
@@ -2065,6 +2133,10 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
             else
                 atapiCmdErrorSimple(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
             break;
+        case SCSI_GET_EVENT_STATUS_NOTIFICATION:
+            cbMax = ataBE2H_U16(pbPacket + 7);
+            ataStartTransfer(s, RT_MIN(cbMax, 8), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
+            break;
         case SCSI_MODE_SENSE_10:
             {
                 uint8_t uPageControl, uPageCode;
@@ -2380,7 +2452,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
             ataStartTransfer(s, RT_MIN(cbMax, 32), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_CONFIGURATION, true);
             break;
         case SCSI_INQUIRY:
-            cbMax = pbPacket[4];
+            cbMax = ataBE2H_U16(pbPacket + 3);
             ataStartTransfer(s, RT_MIN(cbMax, 36), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_INQUIRY, true);
             break;
         default:
@@ -2423,21 +2495,22 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
-#if 0
-        /* Disable this passthrough command. The guest should fallback to other means to
-         * detect the disk status. We cannot emulate this command properly when in non-
-         * passthrough mode. */
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
+            LogRel(("SCSI_GET_EVENT_STATUS_NOTIFICATION\n"));
             cbTransfer = ataBE2H_U16(pbPacket + 7);
+            if (ASMAtomicReadU32(&s->MediaEventStatus) != ATA_EVENT_STATUS_UNCHANGED)
+            {
+                ataStartTransfer(s, RT_MIN(cbTransfer, 8), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
+                break;
+            }
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
-#endif
         case SCSI_GET_PERFORMANCE:
             cbTransfer = s->uATARegLCyl | (s->uATARegHCyl << 8); /* use ATAPI transfer length */
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_INQUIRY:
-            cbTransfer = pbPacket[4];
+            cbTransfer = ataBE2H_U16(pbPacket + 3);
             uTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_LOAD_UNLOAD_MEDIUM:
@@ -2706,6 +2779,42 @@ static bool ataPacketSS(ATADevState *s)
 
 
 /**
+ * SCSI_GET_EVENT_STATUS_NOTIFICATION should return "medium removed" event
+ * from now on, regardless if there was a medium inserted or not.
+ */
+static void ataMediumRemoved(ATADevState *s)
+{
+    ASMAtomicWriteU32(&s->MediaEventStatus, ATA_EVENT_STATUS_MEDIA_REMOVED);
+}
+
+
+/**
+ * SCSI_GET_EVENT_STATUS_NOTIFICATION should return "medium inserted". If
+ * there was already a medium inserted, don't forget to send the "medium
+ * removed" event first.
+ */
+static void ataMediumInserted(ATADevState *s)
+{
+    uint32_t OldStatus, NewStatus;
+    do
+    {
+        OldStatus = ASMAtomicReadU32(&s->MediaEventStatus);
+        switch (OldStatus)
+        {
+            case ATA_EVENT_STATUS_MEDIA_CHANGED:
+            case ATA_EVENT_STATUS_MEDIA_REMOVED:
+                /* no change, we will send "medium removed" + "medium inserted" */
+                NewStatus = ATA_EVENT_STATUS_MEDIA_CHANGED;
+                break;
+            default:
+                NewStatus = ATA_EVENT_STATUS_MEDIA_NEW;
+                break;
+        }
+    } while (!ASMAtomicCmpXchgU32(&s->MediaEventStatus, NewStatus, OldStatus));
+}
+
+
+/**
  * Called when a media is mounted.
  *
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -2727,6 +2836,7 @@ static DECLCALLBACK(void) ataMountNotify(PPDMIMOUNTNOTIFY pInterface)
     /* Report media changed in TEST UNIT and other (probably incorrect) places. */
     if (pIf->cNotifiedMediaChange < 2)
         pIf->cNotifiedMediaChange = 2;
+    ataMediumInserted(pIf);
 }
 
 /**
@@ -2746,6 +2856,7 @@ static DECLCALLBACK(void) ataUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
      * present and 2 in which it is changed.
      */
     pIf->cNotifiedMediaChange = 4;
+    ataMediumRemoved(pIf);
 }
 
 static void ataPacketBT(ATADevState *s)
@@ -2761,6 +2872,7 @@ static void ataResetDevice(ATADevState *s)
 {
     s->cMultSectors = ATA_MAX_MULT_SECTORS;
     s->cNotifiedMediaChange = 0;
+    ASMAtomicWriteU32(&s->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
     ataUnsetIRQ(s);
 
     s->uATARegSelect = 0x20;
@@ -5041,6 +5153,13 @@ static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN)
     pIf->pDrvBlock = NULL;
     pIf->pDrvBlockBios = NULL;
     pIf->pDrvMount = NULL;
+
+    /*
+     * Just in case there was a medium inserted. Only required when attached to a physical drive
+     * in passthrough mode as in virtual ATAPI mode we've got an unmount notification.
+     */
+    if (pIf->fATAPIPassthrough)
+        ataMediumRemoved(pIf);
 }
 
 
@@ -5214,7 +5333,15 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
      */
     rc = PDMDevHlpDriverAttach(pDevIns, pIf->iLUN, &pIf->IBase, &pIf->pDrvBase, NULL);
     if (RT_SUCCESS(rc))
+    {
         rc = ataConfigLun(pDevIns, pIf);
+        /*
+         * In case there is a new medium inserted. In virtual ATAPI mode we get an mount
+         * notification.
+         */
+        if (pIf->fATAPIPassthrough)
+            ataMediumInserted(pIf);
+    }
     else
         AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
 
@@ -5373,6 +5500,7 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
             SSMR3PutMem(pSSMHandle, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
             SSMR3PutMem(pSSMHandle, &pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
             SSMR3PutU8(pSSMHandle, pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
+            SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].MediaEventStatus);
             SSMR3PutMem(pSSMHandle, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));
             SSMR3PutU32(pSSMHandle, pThis->aCts[i].aIfs[j].cbIOBuffer);
             if (pThis->aCts[i].aIfs[j].cbIOBuffer)
@@ -5401,8 +5529,9 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
     int             rc;
     uint32_t        u32;
 
-    if (    u32Version != ATA_SAVED_STATE_VERSION
-        &&  u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
+    if (   u32Version != ATA_SAVED_STATE_VERSION
+        && u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
+        && u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
     {
         AssertMsgFailed(("u32Version=%d\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -5476,7 +5605,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].iATAPILBA);
             SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cbATAPISector);
             SSMR3GetMem(pSSMHandle, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
-            if (u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
+            if (u32Version > ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
             {
                 SSMR3GetMem(pSSMHandle, pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
             }
@@ -5493,6 +5622,10 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             }
             /** @todo triple-check this hack after passthrough is working */
             SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
+            if (u32Version > ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
+                SSMR3GetU32(pSSMHandle, (uint32_t*)&pThis->aCts[i].aIfs[j].MediaEventStatus);
+            else
+                pThis->aCts[i].aIfs[j].MediaEventStatus = ATA_EVENT_STATUS_UNCHANGED;
             SSMR3GetMem(pSSMHandle, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));
             SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cbIOBuffer);
             if (pThis->aCts[i].aIfs[j].cbIOBuffer)
