@@ -901,6 +901,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
 
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
+            Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
             return VINF_PGM_SYNC_CR3;
@@ -942,6 +943,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
 
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
+            Log(("PGMShwSyncLongModePDPtr: PGM pool flushed (2) -> signal sync cr3\n"));
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
             return VINF_PGM_SYNC_CR3;
