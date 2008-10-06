@@ -439,7 +439,7 @@ VMMDECL(int) PGMPrefetchPage(PVM pVM, RTGCPTR GCPtrPage)
  */
 PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
 {
-    PPGMMAPPING pMapping = CTXALLSUFF(pVM->pgm.s.pMappings);
+    PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
     while (pMapping)
     {
         if ((uintptr_t)GCPtr < (uintptr_t)pMapping->GCPtr)
@@ -449,7 +449,7 @@ PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
             STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPTConflict);
             return pMapping;
         }
-        pMapping = CTXALLSUFF(pMapping->pNext);
+        pMapping = pMapping->CTX_SUFF(pNext);
     }
     return NULL;
 }
@@ -1765,9 +1765,9 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
     /*
      * Check for mapping conflicts.
      */
-    for (PPGMMAPPING pMapping = CTXALLSUFF(pVM->pgm.s.pMappings);
+    for (PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
          pMapping;
-         pMapping = CTXALLSUFF(pMapping->pNext))
+         pMapping = pMapping->CTX_SUFF(pNext))
     {
         /** @todo This is slow and should be optimized, but since it's just assertions I don't care now. */
         for (RTGCUINTPTR GCPtr = (RTGCUINTPTR)pMapping->GCPtr;
