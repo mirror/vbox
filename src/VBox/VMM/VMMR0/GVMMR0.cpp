@@ -20,7 +20,7 @@
  */
 
 
-/** @page pg_GVMM   GVMM - The Global VM Manager
+/** @page pg_gvmm   GVMM - The Global VM Manager
  *
  * The Global VM Manager lives in ring-0. It's main function at the moment
  * is to manage a list of all running VMs, keep a ring-0 only structure (GVM)

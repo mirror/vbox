@@ -19,6 +19,20 @@
  * additional information or have any questions.
  */
 
+/** @page pg_stam       STAM - The Statistics Manager
+ *
+ * The purpose for the statistics manager is to present the rest of the system
+ * with a somewhat uniform way of accessing VMM statistics. STAM sports a couple
+ * of different APIs for accessing them: STAMR3EnumU, STAMR3SnapshotU,
+ * STAMR3DumpU, STAMR3DumpToReleaseLogU. Main is exposing the XML based one,
+ * STAMR3SnapshotU.
+ *
+ * The rest of the VMM together with the devices and drivers registers their
+ * statistics with STAM giving them a name. The name is like hierarchical, the
+ * components separated by slashes ('/').
+ *
+ */
+
 
 /*******************************************************************************
 *   Header Files                                                               *
