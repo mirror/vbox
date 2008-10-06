@@ -431,6 +431,8 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->pdm.s.Apic.pfnSetTPRRC         += offDelta;
         pVM->pdm.s.Apic.pfnGetTPRRC         += offDelta;
         pVM->pdm.s.Apic.pfnBusDeliverRC     += offDelta;
+        pVM->pdm.s.Apic.pfnWRMSRRC          += offDelta;
+        pVM->pdm.s.Apic.pfnRDMSRRC          += offDelta;
     }
 
     /*

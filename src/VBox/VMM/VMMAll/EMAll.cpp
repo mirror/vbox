@@ -33,6 +33,7 @@
 #include <VBox/stam.h>
 #include "EMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/hwaccm.h>
 #include <VBox/tm.h>
 #include <VBox/pdmapi.h>
@@ -2575,14 +2576,25 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         /* no break */
 #endif
     default:
-        /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
-        val = 0;
-        break;
+        /* In X2APIC specification this range is reserved for APIC control. */ 
+        if ((pRegFrame->ecx >= MSR_IA32_APIC_START) && (pRegFrame->ecx < MSR_IA32_APIC_END))
+        {
+            rc = PDMApicRDMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, &val);
+        } 
+        else 
+        {
+            /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
+            val = 0;
+            break;
+        }
     }
     Log(("EMInterpretRdmsr %s (%x) -> val=%VX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
-    pRegFrame->eax = (uint32_t) val;
-    pRegFrame->edx = (uint32_t) (val >> 32ULL);
-    return VINF_SUCCESS;
+    if (rc == VINF_SUCCESS) 
+    {
+        pRegFrame->eax = (uint32_t) val;
+        pRegFrame->edx = (uint32_t) (val >> 32ULL);
+    }
+    return rc;
 }
 
 
@@ -2713,6 +2725,11 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     default:
+        /* In X2APIC specification this range is reserved for APIC control. */ 
+        if ((pRegFrame->ecx >=  MSR_IA32_APIC_START) && (pRegFrame->ecx <  MSR_IA32_APIC_END))
+        {
+            return PDMApicWRMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, val);
+        }
         /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
         break;
     }

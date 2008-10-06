@@ -991,6 +991,28 @@ typedef struct PDMAPICREG
     DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns));
 
     /**
+     * WRMSR in APIC range.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         Device instance of the APIC.
+     * @param   iCpu            Target CPU.
+     * @param   u32Reg          MSR to write.
+     * @param   u64Value        Value to write.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnWRMSRR3, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value));
+
+    /**
+     * RDMSR in APIC range.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         Device instance of the APIC.
+     * @param   iCpu            Target CPU.
+     * @param   u32Reg          MSR to read.
+     * @param   pu64Value       Value read.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnRDMSRR3, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value));
+
+    /**
      * Private interface between the IOAPIC and APIC.
      *
      * This is a low-level, APIC/IOAPIC implementation specific interface
@@ -1023,6 +1045,10 @@ typedef struct PDMAPICREG
     const char         *pszSetTPRRC;
     /** The name of the RC GetTPR entry point. */
     const char         *pszGetTPRRC;
+    /** The name of the RC WRMSR entry point. */
+    const char         *pszWRMSRRC;
+    /** The name of the RC RDMSR entry point. */
+    const char         *pszRDMSRRC;
     /** The name of the RC BusDeliver entry point. */
     const char         *pszBusDeliverRC;
 
@@ -1038,6 +1064,10 @@ typedef struct PDMAPICREG
     const char         *pszSetTPRR0;
     /** The name of the R0 GetTPR entry point. */
     const char         *pszGetTPRR0;
+    /** The name of the R0 WRMSR entry point. */
+    const char         *pszWRMSRR0;
+    /** The name of the R0 RDMSR entry point. */
+    const char         *pszRDMSRR0;
     /** The name of the R0 BusDeliver entry point. */
     const char         *pszBusDeliverR0;
 
