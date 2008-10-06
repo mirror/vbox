@@ -107,7 +107,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CPUMR3DECL(int) CPUMR3Init(PVM pVM)
+VMMR3DECL(int) CPUMR3Init(PVM pVM)
 {
     LogFlow(("CPUMR3Init\n"));
 
@@ -599,7 +599,7 @@ static int cpumR3CpuIdInit(PVM pVM)
  *
  * @param   pVM     The VM.
  */
-CPUMR3DECL(void) CPUMR3Relocate(PVM pVM)
+VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 {
     LogFlow(("CPUMR3Relocate\n"));
     /*
@@ -617,7 +617,7 @@ CPUMR3DECL(void) CPUMR3Relocate(PVM pVM)
  * @param   pVM         Handle to the virtual machine.
  * @param   ppCtx       Receives the CPUMCTX GC pointer when successful.
  */
-CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx)
+VMMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx)
 {
     LogFlow(("CPUMR3QueryGuestCtxGCPtr\n"));
     /*
@@ -637,7 +637,7 @@ CPUMR3DECL(int) CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CPUMR3DECL(int) CPUMR3Term(PVM pVM)
+VMMR3DECL(int) CPUMR3Term(PVM pVM)
 {
     /** @todo ? */
     return 0;
@@ -650,7 +650,7 @@ CPUMR3DECL(int) CPUMR3Term(PVM pVM)
  * @returns VINF_SUCCESS.
  * @param   pVM         The VM handle.
  */
-CPUMR3DECL(void) CPUMR3Reset(PVM pVM)
+VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 {
     PCPUMCTX pCtx = &pVM->cpum.s.Guest;
 
@@ -2149,7 +2149,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
  * @param   pszPrefix   String prefix for logging (debug only)
  *
  */
-CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix)
+VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDISCPUSTATE pCpu, const char *pszPrefix)
 {
     CPUMDISASSTATE  State;
     int             rc;
@@ -2262,7 +2262,7 @@ CPUMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PD
  *
  * @deprecated  Use DBGFR3DisasInstrCurrentLog().
  */
-CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix)
+VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix)
 {
     DISCPUSTATE Cpu;
     CPUMR3DisasmInstrCPU(pVM, pCtx, pc, &Cpu, pszPrefix);
@@ -2281,7 +2281,7 @@ CPUMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const cha
  *
  * @deprecated  Create new DBGFR3Disas function to do this.
  */
-CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix, int nrInstructions)
+VMMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char *pszPrefix, int nrInstructions)
 {
     for (int i = 0; i < nrInstructions; i++)
     {
@@ -2298,7 +2298,7 @@ CPUMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const cha
  *
  * @internal
  */
-CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
+VMMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
 {
     pVM->cpum.s.GuestEntry = pVM->cpum.s.Guest;
 }
@@ -2316,7 +2316,7 @@ CPUMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
  * @param   fOr     The CR4 OR mask.
  * @param   fAnd    The CR4 AND mask.
  */
-CPUMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
+VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
 {
     AssertMsgReturn(!(fOr & ~(X86_CR4_TSD)), ("%#x\n", fOr), VERR_INVALID_PARAMETER);
     AssertMsgReturn((fAnd & ~(X86_CR4_TSD)) == ~(X86_CR4_TSD), ("%#x\n", fAnd), VERR_INVALID_PARAMETER);

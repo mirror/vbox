@@ -304,7 +304,7 @@ int pdmR3ThreadCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, v
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
-PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
+VMMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,
                                  PFNPDMTHREADWAKEUPINT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
@@ -335,7 +335,7 @@ PDMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PF
  * @param   enmType     See RTThreadCreate.
  * @param   pszName     See RTThreadCreate.
  */
-PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
+VMMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADEXT pfnThread,
                                          PFNPDMTHREADWAKEUPEXT pfnWakeUp, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     int rc = pdmR3ThreadNew(pVM, ppThread);
@@ -364,7 +364,7 @@ PDMR3DECL(int) PDMR3ThreadCreateExternal(PVM pVM, PPPDMTHREAD ppThread, void *pv
  * @param   pRcThread       Where to store the thread exit code. Optional.
  * @thread  The emulation thread (EMT).
  */
-PDMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
+VMMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
 {
     /*
      * Assert sanity.
@@ -625,7 +625,7 @@ static void pdmR3ThreadBailMeOut(PPDMTHREAD pThread)
  *          On failure, terminate the thread.
  * @param   pThread     The PDM thread.
  */
-PDMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread)
+VMMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread)
 {
     /*
      * Assert sanity.
@@ -673,7 +673,7 @@ PDMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread)
  *          On failure, terminate the thread.
  * @param   pThread     The PDM thread.
  */
-PDMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread)
+VMMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread)
 {
     /*
      * Assert sanity.
@@ -711,7 +711,7 @@ PDMR3DECL(int) PDMR3ThreadIAmRunning(PPDMTHREAD pThread)
  * @param   pThread     The PDM thread.
  * @param   cMillies    The number of milliseconds to sleep.
  */
-PDMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies)
+VMMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, unsigned cMillies)
 {
     /*
      * Assert sanity.
@@ -883,7 +883,7 @@ static void pdmR3ThreadBailOut(PPDMTHREAD pThread)
  * @returns VBox status code.
  * @param   pThread     The PDM thread.
  */
-PDMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread)
+VMMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread)
 {
     /*
      * Assert sanity.
@@ -977,7 +977,7 @@ int pdmR3ThreadSuspendAll(PVM pVM)
  * @returns VBox status code.
  * @param   pThread     The PDM thread.
  */
-PDMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread)
+VMMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread)
 {
     /*
      * Assert sanity.

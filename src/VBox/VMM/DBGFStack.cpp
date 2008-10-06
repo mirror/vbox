@@ -350,7 +350,7 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, PDBGFSTACKFRAME pFrame,
  *                      On output the structure will contain all the information we were able to
  *                      obtain about the stack frame.
  */
-DBGFR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame)
+VMMR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame)
 {
     pFrame->pFirst = NULL;
     pFrame->pNext = NULL;
@@ -381,7 +381,7 @@ DBGFR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame)
  *                      On output the structure will contain all the information we were able to
  *                      obtain about the stack frame.
  */
-DBGFR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, PDBGFSTACKFRAME pFrame)
+VMMR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, PDBGFSTACKFRAME pFrame)
 {
     pFrame->pFirst = NULL;
     pFrame->pNext = NULL;
@@ -405,7 +405,7 @@ DBGFR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, PDBGFSTACKFRAME pFrame)
  * @param   pVM         The VM handle.
  * @param   pFrame      Pointer to the current frame on input, content is replaced with the next frame on successful return.
  */
-DBGFR3DECL(int) DBGFR3StackWalkNext(PVM pVM, PDBGFSTACKFRAME pFrame)
+VMMR3DECL(int) DBGFR3StackWalkNext(PVM pVM, PDBGFSTACKFRAME pFrame)
 {
     if (pFrame->pNext)
     {
@@ -425,7 +425,7 @@ DBGFR3DECL(int) DBGFR3StackWalkNext(PVM pVM, PDBGFSTACKFRAME pFrame)
  * @param   pVM         The VM handle.
  * @param   pFrame      The stackframe as returned by the last stack walk call.
  */
-DBGFR3DECL(void) DBGFR3StackWalkEnd(PVM pVM, PDBGFSTACKFRAME pFrame)
+VMMR3DECL(void) DBGFR3StackWalkEnd(PVM pVM, PDBGFSTACKFRAME pFrame)
 {
     if (!pFrame || !pFrame->pFirst)
         return;

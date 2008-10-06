@@ -95,7 +95,7 @@ static void cfgmR3FreeValue(PCFGMLEAF pLeaf);
  * @param   pvUser              The user argument passed to pfnCFGMConstructor.
  * @thread  EMT.
  */
-CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUser)
+VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUser)
 {
     LogFlow(("CFGMR3Init: pfnCFGMConstructor=%p pvUser=%p\n", pfnCFGMConstructor, pvUser));
 
@@ -150,7 +150,7 @@ CFGMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void 
  * @returns VBox status code.
  * @param   pVM             VM handle.
  */
-CFGMR3DECL(int) CFGMR3Term(PVM pVM)
+VMMR3DECL(int) CFGMR3Term(PVM pVM)
 {
     CFGMR3RemoveNode(pVM->cfgm.s.pRoot);
     pVM->cfgm.s.pRoot = NULL;
@@ -164,7 +164,7 @@ CFGMR3DECL(int) CFGMR3Term(PVM pVM)
  * @returns Pointer to root node.
  * @param   pVM             VM handle.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
+VMMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
 {
     return pVM->cfgm.s.pRoot;
 }
@@ -179,7 +179,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetRoot(PVM pVM)
  *
  * @param   pNode           The node which parent we query.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetParent(PCFGMNODE pNode)
+VMMR3DECL(PCFGMNODE) CFGMR3GetParent(PCFGMNODE pNode)
 {
     if (pNode && !pNode->fRestrictedRoot)
         return pNode->pParent;
@@ -196,7 +196,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetParent(PCFGMNODE pNode)
  * @param   pVM             The VM handle, used as token that the caller is trusted.
  * @param   pNode           The node which parent we query.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetParentEx(PVM pVM, PCFGMNODE pNode)
+VMMR3DECL(PCFGMNODE) CFGMR3GetParentEx(PVM pVM, PCFGMNODE pNode)
 {
     if (pNode && pNode->pVM == pVM)
         return pNode->pParent;
@@ -213,7 +213,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetParentEx(PVM pVM, PCFGMNODE pNode)
  * @param   pszPath         Path to the child node or pNode.
  *                          It's good style to end this with '/'.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
+VMMR3DECL(PCFGMNODE) CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
 {
     PCFGMNODE pChild;
     int rc = cfgmR3ResolveNode(pNode, pszPath, &pChild);
@@ -233,7 +233,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
  *                          It's good style to end this with '/'.
  * @param   ...             Arguments to pszPathFormat.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetChildF(PCFGMNODE pNode, const char *pszPathFormat, ...)
+VMMR3DECL(PCFGMNODE) CFGMR3GetChildF(PCFGMNODE pNode, const char *pszPathFormat, ...)
 {
     va_list Args;
     va_start(Args,  pszPathFormat);
@@ -253,7 +253,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetChildF(PCFGMNODE pNode, const char *pszPathFormat
  *                          It's good style to end this with '/'.
  * @param   Args            Arguments to pszPathFormat.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetChildFV(PCFGMNODE pNode, const char *pszPathFormat, va_list Args)
+VMMR3DECL(PCFGMNODE) CFGMR3GetChildFV(PCFGMNODE pNode, const char *pszPathFormat, va_list Args)
 {
     char *pszPath;
     RTStrAPrintfV(&pszPath, pszPathFormat, Args);
@@ -277,7 +277,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetChildFV(PCFGMNODE pNode, const char *pszPathForma
  * @returns NULL if no children.
  * @param   pNode           Node to enumerate children for.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetFirstChild(PCFGMNODE pNode)
+VMMR3DECL(PCFGMNODE) CFGMR3GetFirstChild(PCFGMNODE pNode)
 {
     return pNode ? pNode->pFirstChild : NULL;
 }
@@ -292,7 +292,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetFirstChild(PCFGMNODE pNode)
  * @param   pCur            Node to returned by a call to CFGMR3GetFirstChild()
  *                          or successive calls to this function.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3GetNextChild(PCFGMNODE pCur)
+VMMR3DECL(PCFGMNODE) CFGMR3GetNextChild(PCFGMNODE pCur)
 {
     return pCur ? pCur->pNext : NULL;
 }
@@ -308,7 +308,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3GetNextChild(PCFGMNODE pCur)
  * @param   pszName         Where to store the node name.
  * @param   cchName         Size of the buffer pointed to by pszName (with terminator).
  */
-CFGMR3DECL(int) CFGMR3GetName(PCFGMNODE pCur, char *pszName, size_t cchName)
+VMMR3DECL(int) CFGMR3GetName(PCFGMNODE pCur, char *pszName, size_t cchName)
 {
     int rc;
     if (pCur)
@@ -336,7 +336,7 @@ CFGMR3DECL(int) CFGMR3GetName(PCFGMNODE pCur, char *pszName, size_t cchName)
  * @param   pCur            Node to returned by a call to CFGMR3GetFirstChild()
  *                          or successive calls to CFGMR3GetNextChild().
  */
-CFGMR3DECL(int) CFGMR3GetNameLen(PCFGMNODE pCur)
+VMMR3DECL(int) CFGMR3GetNameLen(PCFGMNODE pCur)
 {
     return pCur ? pCur->cchName + 1 : 0;
 }
@@ -351,7 +351,7 @@ CFGMR3DECL(int) CFGMR3GetNameLen(PCFGMNODE pCur)
  * @param   pszzValid       List of valid names separated by '\\0' and ending with
  *                          a double '\\0'.
  */
-CFGMR3DECL(bool) CFGMR3AreChildrenValid(PCFGMNODE pNode, const char *pszzValid)
+VMMR3DECL(bool) CFGMR3AreChildrenValid(PCFGMNODE pNode, const char *pszzValid)
 {
     if (pNode)
     {
@@ -391,7 +391,7 @@ CFGMR3DECL(bool) CFGMR3AreChildrenValid(PCFGMNODE pNode, const char *pszzValid)
  * @returns Pointer to the first value.
  * @param   pCur            The node (Key) which values to enumerate.
  */
-CFGMR3DECL(PCFGMLEAF) CFGMR3GetFirstValue(PCFGMNODE pCur)
+VMMR3DECL(PCFGMLEAF) CFGMR3GetFirstValue(PCFGMNODE pCur)
 {
     return pCur ? pCur->pFirstLeaf : NULL;
 }
@@ -402,7 +402,7 @@ CFGMR3DECL(PCFGMLEAF) CFGMR3GetFirstValue(PCFGMNODE pCur)
  * @returns Pointer to the next value.
  * @param   pCur            The current value as returned by this function or CFGMR3GetFirstValue().
  */
-CFGMR3DECL(PCFGMLEAF) CFGMR3GetNextValue(PCFGMLEAF pCur)
+VMMR3DECL(PCFGMLEAF) CFGMR3GetNextValue(PCFGMLEAF pCur)
 {
     return pCur ? pCur->pNext : NULL;
 }
@@ -417,7 +417,7 @@ CFGMR3DECL(PCFGMLEAF) CFGMR3GetNextValue(PCFGMLEAF pCur)
  * @param   pszName         Where to store the value name.
  * @param   cchName         Size of the buffer pointed to by pszName (with terminator).
  */
-CFGMR3DECL(int) CFGMR3GetValueName(PCFGMLEAF pCur, char *pszName, size_t cchName)
+VMMR3DECL(int) CFGMR3GetValueName(PCFGMLEAF pCur, char *pszName, size_t cchName)
 {
     int rc;
     if (pCur)
@@ -445,7 +445,7 @@ CFGMR3DECL(int) CFGMR3GetValueName(PCFGMLEAF pCur, char *pszName, size_t cchName
  * @param   pCur            Value returned by a call to CFGMR3GetFirstValue()
  *                          or successive calls to CFGMR3GetNextValue().
  */
-CFGMR3DECL(int) CFGMR3GetValueNameLen(PCFGMLEAF pCur)
+VMMR3DECL(int) CFGMR3GetValueNameLen(PCFGMLEAF pCur)
 {
     return pCur ? pCur->cchName + 1 : 0;
 }
@@ -458,7 +458,7 @@ CFGMR3DECL(int) CFGMR3GetValueNameLen(PCFGMLEAF pCur)
  * @param   pCur            Value returned by a call to CFGMR3GetFirstValue()
  *                          or successive calls to CFGMR3GetNextValue().
  */
-CFGMR3DECL(CFGMVALUETYPE) CFGMR3GetValueType(PCFGMLEAF pCur)
+VMMR3DECL(CFGMVALUETYPE) CFGMR3GetValueType(PCFGMLEAF pCur)
 {
     Assert(pCur);
     return pCur->enmType;
@@ -474,7 +474,7 @@ CFGMR3DECL(CFGMVALUETYPE) CFGMR3GetValueType(PCFGMLEAF pCur)
  * @param   pszzValid       List of valid names separated by '\\0' and ending with
  *                          a double '\\0'.
  */
-CFGMR3DECL(bool) CFGMR3AreValuesValid(PCFGMNODE pNode, const char *pszzValid)
+VMMR3DECL(bool) CFGMR3AreValuesValid(PCFGMNODE pNode, const char *pszzValid)
 {
     if (pNode)
     {
@@ -516,7 +516,7 @@ CFGMR3DECL(bool) CFGMR3AreValuesValid(PCFGMNODE pNode, const char *pszzValid)
  * @param   pszName         Name of an integer value.
  * @param   penmType        Where to store the type.
  */
-CFGMR3DECL(int) CFGMR3QueryType(PCFGMNODE pNode, const char *pszName, PCFGMVALUETYPE penmType)
+VMMR3DECL(int) CFGMR3QueryType(PCFGMNODE pNode, const char *pszName, PCFGMVALUETYPE penmType)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -538,7 +538,7 @@ CFGMR3DECL(int) CFGMR3QueryType(PCFGMNODE pNode, const char *pszName, PCFGMVALUE
  * @param   pszName         Name of an integer value.
  * @param   pcb             Where to store the value size.
  */
-CFGMR3DECL(int) CFGMR3QuerySize(PCFGMNODE pNode, const char *pszName, size_t *pcb)
+VMMR3DECL(int) CFGMR3QuerySize(PCFGMNODE pNode, const char *pszName, size_t *pcb)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -576,7 +576,7 @@ CFGMR3DECL(int) CFGMR3QuerySize(PCFGMNODE pNode, const char *pszName, size_t *pc
  * @param   pszName         Name of an integer value.
  * @param   pu64            Where to store the integer value.
  */
-CFGMR3DECL(int) CFGMR3QueryInteger(PCFGMNODE pNode, const char *pszName, uint64_t *pu64)
+VMMR3DECL(int) CFGMR3QueryInteger(PCFGMNODE pNode, const char *pszName, uint64_t *pu64)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -600,7 +600,7 @@ CFGMR3DECL(int) CFGMR3QueryInteger(PCFGMNODE pNode, const char *pszName, uint64_
  * @param   pu64            Where to store the integer value. This is set to the default on failure.
  * @param   u64Def          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryIntegerDef(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
+VMMR3DECL(int) CFGMR3QueryIntegerDef(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -632,7 +632,7 @@ CFGMR3DECL(int) CFGMR3QueryIntegerDef(PCFGMNODE pNode, const char *pszName, uint
  * @param   pszString       Where to store the string.
  * @param   cchString       Size of the string buffer. (Includes terminator.)
  */
-CFGMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
+VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -665,7 +665,7 @@ CFGMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *ps
  * @param   cchString       Size of the string buffer. (Includes terminator.)
  * @param   pszDef          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
+VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -712,7 +712,7 @@ CFGMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char 
  * @param   pvData          Where to store the binary data.
  * @param   cbData          Size of buffer pvData points too.
  */
-CFGMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvData, size_t cbData)
+VMMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvData, size_t cbData)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -1103,7 +1103,7 @@ static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *pp
  * @returns Pointer to the root node.
  * @param   pVM         The VM handle.
  */
-CFGMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM)
+VMMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM)
 {
     PCFGMNODE pNew = (PCFGMNODE)MMR3HeapAlloc(pVM, MM_TAG_CFGM, sizeof(*pNew));
     if (pNew)
@@ -1140,7 +1140,7 @@ CFGMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM)
  * @param   pSubTree    The subtree to insert. Must be returned by CFGMR3CreateTree().
  * @param   ppChild     Where to store the address of the new child node. (optional)
  */
-CFGMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNODE pSubTree, PCFGMNODE *ppChild)
+VMMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNODE pSubTree, PCFGMNODE *ppChild)
 {
     /*
      * Validate input.
@@ -1186,7 +1186,7 @@ CFGMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMN
  * @param   pszName     Name or path of the new child node.
  * @param   ppChild     Where to store the address of the new child node. (optional)
  */
-CFGMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE *ppChild)
+VMMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE *ppChild)
 {
     int rc;
     if (pNode)
@@ -1324,7 +1324,7 @@ CFGMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE
  * @param   pszNameFormat   Name of or path the new child node.
  * @param   ...             Name format arguments.
  */
-CFGMR3DECL(int) CFGMR3InsertNodeF(PCFGMNODE pNode, PCFGMNODE *ppChild, const char *pszNameFormat, ...)
+VMMR3DECL(int) CFGMR3InsertNodeF(PCFGMNODE pNode, PCFGMNODE *ppChild, const char *pszNameFormat, ...)
 {
     va_list Args;
     va_start(Args,  pszNameFormat);
@@ -1343,7 +1343,7 @@ CFGMR3DECL(int) CFGMR3InsertNodeF(PCFGMNODE pNode, PCFGMNODE *ppChild, const cha
  * @param   pszNameFormat   Name or path of the new child node.
  * @param   Args            Name format arguments.
  */
-CFGMR3DECL(int) CFGMR3InsertNodeFV(PCFGMNODE pNode, PCFGMNODE *ppChild, const char *pszNameFormat, va_list Args)
+VMMR3DECL(int) CFGMR3InsertNodeFV(PCFGMNODE pNode, PCFGMNODE *ppChild, const char *pszNameFormat, va_list Args)
 {
     int     rc;
     char   *pszName;
@@ -1365,7 +1365,7 @@ CFGMR3DECL(int) CFGMR3InsertNodeFV(PCFGMNODE pNode, PCFGMNODE *ppChild, const ch
  *
  * @param   pNode       The node to mark.
  */
-CFGMR3DECL(void) CFGMR3SetRestrictedRoot(PCFGMNODE pNode)
+VMMR3DECL(void) CFGMR3SetRestrictedRoot(PCFGMNODE pNode)
 {
     if (pNode)
         pNode->fRestrictedRoot = true;
@@ -1443,7 +1443,7 @@ static int cfgmR3InsertLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppL
  *
  * @param   pNode       Parent node.
  */
-CFGMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
+VMMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
 {
     if (pNode)
     {
@@ -1559,7 +1559,7 @@ static void cfgmR3FreeValue(PCFGMLEAF pLeaf)
  * @param   pszName         Value name.
  * @param   u64Integer      The value.
  */
-CFGMR3DECL(int) CFGMR3InsertInteger(PCFGMNODE pNode, const char *pszName, uint64_t u64Integer)
+VMMR3DECL(int) CFGMR3InsertInteger(PCFGMNODE pNode, const char *pszName, uint64_t u64Integer)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3InsertLeaf(pNode, pszName, &pLeaf);
@@ -1580,7 +1580,7 @@ CFGMR3DECL(int) CFGMR3InsertInteger(PCFGMNODE pNode, const char *pszName, uint64
  * @param   pszName         Value name.
  * @param   pszString       The value.
  */
-CFGMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const char *pszString)
+VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const char *pszString)
 {
     int rc;
     if (pNode)
@@ -1626,7 +1626,7 @@ CFGMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const c
  * @param   pvBytes         The value.
  * @param   cbBytes         The value size.
  */
-CFGMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const void *pvBytes, size_t cbBytes)
+VMMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const void *pvBytes, size_t cbBytes)
 {
     int rc;
     if (pNode)
@@ -1673,7 +1673,7 @@ CFGMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const vo
  * @param   pNode       Parent node.
  * @param   pszName     Name of the new child node.
  */
-CFGMR3DECL(int) CFGMR3RemoveValue(PCFGMNODE pNode, const char *pszName)
+VMMR3DECL(int) CFGMR3RemoveValue(PCFGMNODE pNode, const char *pszName)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
@@ -1697,7 +1697,7 @@ CFGMR3DECL(int) CFGMR3RemoveValue(PCFGMNODE pNode, const char *pszName)
  * @param   pszName         Name of an integer value.
  * @param   pu64            Where to store the integer value.
  */
-CFGMR3DECL(int) CFGMR3QueryU64(PCFGMNODE pNode, const char *pszName, uint64_t *pu64)
+VMMR3DECL(int) CFGMR3QueryU64(PCFGMNODE pNode, const char *pszName, uint64_t *pu64)
 {
     return CFGMR3QueryInteger(pNode, pszName, pu64);
 }
@@ -1712,7 +1712,7 @@ CFGMR3DECL(int) CFGMR3QueryU64(PCFGMNODE pNode, const char *pszName, uint64_t *p
  * @param   pu64            Where to store the integer value. Set to default on failure.
  * @param   u64Def          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryU64Def(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
+VMMR3DECL(int) CFGMR3QueryU64Def(PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
 {
     return CFGMR3QueryIntegerDef(pNode, pszName, pu64, u64Def);
 }
@@ -1726,7 +1726,7 @@ CFGMR3DECL(int) CFGMR3QueryU64Def(PCFGMNODE pNode, const char *pszName, uint64_t
  * @param   pszName         Name of an integer value.
  * @param   pi64            Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryS64(PCFGMNODE pNode, const char *pszName, int64_t *pi64)
+VMMR3DECL(int) CFGMR3QueryS64(PCFGMNODE pNode, const char *pszName, int64_t *pi64)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -1745,7 +1745,7 @@ CFGMR3DECL(int) CFGMR3QueryS64(PCFGMNODE pNode, const char *pszName, int64_t *pi
  * @param   pi64            Where to store the value. Set to default on failure.
  * @param   i64Def          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryS64Def(PCFGMNODE pNode, const char *pszName, int64_t *pi64, int64_t i64Def)
+VMMR3DECL(int) CFGMR3QueryS64Def(PCFGMNODE pNode, const char *pszName, int64_t *pi64, int64_t i64Def)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i64Def);
@@ -1763,7 +1763,7 @@ CFGMR3DECL(int) CFGMR3QueryS64Def(PCFGMNODE pNode, const char *pszName, int64_t 
  * @param   pszName         Name of an integer value.
  * @param   pu32            Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
+VMMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu32)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -1787,7 +1787,7 @@ CFGMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *p
  * @param   pu32            Where to store the value. Set to default on failure.
  * @param   u32Def          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryU32Def(PCFGMNODE pNode, const char *pszName, uint32_t *pu32, uint32_t u32Def)
+VMMR3DECL(int) CFGMR3QueryU32Def(PCFGMNODE pNode, const char *pszName, uint32_t *pu32, uint32_t u32Def)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u32Def);
@@ -1810,7 +1810,7 @@ CFGMR3DECL(int) CFGMR3QueryU32Def(PCFGMNODE pNode, const char *pszName, uint32_t
  * @param   pszName         Name of an integer value.
  * @param   pi32            Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryS32(PCFGMNODE pNode, const char *pszName, int32_t *pi32)
+VMMR3DECL(int) CFGMR3QueryS32(PCFGMNODE pNode, const char *pszName, int32_t *pi32)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -1835,7 +1835,7 @@ CFGMR3DECL(int) CFGMR3QueryS32(PCFGMNODE pNode, const char *pszName, int32_t *pi
  * @param   pi32            Where to store the value. Set to default on failure.
  * @param   i32Def          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryS32Def(PCFGMNODE pNode, const char *pszName, int32_t *pi32, int32_t i32Def)
+VMMR3DECL(int) CFGMR3QueryS32Def(PCFGMNODE pNode, const char *pszName, int32_t *pi32, int32_t i32Def)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i32Def);
@@ -1859,7 +1859,7 @@ CFGMR3DECL(int) CFGMR3QueryS32Def(PCFGMNODE pNode, const char *pszName, int32_t 
  * @param   pszName         Name of an integer value.
  * @param   pu16            Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryU16(PCFGMNODE pNode, const char *pszName, uint16_t *pu16)
+VMMR3DECL(int) CFGMR3QueryU16(PCFGMNODE pNode, const char *pszName, uint16_t *pu16)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -1883,7 +1883,7 @@ CFGMR3DECL(int) CFGMR3QueryU16(PCFGMNODE pNode, const char *pszName, uint16_t *p
  * @param   pu16            Where to store the value. Set to default on failure.
  * @param   i16Def          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t *pu16, uint16_t u16Def)
+VMMR3DECL(int) CFGMR3QueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t *pu16, uint16_t u16Def)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u16Def);
@@ -1906,7 +1906,7 @@ CFGMR3DECL(int) CFGMR3QueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t
  * @param   pszName         Name of an integer value.
  * @param   pi16            Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryS16(PCFGMNODE pNode, const char *pszName, int16_t *pi16)
+VMMR3DECL(int) CFGMR3QueryS16(PCFGMNODE pNode, const char *pszName, int16_t *pi16)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -1931,7 +1931,7 @@ CFGMR3DECL(int) CFGMR3QueryS16(PCFGMNODE pNode, const char *pszName, int16_t *pi
  * @param   pi16            Where to store the value. Set to default on failure.
  * @param   i16Def          The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryS16Def(PCFGMNODE pNode, const char *pszName, int16_t *pi16, int16_t i16Def)
+VMMR3DECL(int) CFGMR3QueryS16Def(PCFGMNODE pNode, const char *pszName, int16_t *pi16, int16_t i16Def)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i16Def);
@@ -1955,7 +1955,7 @@ CFGMR3DECL(int) CFGMR3QueryS16Def(PCFGMNODE pNode, const char *pszName, int16_t 
  * @param   pszName         Name of an integer value.
  * @param   pu8             Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
+VMMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -1979,7 +1979,7 @@ CFGMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8
  * @param   pu8             Where to store the value. Set to default on failure.
  * @param   u8Def           The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryU8Def(PCFGMNODE pNode, const char *pszName, uint8_t *pu8, uint8_t u8Def)
+VMMR3DECL(int) CFGMR3QueryU8Def(PCFGMNODE pNode, const char *pszName, uint8_t *pu8, uint8_t u8Def)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u8Def);
@@ -2002,7 +2002,7 @@ CFGMR3DECL(int) CFGMR3QueryU8Def(PCFGMNODE pNode, const char *pszName, uint8_t *
  * @param   pszName         Name of an integer value.
  * @param   pi8             Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryS8(PCFGMNODE pNode, const char *pszName, int8_t *pi8)
+VMMR3DECL(int) CFGMR3QueryS8(PCFGMNODE pNode, const char *pszName, int8_t *pi8)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -2027,7 +2027,7 @@ CFGMR3DECL(int) CFGMR3QueryS8(PCFGMNODE pNode, const char *pszName, int8_t *pi8)
  * @param   pi8             Where to store the value. Set to default on failure.
  * @param   i8Def           The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryS8Def(PCFGMNODE pNode, const char *pszName, int8_t *pi8, int8_t i8Def)
+VMMR3DECL(int) CFGMR3QueryS8Def(PCFGMNODE pNode, const char *pszName, int8_t *pi8, int8_t i8Def)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i8Def);
@@ -2052,7 +2052,7 @@ CFGMR3DECL(int) CFGMR3QueryS8Def(PCFGMNODE pNode, const char *pszName, int8_t *p
  * @param   pf              Where to store the value.
  * @remark  This function will interpret any non-zero value as true.
  */
-CFGMR3DECL(int) CFGMR3QueryBool(PCFGMNODE pNode, const char *pszName, bool *pf)
+VMMR3DECL(int) CFGMR3QueryBool(PCFGMNODE pNode, const char *pszName, bool *pf)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -2072,7 +2072,7 @@ CFGMR3DECL(int) CFGMR3QueryBool(PCFGMNODE pNode, const char *pszName, bool *pf)
  * @param   fDef            The default value.
  * @remark  This function will interpret any non-zero value as true.
  */
-CFGMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
+VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf, bool fDef)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, fDef);
@@ -2090,7 +2090,7 @@ CFGMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *p
  * @param   pszName         Name of an integer value.
  * @param   pPort           Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryPort(PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort)
+VMMR3DECL(int) CFGMR3QueryPort(PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort)
 {
     AssertCompileSize(RTIOPORT, 2);
     return CFGMR3QueryU16(pNode, pszName, pPort);
@@ -2106,7 +2106,7 @@ CFGMR3DECL(int) CFGMR3QueryPort(PCFGMNODE pNode, const char *pszName, PRTIOPORT 
  * @param   pPort           Where to store the value. Set to default on failure.
  * @param   PortDef         The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryPortDef(PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort, RTIOPORT PortDef)
+VMMR3DECL(int) CFGMR3QueryPortDef(PCFGMNODE pNode, const char *pszName, PRTIOPORT pPort, RTIOPORT PortDef)
 {
     AssertCompileSize(RTIOPORT, 2);
     return CFGMR3QueryU16Def(pNode, pszName, pPort, PortDef);
@@ -2121,7 +2121,7 @@ CFGMR3DECL(int) CFGMR3QueryPortDef(PCFGMNODE pNode, const char *pszName, PRTIOPO
  * @param   pszName         Name of an integer value.
  * @param   pu              Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryUInt(PCFGMNODE pNode, const char *pszName, unsigned int *pu)
+VMMR3DECL(int) CFGMR3QueryUInt(PCFGMNODE pNode, const char *pszName, unsigned int *pu)
 {
     AssertCompileSize(unsigned int, 4);
     return CFGMR3QueryU32(pNode, pszName, (uint32_t *)pu);
@@ -2137,7 +2137,7 @@ CFGMR3DECL(int) CFGMR3QueryUInt(PCFGMNODE pNode, const char *pszName, unsigned i
  * @param   pu              Where to store the value. Set to default on failure.
  * @param   uDef            The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryUIntDef(PCFGMNODE pNode, const char *pszName, unsigned int *pu, unsigned int uDef)
+VMMR3DECL(int) CFGMR3QueryUIntDef(PCFGMNODE pNode, const char *pszName, unsigned int *pu, unsigned int uDef)
 {
     AssertCompileSize(unsigned int, 4);
     return CFGMR3QueryU32Def(pNode, pszName, (uint32_t *)pu, uDef);
@@ -2152,7 +2152,7 @@ CFGMR3DECL(int) CFGMR3QueryUIntDef(PCFGMNODE pNode, const char *pszName, unsigne
  * @param   pszName         Name of an integer value.
  * @param   pi              Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QuerySInt(PCFGMNODE pNode, const char *pszName, signed int *pi)
+VMMR3DECL(int) CFGMR3QuerySInt(PCFGMNODE pNode, const char *pszName, signed int *pi)
 {
     AssertCompileSize(signed int, 4);
     return CFGMR3QueryS32(pNode, pszName, (int32_t *)pi);
@@ -2168,7 +2168,7 @@ CFGMR3DECL(int) CFGMR3QuerySInt(PCFGMNODE pNode, const char *pszName, signed int
  * @param   pi              Where to store the value. Set to default on failure.
  * @param   iDef            The default value.
  */
-CFGMR3DECL(int) CFGMR3QuerySIntDef(PCFGMNODE pNode, const char *pszName, signed int *pi, signed int iDef)
+VMMR3DECL(int) CFGMR3QuerySIntDef(PCFGMNODE pNode, const char *pszName, signed int *pi, signed int iDef)
 {
     AssertCompileSize(signed int, 4);
     return CFGMR3QueryS32Def(pNode, pszName, (int32_t *)pi, iDef);
@@ -2183,7 +2183,7 @@ CFGMR3DECL(int) CFGMR3QuerySIntDef(PCFGMNODE pNode, const char *pszName, signed 
  * @param   pszName         Name of an integer value.
  * @param   ppv             Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryPtr(PCFGMNODE pNode, const char *pszName, void **ppv)
+VMMR3DECL(int) CFGMR3QueryPtr(PCFGMNODE pNode, const char *pszName, void **ppv)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -2208,7 +2208,7 @@ CFGMR3DECL(int) CFGMR3QueryPtr(PCFGMNODE pNode, const char *pszName, void **ppv)
  * @param   ppv             Where to store the value. Set to default on failure.
  * @param   pvDef           The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryPtrDef(PCFGMNODE pNode, const char *pszName, void **ppv, void *pvDef)
+VMMR3DECL(int) CFGMR3QueryPtrDef(PCFGMNODE pNode, const char *pszName, void **ppv, void *pvDef)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, (uintptr_t)pvDef);
@@ -2232,7 +2232,7 @@ CFGMR3DECL(int) CFGMR3QueryPtrDef(PCFGMNODE pNode, const char *pszName, void **p
  * @param   pszName         Name of an integer value.
  * @param   pGCPtr          Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryGCPtr(PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr)
+VMMR3DECL(int) CFGMR3QueryGCPtr(PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -2257,7 +2257,7 @@ CFGMR3DECL(int) CFGMR3QueryGCPtr(PCFGMNODE pNode, const char *pszName, PRTGCPTR 
  * @param   pGCPtr          Where to store the value. Set to default on failure.
  * @param   GCPtrDef        The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryGCPtrDef(PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr, RTGCPTR GCPtrDef)
+VMMR3DECL(int) CFGMR3QueryGCPtrDef(PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr, RTGCPTR GCPtrDef)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
@@ -2281,7 +2281,7 @@ CFGMR3DECL(int) CFGMR3QueryGCPtrDef(PCFGMNODE pNode, const char *pszName, PRTGCP
  * @param   pszName         Name of an integer value.
  * @param   pGCPtr          Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryGCPtrU(PCFGMNODE pNode, const char *pszName, PRTGCUINTPTR pGCPtr)
+VMMR3DECL(int) CFGMR3QueryGCPtrU(PCFGMNODE pNode, const char *pszName, PRTGCUINTPTR pGCPtr)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -2306,7 +2306,7 @@ CFGMR3DECL(int) CFGMR3QueryGCPtrU(PCFGMNODE pNode, const char *pszName, PRTGCUIN
  * @param   pGCPtr          Where to store the value. Set to default on failure.
  * @param   GCPtrDef        The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryGCPtrUDef(PCFGMNODE pNode, const char *pszName, PRTGCUINTPTR pGCPtr, RTGCUINTPTR GCPtrDef)
+VMMR3DECL(int) CFGMR3QueryGCPtrUDef(PCFGMNODE pNode, const char *pszName, PRTGCUINTPTR pGCPtr, RTGCUINTPTR GCPtrDef)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
@@ -2330,7 +2330,7 @@ CFGMR3DECL(int) CFGMR3QueryGCPtrUDef(PCFGMNODE pNode, const char *pszName, PRTGC
  * @param   pszName         Name of an integer value.
  * @param   pGCPtr          Where to store the value.
  */
-CFGMR3DECL(int) CFGMR3QueryGCPtrS(PCFGMNODE pNode, const char *pszName, PRTGCINTPTR pGCPtr)
+VMMR3DECL(int) CFGMR3QueryGCPtrS(PCFGMNODE pNode, const char *pszName, PRTGCINTPTR pGCPtr)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
@@ -2355,7 +2355,7 @@ CFGMR3DECL(int) CFGMR3QueryGCPtrS(PCFGMNODE pNode, const char *pszName, PRTGCINT
  * @param   pGCPtr          Where to store the value. Set to default on failure.
  * @param   GCPtrDef        The default value.
  */
-CFGMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGCINTPTR pGCPtr, RTGCINTPTR GCPtrDef)
+VMMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGCINTPTR pGCPtr, RTGCINTPTR GCPtrDef)
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
@@ -2381,7 +2381,7 @@ CFGMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGC
  * @param   ppszString      Where to store the string pointer.
  *                          Free this using MMR3HeapFree().
  */
-CFGMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
+VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
 {
     size_t cch;
     int rc = CFGMR3QuerySize(pNode, pszName, &cch);
@@ -2413,7 +2413,7 @@ CFGMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, cha
  * @param   ppszString      Where to store the string pointer. Not set on failure.
  *                          Free this using MMR3HeapFree().
  */
-CFGMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
+VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
 {
     size_t cch;
     int rc = CFGMR3QuerySize(pNode, pszName, &cch);
@@ -2445,7 +2445,7 @@ CFGMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, 
  *
  * @param   pRoot   The root node of the dump.
  */
-CFGMR3DECL(void) CFGMR3Dump(PCFGMNODE pRoot)
+VMMR3DECL(void) CFGMR3Dump(PCFGMNODE pRoot)
 {
     LogRel(("************************* CFGM dump *************************\n"));
     cfgmR3Info(pRoot->pVM, DBGFR3InfoLogRelHlp(), NULL);

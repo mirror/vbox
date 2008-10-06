@@ -30,9 +30,6 @@
 #include <VBox/param.h>
 #include <iprt/avl.h>
 
-#if !defined(IN_IOM_R3) && !defined(IN_IOM_R0) && !defined(IN_IOM_GC)
-# error "Not in IOM! This is an internal header!"
-#endif
 
 
 /** @defgroup grp_iom_int   Internals
@@ -402,10 +399,10 @@ typedef IOM *PIOM;
 
 __BEGIN_DECLS
 
-#ifdef IN_IOM_R3
+#ifdef IN_RING3
 PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc);
-PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
-#endif /* IN_IOM_R3 */
+PIOMMMIOSTATS   iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
+#endif /* IN_RING3 */
 
 /**
  * \#PF Handler callback for MMIO ranges.
@@ -419,7 +416,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO range entry.
  */
-IOMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 
 #ifdef IN_RING3
 /**

@@ -397,7 +397,7 @@ DECLINLINE(void) mmR3PagePoolFree(PMMPAGEPOOL pPool, void *pv)
  * @param   pVM         VM handle.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(void *) MMR3PageAlloc(PVM pVM)
+VMMR3DECL(void *) MMR3PageAlloc(PVM pVM)
 {
     return mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
 }
@@ -415,7 +415,7 @@ MMR3DECL(void *) MMR3PageAlloc(PVM pVM)
  * @param   pVM         VM handle.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
+VMMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
 {
     /** @todo optimize this, it's the most common case now. */
     void *pv = mmR3PagePoolAlloc(pVM->mm.s.pPagePoolR3);
@@ -433,7 +433,7 @@ MMR3DECL(RTHCPHYS) MMR3PageAllocPhys(PVM pVM)
  * @param   pvPage      Pointer to the page.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
+VMMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
 {
     mmR3PagePoolFree(pVM->mm.s.pPagePoolR3, pvPage);
 }
@@ -447,7 +447,7 @@ MMR3DECL(void) MMR3PageFree(PVM pVM, void *pvPage)
  * @param   pVM         VM handle.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
+VMMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
 {
     return mmR3PagePoolAlloc(pVM->mm.s.pPagePoolLowR3);
 }
@@ -460,7 +460,7 @@ MMR3DECL(void *) MMR3PageAllocLow(PVM pVM)
  * @param   pvPage      Pointer to the page.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage)
+VMMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage)
 {
     mmR3PagePoolFree(pVM->mm.s.pPagePoolLowR3, pvPage);
 }
@@ -475,7 +475,7 @@ MMR3DECL(void) MMR3PageFreeLow(PVM pVM, void *pvPage)
  * @param   HCPhysPage  The physical address of the page to be freed.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage)
+VMMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage)
 {
     void *pvPage = mmPagePoolPhys2Ptr(pVM->mm.s.pPagePoolR3, HCPhysPage);
     if (!pvPage)
@@ -497,7 +497,7 @@ MMR3DECL(void) MMR3PageFreeByPhys(PVM pVM, RTHCPHYS HCPhysPage)
  * @param   pVM         VM handle.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
+VMMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
     if (!pVM->mm.s.pvDummyPage)
@@ -521,7 +521,7 @@ MMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
  * @param   pVM         VM handle.
  * @thread  The Emulation Thread.
  */
-MMR3DECL(RTHCPHYS) MMR3PageDummyHCPhys(PVM pVM)
+VMMR3DECL(RTHCPHYS) MMR3PageDummyHCPhys(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
     if (!pVM->mm.s.pvDummyPage)

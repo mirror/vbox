@@ -40,9 +40,6 @@
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 
-#if !defined(IN_PGM_R3) && !defined(IN_PGM_R0) && !defined(IN_PGM_GC)
-# error "Not in PGM! This is an internal header!"
-#endif
 
 
 /** @defgroup grp_pgm_int   Internals
@@ -1698,7 +1695,7 @@ typedef PGMTREES *PPGMTREES;
 #ifdef IN_GC
 # define PGM_CTX(a,b)                   a##GC##b
 # define PGM_CTX_STR(a,b)               a "GC" b
-# define PGM_CTX_DECL(type)             PGMGCDECL(type)
+# define PGM_CTX_DECL(type)             VMMRCDECL(type)
 #else
 # ifdef IN_RING3
 #  define PGM_CTX(a,b)                   a##R3##b
@@ -1707,7 +1704,7 @@ typedef PGMTREES *PPGMTREES;
 # else
 #  define PGM_CTX(a,b)                   a##R0##b
 #  define PGM_CTX_STR(a,b)               a "R0" b
-#  define PGM_CTX_DECL(type)             PGMDECL(type)
+#  define PGM_CTX_DECL(type)             VMMDECL(type)
 # endif
 #endif
 
@@ -2635,8 +2632,8 @@ __BEGIN_DECLS
 int             pgmLock(PVM pVM);
 void            pgmUnlock(PVM pVM);
 
-PGMGCDECL(int)  pgmGCGuestPDWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
-PGMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+VMMRCDECL(int)  pgmGCGuestPDWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+VMMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 
 int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping);
 int             pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping);

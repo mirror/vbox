@@ -70,7 +70,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMR3DECL(int) VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -103,7 +103,7 @@ VMR3DECL(int) VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFu
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -136,7 +136,7 @@ VMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFNR
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMR3DECL(int) VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -171,7 +171,7 @@ VMR3DECL(int) VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT p
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -206,7 +206,7 @@ VMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned 
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
@@ -241,7 +241,7 @@ VMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned
  *                          Stuff which differs in size from uintptr_t is gonna make trouble, so don't try!
  * @param   Args            Argument vector.
  */
-VMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     LogFlow(("VMR3ReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
 
@@ -364,7 +364,7 @@ static void vmr3ReqJoinFree(PVMINTUSERPERVM pVMInt, PVMREQ pList)
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
  */
-VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
+VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
 {
     return VMR3ReqAllocU(pVM->pUVM, ppReq, enmType);
 }
@@ -382,7 +382,7 @@ VMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
  */
-VMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType)
+VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType)
 {
     /*
      * Validate input.
@@ -514,7 +514,7 @@ VMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType)
  * @param   pReq            Package to free.
  * @remark  The request packet must be in allocated or completed state!
  */
-VMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
+VMMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
 {
     /*
      * Ignore NULL (all free functions should do this imho).
@@ -584,7 +584,7 @@ VMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
  */
-VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
+VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
 {
     LogFlow(("VMR3ReqQueue: pReq=%p cMillies=%d\n", pReq, cMillies));
     /*
@@ -660,7 +660,7 @@ VMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
  * @param   cMillies        Number of milliseconds to wait.
  *                          Use RT_INDEFINITE_WAIT to only wait till it's completed.
  */
-VMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
+VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
 {
     LogFlow(("VMR3ReqWait: pReq=%p cMillies=%d\n", pReq, cMillies));
 
@@ -725,7 +725,7 @@ VMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
  *
  * @param   pUVM            Pointer to the user mode VM structure.
  */
-VMR3DECL(int) VMR3ReqProcessU(PUVM pUVM)
+VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM)
 {
     LogFlow(("VMR3ReqProcessU: (enmVMState=%d)\n", pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
 

@@ -43,7 +43,7 @@
  * @param   pVM         The VM handle.
  * @param   GCPtrPage   The
  */
-REMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
+VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
     if (pVM->rem.s.cInvalidatedPages < RT_ELEMENTS(pVM->rem.s.aGCPtrInvalidatedPages))
     {
@@ -91,7 +91,7 @@ static void remFlushHandlerNotifications(PVM pVM)
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  */
-REMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
 {
     if (pVM->rem.s.cHandlerNotifications >= RT_ELEMENTS(pVM->rem.s.aHandlerNotifications))
         remFlushHandlerNotifications(pVM);
@@ -115,7 +115,7 @@ REMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     if (pVM->rem.s.cHandlerNotifications >= RT_ELEMENTS(pVM->rem.s.aHandlerNotifications))
         remFlushHandlerNotifications(pVM);
@@ -141,7 +141,7 @@ REMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     if (pVM->rem.s.cHandlerNotifications >= RT_ELEMENTS(pVM->rem.s.aHandlerNotifications))
         remFlushHandlerNotifications(pVM);

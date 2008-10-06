@@ -82,7 +82,7 @@ int tmCpuTickResume(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @todo replace this with TMNotifyResume
  */
-TMDECL(int) TMCpuTickResume(PVM pVM)
+VMMDECL(int) TMCpuTickResume(PVM pVM)
 {
     if (!pVM->tm.s.fTSCTiedToExecution)
         return tmCpuTickResume(pVM);
@@ -118,7 +118,7 @@ int tmCpuTickPause(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @todo replace this with TMNotifySuspend
  */
-TMDECL(int) TMCpuTickPause(PVM pVM)
+VMMDECL(int) TMCpuTickPause(PVM pVM)
 {
     if (!pVM->tm.s.fTSCTiedToExecution)
         return tmCpuTickPause(pVM);
@@ -136,7 +136,7 @@ TMDECL(int) TMCpuTickPause(PVM pVM)
  *                          Can be NULL.
  * @thread EMT.
  */
-TMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
+VMMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
 {
     /*
      * We require:
@@ -192,7 +192,7 @@ TMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
  * @returns Gets the CPU tsc.
  * @param   pVM         The VM to operate on.
  */
-TMDECL(uint64_t) TMCpuTickGet(PVM pVM)
+VMMDECL(uint64_t) TMCpuTickGet(PVM pVM)
 {
     uint64_t u64;
     if (RT_LIKELY(pVM->tm.s.fTSCTicking))
@@ -221,7 +221,7 @@ TMDECL(uint64_t) TMCpuTickGet(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   u64Tick     The new timestamp value.
  */
-TMDECL(int) TMCpuTickSet(PVM pVM, uint64_t u64Tick)
+VMMDECL(int) TMCpuTickSet(PVM pVM, uint64_t u64Tick)
 {
     Assert(!pVM->tm.s.fTSCTicking);
     pVM->tm.s.u64TSC = u64Tick;
@@ -235,7 +235,7 @@ TMDECL(int) TMCpuTickSet(PVM pVM, uint64_t u64Tick)
  * @returns Number of ticks per second.
  * @param   pVM     The VM.
  */
-TMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM)
+VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM)
 {
     if (pVM->tm.s.fTSCUseRealTSC)
     {

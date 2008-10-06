@@ -30,7 +30,7 @@ BEGINCODE
 
 ;;
 ; Emulate LOCK CMPXCHG instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateLockCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
+; VMMRCDECL(uint32_t) EMGCEmulateLockCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
 ; @returns eax=0 if data written, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
@@ -101,7 +101,7 @@ ENDPROC     EMGCEmulateLockCmpXchg
 
 ;;
 ; Emulate CMPXCHG instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
+; VMMRCDECL(uint32_t) EMGCEmulateCmpXchg(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
 ; @returns eax=0 if data written, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
@@ -171,7 +171,7 @@ ENDPROC     EMGCEmulateCmpXchg
 
 ;;
 ; Emulate LOCK CMPXCHG8B instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateLockCmpXchg8b(RTGCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
+; VMMRCDECL(uint32_t) EMGCEmulateLockCmpXchg8b(RTGCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
 ;
 ; @returns eax=0 if data written, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
@@ -227,7 +227,7 @@ ENDPROC     EMGCEmulateLockCmpXchg8b
 
 ;;
 ; Emulate CMPXCHG8B instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateCmpXchg8b(RTGCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
+; VMMRCDECL(uint32_t) EMGCEmulateCmpXchg8b(RTGCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
 ;
 ; @returns eax=0 if data written, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
@@ -282,7 +282,7 @@ ENDPROC     EMGCEmulateCmpXchg8b
 
 ;;
 ; Emulate LOCK XADD instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateLockXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
+; VMMRCDECL(uint32_t) EMGCEmulateLockXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
 ; @returns eax=0 if data exchanged, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
@@ -343,7 +343,7 @@ ENDPROC     EMGCEmulateLockXAdd
 
 ;;
 ; Emulate XADD instruction, CDECL calling conv.
-; EMGCDECL(uint32_t) EMGCEmulateXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
+; VMMRCDECL(uint32_t) EMGCEmulateXAdd(RTGCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
 ;
 ; @returns eax=0 if data written, other code - invalid access, #PF was generated.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter

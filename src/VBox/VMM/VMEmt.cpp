@@ -224,7 +224,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
  * @returns VINF_SUCCESS or doesn't return
  * @param   pVM             VM handle.
  */
-VMR3DECL(int) VMR3WaitForResume(PVM pVM)
+VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
 {
     /*
      * The request loop.
@@ -951,7 +951,7 @@ static const struct VMHALTMETHODDESC
  * @param   fNotifiedREM    Set if REM have already been notified. If clear the
  *                          generic REMR3NotifyFF() method is called.
  */
-VMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM)
+VMMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM)
 {
     LogFlow(("VMR3NotifyFF:\n"));
     PUVM pUVM = pVM->pUVM;
@@ -969,7 +969,7 @@ VMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM)
  * @param   fNotifiedREM    Set if REM have already been notified. If clear the
  *                          generic REMR3NotifyFF() method is called.
  */
-VMR3DECL(void) VMR3NotifyFFU(PUVM pUVM, bool fNotifiedREM)
+VMMR3DECL(void) VMR3NotifyFFU(PUVM pUVM, bool fNotifiedREM)
 {
     LogFlow(("VMR3NotifyFF:\n"));
     g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnNotifyFF(pUVM, fNotifiedREM);
@@ -986,7 +986,7 @@ VMR3DECL(void) VMR3NotifyFFU(PUVM pUVM, bool fNotifiedREM)
  * @param   fIgnoreInterrupts   If set the VM_FF_INTERRUPT flags is ignored.
  * @thread  The emulation thread.
  */
-VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
+VMMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
 {
     LogFlow(("VMR3WaitHalted: fIgnoreInterrupts=%d\n", fIgnoreInterrupts));
 
@@ -1058,7 +1058,7 @@ VMR3DECL(int) VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts)
  * @param   pUVM            Pointer to the user mode VM structure.
  * @thread  The emulation thread.
  */
-VMR3DECL(int) VMR3WaitU(PUVM pUVM)
+VMMR3DECL(int) VMR3WaitU(PUVM pUVM)
 {
     LogFlow(("VMR3WaitU:\n"));
 

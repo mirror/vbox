@@ -52,7 +52,7 @@
  * @param   HCPtr   The HC pointer to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
  */
-PGMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
+VMMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     *pGCPhys = NIL_RTGCPHYS;
@@ -105,7 +105,7 @@ PGMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
  * @param   HCPtr   The HC pointer to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
  */
-PGMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
+VMMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     *pHCPhys = NIL_RTHCPHYS;
@@ -167,7 +167,7 @@ PGMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
  * @param   HCPhys  The HC physical address to convert.
  * @param   pGCPhys Where to store the GC physical address on success.
  */
-PGMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys)
+VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys)
 {
     /*
      * Validate and adjust the input a bit.
@@ -315,7 +315,7 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb,
  * @param   cbNeedle        The length of the byte string. Max 256 bytes.
  * @param   pGCPhysHit      Where to store the address of the first occurence on success.
  */
-PDMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit)
+VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit)
 {
     /*
      * Validate and adjust the input a bit.
@@ -428,7 +428,7 @@ PDMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
  * @param   cbNeedle        The length of the byte string.
  * @param   pGCPtrHit       Where to store the address of the first occurence on success.
  */
-PDMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
+VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
 {
     /*
      * Validate and adjust the input a bit.

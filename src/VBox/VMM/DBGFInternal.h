@@ -31,10 +31,6 @@
 #include <VBox/dbgf.h>
 
 
-#if !defined(IN_DBGF_R3) && !defined(IN_DBGF_R0) && !defined(IN_DBGF_GC)
-# error "Not in DBGF! This is an internal header!"
-#endif
-
 
 /** @defgroup grp_dbgf_int   Internals
  * @ingroup grp_dbgf

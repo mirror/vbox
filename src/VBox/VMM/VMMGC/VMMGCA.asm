@@ -61,7 +61,7 @@ BEGINCODE
 ;/**
 ; * Internal GC logger worker: Logger wrapper.
 ; */
-;VMMGCDECL(void) vmmGCLoggerWrapper(const char *pszFormat, ...);
+;VMMRCDECL(void) vmmGCLoggerWrapper(const char *pszFormat, ...);
 EXPORTEDNAME vmmGCLoggerWrapper
 %ifdef __YASM__
 %ifdef ASM_FORMAT_ELF
@@ -81,7 +81,7 @@ ENDPROC vmmGCLoggerWrapper
 ;/**
 ; * Internal GC logger worker: Logger (release) wrapper.
 ; */
-;VMMGCDECL(void) vmmGCRelLoggerWrapper(const char *pszFormat, ...);
+;VMMRCDECL(void) vmmGCRelLoggerWrapper(const char *pszFormat, ...);
 EXPORTEDNAME vmmGCRelLoggerWrapper
 %ifdef __YASM__
 %ifdef ASM_FORMAT_ELF

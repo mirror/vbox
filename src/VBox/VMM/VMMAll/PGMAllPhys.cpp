@@ -68,7 +68,7 @@
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument. Pointer to the ROM range structure.
  */
-PGMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, void *pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     int rc;
 #ifdef VBOX_WITH_NEW_PHYS_CODE
@@ -135,7 +135,7 @@ PGMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
  * @returns false if disabled.
  * @param   pVM     VM handle.
  */
-PGMDECL(bool) PGMPhysIsA20Enabled(PVM pVM)
+VMMDECL(bool) PGMPhysIsA20Enabled(PVM pVM)
 {
     LogFlow(("PGMPhysIsA20Enabled %d\n", pVM->pgm.s.fA20Enabled));
     return !!pVM->pgm.s.fA20Enabled ; /* stupid MS compiler doesn't trust me. */
@@ -150,7 +150,7 @@ PGMDECL(bool) PGMPhysIsA20Enabled(PVM pVM)
  * @param   pVM     The VM handle.
  * @param   GCPhys  The physical address to validate.
  */
-PGMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
 {
     PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
     return pPage != NULL;
@@ -166,7 +166,7 @@ PGMDECL(bool) PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys)
  * @param   pVM     The VM handle.
  * @param   GCPhys  The physical address to check.
  */
-PGMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
 {
     PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
     return pPage
@@ -187,7 +187,7 @@ PGMDECL(bool) PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys)
  * @param   GCPhys  The GC physical address to convert.
  * @param   pHCPhys Where to store the HC physical address on success.
  */
-PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
+VMMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 {
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
@@ -209,7 +209,7 @@ PGMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
  *
  * @param   pVM     The VM handle.
  */
-PDMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
+VMMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
 {
     /* later */
     NOREF(pVM);
@@ -221,7 +221,7 @@ PDMDECL(void) PGMPhysInvalidatePageGCMapTLB(PVM pVM)
  *
  * @param   pVM     The VM handle.
  */
-PDMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM)
+VMMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM)
 {
     PGMPhysInvalidatePageR3MapTLB(pVM);
 }
@@ -232,7 +232,7 @@ PDMDECL(void) PGMPhysInvalidatePageR0MapTLB(PVM pVM)
  *
  * @param   pVM     The VM handle.
  */
-PDMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
+VMMDECL(void) PGMPhysInvalidatePageR3MapTLB(PVM pVM)
 {
     pgmLock(pVM);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
@@ -640,7 +640,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
  *          the PGM one) because of the deadlock risk.
  * @thread  Any thread.
  */
-PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
+VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
 #ifdef IN_GC
@@ -726,7 +726,7 @@ PGMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  *          the PGM one) because of the deadlock risk.
  * @thread  Any thread.
  */
-PGMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
+VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
     /** @todo implement this */
     return PGMPhysGCPhys2CCPtr(pVM, GCPhys, (void **)ppv, pLock);
@@ -760,7 +760,7 @@ PGMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
  *          the PGM one) because of the deadlock risk.
  * @thread  EMT
  */
-PGMDECL(int) PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPLOCK pLock)
+VMMDECL(int) PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     RTGCPHYS GCPhys;
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, &GCPhys);
@@ -793,7 +793,7 @@ PGMDECL(int) PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPL
  *          the PGM one) because of the deadlock risk.
  * @thread  EMT
  */
-PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv, PPGMPAGEMAPLOCK pLock)
+VMMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
     RTGCPHYS GCPhys;
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, &GCPhys);
@@ -812,7 +812,7 @@ PGMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv
  * @param   pVM         The VM handle.
  * @param   pLock       The lock structure initialized by the mapping function.
  */
-PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
+VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
 #ifdef IN_GC
@@ -858,7 +858,7 @@ PGMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  * @param   cbRange Physical range
  * @param   pHCPtr  Where to store the HC pointer on success.
  */
-PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr)
+VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -910,7 +910,7 @@ PGMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
  * @param   GCPhys      The GC Physical addresss.
  * @param   cbRange     Physical range.
  */
-PGMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
+VMMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
 {
     RTHCPTR HCPtr;
     int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, &HCPtr);
@@ -930,7 +930,7 @@ PGMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRa
  * @param   GCPtr       The guest pointer to convert.
  * @param   pGCPhys     Where to store the GC physical address.
  */
-PGMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
+VMMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
     if (pGCPhys && VBOX_SUCCESS(rc))
@@ -949,7 +949,7 @@ PGMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
  * @param   GCPtr       The guest pointer to convert.
  * @param   pHCPhys     Where to store the HC physical address.
  */
-PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
+VMMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 {
     RTGCPHYS GCPhys;
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
@@ -969,7 +969,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
  * @param   GCPtr       The guest pointer to convert.
  * @param   pHCPtr      Where to store the HC virtual address.
  */
-PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
+VMMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -997,7 +997,7 @@ PGMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
  *          potentially not be in sync. It could also be used by a
  *          future DBGF API to cpu state independent conversions.
  */
-PGMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTHCPTR pHCPtr)
+VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTHCPTR pHCPtr)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -1130,7 +1130,7 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
  * @param   pvBuf           Where to put the read bits.
  * @param   cbRead          How many bytes to read.
  */
-PGMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
 #ifdef IN_RING3
     bool fGrabbedLock = false;
@@ -1391,7 +1391,7 @@ end:
  * @param   pvBuf           What to write.
  * @param   cbWrite         How many bytes to write.
  */
-PGMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
 #ifdef IN_RING3
     bool fGrabbedLock = false;
@@ -1729,7 +1729,7 @@ end:
  * @param   GCPhysSrc   The source address (GC physical address).
  * @param   cb          The number of bytes to read.
  */
-PGMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb)
+VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb)
 {
     /*
      * Anything to be done?
@@ -1811,7 +1811,7 @@ PGMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
  * @param   pvSrc       The source buffer.
  * @param   cb          The number of bytes to write.
  */
-PGMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb)
 {
     /*
      * Anything to be done?
@@ -1898,7 +1898,7 @@ PGMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
  * @param   GCPtrSrc    The source address (GC pointer).
  * @param   cb          The number of bytes to read.
  */
-PGMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
+VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
     /*
      * Anything to do?
@@ -1959,7 +1959,7 @@ PGMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
  * @param   pvSrc       The source address.
  * @param   cb          The number of bytes to write.
  */
-PGMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
     /*
      * Anything to do?
@@ -2022,7 +2022,7 @@ PGMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
  * @param   cb          The number of bytes to read.
  */
 /** @todo use the PGMPhysReadGCPtr name and rename the unsafe one to something appropriate */
-PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
+VMMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
     RTGCPHYS    GCPhys;
     int         rc;
@@ -2095,7 +2095,7 @@ PGMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
  * @param   cb          The number of bytes to write.
  */
 /** @todo use the PGMPhysWriteGCPtr name and rename the unsafe one to something appropriate */
-PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
     RTGCPHYS    GCPhys;
     int         rc;
@@ -2168,7 +2168,7 @@ PGMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
  * @param   pvSrc       The source address.
  * @param   cb          The number of bytes to write.
  */
-PGMDECL(int) PGMPhysWriteGCPtrDirty(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysWriteGCPtrDirty(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
     /*
      * Anything to do?
@@ -2249,7 +2249,7 @@ PGMDECL(int) PGMPhysWriteGCPtrDirty(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc
  * @remark  This function will dynamically map physical pages in GC. This may unmap
  *          mappings done by the caller. Be careful!
  */
-PGMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb)
+VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb)
 {
     Assert(cb <= PAGE_SIZE);
 
@@ -2387,6 +2387,6 @@ PGMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
     return TRPMRaiseXcptErrCR2(pVM, pCtxCore, X86_XCPT_PF, uErr, GCPtrSrc);
 }
 
-/// @todo PGMDECL(int) PGMPhysInterpretedWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+/// @todo VMMDECL(int) PGMPhysInterpretedWrite(PVM pVM, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 
 

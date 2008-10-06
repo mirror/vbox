@@ -34,7 +34,7 @@
 #endif
 
 
-CPUMDECL(void) CPUMPushHyper(PVM pVM, uint32_t u32)
+VMMDECL(void) CPUMPushHyper(PVM pVM, uint32_t u32)
 {
     /* ASSUME always on flat stack within hypervisor memory for now */
     pVM->cpum.s.Hyper.esp -= sizeof(u32);

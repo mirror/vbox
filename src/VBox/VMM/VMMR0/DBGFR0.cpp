@@ -46,7 +46,7 @@
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   uDr6        The DR6 register value.
  */
-DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
+VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
 {
     /** @todo Intel docs say that X86_DR6_BS has the highest priority... */
     /*
@@ -104,7 +104,7 @@ DBGFR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG
  * @param   pVM         The VM handle.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
-DBGFR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMR0DECL(int) DBGFR0Trap03Handler(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     /*
      * Get the trap address and look it up in the breakpoint table.

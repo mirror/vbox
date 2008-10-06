@@ -177,7 +177,7 @@ tstInlineAsmPIC3_DEFS = PIC
 tstLdr_SOURCES = tstLdr.cpp
 
 tstLdr-2_SOURCES = tstLdr-2.cpp
-tstLdr-2_DEFS = IN_DIS_R3
+tstLdr-2_DEFS = IN_DIS
 tstLdr-2_LIBS = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
@@ -185,7 +185,7 @@ tstLdrObj_TEMPLATE = VBOXGC
 tstLdrObj_INST = $(INST_TESTCASE)
 tstLdrObj_SYSSUFF = .gc
 tstLdrObj_SOURCES = tstLdrObj.cpp
-tstLdrObj_DEFS = IN_DIS_GC IN_RT_GC DIS_CORE_ONLY
+tstLdrObj_DEFS = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
 ifeq ($(VBOX_LDR_FMT32),elf)
 tstLdrObj_DEFS += VBOX_SOME_IMPORT_FUNCTION
 endif
@@ -206,7 +206,7 @@ tstLdrObj_LIBS += \
 endif
 
 tstLdr-3_SOURCES = tstLdr-3.cpp
-tstLdr-3_DEFS = IN_DIS_R3
+tstLdr-3_DEFS = IN_DIS
 tstLdr-3_LIBS = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
@@ -221,7 +221,7 @@ tstLdrObjR0_TEMPLATE = VBOXR0
 tstLdrObjR0_INST = $(INST_TESTCASE)
 tstLdrObjR0_SYSSUFF = .r0
 tstLdrObjR0_SOURCES = tstLdrObjR0.cpp tstLdrDisasmTest.cpp
-tstLdrObjR0_DEFS = IN_DIS_R0 IN_RT_R0 DIS_CORE_ONLY
+tstLdrObjR0_DEFS = IN_DIS IN_RT_R0 DIS_CORE_ONLY
 ifeq ($(VBOX_LDR_FMT32),elf)
  tstLdrObjR0_DEFS += VBOX_SOME_IMPORT_FUNCTION
 endif
@@ -244,7 +244,7 @@ ifeq ($(VBOX_LDR_FMT),lx)
 endif
 
 tstLdr-4_SOURCES = tstLdr-4.cpp tstLdrDisasmTest.cpp
-tstLdr-4_DEFS = IN_DIS_R3
+tstLdr-4_DEFS = IN_DIS
 tstLdr-4_LIBS = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 

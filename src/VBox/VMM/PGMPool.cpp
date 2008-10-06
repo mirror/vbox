@@ -420,7 +420,7 @@ void pgmR3PoolReset(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
-PDMR3DECL(int) PGMR3PoolGrow(PVM pVM)
+VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
 {
     PPGMPOOL pPool = pVM->pgm.s.pPoolHC;
     AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_INTERNAL_ERROR);

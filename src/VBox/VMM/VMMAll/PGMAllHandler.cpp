@@ -78,7 +78,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
  *                          This must be a GC pointer because it will be relocated!
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-PGMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
+VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                           R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                           R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
                                           RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RCPTRTYPE(void *) pvUserGC,
@@ -283,7 +283,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
  * @param   pVM         VM Handle.
  * @param   GCPhys      Start physical address.
  */
-PGMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
 {
     /*
      * Find the handler.
@@ -484,7 +484,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
  * @param   GCPhys          New location.
  * @param   GCPhysLast      New last location.
  */
-PGMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast)
+VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast)
 {
     /*
      * Remove it.
@@ -596,7 +596,7 @@ PGMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
  *                          This must be a GC pointer because it will be relocated!
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-PGMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
+VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
                                                R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                                R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
                                                RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RCPTRTYPE(void *) pvUserGC,
@@ -640,7 +640,7 @@ PGMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
  * @param   GCPhys          Start physical address of the handler.
  * @param   GCPhysSplit     The split address.
  */
-PGMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit)
+VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit)
 {
     AssertReturn(GCPhys < GCPhysSplit, VERR_INVALID_PARAMETER);
 
@@ -706,7 +706,7 @@ PGMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
  * @param   GCPhys1         Start physical address of the first handler.
  * @param   GCPhys2         Start physical address of the second handler.
  */
-PGMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
+VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
 {
     /*
      * Get the handlers.
@@ -783,7 +783,7 @@ PGMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
  * @param   pVM         VM Handle
  * @param   GCPhys      Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
  */
-PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
 {
     pgmLock(pVM);
 
@@ -863,7 +863,7 @@ PGMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
  *                      handlers installed for the start and end pages.
  * @param   GCPhysPage  Physical address of the page to turn off access monitoring for.
  */
-PGMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
+VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
 {
     /*
      * Validate the range.
@@ -917,7 +917,7 @@ PGMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  *                      handlers installed for the start and end pages.
  * @param   GCPhysPage  Physical address of the page to turn on access monitoring for.
  */
-PGMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
+VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
 {
     /*
      * Validate the range.
@@ -962,7 +962,7 @@ PGMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
  * @param   pVM         VM Handle
  * @param   GCPhys      Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
  */
-PGMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
 {
     /*
      * Find the handler.
@@ -1334,7 +1334,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
  * @returns Number of mismatches.
  * @param   pVM     The VM handle.
  */
-PGMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
+VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
 {
     PPGM        pPGM = &pVM->pgm.s;
     PGMAHAFIS   State;

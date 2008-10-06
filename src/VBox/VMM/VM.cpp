@@ -129,7 +129,7 @@ static DECLCALLBACK(int) vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNTIME
  *
  * @returns VBox status code.
  */
-VMR3DECL(int)   VMR3GlobalInit(void)
+VMMR3DECL(int)   VMR3GlobalInit(void)
 {
     /*
      * Only once.
@@ -163,7 +163,7 @@ VMR3DECL(int)   VMR3GlobalInit(void)
  * @param   pvUserCFGM          The user argument passed to pfnCFGMConstructor.
  * @param   ppVM                Where to store the 'handle' of the created VM.
  */
-VMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
+VMMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
 {
     LogFlow(("VMR3Create: pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n", pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
 
@@ -788,7 +788,7 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  * @param   pVM         VM handle.
  * @param   offDelta    Relocation delta relative to old location.
  */
-VMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("VMR3Relocate: offDelta=%VGv\n", offDelta));
 
@@ -825,7 +825,7 @@ VMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * @vmstate     Created
  * @vmstateto   Running
  */
-VMR3DECL(int)   VMR3PowerOn(PVM pVM)
+VMMR3DECL(int)   VMR3PowerOn(PVM pVM)
 {
     LogFlow(("VMR3PowerOn: pVM=%p\n", pVM));
 
@@ -895,7 +895,7 @@ static DECLCALLBACK(int) vmR3PowerOn(PVM pVM)
  * @vmstate     Running
  * @vmstateto   Suspended
  */
-VMR3DECL(int) VMR3Suspend(PVM pVM)
+VMMR3DECL(int) VMR3Suspend(PVM pVM)
 {
     LogFlow(("VMR3Suspend: pVM=%p\n", pVM));
 
@@ -934,7 +934,7 @@ VMR3DECL(int) VMR3Suspend(PVM pVM)
  * @vmstate     Running
  * @vmstateto   Suspended
  */
-VMR3DECL(int) VMR3SuspendNoSave(PVM pVM)
+VMMR3DECL(int) VMR3SuspendNoSave(PVM pVM)
 {
     pVM->vm.s.fPreventSaveState = true;
     return VMR3Suspend(pVM);
@@ -982,7 +982,7 @@ static DECLCALLBACK(int) vmR3Suspend(PVM pVM)
  * @vmstate     Suspended
  * @vmstateto   Running
  */
-VMR3DECL(int)   VMR3Resume(PVM pVM)
+VMMR3DECL(int)   VMR3Resume(PVM pVM)
 {
     LogFlow(("VMR3Resume: pVM=%p\n", pVM));
 
@@ -1058,7 +1058,7 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
  * @vmstate     Suspended
  * @vmstateto   Unchanged state.
  */
-VMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, pfnProgress, pvUser));
 
@@ -1153,7 +1153,7 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRES
  * @vmstate     Created, Suspended
  * @vmstateto   Suspended
  */
-VMR3DECL(int)   VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int)   VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("VMR3Load: pVM=%p pszFilename=%p:{%s} pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, pfnProgress, pvUser));
 
@@ -1247,7 +1247,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
  * @vmstate     Suspended, Running, Guru Meditation, Load Failure
  * @vmstateto   Off
  */
-VMR3DECL(int)   VMR3PowerOff(PVM pVM)
+VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
 {
     LogFlow(("VMR3PowerOff: pVM=%p\n", pVM));
 
@@ -1378,7 +1378,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
  * @vmstate     Off, Created
  * @vmstateto   N/A
  */
-VMR3DECL(int)   VMR3Destroy(PVM pVM)
+VMMR3DECL(int)   VMR3Destroy(PVM pVM)
 {
     LogFlow(("VMR3Destroy: pVM=%p\n", pVM));
 
@@ -1677,7 +1677,7 @@ static void vmR3DestroyUVM(PUVM pUVM)
  * @param   pVMPrev     The previous VM
  *                      Use NULL to start the enumeration.
  */
-VMR3DECL(PVM)   VMR3EnumVMs(PVM pVMPrev)
+VMMR3DECL(PVM)   VMR3EnumVMs(PVM pVMPrev)
 {
     /*
      * This is quick and dirty. It has issues with VM being
@@ -1699,7 +1699,7 @@ VMR3DECL(PVM)   VMR3EnumVMs(PVM pVMPrev)
  * @param   pfnAtDtor       Pointer to callback.
  * @param   pvUser          User argument.
  */
-VMR3DECL(int)   VMR3AtDtorRegister(PFNVMATDTOR pfnAtDtor, void *pvUser)
+VMMR3DECL(int)   VMR3AtDtorRegister(PFNVMATDTOR pfnAtDtor, void *pvUser)
 {
     /*
      * Check if already registered.
@@ -1744,7 +1744,7 @@ VMR3DECL(int)   VMR3AtDtorRegister(PFNVMATDTOR pfnAtDtor, void *pvUser)
  * @returns VBox status code.
  * @param   pfnAtDtor       Pointer to callback.
  */
-VMR3DECL(int)   VMR3AtDtorDeregister(PFNVMATDTOR pfnAtDtor)
+VMMR3DECL(int)   VMR3AtDtorDeregister(PFNVMATDTOR pfnAtDtor)
 {
     /*
      * Find it, unlink it and free it.
@@ -1799,7 +1799,7 @@ static void vmR3AtDtor(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     VM to reset.
  */
-VMR3DECL(int)   VMR3Reset(PVM pVM)
+VMMR3DECL(int)   VMR3Reset(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
@@ -1983,7 +1983,7 @@ static int vmr3AtResetRegisterU(PUVM pUVM, void *pvUser, const char *pszDesc, PV
  * @param   pvUser          User argument.
  * @param   pszDesc         Description (optional).
  */
-VMR3DECL(int)   VMR3AtResetRegister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback, void *pvUser, const char *pszDesc)
+VMMR3DECL(int)   VMR3AtResetRegister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback, void *pvUser, const char *pszDesc)
 {
     /*
      * Validate.
@@ -2022,7 +2022,7 @@ VMR3DECL(int)   VMR3AtResetRegister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET p
  * @param   pvUser          User argument.
  * @param   pszDesc         Description (optional).
  */
-VMR3DECL(int)   VMR3AtResetRegisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback, void *pvUser, const char *pszDesc)
+VMMR3DECL(int)   VMR3AtResetRegisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback, void *pvUser, const char *pszDesc)
 {
     /*
      * Validate.
@@ -2060,7 +2060,7 @@ VMR3DECL(int)   VMR3AtResetRegisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback
  * @param   pvUser          User argument.
  * @param   pszDesc         Description (optional).
  */
-VMR3DECL(int)   VMR3AtResetRegisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback, void *pvUser, const char *pszDesc)
+VMMR3DECL(int)   VMR3AtResetRegisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback, void *pvUser, const char *pszDesc)
 {
     /*
      * Validate.
@@ -2133,7 +2133,7 @@ static PVMATRESET vmr3AtResetFreeU(PUVM pUVM, PVMATRESET pCur, PVMATRESET pPrev)
  * @param   pDevInst        Device instance.
  * @param   pfnCallback     Callback function.
  */
-VMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback)
+VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback)
 {
     int         rc = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
@@ -2166,7 +2166,7 @@ VMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET
  * @param   pVM             The VM.
  * @param   pfnCallback     Callback function.
  */
-VMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback)
+VMMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback)
 {
     int         rc = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
@@ -2198,7 +2198,7 @@ VMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallba
  * @param   pVM             The VM.
  * @param   pfnCallback     Callback function.
  */
-VMR3DECL(int)   VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback)
+VMMR3DECL(int)   VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback)
 {
     int         rc = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
@@ -2230,7 +2230,7 @@ VMR3DECL(int)   VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallba
  * @param   pVM             VM handle.
  * @thread  Any
  */
-VMR3DECL(VMSTATE) VMR3GetState(PVM pVM)
+VMMR3DECL(VMSTATE) VMR3GetState(PVM pVM)
 {
     return pVM->enmVMState;
 }
@@ -2242,7 +2242,7 @@ VMR3DECL(VMSTATE) VMR3GetState(PVM pVM)
  * @returns Pointer to the state name. (readonly)
  * @param   enmState        The state.
  */
-VMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
+VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
 {
     switch (enmState)
     {
@@ -2321,7 +2321,7 @@ void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-VMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
+VMMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
 {
     LogFlow(("VMR3AtStateRegister: pfnAtState=%p pvUser=%p\n", pfnAtState, pvUser));
 
@@ -2390,7 +2390,7 @@ static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-VMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
+VMMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
 {
     LogFlow(("VMR3AtStateDeregister: pfnAtState=%p pvUser=%p\n", pfnAtState, pvUser));
 
@@ -2485,7 +2485,7 @@ static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtSta
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-VMR3DECL(int)   VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
+VMMR3DECL(int)   VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
     return VMR3AtErrorRegisterU(pVM->pUVM, pfnAtError, pvUser);
 }
@@ -2500,7 +2500,7 @@ VMR3DECL(int)   VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUs
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-VMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
+VMMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
     LogFlow(("VMR3AtErrorRegister: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
     AssertPtrReturn(pfnAtError, VERR_INVALID_PARAMETER);
@@ -2561,7 +2561,7 @@ static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-VMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
+VMMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
     LogFlow(("VMR3AtErrorDeregister: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
 
@@ -2666,7 +2666,7 @@ static void vmR3SetErrorWorkerDoCall(PVM pVM, PVMATERROR pCur, int rc, RT_SRC_PO
  * @param   pVM             The VM handle.
  * @thread  EMT.
  */
-VMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
+VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsgFailed(("And we have a winner! You get to implement Ring-0 and GC VMSetErrorV! Contrats!\n"));
@@ -2777,7 +2777,7 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
  * @param   pvUser              User argument.
  * @thread  Any.
  */
-VMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+VMMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
 {
     LogFlow(("VMR3AtRuntimeErrorRegister: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
 
@@ -2846,7 +2846,7 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegisterU(PUVM pUVM, PFNVMATRUNTIM
  * @param   pvUser              User argument.
  * @thread  Any.
  */
-VMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
+VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
 {
     LogFlow(("VMR3AtRuntimeErrorDeregister: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
 
@@ -2953,7 +2953,7 @@ static void vmR3SetRuntimeErrorWorkerDoCall(PVM pVM, PVMATRUNTIMEERROR pCur, boo
  * @param   pVM             The VM handle.
  * @thread  EMT.
  */
-VMR3DECL(void) VMR3SetRuntimeErrorWorker(PVM pVM)
+VMMR3DECL(void) VMR3SetRuntimeErrorWorker(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsgFailed(("And we have a winner! You get to implement Ring-0 and GC VMSetRuntimeErrorV! Contrats!\n"));

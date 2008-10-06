@@ -55,7 +55,7 @@
  * @param   fFlags      Flags of the MM_RAM_FLAGS_* defines.
  * @param   pszDesc     Description of the memory.
  */
-MMR3DECL(int) MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc)
+VMMR3DECL(int) MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, const char *pszDesc)
 {
     return MMR3PhysRegisterEx(pVM, pvRam, GCPhys, cb, fFlags, MM_PHYS_TYPE_NORMAL, pszDesc);
 }
@@ -80,7 +80,7 @@ MMR3DECL(int) MMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned c
  * @deprecated  For the old dynamic allocation code only. Will be removed with VBOX_WITH_NEW_PHYS_CODE.
  */
 /** @todo this function description is not longer up-to-date */
-MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc)
+VMMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned cb, unsigned fFlags, MMPHYSREG enmType, const char *pszDesc)
 {
     int rc = VINF_SUCCESS;
 
@@ -219,7 +219,7 @@ MMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigned
  * @remark  There is no way to remove the rom, automatically on device cleanup or
  *          manually from the device yet. At present I doubt we need such features...
  */
-MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary,
+VMMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTUINT cbRange, const void *pvBinary,
                                   bool fShadow, const char *pszDesc)
 {
     /*
@@ -349,7 +349,7 @@ MMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, 
  * @param   cbRange         The size of the range.
  * @param   pszDesc         Description string.
  */
-MMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc)
+VMMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const char *pszDesc)
 {
     /*
      * Validate input.
@@ -413,7 +413,7 @@ MMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const ch
  * @param   pVM         The VM handle.
  * @thread  Any.
  */
-MMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
+VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
 {
     return pVM->mm.s.cbRamBase;
 }
@@ -459,7 +459,7 @@ void mmR3PhysRomReset(PVM pVM)
  * @param   cbRange     The length of the registered shadow ROM range.
  *                      This can be NULL (not sure about the BIOS interface yet).
  */
-MMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
+VMMR3DECL(int) MMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
 {
     for (PMMROMRANGE pCur = pVM->mm.s.pRomHead; pCur; pCur = pCur->pNext)
         if (    pCur->GCPhys == GCPhys

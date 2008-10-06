@@ -187,7 +187,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
  * @returns VBox status code.
  * @param   pUVM    Pointer to the user mode VM structure.
  */
-MMR3DECL(int) MMR3InitUVM(PUVM pUVM)
+VMMR3DECL(int) MMR3InitUVM(PUVM pUVM)
 {
     /*
      * Assert sizes and order.
@@ -221,7 +221,7 @@ MMR3DECL(int) MMR3InitUVM(PUVM pUVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-MMR3DECL(int) MMR3Init(PVM pVM)
+VMMR3DECL(int) MMR3Init(PVM pVM)
 {
     LogFlow(("MMR3Init\n"));
 
@@ -274,7 +274,7 @@ MMR3DECL(int) MMR3Init(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @remark  No cleanup necessary since MMR3Term() will be called on failure.
  */
-MMR3DECL(int) MMR3InitPaging(PVM pVM)
+VMMR3DECL(int) MMR3InitPaging(PVM pVM)
 {
     LogFlow(("MMR3InitPaging:\n"));
 
@@ -422,7 +422,7 @@ MMR3DECL(int) MMR3InitPaging(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-MMR3DECL(int) MMR3Term(PVM pVM)
+VMMR3DECL(int) MMR3Term(PVM pVM)
 {
     /*
      * Destroy the page pool. (first as it used the hyper heap)
@@ -477,7 +477,7 @@ MMR3DECL(int) MMR3Term(PVM pVM)
  * @returns VBox status code.
  * @param   pUVM        Pointer to the user mode VM structure.
  */
-MMR3DECL(void) MMR3TermUVM(PUVM pUVM)
+VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
 {
     /*
      * Destroy the heap.
@@ -495,7 +495,7 @@ MMR3DECL(void) MMR3TermUVM(PUVM pUVM)
  *
  * @param   pVM             The VM handle.
  */
-MMR3DECL(void) MMR3Reset(PVM pVM)
+VMMR3DECL(void) MMR3Reset(PVM pVM)
 {
     mmR3PhysRomReset(pVM);
 }
@@ -614,7 +614,7 @@ int mmR3UpdateReservation(PVM pVM)
  * @param   pVM             The shared VM structure.
  * @param   cAddBasePages   The number of pages to add.
  */
-MMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
+VMMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
 {
     uint64_t cOld = pVM->mm.s.cBasePages;
     pVM->mm.s.cBasePages += cAddBasePages;
@@ -639,7 +639,7 @@ MMR3DECL(int) MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
  * @param   cDeltaFixedPages    The number of pages to add (positive) or subtract (negative).
  * @param   pszDesc             Some description associated with the reservation.
  */
-MMR3DECL(int) MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc)
+VMMR3DECL(int) MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc)
 {
     const uint32_t cOld = pVM->mm.s.cFixedPages;
     pVM->mm.s.cFixedPages += cDeltaFixedPages;
@@ -664,7 +664,7 @@ MMR3DECL(int) MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, cons
  * @param   pVM             The shared VM structure.
  * @param   cShadowPages    The new page count.
  */
-MMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
+VMMR3DECL(int) MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages)
 {
     const uint32_t cOld = pVM->mm.s.cShadowPages;
     pVM->mm.s.cShadowPages = cShadowPages;
@@ -814,7 +814,7 @@ int mmR3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage
  *          Intended for the debugger facility only.
  * @todo    Rename to indicate the special usage.
  */
-MMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
+VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
     /*
      * Try page tables.
@@ -855,7 +855,7 @@ MMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  * @remarks Intended for the debugger facility only.
  * @todo    Move to DBGF, it's only selecting which functions to use!
  */
-MMR3DECL(int) MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
+VMMR3DECL(int) MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
 {
     if (GCPtr - pVM->mm.s.pvHyperAreaGC < pVM->mm.s.cbHyperArea)
         return MMR3HyperReadGCVirt(pVM, pvDst, GCPtr, cb);
@@ -875,7 +875,7 @@ MMR3DECL(int) MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
  * @remarks Intended for the debugger facility only.
  * @todo    Move to DBGF, it's only selecting which functions to use!
  */
-MMR3DECL(int) MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+VMMR3DECL(int) MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
     if (GCPtrDst - pVM->mm.s.pvHyperAreaGC < pVM->mm.s.cbHyperArea)
         return VERR_ACCESS_DENIED;

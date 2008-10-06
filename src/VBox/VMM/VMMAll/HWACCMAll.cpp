@@ -50,7 +50,7 @@
  * @param   pVM         The VM to operate on.
  * @param   GCVirt      Page to invalidate
  */
-HWACCMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
+VMMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
     /** @todo Intel for nested paging */
 #ifdef IN_RING0
@@ -67,7 +67,7 @@ HWACCMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMDECL(int) HWACCMFlushTLB(PVM pVM)
+VMMDECL(int) HWACCMFlushTLB(PVM pVM)
 {
     /** @todo Intel for nested paging */
     if (pVM->hwaccm.s.svm.fSupported)
@@ -85,7 +85,7 @@ HWACCMDECL(int) HWACCMFlushTLB(PVM pVM)
  * @returns boolean
  * @param   pVM         The VM to operate on.
  */
-HWACCMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
+VMMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
 {
     return HWACCMIsEnabled(pVM) && pVM->hwaccm.s.fNestedPaging;
 }
@@ -96,7 +96,7 @@ HWACCMDECL(bool) HWACCMIsNestedPagingActive(PVM pVM)
  * @returns shadow paging mode
  * @param   pVM         The VM to operate on.
  */
-HWACCMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM)
+VMMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM)
 {
     Assert(HWACCMIsNestedPagingActive(pVM));
     if (pVM->hwaccm.s.svm.fSupported)
@@ -114,7 +114,7 @@ HWACCMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   GCPhys      Page to invalidate
  */
-HWACCMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
     if (!HWACCMIsNestedPagingActive(pVM))
         return VINF_SUCCESS;
@@ -137,7 +137,7 @@ HWACCMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  * @returns Interrupt event pending state.
  * @param   pVM         The VM to operate on.
  */
-HWACCMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
+VMMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
 {
     return !!pVM->hwaccm.s.Event.fPending;
 }

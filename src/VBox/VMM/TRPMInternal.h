@@ -28,9 +28,6 @@
 #include <VBox/cpum.h>
 
 
-#if !defined(IN_TRPM_R3) && !defined(IN_TRPM_R0) && !defined(IN_TRPM_GC)
-# error "Not in TRPM! This is an internal header!"
-#endif
 
 /* Enable to allow trap forwarding in GC. */
 #define TRPM_FORWARD_TRAPS_IN_GC
@@ -195,8 +192,8 @@ typedef struct TRPM
 /** Pointer to TRPM Data. */
 typedef TRPM *PTRPM;
 
-TRPMGCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 
 /**
  * Clear guest trap/interrupt gate handler
@@ -205,7 +202,7 @@ TRPMGCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
  * @param   pVM         The VM to operate on.
  * @param   iTrap       Interrupt/trap number.
  */
-TRPMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap);
+VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap);
 
 
 #ifdef IN_RING3
@@ -217,7 +214,7 @@ TRPMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap);
  * @param   pVM         The VM to operate on.
  * @param   iTrap       Trap/interrupt gate number.
  */
-TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap);
+VMMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap);
 
 #endif
 

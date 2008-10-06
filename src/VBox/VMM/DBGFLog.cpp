@@ -46,7 +46,7 @@ static DECLCALLBACK(int) dbgfR3LogModifyDestinations(PVM pVM, const char *pszDes
  * @param   pVM                 The VM handle.
  * @param   pszGroupSettings    The group settings string. (VBOX_LOG)
  */
-DBGFR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
+VMMR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
 {
     AssertReturn(VALID_PTR(pVM), VERR_INVALID_POINTER);
     AssertReturn(VALID_PTR(pszGroupSettings), VERR_INVALID_POINTER);
@@ -83,7 +83,7 @@ static DECLCALLBACK(int) dbgfR3LogModifyGroups(PVM pVM, const char *pszGroupSett
  * @param   pVM                 The VM handle.
  * @param   pszFlagSettings     The group settings string. (VBOX_LOG_FLAGS)
  */
-DBGFR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
+VMMR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
 {
     AssertReturn(VALID_PTR(pVM), VERR_INVALID_POINTER);
     AssertReturn(VALID_PTR(pszFlagSettings), VERR_INVALID_POINTER);
@@ -120,7 +120,7 @@ static DECLCALLBACK(int) dbgfR3LogModifyFlags(PVM pVM, const char *pszFlagSettin
  * @param   pVM                 The VM handle.
  * @param   pszDestSettings     The destination settings string. (VBOX_LOG_DEST)
  */
-DBGFR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
+VMMR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
 {
     AssertReturn(VALID_PTR(pVM), VERR_INVALID_POINTER);
     AssertReturn(VALID_PTR(pszDestSettings), VERR_INVALID_POINTER);

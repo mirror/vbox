@@ -89,7 +89,7 @@ static DECLCALLBACK(int) dbgfR3OSRegister(PVM pVM, PDBGFOSREG pReg)
  * @param   pReg    The registration structure.
  * @thread  Any.
  */
-DBGFR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
+VMMR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
 {
     /*
      * Validate intput.
@@ -212,7 +212,7 @@ static DECLCALLBACK(int) dbgfR3OSDetect(PVM pVM, char *pszName, size_t cchName)
  * @param   cchName     Size of the buffer.
  * @thread  Any.
  */
-DBGFR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
+VMMR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
 {
     AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
     if (pszName && cchName)
@@ -289,7 +289,7 @@ static DECLCALLBACK(int) dbgfR3OSQueryNameAndVersion(PVM pVM, char *pszName, siz
  * @param   cchVersion      The size of the version buffer.
  * @thread  Any.
  */
-DBGFR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion)
+VMMR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchName, char *pszVersion, size_t cchVersion)
 {
     AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pszVersion, VERR_INVALID_POINTER);
@@ -348,7 +348,7 @@ static DECLCALLBACK(void) dbgfR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf,
  * @param   enmIf       The interface identifier.
  * @thread  Any.
  */
-DBGFR3DECL(void *) DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf)
+VMMR3DECL(void *) DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf)
 {
     AssertMsgReturn(enmIf > DBGFOSINTERFACE_INVALID && enmIf < DBGFOSINTERFACE_END, ("%d\n", enmIf), NULL);
 

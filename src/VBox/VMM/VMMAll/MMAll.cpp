@@ -273,7 +273,7 @@ DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr)
+VMMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR0(pVM, R0Ptr, &off);
@@ -292,7 +292,7 @@ MMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTRCPTR) MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr)
+VMMDECL(RTRCPTR) MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR0(pVM, R0Ptr, &off);
@@ -312,7 +312,7 @@ MMDECL(RTRCPTR) MMHyperR0ToRC(PVM pVM, RTR0PTR R0Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(void *) MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr)
+VMMDECL(void *) MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR0(pVM, R0Ptr, &off);
@@ -332,7 +332,7 @@ MMDECL(void *) MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
+VMMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR3(pVM, R3Ptr, &off);
@@ -352,7 +352,7 @@ MMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
+VMMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR3(pVM, R3Ptr, &off);
@@ -373,7 +373,7 @@ MMDECL(RTRCPTR) MMHyperR3ToRC(PVM pVM, RTR3PTR R3Ptr)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_RING3
-MMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
+VMMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR3(pVM, R3Ptr, &off);
@@ -393,7 +393,7 @@ MMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTR3PTR) MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr)
+VMMDECL(RTR3PTR) MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupRC(pVM, RCPtr, &off);
@@ -412,7 +412,7 @@ MMDECL(RTR3PTR) MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr)
  *                      You'll be damned if this is not in the HMA! :-)
  * @thread  The Emulation Thread.
  */
-MMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
+VMMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupRC(pVM, RCPtr, &off);
@@ -432,7 +432,7 @@ MMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_GC
-MMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
+VMMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupRC(pVM, RCPtr, &off);
@@ -454,7 +454,7 @@ MMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_RING3
-MMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
+VMMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);
@@ -474,7 +474,7 @@ MMDECL(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_RING0
-MMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
+VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);
@@ -495,7 +495,7 @@ MMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
  * @thread  The Emulation Thread.
  */
 #ifndef IN_GC
-MMDECL(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
+VMMDECL(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 {
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);

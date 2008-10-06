@@ -532,7 +532,7 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
  * @param   cbImage         Size of the image.
  *                          Ignored when pszName is NULL.
  */
-DBGFR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage)
+VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage)
 {
     /*
      * Lazy init.
@@ -637,7 +637,7 @@ DBGFR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR A
  * @param   pszFilename     The image filename.
  * @param   pszName         The module name.
  */
-DBGFR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, unsigned cbImage,
+VMMR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, unsigned cbImage,
                                       const char *pszFilename, const char *pszName)
 {
 #ifdef HAVE_DBGHELP
@@ -668,7 +668,7 @@ DBGFR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUIN
  * @param   cbSymbol        Size of the symbol. Use 0 if info not available.
  * @param   pszSymbol       Symbol name.
  */
-DBGFR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol)
+VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol)
 {
     /*
      * Validate.
@@ -709,7 +709,7 @@ DBGFR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR 
  * @param   poffDisplacement    Where to store the symbol displacement from Address.
  * @param   pSymbol             Where to store the symbol info.
  */
-DBGFR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol)
+VMMR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol)
 {
     /*
      * Lazy init.
@@ -797,7 +797,7 @@ DBGFR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR pof
  * @param   pszSymbol           Symbol name.
  * @param   pSymbol             Where to store the symbol info.
  */
-DBGFR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol)
+VMMR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol)
 {
     /*
      * Lazy init.
@@ -871,7 +871,7 @@ static PDBGFSYMBOL dbgfR3SymbolDup(PVM pVM, PCDBGFSYMBOL pSymbol)
  * @param   Address             Address.
  * @param   poffDisplacement    Where to store the symbol displacement from Address.
  */
-DBGFR3DECL(PDBGFSYMBOL) DBGFR3SymbolByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement)
+VMMR3DECL(PDBGFSYMBOL) DBGFR3SymbolByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement)
 {
     DBGFSYMBOL Symbol;
     int rc = DBGFR3SymbolByAddr(pVM, Address, poffDisplacement, &Symbol);
@@ -889,7 +889,7 @@ DBGFR3DECL(PDBGFSYMBOL) DBGFR3SymbolByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PR
  * @param   pVM                 VM handle.
  * @param   pszSymbol           Symbol name.
  */
-DBGFR3DECL(PDBGFSYMBOL) DBGFR3SymbolByNameAlloc(PVM pVM, const char *pszSymbol)
+VMMR3DECL(PDBGFSYMBOL) DBGFR3SymbolByNameAlloc(PVM pVM, const char *pszSymbol)
 {
     DBGFSYMBOL Symbol;
     int rc = DBGFR3SymbolByName(pVM, pszSymbol, &Symbol);
@@ -904,7 +904,7 @@ DBGFR3DECL(PDBGFSYMBOL) DBGFR3SymbolByNameAlloc(PVM pVM, const char *pszSymbol)
  *
  * @param   pSymbol         Pointer to the symbol.
  */
-DBGFR3DECL(void) DBGFR3SymbolFree(PDBGFSYMBOL pSymbol)
+VMMR3DECL(void) DBGFR3SymbolFree(PDBGFSYMBOL pSymbol)
 {
     if (pSymbol)
         MMR3HeapFree(pSymbol);
@@ -920,7 +920,7 @@ DBGFR3DECL(void) DBGFR3SymbolFree(PDBGFSYMBOL pSymbol)
  * @param   poffDisplacement    Where to store the line displacement from Address.
  * @param   pLine               Where to store the line info.
  */
-DBGFR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine)
+VMMR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine)
 {
     /*
      * Lazy init.
@@ -982,7 +982,7 @@ static PDBGFLINE dbgfR3LineDup(PVM pVM, PCDBGFLINE pLine)
  * @param   Address             Address.
  * @param   poffDisplacement    Where to store the line displacement from Address.
  */
-DBGFR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement)
+VMMR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement)
 {
     DBGFLINE Line;
     int rc = DBGFR3LineByAddr(pVM, Address, poffDisplacement, &Line);
@@ -997,7 +997,7 @@ DBGFR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCI
  *
  * @param   pLine           Pointer to the line.
  */
-DBGFR3DECL(void) DBGFR3LineFree(PDBGFLINE pLine)
+VMMR3DECL(void) DBGFR3LineFree(PDBGFLINE pLine)
 {
     if (pLine)
         MMR3HeapFree(pLine);

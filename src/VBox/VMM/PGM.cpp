@@ -1105,7 +1105,7 @@ static const DBGCCMD    g_aCmds[] =
  * @returns VBox status code.
  * @param   pVM     Pointer to VM structure.
  */
-PGMR3DECL(int) PGMR3Init(PVM pVM)
+VMMR3DECL(int) PGMR3Init(PVM pVM)
 {
     LogFlow(("PGMR3Init:\n"));
 
@@ -1703,7 +1703,7 @@ static void pgmR3InitStats(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     VM handle.
  */
-PGMR3DECL(int) PGMR3InitDynMap(PVM pVM)
+VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
 {
     RTGCPTR GCPtr;
     /*
@@ -1744,7 +1744,7 @@ PGMR3DECL(int) PGMR3InitDynMap(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  */
-PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
+VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 {
     /*
      * Map the paging pages into the guest context.
@@ -1829,7 +1829,7 @@ PGMR3DECL(int) PGMR3InitFinalize(PVM pVM)
  * @param   pVM     The VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
-PGMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PGMR3Relocate\n"));
 
@@ -1992,7 +1992,7 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
  *
  * @param   pVM     VM handle.
  */
-PGMR3DECL(void) PGMR3Reset(PVM pVM)
+VMMR3DECL(void) PGMR3Reset(PVM pVM)
 {
     LogFlow(("PGMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
@@ -2079,7 +2079,7 @@ static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmSta
  * @returns VBox status code.
  * @param   pVM     Pointer to VM structure.
  */
-PGMR3DECL(int) PGMR3Term(PVM pVM)
+VMMR3DECL(int) PGMR3Term(PVM pVM)
 {
     return PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
 }
@@ -2583,7 +2583,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
-PDMR3DECL(int) PGMR3LockCall(PVM pVM)
+VMMR3DECL(int) PGMR3LockCall(PVM pVM)
 {
     int rc = PDMR3CritSectEnterEx(&pVM->pgm.s.CritSect, true /* fHostCall */);
     AssertRC(rc);
@@ -3133,7 +3133,7 @@ if (getenv("VBOX_32BIT"))
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.
  */
-PGMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
+VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 {
     Log(("PGMR3ChangeMode: Guest mode: %s -> %s\n", PGMGetModeName(pVM->pgm.s.enmGuestMode), PGMGetModeName(enmGuestMode)));
     STAM_REL_COUNTER_INC(&pVM->pgm.s.cGuestModeChanges);
@@ -3884,7 +3884,7 @@ int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPH
  * @param   cr4         The CR4, PSE is currently used.
  * @param   PhysSearch  Address to search for.
  */
-PGMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch)
+VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHYS PhysSearch)
 {
     bool fLongMode = false;
     const unsigned cch = fLongMode ? 16 : 8; NOREF(cch);
@@ -3993,7 +3993,7 @@ PGMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
  * @param   cMaxDepth   Number of levels to dump.
  * @param   pHlp        Pointer to the output functions.
  */
-PGMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
+VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fLongMode, unsigned cMaxDepth, PCDBGFINFOHLP pHlp)
 {
     if (!pHlp)
         pHlp = DBGFR3InfoLogHlp();
@@ -4349,7 +4349,7 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysToVirtHandlerNode(PAVLROGCPHYSNO
  * @returns VBox error status after asserting on integrity breach.
  * @param   pVM     The VM handle.
  */
-PDMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
+VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
 {
     AssertReleaseReturn(pVM->pgm.s.offVM, VERR_INTERNAL_ERROR);
 
@@ -4387,7 +4387,7 @@ PDMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
  * @param   pVM         VM handle.
  * @param   fEnable     Enable or disable shadow mappings
  */
-PGMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable)
+VMMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable)
 {
     pVM->pgm.s.fDisableMappings = !fEnable;
 

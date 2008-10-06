@@ -604,99 +604,99 @@ typedef enum CPUMCPUVENDOR
 
 /** @name Guest Register Getters.
  * @{ */
-CPUMDECL(void)      CPUMGetGuestGDTR(PVM pVM, PVBOXGDTR pGDTR);
-CPUMDECL(RTGCPTR)   CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit);
-CPUMDECL(RTSEL)     CPUMGetGuestTR(PVM pVM);
-CPUMDECL(RTSEL)     CPUMGetGuestLDTR(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestCR0(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestCR2(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestCR3(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestCR4(PVM pVM);
-CPUMDECL(int)       CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue);
-CPUMDECL(uint32_t)  CPUMGetGuestEFlags(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestEIP(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestRIP(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestEAX(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestEBX(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestECX(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestEDX(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestESI(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestEDI(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestESP(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestEBP(PVM pVM);
-CPUMDECL(RTSEL)     CPUMGetGuestCS(PVM pVM);
-CPUMDECL(RTSEL)     CPUMGetGuestDS(PVM pVM);
-CPUMDECL(RTSEL)     CPUMGetGuestES(PVM pVM);
-CPUMDECL(RTSEL)     CPUMGetGuestFS(PVM pVM);
-CPUMDECL(RTSEL)     CPUMGetGuestGS(PVM pVM);
-CPUMDECL(RTSEL)     CPUMGetGuestSS(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestDR0(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestDR1(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestDR2(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestDR3(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestDR6(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestDR7(PVM pVM);
-CPUMDECL(int)       CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint64_t *pValue);
-CPUMDECL(void)      CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
-CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM);
-CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM);
-CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM);
-CPUMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestCpuIdStdMax(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestCpuIdExtMax(PVM pVM);
-CPUMDECL(uint32_t)  CPUMGetGuestCpuIdCentaurMax(PVM pVM);
-CPUMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestEFER(PVM pVM);
-CPUMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr);
+VMMDECL(void)       CPUMGetGuestGDTR(PVM pVM, PVBOXGDTR pGDTR);
+VMMDECL(RTGCPTR)    CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit);
+VMMDECL(RTSEL)      CPUMGetGuestTR(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestLDTR(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestCR0(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestCR2(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestCR3(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestCR4(PVM pVM);
+VMMDECL(int)        CPUMGetGuestCRx(PVM pVM, unsigned iReg, uint64_t *pValue);
+VMMDECL(uint32_t)   CPUMGetGuestEFlags(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestEIP(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestRIP(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestEAX(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestEBX(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestECX(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestEDX(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestESI(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestEDI(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestESP(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestEBP(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestCS(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestDS(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestES(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestFS(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestGS(PVM pVM);
+VMMDECL(RTSEL)      CPUMGetGuestSS(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestDR0(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestDR1(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestDR2(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestDR3(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestDR6(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestDR7(PVM pVM);
+VMMDECL(int)        CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint64_t *pValue);
+VMMDECL(void)       CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestCpuIdStdMax(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestCpuIdExtMax(PVM pVM);
+VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
+VMMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestEFER(PVM pVM);
+VMMDECL(uint64_t)   CPUMGetGuestMsr(PVM pVM, unsigned idMsr);
 /** @} */
 
 /** @name Guest Register Setters.
  * @{ */
-CPUMDECL(int)       CPUMSetGuestGDTR(PVM pVM, uint32_t addr, uint16_t limit);
-CPUMDECL(int)       CPUMSetGuestIDTR(PVM pVM, uint32_t addr, uint16_t limit);
-CPUMDECL(int)       CPUMSetGuestTR(PVM pVM, uint16_t tr);
-CPUMDECL(int)       CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr);
-CPUMDECL(int)       CPUMSetGuestCR0(PVM pVM, uint64_t cr0);
-CPUMDECL(int)       CPUMSetGuestCR2(PVM pVM, uint64_t cr2);
-CPUMDECL(int)       CPUMSetGuestCR3(PVM pVM, uint64_t cr3);
-CPUMDECL(int)       CPUMSetGuestCR4(PVM pVM, uint64_t cr4);
-CPUMDECL(int)       CPUMSetGuestDR0(PVM pVM, uint64_t uDr0);
-CPUMDECL(int)       CPUMSetGuestDR1(PVM pVM, uint64_t uDr1);
-CPUMDECL(int)       CPUMSetGuestDR2(PVM pVM, uint64_t uDr2);
-CPUMDECL(int)       CPUMSetGuestDR3(PVM pVM, uint64_t uDr3);
-CPUMDECL(int)       CPUMSetGuestDR6(PVM pVM, uint64_t uDr6);
-CPUMDECL(int)       CPUMSetGuestDR7(PVM pVM, uint64_t uDr7);
-CPUMDECL(int)       CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint64_t Value);
-CPUMDECL(int)       CPUMSetGuestEFlags(PVM pVM, uint32_t eflags);
-CPUMDECL(int)       CPUMSetGuestEIP(PVM pVM, uint32_t eip);
-CPUMDECL(int)       CPUMSetGuestEAX(PVM pVM, uint32_t eax);
-CPUMDECL(int)       CPUMSetGuestEBX(PVM pVM, uint32_t ebx);
-CPUMDECL(int)       CPUMSetGuestECX(PVM pVM, uint32_t ecx);
-CPUMDECL(int)       CPUMSetGuestEDX(PVM pVM, uint32_t edx);
-CPUMDECL(int)       CPUMSetGuestESI(PVM pVM, uint32_t esi);
-CPUMDECL(int)       CPUMSetGuestEDI(PVM pVM, uint32_t edi);
-CPUMDECL(int)       CPUMSetGuestESP(PVM pVM, uint32_t esp);
-CPUMDECL(int)       CPUMSetGuestEBP(PVM pVM, uint32_t ebp);
-CPUMDECL(int)       CPUMSetGuestCS(PVM pVM, uint16_t cs);
-CPUMDECL(int)       CPUMSetGuestDS(PVM pVM, uint16_t ds);
-CPUMDECL(int)       CPUMSetGuestES(PVM pVM, uint16_t es);
-CPUMDECL(int)       CPUMSetGuestFS(PVM pVM, uint16_t fs);
-CPUMDECL(int)       CPUMSetGuestGS(PVM pVM, uint16_t gs);
-CPUMDECL(int)       CPUMSetGuestSS(PVM pVM, uint16_t ss);
-CPUMDECL(void)      CPUMSetGuestEFER(PVM pVM, uint64_t val);
-CPUMDECL(void)      CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
-CPUMDECL(void)      CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
-CPUMDECL(bool)      CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
-CPUMDECL(void)      CPUMSetGuestCtx(PVM pVM, const PCPUMCTX pCtx);
+VMMDECL(int)        CPUMSetGuestGDTR(PVM pVM, uint32_t addr, uint16_t limit);
+VMMDECL(int)        CPUMSetGuestIDTR(PVM pVM, uint32_t addr, uint16_t limit);
+VMMDECL(int)        CPUMSetGuestTR(PVM pVM, uint16_t tr);
+VMMDECL(int)        CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr);
+VMMDECL(int)        CPUMSetGuestCR0(PVM pVM, uint64_t cr0);
+VMMDECL(int)        CPUMSetGuestCR2(PVM pVM, uint64_t cr2);
+VMMDECL(int)        CPUMSetGuestCR3(PVM pVM, uint64_t cr3);
+VMMDECL(int)        CPUMSetGuestCR4(PVM pVM, uint64_t cr4);
+VMMDECL(int)        CPUMSetGuestDR0(PVM pVM, uint64_t uDr0);
+VMMDECL(int)        CPUMSetGuestDR1(PVM pVM, uint64_t uDr1);
+VMMDECL(int)        CPUMSetGuestDR2(PVM pVM, uint64_t uDr2);
+VMMDECL(int)        CPUMSetGuestDR3(PVM pVM, uint64_t uDr3);
+VMMDECL(int)        CPUMSetGuestDR6(PVM pVM, uint64_t uDr6);
+VMMDECL(int)        CPUMSetGuestDR7(PVM pVM, uint64_t uDr7);
+VMMDECL(int)        CPUMSetGuestDRx(PVM pVM, uint32_t iReg, uint64_t Value);
+VMMDECL(int)        CPUMSetGuestEFlags(PVM pVM, uint32_t eflags);
+VMMDECL(int)        CPUMSetGuestEIP(PVM pVM, uint32_t eip);
+VMMDECL(int)        CPUMSetGuestEAX(PVM pVM, uint32_t eax);
+VMMDECL(int)        CPUMSetGuestEBX(PVM pVM, uint32_t ebx);
+VMMDECL(int)        CPUMSetGuestECX(PVM pVM, uint32_t ecx);
+VMMDECL(int)        CPUMSetGuestEDX(PVM pVM, uint32_t edx);
+VMMDECL(int)        CPUMSetGuestESI(PVM pVM, uint32_t esi);
+VMMDECL(int)        CPUMSetGuestEDI(PVM pVM, uint32_t edi);
+VMMDECL(int)        CPUMSetGuestESP(PVM pVM, uint32_t esp);
+VMMDECL(int)        CPUMSetGuestEBP(PVM pVM, uint32_t ebp);
+VMMDECL(int)        CPUMSetGuestCS(PVM pVM, uint16_t cs);
+VMMDECL(int)        CPUMSetGuestDS(PVM pVM, uint16_t ds);
+VMMDECL(int)        CPUMSetGuestES(PVM pVM, uint16_t es);
+VMMDECL(int)        CPUMSetGuestFS(PVM pVM, uint16_t fs);
+VMMDECL(int)        CPUMSetGuestGS(PVM pVM, uint16_t gs);
+VMMDECL(int)        CPUMSetGuestSS(PVM pVM, uint16_t ss);
+VMMDECL(void)       CPUMSetGuestEFER(PVM pVM, uint64_t val);
+VMMDECL(void)       CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMMDECL(void)       CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMMDECL(bool)       CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
+VMMDECL(void)       CPUMSetGuestCtx(PVM pVM, const PCPUMCTX pCtx);
 /** @} */
 
 /** @name Misc Guest Predicate Functions.
  * @{  */
 
 
-CPUMDECL(bool)      CPUMIsGuestIn16BitCode(PVM pVM);
-CPUMDECL(bool)      CPUMIsGuestIn32BitCode(PVM pVM);
-CPUMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM);
+VMMDECL(bool)       CPUMIsGuestIn16BitCode(PVM pVM);
+VMMDECL(bool)       CPUMIsGuestIn32BitCode(PVM pVM);
+VMMDECL(CPUMCPUVENDOR) CPUMGetCPUVendor(PVM pVM);
 
 /**
  * Tests if the guest is running in real mode or not.
@@ -799,83 +799,83 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
 
 /** @name Hypervisor Register Getters.
  * @{ */
-CPUMDECL(RTSEL)         CPUMGetHyperCS(PVM pVM);
-CPUMDECL(RTSEL)         CPUMGetHyperDS(PVM pVM);
-CPUMDECL(RTSEL)         CPUMGetHyperES(PVM pVM);
-CPUMDECL(RTSEL)         CPUMGetHyperFS(PVM pVM);
-CPUMDECL(RTSEL)         CPUMGetHyperGS(PVM pVM);
-CPUMDECL(RTSEL)         CPUMGetHyperSS(PVM pVM);
+VMMDECL(RTSEL)          CPUMGetHyperCS(PVM pVM);
+VMMDECL(RTSEL)          CPUMGetHyperDS(PVM pVM);
+VMMDECL(RTSEL)          CPUMGetHyperES(PVM pVM);
+VMMDECL(RTSEL)          CPUMGetHyperFS(PVM pVM);
+VMMDECL(RTSEL)          CPUMGetHyperGS(PVM pVM);
+VMMDECL(RTSEL)          CPUMGetHyperSS(PVM pVM);
 #if 0 /* these are not correct. */
-CPUMDECL(uint32_t)      CPUMGetHyperCR0(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperCR2(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperCR3(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperCR4(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperCR0(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperCR2(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperCR3(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperCR4(PVM pVM);
 #endif
 /** This register is only saved on fatal traps. */
-CPUMDECL(uint32_t)      CPUMGetHyperEAX(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperEBX(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperEAX(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperEBX(PVM pVM);
 /** This register is only saved on fatal traps. */
-CPUMDECL(uint32_t)      CPUMGetHyperECX(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperECX(PVM pVM);
 /** This register is only saved on fatal traps. */
-CPUMDECL(uint32_t)      CPUMGetHyperEDX(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperESI(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperEDI(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperEBP(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperESP(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperEFlags(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperEIP(PVM pVM);
-CPUMDECL(uint64_t)      CPUMGetHyperRIP(PVM pVM);
-CPUMDECL(uint32_t)      CPUMGetHyperIDTR(PVM pVM, uint16_t *pcbLimit);
-CPUMDECL(uint32_t)      CPUMGetHyperGDTR(PVM pVM, uint16_t *pcbLimit);
-CPUMDECL(RTSEL)         CPUMGetHyperLDTR(PVM pVM);
-CPUMDECL(RTGCUINTREG)   CPUMGetHyperDR0(PVM pVM);
-CPUMDECL(RTGCUINTREG)   CPUMGetHyperDR1(PVM pVM);
-CPUMDECL(RTGCUINTREG)   CPUMGetHyperDR2(PVM pVM);
-CPUMDECL(RTGCUINTREG)   CPUMGetHyperDR3(PVM pVM);
-CPUMDECL(RTGCUINTREG)   CPUMGetHyperDR6(PVM pVM);
-CPUMDECL(RTGCUINTREG)   CPUMGetHyperDR7(PVM pVM);
-CPUMDECL(void)          CPUMGetHyperCtx(PVM pVM, PCPUMCTX pCtx);
+VMMDECL(uint32_t)       CPUMGetHyperEDX(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperESI(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperEDI(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperEBP(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperESP(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperEFlags(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperEIP(PVM pVM);
+VMMDECL(uint64_t)       CPUMGetHyperRIP(PVM pVM);
+VMMDECL(uint32_t)       CPUMGetHyperIDTR(PVM pVM, uint16_t *pcbLimit);
+VMMDECL(uint32_t)       CPUMGetHyperGDTR(PVM pVM, uint16_t *pcbLimit);
+VMMDECL(RTSEL)          CPUMGetHyperLDTR(PVM pVM);
+VMMDECL(RTGCUINTREG)    CPUMGetHyperDR0(PVM pVM);
+VMMDECL(RTGCUINTREG)    CPUMGetHyperDR1(PVM pVM);
+VMMDECL(RTGCUINTREG)    CPUMGetHyperDR2(PVM pVM);
+VMMDECL(RTGCUINTREG)    CPUMGetHyperDR3(PVM pVM);
+VMMDECL(RTGCUINTREG)    CPUMGetHyperDR6(PVM pVM);
+VMMDECL(RTGCUINTREG)    CPUMGetHyperDR7(PVM pVM);
+VMMDECL(void)           CPUMGetHyperCtx(PVM pVM, PCPUMCTX pCtx);
 /** @} */
 
 /** @name Hypervisor Register Setters.
  * @{ */
-CPUMDECL(void)          CPUMSetHyperGDTR(PVM pVM, uint32_t addr, uint16_t limit);
-CPUMDECL(void)          CPUMSetHyperLDTR(PVM pVM, RTSEL SelLDTR);
-CPUMDECL(void)          CPUMSetHyperIDTR(PVM pVM, uint32_t addr, uint16_t limit);
-CPUMDECL(void)          CPUMSetHyperCR3(PVM pVM, uint32_t cr3);
-CPUMDECL(void)          CPUMSetHyperTR(PVM pVM, RTSEL SelTR);
-CPUMDECL(void)          CPUMSetHyperCS(PVM pVM, RTSEL SelCS);
-CPUMDECL(void)          CPUMSetHyperDS(PVM pVM, RTSEL SelDS);
-CPUMDECL(void)          CPUMSetHyperES(PVM pVM, RTSEL SelDS);
-CPUMDECL(void)          CPUMSetHyperFS(PVM pVM, RTSEL SelDS);
-CPUMDECL(void)          CPUMSetHyperGS(PVM pVM, RTSEL SelDS);
-CPUMDECL(void)          CPUMSetHyperSS(PVM pVM, RTSEL SelSS);
-CPUMDECL(void)          CPUMSetHyperESP(PVM pVM, uint32_t u32ESP);
-CPUMDECL(int)           CPUMSetHyperEFlags(PVM pVM, uint32_t Efl);
-CPUMDECL(void)          CPUMSetHyperEIP(PVM pVM, uint32_t u32EIP);
-CPUMDECL(void)          CPUMSetHyperDR0(PVM pVM, RTGCUINTREG uDr0);
-CPUMDECL(void)          CPUMSetHyperDR1(PVM pVM, RTGCUINTREG uDr1);
-CPUMDECL(void)          CPUMSetHyperDR2(PVM pVM, RTGCUINTREG uDr2);
-CPUMDECL(void)          CPUMSetHyperDR3(PVM pVM, RTGCUINTREG uDr3);
-CPUMDECL(void)          CPUMSetHyperDR6(PVM pVM, RTGCUINTREG uDr6);
-CPUMDECL(void)          CPUMSetHyperDR7(PVM pVM, RTGCUINTREG uDr7);
-CPUMDECL(void)          CPUMSetHyperCtx(PVM pVM, const PCPUMCTX pCtx);
-CPUMDECL(int)           CPUMRecalcHyperDRx(PVM pVM);
+VMMDECL(void)           CPUMSetHyperGDTR(PVM pVM, uint32_t addr, uint16_t limit);
+VMMDECL(void)           CPUMSetHyperLDTR(PVM pVM, RTSEL SelLDTR);
+VMMDECL(void)           CPUMSetHyperIDTR(PVM pVM, uint32_t addr, uint16_t limit);
+VMMDECL(void)           CPUMSetHyperCR3(PVM pVM, uint32_t cr3);
+VMMDECL(void)           CPUMSetHyperTR(PVM pVM, RTSEL SelTR);
+VMMDECL(void)           CPUMSetHyperCS(PVM pVM, RTSEL SelCS);
+VMMDECL(void)           CPUMSetHyperDS(PVM pVM, RTSEL SelDS);
+VMMDECL(void)           CPUMSetHyperES(PVM pVM, RTSEL SelDS);
+VMMDECL(void)           CPUMSetHyperFS(PVM pVM, RTSEL SelDS);
+VMMDECL(void)           CPUMSetHyperGS(PVM pVM, RTSEL SelDS);
+VMMDECL(void)           CPUMSetHyperSS(PVM pVM, RTSEL SelSS);
+VMMDECL(void)           CPUMSetHyperESP(PVM pVM, uint32_t u32ESP);
+VMMDECL(int)            CPUMSetHyperEFlags(PVM pVM, uint32_t Efl);
+VMMDECL(void)           CPUMSetHyperEIP(PVM pVM, uint32_t u32EIP);
+VMMDECL(void)           CPUMSetHyperDR0(PVM pVM, RTGCUINTREG uDr0);
+VMMDECL(void)           CPUMSetHyperDR1(PVM pVM, RTGCUINTREG uDr1);
+VMMDECL(void)           CPUMSetHyperDR2(PVM pVM, RTGCUINTREG uDr2);
+VMMDECL(void)           CPUMSetHyperDR3(PVM pVM, RTGCUINTREG uDr3);
+VMMDECL(void)           CPUMSetHyperDR6(PVM pVM, RTGCUINTREG uDr6);
+VMMDECL(void)           CPUMSetHyperDR7(PVM pVM, RTGCUINTREG uDr7);
+VMMDECL(void)           CPUMSetHyperCtx(PVM pVM, const PCPUMCTX pCtx);
+VMMDECL(int)            CPUMRecalcHyperDRx(PVM pVM);
 /** @} */
 
-CPUMDECL(void)      CPUMPushHyper(PVM pVM, uint32_t u32);
-CPUMDECL(void)      CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
-CPUMDECL(int)       CPUMQueryGuestCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
-CPUMDECL(int)       CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
-CPUMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVM pVM);
-CPUMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVM pVM);
-CPUMDECL(void)      CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore);
-CPUMDECL(int)       CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
-CPUMDECL(int)       CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc);
-CPUMDECL(uint32_t)  CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore);
-CPUMDECL(void)      CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags);
-CPUMDECL(int)       CPUMHandleLazyFPU(PVM pVM);
-CPUMDECL(int)       CPUMRestoreHostFPUState(PVM pVM);
+VMMDECL(void)           CPUMPushHyper(PVM pVM, uint32_t u32);
+VMMDECL(void)           CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
+VMMDECL(int)            CPUMQueryGuestCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
+VMMDECL(int)            CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
+VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVM pVM);
+VMMDECL(PCCPUMCTXCORE)  CPUMGetHyperCtxCore(PVM pVM);
+VMMDECL(void)           CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore);
+VMMDECL(int)            CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
+VMMDECL(int)            CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc);
+VMMDECL(uint32_t)       CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore);
+VMMDECL(void)           CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags);
+VMMDECL(int)            CPUMHandleLazyFPU(PVM pVM);
+VMMDECL(int)            CPUMRestoreHostFPUState(PVM pVM);
 
 /** @name Changed flags
  * These flags are used to keep track of which important register that
@@ -898,18 +898,18 @@ CPUMDECL(int)       CPUMRestoreHostFPUState(PVM pVM);
 #define CPUM_CHANGED_ALL                (CPUM_CHANGED_FPU_REM|CPUM_CHANGED_CR0|CPUM_CHANGED_CR3|CPUM_CHANGED_CR4|CPUM_CHANGED_GDTR|CPUM_CHANGED_IDTR|CPUM_CHANGED_LDTR|CPUM_CHANGED_TR|CPUM_CHANGED_SYSENTER_MSR|CPUM_CHANGED_HIDDEN_SEL_REGS|CPUM_CHANGED_CPUID)
 /** @} */
 
-CPUMDECL(unsigned)  CPUMGetAndClearChangedFlagsREM(PVM pVM);
-CPUMDECL(void)      CPUMSetChangedFlags(PVM pVM, uint32_t fChangedFlags);
-CPUMDECL(bool)      CPUMSupportsFXSR(PVM pVM);
-CPUMDECL(bool)      CPUMIsHostUsingSysEnter(PVM pVM);
-CPUMDECL(bool)      CPUMIsHostUsingSysCall(PVM pVM);
-CPUMDECL(bool)      CPUMIsGuestFPUStateActive(PVM pVM);
-CPUMDECL(void)      CPUMDeactivateGuestFPUState(PVM pVM);
-CPUMDECL(bool)      CPUMIsGuestDebugStateActive(PVM pVM);
-CPUMDECL(void)      CPUMDeactivateGuestDebugState(PVM pVM);
-CPUMDECL(bool)      CPUMAreHiddenSelRegsValid(PVM pVM);
-CPUMDECL(void)      CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid);
-CPUMDECL(uint32_t)  CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore);
+VMMDECL(unsigned)       CPUMGetAndClearChangedFlagsREM(PVM pVM);
+VMMDECL(void)           CPUMSetChangedFlags(PVM pVM, uint32_t fChangedFlags);
+VMMDECL(bool)           CPUMSupportsFXSR(PVM pVM);
+VMMDECL(bool)           CPUMIsHostUsingSysEnter(PVM pVM);
+VMMDECL(bool)           CPUMIsHostUsingSysCall(PVM pVM);
+VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVM pVM);
+VMMDECL(void)           CPUMDeactivateGuestFPUState(PVM pVM);
+VMMDECL(bool)           CPUMIsGuestDebugStateActive(PVM pVM);
+VMMDECL(void)           CPUMDeactivateGuestDebugState(PVM pVM);
+VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVM pVM);
+VMMDECL(void)           CPUMSetHiddenSelRegsValid(PVM pVM, bool fValid);
+VMMDECL(uint32_t)       CPUMGetGuestCPL(PVM pVM, PCPUMCTXCORE pCtxCore);
 
 /**
  * CPU modes.
@@ -926,7 +926,7 @@ typedef enum CPUMMODE
     CPUMMODE_LONG
 } CPUMMODE;
 
-CPUMDECL(CPUMMODE)  CPUMGetGuestMode(PVM pVM);
+VMMDECL(CPUMMODE)  CPUMGetGuestMode(PVM pVM);
 
 
 #ifdef IN_RING3
@@ -935,15 +935,15 @@ CPUMDECL(CPUMMODE)  CPUMGetGuestMode(PVM pVM);
  * @{
  */
 
-CPUMR3DECL(int)     CPUMR3Init(PVM pVM);
-CPUMR3DECL(void)    CPUMR3Relocate(PVM pVM);
-CPUMR3DECL(int)     CPUMR3Term(PVM pVM);
-CPUMR3DECL(void)    CPUMR3Reset(PVM pVM);
-CPUMR3DECL(int)     CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
+VMMR3DECL(int)          CPUMR3Init(PVM pVM);
+VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
+VMMR3DECL(int)          CPUMR3Term(PVM pVM);
+VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
+VMMR3DECL(int)          CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
 # ifdef DEBUG
-CPUMR3DECL(void)    CPUMR3SaveEntryCtx(PVM pVM);
+VMMR3DECL(void)         CPUMR3SaveEntryCtx(PVM pVM);
 # endif
-CPUMR3DECL(int)     CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
+VMMR3DECL(int)          CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
 
 /** @} */
 #endif /* IN_RING3 */
@@ -967,8 +967,8 @@ CPUMR3DECL(int)     CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fA
  *
  * This function does not return!
  */
-DECLASM(void)       CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler, uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
-CPUMGCDECL(void)    CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
+DECLASM(void)           CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler, uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
+VMMRCDECL(void)         CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 
 /** @} */
 #endif /* IN_GC */
@@ -978,11 +978,11 @@ CPUMGCDECL(void)    CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
  * @ingroup grp_cpum
  * @{
  */
-CPUMR0DECL(int) CPUMR0Init(PVM pVM);
-CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx);
-CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx);
-CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
-CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
+VMMR0DECL(int)          CPUMR0Init(PVM pVM);
+VMMR0DECL(int)          CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx);
+VMMR0DECL(int)          CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx);
+VMMR0DECL(int)          CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
+VMMR0DECL(int)          CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
 
 /** @} */
 #endif /* IN_RING0 */
@@ -992,8 +992,4 @@ __END_DECLS
 
 
 #endif
-
-
-
-
 

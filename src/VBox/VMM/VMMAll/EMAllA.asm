@@ -47,7 +47,7 @@ BEGINCODE
 
 ;;
 ; Emulate CMP instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateCmp(uint32_t u32Param1, uint64_t u64Param2, size_t cb);
+; VMMDECL(uint32_t) EMEmulateCmp(uint32_t u32Param1, uint64_t u64Param2, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]  rdi  rcx       Param 1 - First parameter (Dst).
@@ -111,7 +111,7 @@ ENDPROC     EMEmulateCmp
 
 ;;
 ; Emulate AND instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateAnd(void *pvParam1, uint64_t u64Param2, size_t cb);
+; VMMDECL(uint32_t) EMEmulateAnd(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -176,7 +176,7 @@ ENDPROC     EMEmulateAnd
 
 ;;
 ; Emulate OR instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateOr(void *pvParam1, uint64_t u64Param2, size_t cb);
+; VMMDECL(uint32_t) EMEmulateOr(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -241,7 +241,7 @@ ENDPROC     EMEmulateOr
 
 ;;
 ; Emulate LOCK OR instruction.
-; EMDECL(int)      EMEmulateLockOr(void *pvParam1, uint64_t u64Param2, size_t cbSize, RTGCUINTREG32 *pf);
+; VMMDECL(int)      EMEmulateLockOr(void *pvParam1, uint64_t u64Param2, size_t cbSize, RTGCUINTREG32 *pf);
 ;
 ; @returns VINF_SUCCESS on success, VERR_ACCESS_DENIED on \#PF (GC only).
 ; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to data item (the real stuff).
@@ -325,7 +325,7 @@ ENDPROC     EMEmulateLockOr
 
 ;;
 ; Emulate XOR instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateXor(void *pvParam1, uint64_t u64Param2, size_t cb);
+; VMMDECL(uint32_t) EMEmulateXor(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -390,7 +390,7 @@ ENDPROC     EMEmulateXor
 
 ;;
 ; Emulate INC instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateInc(void *pvParam1, size_t cb);
+; VMMDECL(uint32_t) EMEmulateInc(void *pvParam1, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]  rdi  rcx   Param 1 - First parameter - pointer to data item.
@@ -453,7 +453,7 @@ ENDPROC     EMEmulateInc
 
 ;;
 ; Emulate DEC instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateDec(void *pvParam1, size_t cb);
+; VMMDECL(uint32_t) EMEmulateDec(void *pvParam1, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -516,7 +516,7 @@ ENDPROC     EMEmulateDec
 
 ;;
 ; Emulate ADD instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateAdd(void *pvParam1, uint64_t u64Param2, size_t cb);
+; VMMDECL(uint32_t) EMEmulateAdd(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -581,7 +581,7 @@ ENDPROC     EMEmulateAdd
 
 ;;
 ; Emulate ADC instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateAdcWithCarrySet(void *pvParam1, uint64_t u64Param2, size_t cb);
+; VMMDECL(uint32_t) EMEmulateAdcWithCarrySet(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -650,7 +650,7 @@ ENDPROC     EMEmulateAdcWithCarrySet
 
 ;;
 ; Emulate SUB instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateSub(void *pvParam1, uint64_t u64Param2, size_t cb);
+; VMMDECL(uint32_t) EMEmulateSub(void *pvParam1, uint64_t u64Param2, size_t cb);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -715,7 +715,7 @@ ENDPROC     EMEmulateSub
 
 ;;
 ; Emulate BTR instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateBtr(void *pvParam1, uint64_t u64Param2);
+; VMMDECL(uint32_t) EMEmulateBtr(void *pvParam1, uint64_t u64Param2);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -745,7 +745,7 @@ ENDPROC     EMEmulateBtr
 
 ;;
 ; Emulate LOCK BTR instruction.
-; EMDECL(int)      EMEmulateLockBtr(void *pvParam1, uint64_t u64Param2, RTGCUINTREG32 *pf);
+; VMMDECL(int)      EMEmulateLockBtr(void *pvParam1, uint64_t u64Param2, RTGCUINTREG32 *pf);
 ;
 ; @returns VINF_SUCCESS on success, VERR_ACCESS_DENIED on \#PF (GC only).
 ; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to data item (the real stuff).
@@ -789,7 +789,7 @@ ENDPROC     EMEmulateLockBtr
 
 ;;
 ; Emulate BTC instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateBtc(void *pvParam1, uint64_t u64Param2);
+; VMMDECL(uint32_t) EMEmulateBtc(void *pvParam1, uint64_t u64Param2);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -820,7 +820,7 @@ ENDPROC     EMEmulateBtc
 
 ;;
 ; Emulate BTS instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateBts(void *pvParam1, uint64_t u64Param2);
+; VMMDECL(uint32_t) EMEmulateBts(void *pvParam1, uint64_t u64Param2);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to data item.
@@ -851,7 +851,7 @@ ENDPROC     EMEmulateBts
 
 ;;
 ; Emulate LOCK CMPXCHG instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateLockCmpXchg(void *pvParam1, uint64_t *pu64Param2, uint64_t u64Param3, size_t cbSize);
+; VMMDECL(uint32_t) EMEmulateLockCmpXchg(void *pvParam1, uint64_t *pu64Param2, uint64_t u64Param3, size_t cbSize);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to first parameter
@@ -939,7 +939,7 @@ ENDPROC     EMEmulateLockCmpXchg
 
 ;;
 ; Emulate CMPXCHG instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateCmpXchg(void *pvParam1, uint64_t *pu32Param2, uint64_t u32Param3, size_t cbSize);
+; VMMDECL(uint32_t) EMEmulateCmpXchg(void *pvParam1, uint64_t *pu32Param2, uint64_t u32Param3, size_t cbSize);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - pointer to first parameter
@@ -1030,7 +1030,7 @@ ENDPROC     EMEmulateCmpXchg
 
 ;;
 ; Emulate LOCK CMPXCHG8B instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateLockCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+; VMMDECL(uint32_t) EMEmulateLockCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
@@ -1070,7 +1070,7 @@ ENDPROC     EMEmulateLockCmpXchg8b
 
 ;;
 ; Emulate CMPXCHG8B instruction, CDECL calling conv.
-; EMDECL(uint32_t) EMEmulateCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+; VMMDECL(uint32_t) EMEmulateCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
 ; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter

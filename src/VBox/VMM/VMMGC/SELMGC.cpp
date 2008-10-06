@@ -181,7 +181,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-SELMGCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     LogFlow(("selmgcGuestGDTWriteHandler errcode=%x fault=%VGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
 
@@ -254,7 +254,7 @@ SELMGCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-SELMGCDECL(int) selmgcGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmgcGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     /** @todo To be implemented. */
     ////LogCom(("selmgcGuestLDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
@@ -277,7 +277,7 @@ SELMGCDECL(int) selmgcGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     LogFlow(("selmgcGuestTSSWriteHandler errcode=%x fault=%VGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
 
@@ -308,7 +308,7 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
             uint32_t offIntRedirBitmap = pGuestTSS->offIoBitmap - sizeof(pVM->selm.s.Tss.IntRedirBitmap);
 
             /** @todo not sure how the partial case is handled; probably not allowed */
-            if (   offIntRedirBitmap <= offRange 
+            if (   offIntRedirBitmap <= offRange
                 && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) >= offRange + cb
                 && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
             {
@@ -360,7 +360,7 @@ SELMGCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-SELMGCDECL(int) selmgcShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmgcShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     LogRel(("FATAL ERROR: selmgcShadowGDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
     return VERR_SELM_SHADOW_GDT_WRITE;
@@ -378,7 +378,7 @@ SELMGCDECL(int) selmgcShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-SELMGCDECL(int) selmgcShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmgcShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     LogRel(("FATAL ERROR: selmgcShadowLDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
     Assert((RTRCPTR)pvFault >= pVM->selm.s.GCPtrLdt && (RTRCUINTPTR)pvFault < (RTRCUINTPTR)pVM->selm.s.GCPtrLdt + 65536 + PAGE_SIZE);
@@ -397,7 +397,7 @@ SELMGCDECL(int) selmgcShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-SELMGCDECL(int) selmgcShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmgcShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     LogRel(("FATAL ERROR: selmgcShadowTSSWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
     return VERR_SELM_SHADOW_TSS_WRITE;
@@ -412,7 +412,7 @@ SELMGCDECL(int) selmgcShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMC
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
  */
-SELMGCDECL(int) SELMGCGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
+VMMRCDECL(int) SELMGCGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
 {
     if (pVM->selm.s.fSyncTSSRing0Stack)
     {

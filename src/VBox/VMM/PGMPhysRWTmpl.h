@@ -29,7 +29,7 @@
  * @param   pVM             VM Handle.
  * @param   GCPhys          Physical address start reading from.
  */
-PGMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
 {
     uint32_t iCacheIndex;
 
@@ -71,7 +71,7 @@ PGMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
  * @param   GCPhys          Physical address to write to.
  * @param   val             What to write.
  */
-PGMDECL(void) PGMPHYSFN_WRITENAME(PVM pVM, RTGCPHYS GCPhys, PGMPHYS_DATATYPE val)
+VMMDECL(void) PGMPHYSFN_WRITENAME(PVM pVM, RTGCPHYS GCPhys, PGMPHYS_DATATYPE val)
 {
     uint32_t iCacheIndex;
 

@@ -82,7 +82,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
  *                          This must be a GC pointer because it will be relocated!
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-PGMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
+VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                             PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
                                             const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
                                             const char *pszModGC, const char *pszHandlerGC, RTGCPTR pvUserGC, const char *pszDesc)
@@ -226,7 +226,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 /** @todo rename this function to PGMR3HandlerVirtualRegister */
-PGMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
+VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
                                            PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
                                            PFNPGMHCVIRTHANDLER pfnHandlerHC,
                                            const char *pszHandlerGC, const char *pszModGC,
@@ -276,7 +276,7 @@ PGMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
 /** @todo rename this to PGMR3HandlerVirtualRegisterEx. */
 /** @todo create a template for virtual handlers (see async i/o), we're wasting space
  * duplicating the function pointers now. (Or we will once we add the missing callbacks.) */
-PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
+VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
                                          PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
                                          PFNPGMHCVIRTHANDLER pfnHandlerHC, RTGCPTR pfnHandlerGC,
                                          R3PTRTYPE(const char *) pszDesc)
@@ -417,7 +417,7 @@ PGMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
  * @param   pfnInvalidateHC The HC invalidate callback (can be 0)
  * @remarks Doesn't work with the hypervisor access handler type.
  */
-PGMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, PFNPGMHCVIRTINVALIDATE pfnInvalidateHC)
+VMMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, PFNPGMHCVIRTINVALIDATE pfnInvalidateHC)
 {
     pgmLock(pVM);
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.pTreesHC->VirtHandlers, GCPtr);
@@ -441,7 +441,7 @@ PGMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, P
  * @param   GCPtr       Start address.
  * @thread  EMT
  */
-PGMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
+VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
 {
     pgmLock(pVM);
 

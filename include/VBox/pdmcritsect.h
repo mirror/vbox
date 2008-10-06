@@ -58,17 +58,17 @@ typedef PDMCRITSECT *PPDMCRITSECT;
 /** Pointer to a const PDM critical section. */
 typedef const PDMCRITSECT *PCPDMCRITSECT;
 
-PDMR3DECL(int)  PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName);
-PDMDECL(int)    PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
-PDMR3DECL(int)  PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost);
-PDMDECL(void)   PDMCritSectLeave(PPDMCRITSECT pCritSect);
-PDMDECL(bool)   PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
-PDMDECL(bool)   PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
-PDMR3DECL(int)  PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
-PDMR3DECL(int)  PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
-PDMR3DECL(int)  PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
-PDMDECL(int)    PDMR3CritSectTerm(PVM pVM);
-PDMR3DECL(void) PDMR3CritSectFF(PVM pVM);
+VMMR3DECL(int)  PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, const char *pszName);
+VMMDECL(int)    PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
+VMMR3DECL(int)  PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallHost);
+VMMDECL(void)   PDMCritSectLeave(PPDMCRITSECT pCritSect);
+VMMDECL(bool)   PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
+VMMDECL(bool)   PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
+VMMR3DECL(int)  PDMR3CritSectTryEnter(PPDMCRITSECT pCritSect);
+VMMR3DECL(int)  PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
+VMMR3DECL(int)  PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
+VMMDECL(int)    PDMR3CritSectTerm(PVM pVM);
+VMMR3DECL(void) PDMR3CritSectFF(PVM pVM);
 
 /** @} */
 

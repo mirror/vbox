@@ -44,7 +44,7 @@
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-CPUMR0DECL(int) CPUMR0Init(PVM pVM)
+VMMR0DECL(int) CPUMR0Init(PVM pVM)
 {
     LogFlow(("CPUMR0Init: %p\n", pVM));
 
@@ -115,7 +115,7 @@ CPUMR0DECL(int) CPUMR0Init(PVM pVM)
  * @param   pVM         VM handle.
  * @param   pCtx        CPU context
  */
-CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
@@ -235,7 +235,7 @@ CPUMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx)
  * @param   pVM         VM handle.
  * @param   pCtx        CPU context
  */
-CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
@@ -286,7 +286,7 @@ CPUMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx)
  * @param   pCtx        CPU context
  * @param   fDR6        Include DR6 or not
  */
-CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
+VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
 {
     Assert(pVM->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS);
 
@@ -322,7 +322,7 @@ CPUMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
  * @param   pCtx        CPU context
  * @param   fDR6        Include DR6 or not
  */
-CPUMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
+VMMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6)
 {
     /* Save the host state. */
     pVM->cpum.s.Host.dr0 = ASMGetDR0();

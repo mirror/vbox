@@ -421,7 +421,7 @@ static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-TRPMR3DECL(int) TRPMR3Init(PVM pVM)
+VMMR3DECL(int) TRPMR3Init(PVM pVM)
 {
     LogFlow(("TRPMR3Init\n"));
     /*
@@ -541,7 +541,7 @@ TRPMR3DECL(int) TRPMR3Init(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   offDelta    Relocation delta relative to old location.
  */
-TRPMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("TRPMR3Relocate\n"));
     /*
@@ -663,7 +663,7 @@ TRPMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-TRPMR3DECL(int) TRPMR3Term(PVM pVM)
+VMMR3DECL(int) TRPMR3Term(PVM pVM)
 {
     NOREF(pVM);
     return 0;
@@ -678,7 +678,7 @@ TRPMR3DECL(int) TRPMR3Term(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-TRPMR3DECL(void) TRPMR3Reset(PVM pVM)
+VMMR3DECL(void) TRPMR3Reset(PVM pVM)
 {
     /*
      * Deregister any virtual handlers.
@@ -875,7 +875,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  */
-TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
+VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
 {
     STAM_PROFILE_START(&pVM->trpm.s.StatSyncIDT, a);
     const bool  fRawRing0 = EMIsRawRing0Enabled(pVM);
@@ -982,7 +982,7 @@ TRPMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
  *
  * @param   pVM         The VM to operate on.
  */
-TRPMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
+VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
 {
     /*
      * Deregister any virtual handlers.
@@ -1047,7 +1047,7 @@ static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
  * @param   pVM         The VM to operate on.
  * @param   iTrap       Trap/interrupt gate number.
  */
-TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
+VMMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
 {
     /** @todo cleanup trpmR3ClearPassThroughHandler()! */
     RTRCPTR aGCPtrs[TRPM_HANDLER_MAX];
@@ -1106,7 +1106,7 @@ TRPMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
  * @param   pVM         VM handle.
  * @param   GCPtr       GC address to check.
  */
-TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
+VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
 {
     for (uint32_t iTrap = 0; iTrap < RT_ELEMENTS(pVM->trpm.s.aGuestTrapHandler); iTrap++)
     {
@@ -1134,7 +1134,7 @@ TRPMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr)
  * @param   pVM         The VM to operate on.
  * @param   iTrap       Interrupt/trap number.
  */
-TRPMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
+VMMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
 {
     AssertReturn(iTrap < RT_ELEMENTS(pVM->trpm.s.aIdt), TRPM_INVALID_HANDLER);
 
@@ -1151,7 +1151,7 @@ TRPMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
  * @param   iTrap       Interrupt/trap number.
  * @param   pHandler    GC handler pointer
  */
-TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandler)
+VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandler)
 {
     /*
      * Validate.
@@ -1268,7 +1268,7 @@ TRPMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHand
  * @param   pVM         VM handle.
  * @param   GCPtr       GC address to check.
  */
-TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
+VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
 {
     /*
      * Read IDTR and calc last entry.
@@ -1337,7 +1337,7 @@ TRPMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
  * @param   pVM         The VM to operate on.
  * @param   enmEvent    Trpm event type
  */
-TRPMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
+VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
 {
     PCPUMCTX pCtx;
     int      rc;

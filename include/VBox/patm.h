@@ -144,7 +144,7 @@ typedef enum
  * @param   pCtxCore    The cpu context core.
  * @see     pg_raw
  */
-PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
+VMMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
 
 /**
  * Restores virtualized flags.
@@ -156,7 +156,7 @@ PATMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
  * @param   rawRC       Raw mode return code
  * @see     @ref pg_raw
  */
-PATMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC);
+VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC);
 
 /**
  * Get the EFLAGS.
@@ -166,7 +166,7 @@ PATMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC);
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The context core.
  */
-PATMDECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore);
+VMMDECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore);
 
 /**
  * Updates the EFLAGS.
@@ -176,7 +176,7 @@ PATMDECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore);
  * @param   pCtxCore    The context core.
  * @param   efl         The new EFLAGS value.
  */
-PATMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl);
+VMMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl);
 
 /**
  * Returns the guest context pointer of the GC context structure
@@ -184,7 +184,7 @@ PATMDECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-PATMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM);
+VMMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM);
 
 /**
  * Checks whether the GC address is part of our patch region
@@ -193,7 +193,7 @@ PATMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM);
  * @param   pVM         The VM to operate on.
  * @param   pAddr       Guest context address
  */
-PATMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCPTR pAddr);
+VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCPTR pAddr);
 
 /**
  * Check if we must use raw mode (patch code being executed or marked safe for IF=0)
@@ -201,7 +201,7 @@ PATMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCPTR pAddr);
  * @param   pVM         VM handle.
  * @param   pAddrGC     Guest context address
  */
-PATMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC);
+VMMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC);
 
 /**
  * Query PATM state (enabled/disabled)
@@ -219,7 +219,7 @@ PATMDECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC);
  * @param   GCPhys          MMIO physical address
  * @param   pCachedData     GC pointer to cached data
  */
-PATMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData);
+VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData);
 
 
 /**
@@ -231,7 +231,7 @@ PATMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData
  * @param   pBranchTarget       Original branch target
  * @param   pRelBranchPatch     Relative duplicated function address
  */
-PATMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR pBranchTarget, RTRCUINTPTR pRelBranchPatch);
+VMMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR pBranchTarget, RTRCUINTPTR pRelBranchPatch);
 
 
 /**
@@ -242,7 +242,7 @@ PATMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR 
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
+VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /**
  * Checks if the int 3 was caused by a patched instruction
@@ -254,7 +254,7 @@ PATMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
  * @param   pOpcode     Original instruction opcode (out, optional)
  * @param   pSize       Original instruction size (out, optional)
  */
-PATMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize);
+VMMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize);
 
 
 /**
@@ -265,7 +265,7 @@ PATMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uin
  *
  * @param   pVM         The VM handle.
  */
-PATMDECL(bool) PATMAreInterruptsEnabled(PVM pVM);
+VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM);
 
 /**
  * Checks if the interrupt flag is enabled or not.
@@ -276,7 +276,7 @@ PATMDECL(bool) PATMAreInterruptsEnabled(PVM pVM);
  * @param   pVM         The VM handle.
  * @param   pCtxCore    CPU context
  */
-PATMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
+VMMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
 
 #ifdef PATM_EMULATE_SYSENTER
 /**
@@ -288,7 +288,7 @@ PATMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
  * @param   pCtxCore    The relevant core context.
  * @param   pCpu        Disassembly context
  */
-PATMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
 #endif
 
 #ifdef IN_GC
@@ -308,7 +308,7 @@ PATMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
  * @param   cbWrite     Nr of bytes to write
  *
  */
-PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite);
+VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite);
 
 /**
  * Checks if the illegal instruction was caused by a patched instruction
@@ -318,7 +318,7 @@ PATMGCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RT
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
+VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /** @} */
 
@@ -336,7 +336,7 @@ PATMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
  * @returns 0 - disabled, 1 - enabled
  * @param   pVM         The VM to operate on.
  */
-PATMR3DECL(int) PATMR3IsEnabled(PVM pVM);
+VMMR3DECL(int) PATMR3IsEnabled(PVM pVM);
 
 /**
  * Initializes the PATM.
@@ -344,7 +344,7 @@ PATMR3DECL(int) PATMR3IsEnabled(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-PATMR3DECL(int) PATMR3Init(PVM pVM);
+VMMR3DECL(int) PATMR3Init(PVM pVM);
 
 /**
  * Finalizes HMA page attributes.
@@ -352,7 +352,7 @@ PATMR3DECL(int) PATMR3Init(PVM pVM);
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
-PATMR3DECL(int) PATMR3InitFinalize(PVM pVM);
+VMMR3DECL(int) PATMR3InitFinalize(PVM pVM);
 
 /**
  * Applies relocations to data and code managed by this
@@ -363,7 +363,7 @@ PATMR3DECL(int) PATMR3InitFinalize(PVM pVM);
  *
  * @param   pVM     The VM.
  */
-PATMR3DECL(void) PATMR3Relocate(PVM pVM);
+VMMR3DECL(void) PATMR3Relocate(PVM pVM);
 
 /**
  * Terminates the PATM.
@@ -374,7 +374,7 @@ PATMR3DECL(void) PATMR3Relocate(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-PATMR3DECL(int) PATMR3Term(PVM pVM);
+VMMR3DECL(int) PATMR3Term(PVM pVM);
 
 /**
  * PATM reset callback.
@@ -382,7 +382,7 @@ PATMR3DECL(int) PATMR3Term(PVM pVM);
  * @returns VBox status code.
  * @param   pVM     The VM which is reset.
  */
-PATMR3DECL(int) PATMR3Reset(PVM pVM);
+VMMR3DECL(int) PATMR3Reset(PVM pVM);
 
 /**
  * Returns the host context pointer and size of the patch memory block
@@ -391,7 +391,7 @@ PATMR3DECL(int) PATMR3Reset(PVM pVM);
  * @param   pVM         The VM to operate on.
  * @param   pcb         Size of the patch memory block
  */
-PATMR3DECL(void *) PATMR3QueryPatchMemHC(PVM pVM, uint32_t *pcb);
+VMMR3DECL(void *) PATMR3QueryPatchMemHC(PVM pVM, uint32_t *pcb);
 
 /**
  * Returns the guest context pointer and size of the patch memory block
@@ -400,7 +400,7 @@ PATMR3DECL(void *) PATMR3QueryPatchMemHC(PVM pVM, uint32_t *pcb);
  * @param   pVM         The VM to operate on.
  * @param   pcb         Size of the patch memory block
  */
-PATMR3DECL(RTRCPTR) PATMR3QueryPatchMemGC(PVM pVM, uint32_t *pcb);
+VMMR3DECL(RTRCPTR) PATMR3QueryPatchMemGC(PVM pVM, uint32_t *pcb);
 
 /**
  * Checks whether the GC address is inside a generated patch jump
@@ -410,7 +410,7 @@ PATMR3DECL(RTRCPTR) PATMR3QueryPatchMemGC(PVM pVM, uint32_t *pcb);
  * @param   pAddr       Guest context address
  * @param   pPatchAddr  Guest context patch address (if true)
  */
-PATMR3DECL(bool) PATMR3IsInsidePatchJump(PVM pVM, RTRCPTR pAddr, PRTGCPTR32 pPatchAddr);
+VMMR3DECL(bool) PATMR3IsInsidePatchJump(PVM pVM, RTRCPTR pAddr, PRTGCPTR32 pPatchAddr);
 
 
 /**
@@ -420,7 +420,7 @@ PATMR3DECL(bool) PATMR3IsInsidePatchJump(PVM pVM, RTRCPTR pAddr, PRTGCPTR32 pPat
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     Guest context address
  */
-PATMR3DECL(RTRCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTRCPTR pAddrGC);
+VMMR3DECL(RTRCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTRCPTR pAddrGC);
 
 /**
  * Checks whether the HC address is part of our patch region
@@ -429,7 +429,7 @@ PATMR3DECL(RTRCPTR) PATMR3QueryPatchGCPtr(PVM pVM, RTRCPTR pAddrGC);
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     Guest context address
  */
-PATMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, R3PTRTYPE(uint8_t *) pAddrHC);
+VMMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, R3PTRTYPE(uint8_t *) pAddrHC);
 
 /**
  * Convert a GC patch block pointer to a HC patch pointer
@@ -438,7 +438,7 @@ PATMR3DECL(bool) PATMR3IsPatchHCAddr(PVM pVM, R3PTRTYPE(uint8_t *) pAddrHC);
  * @param   pVM         The VM to operate on.
  * @param   pAddrGC     GC pointer
  */
-PATMR3DECL(R3PTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTRCPTR pAddrGC);
+VMMR3DECL(R3PTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTRCPTR pAddrGC);
 
 
 /**
@@ -447,7 +447,7 @@ PATMR3DECL(R3PTRTYPE(void *)) PATMR3GCPtrToHCPtr(PVM pVM, RTRCPTR pAddrGC);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-PATMR3DECL(PPATMGCSTATE) PATMR3QueryGCStateHC(PVM pVM);
+VMMR3DECL(PPATMGCSTATE) PATMR3QueryGCStateHC(PVM pVM);
 
 /**
  * Handle trap inside patch code
@@ -458,7 +458,7 @@ PATMR3DECL(PPATMGCSTATE) PATMR3QueryGCStateHC(PVM pVM);
  * @param   pEip        GC pointer of trapping instruction
  * @param   pNewEip     GC pointer to new instruction
  */
-PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *ppNewEip);
+VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *ppNewEip);
 
 /**
  * Handle page-fault in monitored page
@@ -466,7 +466,7 @@ PATMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-PATMR3DECL(int) PATMR3HandleMonitoredPage(PVM pVM);
+VMMR3DECL(int) PATMR3HandleMonitoredPage(PVM pVM);
 
 /**
  * Notifies PATM about a (potential) write to code that has been patched.
@@ -477,7 +477,7 @@ PATMR3DECL(int) PATMR3HandleMonitoredPage(PVM pVM);
  * @param   cbWrite     Nr of bytes to write
  *
  */
-PATMR3DECL(int) PATMR3PatchWrite(PVM pVM, RTRCPTR GCPtr, uint32_t cbWrite);
+VMMR3DECL(int) PATMR3PatchWrite(PVM pVM, RTRCPTR GCPtr, uint32_t cbWrite);
 
 /**
  * Notify PATM of a page flush
@@ -486,7 +486,7 @@ PATMR3DECL(int) PATMR3PatchWrite(PVM pVM, RTRCPTR GCPtr, uint32_t cbWrite);
  * @param   pVM         The VM to operate on.
  * @param   addr        GC address of the page to flush
  */
-PATMR3DECL(int) PATMR3FlushPage(PVM pVM, RTRCPTR addr);
+VMMR3DECL(int) PATMR3FlushPage(PVM pVM, RTRCPTR addr);
 
 /**
  * Allows or disallow patching of privileged instructions executed by the guest OS
@@ -495,7 +495,7 @@ PATMR3DECL(int) PATMR3FlushPage(PVM pVM, RTRCPTR addr);
  * @param   pVM         The VM to operate on.
  * @param   fAllowPatching Allow/disallow patching
  */
-PATMR3DECL(int) PATMR3AllowPatching(PVM pVM, uint32_t fAllowPatching);
+VMMR3DECL(int) PATMR3AllowPatching(PVM pVM, uint32_t fAllowPatching);
 
 /**
  * Patch privileged instruction at specified location
@@ -507,7 +507,7 @@ PATMR3DECL(int) PATMR3AllowPatching(PVM pVM, uint32_t fAllowPatching);
  *
  * @note    returns failure if patching is not allowed or possible
  */
-PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags);
+VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags);
 
 /**
  * Gives hint to PATM about supervisor guest instructions
@@ -517,7 +517,7 @@ PATMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags);
  * @param   pInstr      Guest context point to privileged instruction
  * @param   flags       Patch flags
  */
-PATMR3DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags);
+VMMR3DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags);
 
 /**
  * Patch branch target function for call/jump at specified location.
@@ -528,7 +528,7 @@ PATMR3DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags);
  * @param   pCtx        Guest context
  *
  */
-PATMR3DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx);
+VMMR3DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx);
 
 /**
  * Query the corresponding GC instruction pointer from a pointer inside the patch block itself
@@ -539,7 +539,7 @@ PATMR3DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx);
  * @param   pEnmState   State of the translated address (out)
  *
  */
-PATMR3DECL(RTRCPTR) PATMR3PatchToGCPtr(PVM pVM, RTRCPTR pPatchGC, PATMTRANSSTATE *pEnmState);
+VMMR3DECL(RTRCPTR) PATMR3PatchToGCPtr(PVM pVM, RTRCPTR pPatchGC, PATMTRANSSTATE *pEnmState);
 
 /**
  * Converts Guest code GC ptr to Patch code GC ptr (if found)
@@ -549,7 +549,7 @@ PATMR3DECL(RTRCPTR) PATMR3PatchToGCPtr(PVM pVM, RTRCPTR pPatchGC, PATMTRANSSTATE
  * @param   pInstrGC    Guest context pointer to privileged instruction
  *
  */
-PATMR3DECL(RTRCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, RCPTRTYPE(uint8_t*) pInstrGC);
+VMMR3DECL(RTRCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, RCPTRTYPE(uint8_t*) pInstrGC);
 
 /**
  * Query the opcode of the original code that was overwritten by the 5 bytes patch jump
@@ -561,7 +561,7 @@ PATMR3DECL(RTRCPTR) PATMR3GuestGCPtrToPatchGCPtr(PVM pVM, RCPTRTYPE(uint8_t*) pI
  * @returns VBOX error code
  *
  */
-PATMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTRCPTR pInstrGC, uint8_t *pByte);
+VMMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTRCPTR pInstrGC, uint8_t *pByte);
 
 /**
  * Disable patch for privileged instruction at specified location
@@ -573,7 +573,7 @@ PATMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTRCPTR pInstrGC, uint8_t *pByte);
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC);
+VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC);
 
 
 /**
@@ -586,7 +586,7 @@ PATMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC);
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC);
+VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC);
 
 
 /**
@@ -599,7 +599,7 @@ PATMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC);
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3RemovePatch(PVM pVM, RTRCPTR pInstrGC);
+VMMR3DECL(int) PATMR3RemovePatch(PVM pVM, RTRCPTR pInstrGC);
 
 
 /**
@@ -610,7 +610,7 @@ PATMR3DECL(int) PATMR3RemovePatch(PVM pVM, RTRCPTR pInstrGC);
  * @param   pInstrGC    Guest context pointer to instruction
  * @param   pConflictGC Guest context pointer to check
  */
-PATMR3DECL(int) PATMR3DetectConflict(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflictGC);
+VMMR3DECL(int) PATMR3DetectConflict(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflictGC);
 
 
 /**
@@ -620,7 +620,7 @@ PATMR3DECL(int) PATMR3DetectConflict(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflic
  * @param   pVM         The VM to operate on.
  * @param   pInstrGC    Guest context pointer to instruction
  */
-PATMR3DECL(bool) PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC);
+VMMR3DECL(bool) PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC);
 
 
 /**
@@ -632,7 +632,7 @@ PATMR3DECL(bool) PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC);
  * @param   cbAcquireSpinlockCall       Instruction size
  *
  */
-PATMR3DECL(int) PATMInstallSpinlockPatch(PVM pVM, RTRCPTR pCallAcquireSpinlockGC, uint32_t cbAcquireSpinlockCall);
+VMMR3DECL(int) PATMInstallSpinlockPatch(PVM pVM, RTRCPTR pCallAcquireSpinlockGC, uint32_t cbAcquireSpinlockCall);
 
 
 /**
@@ -643,7 +643,7 @@ PATMR3DECL(int) PATMInstallSpinlockPatch(PVM pVM, RTRCPTR pCallAcquireSpinlockGC
  * @param   pCallAcquireSpinlockGC      Call target GC address
  *
  */
-PATMR3DECL(bool) PATMIsSpinlockAcquire(PVM pVM, RTRCPTR pCallTargetGC);
+VMMR3DECL(bool) PATMIsSpinlockAcquire(PVM pVM, RTRCPTR pCallTargetGC);
 
 /**
  * Check if supplied call target is the Linux 2.6 spinlock release function
@@ -653,7 +653,7 @@ PATMR3DECL(bool) PATMIsSpinlockAcquire(PVM pVM, RTRCPTR pCallTargetGC);
  * @param   pCallTargetGC   Call target GC address
  *
  */
-PATMR3DECL(bool) PATMIsSpinlockRelease(PVM pVM, RTRCPTR pCallTargetGC);
+VMMR3DECL(bool) PATMIsSpinlockRelease(PVM pVM, RTRCPTR pCallTargetGC);
 
 /**
  * Check if supplied call target is the Linux 2.6 spinlock release function (patched equivalent)
@@ -663,7 +663,7 @@ PATMR3DECL(bool) PATMIsSpinlockRelease(PVM pVM, RTRCPTR pCallTargetGC);
  * @param   pCallTargetGC   Call target GC address
  *
  */
-PATMR3DECL(bool) PATMIsSpinlockReleasePatch(PVM pVM, RTRCPTR pCallTargetGC);
+VMMR3DECL(bool) PATMIsSpinlockReleasePatch(PVM pVM, RTRCPTR pCallTargetGC);
 
 /** @} */
 #endif

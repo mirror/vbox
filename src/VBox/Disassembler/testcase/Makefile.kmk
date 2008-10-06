@@ -25,7 +25,7 @@ ifdef VBOX_WITH_TESTCASES
 
 PROGRAMS += tstDisasm-2
 tstDisasm-2_TEMPLATE    = VBOXR3TSTEXE
-tstDisasm-2_DEFS        = IN_DIS_R3
+tstDisasm-2_DEFS        = IN_DIS
 tstDisasm-2_SOURCES     = \
 	tstDisasm-2.cpp
 tstDisasm-2_LIBS        = \

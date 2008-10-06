@@ -54,7 +54,7 @@
  *
  * @param   pVM         Pointer to the shared VM structure.
  */
-TMDECL(void) TMNotifyStartOfExecution(PVM pVM)
+VMMDECL(void) TMNotifyStartOfExecution(PVM pVM)
 {
     if (pVM->tm.s.fTSCTiedToExecution)
         tmCpuTickResume(pVM);
@@ -71,7 +71,7 @@ TMDECL(void) TMNotifyStartOfExecution(PVM pVM)
  *
  * @param   pVM         Pointer to the shared VM structure.
  */
-TMDECL(void) TMNotifyEndOfExecution(PVM pVM)
+VMMDECL(void) TMNotifyEndOfExecution(PVM pVM)
 {
     if (pVM->tm.s.fTSCTiedToExecution)
         tmCpuTickPause(pVM);
@@ -88,7 +88,7 @@ TMDECL(void) TMNotifyEndOfExecution(PVM pVM)
  *
  * @param   pVM         Pointer to the shared VM structure.
  */
-TMDECL(void) TMNotifyStartOfHalt(PVM pVM)
+VMMDECL(void) TMNotifyStartOfHalt(PVM pVM)
 {
     if (    pVM->tm.s.fTSCTiedToExecution
         &&  !pVM->tm.s.fTSCNotTiedToHalt)
@@ -106,7 +106,7 @@ TMDECL(void) TMNotifyStartOfHalt(PVM pVM)
  *
  * @param   pVM         Pointer to the shared VM structure.
  */
-TMDECL(void) TMNotifyEndOfHalt(PVM pVM)
+VMMDECL(void) TMNotifyEndOfHalt(PVM pVM)
 {
     if (    pVM->tm.s.fTSCTiedToExecution
         &&  !pVM->tm.s.fTSCNotTiedToHalt)
@@ -215,7 +215,7 @@ DECLINLINE(bool) tmTimerTryWithLink(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, T
  * @param   pVM         Pointer to the shared VM structure.
  * @thread  The emulation thread.
  */
-TMDECL(uint64_t) TMTimerPoll(PVM pVM)
+VMMDECL(uint64_t) TMTimerPoll(PVM pVM)
 {
     /*
      * Return straight away if the timer FF is already set.
@@ -309,7 +309,7 @@ TMDECL(uint64_t) TMTimerPoll(PVM pVM)
  * @param   pu64Delta   Where to store the delta.
  * @thread  The emulation thread.
  */
-TMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
+VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
 {
     /*
      * Return straight away if the timer FF is already set.
@@ -412,7 +412,7 @@ TMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta)
  * @returns HC R3 pointer.
  * @param   pTimer      Timer handle as returned by one of the create functions.
  */
-TMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer)
+VMMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer)
 {
     return (PTMTIMERR3)MMHyperCCToR3(pTimer->CTXALLSUFF(pVM), pTimer);
 }
@@ -424,7 +424,7 @@ TMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer)
  * @returns HC R0 pointer.
  * @param   pTimer      Timer handle as returned by one of the create functions.
  */
-TMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer)
+VMMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer)
 {
     return (PTMTIMERR0)MMHyperCCToR0(pTimer->CTXALLSUFF(pVM), pTimer);
 }
@@ -436,7 +436,7 @@ TMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer)
  * @returns RC pointer.
  * @param   pTimer      Timer handle as returned by one of the create functions.
  */
-TMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
+VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
 {
     return (PTMTIMERRC)MMHyperCCToRC(pTimer->CTXALLSUFF(pVM), pTimer);
 }
@@ -448,7 +448,7 @@ TMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
  * @returns VBox status.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(int) TMTimerDestroy(PTMTIMER pTimer)
+VMMDECL(int) TMTimerDestroy(PTMTIMER pTimer)
 {
     int cRetries = 1000;
     do
@@ -546,7 +546,7 @@ TMDECL(int) TMTimerDestroy(PTMTIMER pTimer)
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   u64Expire       New expire time.
  */
-TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
 {
     STAM_PROFILE_START(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatTimerSet), a);
 
@@ -656,7 +656,7 @@ TMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cMilliesToNext  Number of millieseconds to the next tick.
  */
-TMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
+VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
 {
     PVM pVM = pTimer->CTXALLSUFF(pVM);
     switch (pTimer->enmClock)
@@ -685,7 +685,7 @@ TMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cMicrosToNext   Number of microseconds to the next tick.
  */
-TMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
+VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
 {
     PVM pVM = pTimer->CTXALLSUFF(pVM);
     switch (pTimer->enmClock)
@@ -719,7 +719,7 @@ TMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   cNanosToNext    Number of nanoseconds to the next tick.
  */
-TMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
+VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
 {
     PVM pVM = pTimer->CTXALLSUFF(pVM);
     switch (pTimer->enmClock)
@@ -753,7 +753,7 @@ TMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
  * @returns VBox status.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(int) TMTimerStop(PTMTIMER pTimer)
+VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 {
     STAM_PROFILE_START(&pTimer->CTXALLSUFF(pVM)->tm.s.CTXALLSUFF(StatTimerStop), a);
     /** @todo see if this function needs optimizing. */
@@ -843,7 +843,7 @@ TMDECL(int) TMTimerStop(PTMTIMER pTimer)
  * @returns Current clock time.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
 {
     uint64_t u64;
     PVM pVM = pTimer->CTXALLSUFF(pVM);
@@ -878,7 +878,7 @@ TMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
  * @returns Clock frequency (as Hz of course).
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
 {
     switch (pTimer->enmClock)
     {
@@ -905,7 +905,7 @@ TMDECL(uint64_t) TMTimerGetFreq(PTMTIMER pTimer)
  * @returns The timer clock as nanoseconds.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(uint64_t) TMTimerGetNano(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetNano(PTMTIMER pTimer)
 {
     return TMTimerToNano(pTimer, TMTimerGet(pTimer));
 }
@@ -917,7 +917,7 @@ TMDECL(uint64_t) TMTimerGetNano(PTMTIMER pTimer)
  * @returns The timer clock as microseconds.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(uint64_t) TMTimerGetMicro(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetMicro(PTMTIMER pTimer)
 {
     return TMTimerToMicro(pTimer, TMTimerGet(pTimer));
 }
@@ -929,7 +929,7 @@ TMDECL(uint64_t) TMTimerGetMicro(PTMTIMER pTimer)
  * @returns The timer clock as milliseconds.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
 {
     return TMTimerToMilli(pTimer, TMTimerGet(pTimer));
 }
@@ -944,7 +944,7 @@ TMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
  * @remark  There could be rounding errors here. We just do a simple integere divide
  *          without any adjustments.
  */
-TMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
+VMMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
 {
     switch (pTimer->enmClock)
     {
@@ -977,7 +977,7 @@ TMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
  * @remark  There could be rounding errors here. We just do a simple integere divide
  *          without any adjustments.
  */
-TMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
+VMMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
 {
     switch (pTimer->enmClock)
     {
@@ -1010,7 +1010,7 @@ TMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
  * @remark  There could be rounding errors here. We just do a simple integere divide
  *          without any adjustments.
  */
-TMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
+VMMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
 {
     switch (pTimer->enmClock)
     {
@@ -1042,7 +1042,7 @@ TMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
  * @param   u64NanoTS       The nanosecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-TMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
+VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
 {
     switch (pTimer->enmClock)
     {
@@ -1074,7 +1074,7 @@ TMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
  * @param   u64MicroTS      The microsecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-TMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
+VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
 {
     switch (pTimer->enmClock)
     {
@@ -1106,7 +1106,7 @@ TMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
  * @param   u64MilliTS      The millisecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-TMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS)
+VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS)
 {
     switch (pTimer->enmClock)
     {
@@ -1137,7 +1137,7 @@ TMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS)
  * @returns Expire time of the timer.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
+VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
 {
     int cRetries = 1000;
     do
@@ -1198,7 +1198,7 @@ TMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
  * @returns False if not active.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  */
-TMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
+VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
 {
     TMTIMERSTATE    enmState = pTimer->enmState;
     switch (enmState)

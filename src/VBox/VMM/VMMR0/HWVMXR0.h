@@ -48,7 +48,7 @@ __BEGIN_DECLS
  * @param   pVM         The VM to operate on.
  * @param   pCpu        CPU info struct
  */
-HWACCMR0DECL(int) VMXR0Enter(PVM pVMm, PHWACCM_CPUINFO pCpu);
+VMMR0DECL(int) VMXR0Enter(PVM pVMm, PHWACCM_CPUINFO pCpu);
 
 /**
  * Leaves the VT-x session
@@ -57,7 +57,7 @@ HWACCMR0DECL(int) VMXR0Enter(PVM pVMm, PHWACCM_CPUINFO pCpu);
  * @param   pVM         The VM to operate on.
  * @param   pCtx        CPU context
  */
-HWACCMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx);
+VMMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx);
 
 
 /**
@@ -69,7 +69,7 @@ HWACCMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx);
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
  * Deactivates VT-x on the current CPU
@@ -79,7 +79,7 @@ HWACCMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu,
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-HWACCMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
  * Does Ring-0 per VM VT-x init.
@@ -87,7 +87,7 @@ HWACCMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHY
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0InitVM(PVM pVM);
+VMMR0DECL(int) VMXR0InitVM(PVM pVM);
 
 /**
  * Does Ring-0 per VM VT-x termination.
@@ -95,7 +95,7 @@ HWACCMR0DECL(int) VMXR0InitVM(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0TermVM(PVM pVM);
+VMMR0DECL(int) VMXR0TermVM(PVM pVM);
 
 /**
  * Sets up VT-x for the specified VM
@@ -103,7 +103,7 @@ HWACCMR0DECL(int) VMXR0TermVM(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM);
+VMMR0DECL(int) VMXR0SetupVM(PVM pVM);
 
 
 /**
@@ -112,7 +112,7 @@ HWACCMR0DECL(int) VMXR0SetupVM(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM);
+VMMR0DECL(int) VMXR0SaveHostState(PVM pVM);
 
 /**
  * Loads the guest state
@@ -121,7 +121,7 @@ HWACCMR0DECL(int) VMXR0SaveHostState(PVM pVM);
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
  */
-HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
+VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
 
 
 /**
@@ -131,7 +131,7 @@ HWACCMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx);
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
  */
-HWACCMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
+VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
 
 
 #define VMX_WRITE_SELREG(REG, reg) \

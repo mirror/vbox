@@ -100,7 +100,7 @@ static int emR3RawGuestTrap(PVM pVM);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-EMR3DECL(int) EMR3Init(PVM pVM)
+VMMR3DECL(int) EMR3Init(PVM pVM)
 {
     LogFlow(("EMR3Init\n"));
     /*
@@ -370,7 +370,7 @@ EMR3DECL(int) EMR3Init(PVM pVM)
  *
  * @param   pVM     The VM.
  */
-EMR3DECL(void) EMR3Relocate(PVM pVM)
+VMMR3DECL(void) EMR3Relocate(PVM pVM)
 {
     LogFlow(("EMR3Relocate\n"));
     if (pVM->em.s.pStatsR3)
@@ -383,7 +383,7 @@ EMR3DECL(void) EMR3Relocate(PVM pVM)
  *
  * @param   pVM
  */
-EMR3DECL(void) EMR3Reset(PVM pVM)
+VMMR3DECL(void) EMR3Reset(PVM pVM)
 {
     LogFlow(("EMR3Reset: \n"));
     pVM->em.s.fForceRAW = false;
@@ -399,7 +399,7 @@ EMR3DECL(void) EMR3Reset(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-EMR3DECL(int) EMR3Term(PVM pVM)
+VMMR3DECL(int) EMR3Term(PVM pVM)
 {
     AssertMsg(pVM->em.s.offVM, ("bad init order!\n"));
 
@@ -462,7 +462,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
  * @param   enmMode     The execution mode change.
  * @thread  The emulation thread.
  */
-EMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode)
+VMMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode)
 {
     switch (enmMode)
     {
@@ -501,7 +501,7 @@ EMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode)
  * @param   pVM         VM handle.
  * @param   rc          VBox status code.
  */
-EMR3DECL(void) EMR3FatalError(PVM pVM, int rc)
+VMMR3DECL(void) EMR3FatalError(PVM pVM, int rc)
 {
     longjmp(pVM->em.s.u.FatalLongJump, rc);
     AssertReleaseMsgFailed(("longjmp returned!\n"));
@@ -514,7 +514,7 @@ EMR3DECL(void) EMR3FatalError(PVM pVM, int rc)
  * @returns pointer to read only state name,
  * @param   enmState    The state.
  */
-EMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
+VMMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
 {
     switch (enmState)
     {
@@ -2356,7 +2356,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-EMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
+VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM)
 {
     return emR3RawForcedActions(pVM, pVM->em.s.pCtx);
 }
@@ -3219,7 +3219,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-EMR3DECL(int) EMR3ExecuteVM(PVM pVM)
+VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
 {
     LogFlow(("EMR3ExecuteVM: pVM=%p enmVMState=%d  enmState=%d (%s) fForceRAW=%d\n", pVM, pVM->enmVMState,
              pVM->em.s.enmState, EMR3GetStateName(pVM->em.s.enmState), pVM->em.s.fForceRAW));

@@ -26,9 +26,6 @@
 #include <VBox/vmapi.h>
 #include <setjmp.h>
 
-#if !defined(IN_VM_R3) && !defined(IN_VM_R0) && !defined(IN_VM_GC)
-# error "Not in VM! This is an internal header!"
-#endif
 
 
 /** @defgroup grp_vm_int   Internals

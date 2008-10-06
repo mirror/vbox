@@ -30,7 +30,7 @@ endif
 
 LIBRARIES              += DisasmR3
 DisasmR3_TEMPLATE       = VBOXR3
-DisasmR3_DEFS           = IN_DIS_R3
+DisasmR3_DEFS           = IN_DIS
 ifeq ($(KBUILD_TARGET),win)
 DisasmR3_CXXFLAGS      += -EHa
 else ifneq ($(KBUILD_TARGET),l4)
@@ -47,7 +47,7 @@ DisasmR3_SOURCES        = \
 
 LIBRARIES              += DisasmCoreR3
 DisasmCoreR3_TEMPLATE   = VBOXR3
-DisasmCoreR3_DEFS       = IN_DIS_R3 DIS_CORE_ONLY
+DisasmCoreR3_DEFS       = IN_DIS DIS_CORE_ONLY
 DisasmCoreR3_SOURCES    = \
 	DisasmCore.cpp \
 	DisasmReg.cpp \
@@ -56,7 +56,7 @@ DisasmCoreR3_SOURCES    = \
 
 LIBRARIES              += DisasmGC
 DisasmGC_TEMPLATE       = VBOXGC
-DisasmGC_DEFS           = IN_DIS_GC IN_RT_GC DIS_CORE_ONLY
+DisasmGC_DEFS           = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
 DisasmGC_SOURCES        = \
 	DisasmCore.cpp \
 	DisasmReg.cpp \
@@ -65,7 +65,7 @@ DisasmGC_SOURCES        = \
 
 LIBRARIES              += DisasmR0
 DisasmR0_TEMPLATE       = VBOXR0
-DisasmR0_DEFS           = IN_DIS_R0 IN_RT_R0 DIS_CORE_ONLY
+DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY
 DisasmR0_SOURCES        = \
 	DisasmCore.cpp \
 	DisasmReg.cpp \
@@ -77,7 +77,7 @@ ifdef VBOX_WITH_TESTCASES
  # testcase that hasn't been moved yet.
  PROGRAMS              += tstDisasm
  tstDisasm_TEMPLATE     = VBOXR3TSTEXE
- tstDisasm_DEFS         = IN_DIS_R3
+ tstDisasm_DEFS         = IN_DIS
  tstDisasm_SOURCES      = DisasmTest.cpp DisasmTestA.asm
  tstDisasm_LIBS         = \
  	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
@@ -85,7 +85,7 @@ ifdef VBOX_WITH_TESTCASES
 
  PROGRAMS              += tstDisasmCore
  tstDisasmCore_TEMPLATE = VBOXR3TSTEXE
- tstDisasmCore_DEFS     = IN_DIS_R3 DIS_CORE_ONLY
+ tstDisasmCore_DEFS     = IN_DIS DIS_CORE_ONLY
  tstDisasmCore_SOURCES  = DisasmTestCore.cpp
  tstDisasmCore_LIBS     = \
  	$(PATH_LIB)/DisasmCoreR3$(VBOX_SUFF_LIB) \

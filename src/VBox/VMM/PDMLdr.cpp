@@ -78,7 +78,7 @@ static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const
  * @returns VBox status code.
  * @param   pUVM            Pointer to the user mode VM structure.
  */
-PDMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
+VMMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
 {
     return pdmR3LoadR0U(pUVM, NULL, VMMR0_MAIN_MODULE_NAME);
 }
@@ -174,7 +174,7 @@ void pdmR3LdrTermU(PUVM pUVM)
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   offDelta    Relocation delta relative to old location.
  */
-PDMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
+VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PDMR3LdrRelocate: offDelta=%VGv\n", offDelta));
 
@@ -407,7 +407,7 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
  * @param   pszFilename     Filename of the module binary.
  * @param   pszName         Module name. Case sensitive and the length is limited!
  */
-PDMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName)
+VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName)
 {
     /*
      * Validate input.
@@ -618,7 +618,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue)
+VMMR3DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue)
 {
     /*
      * Validate input.
@@ -666,7 +666,7 @@ PDMR3DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *p
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue)
+VMMR3DECL(int) PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue)
 {
 #ifdef PDMLDR_FAKE_MODE
     *ppvValue = 0xdeadbeef;
@@ -714,7 +714,7 @@ PDMR3DECL(int) PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *p
  *                          ordinal value rather than a string pointer.
  * @param   ppvValue        Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue)
+VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue)
 {
 #ifdef PDMLDR_FAKE_MODE
     *ppvValue = 0xdeadbeef;
@@ -755,7 +755,7 @@ PDMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
  *                          ordinal value rather than a string pointer.
  * @param   pRCPtrValue     Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pRCPtrValue)
+VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pRCPtrValue)
 {
 #ifdef PDMLDR_FAKE_MODE
     *pRCPtrValue = 0xfeedf00d;
@@ -811,7 +811,7 @@ PDMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
  *                          ordinal value rather than a string pointer.
  * @param   pRCPtrValue     Where to store the symbol value.
  */
-PDMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pRCPtrValue)
+VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pRCPtrValue)
 {
 #ifdef PDMLDR_FAKE_MODE
     *pRCPtrValue = 0xfeedf00d;
@@ -1009,7 +1009,7 @@ typedef struct QMFEIPARG
  * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2.
  * @param   pNearSym2   The address of pszNearSym2.
  */
-PDMR3DECL(int) PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
+VMMR3DECL(int) PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
                                         char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
                                         char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
                                         char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2)
@@ -1130,7 +1130,7 @@ static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const
  * @param   pfnCallback     Function to call back for each of the modules.
  * @param   pvArg           User argument.
  */
-PDMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg)
+VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg)
 {
     PPDMMOD pCur;
     for (pCur = pVM->pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)

@@ -32,9 +32,6 @@
 #include <iprt/param.h>
 #include <VBox/log.h>
 
-#if !defined(IN_PATM_R3) && !defined(IN_PATM_R0) && !defined(IN_PATM_GC)
-# error "Not in PATM! This is an internal header!"
-#endif
 
 
 #ifdef PATM_WITH_NEW_SSM
@@ -638,7 +635,7 @@ R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(ui
  * @param   pInstrGC    Guest context point to the instruction
  *
  */
-PATMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC);
+VMMDECL(PPATMPATCHREC) PATMQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC);
 
 
 /**
@@ -667,7 +664,7 @@ void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree);
  * @param   opcode      DIS instruction opcode
  * @param   fPatchFlags Patch flags
  */
-PATMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags);
+VMMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags);
 
 
 /**
@@ -730,7 +727,7 @@ __BEGIN_DECLS
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-PATMGCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 
 /**
  * Find patch for privileged instruction at specified location
@@ -757,7 +754,7 @@ PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTRCPTR pInstrGC, bool fIncl
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC,
+VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC,
                                  uint32_t uOpcode, uint32_t uOpSize, PPATMPATCHREC pPatchRec);
 
 
@@ -774,7 +771,7 @@ PATMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *)
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch);
+VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISCPUSTATE *pCpu, PPATCHINFO pPatch);
 
 /**
  * Mark patch as dirty
@@ -786,7 +783,7 @@ PATMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_
  * @note    returns failure if patching is not allowed or possible
  *
  */
-PATMR3DECL(int) PATMR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch);
+VMMR3DECL(int) PATMR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch);
 
 /**
  * Calculate the branch destination
