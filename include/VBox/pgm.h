@@ -1,5 +1,5 @@
 /** @file
- * PGM - Page Monitor/Monitor.
+ * PGM - Page Monitor / Monitor.
  */
 
 /*
@@ -39,7 +39,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pgm   The Page Monitor/Manager API
+/** @defgroup grp_pgm   The Page Monitor / Manager API
  * @{
  */
 

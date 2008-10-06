@@ -37,6 +37,7 @@
  * "ping thread" and the "pong thread, respectivly. (The last set of names comes
  * from the use of the Ping-Pong synchronization construct from the RTSem API.)
  *
+ * @see grp_dbgf
  *
  *
  * @section sec_dbgf_scenario   Usage Scenario

@@ -22,7 +22,9 @@
 
 /** @page pg_pgm PGM - The Page Manager and Monitor
  *
- * See also @ref pg_pgmPhys, @ref pg_pgm_pool.
+ * @see grp_pgm,
+ * @ref pg_pgm_pool,
+ * @ref pg_pgm_phys.
  *
  *
  * @section         sec_pgm_modes           Paging Modes
@@ -199,7 +201,7 @@
  */
 
 
-/** @page pg_pgmPhys PGMPhys - Physical Guest Memory Management.
+/** @page pg_pgm_phys   PGM Physical Guest Memory Management
  *
  *
  * Objectives:

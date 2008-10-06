@@ -47,7 +47,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_device    Devices
+/** @defgroup grp_pdm_device    The PDM Devices API
  * @ingroup grp_pdm
  * @{
  */

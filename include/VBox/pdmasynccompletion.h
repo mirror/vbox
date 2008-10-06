@@ -37,7 +37,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_async_completion  Async I/O Completion
+/** @defgroup grp_pdm_async_completion  The PDM Async I/O Completion API
  * @ingroup grp_pdm
  * @{
  */

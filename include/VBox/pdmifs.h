@@ -35,7 +35,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_interfaces    Interfaces
+/** @defgroup grp_pdm_interfaces    The PDM Interface Definitions
  * @ingroup grp_pdm
  * @{
  */

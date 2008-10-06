@@ -36,7 +36,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_services  Services
+/** @defgroup grp_pdm_services  The PDM Services API
  * @ingroup grp_pdm
  * @{
  */

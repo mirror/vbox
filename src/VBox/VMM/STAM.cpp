@@ -31,8 +31,8 @@
  * statistics with STAM giving them a name. The name is like hierarchical, the
  * components separated by slashes ('/').
  *
+ * @see grp_stam
  */
-
 
 /*******************************************************************************
 *   Header Files                                                               *

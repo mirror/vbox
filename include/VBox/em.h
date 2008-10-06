@@ -37,7 +37,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_em        The Execution Monitor API
+/** @defgroup grp_em        The Execution Monitor / Manager API
  * @{
  */
 

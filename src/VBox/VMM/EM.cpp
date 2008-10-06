@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * EM - Execution Monitor/Manager.
+ * EM - Execution Monitor / Manager.
  */
 
 /*
@@ -19,7 +19,7 @@
  * additional information or have any questions.
  */
 
-/** @page pg_em         EM - The Execution Monitor/Manager
+/** @page pg_em         EM - The Execution Monitor / Manager
  *
  * The Execution Monitor/Manager is responsible for running the VM, scheduling
  * the right kind of execution (Raw-mode, Hardware Assisted, Recompiled or
@@ -31,6 +31,8 @@
  * The interpreted execution is only used to avoid switching between
  * raw-mode/hwaccm and the recompiler when fielding virtualization traps/faults.
  * The interpretation is thus implemented as part of EM.
+ *
+ * @see grp_em
  */
 
 /*******************************************************************************

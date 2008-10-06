@@ -1,5 +1,5 @@
 /** @file
- * DBGF - Debugging Facility.
+ * DBGF - Debugger Facility.
  */
 
 /*
@@ -40,7 +40,7 @@
 __BEGIN_DECLS
 
 
-/** @defgroup grp_dbgf     The Debugging Facility API
+/** @defgroup grp_dbgf     The Debugger Facility API
  * @{
  */
 

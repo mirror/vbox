@@ -45,7 +45,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_usbdev    USB Devices
+/** @defgroup grp_pdm_usbdev    The USB Devices API
  * @ingroup grp_pdm
  * @{
  */

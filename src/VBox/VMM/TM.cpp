@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * TM - Timeout Manager.
+ * TM - Time Manager.
  */
 
 /*
@@ -24,6 +24,8 @@
  *
  * The Time Manager abstracts the CPU clocks and manages timers used by the VMM,
  * device and drivers.
+ *
+ * @see grp_tm
  *
  *
  * @section sec_tm_clocks   Clocks

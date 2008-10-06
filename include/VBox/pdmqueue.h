@@ -34,7 +34,7 @@
 
 __BEGIN_DECLS
 
-/** @defgroup grp_pdm_queue     Queues
+/** @defgroup grp_pdm_queue     The PDM Queues API
  * @ingroup grp_pdm
  * @{
  */

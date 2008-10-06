@@ -27,6 +27,8 @@
  * I/0 port handlers and memory mapped I/O handlers. A handler is PDM devices
  * and a set of callback functions.
  *
+ * @see grp_iom
+ *
  *
  * @section sec_iom_rawmode     Raw-Mode
  *

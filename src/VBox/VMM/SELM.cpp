@@ -24,6 +24,8 @@
  * Manages the hypervisor GDT entires, monitors and shadows the guest GDT, LDT
  * and TSS. Only active in raw-mode.
  *
+ * @see grp_selm
+ *
  */
 
 /*******************************************************************************

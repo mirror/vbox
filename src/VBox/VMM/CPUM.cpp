@@ -31,6 +31,8 @@
  * raw-mode, CPUM also maintains a host context for saving and restoring
  * registers accross world switches. This latter is done in cooperation with the
  * world switcher (@see pg_vmm).
+ *
+ * @see grp_cpum
  */
 
 /*******************************************************************************
