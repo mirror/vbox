@@ -5153,11 +5153,9 @@ static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN)
     pIf->pDrvMount = NULL;
 
     /*
-     * Just in case there was a medium inserted. Only required when attached to a physical drive
-     * in passthrough mode as in virtual ATAPI mode we've got an unmount notification.
+     * In case there was a medium inserted.
      */
-    if (pIf->fATAPIPassthrough)
-        ataMediumRemoved(pIf);
+    ataMediumRemoved(pIf);
 }
 
 
@@ -5334,11 +5332,9 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
     {
         rc = ataConfigLun(pDevIns, pIf);
         /*
-         * In case there is a new medium inserted. In virtual ATAPI mode we get an mount
-         * notification.
+         * In case there is a medium inserted.
          */
-        if (pIf->fATAPIPassthrough)
-            ataMediumInserted(pIf);
+        ataMediumInserted(pIf);
     }
     else
         AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
