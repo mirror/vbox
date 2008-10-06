@@ -750,6 +750,13 @@ Drivers_SOURCES.win   = \
 	Audio/dsoundaudio.c \
 	Serial/DrvHostSerial.cpp
 
+if defined(VBOX_WITH_NETFLT) && "$(KBUILD_TARGET)" == "win"
+ if defined(VBOX_NETFLT_ONDEMAND_BIND)
+  Drivers_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
+ else
+  Drivers_SOURCES.win += Network/win/DrvIntNet-win.cpp
+ endif
+endif
 
 # -- features --
 
