@@ -398,7 +398,7 @@ endif
 # Drop incompatible options when using the cross-compiler on darwin.
 ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(filter-out i386-elf-gcc%, $(VBOX_RECOMPILER_OP_GCC)),)
-  COMPILE_OP_CMDS = $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector, $(COMPILE_OP_CMDS_2))
+  COMPILE_OP_CMDS = $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector -Wno-missing-field-initializers, $(COMPILE_OP_CMDS_2))
  endif
 else if1of ($(KBUILD_TARGET),linux)
  ifneq ($(TOOL_$(VBOX_GCC_TOOL)_CC),$(VBOX_RECOMPILER_OP_GCC))
