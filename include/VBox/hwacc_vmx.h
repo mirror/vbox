@@ -755,6 +755,10 @@ typedef const EPTPT *PCEPTPT;
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT             RT_BIT(11)
 /** VM Exit when executing the RDTSC instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT             RT_BIT(12)
+/** VM Exit when executing the MOV to CR3 instruction. */
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT          RT_BIT(15)
+/** VM Exit when executing the MOV from CR3 instruction. */
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT         RT_BIT(16)
 /** VM Exit on CR8 loads. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT          RT_BIT(19)
 /** VM Exit on CR8 stores. */
@@ -767,6 +771,8 @@ typedef const EPTPT *PCEPTPT;
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT         RT_BIT(24)
 /** Use IO bitmaps. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS         RT_BIT(25)
+/** Monitor trap flag. */
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG      RT_BIT(27)
 /** Use MSR bitmaps. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS        RT_BIT(28)
 /** VM Exit when executing the MONITOR instruction. */
@@ -1443,6 +1449,11 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
     return uLastError;
 #endif
 }
+
+#ifdef IN_RING0
+VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
+VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+#endif /* IN_RING0 */
 
 /** @} */
 
