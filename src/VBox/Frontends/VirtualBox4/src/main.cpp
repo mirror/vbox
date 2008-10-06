@@ -232,7 +232,9 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         /* Cause Qt4 has the conflict with fontconfig application as a result
          * substituting some fonts with non anti-aliased bitmap font we are
          * reseting all the substitutes here for the current application font. */
+# ifndef Q_OS_SOLARIS
         QFont::removeSubstitution (QApplication::font().family());
+# endif /* Q_OS_SOLARIS */
 #endif
 
 #ifdef Q_WS_WIN
