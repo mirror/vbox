@@ -365,8 +365,8 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns);
 PDMBOTHCBDECL(void) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                            uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
                                            uint8_t u8TriggerMode);
-PDMBOTHCBDECL(uint32_t) apicWRMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
-PDMBOTHCBDECL(uint32_t) apicRDMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
+PDMBOTHCBDECL(uint32_t) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
+PDMBOTHCBDECL(uint32_t) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
 PDMBOTHCBDECL(int)  ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int)  ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
@@ -580,12 +580,19 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns)
     return s->tpr >> 4;
 }
 
-PDMBOTHCBDECL(uint32_t) apicWRMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value)
+PDMBOTHCBDECL(uint32_t) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value)
 {
+    APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    u32Reg -= MSR_IA32_APIC_START;
+    LogRel(("nike: WRMSR on %d: to %x written %llx\n", iCpu, u32Reg, u64Value));
     return 0;
 }
-PDMBOTHCBDECL(uint32_t) apicRDMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value)
+PDMBOTHCBDECL(uint32_t) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
+    APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    u32Reg -= MSR_IA32_APIC_START;
+    LogRel(("nike: RDMSR on %d: read from %x\n", iCpu, u32Reg));
+    *pu64Value = 0;
     return 0;
 }
 
@@ -1967,8 +1974,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     ApicReg.pfnGetBaseR3            = apicGetBase;
     ApicReg.pfnSetTPRR3             = apicSetTPR;
     ApicReg.pfnGetTPRR3             = apicGetTPR;
-    ApicReg.pfnWRMSRR3              = apicWRMSR;
-    ApicReg.pfnRDMSRR3              = apicRDMSR;
+    ApicReg.pfnWriteMSRR3           = apicWriteMSR;
+    ApicReg.pfnReadMSRR3            = apicReadMSR;
     ApicReg.pfnBusDeliverR3         = apicBusDeliverCallback;
     if (fGCEnabled) {
         ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
@@ -1977,8 +1984,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszGetBaseRC        = "apicGetBase";
         ApicReg.pszSetTPRRC         = "apicSetTPR";
         ApicReg.pszGetTPRRC         = "apicGetTPR";
-        ApicReg.pszWRMSRRC          = "apicWRMSR";
-        ApicReg.pszRDMSRRC          = "apicRDMSR";
+        ApicReg.pszWriteMSRRC       = "apicWriteMSR";
+        ApicReg.pszReadMSRRC        = "apicReadMSR";
         ApicReg.pszBusDeliverRC     = "apicBusDeliverCallback";
     } else {
         ApicReg.pszGetInterruptRC   = NULL;
@@ -1987,8 +1994,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszGetBaseRC        = NULL;
         ApicReg.pszSetTPRRC         = NULL;
         ApicReg.pszGetTPRRC         = NULL;
-        ApicReg.pszWRMSRRC          = NULL;
-        ApicReg.pszRDMSRRC          = NULL;
+        ApicReg.pszWriteMSRRC       = NULL;
+        ApicReg.pszReadMSRRC        = NULL;
         ApicReg.pszBusDeliverRC     = NULL;
     }
     if (fR0Enabled) {
@@ -1998,8 +2005,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszGetBaseR0        = "apicGetBase";
         ApicReg.pszSetTPRR0         = "apicSetTPR";
         ApicReg.pszGetTPRR0         = "apicGetTPR";
-        ApicReg.pszWRMSRR0          = "apicWRMSR";
-        ApicReg.pszRDMSRR0          = "apicRDMSR";
+        ApicReg.pszWriteMSRR0       = "apicWriteMSR";
+        ApicReg.pszReadMSRR0        = "apicReadMSR";
         ApicReg.pszBusDeliverR0     = "apicBusDeliverCallback";
     } else {
         ApicReg.pszGetInterruptR0   = NULL;
@@ -2008,8 +2015,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszGetBaseR0        = NULL;
         ApicReg.pszSetTPRR0         = NULL;
         ApicReg.pszGetTPRR0         = NULL;
-        ApicReg.pszWRMSRR0          = NULL;
-        ApicReg.pszRDMSRR0          = NULL;
+        ApicReg.pszWriteMSRR0       = NULL;
+        ApicReg.pszReadMSRR0        = NULL;
         ApicReg.pszBusDeliverR0     = NULL;
     }
 

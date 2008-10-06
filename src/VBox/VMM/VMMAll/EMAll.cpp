@@ -2578,15 +2578,11 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     default:
         /* In X2APIC specification this range is reserved for APIC control. */ 
         if ((pRegFrame->ecx >= MSR_IA32_APIC_START) && (pRegFrame->ecx < MSR_IA32_APIC_END))
-        {
-            rc = PDMApicRDMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, &val);
-        } 
+            rc = PDMApicReadMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, &val);
         else 
-        {
             /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
             val = 0;
-            break;
-        }
+        break;
     }
     Log(("EMInterpretRdmsr %s (%x) -> val=%VX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
     if (rc == VINF_SUCCESS) 
@@ -2727,9 +2723,8 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     default:
         /* In X2APIC specification this range is reserved for APIC control. */ 
         if ((pRegFrame->ecx >=  MSR_IA32_APIC_START) && (pRegFrame->ecx <  MSR_IA32_APIC_END))
-        {
-            return PDMApicWRMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, val);
-        }
+            return PDMApicWriteMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, val);
+
         /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
         break;
     }

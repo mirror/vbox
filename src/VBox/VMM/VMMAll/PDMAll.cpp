@@ -253,7 +253,7 @@ VMMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending)
 }
 
 /**
- * WRMSR in APIC range.
+ * Write MSR in APIC range.
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
@@ -261,13 +261,13 @@ VMMDECL(int) PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending)
  * @param   u32Reg          MSR to write.
  * @param   u64Value        Value to write.
  */
-VMMDECL(int) PDMApicWRMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value)
+VMMDECL(int) PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnWRMSR));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnWriteMSR));
         pdmLock(pVM);
-        pVM->pdm.s.Apic.CTX_SUFF(pfnWRMSR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), iCpu, u32Reg, u64Value);
+        pVM->pdm.s.Apic.CTX_SUFF(pfnWriteMSR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), iCpu, u32Reg, u64Value);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -275,7 +275,7 @@ VMMDECL(int) PDMApicWRMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Va
 }
 
 /**
- * RDMSR in APIC range.
+ * Read MSR in APIC range.
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
@@ -283,13 +283,13 @@ VMMDECL(int) PDMApicWRMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Va
  * @param   u32Reg          MSR to read.
  * @param   pu64Value       Value read.
  */
-VMMDECL(int) PDMApicRDMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value)
+VMMDECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
-        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnRDMSR));
+        Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnReadMSR));
         pdmLock(pVM);
-        pVM->pdm.s.Apic.CTX_SUFF(pfnRDMSR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), iCpu, u32Reg, pu64Value);
+        pVM->pdm.s.Apic.CTX_SUFF(pfnReadMSR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), iCpu, u32Reg, pu64Value);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
