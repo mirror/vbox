@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 
   if (modified == 1) {
 #ifdef VBOX
-    long new_bios_len;
+    size_t new_bios_len;
 #endif
     if ((stream = fopen( argv[1], "wb")) == NULL) {
       printf("Error opening %s for writing.\n", argv[1]);
