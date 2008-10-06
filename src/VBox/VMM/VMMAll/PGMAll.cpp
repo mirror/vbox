@@ -1014,7 +1014,7 @@ VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPd
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int)    PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
+VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
@@ -1037,6 +1037,7 @@ VMMDECL(int)    PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt
         rc = pgmPoolAlloc(pVM, (GCPtr & EPT_PML4E_PG_MASK) + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4e, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
+            Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
             return VINF_PGM_SYNC_CR3;
@@ -1068,6 +1069,7 @@ VMMDECL(int)    PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt
         rc = pgmPoolAlloc(pVM, (GCPtr & EPT_PDPTE_PG_MASK) + RT_BIT_64(62) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PD_FOR_PHYS, pShwPage->idx, iPdPt, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
+            Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (2) -> signal sync cr3\n"));
             Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
             return VINF_PGM_SYNC_CR3;
