@@ -3072,15 +3072,19 @@ void helper_wrmsr(void)
         break;
 #endif
     default:
+#ifndef VBOX
+        /* XXX: exception ? */
+        break;
+#else  /* VBOX */
     {
         uint32_t ecx = (uint32_t)ECX;
-        /* In X2APIC specification this range is reserved for APIC control. */ 
-        if ((ecx >= MSR_APIC_RANGE_START) && (ecx < MSR_APIC_RANGE_END))
+        /* In X2APIC specification this range is reserved for APIC control. */
+        if (ecx >= MSR_APIC_RANGE_START && ecx < MSR_APIC_RANGE_END)
             cpu_apic_wrmsr(env, ecx, val);
-        else 
-            /* @todo: exception ? */;
+        /** @todo else exception? */
         break;
     }
+#endif /* VBOX */
     }
 }
 
@@ -3130,16 +3134,21 @@ void helper_rdmsr(void)
         break;
 #endif
     default:
+#ifndef VBOX
+        /* XXX: exception ? */
+        val = 0;
+        break;
+#else  /* VBOX */
     {
         uint32_t ecx = (uint32_t)ECX;
-        /* In X2APIC specification this range is reserved for APIC control. */ 
-        if ((ecx >= MSR_APIC_RANGE_START) && (ecx < MSR_APIC_RANGE_END))
+        /* In X2APIC specification this range is reserved for APIC control. */
+        if (ecx >= MSR_APIC_RANGE_START && ecx < MSR_APIC_RANGE_END)
             val = cpu_apic_rdmsr(env, ecx);
-        else 
-            /** @todo: exception ? */
-            val = 0;
+        else
+            val = 0; /** @todo else exception? */
         break;
     }
+#endif /* VBOX */
     }
     EAX = (uint32_t)(val);
     EDX = (uint32_t)(val >> 32);
