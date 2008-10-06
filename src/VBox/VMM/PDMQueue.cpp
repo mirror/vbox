@@ -647,7 +647,7 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
     PPDMQUEUEITEMCORE pItems = (PPDMQUEUEITEMCORE)ASMAtomicXchgPtr((void * volatile *)&pQueue->pPendingR3, NULL);
     RTRCPTR           pItemsRC;
     ASMAtomicXchgSizeCorrect(&pQueue->pPendingRC, NIL_RTRCPTR, &pItemsRC);
-    RTRCPTR           pItemsR0;
+    RTR0PTR           pItemsR0;
     ASMAtomicXchgSizeCorrect(&pQueue->pPendingR0, NIL_RTR0PTR, &pItemsR0);
 
     AssertMsg(pItems || pItemsRC || pItemsR0, ("ERROR: can't all be NULL now!\n"));
