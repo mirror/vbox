@@ -50,8 +50,8 @@ VMMDECL(int)    PDMApicSetBase(PVM pVM, uint64_t u64Base);
 VMMDECL(int)    PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
 VMMDECL(int)    PDMApicSetTPR(PVM pVM, uint8_t u8TPR);
 VMMDECL(int)    PDMApicGetTPR(PVM pVM, uint8_t *pu8TPR, bool *pfPending);
-VMMDECL(int)    PDMApicWRMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
-VMMDECL(int)    PDMApicRDMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
+VMMDECL(int)    PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
+VMMDECL(int)    PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
 VMMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 
 #ifdef IN_RING3
