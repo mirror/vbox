@@ -1488,12 +1488,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: pApicReg=%p:{.u32Version=%#x, .pfnGetInterruptR3=%p, .pfnSetBaseR3=%p, .pfnGetBaseR3=%p, "
-             ".pfnSetTPRR3=%p, .pfnGetTPRR3=%p, .pfnBusDeliverR3=%p, pszGetInterruptRC=%p:{%s}, pszSetBaseRC=%p:{%s}, pszGetBaseRC=%p:{%s}, "
-             ".pszSetTPRRC=%p:{%s}, .pszGetTPRRC=%p:{%s}, .pszBusDeliverRC=%p:{%s}} ppApicHlpR3=%p\n",
+             ".pfnSetTPRR3=%p, .pfnGetTPRR3=%p, .pfnWRMSR3=%p, .pfnRDMSR3=%p, .pfnBusDeliverR3=%p, pszGetInterruptRC=%p:{%s}, pszSetBaseRC=%p:{%s}, pszGetBaseRC=%p:{%s}, "
+             ".pszSetTPRRC=%p:{%s}, .pszGetTPRRC=%p:{%s}, .pszWRMSRRC=%p:{%s}, .pszRDMSRRC=%p:{%s}, .pszBusDeliverRC=%p:{%s}} ppApicHlpR3=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pApicReg, pApicReg->u32Version, pApicReg->pfnGetInterruptR3, pApicReg->pfnSetBaseR3,
-             pApicReg->pfnGetBaseR3, pApicReg->pfnSetTPRR3, pApicReg->pfnGetTPRR3, pApicReg->pfnBusDeliverR3, pApicReg->pszGetInterruptRC,
+             pApicReg->pfnGetBaseR3, pApicReg->pfnSetTPRR3, pApicReg->pfnGetTPRR3, pApicReg->pfnWRMSRR3, pApicReg->pfnRDMSRR3, pApicReg->pfnBusDeliverR3, pApicReg->pszGetInterruptRC,
              pApicReg->pszGetInterruptRC, pApicReg->pszSetBaseRC, pApicReg->pszSetBaseRC, pApicReg->pszGetBaseRC, pApicReg->pszGetBaseRC,
-             pApicReg->pszSetTPRRC, pApicReg->pszSetTPRRC, pApicReg->pszGetTPRRC, pApicReg->pszGetTPRRC, pApicReg->pszBusDeliverRC,
+             pApicReg->pszSetTPRRC, pApicReg->pszSetTPRRC, pApicReg->pszGetTPRRC, pApicReg->pszGetTPRRC, pApicReg->pszWRMSRRC, pApicReg->pszWRMSRRC, pApicReg->pszRDMSRRC, pApicReg->pszRDMSRRC, pApicReg->pszBusDeliverRC,
              pApicReg->pszBusDeliverRC, ppApicHlpR3));
 
     /*
@@ -1511,6 +1511,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         ||  !pApicReg->pfnGetBaseR3
         ||  !pApicReg->pfnSetTPRR3
         ||  !pApicReg->pfnGetTPRR3
+        ||  !pApicReg->pfnWRMSRR3
+        ||  !pApicReg->pfnRDMSRR3
         ||  !pApicReg->pfnBusDeliverR3)
     {
         Assert(pApicReg->pfnGetInterruptR3);
@@ -1519,6 +1521,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         Assert(pApicReg->pfnGetBaseR3);
         Assert(pApicReg->pfnSetTPRR3);
         Assert(pApicReg->pfnGetTPRR3);
+        Assert(pApicReg->pfnWRMSRR3);
+        Assert(pApicReg->pfnRDMSRR3);
         Assert(pApicReg->pfnBusDeliverR3);
         LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
@@ -1529,6 +1533,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
             ||  pApicReg->pszGetBaseRC
             ||  pApicReg->pszSetTPRRC
             ||  pApicReg->pszGetTPRRC
+            ||  pApicReg->pszWRMSRRC
+            ||  pApicReg->pszRDMSRRC
             ||  pApicReg->pszBusDeliverRC)
         &&  (   !VALID_PTR(pApicReg->pszGetInterruptRC)
             ||  !VALID_PTR(pApicReg->pszHasPendingIrqRC)
@@ -1536,6 +1542,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
             ||  !VALID_PTR(pApicReg->pszGetBaseRC)
             ||  !VALID_PTR(pApicReg->pszSetTPRRC)
             ||  !VALID_PTR(pApicReg->pszGetTPRRC)
+            ||  !VALID_PTR(pApicReg->pszWRMSRRC)
+            ||  !VALID_PTR(pApicReg->pszRDMSRRC)
             ||  !VALID_PTR(pApicReg->pszBusDeliverRC))
        )
     {
@@ -1545,6 +1553,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         Assert(VALID_PTR(pApicReg->pszGetBaseRC));
         Assert(VALID_PTR(pApicReg->pszSetTPRRC));
         Assert(VALID_PTR(pApicReg->pszGetTPRRC));
+        Assert(VALID_PTR(pApicReg->pszRDMSRRC));
+        Assert(VALID_PTR(pApicReg->pszWRMSRRC));
         Assert(VALID_PTR(pApicReg->pszBusDeliverRC));
         LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (RC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
@@ -1555,6 +1565,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
             ||  pApicReg->pszGetBaseR0
             ||  pApicReg->pszSetTPRR0
             ||  pApicReg->pszGetTPRR0
+            ||  pApicReg->pszWRMSRR0
+            ||  pApicReg->pszRDMSRR0
             ||  pApicReg->pszBusDeliverR0)
         &&  (   !VALID_PTR(pApicReg->pszGetInterruptR0)
             ||  !VALID_PTR(pApicReg->pszHasPendingIrqR0)
@@ -1562,6 +1574,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
             ||  !VALID_PTR(pApicReg->pszGetBaseR0)
             ||  !VALID_PTR(pApicReg->pszSetTPRR0)
             ||  !VALID_PTR(pApicReg->pszGetTPRR0)
+            ||  !VALID_PTR(pApicReg->pszRDMSRR0)
+            ||  !VALID_PTR(pApicReg->pszWRMSRR0)
             ||  !VALID_PTR(pApicReg->pszBusDeliverR0))
        )
     {
@@ -1571,6 +1585,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         Assert(VALID_PTR(pApicReg->pszGetBaseR0));
         Assert(VALID_PTR(pApicReg->pszSetTPRR0));
         Assert(VALID_PTR(pApicReg->pszGetTPRR0));
+        Assert(VALID_PTR(pApicReg->pszRDMSRR0));
+        Assert(VALID_PTR(pApicReg->pszWRMSRR0));
         Assert(VALID_PTR(pApicReg->pszBusDeliverR0));
         LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (R0 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
@@ -1583,7 +1599,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     }
 
     /*
-     * Only one APIC device. (malc: only in UP case actually)
+     * Only one APIC device. On SMP we have single logical device covering all LAPICs,
+     * as they need to communicate and share state easily.
      */
     PVM pVM = pDevIns->Internal.s.pVMR3;
     if (pVM->pdm.s.Apic.pDevInsR3)
@@ -1627,6 +1644,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         }
         if (RT_SUCCESS(rc))
         {
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszWRMSRRC, &pVM->pdm.s.Apic.pfnWRMSRRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszWRMSRRC, rc));
+        }
+        if (RT_SUCCESS(rc))
+        {
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszRDMSRRC, &pVM->pdm.s.Apic.pfnRDMSRRC);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszRDMSRRC, rc));
+        }
+        if (RT_SUCCESS(rc))
+        {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszBusDeliverRC, &pVM->pdm.s.Apic.pfnBusDeliverRC);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszBusDeliverRC, rc));
         }
@@ -1646,6 +1673,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         pVM->pdm.s.Apic.pfnGetBaseRC        = 0;
         pVM->pdm.s.Apic.pfnSetTPRRC         = 0;
         pVM->pdm.s.Apic.pfnGetTPRRC         = 0;
+        pVM->pdm.s.Apic.pfnWRMSRRC          = 0;
+        pVM->pdm.s.Apic.pfnRDMSRRC          = 0;
         pVM->pdm.s.Apic.pfnBusDeliverRC     = 0;
     }
 
@@ -1683,6 +1712,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         }
         if (RT_SUCCESS(rc))
         {
+            rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszWRMSRR0, &pVM->pdm.s.Apic.pfnWRMSRR0);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszWRMSRR0, rc));
+        }
+        if (RT_SUCCESS(rc))
+        {
+            rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszRDMSRR0, &pVM->pdm.s.Apic.pfnRDMSRR0);
+            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszRDMSRR0, rc));
+        }
+        if (RT_SUCCESS(rc))
+        {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, &pVM->pdm.s.Apic.pfnBusDeliverR0);
             AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, rc));
         }
@@ -1702,6 +1741,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         pVM->pdm.s.Apic.pfnGetBaseR0        = 0;
         pVM->pdm.s.Apic.pfnSetTPRR0         = 0;
         pVM->pdm.s.Apic.pfnGetTPRR0         = 0;
+        pVM->pdm.s.Apic.pfnWRMSRR0          = 0;
+        pVM->pdm.s.Apic.pfnRDMSRR0          = 0;
         pVM->pdm.s.Apic.pfnBusDeliverR0     = 0;
         pVM->pdm.s.Apic.pDevInsR0           = 0;
     }
@@ -1716,6 +1757,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     pVM->pdm.s.Apic.pfnGetBaseR3        = pApicReg->pfnGetBaseR3;
     pVM->pdm.s.Apic.pfnSetTPRR3         = pApicReg->pfnSetTPRR3;
     pVM->pdm.s.Apic.pfnGetTPRR3         = pApicReg->pfnGetTPRR3;
+    pVM->pdm.s.Apic.pfnWRMSRR3          = pApicReg->pfnWRMSRR3;
+    pVM->pdm.s.Apic.pfnRDMSRR3          = pApicReg->pfnRDMSRR3;
     pVM->pdm.s.Apic.pfnBusDeliverR3     = pApicReg->pfnBusDeliverR3;
     Log(("PDM: Registered APIC device '%s'/%d pDevIns=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pDevIns));
 

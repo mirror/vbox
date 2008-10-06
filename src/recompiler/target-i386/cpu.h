@@ -259,6 +259,8 @@
 #define MSR_EFER_LMA   (1 << 10)
 #define MSR_EFER_NXE   (1 << 11)
 #define MSR_EFER_FFXSR (1 << 14)
+#define MSR_APIC_RANGE_START            0x800
+#define MSR_APIC_RANGE_END              0x900
 
 #define MSR_STAR                        0xc0000081
 #define MSR_LSTAR                       0xc0000082
@@ -850,6 +852,8 @@ void cpu_set_apic_tpr(CPUX86State *env, uint8_t val);
 #ifndef NO_CPU_IO_DEFS
 uint8_t cpu_get_apic_tpr(CPUX86State *env);
 #endif
+uint64_t cpu_apic_rdmsr(CPUX86State *env, uint32_t reg);
+void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value);
 void cpu_smm_update(CPUX86State *env);
 
 /* will be suppressed */

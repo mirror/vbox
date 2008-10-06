@@ -274,6 +274,8 @@ int main()
     GEN_CHECK_OFF(PDM, Apic.pfnSetBaseR3);
     GEN_CHECK_OFF(PDM, Apic.pfnGetBaseR3);
     GEN_CHECK_OFF(PDM, Apic.pfnSetTPRR3);
+    GEN_CHECK_OFF(PDM, Apic.pfnWRMSRR3);
+    GEN_CHECK_OFF(PDM, Apic.pfnRDMSRR3);
     GEN_CHECK_OFF(PDM, Apic.pfnGetTPRR3);
     GEN_CHECK_OFF(PDM, Apic.pfnBusDeliverR3);
     GEN_CHECK_OFF(PDM, Apic.pDevInsR0);
@@ -282,6 +284,8 @@ int main()
     GEN_CHECK_OFF(PDM, Apic.pfnGetBaseR0);
     GEN_CHECK_OFF(PDM, Apic.pfnSetTPRR0);
     GEN_CHECK_OFF(PDM, Apic.pfnGetTPRR0);
+    GEN_CHECK_OFF(PDM, Apic.pfnWRMSRR0);
+    GEN_CHECK_OFF(PDM, Apic.pfnRDMSRR0);
     GEN_CHECK_OFF(PDM, Apic.pfnBusDeliverR0);
     GEN_CHECK_OFF(PDM, Apic.pDevInsRC);
     GEN_CHECK_OFF(PDM, Apic.pfnGetInterruptRC);
@@ -289,6 +293,8 @@ int main()
     GEN_CHECK_OFF(PDM, Apic.pfnGetBaseRC);
     GEN_CHECK_OFF(PDM, Apic.pfnSetTPRRC);
     GEN_CHECK_OFF(PDM, Apic.pfnGetTPRRC);
+    GEN_CHECK_OFF(PDM, Apic.pfnWRMSRRC);
+    GEN_CHECK_OFF(PDM, Apic.pfnRDMSRRC);
     GEN_CHECK_OFF(PDM, Apic.pfnBusDeliverRC);
     GEN_CHECK_OFF(PDM, IoApic);
     GEN_CHECK_OFF(PDM, IoApic.pDevInsR3);

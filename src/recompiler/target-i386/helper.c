@@ -3072,8 +3072,19 @@ void helper_wrmsr(void)
         break;
 #endif
     default:
-        /* XXX: exception ? */
+    {
+        uint32_t ecx = (uint32_t)ECX;
+        /* In X2APIC specification this range is reserved for APIC control. */ 
+        if ((ecx >= MSR_APIC_RANGE_START) && (ecx < MSR_APIC_RANGE_END))
+        {
+            cpu_apic_wrmsr(env, ecx, val);
+        }
+        else 
+        {
+            /* @todo: exception ? */
+        }
         break;
+    }
     }
 }
 
@@ -3123,9 +3134,20 @@ void helper_rdmsr(void)
         break;
 #endif
     default:
-        /* XXX: exception ? */
-        val = 0;
-        break;
+    {
+        uint32_t ecx = (uint32_t)ECX;
+        /* In X2APIC specification this range is reserved for APIC control. */ 
+        if ((ecx >= MSR_APIC_RANGE_START) && (ecx < MSR_APIC_RANGE_END))
+        {
+            val = cpu_apic_rdmsr(env, ecx);
+        } 
+        else 
+        {
+            /** @todo: exception ? */
+            val = 0;
+            break;
+        }
+    }
     }
     EAX = (uint32_t)(val);
     EDX = (uint32_t)(val >> 32);

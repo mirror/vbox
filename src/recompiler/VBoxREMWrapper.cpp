@@ -644,6 +644,20 @@ static const REMPARMDESC g_aArgsPDMApicSetTPR[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL }
 };
+static const REMPARMDESC g_aArgsPDMApicWRMSR[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL }
+};
+static const REMPARMDESC g_aArgsPDMApicRDMSR[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *), NULL }
+};
 static const REMPARMDESC g_aArgsPDMGetInterrupt[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
@@ -1003,7 +1017,7 @@ static const REMFNDESC g_aExports[] =
     { "REMR3NotifyInterruptSet",                (void *)&pfnREMR3NotifyInterruptSet,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyInterruptClear",              (void *)&pfnREMR3NotifyInterruptClear,              &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyTimerPending",                (void *)&pfnREMR3NotifyTimerPending,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
-    { "REMR3NotifyDmaPending",                  (void *)&pfnREMR3NotifyDmaPending,                  &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
+   { "REMR3NotifyDmaPending",                  (void *)&pfnREMR3NotifyDmaPending,                  &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyQueuePending",                (void *)&pfnREMR3NotifyQueuePending,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyFF",                          (void *)&pfnREMR3NotifyFF,                          &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyCodePageChanged",             (void *)&pfnREMR3NotifyCodePageChanged,             &g_aArgsNotifyCodePageChanged[0],           RT_ELEMENTS(g_aArgsNotifyCodePageChanged),             REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
@@ -1064,6 +1078,8 @@ static REMFNDESC g_aVMMImports[] =
     { "PDMApicGetTPR",                          (void *)(uintptr_t)&PDMApicGetTPR,                  &g_aArgsPDMApicGetTPR[0],                   RT_ELEMENTS(g_aArgsPDMApicGetTPR),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMApicSetBase",                         (void *)(uintptr_t)&PDMApicSetBase,                 &g_aArgsPDMApicSetBase[0],                  RT_ELEMENTS(g_aArgsPDMApicSetBase),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMApicSetTPR",                          (void *)(uintptr_t)&PDMApicSetTPR,                  &g_aArgsPDMApicSetTPR[0],                   RT_ELEMENTS(g_aArgsPDMApicSetTPR),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "PDMApicWRMSR",                           (void *)(uintptr_t)&PDMApicWRMSR,                  &g_aArgsPDMApicWRMSR[0],                   RT_ELEMENTS(g_aArgsPDMApicWRMSR),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),           NULL },
+    { "PDMApicRDMSR",                           (void *)(uintptr_t)&PDMApicRDMSR,                  &g_aArgsPDMApicRDMSR[0],                   RT_ELEMENTS(g_aArgsPDMApicRDMSR),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),           NULL },
     { "PDMR3DmaRun",                            (void *)(uintptr_t)&PDMR3DmaRun,                    &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "PDMGetInterrupt",                        (void *)(uintptr_t)&PDMGetInterrupt,                &g_aArgsPDMGetInterrupt[0],                 RT_ELEMENTS(g_aArgsPDMGetInterrupt),                   REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMIsaSetIrq",                           (void *)(uintptr_t)&PDMIsaSetIrq,                   &g_aArgsPDMIsaSetIrq[0],                    RT_ELEMENTS(g_aArgsPDMIsaSetIrq),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },

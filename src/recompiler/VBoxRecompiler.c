@@ -4086,6 +4086,26 @@ uint8_t cpu_get_apic_tpr(CPUX86State *env)
 }
 
 
+uint64_t cpu_apic_rdmsr(CPUX86State *env, uint32_t reg)
+{
+    uint64_t value;
+    int rc = PDMApicRDMSR(env->pVM, 0/* cpu */, reg, &value);
+    if (rc != VINF_SUCCESS)
+    {
+        /** @todo: exception ? */
+        value = 0;
+    }
+    return value;
+}
+
+void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value)
+{
+    int rc = PDMApicWRMSR(env->pVM, 0 /* cpu */, reg, value);
+    if (rc != VINF_SUCCESS)
+    {
+        /** @todo: exception ? */
+    }
+}
 /* -+- I/O Ports -+- */
 
 #undef LOG_GROUP

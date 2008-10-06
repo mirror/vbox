@@ -819,6 +819,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 /** EPT capabilities. */
 #define MSR_IA32_VMX_EPT_CAPS               0x48C
+/** X2APIC MSR ranges. */
+#define MSR_IA32_APIC_START                 0x800
+#define MSR_IA32_APIC_END                   0x900
 
 /** K6 EFER - Extended Feature Enable Register. */
 #define MSR_K6_EFER                         0xc0000080
