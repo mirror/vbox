@@ -1067,7 +1067,9 @@ else
  endif
 endif
 ifeq ($(KBUILD_TARGET_ARCH),x86)
- VBOX_GCC_OPT <= -march=i586
+ ifneq ($(KBUILD_TARGET),darwin)
+  VBOX_GCC_OPT <= -march=i586
+ endif
 endif
 
 #
