@@ -26,34 +26,35 @@
  *
  * @section pg_main_comp    Components
  *
- *  - VM / VMM / GVM / GVMM - Virtual Machine Monitor.
- *      - CFGM - Configuration Manager.
- *      - CPUM - CPU Monitor.
+ *  - VM / @ref pg_vmm "VMM" / GVM / @ref pg_gvmm "GVMM" - Virtual Machine
+ *    Monitor.
+ *      - @ref pg_cfgm
+ *      - @ref pg_cpum
  *      - CSAM - Guest OS Code Scanning and Analyis Manager.
- *      - DBGF - Debugging Facility.
+ *      - @ref pg_dbgf
  *          - DBGC - Debugger Console.
  *          - VBoxDbg - Debugger GUI (Qt).
  *      - DIS - Disassembler.
- *      - EM - Excution Monitor.
+ *      - @ref pg_em
  *      - HWACCM - Intel/AMD VM Hardware Support Manager.
  *      - REM - Recompiled Execution Monitor.
- *      - GMM - Global Memory Manager.
- *          - MM - Memory Monitor.
- *          - PGM - Page Monitor
- *          - SELM - Selector Monitor
- *      - IOM - Input / Output Monitor.
+ *      - @ref pg_gmm
+ *          - @ref pg_mm
+ *          - @ref pg_pgm
+ *          - @ref pg_selm
+ *      - @ref pg_iom
  *      - PATM - Dynamic Guest OS Patching Manager.
- *      - PDM  - Pluggable Device Manager.
+ *      - @ref pg_pdm
  *          - Devices / USB Devices, Drivers and their public interfaces.
  *          - Async I/O Completion API.
  *          - Async Task API.
  *          - Critical Section API.
  *          - Queue API.
  *          - Thread API.
- *      - SSM - Save State Manager.
- *      - STAM - Statistics Manager.
- *      - TM - Time Monitor.
- *      - TRPM - Trap & Interrupt Monitor
+ *      - @ref pg_ssm
+ *      - @ref pg_stam
+ *      - @ref pg_tm
+ *      - @ref pg_trpm
  *  - Pluggable Components (via PDM).
  *      - DevPCArch - PC Architecture Device (chipset, legacy ++).
  *      - DevPCBios - Basic Input Output System.
@@ -93,6 +94,7 @@
  *      - SUPDRV - The Support driver (aka VBoxDrv).
  *      - VBoxUSB - The USB support driver.
  *      - VBoxTAP - The Host Interface Networking driver.
+ *      - @ref pg_netflt
  *  - Host Services.
  *      - Shared Clipboard.
  *      - 3D

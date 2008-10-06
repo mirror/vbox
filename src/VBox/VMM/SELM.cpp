@@ -19,6 +19,13 @@
  * additional information or have any questions.
  */
 
+/** @page pg_selm   SELM - The Selector Manager
+ *
+ * Manages the hypervisor GDT entires, monitors and shadows the guest GDT, LDT
+ * and TSS. Only active in raw-mode.
+ *
+ */
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/

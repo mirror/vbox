@@ -22,6 +22,7 @@
 
 /** @page pg_pgm PGM - The Page Manager and Monitor
  *
+ * See also @ref pg_pgmPhys, @ref pg_pgm_pool.
  *
  *
  * @section         sec_pgm_modes           Paging Modes
