@@ -73,19 +73,20 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
  * @param   pvUserR3        User argument to the R3 handler.
  * @param   pfnHandlerR0    The R0 handler.
  * @param   pvUserR0        User argument to the R0 handler.
- * @param   pfnHandlerGC    The GC handler.
- * @param   pvUserGC        User argument to the GC handler.
- *                          This must be a GC pointer because it will be relocated!
+ * @param   pfnHandlerGC    The RC handler.
+ * @param   pvUserRC        User argument to the RC handler. This can be a value
+ *                          less that 0x10000 or a (non-null) pointer that is
+ *                          automatically relocatated.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                           R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                           R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
-                                          RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RCPTRTYPE(void *) pvUserGC,
+                                          RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
                                           R3PTRTYPE(const char *) pszDesc)
 {
-    Log(("PGMHandlerPhysicalRegisterEx: enmType=%d GCPhys=%VGp GCPhysLast=%VGp pfnHandlerR3=%VHv pvUserR3=%VHv pfnHandlerR0=%VHv pvUserR0=%VHv pfnHandlerGC=%VRv pvUserGC=%VRv pszDesc=%s\n",
-          enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pfnHandlerR0, pvUserR0, pfnHandlerGC, pvUserGC, R3STRING(pszDesc)));
+    Log(("PGMHandlerPhysicalRegisterEx: enmType=%d GCPhys=%RGp GCPhysLast=%RGp pfnHandlerR3=%RHv pvUserR3=%RHv pfnHandlerR0=%RHv pvUserR0=%RHv pfnHandlerGC=%RRv pvUserGC=%RRv pszDesc=%s\n",
+          enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pfnHandlerR0, pvUserR0, pfnHandlerRC, pvUserRC, R3STRING(pszDesc)));
 
     /*
      * Validate input.
@@ -105,13 +106,13 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
             AssertMsgFailed(("Invalid input enmType=%d!\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
-    if (    (RTGCUINTPTR)pvUserGC >= 0x10000
-        &&  MMHyperHC2GC(pVM, MMHyperGC2HC(pVM, pvUserGC)) != pvUserGC)
+    if (    (RTRCUINTPTR)pvUserRC >= 0x10000
+        &&  MMHyperR3ToRC(pVM, MMHyperRCToR3(pVM, pvUserRC)) != pvUserRC)
     {
-        AssertMsgFailed(("Not GC pointer! pvUserGC=%VGv\n", pvUserGC));
+        AssertMsgFailed(("Not RC pointer! pvUserRC=%RRv\n", pvUserRC));
         return VERR_INVALID_PARAMETER;
     }
-    AssertReturn(pfnHandlerR3 || pfnHandlerR0 || pfnHandlerGC, VERR_INVALID_PARAMETER);
+    AssertReturn(pfnHandlerR3 || pfnHandlerR0 || pfnHandlerRC, VERR_INVALID_PARAMETER);
 
     /*
      * We require the range to be within registered ram.
@@ -147,8 +148,8 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
     pNew->pvUserR3      = pvUserR3;
     pNew->pfnHandlerR0  = pfnHandlerR0;
     pNew->pvUserR0      = pvUserR0;
-    pNew->pfnHandlerGC  = pfnHandlerGC;
-    pNew->pvUserGC      = pvUserGC;
+    pNew->pfnHandlerRC  = pfnHandlerRC;
+    pNew->pvUserRC      = pvUserRC;
     pNew->pszDesc       = pszDesc;
 
     pgmLock(pVM);
@@ -591,15 +592,15 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
  * @param   pvUserR3        User argument to the R3 handler.
  * @param   pfnHandlerR0    The R0 handler.
  * @param   pvUserR0        User argument to the R0 handler.
- * @param   pfnHandlerGC    The GC handler.
- * @param   pvUserGC        User argument to the GC handler.
- *                          This must be a GC pointer because it will be relocated!
+ * @param   pfnHandlerRC    The RC handler.
+ * @param   pvUserRC        User argument to the RC handler. Values larger or
+ *                          equal to 0x10000 will be relocated automatically.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
                                                R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                                R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
-                                               RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RCPTRTYPE(void *) pvUserGC,
+                                               RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
                                                R3PTRTYPE(const char *) pszDesc)
 {
     /*
@@ -617,8 +618,8 @@ VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
         pCur->pvUserR3      = pvUserR3;
         pCur->pfnHandlerR0  = pfnHandlerR0;
         pCur->pvUserR0      = pvUserR0;
-        pCur->pfnHandlerGC  = pfnHandlerGC;
-        pCur->pvUserGC      = pvUserGC;
+        pCur->pfnHandlerRC  = pfnHandlerRC;
+        pCur->pvUserRC      = pvUserRC;
         pCur->pszDesc       = pszDesc;
     }
     else
@@ -724,7 +725,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
              */
             if (pCur1->Core.KeyLast + 1 == pCur2->Core.Key)
             {
-                if (    pCur1->pfnHandlerGC == pCur2->pfnHandlerGC
+                if (    pCur1->pfnHandlerRC == pCur2->pfnHandlerRC
                     &&  pCur1->pfnHandlerR0 == pCur2->pfnHandlerR0
                     &&  pCur1->pfnHandlerR3 == pCur2->pfnHandlerR3)
                 {

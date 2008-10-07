@@ -390,9 +390,9 @@ typedef struct PGMPHYSHANDLER
     /** User argument for R0 handlers. */
     R0PTRTYPE(void *)                   pvUserR0;
     /** Pointer to GC callback function. */
-    RCPTRTYPE(PFNPGMGCPHYSHANDLER)      pfnHandlerGC;
-    /** User argument for GC handlers. */
-    RCPTRTYPE(void *)                   pvUserGC;
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)      pfnHandlerRC;
+    /** User argument for RC handlers. */
+    RCPTRTYPE(void *)                   pvUserRC;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
 #ifdef VBOX_WITH_STATISTICS
@@ -1542,8 +1542,8 @@ typedef struct PGMPOOL
     uint16_t        iModifiedHead;
     /** The current number of modified pages. */
     uint16_t        cModifiedPages;
-    /** Access handler, GC. */
-    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnAccessHandlerGC;
+    /** Access handler, RC. */
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnAccessHandlerRC;
     /** Access handler, R0. */
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnAccessHandlerR0;
     /** Access handler, R3. */
@@ -1860,8 +1860,8 @@ typedef struct PGMMODEDATA
     DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmonitorCR3,(PVM pVM));
     DECLRCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
-    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
-    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1870,8 +1870,8 @@ typedef struct PGMMODEDATA
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmonitorCR3,(PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmapCR3,(PVM pVM));
-    R0PTRTYPE(PFNPGMGCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
-    R0PTRTYPE(PFNPGMGCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
+    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
+    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.
@@ -2090,8 +2090,8 @@ typedef struct PGM
     DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmonitorCR3,(PVM pVM));
     DECLRCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
-    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
-    RCPTRTYPE(PFNPGMGCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment3; /**< structure size alignment. */
 #endif
@@ -2103,8 +2103,8 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmonitorCR3,(PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstUnmapCR3,(PVM pVM));
-    R0PTRTYPE(PFNPGMGCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
-    R0PTRTYPE(PFNPGMGCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
+    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstWriteHandlerCR3;
+    R0PTRTYPE(PFNPGMRCPHYSHANDLER)  pfnR0GstPAEWriteHandlerCR3;
     /** @} */
 
     /** @name Function pointers for Both Shadow and Guest paging.

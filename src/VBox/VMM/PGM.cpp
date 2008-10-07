@@ -1932,10 +1932,10 @@ static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, vo
 {
     PPGMPHYSHANDLER pHandler = (PPGMPHYSHANDLER)pNode;
     RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
-    if (pHandler->pfnHandlerGC)
-        pHandler->pfnHandlerGC += offDelta;
-    if ((RTGCUINTPTR)pHandler->pvUserGC >= 0x10000)
-        pHandler->pvUserGC += offDelta;
+    if (pHandler->pfnHandlerRC)
+        pHandler->pfnHandlerRC += offDelta;
+    if (pHandler->pvUserRC >= 0x10000)
+        pHandler->pvUserRC += offDelta;
     return 0;
 }
 
