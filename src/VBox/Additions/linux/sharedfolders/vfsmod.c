@@ -152,7 +152,7 @@ sf_glob_alloc (struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
         sf_g->uid   = info->uid;
         sf_g->gid   = info->gid;
 
-        if (info->length >= sizeof(struct vbsf_mount_info_new))
+        if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new))
         {
             /* new fields */
             sf_g->dmode = info->dmode;
@@ -262,6 +262,7 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
 
         sb->s_magic = 0xface;
         sb->s_blocksize = 1024;
+        sb->s_maxbytes = ~0ULL; /* seek */
         sb->s_op = &sf_super_ops;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
