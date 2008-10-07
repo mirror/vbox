@@ -19,12 +19,16 @@
 
 #
 # Usage:
-#       makespackage.sh $(PATH_TARGET)/install packagename
+#       makespackage.sh $(PATH_TARGET)/install packagename svnrev
 
-if test -z "$2"; then
-    echo "Usage: $0 installdir packagename"
+if test -z "$3"; then
+    echo "Usage: $0 installdir packagename svnrev"
     exit 1
 fi
+
+VBOX_INSTALLED_DIR=$1
+VBOX_PKGFILENAME=$2
+VBOX_SVN_REV=$3
 
 VBOX_PKGNAME=SUNWvboxguest
 VBOX_AWK=/usr/bin/awk
@@ -49,7 +53,7 @@ filelist_fixup()
 }
 
 # prepare file list
-cd "$1"
+cd "$VBOX_INSTALLED_DIR"
 echo 'i pkginfo=./vboxguest.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
@@ -83,13 +87,13 @@ cat prototype
 echo " --- end of prototype --- "
 
 # explicitly set timestamp to shutup warning
-VBOXPKG_TIMESTAMP=vboxguest`date '+%Y%m%d%H%M%S'`
+VBOXPKG_TIMESTAMP=vboxguest`date '+%Y%m%d%H%M%S'`_r$VBOX_SVN_REV
 
 # create the package instance
 pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
 
 # translate into package datastream
-pkgtrans -s -o /var/spool/pkg `pwd`/$2 "$VBOX_PKGNAME"
+pkgtrans -s -o /var/spool/pkg `pwd`/$VBOX_PKGFILENAME "$VBOX_PKGNAME"
 
 rm -rf "/var/spool/pkg/$VBOX_PKGNAME"
 exit $?

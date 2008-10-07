@@ -22,7 +22,7 @@
 
 #
 # Usage:
-#       makespackage.sh [--hardened] $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH) [VBIPackageName]
+#       makespackage.sh [--hardened] $(PATH_TARGET)/install packagename $(KBUILD_TARGET_ARCH) $(VBOX_SVN_REV) [VBIPackageName]
 
 
 # Parse options.
@@ -40,16 +40,19 @@ do
     shift
 done
 
-if [ -z "$3" ]; then
-    echo "Usage: $0 installdir packagename x86|amd64"
+if [ -z "$4" ]; then
+    echo "Usage: $0 installdir packagename x86|amd64 svnrev [VBIPackage]"
     echo "-- packagename must not have any extension (e.g. VirtualBox-SunOS-amd64-r28899)"
     exit 1
 fi
 
+VBOX_INSTALLED_DIR=$1
 VBOX_PKGFILE=$2.pkg
 VBOX_ARCHIVE=$2.tar.gz
-VBOX_PKGNAME=SUNWvbox
+VBOX_PKG_ARCH=$3
+VBOX_SVN_REV=$4
 
+VBOX_PKGNAME=SUNWvbox
 VBOX_GGREP=/usr/sfw/bin/ggrep
 VBOX_AWK=/usr/bin/awk
 VBOX_GTAR=/usr/sfw/bin/gtar
@@ -78,7 +81,7 @@ filelist_fixup()
 }
 
 # prepare file list
-cd "$1"
+cd "$VBOX_INSTALLED_DIR"
 echo 'i pkginfo=./vbox.pkginfo' > prototype
 echo 'i postinstall=./postinstall.sh' >> prototype
 echo 'i preremove=./preremove.sh' >> prototype
@@ -93,14 +96,14 @@ filelist_fixup prototype '$2 == "none"'                                         
 filelist_fixup prototype '$2 == "none"'                                                                 '$3 = "opt/VirtualBox/"$3"="$3'
 
 # install the kernel module to the right place.
-if test "$3" = "x86"; then
+if test "$VBOX_PKG_ARCH" = "x86"; then
     filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv=vboxdrv"'                                   '$3 = "platform/i86pc/kernel/drv/vboxdrv=vboxdrv"; $6 = "sys"'
 else
     filelist_fixup prototype '$3 == "opt/VirtualBox/vboxdrv=vboxdrv"'                                   '$3 = "platform/i86pc/kernel/drv/amd64/vboxdrv=vboxdrv"; $6 = "sys"'
 fi
 
 # install vboxflt to the right place.
-if test "$3" = "x86"; then
+if test "$VBOX_PKG_ARCH" = "x86"; then
     filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt=vboxflt"'                                   '$3 = "platform/i86pc/kernel/drv/vboxflt=vboxflt"; $6 = "sys"'
 else
     filelist_fixup prototype '$3 == "opt/VirtualBox/vboxflt=vboxflt"'                                   '$3 = "platform/i86pc/kernel/drv/amd64/vboxflt=vboxflt"; $6 = "sys"'
@@ -137,7 +140,7 @@ cat prototype
 echo " --- end of prototype --- "
 
 # explicitly set timestamp to shutup warning
-VBOXPKG_TIMESTAMP=vbox`date '+%Y%m%d%H%M%S'`
+VBOXPKG_TIMESTAMP=vbox`date '+%Y%m%d%H%M%S'`_r$VBOX_SVN_REV
 
 # create the package instance
 pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
@@ -145,9 +148,9 @@ pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
 # translate into package datastream
 pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
 
-# $4 if exist would contain the path to the VBI package to include in the .tar.gz
-if test -f "$4"; then
-    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" "$4" autoresponse ReadMe.txt
+# $5 if exist would contain the path to the VBI package to include in the .tar.gz
+if test -f "$5"; then
+    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" "$5" autoresponse ReadMe.txt
 else
     $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" autoresponse ReadMe.txt
 fi
