@@ -130,6 +130,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/etc
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
+		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
 		-e "s/@VBOX_VERSION_REVSTAMP@/$(PKGINFO_REVSTAMP)/g" \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
 		--output $(SOLARIS_INST_DIR)/vboxguest.pkginfo \
@@ -187,6 +188,6 @@ endif
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed                  $(SOLARIS_INST_DIR)/etc/devlink.tab
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh                          $(SOLARIS_INST_DIR)/VBox.sh
 	$(call MSG_L1,Creating install package: $@)
-	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(SOLARIS_INST_DIR) $(PKGFILENAME)
+	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(SOLARIS_INST_DIR) $(PKGFILENAME) $(VBOX_SVN_REV)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKGFILENAME) $(PATH_BIN)/additions/$(PKGFILENAME)
 

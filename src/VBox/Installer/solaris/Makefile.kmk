@@ -357,6 +357,7 @@ endif
 	$(call MSG_L1,Installing files $(SOLARIS_INST_DIR))
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
+		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
 		-e "s/@VBOX_VERSION_REVSTAMP@/$(PKGINFO_REVSTAMP)/g" \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
 		--output $(SOLARIS_INST_DIR)/vbox.pkginfo \
@@ -402,6 +403,7 @@ endif
 		$(SOLARIS_INST_DIR) \
 		$(PKG_FILENAME) \
 		$(KBUILD_TARGET_ARCH) \
+		$(VBOX_SVN_REV) \
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_INST_DIR)/$(PKG_FILENAME).tar.gz $(PATH_BIN)
 	@# Clean up files emitted as side-effect or result of packing
