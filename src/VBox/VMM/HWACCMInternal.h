@@ -124,8 +124,12 @@ __BEGIN_DECLS
 /** Maxium resume loops allowed in ring 0 (safety precaution) */
 #define HWACCM_MAX_RESUME_LOOPS             1024
 
+/** Size for the EPT identity page table (1024 4 MB pages to cover the entire address space). */
+#define HWACCM_EPT_IDENTITY_PG_TABLE_SIZE   PAGE_SIZE
 /** Size of the TSS structure + 2 pages for the IO bitmap + end byte. */
 #define HWACCM_VTX_TSS_SIZE                 (sizeof(VBOXTSS) + 2*PAGE_SIZE + 1)
+/** Total guest mapped memory needed. */
+#define HWACCM_VTX_TOTAL_DEVHEAP_MEM        (HWACCM_EPT_IDENTITY_PG_TABLE_SIZE + HWACCM_VTX_TSS_SIZE)
 
 /** HWACCM SSM version
  */
@@ -234,9 +238,9 @@ typedef struct HWACCM
 
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
-#if HC_ARCH_BITS == 32
-        uint32_t                    padding2; /**< explicit alignment for 32-bit gcc */
-#endif
+
+        /** Virtual address of the identity page table used for real mode emulation in EPT mode. */
+        R3PTRTYPE(PX86PD)           pRealModeEPTPageTable;
 
         /** R0 memory object for the virtual APIC mmio cache. */
         RTR0MEMOBJ                  pMemObjAPIC;
