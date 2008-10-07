@@ -1258,7 +1258,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     /* VMX_VMCS_CTRL_ENTRY_CONTROLS
      * Set required bits to one and zero according to the MSR capabilities.
      */
-    val = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
+    val  = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
+    /* Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+    val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
+
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
         val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
