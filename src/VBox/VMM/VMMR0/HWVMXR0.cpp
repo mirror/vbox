@@ -347,6 +347,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
      * Set required bits to one and zero according to the MSR capabilities.
      */
     val  = pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0;
+
+    /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+    val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
 #if HC_ARCH_BITS == 64
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
 #else
@@ -1121,6 +1124,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         Assert(val);
         if (pVM->hwaccm.s.fNestedPaging)
         {
+            Assert(!(val & 0xfff));
+            /** @todo Check the IA32_VMX_EPT_VPID_CAP MSR for other supported memory types. */
+            val |=   VMX_EPT_MEMTYPE_WB
+                  | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
 #if HC_ARCH_BITS == 64
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_FULL, val);
 #else

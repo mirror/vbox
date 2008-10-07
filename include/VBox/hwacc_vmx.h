@@ -597,6 +597,21 @@ typedef const EPTPT *PCEPTPT;
 
 /** @} */
 
+/** @name Extended Page Table Pointer (EPTP)
+ * @{
+ */
+/** Uncachable EPT paging structure memory type. */
+#define VMX_EPT_MEMTYPE_UC                                  0
+/** Write-back EPT paging structure memory type. */
+#define VMX_EPT_MEMTYPE_WB                                  6
+/** Shift value to get the EPT page walk length (bits 5-3) */
+#define VMX_EPT_PAGE_WALK_LENGTH_SHIFT                      3
+/** Mask value to get the EPT page walk length (bits 5-3) */
+#define VMX_EPT_PAGE_WALK_LENGTH_MASK                       7
+/** Default EPT page walk length */
+#define VMX_EPT_PAGE_WALK_LENGTH_DEFAULT                    3
+/** @} */
+
 
 /** @name VMCS field encoding - 16 bits guest fields
  * @{
