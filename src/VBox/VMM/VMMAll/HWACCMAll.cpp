@@ -52,10 +52,12 @@
  */
 VMMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
-    /** @todo Intel for nested paging */
 #ifdef IN_RING0
-    if (pVM->hwaccm.s.svm.fSupported)
-        return SVMR0InvalidatePage(pVM, GCVirt);
+    if (pVM->hwaccm.s.vmx.fSupported)
+        return VMXR0InvalidatePage(pVM, GCVirt);
+
+    Assert(pVM->hwaccm.s.svm.fSupported);
+    return SVMR0InvalidatePage(pVM, GCVirt);
 #endif
 
     return VINF_SUCCESS;
@@ -69,13 +71,10 @@ VMMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
  */
 VMMDECL(int) HWACCMFlushTLB(PVM pVM)
 {
-    /** @todo Intel for nested paging */
-    if (pVM->hwaccm.s.svm.fSupported)
-    {
-        LogFlow(("HWACCMFlushTLB\n"));
-        pVM->hwaccm.s.svm.fForceTLBFlush = true;
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBManual);
-    }
+    LogFlow(("HWACCMFlushTLB\n"));
+
+    pVM->hwaccm.s.fForceTLBFlush = true;
+    STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBManual);
     return VINF_SUCCESS;
 }
 
@@ -120,11 +119,11 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
         return VINF_SUCCESS;
 
 #ifdef IN_RING0
-    /** @todo Intel for nested paging */
-    if (pVM->hwaccm.s.svm.fSupported)
-    {
-        SVMR0InvalidatePhysPage(pVM, GCPhys);
-    }
+    if (pVM->hwaccm.s.vmx.fSupported)
+        return VMXR0InvalidatePhysPage(pVM, GCPhys);
+
+    Assert(pVM->hwaccm.s.svm.fSupported);
+    SVMR0InvalidatePhysPage(pVM, GCPhys);
 #else
     HWACCMFlushTLB(pVM);
 #endif

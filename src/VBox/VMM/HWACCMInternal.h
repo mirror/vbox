@@ -137,7 +137,7 @@ typedef struct
     RTCPUID     idCpu;
 
     RTR0MEMOBJ  pMemObj;
-    /* Current ASID (AMD-V only) */
+    /* Current ASID (AMD-V)/VPID (Intel) */
     uint32_t    uCurrentASID;
     /* TLB flush count */
     uint32_t    cTLBFlushes;
@@ -184,15 +184,30 @@ typedef struct HWACCM
     /** Set if nested paging is allowed. */
     bool                        fAllowNestedPaging;
 
-    /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
-     *  naturally. */
-    bool                        padding[3+4];
-
-    /** HWACCM_CHANGED_* flags. */
-    uint32_t                    fContextUseFlags;
+    /** Set if we need to flush the TLB during the world switch. */
+    bool                        fForceTLBFlush;
 
     /** Old style FPU reporting trap mask override performed (optimization) */
-    uint32_t                    fFPUOldStyleOverride;
+    bool                        fFPUOldStyleOverride;
+
+    /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
+     *  naturally. */
+    bool                        padding[1];
+
+    /** HWACCM_CHANGED_* flags. */
+    RTUINT                      fContextUseFlags;
+
+    /* Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
+    RTCPUID                     idLastCpu;
+
+    /* TLB flush count */
+    RTUINT                      cTLBFlushes;
+
+    /* Current ASID in use by the VM */
+    RTUINT                      uCurrentASID;
+
+    /** Maximum ASID allowed. */
+    RTUINT                      uMaxASID;
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;
@@ -206,6 +221,9 @@ typedef struct HWACCM
 
         /** Set if we can use VMXResume to execute guest code. */
         bool                        fResumeVM;
+
+        /** Set if VPID is supported. */
+        bool                        fVPID;
 
         /** R0 memory object for the VM control structure (VMCS). */
         RTR0MEMOBJ                  pMemObjVMCS;
@@ -343,17 +361,6 @@ typedef struct HWACCM
         bool                        fResumeVM;
         /** Set if erratum 170 affects the AMD cpu. */
         bool                        fAlwaysFlushTLB;
-        /** Set if we need to flush the TLB during the world switch. */
-        bool                        fForceTLBFlush;
-
-        /* Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
-        RTCPUID                     idLastCpu;
-
-        /* TLB flush count */
-        uint32_t                    cTLBFlushes;
-
-        /* Current ASID in use by the VM */
-        uint32_t                    uCurrentASID;
 
         /** R0 memory object for the VM control block (VMCB). */
         RTR0MEMOBJ                  pMemObjVMCB;
@@ -388,9 +395,6 @@ typedef struct HWACCM
 
         /** SVM revision. */
         uint32_t                    u32Rev;
-
-        /** Maximum ASID allowed. */
-        uint32_t                    u32MaxASID;
 
         /** SVM feature bits from cpuid 0x8000000a */
         uint32_t                    u32Features;
