@@ -1001,7 +1001,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
         /*
          * Pass foward messages when adjacent module can receive, otherwise queue them.
          */
-        if (canputnext(pQueue)))
+        if (canputnext(pQueue))
             putnext(pQueue, pMsg);
         else
             putbq(pQueue, pMsg);
@@ -1028,7 +1028,7 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
         /*
          * Pass foward messages when adjacent module can receive, otherwise queue them.
          */
-        if (canputnext(pQueue)))
+        if (canputnext(pQueue))
             putnext(pQueue, pMsg);
         else
             putbq(pQueue, pMsg);
