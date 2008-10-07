@@ -190,7 +190,7 @@ static struct cb_ops g_VBoxNetFltSolarisCbOps =
     nochpoll,                       /* c poll */
     ddi_prop_op,                    /* property ops */
     &g_VBoxNetFltSolarisStreamTab,
-    D_NEW | D_MP | D_MTPERQ,        /* compat. flag */
+    D_NEW | D_MP | D_MTQPAIR,       /* compat. flag */
     CB_REV                          /* revision */
 };
 
