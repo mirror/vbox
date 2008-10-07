@@ -50,11 +50,11 @@ ifndef VBOX_ONLY_DOCS
   SYSMODS.win     += VBoxDrv
   SYSMODS.os2     += VBoxDrv
   SYSMODS.solaris += vboxdrv
-  OTHERS.linux    += \
+ endif
+ OTHERS.linux    += \
   	$(PATH_BIN)/src/build_in_tmp \
   	$(PATH_BIN)/src/Makefile \
   	$(if $(VBOX_OSE),,$(PATH_BIN)/src/dkms.conf)
- endif
  INSTALLS.linux   += vboxmod-bin vboxmod-sh
 
  #
