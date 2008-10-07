@@ -339,8 +339,6 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
     pNew->pfnHandlerRC  = pfnHandlerRC;
     pNew->pfnHandlerR3  = pfnHandlerR3;
     pNew->pszDesc       = pszDesc;
-    pNew->GCPtr         = GCPtr;
-    pNew->GCPtrLast     = GCPtrLast;
     pNew->cb            = GCPtrLast - GCPtr + 1;
     pNew->cPages        = cPages;
     /* Will be synced at next guest execution attempt. */
@@ -366,19 +364,19 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
     {
         PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(pRoot, pNew->Core.Key, true);
         if (    !pCur
-            ||  GCPtr     > pCur->GCPtrLast
-            ||  GCPtrLast < pCur->GCPtr)
+            ||  GCPtr     > pCur->Core.KeyLast
+            ||  GCPtrLast < pCur->Core.Key)
             pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGetBestFit(pRoot, pNew->Core.Key, false);
         if (    pCur
-            &&  GCPtr     <= pCur->GCPtrLast
-            &&  GCPtrLast >= pCur->GCPtr)
+            &&  GCPtr     <= pCur->Core.KeyLast
+            &&  GCPtrLast >= pCur->Core.Key)
         {
             /*
              * The LDT sometimes conflicts with the IDT and LDT ranges while being
              * updated on linux. So, we don't assert simply log it.
              */
             Log(("PGMR3HandlerVirtualRegister: Conflict with existing range %RGv-%RGv (%s), req. %RGv-%RGv (%s)\n",
-                 pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc, GCPtr, GCPtrLast, pszDesc));
+                 pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc, GCPtr, GCPtrLast, pszDesc));
             MMHyperFree(pVM, pNew);
             pgmUnlock(pVM);
             return VERR_PGM_HANDLER_VIRTUAL_CONFLICT;
@@ -396,7 +394,7 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
 
 #ifdef VBOX_WITH_STATISTICS
         char szPath[256];
-        RTStrPrintf(szPath, sizeof(szPath), "/PGM/VirtHandler/Calls/%VGv-%VGv", pNew->GCPtr, pNew->GCPtrLast);
+        RTStrPrintf(szPath, sizeof(szPath), "/PGM/VirtHandler/Calls/%VGv-%VGv", pNew->Core.Key, pNew->Core.KeyLast);
         rc = STAMR3Register(pVM, &pNew->Stat, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szPath, STAMUNIT_TICKS_PER_CALL, pszDesc);
         AssertRC(rc);
 #endif
@@ -455,8 +453,8 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, GCPtr);
     if (RT_LIKELY(pCur))
     {
-        Log(("PGMHandlerVirtualDeregister: Removing Virtual (%d) Range %VGv-%VGv %s\n", pCur->enmType,
-             pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc));
+        Log(("PGMHandlerVirtualDeregister: Removing Virtual (%d) Range %RGv-%RGv %s\n", pCur->enmType,
+             pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
         Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
 
         /*
@@ -484,8 +482,8 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
             return VERR_INVALID_PARAMETER;
         }
 
-        Log(("PGMHandlerVirtualDeregister: Removing Hyper Virtual (%d) Range %VGv-%VGv %s\n", pCur->enmType,
-             pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc));
+        Log(("PGMHandlerVirtualDeregister: Removing Hyper Virtual (%d) Range %RGv-%RGv %s\n", pCur->enmType,
+             pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
         Assert(pCur->enmType == PGMVIRTHANDLERTYPE_HYPERVISOR);
     }
 
@@ -618,7 +616,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
         default:                            pszType = "????"; break;
     }
     pHlp->pfnPrintf(pHlp, "%RGv - %RGv  %RHv  %RRv  %s  %s\n",
-        pCur->GCPtr, pCur->GCPtrLast, pCur->pfnHandlerR3, pCur->pfnHandlerRC, pszType, pCur->pszDesc);
+        pCur->Core.Key, pCur->Core.KeyLast, pCur->pfnHandlerR3, pCur->pfnHandlerRC, pszType, pCur->pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
         pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",

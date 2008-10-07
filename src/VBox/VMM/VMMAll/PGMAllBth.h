@@ -274,12 +274,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  */
                 PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->HyperVirtHandlers, pvFault);
                 if (    pCur
-                    &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
+                    &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb
                     &&  uErr & X86_TRAP_PF_RW)
                 {
 #  ifdef IN_GC
                     STAM_PROFILE_START(&pCur->Stat, h);
-                    rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
+                    rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key);
                     STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                     AssertFailed();
@@ -447,19 +447,19 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->VirtHandlers, pvFault);
                         if (pCur)
                         {
-                            AssertMsg(!((RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb)
+                            AssertMsg(!((RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb)
                                       || (     pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                            || !(uErr & X86_TRAP_PF_P)
                                            || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
                                       ("Unexpected trap for virtual handler: %VGv (phys=%VGp) HCPhys=%HGp uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
-                            if (    (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
+                            if (    (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb
                                 &&  (    uErr & X86_TRAP_PF_RW
                                      ||  pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
                             {
 #  ifdef IN_GC
                                 STAM_PROFILE_START(&pCur->Stat, h);
-                                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
+                                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key);
                                 STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
@@ -485,10 +485,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             {
                                 Assert((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == GCPhys);
 #  ifdef IN_GC
-                                RTGCUINTPTR off = (iPage << PAGE_SHIFT) + ((RTGCUINTPTR)pvFault & PAGE_OFFSET_MASK) - ((RTGCUINTPTR)pCur->GCPtr & PAGE_OFFSET_MASK);
+                                RTGCUINTPTR off = (iPage << PAGE_SHIFT) + ((RTGCUINTPTR)pvFault & PAGE_OFFSET_MASK) - ((RTGCUINTPTR)pCur->Core.Key & PAGE_OFFSET_MASK);
                                 Assert(off < pCur->cb);
                                 STAM_PROFILE_START(&pCur->Stat, h);
-                                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, off);
+                                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, off);
                                 STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
@@ -554,19 +554,19 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->VirtHandlers, pvFault);
                     if (pCur)
                     {
-                        AssertMsg(   !((RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb)
+                        AssertMsg(   !((RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb)
                                   || (    pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                        || !(uErr & X86_TRAP_PF_P)
                                        || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
                                   ("Unexpected trap for virtual handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
-                        if (    (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr < pCur->cb
+                        if (    (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb
                             &&  (    uErr & X86_TRAP_PF_RW
                                  ||  pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
                         {
 #  ifdef IN_GC
                             STAM_PROFILE_START(&pCur->Stat, h);
-                            rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
+                            rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key);
                             STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                             rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */

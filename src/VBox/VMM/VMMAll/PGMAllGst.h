@@ -775,7 +775,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
     PX86PD          pPDSrc = pState->pVM->pgm.s.CTXSUFF(pGuestPD);
 #endif
 
-    RTGCUINTPTR     GCPtr = (RTUINTPTR)pCur->GCPtr;
+    RTGCUINTPTR     GCPtr = (RTUINTPTR)pCur->Core.Key;
 #if PGM_GST_MODE != PGM_MODE_AMD64
     /* skip all stuff above 4GB if not AMD64 mode. */
     if (GCPtr >= _4GB)

@@ -1010,7 +1010,7 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
         *ppVirt = (PPGMVIRTHANDLER)((uintptr_t)pCur + pCur->offVirtHandler);
         *piPage = pCur - &(*ppVirt)->aPhysToVirt[0];
 
-        LogFlow(("PHYS2VIRT: found match for %VGp -> %VGv *piPage=%#x\n", GCPhys, (*ppVirt)->GCPtr, *piPage));
+        LogFlow(("PHYS2VIRT: found match for %RGp -> %RGv *piPage=%#x\n", GCPhys, (*ppVirt)->Core.Key, *piPage));
         STAM_PROFILE_STOP(CTXSUFF(&pVM->pgm.s.StatVirtHandleSearchByPhys), a);
         return VINF_SUCCESS;
     }
@@ -1090,7 +1090,7 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
      */
     unsigned        uState   = pgmHandlerVirtualCalcState(pCur);
     PPGMRAMRANGE    pRamHint = NULL;
-    RTGCUINTPTR     offPage  = ((RTGCUINTPTR)pCur->GCPtr & PAGE_OFFSET_MASK);
+    RTGCUINTPTR     offPage  = ((RTGCUINTPTR)pCur->Core.Key & PAGE_OFFSET_MASK);
     RTGCUINTPTR     cbLeft   = pCur->cb;
     for (unsigned iPage = 0; iPage < pCur->cPages; iPage++)
     {
@@ -1260,26 +1260,26 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
     /*
      * Check key alignment.
      */
-    if (    (pVirt->aPhysToVirt[0].Core.Key & PAGE_OFFSET_MASK) != ((RTGCUINTPTR)pVirt->GCPtr & PAGE_OFFSET_MASK)
+    if (    (pVirt->aPhysToVirt[0].Core.Key & PAGE_OFFSET_MASK) != ((RTGCUINTPTR)pVirt->Core.Key & PAGE_OFFSET_MASK)
         &&  pVirt->aPhysToVirt[0].Core.Key != NIL_RTGCPHYS)
     {
-        AssertMsgFailed(("virt handler phys has incorrect key! %VGp %VGv %s\n",
-                         pVirt->aPhysToVirt[0].Core.Key, pVirt->GCPtr, R3STRING(pVirt->pszDesc)));
+        AssertMsgFailed(("virt handler phys has incorrect key! %RGp %RGv %s\n",
+                         pVirt->aPhysToVirt[0].Core.Key, pVirt->Core.Key, R3STRING(pVirt->pszDesc)));
         pState->cErrors++;
     }
 
-    if (    (pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast & PAGE_OFFSET_MASK) != ((RTGCUINTPTR)pVirt->GCPtrLast & PAGE_OFFSET_MASK)
+    if (    (pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast & PAGE_OFFSET_MASK) != ((RTGCUINTPTR)pVirt->Core.KeyLast & PAGE_OFFSET_MASK)
         &&  pVirt->aPhysToVirt[pVirt->cPages - 1].Core.Key != NIL_RTGCPHYS)
     {
-        AssertMsgFailed(("virt handler phys has incorrect key! %VGp %VGv %s\n",
-                         pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast, pVirt->GCPtrLast, R3STRING(pVirt->pszDesc)));
+        AssertMsgFailed(("virt handler phys has incorrect key! %RGp %RGv %s\n",
+                         pVirt->aPhysToVirt[pVirt->cPages - 1].Core.KeyLast, pVirt->Core.KeyLast, R3STRING(pVirt->pszDesc)));
         pState->cErrors++;
     }
 
     /*
      * Check pages for sanity and state.
      */
-    RTGCUINTPTR   GCPtr = (RTGCUINTPTR)pVirt->GCPtr;
+    RTGCUINTPTR   GCPtr = (RTGCUINTPTR)pVirt->Core.Key;
     for (unsigned iPage = 0; iPage < pVirt->cPages; iPage++, GCPtr += PAGE_SIZE)
     {
         RTGCPHYS   GCPhysGst;
