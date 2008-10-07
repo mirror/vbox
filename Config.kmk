@@ -2474,7 +2474,7 @@ endif
 TEMPLATE_VBOXNOCRTGCC = VBox no-crt GCC libraries and modules, yasm/nasm.
 TEMPLATE_VBOXNOCRTGCC_DEFS              = IN_RING3 IPRT_NO_CRT $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXNOCRTGCC_ASDEFS            = ASM_CALL64_GCC
-TEMPLATE_VBOXNOCRTGCC_CFLAGS            = -nostdinc -fno-strict-aliasing -fno-math-errno $(VBOX_GCC_PEDANTIC)
+TEMPLATE_VBOXNOCRTGCC_CFLAGS            = -nostdinc -fno-strict-aliasing -fno-math-errno $(VBOX_GCC_WARN)
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.x86        = -m32
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.amd64      = -m64 -mcmodel=medium -fno-common
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.release    = -O2 -fno-strict-aliasing
