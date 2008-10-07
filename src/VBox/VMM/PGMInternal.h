@@ -443,21 +443,16 @@ typedef struct PGMVIRTHANDLER
 {
     /** Core node for the tree based on virtual ranges. */
     AVLROGCPTRNODECORE                  Core;
-#if GC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t                            u32Padding;
-#endif
-    /** Access type. */
-    PGMVIRTHANDLERTYPE                  enmType;
-    /** Number of cache pages. */
-    uint32_t                            cPages;
-
     /** Size of the range (in bytes). */
     RTGCUINTPTR                         cb;
+    /** Number of cache pages. */
+    uint32_t                            cPages;
+    /** Access type. */
+    PGMVIRTHANDLERTYPE                  enmType;
     /** Pointer to the RC callback function. */
     RCPTRTYPE(PFNPGMRCVIRTHANDLER)      pfnHandlerRC;
-#if GC_ARCH_BITS == 64
-    RTRCPTR                             padding1;
+#if HC_ARCH_BITS == 64
+    RTRCPTR                             padding;
 #endif
     /** Pointer to the R3 callback function for invalidation. */
     R3PTRTYPE(PFNPGMR3VIRTINVALIDATE)   pfnInvalidateR3;
