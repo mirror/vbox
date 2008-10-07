@@ -812,10 +812,24 @@ typedef const EPTPT *PCEPTPT;
 /** @name VMX_VMCS_CTRL_EXIT_CONTROLS
  * @{
  */
+/** Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG                  RT_BIT(2)
 /** Return to long mode after a VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64                  RT_BIT(9)
+/** This control determines whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_PERF_MSR               RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXTERNAL_IRQ            RT_BIT(15)
+/** This control determines whether the guest IA32_PAT MSR is saved on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR          RT_BIT(18)
+/** This control determines whether the host IA32_PAT MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR           RT_BIT(19)
+/** This control determines whether the guest IA32_EFER MSR is saved on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR         RT_BIT(20)
+/** This control determines whether the host IA32_EFER MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR          RT_BIT(21)
+/** This control determines whether the value of the VMX preemption timer is saved on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER      RT_BIT(22)
 /** @} */
 
 /**  @name VMCS field encoding - 32 Bits read-only fields
