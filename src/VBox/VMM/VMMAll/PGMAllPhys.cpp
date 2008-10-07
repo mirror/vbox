@@ -1256,7 +1256,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                             cb = cbRange;
                         if (cb > cbRead)
                             cb = cbRead;
-                        RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pNode->GCPtr & PAGE_BASE_GC_MASK)
+                        RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pNode->Core.Key & PAGE_BASE_GC_MASK)
                                           + (iPage << PAGE_SHIFT) + (off & PAGE_OFFSET_MASK);
 
                         void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
@@ -1505,7 +1505,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                                 cb = cbRange;
                             if (cb > cbWrite)
                                 cb = cbWrite;
-                            RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pVirtNode->GCPtr & PAGE_BASE_GC_MASK)
+                            RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pVirtNode->Core.Key & PAGE_BASE_GC_MASK)
                                               + (iPage << PAGE_SHIFT) + (off & PAGE_OFFSET_MASK);
 
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
@@ -1555,7 +1555,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                                 cb = cbRange;
                             if (cb > cbWrite)
                                 cb = cbWrite;
-                            RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pNode->GCPtr & PAGE_BASE_GC_MASK)
+                            RTGCUINTPTR GCPtr = ((RTGCUINTPTR)pNode->Core.Key & PAGE_BASE_GC_MASK)
                                               + (iPage << PAGE_SHIFT) + (off & PAGE_OFFSET_MASK);
 
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
