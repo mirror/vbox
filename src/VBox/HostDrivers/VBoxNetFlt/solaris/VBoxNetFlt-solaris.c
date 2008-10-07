@@ -999,14 +999,10 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
     if (fSendUpstream)
     {
         /*
-         * Pass foward high priority messages or when there's no flow control
-         * on an empty queue, otherwise queue them.
+         * Pass foward messages when adjacent module can receive, otherwise queue them.
          */
-        if (   queclass(pMsg) == QPCTL
-            || (pQueue->q_first == NULL && canputnext(pQueue)))
-        {
+        if (canputnext(pQueue)))
             putnext(pQueue, pMsg);
-        }
         else
             putbq(pQueue, pMsg);
     }
@@ -1030,14 +1026,10 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
     if (pMsg)
     {
         /*
-         * Pass foward high priority messages or when there's no flow control
-         * on an empty queue, otherwise queue them.
+         * Pass foward messages when adjacent module can receive, otherwise queue them.
          */
-        if (   queclass(pMsg) == QPCTL
-            || (pQueue->q_first == NULL && canputnext(pQueue)))
-        {
+        if (canputnext(pQueue)))
             putnext(pQueue, pMsg);
-        }
         else
             putbq(pQueue, pMsg);
     }
