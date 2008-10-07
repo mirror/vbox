@@ -68,7 +68,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
      * The request loop.
      */
     int     rc = VINF_SUCCESS;
-    VMSTATE enmBefore = VMSTATE_CREATING;
+    volatile VMSTATE enmBefore = VMSTATE_CREATING; /* volatile because of setjmp */
     Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pUVM=%p\n", ThreadSelf, pUVM));
     for (;;)
     {
