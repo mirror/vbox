@@ -815,19 +815,27 @@ typedef const EPTPT *PCEPTPT;
 /** @name VMX_VMCS_CTRL_ENTRY_CONTROLS
  * @{
  */
+/** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG                 RT_BIT(2)
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE                  RT_BIT(9)
 /** In SMM mode after VM-entry. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM                  RT_BIT(10)
 /** Disable dual treatment of SMI and SMM; must be zero for VM-entry outside of SMM. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON         RT_BIT(11)
+/** This control determines whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM entry. */
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR        RT_BIT(13)
+/** This control determines whether the guest IA32_PAT MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR         RT_BIT(14)
+/** This control determines whether the guest IA32_EFER MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR        RT_BIT(15)
 /** @} */
 
 
 /** @name VMX_VMCS_CTRL_EXIT_CONTROLS
  * @{
  */
-/** Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+/** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG                  RT_BIT(2)
 /** Return to long mode after a VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64                  RT_BIT(9)
