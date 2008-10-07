@@ -68,7 +68,7 @@ VMMRCDECL(int) TRPMGCSetTempHandler(PVM pVM, unsigned iTrap, PFNTRPMGCTRAPHANDLE
     /*
      * Install handler.
      */
-    pVM->trpm.s.aTmpTrapHandlers[iTrap] = (RTRCPTR)pfnHandler;
+    pVM->trpm.s.aTmpTrapHandlers[iTrap] = (RTRCPTR)(uintptr_t)pfnHandler;
     return VINF_SUCCESS;
 }
 
