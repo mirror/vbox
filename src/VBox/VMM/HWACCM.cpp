@@ -529,7 +529,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             pVM->hwaccm.s.fInitialized = true;
 
             /* Allocate three pages for the TSS we need for real mode emulation. (2 page for the IO bitmap) */
-            rc = PDMR3VMMDevHeapAlloc(pVM, HWACCM_VTX_TSS_SIZE, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
+            rc = PDMR3VMMDevHeapAlloc(pVM, HWACCM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 return rc;
@@ -542,6 +542,16 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* Allow all port IO, so the VT-x IO intercepts do their job. */
             memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
             *((unsigned char *)pVM->hwaccm.s.vmx.pRealModeTSS + HWACCM_VTX_TSS_SIZE - 2) = 0xff;
+
+            /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in 
+             * real and protected mode without paging with EPT.
+             */
+            pVM->hwaccm.s.vmx.pRealModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
+            for (unsigned i=0;i<X86_PG_ENTRIES;i++)
+            {
+                pVM->hwaccm.s.vmx.pRealModeEPTPageTable->a[i].u = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
+                pVM->hwaccm.s.vmx.pRealModeEPTPageTable->a[i].b.u10PageNo  = _4M * i;
+            }
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);

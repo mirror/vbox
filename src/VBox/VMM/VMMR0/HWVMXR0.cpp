@@ -1091,6 +1091,12 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
             }
         }
+        else
+        if (!(pCtx->cr0 & X86_CR0_PG))
+        {
+            /* We use 4 MB pages in our identity mapping page table for real and protected mode without paging. */
+            val |= X86_CR4_PSE;
+        }
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
@@ -1136,8 +1142,24 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #endif
             AssertRC(rc);
 
-            /* Save the real guest CR3 in VMX_VMCS_GUEST_CR3 */
-            val = pCtx->cr3;
+            if (!(pCtx->cr0 & X86_CR0_PG))
+            {
+                RTGCPHYS GCPhys;
+
+                /* We convert it here every time as pci regions could be reconfigured. */
+                rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeEPTPageTable, &GCPhys);
+                AssertRC(rc);
+
+                /* We use our identity mapping page table here as we need to map guest virtual to guest physical addresses; EPT will
+                 * take care of the translation to host physical addresses.
+                 */
+                val = GCPhys;
+            }
+            else
+            {
+                /* Save the real guest CR3 in VMX_VMCS_GUEST_CR3 */
+                val = pCtx->cr3;
+            }
         }
         /* Save our shadow CR3 register. */
         rc = VMXWriteVMCS(VMX_VMCS_GUEST_CR3, val);
