@@ -244,11 +244,11 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     pNew->fFlags        = 0;
 
     pNew->pvR3          = NULL;
-    pNew->pavHCChunkHC  = NULL;
+    pNew->paChunkR3Ptrs = NULL;
 
 #ifndef VBOX_WITH_NEW_PHYS_CODE
     /* Allocate memory for chunk to HC ptr lookup array. */
-    rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pavHCChunkHC);
+    rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->paChunkR3Ptrs);
     AssertRCReturn(rc, rc);
     pNew->fFlags |= MM_RAM_FLAGS_DYNAMIC_ALLOC;
 
@@ -336,8 +336,8 @@ int pgmR3PhysRamReset(PVM pVM)
                         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
                         {
                             unsigned iChunk = iPage >> (PGM_DYNAMIC_CHUNK_SHIFT - PAGE_SHIFT);
-                            if (pRam->pavHCChunkHC[iChunk])
-                                ASMMemZero32((char *)pRam->pavHCChunkHC[iChunk] + ((iPage << PAGE_SHIFT) & PGM_DYNAMIC_CHUNK_OFFSET_MASK), PAGE_SIZE);
+                            if (pRam->paChunkR3Ptrs[iChunk])
+                                ASMMemZero32((char *)pRam->paChunkR3Ptrs[iChunk] + ((iPage << PAGE_SHIFT) & PGM_DYNAMIC_CHUNK_OFFSET_MASK), PAGE_SIZE);
                         }
                         else
                             ASMMemZero32((char *)pRam->pvR3 + (iPage << PAGE_SHIFT), PAGE_SIZE);
@@ -487,7 +487,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         pNew->fFlags        = 0; /* Some MMIO flag here? */
 
         pNew->pvR3          = NULL;
-        pNew->pavHCChunkHC  = NULL;
+        pNew->paChunkR3Ptrs = NULL;
 
         uint32_t iPage = cPages;
         while (iPage-- > 0)
@@ -697,8 +697,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
             pNew->RamRange.cb = cb;
             //pNew->RamRange.fFlags = 0;
 
-            pNew->RamRange.pvR3 = pvPages;      ///@todo remove this [new phys code]
-            pNew->RamRange.pavHCChunkHC = NULL; ///@todo remove this [new phys code]
+            pNew->RamRange.pvR3 = pvPages;       ///@todo remove this [new phys code]
+            pNew->RamRange.paChunkR3Ptrs = NULL; ///@todo remove this [new phys code]
 
             uint32_t iPage = cPages;
             while (iPage-- > 0)
@@ -1771,7 +1771,7 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         pNew->GCPhysLast    = GCPhysLast;
         pNew->cb            = cb;
         pNew->fFlags        = fFlags;
-        pNew->pavHCChunkHC  = NULL;
+        pNew->paChunkR3Ptrs = NULL;
 
         unsigned iPage = cb >> PAGE_SHIFT;
         if (paPages)
@@ -1787,7 +1787,7 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         else if (fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
             /* Allocate memory for chunk to HC ptr lookup array. */
-            rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pavHCChunkHC);
+            rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->paChunkR3Ptrs);
             AssertMsgReturn(rc == VINF_SUCCESS, ("MMHyperAlloc(,%#x,,,) -> %Vrc\n", cbRam, cb), rc);
 
             /* Physical memory will be allocated on demand. */
@@ -1901,7 +1901,7 @@ VMMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
             pRam->aPages[off + iPage].HCPhys = (paPages[iPage].Phys & X86_PTE_PAE_PG_MASK) | fFlags;  /** @todo PAGE FLAGS */
     }
     off >>= (PGM_DYNAMIC_CHUNK_SHIFT - PAGE_SHIFT);
-    pRam->pavHCChunkHC[off] = pvRam;
+    pRam->paChunkR3Ptrs[off] = (uintptr_t)pvRam;
 
     /* Notify the recompiler. */
     REMR3NotifyPhysRamChunkRegister(pVM, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, (RTHCUINTPTR)pvRam, fFlags);
@@ -1936,8 +1936,8 @@ VMMR3DECL(int) PGM3PhysGrowRange(PVM pVM, PCRTGCPHYS pGCPhys)
             bool     fRangeExists = false;
             unsigned off = (GCPhys - pRam->GCPhys) >> PGM_DYNAMIC_CHUNK_SHIFT;
 
-            /** @note A request made from another thread may end up in EMT after somebody else has already allocated the range. */
-            if (pRam->pavHCChunkHC[off])
+            /* Note: A request made from another thread may end up in EMT after somebody else has already allocated the range. */
+            if (pRam->paChunkR3Ptrs[off])
                 fRangeExists = true;
 
             pgmUnlock(pVM);

@@ -938,11 +938,7 @@ typedef struct PGMRAMRANGE
 #ifndef VBOX_WITH_NEW_PHYS_CODE
     /** HC virtual lookup ranges for chunks - R3/R0 Ptr.
      * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
-//# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-//    R3PTRTYPE(PRTHCPTR)                 pavHCChunkHC;
-//# else
-    R3R0PTRTYPE(PRTHCPTR)               pavHCChunkHC;
-//# endif
+    R3R0PTRTYPE(PRTR3UINTPTR)           paChunkR3Ptrs;
 #endif
     /** Start of the HC mapping of the range. This is only used for MMIO2. */
     R3PTRTYPE(void *)                   pvR3;
@@ -964,8 +960,8 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 
 /** Return hc ptr corresponding to the ram range and physical offset */
 #define PGMRAMRANGE_GETHCPTR(pRam, off) \
-    (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[(off >> PGM_DYNAMIC_CHUNK_SHIFT)] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK))  \
-                                                : (RTHCPTR)((RTR3UINTPTR)pRam->pvR3 + off);
+    (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((pRam)->paChunkR3Ptrs[(off) >> PGM_DYNAMIC_CHUNK_SHIFT] + ((off) & PGM_DYNAMIC_CHUNK_OFFSET_MASK)) \
+                                                : (RTHCPTR)((RTR3UINTPTR)(pRam)->pvR3 + (off));
 
 /**
  * Per page tracking structure for ROM image.
@@ -3072,7 +3068,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
     if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
     {
         unsigned iChunk = off >> PGM_DYNAMIC_CHUNK_SHIFT;
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+        *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
         return VINF_SUCCESS;
     }
     if (pRam->pvR3)
@@ -3106,7 +3102,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS
     {
         unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
         /* Physical chunk in dynamically allocated range not present? */
-        if (RT_UNLIKELY(!CTXSUFF(pRam->pavHCChunk)[idx]))
+        if (RT_UNLIKELY(!pRam->paChunkR3Ptrs[idx]))
         {
 #ifdef IN_RING3
             int rc = pgmr3PhysGrowRange(pVM, GCPhys);
@@ -3119,7 +3115,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS
                 return rc;
             }
         }
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+        *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
         return VINF_SUCCESS;
     }
     if (pRam->pvR3)
@@ -3162,11 +3158,11 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
     if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
     {
         unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-        PRTR3PTR paChunkR3Ptrs = (PRTR3PTR)MMHyperR3ToCC(PGM2VM(pPGM), pRam->pavHCChunkHC);
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES only MapCR3 usage. */
+        PRTR3UINTPTR paChunkR3Ptrs = (PRTR3UINTPTR)MMHyperR3ToCC(PGM2VM(pPGM), pRam->paChunkR3Ptrs);
         *pHCPtr = paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK);
 #else
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+        *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #endif
         return VINF_SUCCESS;
     }

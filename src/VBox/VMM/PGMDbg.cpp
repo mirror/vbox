@@ -67,9 +67,9 @@ VMMR3DECL(int) PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys)
         {
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (pRam->pavHCChunkHC[iChunk])
+                if (pRam->paChunkR3Ptrs[iChunk])
                 {
-                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pavHCChunkHC[iChunk];
+                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - pRam->paChunkR3Ptrs[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         *pGCPhys = pRam->GCPhys + iChunk*PGM_DYNAMIC_CHUNK_SIZE + off;
@@ -122,9 +122,9 @@ VMMR3DECL(int) PGMR3DbgR3Ptr2HCPhys(PVM pVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys)
         {
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (pRam->pavHCChunkHC[iChunk])
+                if (pRam->paChunkR3Ptrs[iChunk])
                 {
-                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pavHCChunkHC[iChunk];
+                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - pRam->paChunkR3Ptrs[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
