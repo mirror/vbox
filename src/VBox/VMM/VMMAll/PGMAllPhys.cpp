@@ -893,10 +893,10 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
     {
         unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
 #if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES this is a rare occurence */
-        PRTR3PTR paChunkR3Ptrs = (PRTR3PTR)MMHyperR3ToCC(pVM, pRam->pavHCChunkHC);
-        *pHCPtr = paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK);
+        PRTR3UINTPTR paChunkR3Ptrs = (PRTR3UINTPTR)MMHyperR3ToCC(pVM, pRam->paChunkR3Ptrs);
+        *pHCPtr = (RTHCPTR)(paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #else
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+        *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #endif
     }
     else if (RT_LIKELY(pRam->pvR3))

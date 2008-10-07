@@ -2149,10 +2149,10 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
         {
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (pRam->pavHCChunkHC[iChunk])
+                if (pRam->paChunkR3Ptrs[iChunk])
                 {
                     SSMR3PutU8(pSSM, 1);    /* chunk present */
-                    SSMR3PutMem(pSSM, pRam->pavHCChunkHC[iChunk], PGM_DYNAMIC_CHUNK_SIZE);
+                    SSMR3PutMem(pSSM, (void *)pRam->paChunkR3Ptrs[iChunk], PGM_DYNAMIC_CHUNK_SIZE);
                 }
                 else
                     SSMR3PutU8(pSSM, 0);    /* no chunk present */
@@ -2382,15 +2382,15 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
 
                 if (fValidChunk)
                 {
-                    if (!pRam->pavHCChunkHC[iChunk])
+                    if (!pRam->paChunkR3Ptrs[iChunk])
                     {
                         rc = pgmr3PhysGrowRange(pVM, pRam->GCPhys + iChunk * PGM_DYNAMIC_CHUNK_SIZE);
                         if (VBOX_FAILURE(rc))
                             return rc;
                     }
-                    Assert(pRam->pavHCChunkHC[iChunk]);
+                    Assert(pRam->paChunkR3Ptrs[iChunk]);
 
-                    SSMR3GetMem(pSSM, pRam->pavHCChunkHC[iChunk], PGM_DYNAMIC_CHUNK_SIZE);
+                    SSMR3GetMem(pSSM, (void *)pRam->paChunkR3Ptrs[iChunk], PGM_DYNAMIC_CHUNK_SIZE);
                 }
                 /* else nothing to do */
             }
