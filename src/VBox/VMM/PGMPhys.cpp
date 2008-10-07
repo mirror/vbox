@@ -245,13 +245,11 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
 
     pNew->pvR3          = NULL;
     pNew->pavHCChunkHC  = NULL;
-    pNew->pavHCChunkGC  = 0;
 
 #ifndef VBOX_WITH_NEW_PHYS_CODE
     /* Allocate memory for chunk to HC ptr lookup array. */
     rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pavHCChunkHC);
     AssertRCReturn(rc, rc);
-    pNew->pavHCChunkGC = MMHyperCCToRC(pVM, pNew->pavHCChunkHC);
     pNew->fFlags |= MM_RAM_FLAGS_DYNAMIC_ALLOC;
 
 #endif
@@ -490,7 +488,6 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
 
         pNew->pvR3          = NULL;
         pNew->pavHCChunkHC  = NULL;
-        pNew->pavHCChunkGC  = 0;
 
         uint32_t iPage = cPages;
         while (iPage-- > 0)
@@ -702,7 +699,6 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
 
             pNew->RamRange.pvR3 = pvPages;      ///@todo remove this [new phys code]
             pNew->RamRange.pavHCChunkHC = NULL; ///@todo remove this [new phys code]
-            pNew->RamRange.pavHCChunkGC = 0;    ///@todo remove this [new phys code]
 
             uint32_t iPage = cPages;
             while (iPage-- > 0)
@@ -1776,7 +1772,6 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         pNew->cb            = cb;
         pNew->fFlags        = fFlags;
         pNew->pavHCChunkHC  = NULL;
-        pNew->pavHCChunkGC  = 0;
 
         unsigned iPage = cb >> PAGE_SHIFT;
         if (paPages)
@@ -1794,9 +1789,6 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             /* Allocate memory for chunk to HC ptr lookup array. */
             rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->pavHCChunkHC);
             AssertMsgReturn(rc == VINF_SUCCESS, ("MMHyperAlloc(,%#x,,,) -> %Vrc\n", cbRam, cb), rc);
-
-            pNew->pavHCChunkGC = MMHyperHC2GC(pVM, pNew->pavHCChunkHC);
-            Assert(pNew->pavHCChunkGC);
 
             /* Physical memory will be allocated on demand. */
             while (iPage-- > 0)

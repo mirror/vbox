@@ -1872,15 +1872,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         pVM->pgm.s.pRamRangesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pRamRangesR3);
         for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur->pNextR3; pCur = pCur->pNextR3)
-#ifdef VBOX_WITH_NEW_PHYS_CODE
             pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
-#else
-        {
-            pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
-            if (pCur->pavHCChunkGC)
-                pCur->pavHCChunkGC = MMHyperHC2GC(pVM, pCur->pavHCChunkHC);
-        }
-#endif
     }
 
     /*

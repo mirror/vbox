@@ -169,7 +169,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode,
 /** darwin stub */
 VMMR0DECL(int) PGMR0DynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 {
-    Assert(!(GCPhys & PAGE_OFFSET));
+    Assert(!(GCPhys & PAGE_OFFSET_MASK));
     return VERR_NOT_IMPLEMENTED;
 }
 

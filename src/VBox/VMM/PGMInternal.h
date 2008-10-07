@@ -221,7 +221,7 @@
  */
 #ifdef IN_GC
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) PGMGCDynMapHCPage(pVM, HCPhys, (void **)(ppv))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) PGMR0DynMapHCPage(pVM, HCPhys, (void **)(ppv))
 #else
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
@@ -241,7 +241,7 @@
  */
 #ifdef IN_GC
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMGCDynMapGCPage(pVM, GCPhys, (void **)(ppv))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMR0DynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
@@ -261,7 +261,7 @@
  */
 #ifdef IN_GC
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMGCDynMapGCPageEx(pVM, GCPhys, (void **)(ppv))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMR0DynMapGCPageEx(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
@@ -934,12 +934,8 @@ typedef struct PGMRAMRANGE
     RTGCPHYS                            cb;
     /** MM_RAM_* flags */
     uint32_t                            fFlags;
-#ifdef VBOX_WITH_NEW_PHYS_CODE
     uint32_t                            u32Alignment; /**< alignment. */
-#else
-    /** HC virtual lookup ranges for chunks - RC Ptr.
-     * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
-    RCPTRTYPE(PRTHCPTR)                 pavHCChunkGC;
+#ifndef VBOX_WITH_NEW_PHYS_CODE
     /** HC virtual lookup ranges for chunks - R3/R0 Ptr.
      * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
 //# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -3048,8 +3044,9 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
 }
 #endif /* !IN_GC */
 
+#if !defined(IN_GC) /** @todo && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) */
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
+# ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
  * Convert GC Phys to HC Virt.
  *
@@ -3086,7 +3083,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
     *pHCPtr = 0; /* Shut up silly GCC warnings. */
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
-#endif /* !VBOX_WITH_NEW_PHYS_CODE */
+# endif /* !VBOX_WITH_NEW_PHYS_CODE */
 
 
 /**
@@ -3134,6 +3131,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
 
+#endif /* !IN_GC && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) */
 
 /**
  * Convert GC Phys to HC Virt and HC Phys.
@@ -3164,7 +3162,12 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
     if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
     {
         unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+        PRTR3PTR paChunkR3Ptrs = (PRTR3PTR)MMHyperR3ToCC(PGM2VM(pPGM), pRam->pavHCChunkHC);
+        *pHCPtr = paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK);
+#else
         *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+#endif
         return VINF_SUCCESS;
     }
     if (pRam->pvR3)
