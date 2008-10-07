@@ -40,7 +40,7 @@
 
 
 /**
- * Converts a HC pointer to a GC physical address.
+ * Converts a R3 pointer to a GC physical address.
  *
  * Only for the debugger.
  *
@@ -48,28 +48,28 @@
  * @retval  VINF_SUCCESS on success, *pGCPhys is set.
  * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
  *
- * @param   pVM     The VM handle.
- * @param   HCPtr   The HC pointer to convert.
- * @param   pGCPhys Where to store the GC physical address on success.
+ * @param   pVM         The VM handle.
+ * @param   R3Ptr       The R3 pointer to convert.
+ * @param   pGCPhys     Where to store the GC physical address on success.
  */
-VMMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
+VMMR3DECL(int) PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     *pGCPhys = NIL_RTGCPHYS;
     return VERR_NOT_IMPLEMENTED;
 
 #else
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
-         pRam = CTXALLSUFF(pRam->pNext))
+         pRam = pRam->CTX_SUFF(pNext))
     {
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (CTXSUFF(pRam->pavHCChunk)[iChunk])
+                if (pRam->pavHCChunkHC[iChunk])
                 {
-                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk];
+                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pavHCChunkHC[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         *pGCPhys = pRam->GCPhys + iChunk*PGM_DYNAMIC_CHUNK_SIZE + off;
@@ -78,9 +78,9 @@ VMMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
                 }
             }
         }
-        else if (pRam->pvHC)
+        else if (pRam->pvR3)
         {
-            RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pRam->pvHC;
+            RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pvR3;
             if (off < pRam->cb)
             {
                 *pGCPhys = pRam->GCPhys + off;
@@ -94,35 +94,37 @@ VMMR3DECL(int) PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys)
 
 
 /**
- * Converts a HC pointer to a GC physical address.
+ * Converts a R3 pointer to a HC physical address.
+ *
+ * Only for the debugger.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success, *pHCPhys is set.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical page but has no physical backing.
  * @retval  VERR_INVALID_POINTER if the pointer is not within the GC physical memory.
  *
- * @param   pVM     The VM handle.
- * @param   HCPtr   The HC pointer to convert.
- * @param   pHCPhys Where to store the HC physical address on success.
+ * @param   pVM         The VM handle.
+ * @param   R3Ptr       The R3 pointer to convert.
+ * @param   pHCPhys     Where to store the HC physical address on success.
  */
-VMMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
+VMMR3DECL(int) PGMR3DbgR3Ptr2HCPhys(PVM pVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     *pHCPhys = NIL_RTHCPHYS;
     return VERR_NOT_IMPLEMENTED;
 
 #else
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
-         pRam = CTXALLSUFF(pRam->pNext))
+         pRam = pRam->CTX_SUFF(pNext))
     {
         if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
         {
             for (unsigned iChunk = 0; iChunk < (pRam->cb >> PGM_DYNAMIC_CHUNK_SHIFT); iChunk++)
             {
-                if (CTXSUFF(pRam->pavHCChunk)[iChunk])
+                if (pRam->pavHCChunkHC[iChunk])
                 {
-                    RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk];
+                    RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pavHCChunkHC[iChunk];
                     if (off < PGM_DYNAMIC_CHUNK_SIZE)
                     {
                         PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
@@ -135,9 +137,9 @@ VMMR3DECL(int) PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys)
                 }
             }
         }
-        else if (pRam->pvHC)
+        else if (pRam->pvR3)
         {
-            RTHCUINTPTR off = (RTHCUINTPTR)HCPtr - (RTHCUINTPTR)pRam->pvHC;
+            RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pRam->pvR3;
             if (off < pRam->cb)
             {
                 PPGMPAGE pPage = &pRam->aPages[off >> PAGE_SHIFT];
@@ -179,9 +181,9 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys
     if (HCPhys == 0)
         return VERR_INVALID_POINTER;
 
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
-         pRam = CTXALLSUFF(pRam->pNext))
+         pRam = pRam->CTX_SUFF(pNext))
     {
         uint32_t iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
@@ -345,9 +347,9 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
      * Search the memory - ignore MMIO and zero pages, also don't
      * bother to match across ranges.
      */
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
-         pRam = CTXALLSUFF(pRam->pNext))
+         pRam = pRam->CTX_SUFF(pNext))
     {
         /*
          * If the search range starts prior to the current ram range record,

@@ -1870,13 +1870,13 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     if (pVM->pgm.s.pRamRangesR3)
     {
-        pVM->pgm.s.pRamRangesGC = MMHyperHC2GC(pVM, pVM->pgm.s.pRamRangesR3);
+        pVM->pgm.s.pRamRangesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pRamRangesR3);
         for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesR3; pCur->pNextR3; pCur = pCur->pNextR3)
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-            pCur->pNextGC = MMHyperR3ToRC(pVM, pCur->pNextR3);
+            pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
 #else
         {
-            pCur->pNextGC = MMHyperR3ToRC(pVM, pCur->pNextR3);
+            pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
             if (pCur->pavHCChunkGC)
                 pCur->pavHCChunkGC = MMHyperHC2GC(pVM, pCur->pavHCChunkHC);
         }
@@ -2145,7 +2145,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutGCPhys(pSSM, pRam->GCPhys);
         SSMR3PutGCPhys(pSSM, pRam->GCPhysLast);
         SSMR3PutGCPhys(pSSM, pRam->cb);
-        SSMR3PutU8(pSSM, !!pRam->pvHC);             /* boolean indicating memory or not. */
+        SSMR3PutU8(pSSM, !!pRam->pvR3);             /* boolean indicating memory or not. */
 
         /* Flags. */
         const unsigned cPages = pRam->cb >> PAGE_SHIFT;
@@ -2166,12 +2166,12 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
                     SSMR3PutU8(pSSM, 0);    /* no chunk present */
             }
         }
-        else if (pRam->pvHC)
+        else if (pRam->pvR3)
         {
-            int rc = SSMR3PutMem(pSSM, pRam->pvHC, pRam->cb);
+            int rc = SSMR3PutMem(pSSM, pRam->pvR3, pRam->cb);
             if (VBOX_FAILURE(rc))
             {
-                Log(("pgmR3Save: SSMR3PutMem(, %p, %#x) -> %Vrc\n", pRam->pvHC, pRam->cb, rc));
+                Log(("pgmR3Save: SSMR3PutMem(, %p, %#x) -> %Vrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
             }
         }
@@ -2340,11 +2340,11 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
         if (    GCPhys != pRam->GCPhys
             ||  GCPhysLast != pRam->GCPhysLast
             ||  cb != pRam->cb
-            ||  fHaveBits != !!pRam->pvHC)
+            ||  fHaveBits != !!pRam->pvR3)
         {
-            LogRel(("Ram range: %VGp-%VGp %VGp bytes %s\n"
-                    "State    : %VGp-%VGp %VGp bytes %s\n",
-                    pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvHC ? "bits" : "nobits",
+            LogRel(("Ram range: %RGp-%RGp %RGp bytes %s\n"
+                    "State    : %RGp-%RGp %RGp bytes %s\n",
+                    pRam->GCPhys, pRam->GCPhysLast, pRam->cb, pRam->pvR3 ? "bits" : "nobits",
                     GCPhys, GCPhysLast, cb, fHaveBits ? "bits" : "nobits"));
             /*
              * If we're loading a state for debugging purpose, don't make a fuss if
@@ -2403,12 +2403,12 @@ LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc)
                 /* else nothing to do */
             }
         }
-        else if (pRam->pvHC)
+        else if (pRam->pvR3)
         {
-            int rc = SSMR3GetMem(pSSM, pRam->pvHC, pRam->cb);
+            int rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
             if (VBOX_FAILURE(rc))
             {
-                Log(("pgmR3Save: SSMR3GetMem(, %p, %#x) -> %Vrc\n", pRam->pvHC, pRam->cb, rc));
+                Log(("pgmR3Save: SSMR3GetMem(, %p, %#x) -> %Vrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
             }
         }
@@ -2522,7 +2522,7 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                         "%RGp-%RGp %RHv %s\n",
                         pCur->GCPhys,
                         pCur->GCPhysLast,
-                        pCur->pvHC,
+                        pCur->pvR3,
                         pCur->pszDesc);
 }
 
@@ -4053,7 +4053,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      */
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-    if (!pVM->pgm.s.pRamRangesGC)
+    if (!pVM->pgm.s.pRamRangesRC)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no Ram is registered.\n");
 
     /*
@@ -4064,8 +4064,8 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     for (pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
     {
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-            "%VGp - %VGp  %p\n",
-            pRam->GCPhys, pRam->GCPhysLast, pRam->pvHC);
+            "%RGp - %RGp  %p\n",
+            pRam->GCPhys, pRam->GCPhysLast, pRam->pvR3);
         if (VBOX_FAILURE(rc))
             return rc;
     }

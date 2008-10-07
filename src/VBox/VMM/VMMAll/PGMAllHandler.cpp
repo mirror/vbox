@@ -117,9 +117,9 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
      * We require the range to be within registered ram.
      * There is no apparent need to support ranges which cover more than one ram range.
      */
-    PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
     while (pRam && GCPhys > pRam->GCPhysLast)
-        pRam = CTXALLSUFF(pRam->pNext);
+        pRam = pRam->CTX_SUFF(pNext);
     if (    !pRam
         ||  GCPhysLast < pRam->GCPhys
         ||  GCPhys > pRam->GCPhysLast)
@@ -510,9 +510,9 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
              * We require the range to be within registered ram.
              * There is no apparent need to support ranges which cover more than one ram range.
              */
-            PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+            PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
             while (pRam && GCPhys > pRam->GCPhysLast)
-                pRam = CTXALLSUFF(pRam->pNext);
+                pRam = pRam->CTX_SUFF(pNext);
             if (    pRam
                 &&  GCPhys <= pRam->GCPhysLast
                 &&  GCPhysLast >= pRam->GCPhys)
@@ -1347,7 +1347,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
     /*
      * Check the RAM flags against the handlers.
      */
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges); pRam; pRam = CTXALLSUFF(pRam->pNext))
+    for (PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges); pRam; pRam = pRam->CTX_SUFF(pNext))
     {
         const unsigned cPages = pRam->cb >> PAGE_SHIFT;
         for (unsigned iPage = 0; iPage < cPages; iPage++)
