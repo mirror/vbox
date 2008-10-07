@@ -770,9 +770,9 @@ typedef const EPTPT *PCEPTPT;
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT             RT_BIT(11)
 /** VM Exit when executing the RDTSC instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT             RT_BIT(12)
-/** VM Exit when executing the MOV to CR3 instruction. */
+/** VM Exit when executing the MOV to CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT          RT_BIT(15)
-/** VM Exit when executing the MOV from CR3 instruction. */
+/** VM Exit when executing the MOV from CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT         RT_BIT(16)
 /** VM Exit on CR8 loads. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT          RT_BIT(19)
@@ -815,7 +815,7 @@ typedef const EPTPT *PCEPTPT;
 /** @name VMX_VMCS_CTRL_ENTRY_CONTROLS
  * @{
  */
-/** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+/** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG                 RT_BIT(2)
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE                  RT_BIT(9)
@@ -835,7 +835,7 @@ typedef const EPTPT *PCEPTPT;
 /** @name VMX_VMCS_CTRL_EXIT_CONTROLS
  * @{
  */
-/** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+/** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG                  RT_BIT(2)
 /** Return to long mode after a VM-exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64                  RT_BIT(9)
