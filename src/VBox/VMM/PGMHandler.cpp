@@ -76,25 +76,26 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
  * @param   pszModR0        The R0 handler module. NULL means the default R0 module.
  * @param   pszHandlerR0    The R0 handler symbol name.
  * @param   pvUserR0        User argument to the R0 handler.
- * @param   pszModGC        The GC handler module. NULL means the default GC module.
- * @param   pszHandlerGC    The GC handler symbol name.
- * @param   pvUserGC        User argument to the GC handler.
- *                          This must be a GC pointer because it will be relocated!
+ * @param   pszModRC        The RC handler module. NULL means the default RC
+ *                          module.
+ * @param   pszHandlerRC    The RC handler symbol name.
+ * @param   pvUserRC        User argument to the RC handler. Values less than
+ *                          0x10000 will not be relocated.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                             PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
                                             const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
-                                            const char *pszModGC, const char *pszHandlerGC, RTGCPTR pvUserGC, const char *pszDesc)
+                                            const char *pszModRC, const char *pszHandlerRC, RTRCPTR pvUserRC, const char *pszDesc)
 {
-    LogFlow(("PGMR3HandlerPhysicalRegister: enmType=%d GCPhys=%VGv GCPhysLast=%VGv pfnHandlerR3=%VHv pvUserHC=%VHv pszModGC=%p:{%s} pszHandlerGC=%p:{%s} pvUser=%VGv pszDesc=%s\n",
-             enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pszModGC, pszModGC, pszHandlerGC, pszHandlerGC, pvUserGC, pszDesc));
+    LogFlow(("PGMR3HandlerPhysicalRegister: enmType=%d GCPhys=%RGp GCPhysLast=%RGp pfnHandlerR3=%RHv pvUserHC=%RHv pszModR0=%s pszHandlerR0=%s pszModRC=%s pvUserR0=%RHv pszHandlerRC=%s pvUser=%RRv pszDesc=%s\n",
+             enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pszModR0, pszHandlerR0, pvUserR0, pszHandlerRC, pszModRC, pvUserRC, pszDesc));
 
     /*
      * Validate input.
      */
-    if (!pszModGC)
-        pszModGC = VMMGC_MAIN_MODULE_NAME;
+    if (!pszModRC)
+        pszModRC = VMMGC_MAIN_MODULE_NAME;
 
     if (!pszModR0)
         pszModR0 = VMMR0_MAIN_MODULE_NAME;
@@ -111,18 +112,18 @@ VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
         /*
          * Resolve the GC handler.
          */
-        RTGCPTR32 pfnHandlerGC = NIL_RTGCPTR;
-        if (pszHandlerGC)
-            rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
+        RTRCPTR pfnHandlerRC = NIL_RTRCPTR;
+        if (pszHandlerRC)
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, pszHandlerRC, &pfnHandlerRC);
 
         if (VBOX_SUCCESS(rc))
             return PGMHandlerPhysicalRegisterEx(pVM, enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3,
-                                                pfnHandlerR0, pvUserR0, pfnHandlerGC, pvUserGC, pszDesc);
+                                                pfnHandlerR0, pvUserR0, pfnHandlerRC, pvUserRC, pszDesc);
 
-        AssertMsgFailed(("Failed to resolve %s.%s, rc=%Vrc.\n", pszModGC, pszHandlerGC, rc));
+        AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszModRC, pszHandlerRC, rc));
     }
     else
-        AssertMsgFailed(("Failed to resolve %s.%s, rc=%Vrc.\n", pszModR0, pszHandlerR0, rc));
+        AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszModR0, pszHandlerR0, rc));
 
     return rc;
 }
@@ -582,8 +583,8 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
         default:                                pszType = "????"; break;
     }
     pHlp->pfnPrintf(pHlp,
-        "%VGp - %VGp  %VHv  %VHv  %VRv  %VRv  %s  %s\n",
-        pCur->Core.Key, pCur->Core.KeyLast, pCur->pfnHandlerR3, pCur->pvUserR3, pCur->pfnHandlerGC, pCur->pvUserGC, pszType, pCur->pszDesc);
+        "%RGp - %RGp  %RHv  %RHv  %RRv  %RRv  %s  %s\n",
+        pCur->Core.Key, pCur->Core.KeyLast, pCur->pfnHandlerR3, pCur->pvUserR3, pCur->pfnHandlerRC, pCur->pvUserRC, pszType, pCur->pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
         pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",

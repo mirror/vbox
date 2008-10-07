@@ -399,14 +399,14 @@ int pgmR3PhysRamReset(PVM pVM)
  * @param   pvUserR3        The user argument for R3.
  * @param   pfnHandlerR0    The address of the ring-0 handler. (IOMMMIOHandler)
  * @param   pvUserR0        The user argument for R0.
- * @param   pfnHandlerGC    The address of the GC handler. (IOMMMIOHandler)
- * @param   pvUserGC        The user argument for GC.
+ * @param   pfnHandlerRC    The address of the RC handler. (IOMMMIOHandler)
+ * @param   pvUserRC        The user argument for RC.
  * @param   pszDesc         The description of the MMIO region.
  */
 VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
                                      R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                      R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
-                                     RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
+                                     RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
                                      R3PTRTYPE(const char *) pszDesc)
 {
     /*
@@ -504,7 +504,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
     rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_MMIO, GCPhys, GCPhysLast,
                                       pfnHandlerR3, pvUserR3,
                                       pfnHandlerR0, pvUserR0,
-                                      pfnHandlerGC, pvUserGC, pszDesc);
+                                      pfnHandlerRC, pvUserRC, pszDesc);
     if (    RT_FAILURE(rc)
         &&  !fRamExists)
     {

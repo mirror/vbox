@@ -103,9 +103,9 @@ typedef enum PGMPHYSHANDLERTYPE
 } PGMPHYSHANDLERTYPE;
 
 /**
- * \#PF Handler callback for physical access handler ranges (MMIO among others) in GC.
+ * \#PF Handler callback for physical access handler ranges in RC.
  *
- * @returns VBox status code (appropriate for GC return).
+ * @returns VBox status code (appropriate for RC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -114,14 +114,14 @@ typedef enum PGMPHYSHANDLERTYPE
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(int) FNPGMGCPHYSHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMRCPHYSHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 /** Pointer to PGM access callback. */
-typedef FNPGMGCPHYSHANDLER *PFNPGMGCPHYSHANDLER;
+typedef FNPGMRCPHYSHANDLER *PFNPGMRCPHYSHANDLER;
 
 /**
- * \#PF Handler callback for physical access handler ranges (MMIO among others) in R0.
+ * \#PF Handler callback for physical access handler ranges in R0.
  *
- * @returns VBox status code (appropriate for GC return).
+ * @returns VBox status code (appropriate for R0 return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -345,14 +345,14 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode);
 VMMDECL(int)    PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                              R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                              R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
-                                             RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RCPTRTYPE(void *) pvUserGC,
+                                             RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
                                              R3PTRTYPE(const char *) pszDesc);
 VMMDECL(int)    PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 VMMDECL(int)    PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(int)    PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
                                                   R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                                   R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
-                                                  RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RCPTRTYPE(void *) pvUserGC,
+                                                  RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
                                                   R3PTRTYPE(const char *) pszDesc);
 VMMDECL(int)    PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit);
 VMMDECL(int)    PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2);
@@ -490,7 +490,7 @@ VMMR3DECL(int)  PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, cons
 VMMR3DECL(int)  PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
                                       R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
                                       R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
-                                      RCPTRTYPE(PFNPGMGCPHYSHANDLER) pfnHandlerGC, RTGCPTR pvUserGC,
+                                      RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
                                       R3PTRTYPE(const char *) pszDesc);
 VMMR3DECL(int)  PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
 VMMR3DECL(int)  PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
@@ -529,7 +529,7 @@ VMMR3DECL(int)  PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 VMMR3DECL(int)  PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                              PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
                                              const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
-                                             const char *pszModGC, const char *pszHandlerGC, RTGCPTR pvUserGC, const char *pszDesc);
+                                             const char *pszModRC, const char *pszHandlerRC, RTRCPTR pvUserRC, const char *pszDesc);
 VMMDECL(int)    PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
                                             PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
                                             PFNPGMHCVIRTHANDLER pfnHandlerHC, RTGCPTR pfnHandlerGC,
