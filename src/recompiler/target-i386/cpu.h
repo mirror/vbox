@@ -409,7 +409,7 @@ enum {
     CC_OP_SARL,
     CC_OP_SARQ,
 
-    CC_OP_NB,
+    CC_OP_NB
 };
 
 #ifdef FLOATX80
