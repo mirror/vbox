@@ -672,11 +672,13 @@ NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_proxy.c
 NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_util.c
 
 NatAlias_SOURCES.amd64 +=	Network/nat/src/sys/amd64/amd64/in_cksum.c
+NatAlias_SOURCES.i386 +=	Network/nat/src/sys/i386/i386/in_cksum.c
 
 NatAlias_INCS += Network/nat
 NatAlias_INCS += Network/nat/src/sys
 NatAlias_INCS +=  Network/nat/src/sys/contrib/altq
 NatAlias_INCS.amd64 += Network/nat/src/sys/amd64/include
+NatAlias_INCS.i386 += Network/nat/src/sys/i386/include
 endif
 
 # -- OS specific --
