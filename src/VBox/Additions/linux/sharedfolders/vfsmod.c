@@ -262,7 +262,9 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
 
         sb->s_magic = 0xface;
         sb->s_blocksize = 1024;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 3)
         sb->s_maxbytes = ~0ULL; /* seek */
+#endif
         sb->s_op = &sf_super_ops;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 25)
