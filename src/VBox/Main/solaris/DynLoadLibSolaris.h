@@ -25,6 +25,8 @@
 #define LIB_DLPI "libdlpi.so"
 #include <libdlpi.h>
 
+typedef boolean_t dlpi_walkfunc_t(const char*, void *);
+
 extern int (*g_pfnLibDlpiWalk)(dlpi_walkfunc_t *, void *, uint_t);
 
 extern bool VBoxSolarisLibDlpiFound(void);
