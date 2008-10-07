@@ -348,7 +348,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
      */
     val  = pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0;
 
-    /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+    /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
 #if HC_ARCH_BITS == 64
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
@@ -1259,7 +1259,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
      * Set required bits to one and zero according to the MSR capabilities.
      */
     val  = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
-    /* Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs) */
+    /* Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
     val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
 
     /* 64 bits guest mode? */
