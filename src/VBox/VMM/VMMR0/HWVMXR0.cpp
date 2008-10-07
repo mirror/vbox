@@ -274,10 +274,15 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* Program which event cause VM-exits and which features we want to use. */
     val = val | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT
               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET
-              | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT
               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT
               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT;    /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
+
+    /* Without nested paging we should intercept invlpg and cr3 mov instructions. */
+    if (!pVM->hwaccm.s.fNestedPaging)
+        val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
 
     /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
 
@@ -320,6 +325,10 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         val  = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
         val |= VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT;
 
+#ifdef HWACCM_VTX_WITH_EPT
+        if (pVM->hwaccm.s.fNestedPaging)
+            val |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;
+#endif
         /* Mask away the bits that the CPU doesn't support */
         /** @todo make sure they don't conflict with the above requirements. */
         val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
@@ -361,6 +370,10 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
      * Note: only possible if the current state is actually ours (X86_CR0_TS flag)
      */
     pVM->hwaccm.s.vmx.u32TrapMask = HWACCM_VMX_TRAP_MASK;
+#ifndef DEBUG
+    if (pVM->hwaccm.s.fNestedPaging)
+        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_PF);   /* no longer need to intercept #PF. */
+#endif
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
     AssertRC(rc);
 
@@ -993,8 +1006,11 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         }
         /* Note: protected mode & paging are always enabled; we use them for emulating real and protected mode without paging too. */
         val |= X86_CR0_PE | X86_CR0_PG;
-        /* Note: We must also set this as we rely on protecting various pages for which supervisor writes must be caught. */
-        val |= X86_CR0_WP;
+        if (!pVM->hwaccm.s.fNestedPaging)
+        {
+            /* Note: We must also set this as we rely on protecting various pages for which supervisor writes must be caught. */
+            val |= X86_CR0_WP;
+        }
 
         /* Always enable caching. */
         val &= ~(X86_CR0_CD|X86_CR0_NW);
@@ -1026,31 +1042,36 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         Log2(("Guest CR4-shadow %08x\n", pCtx->cr4));
         /* Set the required bits in cr4 too (currently X86_CR4_VMXE). */
         val = pCtx->cr4 | (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0;
-        switch(pVM->hwaccm.s.enmShadowMode)
+
+        if (!pVM->hwaccm.s.fNestedPaging)
         {
-        case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
-        case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
-        case PGMMODE_32_BIT:        /* 32-bit paging. */
-            break;
+            switch(pVM->hwaccm.s.enmShadowMode)
+            {
+            case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
+            case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
+            case PGMMODE_32_BIT:        /* 32-bit paging. */
+                break;
 
-        case PGMMODE_PAE:           /* PAE paging. */
-        case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
-            /** @todo use normal 32 bits paging */
-            val |= X86_CR4_PAE;
-            break;
+            case PGMMODE_PAE:           /* PAE paging. */
+            case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
+                /** @todo use normal 32 bits paging */
+                val |= X86_CR4_PAE;
+                break;
 
-        case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
-        case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
+            case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
+            case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
-            break;
+                break;
 #else
-            AssertFailed();
-            return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+                AssertFailed();
+                return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
-        default:                   /* shut up gcc */
-            AssertFailed();
-            return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+            default:                   /* shut up gcc */
+                AssertFailed();
+                return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+            }
         }
+
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (CPUMIsGuestInRealModeEx(pCtx))
@@ -1079,9 +1100,22 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
     if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
     {
-        /* Save our shadow CR3 register. */
         val = PGMGetHyperCR3(pVM);
         Assert(val);
+        if (pVM->hwaccm.s.fNestedPaging)
+        {
+#if HC_ARCH_BITS == 64
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_FULL, val);
+#else
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_FULL, val);
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_HIGH, val);
+#endif
+            AssertRC(rc);
+
+            /* Save the real guest CR3 in VMX_VMCS_GUEST_CR3 */
+            val = pCtx->cr3;
+        }
+        /* Save our shadow CR3 register. */
         rc = VMXWriteVMCS(VMX_VMCS_GUEST_CR3, val);
         AssertRC(rc);
     }
@@ -1254,6 +1288,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo, uInterruptState;
     bool        fSyncTPR = false;
+    PHWACCM_CPUINFO pCpu = 0;
     unsigned    cResume = 0;
 #ifdef VBOX_STRICT
     RTCPUID  idCpuCheck;
@@ -1411,6 +1446,20 @@ ResumeExecution:
         fSyncTPR = true;
     }
 
+#ifdef LOG_ENABLED
+    pCpu = HWACCMR0GetCurrentCpu();
+    if (    pVM->hwaccm.s.idLastCpu   != pCpu->idCpu
+        ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+    {
+        if (pVM->hwaccm.s.idLastCpu != pCpu->idCpu)
+            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.idLastCpu, pCpu->idCpu));
+        else
+            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+    }
+    if (pCpu->fFlushTLB)
+        Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
+#endif
+
     /*
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
      *       (until the actual world switch)
@@ -1431,6 +1480,71 @@ ResumeExecution:
     {
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
+    }
+
+    /* Deal with tagged TLBs if VPID is supported. */
+    if (pVM->hwaccm.s.vmx.fVPID)
+    {
+        pCpu = HWACCMR0GetCurrentCpu();
+        /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
+        /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
+        if (    pVM->hwaccm.s.idLastCpu != pCpu->idCpu
+                /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
+            ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        {
+            /* Force a TLB flush on VM entry. */
+            pVM->hwaccm.s.fForceTLBFlush = true;
+        }
+        else
+            Assert(!pCpu->fFlushTLB);
+
+        pVM->hwaccm.s.idLastCpu = pCpu->idCpu;
+
+        /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
+        if (pVM->hwaccm.s.fForceTLBFlush)
+        {
+            if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
+                ||  pCpu->fFlushTLB)
+            {
+                pCpu->fFlushTLB                  = false;
+                pCpu->uCurrentASID               = 1;       /* start at 1; host uses 0 */
+                pCpu->cTLBFlushes++;
+            }
+            else
+            {
+                STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
+                pVM->hwaccm.s.fForceTLBFlush     = false;
+            }
+
+            pVM->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
+            pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
+        }
+        else
+        {
+            Assert(!pCpu->fFlushTLB);
+
+            if (!pCpu->uCurrentASID || !pVM->hwaccm.s.uCurrentASID)
+                pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
+        }
+        AssertMsg(pVM->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+        AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
+        AssertMsg(pVM->hwaccm.s.uCurrentASID >= 1 && pVM->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVM->hwaccm.s.uCurrentASID));
+
+        rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_VPID, pVM->hwaccm.s.uCurrentASID);
+        AssertRC(rc);
+
+        if (pVM->hwaccm.s.fForceTLBFlush)
+        {
+
+        }
+
+#ifdef VBOX_WITH_STATISTICS
+        if (pVM->hwaccm.s.fForceTLBFlush)
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBWorldSwitch);
+        else
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatNoFlushTLBWorldSwitch);
+#endif
+
     }
 
     /* Non-register state Guest Context */
@@ -1462,7 +1576,8 @@ ResumeExecution:
     TMNotifyEndOfExecution(pVM);
 
     /* In case we execute a goto ResumeExecution later on. */
-    pVM->hwaccm.s.vmx.fResumeVM = true;
+    pVM->hwaccm.s.vmx.fResumeVM  = true;
+    pVM->hwaccm.s.fForceTLBFlush = false;
 
     /*
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1674,7 +1789,21 @@ ResumeExecution:
     val = (valShadow & pVM->hwaccm.s.vmx.cr4_mask) | (val & ~pVM->hwaccm.s.vmx.cr4_mask);
     CPUMSetGuestCR4(pVM, val);
 
+    /* Can be updated behind our back in the nested paging case. */
     CPUMSetGuestCR2(pVM, ASMGetCR2());
+
+    /* Note: no reason to sync back the CRx registers. They can't be changed by the guest. */
+    /* Note: only in the nested paging case can CR3 & CR4 be changed by the guest. */
+    if (pVM->hwaccm.s.fNestedPaging)
+    {
+        VMXReadVMCS(VMX_VMCS_GUEST_CR3, &val);
+
+        if (val != pCtx->cr3)
+        {
+            CPUMSetGuestCR3(pVM, val);
+            PGMUpdateCR3(pVM, val);
+        }
+    }
 
     /* Sync back DR7 here. */
     VMXReadVMCS(VMX_VMCS_GUEST_DR7, &val);
@@ -1856,7 +1985,31 @@ ResumeExecution:
 
             case X86_XCPT_PF: /* Page fault */
             {
-                Log2(("Page fault at %VGv error code %x\n", exitQualification ,errCode));
+#ifdef DEBUG
+                if (pVM->hwaccm.s.fNestedPaging)
+                {   /* A genuine pagefault.
+                     * Forward the trap to the guest by injecting the exception and resuming execution.
+                     */
+                    Log(("Guest page fault at %VGv cr2=%VGv error code %x rsp=%VGv\n", (RTGCPTR)pCtx->rip, exitQualification, errCode, (RTGCPTR)pCtx->rsp));
+
+                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
+                    /* The error code might have been changed. */
+                    errCode = TRPMGetErrorCode(pVM);
+
+                    TRPMResetTrap(pVM);
+
+                    /* Now we must update CR2. */
+                    pCtx->cr2 = exitQualification;
+                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    AssertRC(rc);
+
+                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    goto ResumeExecution;
+                }
+#endif
+                Assert(!pVM->hwaccm.s.fNestedPaging);
+
+                Log2(("Page fault at %VGv error code %x\n", exitQualification, errCode));
                 /* Exit qualification contains the linear address of the page fault. */
                 TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
                 TRPMSetErrorCode(pVM, errCode);
@@ -2055,6 +2208,39 @@ ResumeExecution:
         break;
     }
 
+    case VMX_EXIT_EPT_VIOLATION:        /* 48 EPT violation. An attempt to access memory with a guest-physical address was disallowed by the configuration of the EPT paging structures. */
+    {
+        Log2(("EPT Page fault at %VGv error code %x\n", exitQualification ,errCode));
+        Assert(pVM->hwaccm.s.fNestedPaging);
+
+        /* Exit qualification contains the linear address of the page fault. */
+        TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
+        TRPMSetErrorCode(pVM, errCode);
+        TRPMSetFaultAddress(pVM, exitQualification );
+
+        /* Handle the pagefault trap for the nested shadow table. */
+        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), exitQualification );
+        Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Vrc\n", pCtx->rip, rc));
+        if (rc == VINF_SUCCESS)
+        {   /* We've successfully synced our shadow pages, so let's just continue execution. */
+            Log2(("Shadow page fault at %VGv cr2=%VGp error code %x\n", pCtx->rip, exitQualification , errCode));
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
+
+            TRPMResetTrap(pVM);
+
+            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+
+#ifdef VBOX_STRICT
+        if (rc != VINF_EM_RAW_EMULATE_INSTR)
+            LogFlow(("PGMTrap0eHandlerNestedPaging failed with %d\n", rc));
+#endif
+        /* Need to go back to the recompiler to emulate the instruction. */
+        TRPMResetTrap(pVM);
+        break;
+    }
+
     case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */
         /* Clear VM-exit on IF=1 change. */
         LogFlow(("VMX_EXIT_IRQ_WINDOW %VGv pending=%d IF=%d\n", pCtx->rip, VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)), pCtx->eflags.Bits.u1IF));
@@ -2112,6 +2298,8 @@ ResumeExecution:
     case VMX_EXIT_INVPG:                /* 14 Guest software attempted to execute INVPG. */
     {
         Log2(("VMX: invlpg\n"));
+        Assert(!pVM->hwaccm.s.fNestedPaging);
+
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvpg);
         rc = EMInterpretInvlpg(pVM, CPUMCTX2CORE(pCtx), exitQualification);
         if (rc == VINF_SUCCESS)
@@ -2164,6 +2352,7 @@ ResumeExecution:
             case 2:
                 break;
             case 3:
+                Assert(!pVM->hwaccm.s.fNestedPaging);
                 pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
                 break;
             case 4:
@@ -2190,6 +2379,8 @@ ResumeExecution:
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ:
             Log2(("VMX: mov x, crx\n"));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxRead);
+
+            Assert(!pVM->hwaccm.s.fNestedPaging || VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != USE_REG_CR3);
 
             /* CR8 reads only cause an exit when the TPR shadow feature isn't present. */
             Assert(VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8 || !(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
@@ -2691,3 +2882,44 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx)
     return VINF_SUCCESS;
 }
 
+/**
+ * Invalidates a guest page
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCVirt      Page to invalidate
+ */
+VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
+{
+    bool fFlushPending = pVM->hwaccm.s.fForceTLBFlush;
+
+    /* @todo Only relevant if we want to use VPID. */
+
+    /* Skip it if a TLB flush is already pending. */
+    if (!fFlushPending)
+    {
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Invalidates a guest page by physical address
+ *
+ * NOTE: Assumes the current instruction references this physical page though a virtual address!!
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   GCPhys      Page to invalidate
+ */
+VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+{
+    bool fFlushPending = pVM->hwaccm.s.fForceTLBFlush;
+
+    Assert(pVM->hwaccm.s.fNestedPaging);
+
+    /* Skip it if a TLB flush is already pending. */
+    if (!fFlushPending)
+    {
+    }
+    return VINF_SUCCESS;
+}

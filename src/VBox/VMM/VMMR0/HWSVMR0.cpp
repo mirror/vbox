@@ -85,8 +85,6 @@ VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     /* Write the physical page address where the CPU will store the host state while executing the VM. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, pPageCpuPhys);
 
-    pCpu->uCurrentASID = 0;   /* we'll aways increment this the first time (host uses ASID 0) */
-    pCpu->cTLBFlushes  = 0;
     return VINF_SUCCESS;
 }
 
@@ -113,7 +111,6 @@ VMMR0DECL(int) SVMR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS p
 
     /* Invalidate host state physical address. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
-    pCpu->uCurrentASID = 0;
 
     return VINF_SUCCESS;
 }
@@ -202,12 +199,6 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         Log(("SVMR0InitVM: AMD cpu with erratum 170 family %x model %x stepping %x\n", u32Family, u32Model, u32Stepping));
         pVM->hwaccm.s.svm.fAlwaysFlushTLB = true;
     }
-
-    /* Invalidate the last cpu we were running on. */
-    pVM->hwaccm.s.svm.idLastCpu    = NIL_RTCPUID;
-
-    /* we'll aways increment this the first time (host uses ASID 0) */
-    pVM->hwaccm.s.svm.uCurrentASID = 0;
     return VINF_SUCCESS;
 }
 
@@ -916,13 +907,13 @@ ResumeExecution:
 
 #ifdef LOG_ENABLED
     pCpu = HWACCMR0GetCurrentCpu();
-    if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
-        ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpu->cTLBFlushes)
+    if (    pVM->hwaccm.s.idLastCpu   != pCpu->idCpu
+        ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
     {
-        if (pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu)
-            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.svm.idLastCpu, pCpu->idCpu));
+        if (pVM->hwaccm.s.idLastCpu != pCpu->idCpu)
+            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.idLastCpu, pCpu->idCpu));
         else
-            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.svm.cTLBFlushes, pCpu->cTLBFlushes));
+            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     }
     if (pCpu->fFlushTLB)
         Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
@@ -948,23 +939,23 @@ ResumeExecution:
     pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
-    if (    pVM->hwaccm.s.svm.idLastCpu != pCpu->idCpu
+    if (    pVM->hwaccm.s.idLastCpu != pCpu->idCpu
             /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
-        ||  pVM->hwaccm.s.svm.cTLBFlushes != pCpu->cTLBFlushes)
+        ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
     {
         /* Force a TLB flush on VM entry. */
-        pVM->hwaccm.s.svm.fForceTLBFlush = true;
+        pVM->hwaccm.s.fForceTLBFlush = true;
     }
     else
         Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
 
-    pVM->hwaccm.s.svm.idLastCpu = pCpu->idCpu;
+    pVM->hwaccm.s.idLastCpu = pCpu->idCpu;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
-    if (    pVM->hwaccm.s.svm.fForceTLBFlush
+    if (    pVM->hwaccm.s.fForceTLBFlush
         && !pVM->hwaccm.s.svm.fAlwaysFlushTLB)
     {
-        if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.svm.u32MaxASID
+        if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
             ||  pCpu->fFlushTLB)
         {
             pCpu->fFlushTLB                  = false;
@@ -975,24 +966,24 @@ ResumeExecution:
         else
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
 
-        pVM->hwaccm.s.svm.cTLBFlushes  = pCpu->cTLBFlushes;
-        pVM->hwaccm.s.svm.uCurrentASID = pCpu->uCurrentASID;
+        pVM->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
+        pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
     }
     else
     {
         Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
 
         /* We never increase uCurrentASID in the fAlwaysFlushTLB (erratum 170) case. */
-        if (!pCpu->uCurrentASID || !pVM->hwaccm.s.svm.uCurrentASID)
-            pVM->hwaccm.s.svm.uCurrentASID = pCpu->uCurrentASID = 1;
+        if (!pCpu->uCurrentASID || !pVM->hwaccm.s.uCurrentASID)
+            pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
 
-        Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVM->hwaccm.s.svm.fForceTLBFlush);
-        pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.svm.fForceTLBFlush;
+        Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVM->hwaccm.s.fForceTLBFlush);
+        pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.fForceTLBFlush;
     }
-    AssertMsg(pVM->hwaccm.s.svm.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVM->hwaccm.s.svm.cTLBFlushes, pCpu->cTLBFlushes));
-    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVM->hwaccm.s.svm.uCurrentASID >= 1 && pVM->hwaccm.s.svm.uCurrentASID < pVM->hwaccm.s.svm.u32MaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVM->hwaccm.s.svm.uCurrentASID));
-    pVMCB->ctrl.TLBCtrl.n.u32ASID = pVM->hwaccm.s.svm.uCurrentASID;
+    AssertMsg(pVM->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+    AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
+    AssertMsg(pVM->hwaccm.s.uCurrentASID >= 1 && pVM->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVM->hwaccm.s.uCurrentASID));
+    pVMCB->ctrl.TLBCtrl.n.u32ASID = pVM->hwaccm.s.uCurrentASID;
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVMCB->ctrl.TLBCtrl.n.u1TLBFlush)
@@ -1003,7 +994,7 @@ ResumeExecution:
 
     /* In case we execute a goto ResumeExecution later on. */
     pVM->hwaccm.s.svm.fResumeVM      = true;
-    pVM->hwaccm.s.svm.fForceTLBFlush = pVM->hwaccm.s.svm.fAlwaysFlushTLB;
+    pVM->hwaccm.s.fForceTLBFlush = pVM->hwaccm.s.svm.fAlwaysFlushTLB;
 
     Assert(sizeof(pVM->hwaccm.s.svm.pVMCBPhys) == 8);
     Assert(pVMCB->ctrl.u32InterceptCtrl2 == ( SVM_CTRL2_INTERCEPT_VMRUN         /* required */
@@ -1660,7 +1651,7 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBCRxChange);
 
             /* Must be set by PGMSyncCR3 */
-            Assert(PGMGetGuestMode(pVM) <= PGMMODE_PROTECTED || pVM->hwaccm.s.svm.fForceTLBFlush);
+            Assert(PGMGetGuestMode(pVM) <= PGMMODE_PROTECTED || pVM->hwaccm.s.fForceTLBFlush);
         }
         if (rc == VINF_SUCCESS)
         {
@@ -2058,7 +2049,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.svm.fSupported);
 
-    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVM->hwaccm.s.svm.idLastCpu, pVM->hwaccm.s.svm.uCurrentASID));
+    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVM->hwaccm.s.idLastCpu, pVM->hwaccm.s.uCurrentASID));
     pVM->hwaccm.s.svm.fResumeVM = false;
 
     /* Force to reload LDTR, so we'll execute VMLoad to load additional guest state. */
@@ -2194,7 +2185,7 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
  */
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
-    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.svm.fForceTLBFlush;
+    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.fForceTLBFlush;
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
@@ -2226,7 +2217,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
  */
 VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
-    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.svm.fForceTLBFlush;
+    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.fForceTLBFlush;
 
     Assert(pVM->hwaccm.s.fNestedPaging);
 

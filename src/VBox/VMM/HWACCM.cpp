@@ -520,6 +520,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 #ifdef HWACCM_VTX_WITH_EPT
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                 pVM->hwaccm.s.fNestedPaging = pVM->hwaccm.s.fAllowNestedPaging;
+
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
+                pVM->hwaccm.s.vmx.fVPID = true;
 #endif
 
             /* Only try once. */
@@ -608,7 +611,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACMM: cpuid 0x80000001.u32AMDFeatureECX = %VX32\n", pVM->hwaccm.s.cpuid.u32AMDFeatureECX));
             LogRel(("HWACMM: cpuid 0x80000001.u32AMDFeatureEDX = %VX32\n", pVM->hwaccm.s.cpuid.u32AMDFeatureEDX));
             LogRel(("HWACCM: SVM revision                      = %X\n", pVM->hwaccm.s.svm.u32Rev));
-            LogRel(("HWACCM: SVM max ASID                      = %d\n", pVM->hwaccm.s.svm.u32MaxASID));
+            LogRel(("HWACCM: SVM max ASID                      = %d\n", pVM->hwaccm.s.uMaxASID));
             LogRel(("HWACCM: SVM features                      = %X\n", pVM->hwaccm.s.svm.u32Features));
 
             if (pVM->hwaccm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)

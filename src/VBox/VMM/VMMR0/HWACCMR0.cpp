@@ -73,6 +73,9 @@ static struct
     DECLR0CALLBACKMEMBER(int, pfnTermVM, (PVM pVM));
     DECLR0CALLBACKMEMBER(int, pfnSetupVM, (PVM pVM));
 
+    /** Maximum ASID allowed. */
+    uint32_t                  uMaxASID;
+
     struct
     {
         /** Set by the ring-0 driver to indicate VMX is supported by the CPU. */
@@ -109,9 +112,6 @@ static struct
 
         /** SVM revision. */
         uint32_t                    u32Rev;
-
-        /** Maximum ASID allowed. */
-        uint32_t                    u32MaxASID;
 
         /** SVM feature bits from cpuid 0x8000000a */
         uint32_t                    u32Features;
@@ -223,6 +223,8 @@ VMMR0DECL(int) HWACCMR0Init(void)
                         HWACCMR0Globals.vmx.msr.vmx_cr4_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
                         HWACCMR0Globals.vmx.msr.vmx_cr4_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
                         HWACCMR0Globals.vmx.msr.vmx_vmcs_enum   = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+                        /* VPID 16 bits ASID. */
+                        HWACCMR0Globals.uMaxASID                = 0x10000; /* exclusive */
 
                         if (HWACCMR0Globals.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
                         {
@@ -330,7 +332,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 if (VBOX_SUCCESS(rc))
                 {
                     /* Query AMD features. */
-                    ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.svm.u32MaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
+                    ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.uMaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
 
                     HWACCMR0Globals.svm.fSupported = true;
                 }
@@ -590,21 +592,24 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     /* Make sure we start with a clean TLB. */
     pCpu->fFlushTLB = true;
 
+    pCpu->uCurrentASID = 0;   /* we'll aways increment this the first time (host uses ASID 0) */
+    pCpu->cTLBFlushes  = 0;
+
     /* Should never happen */
-    if (!HWACCMR0Globals.aCpuInfo[idCpu].pMemObj)
+    if (!pCpu->pMemObj)
     {
         AssertFailed();
         paRc[idCpu] = VERR_INTERNAL_ERROR;
         return;
     }
 
-    pvPageCpu    = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj);
-    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj, 0);
+    pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
     paRc[idCpu]  = HWACCMR0Globals.pfnEnableCpu(pCpu, pVM, pvPageCpu, pPageCpuPhys);
     AssertRC(paRc[idCpu]);
     if (VBOX_SUCCESS(paRc[idCpu]))
-        HWACCMR0Globals.aCpuInfo[idCpu].fConfigured = true;
+        pCpu->fConfigured = true;
 
     return;
 }
@@ -619,22 +624,26 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
  */
 static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    void    *pvPageCpu;
-    RTHCPHYS pPageCpuPhys;
-    int     *paRc = (int *)pvUser1;
+    void           *pvPageCpu;
+    RTHCPHYS        pPageCpuPhys;
+    int            *paRc = (int *)pvUser1;
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
 
-    if (!HWACCMR0Globals.aCpuInfo[idCpu].pMemObj)
+    if (!pCpu->pMemObj)
         return;
 
-    pvPageCpu    = RTR0MemObjAddress(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj);
-    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[idCpu].pMemObj, 0);
+    pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
-    paRc[idCpu] = HWACCMR0Globals.pfnDisableCpu(&HWACCMR0Globals.aCpuInfo[idCpu], pvPageCpu, pPageCpuPhys);
+    paRc[idCpu] = HWACCMR0Globals.pfnDisableCpu(pCpu, pvPageCpu, pPageCpuPhys);
     AssertRC(paRc[idCpu]);
     HWACCMR0Globals.aCpuInfo[idCpu].fConfigured = false;
+
+    pCpu->uCurrentASID = 0;
+
     return;
 }
 
@@ -675,7 +684,6 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum     = HWACCMR0Globals.vmx.msr.vmx_vmcs_enum;
     pVM->hwaccm.s.vmx.msr.vmx_eptcaps       = HWACCMR0Globals.vmx.msr.vmx_eptcaps;
     pVM->hwaccm.s.svm.u32Rev                = HWACCMR0Globals.svm.u32Rev;
-    pVM->hwaccm.s.svm.u32MaxASID            = HWACCMR0Globals.svm.u32MaxASID;
     pVM->hwaccm.s.svm.u32Features           = HWACCMR0Globals.svm.u32Features;
     pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = HWACCMR0Globals.cpuid.u32AMDFeatureECX;
     pVM->hwaccm.s.cpuid.u32AMDFeatureEDX    = HWACCMR0Globals.cpuid.u32AMDFeatureEDX;
@@ -683,6 +691,14 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 #ifdef VBOX_STRICT
     pVM->hwaccm.s.idEnteredCpu              = NIL_RTCPUID;
 #endif
+
+    pVM->hwaccm.s.uMaxASID                  = HWACCMR0Globals.uMaxASID;
+
+    /* Invalidate the last cpu we were running on. */
+    pVM->hwaccm.s.idLastCpu                 = NIL_RTCPUID;
+
+    /* we'll aways increment this the first time (host uses ASID 0) */
+    pVM->hwaccm.s.uCurrentASID              = 0;
 
     /* Init a VT-x or AMD-V VM. */
     return HWACCMR0Globals.pfnInitVM(pVM);
