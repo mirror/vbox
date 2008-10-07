@@ -582,16 +582,21 @@ NatAlias_TEMPLATE   = VBOXR3NP
 Drivers_SOURCES +=	Network/DrvNAT.cpp
 
 Network/DrvNAT.cpp_DEFS += VBOX_NAT_SOURCES
+Network/nat/src/sys/net/if_clone.c_CFLAGS.linux += -std=c99
 
 Drivers_SOURCES += Network/nat/nat_socket.c
 
 NatAlias_CFLAGS += -include Network/nat/bsd.h
+#NatAlias_CFLAGS += -Werror -Wall -Wno-unused -Wno-pointer-sign
 NatAlias_DEFS += VBOX_NAT_SOURCES
 NatAlias_DEFS += __BSD_VISIBLE=1
 NatAlias_DEFS += INET
 NatAlias_DEFS += IPFIREWALL_NAT
 NatAlias_DEFS += RWLOCK_NOINLINE
 NatAlias_DEFS += MUTEX_NOINLINE
+NatAlias_DEFS += IPFIREWALL_FORWARD
+NatAlias_DEFS += IPFIREWALL
+NatAlias_DEFS += IPFIREWALL_DEFAULT_TO_ACCEPT
 
 NatAlias_DEFS += IN_NAT # used in Network/nat/nat.h (which glues VBox and *BSD sources)
 
@@ -601,6 +606,9 @@ NatAlias_SOURCES +=	Network/nat/nat_utils.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_fw_nat.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/in_cksum.c
 NatAlias_SOURCES +=	Network/nat/src/sys/net/if.c
+NatAlias_SOURCES +=	Network/nat/src/sys/net/if_clone.c
+NatAlias_SOURCES +=	Network/nat/src/sys/net/bpf.c
+NatAlias_SOURCES +=	Network/nat/src/sys/net/if_loop.c
 NatAlias_SOURCES +=	Network/nat/src/sys/net/if_ef.c
 NatAlias_SOURCES +=	Network/nat/src/sys/net/if_ethersubr.c
 NatAlias_SOURCES +=	Network/nat/src/sys/net/route.c
@@ -622,6 +630,7 @@ NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_output.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_input.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_mroute.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_id.c
+NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_divert.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/raw_ip.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/tcp_syncache.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/tcp_sack.c
@@ -647,6 +656,7 @@ NatAlias_SOURCES +=	Network/nat/src/sys/kern/uipc_socket.c
 NatAlias_SOURCES +=	Network/nat/src/sys/kern/uipc_domain.c
 NatAlias_SOURCES +=	Network/nat/src/sys/vm/uma_core.c
 NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_fw2.c
+NatAlias_SOURCES +=	Network/nat/src/sys/netinet/ip_fw_pfil.c
 NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias.c
 #NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_cuseeme.c
 NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_db.c
@@ -663,6 +673,7 @@ NatAlias_SOURCES += Network/nat/src/sys/netinet/libalias/alias_util.c
 
 NatAlias_SOURCES.amd64 +=	Network/nat/src/sys/amd64/amd64/in_cksum.c
 
+NatAlias_INCS += Network/nat
 NatAlias_INCS += Network/nat/src/sys
 NatAlias_INCS +=  Network/nat/src/sys/contrib/altq
 NatAlias_INCS.amd64 += Network/nat/src/sys/amd64/include
