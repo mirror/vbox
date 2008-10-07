@@ -458,6 +458,11 @@ VMMRCDECL(int)  PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
  */
 VMMR0DECL(int)  PGMR0PhysAllocateHandyPages(PVM pVM);
 VMMR0DECL(int)  PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+VMMR0DECL(int)  PGMR0DynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
+VMMR0DECL(int)  PGMR0DynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv);
+VMMR0DECL(int)  PGMR0DynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+# endif
 /** @} */
 #endif /* IN_RING0 */
 
@@ -555,8 +560,8 @@ VMMR3DECL(int)  PGMR3PhysAllocateHandyPages(PVM pVM);
 
 VMMR3DECL(int)  PGMR3CheckIntegrity(PVM pVM);
 
-VMMR3DECL(int)  PGMR3DbgHCPtr2GCPhys(PVM pVM, RTHCPTR HCPtr, PRTGCPHYS pGCPhys);
-VMMR3DECL(int)  PGMR3DbgHCPtr2HCPhys(PVM pVM, RTHCPTR HCPtr, PRTHCPHYS pHCPhys);
+VMMR3DECL(int)  PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys);
+VMMR3DECL(int)  PGMR3DbgR3Ptr2HCPhys(PVM pVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys);
 VMMR3DECL(int)  PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys);
 VMMR3DECL(int)  PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit);
 VMMR3DECL(int)  PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPhysHit);

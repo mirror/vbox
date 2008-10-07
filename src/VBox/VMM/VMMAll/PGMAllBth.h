@@ -1302,9 +1302,9 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
     /*
      * Find the guest address.
      */
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
-         pRam = CTXALLSUFF(pRam->pNext))
+         pRam = pRam->CTX_SUFF(pNext))
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
@@ -2567,13 +2567,13 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             Log2(("SyncPT:   BIG %VGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} Shw=%VGv GCPhys=%VGp %s\n",
                   GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u, GCPtr,
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
-            PPGMRAMRANGE      pRam   = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+            PPGMRAMRANGE      pRam   = pVM->pgm.s.CTX_SUFF(pRamRanges);
             unsigned          iPTDst = 0;
             while (iPTDst < RT_ELEMENTS(pPTDst->a))
             {
                 /* Advance ram range list. */
                 while (pRam && GCPhys > pRam->GCPhysLast)
-                    pRam = CTXALLSUFF(pRam->pNext);
+                    pRam = pRam->CTX_SUFF(pNext);
                 if (pRam && GCPhys >= pRam->GCPhys)
                 {
                     unsigned iHCPage = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;
@@ -3630,7 +3630,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%VHp HCPhyswShw=%VHp (cr3)\n", HCPhys, HCPhysShw), false);
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     RTGCPHYS GCPhys;
-    rc = PGMR3DbgHCPtr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
+    rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
 #  endif

@@ -574,13 +574,13 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
      * Find the ram range.
      * 99.8% of requests are expected to be in the first range.
      */
-    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
+    PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges);
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb))
     {
         do
         {
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
             if (!pRam)
                 return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
             off = GCPhys - pRam->GCPhys;
@@ -858,7 +858,7 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  * @param   cbRange Physical range
  * @param   pHCPtr  Where to store the HC pointer on success.
  */
-VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr)
+VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -894,8 +894,8 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
         unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
         *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
     }
-    else if (RT_LIKELY(pRam->pvHC))
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
+    else if (RT_LIKELY(pRam->pvR3))
+        *pHCPtr = (RTHCPTR)((RTR3UINTPTR)pRam->pvR3 + off);
     else
         return VERR_PGM_PHYS_PAGE_RESERVED;
     return VINF_SUCCESS;
@@ -910,7 +910,7 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
  * @param   GCPhys      The GC Physical addresss.
  * @param   cbRange     Physical range.
  */
-VMMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
+VMMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
 {
     RTHCPTR HCPtr;
     int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, &HCPtr);
@@ -969,7 +969,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
  * @param   GCPtr       The guest pointer to convert.
  * @param   pHCPtr      Where to store the HC virtual address.
  */
-VMMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
+VMMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -997,7 +997,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr)
  *          potentially not be in sync. It could also be used by a
  *          future DBGF API to cpu state independent conversions.
  */
-VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTHCPTR pHCPtr)
+VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTHCPTR pHCPtr) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -1153,12 +1153,12 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
     /*
      * Copy loop on ram ranges.
      */
-    PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
     for (;;)
     {
         /* Find range. */
         while (pRam && GCPhys > pRam->GCPhysLast)
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
         /* Inside range or not? */
         if (pRam && GCPhys >= pRam->GCPhys)
         {
@@ -1213,7 +1213,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 #endif /* IN_RING3 */
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
-#ifdef IN_GC
+#ifdef IN_GC /** @todo @bugref{3202}: R0 too */
                         void *pvSrc = NULL;
                         PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                         pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
@@ -1262,7 +1262,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 #endif /* IN_RING3 */
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
-#ifdef IN_GC
+#ifdef IN_GC  /** @todo @bugref{3202}: R0 too */
                         void *pvSrc = NULL;
                         PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                         pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
@@ -1292,7 +1292,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                         //case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2: /* = shadow */ - //MMIO2 isn't in the mask.
                         case MM_RAM_FLAGS_MMIO2: // MMIO2 isn't in the mask.
                         {
-#ifdef IN_GC
+#ifdef IN_GC /** @todo @bugref{3202}: R0 too */
                             void *pvSrc = NULL;
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvSrc);
                             pvSrc = (char *)pvSrc + (off & PAGE_OFFSET_MASK);
@@ -1414,12 +1414,12 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
     /*
      * Copy loop on ram ranges.
      */
-    PPGMRAMRANGE    pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    PPGMRAMRANGE    pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
     for (;;)
     {
         /* Find range. */
         while (pRam && GCPhys > pRam->GCPhysLast)
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
         /* Inside range or not? */
         if (pRam && GCPhys >= pRam->GCPhys)
         {
@@ -1516,7 +1516,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif /* IN_RING3 */
                         if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                         {
-#ifdef IN_GC
+#ifdef IN_GC /** @todo @bugref{3202}: R0 too */
                             void *pvDst = NULL;
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
@@ -1561,7 +1561,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif /* IN_RING3 */
                         if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                         {
-#ifdef IN_GC
+#ifdef IN_GC /** @todo @bugref{3202}: R0 too */
                             void *pvDst = NULL;
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
@@ -1606,7 +1606,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif /* IN_RING3 */
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
-#ifdef IN_GC
+#ifdef IN_GC /** @todo @bugref{3202}: R0 too */
                         void *pvDst = NULL;
                         PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                         pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
@@ -1635,7 +1635,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         case MM_RAM_FLAGS_MMIO2:
                         case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2: /* shadow rom */
                         {
-#ifdef IN_GC
+#ifdef IN_GC /** @todo @bugref{3202}: R0 too */
                             void *pvDst = NULL;
                             PGMGCDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), &pvDst);
                             pvDst = (char *)pvDst + (off & PAGE_OFFSET_MASK);
@@ -1717,7 +1717,7 @@ end:
     return;
 }
 
-#ifndef IN_GC /* Ring 0 & 3 only */
+#ifndef IN_GC /* Ring 0 & 3 only */  /** @todo @bugref{1865,3202}: this'll be fun! */
 
 /**
  * Read from guest physical memory by GC physical address, bypassing
@@ -1740,9 +1740,9 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
     /*
      * Loop ram ranges.
      */
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
-         pRam = CTXALLSUFF(pRam->pNext))
+         pRam = pRam->CTX_SUFF(pNext))
     {
         RTGCPHYS off = GCPhysSrc - pRam->GCPhys;
         if (off < pRam->cb)
@@ -1773,16 +1773,16 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
                     GCPhysSrc  += cbRead;
                 }
             }
-            else if (pRam->pvHC)
+            else if (pRam->pvR3)
             {
                 /* read */
                 size_t cbRead = pRam->cb - off;
                 if (cbRead >= cb)
                 {
-                    memcpy(pvDst, (uint8_t *)pRam->pvHC + off, cb);
+                    memcpy(pvDst, (uint8_t *)pRam->pvR3 + off, cb);
                     return VINF_SUCCESS;
                 }
-                memcpy(pvDst, (uint8_t *)pRam->pvHC + off, cbRead);
+                memcpy(pvDst, (uint8_t *)pRam->pvR3 + off, cbRead);
 
                 /* next */
                 cb        -= cbRead;
@@ -1824,9 +1824,9 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
     /*
      * Loop ram ranges.
      */
-    for (PPGMRAMRANGE pRam = CTXALLSUFF(pVM->pgm.s.pRamRanges);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
-         pRam = CTXALLSUFF(pRam->pNext))
+         pRam = pRam->CTX_SUFF(pNext))
     {
         RTGCPHYS off = GCPhysDst - pRam->GCPhys;
         if (off < pRam->cb)
@@ -1860,16 +1860,16 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
                     GCPhysDst  += cbWrite;
                 }
             }
-            else if (pRam->pvHC)
+            else if (pRam->pvR3)
             {
                 /* write */
                 size_t cbWrite = pRam->cb - off;
                 if (cbWrite >= cb)
                 {
-                    memcpy((uint8_t *)pRam->pvHC + off, pvSrc, cb);
+                    memcpy((uint8_t *)pRam->pvR3 + off, pvSrc, cb);
                     return VINF_SUCCESS;
                 }
-                memcpy((uint8_t *)pRam->pvHC + off, pvSrc, cbWrite);
+                memcpy((uint8_t *)pRam->pvR3 + off, pvSrc, cbWrite);
 
                 /* next */
                 cb         -= cbWrite;

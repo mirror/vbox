@@ -48,7 +48,7 @@ PFNRT g_apfnDeps[] =
     (PFNRT)PDMQueueInsert,
     (PFNRT)PDMCritSectEnter,
     (PFNRT)PGMInvalidatePage,
-    (PFNRT)PGMR3DbgHCPtr2GCPhys,
+    (PFNRT)PGMR3DbgR3Ptr2GCPhys,
     (PFNRT)VMR3Create,
     (PFNRT)VMMDoTest,
 #ifdef VBOX_WITH_DEBUGGER

@@ -155,3 +155,28 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode,
     STAM_PROFILE_STOP_EX(&pVM->pgm.s.StatGCTrap0e, pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution), a);
     return rc;
 }
+
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+
+/** darwin stub */
+VMMR0DECL(int) PGMR0DynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+{
+    Assert(!(GCPhys & PAGE_OFFSET));
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** darwin stub */
+VMMR0DECL(int) PGMR0DynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** darwin stub */
+VMMR0DECL(int) PGMR0DynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE */
+

@@ -221,6 +221,8 @@
  */
 #ifdef IN_GC
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) PGMGCDynMapHCPage(pVM, HCPhys, (void **)(ppv))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) PGMR0DynMapHCPage(pVM, HCPhys, (void **)(ppv))
 #else
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
 #endif
@@ -239,6 +241,8 @@
  */
 #ifdef IN_GC
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMGCDynMapGCPage(pVM, GCPhys, (void **)(ppv))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMR0DynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
@@ -257,6 +261,8 @@
  */
 #ifdef IN_GC
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMGCDynMapGCPageEx(pVM, GCPhys, (void **)(ppv))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMR0DynMapGCPageEx(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
@@ -916,10 +922,10 @@ typedef struct PGMRAMRANGE
     R3PTRTYPE(struct PGMRAMRANGE *)     pNextR3;
     /** Pointer to the next RAM range - for R0. */
     R0PTRTYPE(struct PGMRAMRANGE *)     pNextR0;
-    /** Pointer to the next RAM range - for GC. */
-    RCPTRTYPE(struct PGMRAMRANGE *)     pNextGC;
+    /** Pointer to the next RAM range - for RC. */
+    RCPTRTYPE(struct PGMRAMRANGE *)     pNextRC;
     /** Pointer alignment. */
-    RTRCPTR                             GCPtrAlignment;
+    RTRCPTR                             RCPtrAlignment;
     /** Start of the range. Page aligned. */
     RTGCPHYS                            GCPhys;
     /** Last address in the range (inclusive). Page aligned (-1). */
@@ -931,13 +937,19 @@ typedef struct PGMRAMRANGE
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     uint32_t                            u32Alignment; /**< alignment. */
 #else
-    /** HC virtual lookup ranges for chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
+    /** HC virtual lookup ranges for chunks - RC Ptr.
+     * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
     RCPTRTYPE(PRTHCPTR)                 pavHCChunkGC;
-    /** HC virtual lookup ranges for chunks. Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
+    /** HC virtual lookup ranges for chunks - R3/R0 Ptr.
+     * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
+//# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+//    R3PTRTYPE(PRTHCPTR)                 pavHCChunkHC;
+//# else
     R3R0PTRTYPE(PRTHCPTR)               pavHCChunkHC;
+//# endif
 #endif
     /** Start of the HC mapping of the range. This is only used for MMIO2. */
-    R3PTRTYPE(void *)                   pvHC;
+    R3PTRTYPE(void *)                   pvR3;
     /** The range description. */
     R3PTRTYPE(const char *)             pszDesc;
 
@@ -957,7 +969,7 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 /** Return hc ptr corresponding to the ram range and physical offset */
 #define PGMRAMRANGE_GETHCPTR(pRam, off) \
     (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC) ? (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[(off >> PGM_DYNAMIC_CHUNK_SHIFT)] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK))  \
-                                                : (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
+                                                : (RTHCPTR)((RTR3UINTPTR)pRam->pvR3 + off);
 
 /**
  * Per page tracking structure for ROM image.
@@ -2144,8 +2156,8 @@ typedef struct PGM
     R3PTRTYPE(PPGMRAMRANGE)         pRamRangesR3;
     /** R0 pointer corresponding to PGM::pRamRangesR3. */
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
-    /** GC pointer corresponding to PGM::pRamRangesR3. */
-    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesGC;
+    /** RC pointer corresponding to PGM::pRamRangesR3. */
+    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesRC;
     /** The configured RAM size. */
     RTUINT                          cbRamSize;
 
@@ -2718,13 +2730,13 @@ DECLINLINE(PPGMRAMRANGE) pgmPhysGetRange(PPGM pPGM, RTGCPHYS GCPhys)
     /*
      * Optimize for the first range.
      */
-    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
+    PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges);
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb))
     {
         do
         {
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
             if (RT_UNLIKELY(!pRam))
                 break;
             off = GCPhys - pRam->GCPhys;
@@ -2748,13 +2760,13 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PPGM pPGM, RTGCPHYS GCPhys)
     /*
      * Optimize for the first range.
      */
-    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
+    PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges);
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb))
     {
         do
         {
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
             if (RT_UNLIKELY(!pRam))
                 return NULL;
             off = GCPhys - pRam->GCPhys;
@@ -2782,13 +2794,13 @@ DECLINLINE(int) pgmPhysGetPageEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
     /*
      * Optimize for the first range.
      */
-    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
+    PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges);
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb))
     {
         do
         {
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
             if (RT_UNLIKELY(!pRam))
             {
                 *ppPage = NULL; /* avoid incorrect and very annoying GCC warnings */
@@ -2847,13 +2859,13 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
     if (    !pRam
         ||  RT_UNLIKELY((off = GCPhys - pRam->GCPhys) >= pRam->cb))
     {
-        pRam = CTXALLSUFF(pPGM->pRamRanges);
+        pRam = pPGM->CTX_SUFF(pRamRanges);
         off = GCPhys - pRam->GCPhys;
         if (RT_UNLIKELY(off >= pRam->cb))
         {
             do
             {
-                pRam = CTXALLSUFF(pRam->pNext);
+                pRam = pRam->CTX_SUFF(pNext);
                 if (RT_UNLIKELY(!pRam))
                 {
                     *ppPage = NULL; /* Kill the incorrect and extremely annoying GCC warnings. */
@@ -2905,13 +2917,13 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPageAndRange(PPGM pPGM, RTGCPHYS GCPhys, PPGMRAMR
     /*
      * Optimize for the first range.
      */
-    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
+    PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges);
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb))
     {
         do
         {
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
             if (RT_UNLIKELY(!pRam))
                 return NULL;
             off = GCPhys - pRam->GCPhys;
@@ -2940,13 +2952,13 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
     /*
      * Optimize for the first range.
      */
-    PPGMRAMRANGE pRam = CTXALLSUFF(pPGM->pRamRanges);
+    PPGMRAMRANGE pRam = pPGM->CTX_SUFF(pRamRanges);
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off >= pRam->cb))
     {
         do
         {
-            pRam = CTXALLSUFF(pRam->pNext);
+            pRam = pRam->CTX_SUFF(pNext);
             if (RT_UNLIKELY(!pRam))
             {
                 *ppRam = NULL;  /* Shut up silly GCC warnings. */
@@ -3066,9 +3078,9 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
         *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
         return VINF_SUCCESS;
     }
-    if (pRam->pvHC)
+    if (pRam->pvR3)
     {
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off); /** @todo @bugref{1865,3202}: Code is converting R3 pointer and maybe using it in R0! */
         return VINF_SUCCESS;
     }
     *pHCPtr = 0; /* Shut up silly GCC warnings. */
@@ -3113,9 +3125,9 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS
         *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
         return VINF_SUCCESS;
     }
-    if (pRam->pvHC)
+    if (pRam->pvR3)
     {
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off); /** @todo @bugref{1865,3202}: Code is converting R3 pointer and maybe using it in R0! */
         return VINF_SUCCESS;
     }
     *pHCPtr = 0; /* GCC crap */
@@ -3155,9 +3167,9 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
         *pHCPtr = (RTHCPTR)((RTHCUINTPTR)CTXSUFF(pRam->pavHCChunk)[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
         return VINF_SUCCESS;
     }
-    if (pRam->pvHC)
+    if (pRam->pvR3)
     {
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvHC + off);
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off); /** @todo @bugref{1865,3202}: Code is converting R3 pointer and maybe using it in R0! */
         return VINF_SUCCESS;
     }
     *pHCPtr = 0;
