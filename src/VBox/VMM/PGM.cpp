@@ -1954,8 +1954,8 @@ static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, voi
     RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
     Assert(     pHandler->enmType == PGMVIRTHANDLERTYPE_ALL
            ||   pHandler->enmType == PGMVIRTHANDLERTYPE_WRITE);
-    Assert(pHandler->pfnHandlerGC);
-    pHandler->pfnHandlerGC  += offDelta;
+    Assert(pHandler->pfnHandlerRC);
+    pHandler->pfnHandlerRC += offDelta;
     return 0;
 }
 
@@ -1973,8 +1973,8 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
     PPGMVIRTHANDLER pHandler = (PPGMVIRTHANDLER)pNode;
     RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
     Assert(pHandler->enmType == PGMVIRTHANDLERTYPE_HYPERVISOR);
-    Assert(pHandler->pfnHandlerGC);
-    pHandler->pfnHandlerGC  += offDelta;
+    Assert(pHandler->pfnHandlerRC);
+    pHandler->pfnHandlerRC  += offDelta;
     return 0;
 }
 

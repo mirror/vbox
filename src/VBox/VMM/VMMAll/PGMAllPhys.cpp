@@ -1249,7 +1249,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                     PPGMVIRTHANDLER pNode;
                     unsigned iPage;
                     int rc2 = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pNode, &iPage);
-                    if (VBOX_SUCCESS(rc2) && pNode->pfnHandlerHC)
+                    if (VBOX_SUCCESS(rc2) && pNode->pfnHandlerR3)
                     {
                         size_t cbRange = pNode->Core.KeyLast - GCPhys + 1;
                         if (cbRange < cb)
@@ -1261,8 +1261,8 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 
                         void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 
-                        /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
-                        rc = pNode->pfnHandlerHC(pVM, (RTGCPTR)GCPtr, pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, 0);
+                        /* Note: Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
+                        rc = pNode->pfnHandlerR3(pVM, (RTGCPTR)GCPtr, pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, 0);
                     }
 #endif /* IN_RING3 */
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
@@ -1490,7 +1490,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 
-                            /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
+                            /* Note! Dangerous assumption that R3 handlers don't do anything that really requires an EMT lock! */
                             rc = pPhysNode->pfnHandlerR3(pVM, GCPhys, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, pPhysNode->pvUserR3);
                         }
 
@@ -1498,7 +1498,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         PPGMVIRTHANDLER pVirtNode;
                         unsigned iPage;
                         int rc2 = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pVirtNode, &iPage);
-                        if (VBOX_SUCCESS(rc2) && pVirtNode->pfnHandlerHC)
+                        if (VBOX_SUCCESS(rc2) && pVirtNode->pfnHandlerR3)
                         {
                             size_t cbRange = pVirtNode->Core.KeyLast - GCPhys + 1;
                             if (cbRange < cb)
@@ -1510,8 +1510,8 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 
-                            /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
-                            rc2 = pVirtNode->pfnHandlerHC(pVM, (RTGCPTR)GCPtr, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, 0);
+                            /* Note! Dangerous assumption that R3 handlers don't do anything that really requires an EMT lock! */
+                            rc2 = pVirtNode->pfnHandlerR3(pVM, (RTGCPTR)GCPtr, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, 0);
                             if (    (   rc2 != VINF_PGM_HANDLER_DO_DEFAULT
                                      && rc == VINF_PGM_HANDLER_DO_DEFAULT)
                                 ||  (   VBOX_FAILURE(rc2)
@@ -1548,7 +1548,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         PPGMVIRTHANDLER pNode;
                         unsigned iPage;
                         int rc2 = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pNode, &iPage);
-                        if (VBOX_SUCCESS(rc2) && pNode->pfnHandlerHC)
+                        if (VBOX_SUCCESS(rc2) && pNode->pfnHandlerR3)
                         {
                             size_t cbRange = pNode->Core.KeyLast - GCPhys + 1;
                             if (cbRange < cb)
@@ -1560,8 +1560,8 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 
-                            /** @tode Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
-                            rc = pNode->pfnHandlerHC(pVM, (RTGCPTR)GCPtr, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, 0);
+                            /* Note! Dangerous assumption that R3 handlers don't do anything that really requires an EMT lock! */
+                            rc = pNode->pfnHandlerR3(pVM, (RTGCPTR)GCPtr, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, 0);
                         }
 #endif /* IN_RING3 */
                         if (rc == VINF_PGM_HANDLER_DO_DEFAULT)

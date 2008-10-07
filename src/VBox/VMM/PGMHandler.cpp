@@ -228,8 +228,8 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
  */
 /** @todo rename this function to PGMR3HandlerVirtualRegister */
 VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
-                                           PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
-                                           PFNPGMHCVIRTHANDLER pfnHandlerHC,
+                                           PFNPGMR3VIRTINVALIDATE pfnInvalidateHC,
+                                           PFNPGMR3VIRTHANDLER pfnHandlerHC,
                                            const char *pszHandlerGC, const char *pszModGC,
                                            const char *pszDesc)
 {
@@ -268,9 +268,9 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
  * @param   enmType         Handler type. Any of the PGMVIRTHANDLERTYPE_* enums.
  * @param   GCPtr           Start address.
  * @param   GCPtrLast       Last address (inclusive).
- * @param   pfnInvalidateHC The HC invalidate callback (can be 0)
- * @param   pfnHandlerHC    The HC handler.
- * @param   pfnHandlerGC    The GC handler.
+ * @param   pfnInvalidateR3 The R3 invalidate callback (can be 0)
+ * @param   pfnHandlerR3    The R3 handler.
+ * @param   pfnHandlerRC    The RC handler.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  * @thread  EMT
  */
@@ -278,11 +278,13 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
 /** @todo create a template for virtual handlers (see async i/o), we're wasting space
  * duplicating the function pointers now. (Or we will once we add the missing callbacks.) */
 VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
-                                         PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
-                                         PFNPGMHCVIRTHANDLER pfnHandlerHC, RTGCPTR pfnHandlerGC,
+                                         R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3,
+                                         R3PTRTYPE(PFNPGMR3VIRTHANDLER) pfnHandlerR3,
+                                         RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
                                          R3PTRTYPE(const char *) pszDesc)
 {
-    Log(("PGMR3HandlerVirtualRegister: enmType=%d GCPtr=%RGv GCPtrLast=%RGv pfnHandlerGC=%RGv pszDesc=%s\n", enmType, GCPtr, GCPtrLast, pfnHandlerGC, pszDesc));
+    Log(("PGMR3HandlerVirtualRegister: enmType=%d GCPtr=%RGv GCPtrLast=%RGv pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pfnHandlerRC=%RGv pszDesc=%s\n",
+         enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc));
 
     /*
      * Validate input.
@@ -291,7 +293,7 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
     {
         case PGMVIRTHANDLERTYPE_ALL:
         case PGMVIRTHANDLERTYPE_WRITE:
-            if (!pfnHandlerHC)
+            if (!pfnHandlerR3)
             {
                 AssertMsgFailed(("No HC handler specified!!\n"));
                 return VERR_INVALID_PARAMETER;
@@ -299,9 +301,9 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
             break;
 
         case PGMVIRTHANDLERTYPE_HYPERVISOR:
-            if (pfnHandlerHC)
+            if (pfnHandlerR3)
             {
-                AssertMsgFailed(("HC handler specified for hypervisor range!?!\n"));
+                AssertMsgFailed(("R3 handler specified for hypervisor range!?!\n"));
                 return VERR_INVALID_PARAMETER;
             }
             break;
@@ -314,9 +316,9 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
         AssertMsgFailed(("GCPtrLast < GCPtr (%#x < %#x)\n", GCPtrLast, GCPtr));
         return VERR_INVALID_PARAMETER;
     }
-    if (!pfnHandlerGC)
+    if (!pfnHandlerRC)
     {
-        AssertMsgFailed(("pfnHandlerGC is missing\n"));
+        AssertMsgFailed(("pfnHandlerRC is missing\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -333,9 +335,9 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
     pNew->Core.KeyLast  = GCPtrLast;
 
     pNew->enmType       = enmType;
-    pNew->pfnInvalidateHC = pfnInvalidateHC;
-    pNew->pfnHandlerGC  = pfnHandlerGC;
-    pNew->pfnHandlerHC  = pfnHandlerHC;
+    pNew->pfnInvalidateR3 = pfnInvalidateR3;
+    pNew->pfnHandlerRC  = pfnHandlerRC;
+    pNew->pfnHandlerR3  = pfnHandlerR3;
     pNew->pszDesc       = pszDesc;
     pNew->GCPtr         = GCPtr;
     pNew->GCPtrLast     = GCPtrLast;
@@ -415,16 +417,16 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   GCPtr           Start address.
- * @param   pfnInvalidateHC The HC invalidate callback (can be 0)
+ * @param   pfnInvalidateR3 The R3 invalidate callback (can be 0)
  * @remarks Doesn't work with the hypervisor access handler type.
  */
-VMMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, PFNPGMHCVIRTINVALIDATE pfnInvalidateHC)
+VMMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, PFNPGMR3VIRTINVALIDATE pfnInvalidateR3)
 {
     pgmLock(pVM);
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.pTreesHC->VirtHandlers, GCPtr);
     if (pCur)
     {
-        pCur->pfnInvalidateHC = pfnInvalidateHC;
+        pCur->pfnInvalidateR3 = pfnInvalidateR3;
         pgmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -615,8 +617,8 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
         case PGMVIRTHANDLERTYPE_HYPERVISOR: pszType = "WriteHyp "; break;
         default:                            pszType = "????"; break;
     }
-    pHlp->pfnPrintf(pHlp, "%VGv - %VGv  %VHv  %VRv  %s  %s\n",
-        pCur->GCPtr, pCur->GCPtrLast, pCur->pfnHandlerHC, pCur->pfnHandlerGC, pszType, pCur->pszDesc);
+    pHlp->pfnPrintf(pHlp, "%RGv - %RGv  %RHv  %RRv  %s  %s\n",
+        pCur->GCPtr, pCur->GCPtrLast, pCur->pfnHandlerR3, pCur->pfnHandlerRC, pszType, pCur->pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
         pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",

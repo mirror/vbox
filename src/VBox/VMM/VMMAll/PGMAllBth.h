@@ -279,7 +279,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 {
 #  ifdef IN_GC
                     STAM_PROFILE_START(&pCur->Stat, h);
-                    rc = CTXSUFF(pCur->pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
+                    rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
                     STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                     AssertFailed();
@@ -459,7 +459,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             {
 #  ifdef IN_GC
                                 STAM_PROFILE_START(&pCur->Stat, h);
-                                rc = CTXSUFF(pCur->pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
+                                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
                                 STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
@@ -488,7 +488,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 RTGCUINTPTR off = (iPage << PAGE_SHIFT) + ((RTGCUINTPTR)pvFault & PAGE_OFFSET_MASK) - ((RTGCUINTPTR)pCur->GCPtr & PAGE_OFFSET_MASK);
                                 Assert(off < pCur->cb);
                                 STAM_PROFILE_START(&pCur->Stat, h);
-                                rc = CTXSUFF(pCur->pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, off);
+                                rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, off);
                                 STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
@@ -566,7 +566,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         {
 #  ifdef IN_GC
                             STAM_PROFILE_START(&pCur->Stat, h);
-                            rc = CTXSUFF(pCur->pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
+                            rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->GCPtr, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->GCPtr);
                             STAM_PROFILE_STOP(&pCur->Stat, h);
 #  else
                             rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */

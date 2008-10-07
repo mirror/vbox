@@ -443,31 +443,32 @@ typedef struct PGMVIRTHANDLER
 {
     /** Core node for the tree based on virtual ranges. */
     AVLROGCPTRNODECORE                  Core;
-    /** Number of cache pages. */
+#if GC_ARCH_BITS == 32
+    /** Alignment padding. */
     uint32_t                            u32Padding;
+#endif
     /** Access type. */
     PGMVIRTHANDLERTYPE                  enmType;
     /** Number of cache pages. */
     uint32_t                            cPages;
-#if GC_ARCH_BITS == 64
-    uint32_t                            padding0;
-#endif
+
 /** @todo The next two members are redundant. It adds some readability though. */
     /** Start of the range. */
     RTGCPTR                             GCPtr;
     /** End of the range (exclusive). */
     RTGCPTR                             GCPtrLast;
+
     /** Size of the range (in bytes). */
     RTGCUINTPTR                         cb;
-    /** Pointer to the GC callback function. */
-    RCPTRTYPE(PFNPGMGCVIRTHANDLER)      pfnHandlerGC;
+    /** Pointer to the RC callback function. */
+    RCPTRTYPE(PFNPGMRCVIRTHANDLER)      pfnHandlerRC;
 #if GC_ARCH_BITS == 64
     RTRCPTR                             padding1;
 #endif
-    /** Pointer to the HC callback function for invalidation. */
-    R3PTRTYPE(PFNPGMHCVIRTINVALIDATE)   pfnInvalidateHC;
-    /** Pointer to the HC callback function. */
-    R3PTRTYPE(PFNPGMHCVIRTHANDLER)      pfnHandlerHC;
+    /** Pointer to the R3 callback function for invalidation. */
+    R3PTRTYPE(PFNPGMR3VIRTINVALIDATE)   pfnInvalidateR3;
+    /** Pointer to the R3 callback function. */
+    R3PTRTYPE(PFNPGMR3VIRTHANDLER)      pfnHandlerR3;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
 #ifdef VBOX_WITH_STATISTICS

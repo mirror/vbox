@@ -182,7 +182,7 @@ typedef enum PGMVIRTHANDLERTYPE
 } PGMVIRTHANDLERTYPE;
 
 /**
- * \#PF Handler callback for virtual access handler ranges.
+ * \#PF Handler callback for virtual access handler ranges, RC.
  *
  * Important to realize that a physical page in a range can have aliases, and
  * for ALL and WRITE handlers these will also trigger.
@@ -196,12 +196,12 @@ typedef enum PGMVIRTHANDLERTYPE
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-typedef DECLCALLBACK(int) FNPGMGCVIRTHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+typedef DECLCALLBACK(int) FNPGMRCVIRTHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 /** Pointer to PGM access callback. */
-typedef FNPGMGCVIRTHANDLER *PFNPGMGCVIRTHANDLER;
+typedef FNPGMRCVIRTHANDLER *PFNPGMRCVIRTHANDLER;
 
 /**
- * \#PF Handler callback for virtual access handler ranges.
+ * \#PF Handler callback for virtual access handler ranges, R3.
  *
  * Important to realize that a physical page in a range can have aliases, and
  * for ALL and WRITE handlers these will also trigger.
@@ -216,9 +216,9 @@ typedef FNPGMGCVIRTHANDLER *PFNPGMGCVIRTHANDLER;
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) FNPGMHCVIRTHANDLER(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMR3VIRTHANDLER(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 /** Pointer to PGM access callback. */
-typedef FNPGMHCVIRTHANDLER *PFNPGMHCVIRTHANDLER;
+typedef FNPGMR3VIRTHANDLER *PFNPGMR3VIRTHANDLER;
 
 
 /**
@@ -227,9 +227,9 @@ typedef FNPGMHCVIRTHANDLER *PFNPGMHCVIRTHANDLER;
  * @param   pVM             VM Handle.
  * @param   GCPtr           The virtual address the guest has changed.
  */
-typedef DECLCALLBACK(int) FNPGMHCVIRTINVALIDATE(PVM pVM, RTGCPTR GCPtr);
+typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, RTGCPTR GCPtr);
 /** Pointer to PGM invalidation callback. */
-typedef FNPGMHCVIRTINVALIDATE *PFNPGMHCVIRTINVALIDATE;
+typedef FNPGMR3VIRTINVALIDATE *PFNPGMR3VIRTINVALIDATE;
 
 /**
  * Paging mode.
@@ -531,14 +531,15 @@ VMMR3DECL(int)  PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType
                                              const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
                                              const char *pszModRC, const char *pszHandlerRC, RTRCPTR pvUserRC, const char *pszDesc);
 VMMDECL(int)    PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
-                                            PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
-                                            PFNPGMHCVIRTHANDLER pfnHandlerHC, RTGCPTR pfnHandlerGC,
+                                            R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3,
+                                            R3PTRTYPE(PFNPGMR3VIRTHANDLER) pfnHandlerR3,
+                                            RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
                                             R3PTRTYPE(const char *) pszDesc);
 VMMR3DECL(int)  PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
-                                            PFNPGMHCVIRTINVALIDATE pfnInvalidateHC,
-                                            PFNPGMHCVIRTHANDLER pfnHandlerHC,
-                                            const char *pszHandlerGC, const char *pszModGC, const char *pszDesc);
-VMMDECL(int)    PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, PFNPGMHCVIRTINVALIDATE pfnInvalidateHC);
+                                            PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
+                                            PFNPGMR3VIRTHANDLER pfnHandlerR3,
+                                            const char *pszHandlerRC, const char *pszModRC, const char *pszDesc);
+VMMDECL(int)    PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3);
 VMMDECL(int)    PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr);
 VMMR3DECL(int)  PGMR3PoolGrow(PVM pVM);
 #ifdef ___VBox_dbgf_h /** @todo fix this! */
