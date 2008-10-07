@@ -407,7 +407,7 @@ else if1of ($(KBUILD_TARGET),linux)
     then echo "$(1)"; \
     else echo "$(2)"; fi; )
   COMPILE_OP_CMDS = \
-    $(filter-out -fno-stack-protector, $(COMPILE_OP_CMDS_2)) \
+    $(filter-out -fno-stack-protector -Wextra -Wno-missing-field-initializers, $(COMPILE_OP_CMDS_2)) \
     $(call VBOX_RECOMPILER_OP_CHECK_CC_GCC,-fno-stack-protector)
  endif
 endif
