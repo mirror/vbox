@@ -43,6 +43,10 @@ __BEGIN_DECLS
 #include "PGMR0Bth.h"
 #undef PGM_BTH_NAME
 
+#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PROT(name)
+#include "PGMR0Bth.h"
+#undef PGM_BTH_NAME
+
 __END_DECLS
 
 
@@ -81,8 +85,8 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode,
     STAM_PROFILE_START(&pVM->pgm.s.StatGCTrap0e, a);
     STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = NULL; } );
 
-    /* AMD uses the host's paging mode; Intel's version is on the todo list */
-    AssertMsg(enmShwPagingMode == PGMMODE_32_BIT || enmShwPagingMode == PGMMODE_PAE || enmShwPagingMode == PGMMODE_PAE_NX || enmShwPagingMode == PGMMODE_AMD64 || enmShwPagingMode == PGMMODE_AMD64_NX, ("enmShwPagingMode=%d\n", enmShwPagingMode));
+    /* AMD uses the host's paging mode; Intel has a single mode (EPT). */
+    AssertMsg(enmShwPagingMode == PGMMODE_32_BIT || enmShwPagingMode == PGMMODE_PAE || enmShwPagingMode == PGMMODE_PAE_NX || enmShwPagingMode == PGMMODE_AMD64 || enmShwPagingMode == PGMMODE_AMD64_NX || enmShwPagingMode == PGMMODE_EPT, ("enmShwPagingMode=%d\n", enmShwPagingMode));
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -142,6 +146,9 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode,
     case PGMMODE_AMD64:
     case PGMMODE_AMD64_NX:
         rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVM, uErr, pRegFrame, pvFault);
+        break;
+    case PGMMODE_EPT:
+        rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVM, uErr, pRegFrame, pvFault);
         break;
     default:
         AssertFailed();
