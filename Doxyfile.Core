@@ -216,10 +216,29 @@ ALIASES                += \
 <b>Type:</b> \2 <br> \
 "
 
-# bugref - xTracker bug reference, takes a bug number.
+# bugref - xTracker bug reference, takes one to four bug numbers.
 ALIASES               += bugref{1}="https://xtracker.innotek.de/index.php?bug=\1"
-# ticketref - Track ticket reference, takes a ticket number.
+ALIASES               += bugref{2}="https://xtracker.innotek.de/index.php?bug=\1, \
+https://xtracker.innotek.de/index.php?bug=\2"
+ALIASES               += bugref{3}="https://xtracker.innotek.de/index.php?bug=\1, \
+https://xtracker.innotek.de/index.php?bug=\2, \
+https://xtracker.innotek.de/index.php?bug=\3"
+ALIASES               += bugref{4}="https://xtracker.innotek.de/index.php?bug=\1, \
+https://xtracker.innotek.de/index.php?bug=\2, \
+https://xtracker.innotek.de/index.php?bug=\3, \
+https://xtracker.innotek.de/index.php?bug=\4"
+
+# ticketref - Track ticket reference, takes one to four ticket numbers.
 ALIASES               += ticketref{1}="http://www.virtualbox.org/ticket/\1"
+ALIASES               += ticketref{2}="http://www.virtualbox.org/ticket/\1, \
+http://www.virtualbox.org/ticket/\2"
+ALIASES               += ticketref{3}="http://www.virtualbox.org/ticket/\1, \
+http://www.virtualbox.org/ticket/\2, \
+http://www.virtualbox.org/ticket/\3"
+ALIASES               += ticketref{4}="http://www.virtualbox.org/ticket/\1, \
+http://www.virtualbox.org/ticket/\2, \
+http://www.virtualbox.org/ticket/\3, \
+http://www.virtualbox.org/ticket/\4"
 
 
 OPTIMIZE_OUTPUT_FOR_C  = YES
