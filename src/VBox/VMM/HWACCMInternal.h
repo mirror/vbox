@@ -315,10 +315,6 @@ typedef struct HWACCM
         /** The last known guest paging mode. */
         PGMMODE                     enmCurrGuestMode;
 
-#if HC_ARCH_BITS == 32
-        uint32_t                    padding3; /**< explicit alignment for 32-bit gcc */
-#endif
-
         /** Real-mode emulation state. */
         struct
         {
