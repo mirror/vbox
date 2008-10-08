@@ -1185,10 +1185,11 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     /*
      * Trees
      */
-    rc = MMHyperAlloc(pVM, sizeof(PGMTREES), 0, MM_TAG_PGM, (void **)&pVM->pgm.s.pTreesHC);
+    rc = MMHyperAlloc(pVM, sizeof(PGMTREES), 0, MM_TAG_PGM, (void **)&pVM->pgm.s.pTreesR3);
     if (VBOX_SUCCESS(rc))
     {
-        pVM->pgm.s.pTreesGC = MMHyperHC2GC(pVM, pVM->pgm.s.pTreesHC);
+        pVM->pgm.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pTreesR3);
+        pVM->pgm.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pTreesR3);
 
         /*
          * Alocate the zero page.
@@ -1863,7 +1864,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Trees.
      */
-    pVM->pgm.s.pTreesGC = MMHyperHC2GC(pVM, pVM->pgm.s.pTreesHC);
+    pVM->pgm.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pTreesR3);
 
     /*
      * Ram ranges.
@@ -1879,7 +1880,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * Update the two page directories with all page table mappings.
      * (One or more of them have changed, that's why we're here.)
      */
-    pVM->pgm.s.pMappingsRC = MMHyperHC2GC(pVM, pVM->pgm.s.pMappingsR3);
+    pVM->pgm.s.pMappingsRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pMappingsR3);
     for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur->pNextR3; pCur = pCur->pNextR3)
         pCur->pNextRC = MMHyperR3ToRC(pVM, pCur->pNextR3);
 
@@ -1909,9 +1910,9 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Physical and virtual handlers.
      */
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers, true, pgmR3RelocatePhysHandler, &offDelta);
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->VirtHandlers, true, pgmR3RelocateVirtHandler, &offDelta);
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &offDelta);
+    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3RelocatePhysHandler, &offDelta);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers, true, pgmR3RelocateVirtHandler, &offDelta);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &offDelta);
 
     /*
      * The page pool.
@@ -4355,21 +4356,21 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
     const static PGMCHECKINTARGS s_LeftToRight = { true, NULL, NULL, NULL, pVM };
     const static PGMCHECKINTARGS s_RightToLeft = { false, NULL, NULL, NULL, pVM };
     PGMCHECKINTARGS Args = s_LeftToRight;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
+    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
     Args = s_RightToLeft;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers,       false, pgmR3CheckIntegrityPhysHandlerNode, &Args);
+    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       false, pgmR3CheckIntegrityPhysHandlerNode, &Args);
     Args = s_LeftToRight;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->VirtHandlers,       true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
+    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->VirtHandlers,       true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
     Args = s_RightToLeft;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->VirtHandlers,       false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
+    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->VirtHandlers,       false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
     Args = s_LeftToRight;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->HyperVirtHandlers,  true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
+    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->HyperVirtHandlers,  true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
     Args = s_RightToLeft;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesHC->HyperVirtHandlers,  false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
+    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->HyperVirtHandlers,  false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
     Args = s_LeftToRight;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysToVirtHandlers, true,  pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
+    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, true,  pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
     Args = s_RightToLeft;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysToVirtHandlers, false, pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
+    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, false, pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
 
     return !cErrors ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
 }

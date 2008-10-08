@@ -144,8 +144,8 @@ void pgmR3HandlerPhysicalUpdateAll(PVM pVM)
      * (the right -> left on the setting pass is just bird speculating on cache hits)
      */
     pgmLock(pVM);
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers,  true, pgmR3HandlerPhysicalOneClear, pVM);
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, false, pgmR3HandlerPhysicalOneSet, pVM);
+    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers,  true, pgmR3HandlerPhysicalOneClear, pVM);
+    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, false, pgmR3HandlerPhysicalOneSet, pVM);
     pgmUnlock(pVM);
 }
 
@@ -357,8 +357,8 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
      * the same range this makes everything much simpler and faster.
      */
     AVLROGCPTRTREE *pRoot = enmType != PGMVIRTHANDLERTYPE_HYPERVISOR
-                          ? &pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers
-                          : &pVM->pgm.s.CTXSUFF(pTrees)->HyperVirtHandlers;
+                          ? &pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers
+                          : &pVM->pgm.s.CTX_SUFF(pTrees)->HyperVirtHandlers;
     pgmLock(pVM);
     if (*pRoot != 0)
     {
@@ -421,7 +421,7 @@ VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RT
 VMMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, PFNPGMR3VIRTINVALIDATE pfnInvalidateR3)
 {
     pgmLock(pVM);
-    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.pTreesHC->VirtHandlers, GCPtr);
+    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.pTreesR3->VirtHandlers, GCPtr);
     if (pCur)
     {
         pCur->pfnInvalidateR3 = pfnInvalidateR3;
@@ -450,7 +450,7 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
      * Find the handler.
      * We naturally assume GCPtr is a unique specification.
      */
-    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, GCPtr);
+    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, GCPtr);
     if (RT_LIKELY(pCur))
     {
         Log(("PGMHandlerVirtualDeregister: Removing Virtual (%d) Range %RGv-%RGv %s\n", pCur->enmType,
@@ -474,7 +474,7 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
     else
     {
         /* must be a hypervisor one then. */
-        pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTXSUFF(pTrees)->HyperVirtHandlers, GCPtr);
+        pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->HyperVirtHandlers, GCPtr);
         if (RT_UNLIKELY(!pCur))
         {
             pgmUnlock(pVM);
@@ -540,8 +540,8 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
         pHlp->pfnPrintf(pHlp,
             "Physical handlers: (PhysHandlers=%d (%#x))\n"
             "From     - To (incl) HandlerHC UserHC    HandlerGC UserGC    Type     Description\n",
-            pVM->pgm.s.pTreesHC->PhysHandlers, pVM->pgm.s.pTreesHC->PhysHandlers);
-        RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesHC->PhysHandlers, true, pgmR3InfoHandlersPhysicalOne, &Args);
+            pVM->pgm.s.pTreesR3->PhysHandlers, pVM->pgm.s.pTreesR3->PhysHandlers);
+        RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3InfoHandlersPhysicalOne, &Args);
     }
 
     if (fVirtual)
@@ -549,7 +549,7 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
         pHlp->pfnPrintf(pHlp,
             "Virtual handlers:\n"
             "From     - To (excl) HandlerHC HandlerGC Type     Description\n");
-        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->VirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
+        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
     }
 
     if (fHyper)
@@ -557,7 +557,7 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
         pHlp->pfnPrintf(pHlp,
             "Hypervisor Virtual handlers:\n"
             "From     - To (excl) HandlerHC HandlerGC Type     Description\n");
-        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesHC->HyperVirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
+        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
     }
 }
 

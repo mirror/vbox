@@ -186,16 +186,18 @@ int pgmR3PoolInit(PVM pVM)
     /*
      * Initialize it.
      */
-    pPool->pVMHC     = pVM;
-    pPool->pVMGC     = pVM->pVMGC;
+    pPool->pVMR3     = pVM;
+    pPool->pVMR0     = pVM->pVMR0;
+    pPool->pVMRC     = pVM->pVMRC;
     pPool->cMaxPages = cMaxPages;
     pPool->cCurPages = PGMPOOL_IDX_FIRST;
 #ifdef PGMPOOL_WITH_USER_TRACKING
     pPool->iUserFreeHead = 0;
     pPool->cMaxUsers = cMaxUsers;
     PPGMPOOLUSER paUsers = (PPGMPOOLUSER)&pPool->aPages[pPool->cMaxPages];
-    pPool->paUsersHC = paUsers;
-    pPool->paUsersGC = MMHyperHC2GC(pVM, paUsers);
+    pPool->paUsersR3 = paUsers;
+    pPool->paUsersR0 = MMHyperR3ToR0(pVM, paUsers);
+    pPool->paUsersRC = MMHyperR3ToRC(pVM, paUsers);
     for (unsigned i = 0; i < cMaxUsers; i++)
     {
         paUsers[i].iNext = i + 1;
@@ -208,8 +210,9 @@ int pgmR3PoolInit(PVM pVM)
     pPool->iPhysExtFreeHead = 0;
     pPool->cMaxPhysExts = cMaxPhysExts;
     PPGMPOOLPHYSEXT paPhysExts = (PPGMPOOLPHYSEXT)&paUsers[cMaxUsers];
-    pPool->paPhysExtsHC = paPhysExts;
-    pPool->paPhysExtsGC = MMHyperHC2GC(pVM, paPhysExts);
+    pPool->paPhysExtsR3 = paPhysExts;
+    pPool->paPhysExtsR0 = MMHyperR3ToR0(pVM, paPhysExts);
+    pPool->paPhysExtsRC = MMHyperR3ToRC(pVM, paPhysExts);
     for (unsigned i = 0; i < cMaxPhysExts; i++)
     {
         paPhysExts[i].iNext = i + 1;
@@ -239,14 +242,14 @@ int pgmR3PoolInit(PVM pVM)
     /* The Shadow 32-bit PD. (32 bits guest paging) */
     pPool->aPages[PGMPOOL_IDX_PD].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PD].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PD].pvPageHC  = pVM->pgm.s.pHC32BitPD;
+    pPool->aPages[PGMPOOL_IDX_PD].pvPageR3  = pVM->pgm.s.pHC32BitPD;
     pPool->aPages[PGMPOOL_IDX_PD].enmKind   = PGMPOOLKIND_ROOT_32BIT_PD;
     pPool->aPages[PGMPOOL_IDX_PD].idx       = PGMPOOL_IDX_PD;
 
     /* The Shadow PAE PDs. This is actually 4 pages! (32 bits guest paging)  */
     pPool->aPages[PGMPOOL_IDX_PAE_PD].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PAE_PD].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PAE_PD].pvPageHC  = pVM->pgm.s.apHCPaePDs[0];
+    pPool->aPages[PGMPOOL_IDX_PAE_PD].pvPageR3  = pVM->pgm.s.apHCPaePDs[0];
     pPool->aPages[PGMPOOL_IDX_PAE_PD].enmKind   = PGMPOOLKIND_ROOT_PAE_PD;
     pPool->aPages[PGMPOOL_IDX_PAE_PD].idx       = PGMPOOL_IDX_PAE_PD;
 
@@ -255,7 +258,7 @@ int pgmR3PoolInit(PVM pVM)
     {
         pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].Core.Key  = NIL_RTHCPHYS;
         pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].GCPhys    = NIL_RTGCPHYS;
-        pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].pvPageHC  = pVM->pgm.s.apHCPaePDs[i];
+        pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].pvPageR3  = pVM->pgm.s.apHCPaePDs[i];
         pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].enmKind   = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
         pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].idx       = PGMPOOL_IDX_PAE_PD_0 + i;
     }
@@ -263,21 +266,21 @@ int pgmR3PoolInit(PVM pVM)
     /* The Shadow PDPT. */
     pPool->aPages[PGMPOOL_IDX_PDPT].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PDPT].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PDPT].pvPageHC  = pVM->pgm.s.pHCPaePDPT;
+    pPool->aPages[PGMPOOL_IDX_PDPT].pvPageR3  = pVM->pgm.s.pHCPaePDPT;
     pPool->aPages[PGMPOOL_IDX_PDPT].enmKind   = PGMPOOLKIND_ROOT_PDPT;
     pPool->aPages[PGMPOOL_IDX_PDPT].idx       = PGMPOOL_IDX_PDPT;
 
     /* The Shadow AMD64 CR3. */
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageHC  = pVM->pgm.s.pHCPaePDPT;     /* not used */
+    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageR3  = pVM->pgm.s.pHCPaePDPT;     /* not used */
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind   = PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx       = PGMPOOL_IDX_AMD64_CR3;
 
     /* The Shadow AMD64 CR3. */
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].pvPageHC  = pVM->pgm.s.pHCNestedRoot;
+    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].pvPageR3  = pVM->pgm.s.pHCNestedRoot;
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].enmKind   = PGMPOOLKIND_ROOT_NESTED;
     pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].idx       = PGMPOOL_IDX_NESTED_ROOT;
 
@@ -300,7 +303,7 @@ int pgmR3PoolInit(PVM pVM)
         pPool->aPages[iPage].iAgeNext       = NIL_PGMPOOL_IDX;
         pPool->aPages[iPage].iAgePrev       = NIL_PGMPOOL_IDX;
 #endif
-        Assert(VALID_PTR(pPool->aPages[iPage].pvPageHC));
+        Assert(VALID_PTR(pPool->aPages[iPage].pvPageR3));
         Assert(pPool->aPages[iPage].idx == iPage);
         Assert(pPool->aPages[iPage].GCPhys == NIL_RTGCPHYS);
         Assert(!pPool->aPages[iPage].fSeenNonGlobal);
@@ -381,12 +384,12 @@ int pgmR3PoolInit(PVM pVM)
 void pgmR3PoolRelocate(PVM pVM)
 {
     pVM->pgm.s.pPoolRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pPoolR3);
-    pVM->pgm.s.pPoolR3->pVMGC = pVM->pVMRC;
+    pVM->pgm.s.pPoolR3->pVMRC = pVM->pVMRC;
 #ifdef PGMPOOL_WITH_USER_TRACKING
-    pVM->pgm.s.pPoolR3->paUsersGC = MMHyperHC2GC(pVM, pVM->pgm.s.pPoolR3->paUsersHC);
+    pVM->pgm.s.pPoolR3->paUsersRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pPoolR3->paUsersR3);
 #endif
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-    pVM->pgm.s.pPoolR3->paPhysExtsGC = MMHyperHC2GC(pVM, pVM->pgm.s.pPoolR3->paPhysExtsHC);
+    pVM->pgm.s.pPoolR3->paPhysExtsRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pPoolR3->paPhysExtsR3);
 #endif
 #ifdef PGMPOOL_WITH_MONITORING
     int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "pgmPoolAccessHandler", &pVM->pgm.s.pPoolR3->pfnAccessHandlerRC);
@@ -437,13 +440,13 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
 
-        pPage->pvPageHC = MMR3PageAlloc(pVM);
-        if (!pPage->pvPageHC)
+        pPage->pvPageR3 = MMR3PageAlloc(pVM);
+        if (!pPage->pvPageR3)
         {
             Log(("We're out of memory!! i=%d\n", i));
             return i ? VINF_SUCCESS : VERR_NO_PAGE_MEMORY;
         }
-        pPage->Core.Key  = MMPage2Phys(pVM, pPage->pvPageHC);
+        pPage->Core.Key  = MMPage2Phys(pVM, pPage->pvPageR3);
         LogFlow(("PGMR3PoolGrow: insert page %VHp\n", pPage->Core.Key));
         pPage->GCPhys    = NIL_RTGCPHYS;
         pPage->enmKind   = PGMPOOLKIND_FREE;
@@ -484,11 +487,11 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
 static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
     /* for the present this should be safe enough I think... */
-    pgmLock(pPool->pVMHC);
+    pgmLock(pPool->pVMR3);
     if (    pPage->fReusedFlushPending
         &&  pPage->enmKind != PGMPOOLKIND_FREE)
         pgmPoolFlushPage(pPool, pPage);
-    pgmUnlock(pPool->pVMHC);
+    pgmUnlock(pPool->pVMR3);
 }
 
 
@@ -530,7 +533,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
         STAM_COUNTER_INC(&pPool->StatMonitorHCAsync);
         if (!pPage->fReusedFlushPending)
         {
-            int rc = VMR3ReqCallEx(pPool->pVMHC, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID, (PFNRT)pgmR3PoolFlushReusedPage, 2, pPool, pPage);
+            int rc = VMR3ReqCallEx(pPool->pVMR3, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID, (PFNRT)pgmR3PoolFlushReusedPage, 2, pPool, pPage);
             AssertRCReturn(rc, rc);
             pPage->fReusedFlushPending = true;
             pPage->cModifications += 0x1000;

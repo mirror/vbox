@@ -1415,13 +1415,13 @@ typedef enum PGMPOOLKIND
  */
 typedef struct PGMPOOLPAGE
 {
-    /** AVL node code with the (HC) physical address of this page. */
+    /** AVL node code with the (R3) physical address of this page. */
     AVLOHCPHYSNODECORE  Core;
-    /** Pointer to the HC mapping of the page. */
+    /** Pointer to the R3 mapping of the page. */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(void *)   pvPageHC;
+    R3PTRTYPE(void *)   pvPageR3;
 #else
-    R3R0PTRTYPE(void *) pvPageHC;
+    R3R0PTRTYPE(void *) pvPageR3;
 #endif
     /** The guest physical address. */
 #if HC_ARCH_BITS == 32 && GC_ARCH_BITS == 64
@@ -1501,10 +1501,12 @@ typedef struct PGMPOOLPAGE
  */
 typedef struct PGMPOOL
 {
-    /** The VM handle - HC Ptr. */
-    R3R0PTRTYPE(PVM) pVMHC;
-    /** The VM handle - GC Ptr. */
-    RCPTRTYPE(PVM)  pVMGC;
+    /** The VM handle - R3 Ptr. */
+    PVMR3           pVMR3;
+    /** The VM handle - R0 Ptr. */
+    PVMR0           pVMR0;
+    /** The VM handle - RC Ptr. */
+    PVMRC           pVMRC;
     /** The max pool size. This includes the special IDs.  */
     uint16_t        cMaxPages;
     /** The current pool size. */
@@ -1520,20 +1522,24 @@ typedef struct PGMPOOL
     uint16_t        cMaxUsers;
     /** The number of present page table entries in the entire pool. */
     uint32_t        cPresent;
-    /** Pointer to the array of user nodes - GC pointer. */
-    RCPTRTYPE(PPGMPOOLUSER) paUsersGC;
-    /** Pointer to the array of user nodes - HC pointer. */
-    R3R0PTRTYPE(PPGMPOOLUSER) paUsersHC;
+    /** Pointer to the array of user nodes - RC pointer. */
+    RCPTRTYPE(PPGMPOOLUSER) paUsersRC;
+    /** Pointer to the array of user nodes - R3 pointer. */
+    R3PTRTYPE(PPGMPOOLUSER) paUsersR3;
+    /** Pointer to the array of user nodes - R0 pointer. */
+    R0PTRTYPE(PPGMPOOLUSER) paUsersR0;
 #endif /* PGMPOOL_WITH_USER_TRACKING */
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /** Head of the chain of free phys ext nodes. */
     uint16_t        iPhysExtFreeHead;
     /** The number of user nodes we've allocated. */
     uint16_t        cMaxPhysExts;
-    /** Pointer to the array of physical xref extent - GC pointer. */
-    RCPTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsGC;
-    /** Pointer to the array of physical xref extent nodes - HC pointer. */
-    R3R0PTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsHC;
+    /** Pointer to the array of physical xref extent - RC pointer. */
+    RCPTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsRC;
+    /** Pointer to the array of physical xref extent nodes - R3 pointer. */
+    R3PTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsR3;
+    /** Pointer to the array of physical xref extent nodes - R0 pointer. */
+    R0PTRTYPE(PPGMPOOLPHYSEXT) paPhysExtsR0;
 #endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 #ifdef PGMPOOL_WITH_CACHE
     /** Hash table for GCPhys addresses. */
@@ -1675,10 +1681,10 @@ typedef struct PGMPOOL
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)    pgmPoolMapPage((pVM), (pPage))
 #else
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)    ((pPage)->pvPageHC)
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)    ((pPage)->pvPageR3)
 #endif
 
 
@@ -2211,12 +2217,14 @@ typedef struct PGM
      * Registration order. */
     R3PTRTYPE(PPGMMMIO2RANGE)       pMmio2RangesR3;
 
-    /** PGM offset based trees - HC Ptr. */
-    R3R0PTRTYPE(PPGMTREES)          pTreesHC;
-    /** PGM offset based trees - GC Ptr. */
-    RCPTRTYPE(PPGMTREES)            pTreesGC;
+    /** PGM offset based trees - R3 Ptr. */
+    R3PTRTYPE(PPGMTREES)            pTreesR3;
+    /** PGM offset based trees - R0 Ptr. */
+    R0PTRTYPE(PPGMTREES)            pTreesR0;
+    /** PGM offset based trees - RC Ptr. */
+    RCPTRTYPE(PPGMTREES)            pTreesRC;
 
-    /** Linked list of GC mappings - for GC.
+    /** Linked list of GC mappings - for RC.
      * The list is sorted ascending on address.
      */
     RCPTRTYPE(PPGMMAPPING)          pMappingsRC;
@@ -2723,7 +2731,7 @@ void            pgmR3PoolRelocate(PVM pVM);
 void            pgmR3PoolReset(PVM pVM);
 
 #endif /* IN_RING3 */
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 void           *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
 int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
@@ -3788,7 +3796,7 @@ DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, uns
     if (pPhys2Virt->offNextAlias & PGMPHYS2VIRTHANDLER_IS_HEAD)
     {
         /* We're the head of the alias chain. */
-        PPGMPHYS2VIRTHANDLER pRemove = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysRemove(&pPGM->CTXSUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key); NOREF(pRemove);
+        PPGMPHYS2VIRTHANDLER pRemove = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysRemove(&pPGM->CTX_SUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key); NOREF(pRemove);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
         AssertReleaseMsg(pRemove != NULL,
                          ("pPhys2Virt=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
@@ -3809,14 +3817,14 @@ DECLINLINE(void) pgmHandlerVirtualClearPage(PPGM pPGM, PPGMVIRTHANDLER pCur, uns
                              pNext, pNext->Core.Key, pNext->Core.KeyLast, pNext->offVirtHandler, pNext->offNextAlias));
 #endif
             pNext->offNextAlias |= PGMPHYS2VIRTHANDLER_IS_HEAD;
-            bool fRc = RTAvlroGCPhysInsert(&pPGM->CTXSUFF(pTrees)->PhysToVirtHandlers, &pNext->Core);
+            bool fRc = RTAvlroGCPhysInsert(&pPGM->CTX_SUFF(pTrees)->PhysToVirtHandlers, &pNext->Core);
             AssertRelease(fRc);
         }
     }
     else
     {
         /* Locate the previous node in the alias chain. */
-        PPGMPHYS2VIRTHANDLER pPrev = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGet(&pPGM->CTXSUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key);
+        PPGMPHYS2VIRTHANDLER pPrev = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGet(&pPGM->CTX_SUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
         AssertReleaseMsg(pPrev != pPhys2Virt,
                          ("pPhys2Virt=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} pPrev=%p\n",

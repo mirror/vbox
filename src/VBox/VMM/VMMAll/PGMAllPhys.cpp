@@ -1202,7 +1202,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 
 #ifdef IN_RING3 /** @todo deal with this in GC and R0! */
                     /* find and call the handler */
-                    PPGMPHYSHANDLER pNode = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.pTreesHC->PhysHandlers, GCPhys);
+                    PPGMPHYSHANDLER pNode = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.pTreesR3->PhysHandlers, GCPhys);
                     if (pNode && pNode->pfnHandlerR3)
                     {
                         size_t cbRange = pNode->Core.KeyLast - GCPhys + 1;
@@ -1477,7 +1477,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
 #ifdef IN_RING3 /** @todo deal with this in GC and R0! */
                         /* 1. The physical handler */
-                        PPGMPHYSHANDLER pPhysNode = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.pTreesHC->PhysHandlers, GCPhys);
+                        PPGMPHYSHANDLER pPhysNode = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.pTreesR3->PhysHandlers, GCPhys);
                         if (pPhysNode && pPhysNode->pfnHandlerR3)
                         {
                             size_t cbRange = pPhysNode->Core.KeyLast - GCPhys + 1;
@@ -1590,7 +1590,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                     cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
 #ifdef IN_RING3 /** @todo deal with this in GC and R0! */
                     /* find and call the handler */
-                    PPGMPHYSHANDLER pNode = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.pTreesHC->PhysHandlers, GCPhys);
+                    PPGMPHYSHANDLER pNode = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.pTreesR3->PhysHandlers, GCPhys);
                     if (pNode && pNode->pfnHandlerR3)
                     {
                         size_t cbRange = pNode->Core.KeyLast - GCPhys + 1;
