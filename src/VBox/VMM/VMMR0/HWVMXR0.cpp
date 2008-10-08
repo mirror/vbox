@@ -1808,7 +1808,7 @@ ResumeExecution:
         &&  pVM->hwaccm.s.vmx.RealMode.eip == pCtx->eip
         &&  pVM->hwaccm.s.vmx.RealMode.Event.fPending)
     {
-        Assert(!VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo));
+        Assert(!pVM->hwaccm.s.Event.fPending);
 
         Log(("Pending real-mode inject %VX64 at %VGv\n", pVM->hwaccm.s.vmx.RealMode.Event.intInfo, pCtx->rip));
 
