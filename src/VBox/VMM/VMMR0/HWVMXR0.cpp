@@ -1621,7 +1621,7 @@ ResumeExecution:
         fSyncTPR = true;
     }
 
-#ifdef LOG_ENABLED
+#if defined(HWACCM_VTX_WITH_EPT) && defined(LOG_ENABLED)
     pCpu = HWACCMR0GetCurrentCpu();
     if (    pVM->hwaccm.s.idLastCpu   != pCpu->idCpu
         ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
