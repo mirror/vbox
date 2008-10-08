@@ -653,6 +653,7 @@ int main()
     GEN_CHECK_OFF(ATADevState, abATAPISense);
     GEN_CHECK_OFF(ATADevState, abATAPISense[ATAPI_SENSE_SIZE - 1]);
     GEN_CHECK_OFF(ATADevState, cNotifiedMediaChange);
+    GEN_CHECK_OFF(ATADevState, MediaEventStatus);
     GEN_CHECK_OFF(ATADevState, Led);
     GEN_CHECK_OFF(ATADevState, cbIOBuffer);
     GEN_CHECK_OFF(ATADevState, pbIOBufferR3);
