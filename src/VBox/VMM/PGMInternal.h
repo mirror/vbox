@@ -2405,10 +2405,26 @@ typedef struct PGM
     R0PTRTYPE(PSTAMPROFILE) pStatTrap0eAttributionR0;
     RTR0PTR                 padding1;
 
-    /* R3 only: */
+    /* Common */
+# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+    STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
+    STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
+    STAMCOUNTER StatTrackAliasedMany;               /**< The number of times we're tracking using cRef2. */
+    STAMCOUNTER StatTrackAliasedLots;               /**< The number of times we're hitting pages which has overflowed cRef2. */
+    STAMCOUNTER StatTrackOverflows;                 /**< The number of times the extent list grows to long. */
+    STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
+# endif
 
-    /* GC only: */
-    STAMPROFILE StatGCInvalidatePage;               /**< GC: PGMGCInvalidatePage() profiling. */
+    /* R3 only: */
+    STAMCOUNTER StatR3DetectedConflicts;            /**< R3: Number of times PGMR3MapHasConflicts() detected a conflict. */
+    STAMPROFILE StatR3ResolveConflict;              /**< R3: pgmR3SyncPTResolveConflict() profiling (includes the entire relocation). */
+    STAMCOUNTER StatR3GuestPDWrite;                 /**< R3: The total number of times pgmHCGuestPDWriteHandler() was called. */
+    STAMCOUNTER StatR3GuestPDWriteConflict;         /**< R3: The number of times GuestPDWriteContlict() detected a conflict. */
+
+    /* RC only: */
+    STAMPROFILE StatRCInvalidatePage;               /**< RC: PGMGCInvalidatePage() profiling. */
+    STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache hits */
+    STAMCOUNTER StatRCDynMapCacheHits;              /**< RC: The number of dynamic page mapping cache misses */
 
     /* RZ only: */
     STAMPROFILE StatRZTrap0e;                       /**< RC/R0: PGMTrap0eHandler() profiling. */
@@ -2453,6 +2469,11 @@ typedef struct PGM
     STAMCOUNTER StatRZTrap0eGuestPFMapping;         /**< RC/R0: Real guest #PF to HMA or other mapping. */
     STAMCOUNTER StatRZTrap0eWPEmulInRZ;             /**< RC/R0: WP=0 virtualization trap, handled. */
     STAMCOUNTER StatRZTrap0eWPEmulToR3;             /**< RC/R0: WP=0 virtualization trap, chickened out. */
+    STAMCOUNTER StatRZGuestCR3WriteHandled;         /**< RC/R0: The number of times WriteHandlerCR3() was successfully called. */
+    STAMCOUNTER StatRZGuestCR3WriteUnhandled;       /**< RC/R0: The number of times WriteHandlerCR3() was called and we had to fall back to the recompiler. */
+    STAMCOUNTER StatRZGuestCR3WriteConflict;        /**< RC/R0: The number of times WriteHandlerCR3() was called and a conflict was detected. */
+    STAMCOUNTER StatRZGuestROMWriteHandled;         /**< RC/R0: The number of times pgmPhysRomWriteHandler() was successfully called. */
+    STAMCOUNTER StatRZGuestROMWriteUnhandled;       /**< RC/R0: The number of times pgmPhysRomWriteHandler() was called and we had to fall back to the recompiler */
 
 
     /* RZ & R3: */
@@ -2492,6 +2513,9 @@ typedef struct PGM
     STAMCOUNTER StatRZInvalidatePageSkipped;        /**< RC/R0: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
     STAMPROFILE StatRZVirtHandlerSearchByPhys;      /**< RC/R0: Profiling of pgmHandlerVirtualFindByPhysAddr. */
     STAMCOUNTER StatRZPhysHandlerReset;             /**< RC/R0: The number of times PGMHandlerPhysicalReset is called. */
+    STAMCOUNTER StatRZPageOutOfSyncUser;            /**< RC/R0: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
+    STAMPROFILE StatRZPrefetch;                     /**< RC/R0: PGMPrefetchPage. */
 
     STAMPROFILE StatR3SyncCR3;                      /**< R3: PGMSyncCR3() profiling. */
     STAMPROFILE StatR3SyncCR3Handlers;              /**< R3: Profiling of the PGMSyncCR3() update handler section. */
@@ -2529,20 +2553,11 @@ typedef struct PGM
     STAMCOUNTER StatR3InvalidatePageSkipped;        /**< R3: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
     STAMPROFILE StatR3VirtHandlerSearchByPhys;      /**< R3: Profiling of pgmHandlerVirtualFindByPhysAddr. */
     STAMCOUNTER StatR3PhysHandlerReset;             /**< R3: The number of times PGMHandlerPhysicalReset is called. */
+    STAMCOUNTER StatR3PageOutOfSyncUser;            /**< R3: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
+    STAMPROFILE StatR3Prefetch;                     /**< R3: PGMPrefetchPage. */
 
     /* TODO (cleanup):  */
-
-
-    STAMPROFILE StatHCPrefetch;
-
-# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-    STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
-    STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
-    STAMCOUNTER StatTrackAliasedMany;               /**< The number of times we're tracking using cRef2. */
-    STAMCOUNTER StatTrackAliasedLots;               /**< The number of times we're hitting pages which has overflowed cRef2. */
-    STAMCOUNTER StatTrackOverflows;                 /**< The number of times the extent list grows to long. */
-    STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
-# endif
 
     STAMCOUNTER StatPageHCMapTlbHits;               /** Ring-3/0 page mapper TLB hits. */
     STAMCOUNTER StatPageHCMapTlbMisses;             /** Ring-3/0 page mapper TLB misses. */
@@ -2560,40 +2575,10 @@ typedef struct PGM
     STAMCOUNTER StatGCSyncPagePD[X86_PG_ENTRIES];
 
 
-    /** GC: The number of times user page is out of sync was detected in GC. */
-    STAMCOUNTER     StatGCPageOutOfSyncUser;
-    /** GC: The number of times supervisor page is out of sync was detected in GC. */
-    STAMCOUNTER     StatGCPageOutOfSyncSupervisor;
-    /** GC: The number of dynamic page mapping cache hits */
-    STAMCOUNTER     StatDynMapCacheMisses;
-    /** GC: The number of dynamic page mapping cache misses */
-    STAMCOUNTER     StatDynMapCacheHits;
-    /** GC: The number of times pgmGCGuestPDWriteHandler() was successfully called. */
-    STAMCOUNTER     StatGCGuestCR3WriteHandled;
-    /** GC: The number of times pgmGCGuestPDWriteHandler() was called and we had to fall back to the recompiler. */
-    STAMCOUNTER     StatGCGuestCR3WriteUnhandled;
-    /** GC: The number of times pgmGCGuestPDWriteHandler() was called and a conflict was detected. */
-    STAMCOUNTER     StatGCGuestCR3WriteConflict;
-
-    /** GC: The number of times pgmGCGuestROMWriteHandler() was successfully called. */
-    STAMCOUNTER     StatGCGuestROMWriteHandled;
-    /** GC: The number of times pgmGCGuestROMWriteHandler() was called and we had to fall back to the recompiler */
-    STAMCOUNTER     StatGCGuestROMWriteUnhandled;
-
-    /** HC: pgmr3SyncPTResolveConflict() profiling (includes the entire relocation). */
-    STAMPROFILE     StatHCResolveConflict;
-    /** HC: Number of times PGMR3CheckMappingConflicts() detected a conflict. */
-    STAMCOUNTER     StatHCDetectedConflicts;
-    /** HC: The total number of times pgmHCGuestPDWriteHandler() was called. */
-    STAMCOUNTER     StatHCGuestPDWrite;
-    /** HC: The number of times pgmHCGuestPDWriteHandler() detected a conflict */
-    STAMCOUNTER     StatHCGuestPDWriteConflict;
-
-
     /** GC: Profiling of the PGMGstModifyPage() body */
-    STAMPROFILE     StatGCGstModifyPage;
+    STAMPROFILE StatGCGstModifyPage;
     /** HC: Profiling of the PGMGstModifyPage() body */
-    STAMPROFILE     StatHCGstModifyPage;
+    STAMPROFILE StatHCGstModifyPage;
 
     STAMCOUNTER StatSynPT4kGC;
     STAMCOUNTER StatSynPT4kHC;
