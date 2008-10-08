@@ -165,7 +165,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  endif
 
     rc = PGMShwSyncLongModePDPtr(pVM, (RTGCUINTPTR)pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
-    AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertRC(rc);
+        return rc;
+    }
     Assert(pPDDst);
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPDDst = (((RTGCUINTPTR)pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -1582,7 +1586,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     PX86PDPT        pPdptDst;
 
     int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst && pPdptDst);
     PdeDst = pPDDst->a[iPDDst];
 # endif
@@ -1847,7 +1851,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     PX86PDPT        pPdptDst;
 
     int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst && pPdptDst);
     PdeDst = pPDDst->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
@@ -2305,7 +2309,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst);
 # endif
 
@@ -2692,7 +2696,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
-    AssertRCReturn(rc, rc);
+    AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst);
 
     /* Fetch the pgm pool shadow descriptor. */
@@ -2841,7 +2845,11 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #  endif
 
         int rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
-        AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
+        if (rc != VINF_SUCCESS)
+        {
+            AssertRC(rc);
+            return rc;
+        }
         Assert(pPDDst);
         PdeDst = pPDDst->a[iPDDst];
 # endif
@@ -2956,7 +2964,11 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 #  endif
 
     rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
-    AssertReturn(rc == VINF_SUCCESS /* *must* test for VINF_SUCCESS!! */, rc);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertRC(rc);
+        return rc;
+    }
     Assert(pPDDst);
     pPdeDst = &pPDDst->a[iPDDst];
 # endif
