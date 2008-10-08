@@ -167,25 +167,25 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 
 #if PGM_SHW_TYPE != PGM_TYPE_AMD64 /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
         /* GC */
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(GetPage),          &pModeData->pfnGCGstGetPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(GetPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(ModifyPage),       &pModeData->pfnGCGstModifyPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(ModifyPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(GetPDE),           &pModeData->pfnGCGstGetPDE);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(GetPDE), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(MonitorCR3),       &pModeData->pfnGCGstMonitorCR3);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(MonitorCR3), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(UnmonitorCR3),     &pModeData->pfnGCGstUnmonitorCR3);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(UnmonitorCR3), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(MapCR3),           &pModeData->pfnGCGstMapCR3);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(MapCR3), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(UnmapCR3),         &pModeData->pfnGCGstUnmapCR3);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(UnmapCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(GetPage),          &pModeData->pfnRCGstGetPage);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(GetPage),  rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(ModifyPage),       &pModeData->pfnRCGstModifyPage);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(ModifyPage),  rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(GetPDE),           &pModeData->pfnRCGstGetPDE);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(GetPDE), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(MonitorCR3),       &pModeData->pfnRCGstMonitorCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(MonitorCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(UnmonitorCR3),     &pModeData->pfnRCGstUnmonitorCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(UnmonitorCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(MapCR3),           &pModeData->pfnRCGstMapCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(MapCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(UnmapCR3),         &pModeData->pfnRCGstUnmapCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(UnmapCR3), rc), rc);
 # if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(WriteHandlerCR3),  &pModeData->pfnGCGstWriteHandlerCR3);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(WriteHandlerCR3), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_GC_STR(WriteHandlerCR3),  &pModeData->pfnGCGstPAEWriteHandlerCR3);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_GC_STR(PAEWriteHandlerCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(WriteHandlerCR3),  &pModeData->pfnRCGstWriteHandlerCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(WriteHandlerCR3), rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_GST_NAME_RC_STR(WriteHandlerCR3),  &pModeData->pfnRCGstPAEWriteHandlerCR3);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_GST_NAME_RC_STR(PAEWriteHandlerCR3), rc), rc);
 # endif
 #endif /* Not AMD64 shadow paging. */
 

@@ -610,7 +610,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE, GCPhysCR3, GCPhysCR3 + cbCR3Stuff - 1,
                                               pVM->pgm.s.pfnR3GstWriteHandlerCR3, 0,
                                               pVM->pgm.s.pfnR0GstWriteHandlerCR3, 0,
-                                              pVM->pgm.s.pfnGCGstWriteHandlerCR3, 0,
+                                              pVM->pgm.s.pfnRCGstWriteHandlerCR3, 0,
                                               pVM->pgm.s.pszR3GstWriteHandlerCR3);
 # else  /* PGMPOOL_WITH_MIXED_PT_CR3 */
         rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool),
@@ -935,12 +935,12 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
     PGMHVUSTATE State;
 
     pgmLock(pVM);
-    STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat,SyncCR3HandlerVirtualUpdate), a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualUpdate), a);
     State.pVM   = pVM;
     State.fTodo = pVM->pgm.s.fSyncFlags;
     State.cr4   = cr4;
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, PGM_GST_NAME(VirtHandlerUpdateOne), &State);
-    STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3HandlerVirtualUpdate), a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualUpdate), a);
 
 
     /*
@@ -948,11 +948,11 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
      */
     if (State.fTodo & PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL)
     {
-        STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat,SyncCR3HandlerVirtualReset), b);
+        STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualReset), b);
         Log(("pgmR3VirtualHandlersUpdate: resets bits\n"));
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualResetOne, pVM);
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
-        STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3HandlerVirtualReset), b);
+        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualReset), b);
     }
     pgmUnlock(pVM);
 
