@@ -763,7 +763,7 @@ PDMBOTHCBDECL(uint32_t) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t 
     uint32_t index = (u32Reg - MSR_IA32_APIC_START) & 0xff;
     //LogRel(("nike: RDMSR on %d: read from %x\n", idCpu, index));
     APICState* apic = getLapicById(dev, idCpu);
-    uint64_t val;
+    uint64_t val = 0;
 
     switch (index) 
     {
@@ -1586,17 +1586,39 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
     APICState *s = (APICState*)opaque;
     int i;
 
-    if (version_id != 2)
+#ifdef VBOX
+    if ((version_id < 1) || (version_id > 2))
+        return -EINVAL;
+    
+     /* XXX: what if the base changes? (registered memory regions) */
+    qemu_get_be32s(f, &s->apicbase);
+
+    switch (version_id)
+    {
+        case 1:
+        {
+            uint8_t val = 0;
+            qemu_get_8s(f, &val);
+            s->id = val;
+            /* UP only in old saved states */
+            s->phys_id = 0;
+            qemu_get_8s(f, &val);
+            s->arb_id = val;
+            break;
+        }
+        case 2:
+            qemu_get_be32s(f, &s->id);
+            qemu_get_be32s(f, &s->phys_id);
+            qemu_get_be32s(f, &s->arb_id);
+            break;
+    }
+    qemu_get_be32s(f, &s->tpr);
+#else
+     if (version_id != 1)
         return -EINVAL;
 
     /* XXX: what if the base changes? (registered memory regions) */
     qemu_get_be32s(f, &s->apicbase);
-#ifdef VBOX
-    qemu_get_be32s(f, &s->id);
-    qemu_get_be32s(f, &s->phys_id);
-    qemu_get_be32s(f, &s->arb_id);
-    qemu_get_be32s(f, &s->tpr);
-#else
     qemu_get_8s(f, &s->id);
     qemu_get_8s(f, &s->arb_id);
     qemu_get_8s(f, &s->tpr);
