@@ -1005,7 +1005,7 @@ typedef struct PGMROMRANGE
     RTGCPHYS                        cb;
     /** The flags (PGMPHYS_ROM_FLAG_*). */
     uint32_t                        fFlags;
-     /**< Alignment padding ensuring that aPages is sizeof(PGMROMPAGE) aligned. */
+    /** Alignment padding ensuring that aPages is sizeof(PGMROMPAGE) aligned. */
     uint32_t                        au32Alignemnt[HC_ARCH_BITS == 32 ? 7 : 3];
     /** Pointer to the original bits when PGMPHYS_ROM_FLAG_PERMANENT_BINARY was specified.
      * This is used for strictness checks. */
@@ -1049,7 +1049,7 @@ typedef struct PGMMMIO2RANGE
      * @remarks This ASSUMES that nobody will ever really need to have multiple
      *          PCI devices with matching MMIO region numbers on a single device. */
     uint8_t                             iRegion;
-    /**< Alignment padding for putting the ram range on a PGMPAGE alignment boundrary. */
+    /** Alignment padding for putting the ram range on a PGMPAGE alignment boundrary. */
     uint8_t                             abAlignemnt[HC_ARCH_BITS == 32 ? 1 : 5];
     /** The associated RAM range. */
     PGMRAMRANGE                         RamRange;
@@ -2411,6 +2411,49 @@ typedef struct PGM
     STAMPROFILE StatGCInvalidatePage;               /**< GC: PGMGCInvalidatePage() profiling. */
 
     /* RZ only: */
+    STAMPROFILE StatRZTrap0e;                       /**< RC/R0: PGMTrap0eHandler() profiling. */
+    STAMPROFILE StatRZTrap0eTimeCheckPageFault;
+    STAMPROFILE StatRZTrap0eTimeSyncPT;
+    STAMPROFILE StatRZTrap0eTimeMapping;
+    STAMPROFILE StatRZTrap0eTimeOutOfSync;
+    STAMPROFILE StatRZTrap0eTimeHandlers;
+    STAMPROFILE StatRZTrap0eTime2CSAM;              /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CSAM. */
+    STAMPROFILE StatRZTrap0eTime2DirtyAndAccessed;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation. */
+    STAMPROFILE StatRZTrap0eTime2GuestTrap;         /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a guest trap. */
+    STAMPROFILE StatRZTrap0eTime2HndPhys;           /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a physical handler. */
+    STAMPROFILE StatRZTrap0eTime2HndVirt;           /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a virtual handler. */
+    STAMPROFILE StatRZTrap0eTime2HndUnhandled;      /**< RC/R0: Profiling of the Trap0eHandler body when the cause is access outside the monitored areas of a monitored page. */
+    STAMPROFILE StatRZTrap0eTime2Misc;              /**< RC/R0: Profiling of the Trap0eHandler body when the cause is not known. */
+    STAMPROFILE StatRZTrap0eTime2OutOfSync;         /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync page. */
+    STAMPROFILE StatRZTrap0eTime2OutOfSyncHndPhys;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page. */
+    STAMPROFILE StatRZTrap0eTime2OutOfSyncHndVirt;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync virtual handler page. */
+    STAMPROFILE StatRZTrap0eTime2OutOfSyncHndObs;   /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an obsolete handler page. */
+    STAMPROFILE StatRZTrap0eTime2SyncPT;            /**< RC/R0: Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT. */
+    STAMCOUNTER StatRZTrap0eConflicts;              /**< RC/R0: The number of times \#PF was caused by an undetected conflict. */
+    STAMCOUNTER StatRZTrap0eHandlersMapping;        /**< RC/R0: Number of traps due to access handlers in mappings. */
+    STAMCOUNTER StatRZTrap0eHandlersOutOfSync;      /**< RC/R0: Number of out-of-sync handled pages. */
+    STAMCOUNTER StatRZTrap0eHandlersPhysical;       /**< RC/R0: Number of traps due to physical access handlers. */
+    STAMCOUNTER StatRZTrap0eHandlersVirtual;        /**< RC/R0: Number of traps due to virtual access handlers. */
+    STAMCOUNTER StatRZTrap0eHandlersVirtualByPhys;  /**< RC/R0: Number of traps due to virtual access handlers found by physical address. */
+    STAMCOUNTER StatRZTrap0eHandlersVirtualUnmarked;/**< RC/R0: Number of traps due to virtual access handlers found by virtual address (without proper physical flags). */
+    STAMCOUNTER StatRZTrap0eHandlersUnhandled;      /**< RC/R0: Number of traps due to access outside range of monitored page(s). */
+    STAMCOUNTER StatRZTrap0eHandlersInvalid;        /**< RC/R0: Number of traps due to access to invalid physical memory. */
+    STAMCOUNTER StatRZTrap0eUSNotPresentRead;       /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eUSNotPresentWrite;      /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eUSWrite;                /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eUSReserved;             /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eUSNXE;                  /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eUSRead;                 /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eSVNotPresentRead;       /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eSVNotPresentWrite;      /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eSVWrite;                /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eSVReserved;             /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eSNXE;                   /**< RC/R0: #PF err kind */
+    STAMCOUNTER StatRZTrap0eGuestPF;                /**< RC/R0: Real guest #PF. */
+    STAMCOUNTER StatRZTrap0eGuestPFMapping;         /**< RC/R0: Real guest #PF to HMA or other mapping. */
+    STAMCOUNTER StatRZTrap0eWPEmulInRZ;             /**< RC/R0: WP=0 virtualization trap, handled. */
+    STAMCOUNTER StatRZTrap0eWPEmulToR3;             /**< RC/R0: WP=0 virtualization trap, chickened out. */
+
 
     /* RZ & R3: */
     STAMPROFILE StatRZSyncCR3;                      /**< RC/R0: PGMSyncCR3() profiling. */
@@ -2447,6 +2490,8 @@ typedef struct PGM
     STAMCOUNTER StatRZInvalidatePagePDNPs;          /**< RC/R0: The number of times PGMInvalidatePage() was called for a not present page directory. */
     STAMCOUNTER StatRZInvalidatePagePDOutOfSync;    /**< RC/R0: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
     STAMCOUNTER StatRZInvalidatePageSkipped;        /**< RC/R0: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
+    STAMPROFILE StatRZVirtHandlerSearchByPhys;      /**< RC/R0: Profiling of pgmHandlerVirtualFindByPhysAddr. */
+    STAMCOUNTER StatRZPhysHandlerReset;             /**< RC/R0: The number of times PGMHandlerPhysicalReset is called. */
 
     STAMPROFILE StatR3SyncCR3;                      /**< R3: PGMSyncCR3() profiling. */
     STAMPROFILE StatR3SyncCR3Handlers;              /**< R3: Profiling of the PGMSyncCR3() update handler section. */
@@ -2482,22 +2527,12 @@ typedef struct PGM
     STAMCOUNTER StatR3InvalidatePagePDMappings;     /**< R3: The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict). */
     STAMCOUNTER StatR3InvalidatePagePDOutOfSync;    /**< R3: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
     STAMCOUNTER StatR3InvalidatePageSkipped;        /**< R3: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
+    STAMPROFILE StatR3VirtHandlerSearchByPhys;      /**< R3: Profiling of pgmHandlerVirtualFindByPhysAddr. */
+    STAMCOUNTER StatR3PhysHandlerReset;             /**< R3: The number of times PGMHandlerPhysicalReset is called. */
 
     /* TODO (cleanup):  */
 
-    /** GC: Profiling of pgmHandlerVirtualFindByPhysAddr. */
-    STAMPROFILE StatVirtHandleSearchByPhysGC;
-    /** HC: Profiling of pgmHandlerVirtualFindByPhysAddr. */
-    STAMPROFILE StatVirtHandleSearchByPhysHC;
-    /** HC: The number of times PGMR3HandlerPhysicalReset is called. */
-    STAMCOUNTER StatHandlePhysicalReset;
 
-    STAMPROFILE StatCheckPageFault;
-    STAMPROFILE StatLazySyncPT;
-    STAMPROFILE StatMapping;
-    STAMPROFILE StatOutOfSync;
-    STAMPROFILE StatHandlers;
-    STAMPROFILE StatEIPHandlers;
     STAMPROFILE StatHCPrefetch;
 
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
@@ -2520,45 +2555,10 @@ typedef struct PGM
     STAMCOUNTER StatDynRamTotal;                    /** Allocated MBs of guest ram */
     STAMCOUNTER StatDynRamGrow;                     /** Nr of pgmr3PhysGrowRange calls. */
 
-    STAMCOUNTER StatGCTrap0ePD[X86_PG_ENTRIES];
+    STAMCOUNTER StatRZTrap0ePD[X86_PG_ENTRIES];
     STAMCOUNTER StatGCSyncPtPD[X86_PG_ENTRIES];
     STAMCOUNTER StatGCSyncPagePD[X86_PG_ENTRIES];
 
-    STAMPROFILE     StatGCTrap0e;                       /**< GC: PGMGCTrap0eHandler() profiling. */
-    STAMPROFILE     StatTrap0eCSAM;                     /**< Profiling of the Trap0eHandler body when the cause is CSAM. */
-    STAMPROFILE     StatTrap0eDirtyAndAccessedBits;     /**< Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation. */
-    STAMPROFILE     StatTrap0eGuestTrap;                /**< Profiling of the Trap0eHandler body when the cause is a guest trap. */
-    STAMPROFILE     StatTrap0eHndPhys;                  /**< Profiling of the Trap0eHandler body when the cause is a physical handler. */
-    STAMPROFILE     StatTrap0eHndVirt;                  /**< Profiling of the Trap0eHandler body when the cause is a virtual handler. */
-    STAMPROFILE     StatTrap0eHndUnhandled;             /**< Profiling of the Trap0eHandler body when the cause is access outside the monitored areas of a monitored page. */
-    STAMPROFILE     StatTrap0eMisc;                     /**< Profiling of the Trap0eHandler body when the cause is not known. */
-    STAMPROFILE     StatTrap0eOutOfSync;                /**< Profiling of the Trap0eHandler body when the cause is an out-of-sync page. */
-    STAMPROFILE     StatTrap0eOutOfSyncHndPhys;         /**< Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page. */
-    STAMPROFILE     StatTrap0eOutOfSyncHndVirt;         /**< Profiling of the Trap0eHandler body when the cause is an out-of-sync virtual handler page. */
-    STAMPROFILE     StatTrap0eOutOfSyncObsHnd;          /**< Profiling of the Trap0eHandler body when the cause is an obsolete handler page. */
-    STAMPROFILE     StatTrap0eSyncPT;                   /**< Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT. */
-
-    STAMCOUNTER     StatTrap0eMapHandler;               /**< Number of traps due to access handlers in mappings. */
-    STAMCOUNTER     StatGCTrap0eConflicts;              /**< GC: The number of times \#PF was caused by an undetected conflict. */
-
-    STAMCOUNTER     StatGCTrap0eUSNotPresentRead;
-    STAMCOUNTER     StatGCTrap0eUSNotPresentWrite;
-    STAMCOUNTER     StatGCTrap0eUSWrite;
-    STAMCOUNTER     StatGCTrap0eUSReserved;
-    STAMCOUNTER     StatGCTrap0eUSNXE;
-    STAMCOUNTER     StatGCTrap0eUSRead;
-
-    STAMCOUNTER     StatGCTrap0eSVNotPresentRead;
-    STAMCOUNTER     StatGCTrap0eSVNotPresentWrite;
-    STAMCOUNTER     StatGCTrap0eSVWrite;
-    STAMCOUNTER     StatGCTrap0eSVReserved;
-    STAMCOUNTER     StatGCTrap0eSNXE;
-
-    STAMCOUNTER     StatTrap0eWPEmulGC;
-    STAMCOUNTER     StatTrap0eWPEmulR3;
-
-    STAMCOUNTER     StatGCTrap0eUnhandled;
-    STAMCOUNTER     StatGCTrap0eMap;
 
     /** GC: The number of times user page is out of sync was detected in GC. */
     STAMCOUNTER     StatGCPageOutOfSyncUser;
@@ -2574,20 +2574,6 @@ typedef struct PGM
     STAMCOUNTER     StatGCGuestCR3WriteUnhandled;
     /** GC: The number of times pgmGCGuestPDWriteHandler() was called and a conflict was detected. */
     STAMCOUNTER     StatGCGuestCR3WriteConflict;
-    /** GC: Number of out-of-sync handled pages. */
-    STAMCOUNTER     StatHandlersOutOfSync;
-    /** GC: Number of traps due to physical access handlers. */
-    STAMCOUNTER     StatHandlersPhysical;
-    /** GC: Number of traps due to virtual access handlers. */
-    STAMCOUNTER     StatHandlersVirtual;
-    /** GC: Number of traps due to virtual access handlers found by physical address. */
-    STAMCOUNTER     StatHandlersVirtualByPhys;
-    /** GC: Number of traps due to virtual access handlers found by virtual address (without proper physical flags). */
-    STAMCOUNTER     StatHandlersVirtualUnmarked;
-    /** GC: Number of traps due to access outside range of monitored page(s). */
-    STAMCOUNTER     StatHandlersUnhandled;
-    /** GC: Number of traps due to access to invalid physical memory. */
-    STAMCOUNTER     StatHandlersInvalid;
 
     /** GC: The number of times pgmGCGuestROMWriteHandler() was successfully called. */
     STAMCOUNTER     StatGCGuestROMWriteHandled;
