@@ -10447,7 +10447,12 @@
       samples can be set. Only base metrics can be enabled and disabled. All
       sub-metrics are collected when their base metric is collected.
       Collected values for any set of sub-metrics can be queried with
-      <link to="IPerformanceCollector::queryMetricsData" />.
+      <link to="IPerformanceCollector::queryMetricsData" />. When setting up 
+      metric parameters, querying metric data, enabling or disabling metrics 
+      wildcards can be used in metric names to specify a subset of metrics. For 
+      example, to select all CPU-related metrics use <tt>CPU/*</tt>, all 
+      averages can be queried using <tt>*:avg</tt> and so on. To query metric 
+      values without aggregates <tt>*:</tt> can be used.
 
       The valid names for base metrics are:
 
@@ -10496,7 +10501,12 @@
 
       For an example of usage refer to the following files in VirtualBox SDK:
       <ul>
-        <li>Python: <tt>bindings/xpcom/python/sample/shellcommon.py</tt></li>
+        <li>
+          Java: <tt>bindings/webservice/java/jax-ws/samples/metrictest.java</tt>
+        </li>
+        <li>
+          Python: <tt>bindings/xpcom/python/sample/shellcommon.py</tt>
+        </li>
       </ul>
     </desc>
 
