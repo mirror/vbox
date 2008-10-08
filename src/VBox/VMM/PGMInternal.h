@@ -1711,7 +1711,7 @@ typedef PGMTREES *PPGMTREES;
 /** @name Paging mode macros
  * @{ */
 #ifdef IN_GC
-# define PGM_CTX(a,b)                   a##GC##b
+# define PGM_CTX(a,b)                   a##RC##b
 # define PGM_CTX_STR(a,b)               a "GC" b
 # define PGM_CTX_DECL(type)             VMMRCDECL(type)
 #else
@@ -1727,37 +1727,37 @@ typedef PGMTREES *PPGMTREES;
 #endif
 
 #define PGM_GST_NAME_REAL(name)         PGM_CTX(pgm,GstReal##name)
-#define PGM_GST_NAME_GC_REAL_STR(name)  "pgmGCGstReal" #name
+#define PGM_GST_NAME_RC_REAL_STR(name)  "pgmRCGstReal" #name
 #define PGM_GST_NAME_R0_REAL_STR(name)  "pgmR0GstReal" #name
 #define PGM_GST_NAME_PROT(name)         PGM_CTX(pgm,GstProt##name)
-#define PGM_GST_NAME_GC_PROT_STR(name)  "pgmGCGstProt" #name
+#define PGM_GST_NAME_RC_PROT_STR(name)  "pgmRCGstProt" #name
 #define PGM_GST_NAME_R0_PROT_STR(name)  "pgmR0GstProt" #name
 #define PGM_GST_NAME_32BIT(name)        PGM_CTX(pgm,Gst32Bit##name)
-#define PGM_GST_NAME_GC_32BIT_STR(name) "pgmGCGst32Bit" #name
+#define PGM_GST_NAME_RC_32BIT_STR(name) "pgmRCGst32Bit" #name
 #define PGM_GST_NAME_R0_32BIT_STR(name) "pgmR0Gst32Bit" #name
 #define PGM_GST_NAME_PAE(name)          PGM_CTX(pgm,GstPAE##name)
-#define PGM_GST_NAME_GC_PAE_STR(name)   "pgmGCGstPAE" #name
+#define PGM_GST_NAME_RC_PAE_STR(name)   "pgmRCGstPAE" #name
 #define PGM_GST_NAME_R0_PAE_STR(name)   "pgmR0GstPAE" #name
 #define PGM_GST_NAME_AMD64(name)        PGM_CTX(pgm,GstAMD64##name)
-#define PGM_GST_NAME_GC_AMD64_STR(name) "pgmGCGstAMD64" #name
+#define PGM_GST_NAME_RC_AMD64_STR(name) "pgmRCGstAMD64" #name
 #define PGM_GST_NAME_R0_AMD64_STR(name) "pgmR0GstAMD64" #name
 #define PGM_GST_PFN(name, pVM)          ((pVM)->pgm.s.PGM_CTX(pfn,Gst##name))
 #define PGM_GST_DECL(type, name)        PGM_CTX_DECL(type) PGM_GST_NAME(name)
 
 #define PGM_SHW_NAME_32BIT(name)        PGM_CTX(pgm,Shw32Bit##name)
-#define PGM_SHW_NAME_GC_32BIT_STR(name) "pgmGCShw32Bit" #name
+#define PGM_SHW_NAME_RC_32BIT_STR(name) "pgmRCShw32Bit" #name
 #define PGM_SHW_NAME_R0_32BIT_STR(name) "pgmR0Shw32Bit" #name
 #define PGM_SHW_NAME_PAE(name)          PGM_CTX(pgm,ShwPAE##name)
-#define PGM_SHW_NAME_GC_PAE_STR(name)   "pgmGCShwPAE" #name
+#define PGM_SHW_NAME_RC_PAE_STR(name)   "pgmRCShwPAE" #name
 #define PGM_SHW_NAME_R0_PAE_STR(name)   "pgmR0ShwPAE" #name
 #define PGM_SHW_NAME_AMD64(name)        PGM_CTX(pgm,ShwAMD64##name)
-#define PGM_SHW_NAME_GC_AMD64_STR(name) "pgmGCShwAMD64" #name
+#define PGM_SHW_NAME_RC_AMD64_STR(name) "pgmRCShwAMD64" #name
 #define PGM_SHW_NAME_R0_AMD64_STR(name) "pgmR0ShwAMD64" #name
 #define PGM_SHW_NAME_NESTED(name)        PGM_CTX(pgm,ShwNested##name)
-#define PGM_SHW_NAME_GC_NESTED_STR(name) "pgmGCShwNested" #name
+#define PGM_SHW_NAME_RC_NESTED_STR(name) "pgmRCShwNested" #name
 #define PGM_SHW_NAME_R0_NESTED_STR(name) "pgmR0ShwNested" #name
 #define PGM_SHW_NAME_EPT(name)          PGM_CTX(pgm,ShwEPT##name)
-#define PGM_SHW_NAME_GC_EPT_STR(name)   "pgmGCShwEPT" #name
+#define PGM_SHW_NAME_RC_EPT_STR(name)   "pgmRCShwEPT" #name
 #define PGM_SHW_NAME_R0_EPT_STR(name)   "pgmR0ShwEPT" #name
 #define PGM_SHW_DECL(type, name)        PGM_CTX_DECL(type) PGM_SHW_NAME(name)
 #define PGM_SHW_PFN(name, pVM)          ((pVM)->pgm.s.PGM_CTX(pfn,Shw##name))
@@ -1783,24 +1783,24 @@ typedef PGMTREES *PPGMTREES;
 #define PGM_BTH_NAME_EPT_PAE(name)      PGM_CTX(pgm,BthEPTPAE##name)
 #define PGM_BTH_NAME_EPT_AMD64(name)    PGM_CTX(pgm,BthEPTAMD64##name)
 
-#define PGM_BTH_NAME_GC_32BIT_REAL_STR(name)    "pgmGCBth32BitReal" #name
-#define PGM_BTH_NAME_GC_32BIT_PROT_STR(name)    "pgmGCBth32BitProt" #name
-#define PGM_BTH_NAME_GC_32BIT_32BIT_STR(name)   "pgmGCBth32Bit32Bit" #name
-#define PGM_BTH_NAME_GC_PAE_REAL_STR(name)      "pgmGCBthPAEReal" #name
-#define PGM_BTH_NAME_GC_PAE_PROT_STR(name)      "pgmGCBthPAEProt" #name
-#define PGM_BTH_NAME_GC_PAE_32BIT_STR(name)     "pgmGCBthPAE32Bit" #name
-#define PGM_BTH_NAME_GC_PAE_PAE_STR(name)       "pgmGCBthPAEPAE" #name
-#define PGM_BTH_NAME_GC_AMD64_AMD64_STR(name)   "pgmGCBthAMD64AMD64" #name
-#define PGM_BTH_NAME_GC_NESTED_REAL_STR(name)   "pgmGCBthNestedReal" #name
-#define PGM_BTH_NAME_GC_NESTED_PROT_STR(name)   "pgmGCBthNestedProt" #name
-#define PGM_BTH_NAME_GC_NESTED_32BIT_STR(name)  "pgmGCBthNested32Bit" #name
-#define PGM_BTH_NAME_GC_NESTED_PAE_STR(name)    "pgmGCBthNestedPAE" #name
-#define PGM_BTH_NAME_GC_NESTED_AMD64_STR(name)  "pgmGCBthNestedAMD64" #name
-#define PGM_BTH_NAME_GC_EPT_REAL_STR(name)      "pgmGCBthEPTReal" #name
-#define PGM_BTH_NAME_GC_EPT_PROT_STR(name)      "pgmGCBthEPTProt" #name
-#define PGM_BTH_NAME_GC_EPT_32BIT_STR(name)     "pgmGCBthEPT32Bit" #name
-#define PGM_BTH_NAME_GC_EPT_PAE_STR(name)       "pgmGCBthEPTPAE" #name
-#define PGM_BTH_NAME_GC_EPT_AMD64_STR(name)     "pgmGCBthEPTAMD64" #name
+#define PGM_BTH_NAME_RC_32BIT_REAL_STR(name)    "pgmRCBth32BitReal" #name
+#define PGM_BTH_NAME_RC_32BIT_PROT_STR(name)    "pgmRCBth32BitProt" #name
+#define PGM_BTH_NAME_RC_32BIT_32BIT_STR(name)   "pgmRCBth32Bit32Bit" #name
+#define PGM_BTH_NAME_RC_PAE_REAL_STR(name)      "pgmRCBthPAEReal" #name
+#define PGM_BTH_NAME_RC_PAE_PROT_STR(name)      "pgmRCBthPAEProt" #name
+#define PGM_BTH_NAME_RC_PAE_32BIT_STR(name)     "pgmRCBthPAE32Bit" #name
+#define PGM_BTH_NAME_RC_PAE_PAE_STR(name)       "pgmRCBthPAEPAE" #name
+#define PGM_BTH_NAME_RC_AMD64_AMD64_STR(name)   "pgmRCBthAMD64AMD64" #name
+#define PGM_BTH_NAME_RC_NESTED_REAL_STR(name)   "pgmRCBthNestedReal" #name
+#define PGM_BTH_NAME_RC_NESTED_PROT_STR(name)   "pgmRCBthNestedProt" #name
+#define PGM_BTH_NAME_RC_NESTED_32BIT_STR(name)  "pgmRCBthNested32Bit" #name
+#define PGM_BTH_NAME_RC_NESTED_PAE_STR(name)    "pgmRCBthNestedPAE" #name
+#define PGM_BTH_NAME_RC_NESTED_AMD64_STR(name)  "pgmRCBthNestedAMD64" #name
+#define PGM_BTH_NAME_RC_EPT_REAL_STR(name)      "pgmRCBthEPTReal" #name
+#define PGM_BTH_NAME_RC_EPT_PROT_STR(name)      "pgmRCBthEPTProt" #name
+#define PGM_BTH_NAME_RC_EPT_32BIT_STR(name)     "pgmRCBthEPT32Bit" #name
+#define PGM_BTH_NAME_RC_EPT_PAE_STR(name)       "pgmRCBthEPTPAE" #name
+#define PGM_BTH_NAME_RC_EPT_AMD64_STR(name)     "pgmRCBthEPTAMD64" #name
 #define PGM_BTH_NAME_R0_32BIT_REAL_STR(name)    "pgmR0Bth32BitReal" #name
 #define PGM_BTH_NAME_R0_32BIT_PROT_STR(name)    "pgmR0Bth32BitProt" #name
 #define PGM_BTH_NAME_R0_32BIT_32BIT_STR(name)   "pgmR0Bth32Bit32Bit" #name
@@ -1843,8 +1843,8 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLRCCALLBACKMEMBER(int,  pfnGCShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,  pfnGCShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,  pfnRCShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLRCCALLBACKMEMBER(int,  pfnRCShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1867,15 +1867,15 @@ typedef struct PGMMODEDATA
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstPAEWriteHandlerCR3;
     R3PTRTYPE(const char *)         pszR3GstPAEWriteHandlerCR3;
 
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstGetPDE,(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmonitorCR3,(PVM pVM));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstGetPDE,(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPde));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstUnmonitorCR3,(PVM pVM));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstUnmapCR3,(PVM pVM));
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
 
     DECLR0CALLBACKMEMBER(int,  pfnR0GstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0GstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -1892,7 +1892,7 @@ typedef struct PGMMODEDATA
      * @{
      */
     DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, RTGCUINTPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    /*                           no pfnR3BthTrap0eHandler */
     DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
@@ -1902,14 +1902,14 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #endif
 
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLRCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #endif
 
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
@@ -2108,8 +2108,8 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR3CALLBACKMEMBER(int,  pfnR3ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
-    DECLRCCALLBACKMEMBER(int,  pfnGCShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
-    DECLRCCALLBACKMEMBER(int,  pfnGCShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,  pfnRCShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
+    DECLRCCALLBACKMEMBER(int,  pfnRCShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
 
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys));
     DECLR0CALLBACKMEMBER(int,  pfnR0ShwModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
@@ -2133,15 +2133,15 @@ typedef struct PGM
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnR3GstPAEWriteHandlerCR3;
     R3PTRTYPE(const char *)         pszR3GstPAEWriteHandlerCR3;
 
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstGetPDE,(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPde));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmonitorCR3,(PVM pVM));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
-    DECLRCCALLBACKMEMBER(int,  pfnGCGstUnmapCR3,(PVM pVM));
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstWriteHandlerCR3;
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnGCGstPAEWriteHandlerCR3;
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstGetPage,(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstModifyPage,(PVM pVM, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstGetPDE,(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPde));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstMonitorCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstUnmonitorCR3,(PVM pVM));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstMapCR3,(PVM pVM, RTGCPHYS GCPhysCR3));
+    DECLRCCALLBACKMEMBER(int,  pfnRCGstUnmapCR3,(PVM pVM));
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstWriteHandlerCR3;
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnRCGstPAEWriteHandlerCR3;
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment3; /**< structure size alignment. */
 #endif
@@ -2161,7 +2161,7 @@ typedef struct PGM
      * @{
      */
     DECLR3CALLBACKMEMBER(int,       pfnR3BthRelocate,(PVM pVM, RTGCUINTPTR offDelta));
-    DECLR3CALLBACKMEMBER(int,       pfnR3BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    /*                           no pfnR3BthTrap0eHandler */
     DECLR3CALLBACKMEMBER(int,       pfnR3BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
@@ -2177,13 +2177,13 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
     DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
-    DECLRCCALLBACKMEMBER(int,       pfnGCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLRCCALLBACKMEMBER(unsigned,  pfnGCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncCR3,(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
+    DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
+    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment2; /**< structure size alignment. */
 #endif
@@ -2397,13 +2397,133 @@ typedef struct PGM
     STAMCOUNTER                     cGuestModeChanges;
     /** @} */
 
-#ifdef VBOX_WITH_STATISTICS
-    /** GC: Which statistic this \#PF should be attributed to. */
-    RCPTRTYPE(PSTAMPROFILE)   pStatTrap0eAttributionGC;
-    RTRCPTR                   padding0;
-    /** HC: Which statistic this \#PF should be attributed to. */
-    R3R0PTRTYPE(PSTAMPROFILE) pStatTrap0eAttributionHC;
-    RTHCPTR                   padding1;
+#ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap.  */
+    /** RC: Which statistic this \#PF should be attributed to. */
+    RCPTRTYPE(PSTAMPROFILE) pStatTrap0eAttributionRC;
+    RTRCPTR                 padding0;
+    /** R0: Which statistic this \#PF should be attributed to. */
+    R0PTRTYPE(PSTAMPROFILE) pStatTrap0eAttributionR0;
+    RTR0PTR                 padding1;
+
+    /* R3 only: */
+
+    /* GC only: */
+    STAMPROFILE StatGCInvalidatePage;               /**< GC: PGMGCInvalidatePage() profiling. */
+
+    /* RZ only: */
+
+    /* RZ & R3: */
+    STAMPROFILE StatRZSyncCR3;                      /**< RC/R0: PGMSyncCR3() profiling. */
+    STAMPROFILE StatRZSyncCR3Handlers;              /**< RC/R0: Profiling of the PGMSyncCR3() update handler section. */
+    STAMPROFILE StatRZSyncCR3HandlerVirtualReset;   /**< RC/R0: Profiling of the virtual handler resets. */
+    STAMPROFILE StatRZSyncCR3HandlerVirtualUpdate;  /**< RC/R0: Profiling of the virtual handler updates. */
+    STAMCOUNTER StatRZSyncCR3Global;                /**< RC/R0: The number of global CR3 syncs. */
+    STAMCOUNTER StatRZSyncCR3NotGlobal;             /**< RC/R0: The number of non-global CR3 syncs. */
+    STAMCOUNTER StatRZSyncCR3DstCacheHit;           /**< RC/R0: The number of times we got some kind of cache hit on a page table. */
+    STAMCOUNTER StatRZSyncCR3DstFreed;              /**< RC/R0: The number of times we've had to free a shadow entry. */
+    STAMCOUNTER StatRZSyncCR3DstFreedSrcNP;         /**< RC/R0: The number of times we've had to free a shadow entry for which the source entry was not present. */
+    STAMCOUNTER StatRZSyncCR3DstNotPresent;         /**< RC/R0: The number of times we've encountered a not present shadow entry for a present guest entry. */
+    STAMCOUNTER StatRZSyncCR3DstSkippedGlobalPD;    /**< RC/R0: The number of times a global page directory wasn't flushed. */
+    STAMCOUNTER StatRZSyncCR3DstSkippedGlobalPT;    /**< RC/R0: The number of times a page table with only global entries wasn't flushed. */
+    STAMPROFILE StatRZSyncPT;                       /**< RC/R0: PGMSyncPT() profiling. */
+    STAMCOUNTER StatRZSyncPTFailed;                 /**< RC/R0: The number of times PGMSyncPT() failed. */
+    STAMCOUNTER StatRZSyncPagePDNAs;                /**< RC/R0: The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit. */
+    STAMCOUNTER StatRZSyncPagePDOutOfSync;          /**< RC/R0: The number of time we've encountered an out-of-sync PD in SyncPage. */
+    STAMCOUNTER StatRZAccessedPage;                 /**< RC/R0: The number of pages marked not present for accessed bit emulation. */
+    STAMPROFILE StatRZDirtyBitTracking;             /**< RC/R0: Profiling the dirty bit tracking in CheckPageFault().. */
+    STAMCOUNTER StatRZDirtyPage;                    /**< RC/R0: The number of pages marked read-only for dirty bit tracking. */
+    STAMCOUNTER StatRZDirtyPageBig;                 /**< RC/R0: The number of pages marked read-only for dirty bit tracking. */
+    STAMCOUNTER StatRZDirtyPageSkipped;             /**< RC/R0: The number of pages already dirty or readonly. */
+    STAMCOUNTER StatRZDirtyPageTrap;                /**< RC/R0: The number of traps generated for dirty bit tracking. */
+    STAMCOUNTER StatRZDirtyTrackRealPF;             /**< RC/R0: The number of real pages faults during dirty bit tracking. */
+    STAMCOUNTER StatRZDirtiedPage;                  /**< RC/R0: The number of pages marked dirty because of write accesses. */
+    STAMCOUNTER StatRZPageAlreadyDirty;             /**< RC/R0: The number of pages already marked dirty because of write accesses. */
+    STAMPROFILE StatRZInvalidatePage;               /**< RC/R0: PGMInvalidatePage() profiling. */
+    STAMCOUNTER StatRZInvalidatePage4KBPages;       /**< RC/R0: The number of times PGMInvalidatePage() was called for a 4KB page. */
+    STAMCOUNTER StatRZInvalidatePage4MBPages;       /**< RC/R0: The number of times PGMInvalidatePage() was called for a 4MB page. */
+    STAMCOUNTER StatRZInvalidatePage4MBPagesSkip;   /**< RC/R0: The number of times PGMInvalidatePage() skipped a 4MB page. */
+    STAMCOUNTER StatRZInvalidatePagePDMappings;     /**< RC/R0: The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict). */
+    STAMCOUNTER StatRZInvalidatePagePDNAs;          /**< RC/R0: The number of times PGMInvalidatePage() was called for a not accessed page directory. */
+    STAMCOUNTER StatRZInvalidatePagePDNPs;          /**< RC/R0: The number of times PGMInvalidatePage() was called for a not present page directory. */
+    STAMCOUNTER StatRZInvalidatePagePDOutOfSync;    /**< RC/R0: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
+    STAMCOUNTER StatRZInvalidatePageSkipped;        /**< RC/R0: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
+
+    STAMPROFILE StatR3SyncCR3;                      /**< R3: PGMSyncCR3() profiling. */
+    STAMPROFILE StatR3SyncCR3Handlers;              /**< R3: Profiling of the PGMSyncCR3() update handler section. */
+    STAMPROFILE StatR3SyncCR3HandlerVirtualReset;   /**< R3: Profiling of the virtual handler resets. */
+    STAMPROFILE StatR3SyncCR3HandlerVirtualUpdate;  /**< R3: Profiling of the virtual handler updates. */
+    STAMCOUNTER StatR3SyncCR3Global;                /**< R3: The number of global CR3 syncs. */
+    STAMCOUNTER StatR3SyncCR3NotGlobal;             /**< R3: The number of non-global CR3 syncs. */
+    STAMCOUNTER StatR3SyncCR3DstFreed;              /**< R3: The number of times we've had to free a shadow entry. */
+    STAMCOUNTER StatR3SyncCR3DstFreedSrcNP;         /**< R3: The number of times we've had to free a shadow entry for which the source entry was not present. */
+    STAMCOUNTER StatR3SyncCR3DstNotPresent;         /**< R3: The number of times we've encountered a not present shadow entry for a present guest entry. */
+    STAMCOUNTER StatR3SyncCR3DstSkippedGlobalPD;    /**< R3: The number of times a global page directory wasn't flushed. */
+    STAMCOUNTER StatR3SyncCR3DstSkippedGlobalPT;    /**< R3: The number of times a page table with only global entries wasn't flushed. */
+    STAMCOUNTER StatR3SyncCR3DstCacheHit;           /**< R3: The number of times we got some kind of cache hit on a page table. */
+    STAMPROFILE StatR3SyncPT;                       /**< R3: PGMSyncPT() profiling. */
+    STAMCOUNTER StatR3SyncPTFailed;                 /**< R3: The number of times PGMSyncPT() failed. */
+    STAMCOUNTER StatR3SyncPagePDNAs;                /**< R3: The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit. */
+    STAMCOUNTER StatR3SyncPagePDOutOfSync;          /**< R3: The number of time we've encountered an out-of-sync PD in SyncPage. */
+    STAMCOUNTER StatR3AccessedPage;                 /**< R3: The number of pages marked not present for accessed bit emulation. */
+    STAMPROFILE StatR3DirtyBitTracking;             /**< R3: Profiling the dirty bit tracking in CheckPageFault(). */
+    STAMCOUNTER StatR3DirtyPage;                    /**< R3: The number of pages marked read-only for dirty bit tracking. */
+    STAMCOUNTER StatR3DirtyPageBig;                 /**< R3: The number of pages marked read-only for dirty bit tracking. */
+    STAMCOUNTER StatR3DirtyPageSkipped;             /**< R3: The number of pages already dirty or readonly. */
+    STAMCOUNTER StatR3DirtyPageTrap;                /**< R3: The number of traps generated for dirty bit tracking. */
+    STAMCOUNTER StatR3DirtyTrackRealPF;             /**< R3: The number of real pages faults during dirty bit tracking. */
+    STAMCOUNTER StatR3DirtiedPage;                  /**< R3: The number of pages marked dirty because of write accesses. */
+    STAMCOUNTER StatR3PageAlreadyDirty;             /**< R3: The number of pages already marked dirty because of write accesses. */
+    STAMPROFILE StatR3InvalidatePage;               /**< R3: PGMInvalidatePage() profiling. */
+    STAMCOUNTER StatR3InvalidatePage4KBPages;       /**< R3: The number of times PGMInvalidatePage() was called for a 4KB page. */
+    STAMCOUNTER StatR3InvalidatePage4MBPages;       /**< R3: The number of times PGMInvalidatePage() was called for a 4MB page. */
+    STAMCOUNTER StatR3InvalidatePage4MBPagesSkip;   /**< R3: The number of times PGMInvalidatePage() skipped a 4MB page. */
+    STAMCOUNTER StatR3InvalidatePagePDNAs;          /**< R3: The number of times PGMInvalidatePage() was called for a not accessed page directory. */
+    STAMCOUNTER StatR3InvalidatePagePDNPs;          /**< R3: The number of times PGMInvalidatePage() was called for a not present page directory. */
+    STAMCOUNTER StatR3InvalidatePagePDMappings;     /**< R3: The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict). */
+    STAMCOUNTER StatR3InvalidatePagePDOutOfSync;    /**< R3: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
+    STAMCOUNTER StatR3InvalidatePageSkipped;        /**< R3: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
+
+    /* TODO (cleanup):  */
+
+    /** GC: Profiling of pgmHandlerVirtualFindByPhysAddr. */
+    STAMPROFILE StatVirtHandleSearchByPhysGC;
+    /** HC: Profiling of pgmHandlerVirtualFindByPhysAddr. */
+    STAMPROFILE StatVirtHandleSearchByPhysHC;
+    /** HC: The number of times PGMR3HandlerPhysicalReset is called. */
+    STAMCOUNTER StatHandlePhysicalReset;
+
+    STAMPROFILE StatCheckPageFault;
+    STAMPROFILE StatLazySyncPT;
+    STAMPROFILE StatMapping;
+    STAMPROFILE StatOutOfSync;
+    STAMPROFILE StatHandlers;
+    STAMPROFILE StatEIPHandlers;
+    STAMPROFILE StatHCPrefetch;
+
+# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+    STAMCOUNTER StatTrackVirgin;                    /**< The number of first time shadowings. */
+    STAMCOUNTER StatTrackAliased;                   /**< The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
+    STAMCOUNTER StatTrackAliasedMany;               /**< The number of times we're tracking using cRef2. */
+    STAMCOUNTER StatTrackAliasedLots;               /**< The number of times we're hitting pages which has overflowed cRef2. */
+    STAMCOUNTER StatTrackOverflows;                 /**< The number of times the extent list grows to long. */
+    STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
+# endif
+
+    STAMCOUNTER StatPageHCMapTlbHits;               /** Ring-3/0 page mapper TLB hits. */
+    STAMCOUNTER StatPageHCMapTlbMisses;             /** Ring-3/0 page mapper TLB misses. */
+    STAMCOUNTER StatChunkR3MapTlbHits;              /** Ring-3/0 chunk mapper TLB hits. */
+    STAMCOUNTER StatChunkR3MapTlbMisses;            /** Ring-3/0 chunk mapper TLB misses. */
+    STAMCOUNTER StatPageReplaceShared;              /** Times a shared page has been replaced by a private one. */
+    STAMCOUNTER StatPageReplaceZero;                /** Times the zero page has been replaced by a private one. */
+    STAMCOUNTER StatPageHandyAllocs;                /** The number of times we've executed GMMR3AllocateHandyPages. */
+
+    STAMCOUNTER StatDynRamTotal;                    /** Allocated MBs of guest ram */
+    STAMCOUNTER StatDynRamGrow;                     /** Nr of pgmr3PhysGrowRange calls. */
+
+    STAMCOUNTER StatGCTrap0ePD[X86_PG_ENTRIES];
+    STAMCOUNTER StatGCSyncPtPD[X86_PG_ENTRIES];
+    STAMCOUNTER StatGCSyncPagePD[X86_PG_ENTRIES];
+
     STAMPROFILE     StatGCTrap0e;                       /**< GC: PGMGCTrap0eHandler() profiling. */
     STAMPROFILE     StatTrap0eCSAM;                     /**< Profiling of the Trap0eHandler body when the cause is CSAM. */
     STAMPROFILE     StatTrap0eDirtyAndAccessedBits;     /**< Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation. */
@@ -2440,32 +2560,6 @@ typedef struct PGM
     STAMCOUNTER     StatGCTrap0eUnhandled;
     STAMCOUNTER     StatGCTrap0eMap;
 
-    /** GC: PGMSyncPT() profiling. */
-    STAMPROFILE     StatGCSyncPT;
-    /** GC: The number of times PGMSyncPT() needed to allocate page tables. */
-    STAMCOUNTER     StatGCSyncPTAlloc;
-    /** GC: The number of times PGMSyncPT() detected conflicts. */
-    STAMCOUNTER     StatGCSyncPTConflict;
-    /** GC: The number of times PGMSyncPT() failed. */
-    STAMCOUNTER     StatGCSyncPTFailed;
-    /** GC: PGMGCInvalidatePage() profiling. */
-    STAMPROFILE     StatGCInvalidatePage;
-    /** GC: The number of times PGMGCInvalidatePage() was called for a 4KB page. */
-    STAMCOUNTER     StatGCInvalidatePage4KBPages;
-    /** GC: The number of times PGMGCInvalidatePage() was called for a 4MB page. */
-    STAMCOUNTER     StatGCInvalidatePage4MBPages;
-    /** GC: The number of times PGMGCInvalidatePage() skipped a 4MB page. */
-    STAMCOUNTER     StatGCInvalidatePage4MBPagesSkip;
-    /** GC: The number of times PGMGCInvalidatePage() was called for a not accessed page directory. */
-    STAMCOUNTER     StatGCInvalidatePagePDNAs;
-    /** GC: The number of times PGMGCInvalidatePage() was called for a not present page directory. */
-    STAMCOUNTER     StatGCInvalidatePagePDNPs;
-    /** GC: The number of times PGMGCInvalidatePage() was called for a page directory containing mappings (no conflict). */
-    STAMCOUNTER     StatGCInvalidatePagePDMappings;
-    /** GC: The number of times PGMGCInvalidatePage() was called for an out of sync page directory. */
-    STAMCOUNTER     StatGCInvalidatePagePDOutOfSync;
-    /** HC: The number of times PGMGCInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
-    STAMCOUNTER     StatGCInvalidatePageSkipped;
     /** GC: The number of times user page is out of sync was detected in GC. */
     STAMCOUNTER     StatGCPageOutOfSyncUser;
     /** GC: The number of times supervisor page is out of sync was detected in GC. */
@@ -2500,26 +2594,6 @@ typedef struct PGM
     /** GC: The number of times pgmGCGuestROMWriteHandler() was called and we had to fall back to the recompiler */
     STAMCOUNTER     StatGCGuestROMWriteUnhandled;
 
-    /** HC: PGMR3InvalidatePage() profiling. */
-    STAMPROFILE     StatHCInvalidatePage;
-    /** HC: The number of times PGMR3InvalidatePage() was called for a 4KB page. */
-    STAMCOUNTER     StatHCInvalidatePage4KBPages;
-    /** HC: The number of times PGMR3InvalidatePage() was called for a 4MB page. */
-    STAMCOUNTER     StatHCInvalidatePage4MBPages;
-    /** HC: The number of times PGMR3InvalidatePage() skipped a 4MB page. */
-    STAMCOUNTER     StatHCInvalidatePage4MBPagesSkip;
-    /** HC: The number of times PGMR3InvalidatePage() was called for a not accessed page directory. */
-    STAMCOUNTER     StatHCInvalidatePagePDNAs;
-    /** HC: The number of times PGMR3InvalidatePage() was called for a not present page directory. */
-    STAMCOUNTER     StatHCInvalidatePagePDNPs;
-    /** HC: The number of times PGMR3InvalidatePage() was called for a page directory containing mappings (no conflict). */
-    STAMCOUNTER     StatHCInvalidatePagePDMappings;
-    /** HC: The number of times PGMGCInvalidatePage() was called for an out of sync page directory. */
-    STAMCOUNTER     StatHCInvalidatePagePDOutOfSync;
-    /** HC: The number of times PGMR3InvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
-    STAMCOUNTER     StatHCInvalidatePageSkipped;
-    /** HC: PGMR3SyncPT() profiling. */
-    STAMPROFILE     StatHCSyncPT;
     /** HC: pgmr3SyncPTResolveConflict() profiling (includes the entire relocation). */
     STAMPROFILE     StatHCResolveConflict;
     /** HC: Number of times PGMR3CheckMappingConflicts() detected a conflict. */
@@ -2529,52 +2603,11 @@ typedef struct PGM
     /** HC: The number of times pgmHCGuestPDWriteHandler() detected a conflict */
     STAMCOUNTER     StatHCGuestPDWriteConflict;
 
-    /** HC: The number of pages marked not present for accessed bit emulation. */
-    STAMCOUNTER     StatHCAccessedPage;
-    /** HC: The number of pages marked read-only for dirty bit tracking. */
-    STAMCOUNTER     StatHCDirtyPage;
-    /** HC: The number of pages marked read-only for dirty bit tracking. */
-    STAMCOUNTER     StatHCDirtyPageBig;
-    /** HC: The number of traps generated for dirty bit tracking. */
-    STAMCOUNTER     StatHCDirtyPageTrap;
-    /** HC: The number of pages already dirty or readonly. */
-    STAMCOUNTER     StatHCDirtyPageSkipped;
-
-    /** GC: The number of pages marked not present for accessed bit emulation. */
-    STAMCOUNTER     StatGCAccessedPage;
-    /** GC: The number of pages marked read-only for dirty bit tracking. */
-    STAMCOUNTER     StatGCDirtyPage;
-    /** GC: The number of pages marked read-only for dirty bit tracking. */
-    STAMCOUNTER     StatGCDirtyPageBig;
-    /** GC: The number of traps generated for dirty bit tracking. */
-    STAMCOUNTER     StatGCDirtyPageTrap;
-    /** GC: The number of pages already dirty or readonly. */
-    STAMCOUNTER     StatGCDirtyPageSkipped;
-    /** GC: The number of pages marked dirty because of write accesses. */
-    STAMCOUNTER     StatGCDirtiedPage;
-    /** GC: The number of pages already marked dirty because of write accesses. */
-    STAMCOUNTER     StatGCPageAlreadyDirty;
-    /** GC: The number of real pages faults during dirty bit tracking. */
-    STAMCOUNTER     StatGCDirtyTrackRealPF;
-
-    /** GC: Profiling of the PGMTrackDirtyBit() body */
-    STAMPROFILE     StatGCDirtyBitTracking;
-    /** HC: Profiling of the PGMTrackDirtyBit() body */
-    STAMPROFILE     StatHCDirtyBitTracking;
 
     /** GC: Profiling of the PGMGstModifyPage() body */
     STAMPROFILE     StatGCGstModifyPage;
     /** HC: Profiling of the PGMGstModifyPage() body */
     STAMPROFILE     StatHCGstModifyPage;
-
-    /** GC: The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit. */
-    STAMCOUNTER     StatGCSyncPagePDNAs;
-    /** GC: The number of time we've encountered an out-of-sync PD in SyncPage. */
-    STAMCOUNTER     StatGCSyncPagePDOutOfSync;
-    /** HC: The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit. */
-    STAMCOUNTER     StatHCSyncPagePDNAs;
-    /** HC: The number of time we've encountered an out-of-sync PD in SyncPage. */
-    STAMCOUNTER     StatHCSyncPagePDOutOfSync;
 
     STAMCOUNTER StatSynPT4kGC;
     STAMCOUNTER StatSynPT4kHC;
@@ -2592,86 +2625,7 @@ typedef struct PGM
     /** The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
     STAMCOUNTER StatFlushTLBSameCR3Global;
 
-    STAMPROFILE StatGCSyncCR3;                      /**< GC: PGMSyncCR3() profiling. */
-    STAMPROFILE StatGCSyncCR3Handlers;              /**< GC: Profiling of the PGMSyncCR3() update handler section. */
-    STAMPROFILE StatGCSyncCR3HandlerVirtualReset;   /**< GC: Profiling of the virtual handler resets. */
-    STAMPROFILE StatGCSyncCR3HandlerVirtualUpdate;  /**< GC: Profiling of the virtual handler updates. */
-    STAMCOUNTER StatGCSyncCR3Global;                /**< GC: The number of global CR3 syncs. */
-    STAMCOUNTER StatGCSyncCR3NotGlobal;             /**< GC: The number of non-global CR3 syncs. */
-    STAMCOUNTER StatGCSyncCR3DstFreed;              /**< GC: The number of times we've had to free a shadow entry. */
-    STAMCOUNTER StatGCSyncCR3DstFreedSrcNP;         /**< GC: The number of times we've had to free a shadow entry for which the source entry was not present. */
-    STAMCOUNTER StatGCSyncCR3DstNotPresent;         /**< GC: The number of times we've encountered a not present shadow entry for a present guest entry. */
-    STAMCOUNTER StatGCSyncCR3DstSkippedGlobalPD;    /**< GC: The number of times a global page directory wasn't flushed. */
-    STAMCOUNTER StatGCSyncCR3DstSkippedGlobalPT;    /**< GC: The number of times a page table with only global entries wasn't flushed. */
-    STAMCOUNTER StatGCSyncCR3DstCacheHit;           /**< GC: The number of times we got some kind of cache hit on a page table. */
-
-    STAMPROFILE StatHCSyncCR3;                      /**< HC: PGMSyncCR3() profiling. */
-    STAMPROFILE StatHCSyncCR3Handlers;              /**< HC: Profiling of the PGMSyncCR3() update handler section. */
-    STAMPROFILE StatHCSyncCR3HandlerVirtualReset;   /**< HC: Profiling of the virtual handler resets. */
-    STAMPROFILE StatHCSyncCR3HandlerVirtualUpdate;  /**< HC: Profiling of the virtual handler updates. */
-    STAMCOUNTER StatHCSyncCR3Global;                /**< HC: The number of global CR3 syncs. */
-    STAMCOUNTER StatHCSyncCR3NotGlobal;             /**< HC: The number of non-global CR3 syncs. */
-    STAMCOUNTER StatHCSyncCR3DstFreed;              /**< HC: The number of times we've had to free a shadow entry. */
-    STAMCOUNTER StatHCSyncCR3DstFreedSrcNP;         /**< HC: The number of times we've had to free a shadow entry for which the source entry was not present. */
-    STAMCOUNTER StatHCSyncCR3DstNotPresent;         /**< HC: The number of times we've encountered a not present shadow entry for a present guest entry. */
-    STAMCOUNTER StatHCSyncCR3DstSkippedGlobalPD;    /**< HC: The number of times a global page directory wasn't flushed. */
-    STAMCOUNTER StatHCSyncCR3DstSkippedGlobalPT;    /**< HC: The number of times a page table with only global entries wasn't flushed. */
-    STAMCOUNTER StatHCSyncCR3DstCacheHit;           /**< HC: The number of times we got some kind of cache hit on a page table. */
-
-    /** GC: Profiling of pgmHandlerVirtualFindByPhysAddr. */
-    STAMPROFILE StatVirtHandleSearchByPhysGC;
-    /** HC: Profiling of pgmHandlerVirtualFindByPhysAddr. */
-    STAMPROFILE StatVirtHandleSearchByPhysHC;
-    /** HC: The number of times PGMR3HandlerPhysicalReset is called. */
-    STAMCOUNTER StatHandlePhysicalReset;
-
-    STAMPROFILE StatCheckPageFault;
-    STAMPROFILE StatLazySyncPT;
-    STAMPROFILE StatMapping;
-    STAMPROFILE StatOutOfSync;
-    STAMPROFILE StatHandlers;
-    STAMPROFILE StatEIPHandlers;
-    STAMPROFILE StatHCPrefetch;
-
-# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-    /** The number of first time shadowings. */
-    STAMCOUNTER StatTrackVirgin;
-    /** The number of times switching to cRef2, i.e. the page is being shadowed by two PTs. */
-    STAMCOUNTER StatTrackAliased;
-    /** The number of times we're tracking using cRef2. */
-    STAMCOUNTER StatTrackAliasedMany;
-    /** The number of times we're hitting pages which has overflowed cRef2. */
-    STAMCOUNTER StatTrackAliasedLots;
-    /** The number of times the extent list grows to long. */
-    STAMCOUNTER StatTrackOverflows;
-    /** Profiling of SyncPageWorkerTrackDeref (expensive). */
-    STAMPROFILE StatTrackDeref;
-# endif
-
-    /** Ring-3/0 page mapper TLB hits. */
-    STAMCOUNTER StatPageHCMapTlbHits;
-    /** Ring-3/0 page mapper TLB misses. */
-    STAMCOUNTER StatPageHCMapTlbMisses;
-    /** Ring-3/0 chunk mapper TLB hits. */
-    STAMCOUNTER StatChunkR3MapTlbHits;
-    /** Ring-3/0 chunk mapper TLB misses. */
-    STAMCOUNTER StatChunkR3MapTlbMisses;
-    /** Times a shared page has been replaced by a private one. */
-    STAMCOUNTER StatPageReplaceShared;
-    /** Times the zero page has been replaced by a private one. */
-    STAMCOUNTER StatPageReplaceZero;
-    /** The number of times we've executed GMMR3AllocateHandyPages. */
-    STAMCOUNTER StatPageHandyAllocs;
-
-    /** Allocated mbs of guest ram */
-    STAMCOUNTER     StatDynRamTotal;
-    /** Nr of pgmr3PhysGrowRange calls. */
-    STAMCOUNTER     StatDynRamGrow;
-
-    STAMCOUNTER StatGCTrap0ePD[X86_PG_ENTRIES];
-    STAMCOUNTER StatGCSyncPtPD[X86_PG_ENTRIES];
-    STAMCOUNTER StatGCSyncPagePD[X86_PG_ENTRIES];
-#endif
+#endif /* VBOX_WITH_STATISTICS */
 } PGM, *PPGM;
 
 

@@ -336,8 +336,10 @@ typedef struct PGMHVUSTATE
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
 
-#endif
+#endif /* !IN_GC */
 
+
+#ifndef IN_RING3
 /**
  * #PF Handler.
  *
@@ -351,7 +353,7 @@ VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
 {
     LogFlow(("PGMTrap0eHandler: uErr=%RGu pvFault=%VGv eip=%VGv\n", uErr, pvFault, pRegFrame->rip));
     STAM_PROFILE_START(&pVM->pgm.s.StatGCTrap0e, a);
-    STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = NULL; } );
+    STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
 
 #ifdef VBOX_WITH_STATISTICS
@@ -400,11 +402,13 @@ VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
     int rc = PGM_BTH_PFN(Trap0eHandler, pVM)(pVM, uErr, pRegFrame, pvFault);
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
-    STAM_STATS({ if (!pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution))
-                    pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eMisc; });
-    STAM_PROFILE_STOP_EX(&pVM->pgm.s.StatGCTrap0e, pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution), a);
+    STAM_STATS({ if (!pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
+                    pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eMisc; });
+    STAM_PROFILE_STOP_EX(&pVM->pgm.s.StatGCTrap0e, pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
     return rc;
 }
+#endif /* !IN_RING3 */
+
 
 /**
  * Prefetch a page
@@ -445,10 +449,7 @@ PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
         if ((uintptr_t)GCPtr < (uintptr_t)pMapping->GCPtr)
             break;
         if ((uintptr_t)GCPtr - (uintptr_t)pMapping->GCPtr < pMapping->cb)
-        {
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPTConflict);
             return pMapping;
-        }
         pMapping = pMapping->CTX_SUFF(pNext);
     }
     return NULL;
@@ -645,9 +646,9 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
         return rc;
 #endif
 
-    STAM_PROFILE_START(&CTXMID(pVM->pgm.s.Stat,InvalidatePage), a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
     rc = PGM_BTH_PFN(InvalidatePage, pVM)(pVM, GCPtrPage);
-    STAM_PROFILE_STOP(&CTXMID(pVM->pgm.s.Stat,InvalidatePage), a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
 
 #ifndef IN_RING0
     /*
@@ -1540,9 +1541,9 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
     /*
      * Let the 'Bth' function do the work and we'll just keep track of the flags.
      */
-    STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat,SyncCR3), a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     int rc = PGM_BTH_PFN(SyncCR3, pVM)(pVM, cr0, cr3, cr4, fGlobal);
-    STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3), a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || VBOX_FAILURE(rc), ("rc=%VRc\n", rc));
     if (rc == VINF_SUCCESS)
     {
@@ -1971,9 +1972,9 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
  */
 VMMDECL(unsigned) PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4)
 {
-    STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat,SyncCR3), a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVM)(pVM, cr3, cr4, 0, ~(RTGCUINTPTR)0);
-    STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3), a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;
     return 0;
 }

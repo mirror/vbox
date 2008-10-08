@@ -418,8 +418,8 @@ int main()
     GEN_CHECK_OFF(PGM, pfnR3ShwExit);
     GEN_CHECK_OFF(PGM, pfnR3ShwGetPage);
     GEN_CHECK_OFF(PGM, pfnR3ShwModifyPage);
-    GEN_CHECK_OFF(PGM, pfnGCShwGetPage);
-    GEN_CHECK_OFF(PGM, pfnGCShwModifyPage);
+    GEN_CHECK_OFF(PGM, pfnRCShwGetPage);
+    GEN_CHECK_OFF(PGM, pfnRCShwModifyPage);
     GEN_CHECK_OFF(PGM, pfnR3GstRelocate);
     GEN_CHECK_OFF(PGM, pfnR3GstExit);
     GEN_CHECK_OFF(PGM, pfnR3GstMonitorCR3);
@@ -429,23 +429,22 @@ int main()
     GEN_CHECK_OFF(PGM, pfnR3GstGetPage);
     GEN_CHECK_OFF(PGM, pfnR3GstModifyPage);
     GEN_CHECK_OFF(PGM, pfnR3GstGetPDE);
-    GEN_CHECK_OFF(PGM, pfnGCGstGetPage);
-    GEN_CHECK_OFF(PGM, pfnGCGstModifyPage);
-    GEN_CHECK_OFF(PGM, pfnGCGstGetPDE);
+    GEN_CHECK_OFF(PGM, pfnRCGstGetPage);
+    GEN_CHECK_OFF(PGM, pfnRCGstModifyPage);
+    GEN_CHECK_OFF(PGM, pfnRCGstGetPDE);
     GEN_CHECK_OFF(PGM, pfnR3BthRelocate);
     GEN_CHECK_OFF(PGM, pfnR3BthSyncCR3);
-    GEN_CHECK_OFF(PGM, pfnR3BthTrap0eHandler);
     GEN_CHECK_OFF(PGM, pfnR3BthInvalidatePage);
     GEN_CHECK_OFF(PGM, pfnR3BthSyncPage);
     GEN_CHECK_OFF(PGM, pfnR3BthPrefetchPage);
     GEN_CHECK_OFF(PGM, pfnR3BthVerifyAccessSyncPage);
     GEN_CHECK_OFF(PGM, pfnR3BthAssertCR3);
-    GEN_CHECK_OFF(PGM, pfnGCBthTrap0eHandler);
-    GEN_CHECK_OFF(PGM, pfnGCBthInvalidatePage);
-    GEN_CHECK_OFF(PGM, pfnGCBthSyncPage);
-    GEN_CHECK_OFF(PGM, pfnGCBthPrefetchPage);
-    GEN_CHECK_OFF(PGM, pfnGCBthVerifyAccessSyncPage);
-    GEN_CHECK_OFF(PGM, pfnGCBthAssertCR3);
+    GEN_CHECK_OFF(PGM, pfnRCBthTrap0eHandler);
+    GEN_CHECK_OFF(PGM, pfnRCBthInvalidatePage);
+    GEN_CHECK_OFF(PGM, pfnRCBthSyncPage);
+    GEN_CHECK_OFF(PGM, pfnRCBthPrefetchPage);
+    GEN_CHECK_OFF(PGM, pfnRCBthVerifyAccessSyncPage);
+    GEN_CHECK_OFF(PGM, pfnRCBthAssertCR3);
     GEN_CHECK_OFF(PGM, pRamRangesR3);
     GEN_CHECK_OFF(PGM, pRamRangesR0);
     GEN_CHECK_OFF(PGM, pRamRangesRC);
@@ -516,7 +515,8 @@ int main()
     GEN_CHECK_OFF(PGM, cZeroPages);
     GEN_CHECK_OFF(PGM, cGuestModeChanges);
 #ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(PGM, pStatTrap0eAttributionHC);
+    GEN_CHECK_OFF(PGM, pStatTrap0eAttributionR0);
+    GEN_CHECK_OFF(PGM, pStatTrap0eAttributionRC);
 #endif
 
     GEN_CHECK_SIZE(PGMMAPPING);
