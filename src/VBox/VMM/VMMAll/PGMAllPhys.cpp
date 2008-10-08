@@ -89,7 +89,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
             DISCPUSTATE Cpu;
             rc = EMInterpretDisasOne(pVM, pRegFrame, &Cpu, &cbOp);
             if (     RT_SUCCESS(rc)
-                &&   Cpu.mode == CPUMODE_32BIT  /* @todo why does this matter? */
+                &&   Cpu.mode == CPUMODE_32BIT  /** @todo why does this matter? */
                 &&  !(Cpu.prefix & (PREFIX_REPNE | PREFIX_REP | PREFIX_SEG)))
             {
                 switch (Cpu.opcode)
@@ -98,7 +98,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
                      * adding this kind of detection to DIS or EM. */
                     case OP_MOV:
                         pRegFrame->rip += cbOp;
-                        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestROMWriteHandled);
+                        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestROMWriteHandled);
                         return VINF_SUCCESS;
                 }
             }
@@ -122,7 +122,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
     }
 #endif
 
-    STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestROMWriteUnhandled);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestROMWriteUnhandled);
     return VINF_EM_RAW_EMULATE_INSTR;
 }
 

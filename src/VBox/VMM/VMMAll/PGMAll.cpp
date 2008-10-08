@@ -424,9 +424,9 @@ VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
  */
 VMMDECL(int) PGMPrefetchPage(PVM pVM, RTGCPTR GCPtrPage)
 {
-    STAM_PROFILE_START(&pVM->pgm.s.StatHCPrefetch, a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
     int rc = PGM_BTH_PFN(PrefetchPage, pVM)(pVM, (RTGCUINTPTR)GCPtrPage);
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatHCPrefetch, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || VBOX_FAILURE(rc), ("rc=%Vrc\n", rc));
     return rc;
 }
@@ -1873,12 +1873,12 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         int iPage = au8Trans[pVM->pgm.s.iDynPageMapLast][iCache];
         void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
         *ppv = pv;
-        STAM_COUNTER_INC(&pVM->pgm.s.StatDynMapCacheHits);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheHits);
         //Log(("PGMGCDynMapHCPage: HCPhys=%VHp pv=%VGv iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
         return VINF_SUCCESS;
     }
     Assert(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 4);
-    STAM_COUNTER_INC(&pVM->pgm.s.StatDynMapCacheMisses);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheMisses);
 
     /*
      * Update the page tables.

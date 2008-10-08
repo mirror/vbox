@@ -619,9 +619,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  * BTW, fPageShw is invalid in this branch!
                  */
                 if (uErr & X86_TRAP_PF_US)
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncUser);
+                    STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncUser));
                 else /* supervisor */
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncSupervisor);
+                    STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncSupervisor));
 
 #   if defined(LOG_ENABLED) && !defined(IN_RING0)
                 RTGCPHYS   GCPhys;
@@ -728,9 +728,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 if (VBOX_SUCCESS(rc) && (uErr & X86_TRAP_PF_RW))
                 {
                     if (uErr & X86_TRAP_PF_US)
-                        STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncUser);
+                        STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncUser));
                     else /* supervisor */
-                        STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncSupervisor);
+                        STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncSupervisor));
 
 
                     /*
@@ -2995,9 +2995,9 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 #endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
         Assert(rc != VINF_EM_RAW_GUEST_TRAP);
         if (uErr & X86_TRAP_PF_US)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncUser);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncUser));
         else /* supervisor */
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCPageOutOfSyncSupervisor);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncSupervisor));
 
         rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
         if (VBOX_SUCCESS(rc))

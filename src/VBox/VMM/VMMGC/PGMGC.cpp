@@ -176,7 +176,7 @@ VMMRCDECL(int) PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
     LogFlow(("PGMGCInvalidatePage: GCPtrPage=%VGv\n", GCPtrPage));
 
-    STAM_PROFILE_START(&pVM->pgm.s.StatGCInvalidatePage, a);
+    STAM_PROFILE_START(&pVM->pgm.s.StatRCInvalidatePage, a);
 
     /*
      * Check for conflicts and pending CR3 monitoring updates.
@@ -188,14 +188,14 @@ VMMRCDECL(int) PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
         {
             LogFlow(("PGMGCInvalidatePage: Conflict!\n"));
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatGCInvalidatePage, a);
+            STAM_PROFILE_STOP(&pVM->pgm.s.StatRCInvalidatePage, a);
             return VINF_PGM_SYNC_CR3;
         }
 
         if (pVM->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
         {
             LogFlow(("PGMGCInvalidatePage: PGM_SYNC_MONITOR_CR3 -> reinterpret instruction in HC\n"));
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatGCInvalidatePage, a);
+            STAM_PROFILE_STOP(&pVM->pgm.s.StatRCInvalidatePage, a);
             /** @todo counter for these... */
             return VINF_EM_RAW_EMULATE_INSTR;
         }
@@ -209,6 +209,6 @@ VMMRCDECL(int) PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
     if (rc == VINF_SUCCESS)
         rc = PGM_BTH_PFN(InvalidatePage, pVM)(pVM, GCPtrPage);
 
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatGCInvalidatePage, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.StatRCInvalidatePage, a);
     return rc;
 }

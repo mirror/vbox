@@ -1019,7 +1019,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
                      && pgmGetMapping(pVM, (RTGCPTR)(iPD2 << X86_PD_SHIFT)) )
                )
             {
-                STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteConflict);
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteConflict);
                 VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
                 if (rc == VINF_SUCCESS)
                     rc = VINF_PGM_SYNC_CR3;
@@ -1028,7 +1028,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
             }
         }
 
-        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteHandled);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteHandled);
     }
     else
     {
@@ -1036,7 +1036,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
         if (rc == VERR_EM_INTERPRETER)
             rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
         Log(("pgmXXGst32BitWriteHandlerCR3: returns %Rrc\n", rc));
-        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteUnhandled);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteUnhandled);
     }
     return rc;
 }
@@ -1098,12 +1098,12 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
             }
         }
 
-        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteHandled);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteHandled);
     }
     else
     {
         Assert(VBOX_FAILURE(rc));
-        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteUnhandled);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteUnhandled);
         if (rc == VERR_EM_INTERPRETER)
             rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
     }
@@ -1172,7 +1172,7 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
                        )
                     {
                         Log(("pgmXXGstPaeWriteHandlerPD: detected conflict iPD1=%#x iPD2=%#x\n", iPD1, iPD2));
-                        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteConflict);
+                        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteConflict);
                         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
                         return VINF_PGM_SYNC_CR3;
                     }
@@ -1181,7 +1181,7 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
             }
         Assert(i < 4);
 
-        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteHandled);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteHandled);
     }
     else
     {
@@ -1190,7 +1190,7 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
             rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
         else
             Log(("pgmXXGst32BitWriteHandlerCR3: returns %Rrc\n", rc));
-        STAM_COUNTER_INC(&pVM->pgm.s.StatGCGuestCR3WriteUnhandled);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteUnhandled);
     }
     return rc;
 }
