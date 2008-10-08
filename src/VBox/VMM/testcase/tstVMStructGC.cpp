@@ -451,7 +451,7 @@ int main()
     GEN_CHECK_OFF(PGM, pRamRangesRC);
     GEN_CHECK_OFF(PGM, pRomRangesR3);
     GEN_CHECK_OFF(PGM, pRomRangesR0);
-    GEN_CHECK_OFF(PGM, pRomRangesGC);
+    GEN_CHECK_OFF(PGM, pRomRangesRC);
     GEN_CHECK_OFF(PGM, cbRamSize);
     GEN_CHECK_OFF(PGM, pTreesHC);
     GEN_CHECK_OFF(PGM, pTreesGC);
@@ -478,9 +478,11 @@ int main()
     GEN_CHECK_OFF(PGM, fA20Enabled);
     GEN_CHECK_OFF(PGM, fSyncFlags);
     GEN_CHECK_OFF(PGM, CritSect);
-#ifdef PGM_PD_CACHING_ENABLED
-    GEN_CHECK_OFF(PGM, pdcache);
-#endif
+    GEN_CHECK_OFF(PGM, pPoolR3);
+    GEN_CHECK_OFF(PGM, pPoolR0);
+    GEN_CHECK_OFF(PGM, pPoolRC);
+    GEN_CHECK_OFF(PGM, fNoMorePhysWrites);
+    GEN_CHECK_OFF(PGM, fPhysCacheFlushPending);
     GEN_CHECK_OFF(PGM, pgmphysreadcache);
     GEN_CHECK_OFF(PGM, pgmphyswritecache);
     GEN_CHECK_OFF(PGM, ChunkR3Map);
@@ -581,7 +583,7 @@ int main()
     GEN_CHECK_SIZE(PGMROMRANGE);
     GEN_CHECK_OFF(PGMROMRANGE, pNextR3);
     GEN_CHECK_OFF(PGMROMRANGE, pNextR0);
-    GEN_CHECK_OFF(PGMROMRANGE, pNextGC);
+    GEN_CHECK_OFF(PGMROMRANGE, pNextRC);
     GEN_CHECK_OFF(PGMROMRANGE, GCPhys);
     GEN_CHECK_OFF(PGMROMRANGE, GCPhysLast);
     GEN_CHECK_OFF(PGMROMRANGE, cb);
