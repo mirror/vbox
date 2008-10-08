@@ -3236,7 +3236,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
      *
      * @todo A20 setting
      */
-    if (   pVM->pgm.s.CTXSUFF(pPool)
+    if (   pVM->pgm.s.CTX_SUFF(pPool)
         && !HWACCMIsNestedPagingActive(pVM)
         && PGMMODE_WITH_PAGING(pVM->pgm.s.enmGuestMode) != PGMMODE_WITH_PAGING(enmGuestMode))
     {

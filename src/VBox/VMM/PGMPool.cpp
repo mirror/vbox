@@ -179,8 +179,9 @@ int pgmR3PoolInit(PVM pVM)
     rc = MMR3HyperAllocOnceNoRel(pVM, cb, 0, MM_TAG_PGM_POOL, (void **)&pPool);
     if (VBOX_FAILURE(rc))
         return rc;
-    pVM->pgm.s.pPoolHC = pPool;
-    pVM->pgm.s.pPoolGC = MMHyperHC2GC(pVM, pPool);
+    pVM->pgm.s.pPoolR3 = pPool;
+    pVM->pgm.s.pPoolR0 = MMHyperR3ToR0(pVM, pPool);
+    pVM->pgm.s.pPoolRC = MMHyperR3ToRC(pVM, pPool);
 
     /*
      * Initialize it.
@@ -379,21 +380,21 @@ int pgmR3PoolInit(PVM pVM)
  */
 void pgmR3PoolRelocate(PVM pVM)
 {
-    pVM->pgm.s.pPoolGC = MMHyperHC2GC(pVM, pVM->pgm.s.pPoolHC);
-    pVM->pgm.s.pPoolHC->pVMGC = pVM->pVMGC;
+    pVM->pgm.s.pPoolRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pPoolR3);
+    pVM->pgm.s.pPoolR3->pVMGC = pVM->pVMRC;
 #ifdef PGMPOOL_WITH_USER_TRACKING
-    pVM->pgm.s.pPoolHC->paUsersGC = MMHyperHC2GC(pVM, pVM->pgm.s.pPoolHC->paUsersHC);
+    pVM->pgm.s.pPoolR3->paUsersGC = MMHyperHC2GC(pVM, pVM->pgm.s.pPoolR3->paUsersHC);
 #endif
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
-    pVM->pgm.s.pPoolHC->paPhysExtsGC = MMHyperHC2GC(pVM, pVM->pgm.s.pPoolHC->paPhysExtsHC);
+    pVM->pgm.s.pPoolR3->paPhysExtsGC = MMHyperHC2GC(pVM, pVM->pgm.s.pPoolR3->paPhysExtsHC);
 #endif
 #ifdef PGMPOOL_WITH_MONITORING
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "pgmPoolAccessHandler", &pVM->pgm.s.pPoolHC->pfnAccessHandlerRC);
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "pgmPoolAccessHandler", &pVM->pgm.s.pPoolR3->pfnAccessHandlerRC);
     AssertReleaseRC(rc);
     /* init order hack. */
-    if (!pVM->pgm.s.pPoolHC->pfnAccessHandlerR0)
+    if (!pVM->pgm.s.pPoolR3->pfnAccessHandlerR0)
     {
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "pgmPoolAccessHandler", &pVM->pgm.s.pPoolHC->pfnAccessHandlerR0);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "pgmPoolAccessHandler", &pVM->pgm.s.pPoolR3->pfnAccessHandlerR0);
         AssertReleaseRC(rc);
     }
 #endif
@@ -422,7 +423,7 @@ void pgmR3PoolReset(PVM pVM)
  */
 VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
 {
-    PPGMPOOL pPool = pVM->pgm.s.pPoolHC;
+    PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
     AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_INTERNAL_ERROR);
 
     /*
@@ -509,8 +510,8 @@ static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE 
  */
 static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
-    STAM_PROFILE_START(&pVM->pgm.s.pPoolHC->StatMonitorHC, a);
-    PPGMPOOL pPool = pVM->pgm.s.pPoolHC;
+    STAM_PROFILE_START(&pVM->pgm.s.pPoolR3->StatMonitorHC, a);
+    PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
     PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)pvUser;
     LogFlow(("pgmR3PoolAccessHandler: GCPhys=%VGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              GCPhys, pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));

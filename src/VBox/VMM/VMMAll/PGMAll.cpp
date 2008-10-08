@@ -784,7 +784,7 @@ VMMDECL(int)  PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
 VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
-    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
@@ -836,7 +836,7 @@ VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, P
 VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
-    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
     PPGMPOOLPAGE   pShwPage;
 
     Assert(!HWACCMIsNestedPagingActive(pVM));
@@ -872,7 +872,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
     PX86PML4E      pPml4e;
     PPGMPOOLPAGE   pShwPage;
     int            rc;
@@ -976,7 +976,7 @@ VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPd
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
     PX86PML4E      pPml4e;
     PPGMPOOLPAGE   pShwPage;
 
@@ -1018,7 +1018,7 @@ VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, P
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
-    PPGMPOOL       pPool  = pPGM->CTXSUFF(pPool);
+    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
     PEPTPML4       pPml4  = (PEPTPML4)pPGM->pHCNestedRoot;
     PEPTPML4E      pPml4e;
     PPGMPOOLPAGE   pShwPage;
@@ -1749,6 +1749,175 @@ void pgmUnlock(PVM pVM)
     PDMCritSectLeave(&pVM->pgm.s.CritSect);
 }
 
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+
+/**
+ * Temporarily maps one guest page specified by GC physical address.
+ * These pages must have a physical mapping in HC, i.e. they cannot be MMIO pages.
+ *
+ * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
+ * reused after 8 mappings (or perhaps a few more if you score with the cache).
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPhys      GC Physical address of the page.
+ * @param   ppv         Where to store the address of the mapping.
+ */
+VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+{
+    AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("GCPhys=%VGp\n", GCPhys));
+
+    /*
+     * Get the ram range.
+     */
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    while (pRam && GCPhys - pRam->GCPhys >= pRam->cb)
+        pRam = pRam->CTX_SUFF(pNext);
+    if (!pRam)
+    {
+        AssertMsgFailed(("Invalid physical address %VGp!\n", GCPhys));
+        return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+    }
+
+    /*
+     * Pass it on to PGMDynMapHCPage.
+     */
+    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
+    //Log(("PGMDynMapGCPage: GCPhys=%VGp HCPhys=%VHp\n", GCPhys, HCPhys));
+    return PGMDynMapHCPage(pVM, HCPhys, ppv);
+}
+
+
+/**
+ * Temporarily maps one guest page specified by unaligned GC physical address.
+ * These pages must have a physical mapping in HC, i.e. they cannot be MMIO pages.
+ *
+ * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
+ * reused after 8 mappings (or perhaps a few more if you score with the cache).
+ *
+ * The caller is aware that only the speicifed page is mapped and that really bad things
+ * will happen if writing beyond the page!
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPhys      GC Physical address within the page to be mapped.
+ * @param   ppv         Where to store the address of the mapping address corresponding to GCPhys.
+ */
+VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+{
+    /*
+     * Get the ram range.
+     */
+    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
+    while (pRam && GCPhys - pRam->GCPhys >= pRam->cb)
+        pRam = pRam->CTX_SUFF(pNext);
+    if (!pRam)
+    {
+        AssertMsgFailed(("Invalid physical address %VGp!\n", GCPhys));
+        return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+    }
+
+    /*
+     * Pass it on to PGMDynMapHCPageOff.
+     */
+    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
+    return PGMDynMapHCPageOff(pVM, HCPhys, ppv);
+}
+
+
+/**
+ * Temporarily maps one host page specified by HC physical address.
+ *
+ * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
+ * reused after 8 mappings (or perhaps a few more if you score with the cache).
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   HCPhys      HC Physical address of the page.
+ * @param   ppv         Where to store the address of the mapping.
+ */
+VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
+{
+    AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%VHp\n", HCPhys));
+# ifdef IN_GC
+
+    /*
+     * Check the cache.
+     */
+    register unsigned iCache;
+    if (    pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 0] == HCPhys
+        ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 1] == HCPhys
+        ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 2] == HCPhys
+        ||  pVM->pgm.s.aHCPhysDynPageMapCache[iCache = 3] == HCPhys)
+    {
+        static const uint8_t au8Trans[MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT][RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache)] =
+        {
+            { 0, 5, 6, 7 },
+            { 0, 1, 6, 7 },
+            { 0, 1, 2, 7 },
+            { 0, 1, 2, 3 },
+            { 4, 1, 2, 3 },
+            { 4, 5, 2, 3 },
+            { 4, 5, 6, 3 },
+            { 4, 5, 6, 7 },
+        };
+        Assert(RT_ELEMENTS(au8Trans) == 8);
+        Assert(RT_ELEMENTS(au8Trans[0]) == 4);
+        int iPage = au8Trans[pVM->pgm.s.iDynPageMapLast][iCache];
+        void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
+        *ppv = pv;
+        STAM_COUNTER_INC(&pVM->pgm.s.StatDynMapCacheHits);
+        //Log(("PGMGCDynMapHCPage: HCPhys=%VHp pv=%VGv iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
+        return VINF_SUCCESS;
+    }
+    Assert(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 4);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatDynMapCacheMisses);
+
+    /*
+     * Update the page tables.
+     */
+    register unsigned iPage = pVM->pgm.s.iDynPageMapLast;
+    pVM->pgm.s.iDynPageMapLast = iPage = (iPage + 1) & ((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) - 1);
+    Assert((MM_HYPER_DYNAMIC_SIZE >> PAGE_SHIFT) == 8);
+
+    pVM->pgm.s.aHCPhysDynPageMapCache[iPage & (RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) - 1)] = HCPhys;
+    pVM->pgm.s.paDynPageMap32BitPTEsGC[iPage].u = (uint32_t)HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
+    pVM->pgm.s.paDynPageMapPaePTEsGC[iPage].u   =           HCPhys | X86_PTE_P | X86_PTE_A | X86_PTE_D;
+
+    void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
+    *ppv = pv;
+    ASMInvalidatePage(pv);
+    Log4(("PGMGCDynMapHCPage: HCPhys=%VHp pv=%VGv iPage=%d\n", HCPhys, pv, iPage));
+    return VINF_SUCCESS;
+
+#else  /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+    AssertFailed();
+    return VERR_NOT_IMPLEMENTED;
+#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+}
+
+
+/**
+ * Temporarily maps one host page specified by HC physical address, returning
+ * pointer within the page.
+ *
+ * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
+ * reused after 8 mappings (or perhaps a few more if you score with the cache).
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   HCPhys      HC Physical address of the page.
+ * @param   ppv         Where to store the address corresponding to HCPhys.
+ */
+VMMDECL(int) PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv)
+{
+    int rc = PGMDynMapHCPage(pVM, HCPhys, ppv);
+    if (RT_SUCCESS(rc))
+        *ppv = (void *)((uintptr_t)*ppv | (HCPhys & PAGE_OFFSET_MASK));
+    return rc;
+}
+
+#endif /* IN_GC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 #ifdef VBOX_STRICT
 

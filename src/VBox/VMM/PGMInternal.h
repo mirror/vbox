@@ -219,10 +219,8 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef IN_GC
-# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) PGMGCDynMapHCPage(pVM, HCPhys, (void **)(ppv))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) PGMR0DynMapHCPage(pVM, HCPhys, (void **)(ppv))
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) PGMDynMapHCPage(pVM, HCPhys, (void **)(ppv))
 #else
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
 #endif
@@ -239,10 +237,8 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef IN_GC
-# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMGCDynMapGCPage(pVM, GCPhys, (void **)(ppv))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMR0DynMapGCPage(pVM, GCPhys, (void **)(ppv))
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMDynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
@@ -259,10 +255,8 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef IN_GC
-# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMGCDynMapGCPageEx(pVM, GCPhys, (void **)(ppv))
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMR0DynMapGCPageEx(pVM, GCPhys, (void **)(ppv))
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMDynMapGCPageOff(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
@@ -926,9 +920,14 @@ typedef struct PGMRAMRANGE
     uint32_t                            fFlags;
     uint32_t                            u32Alignment; /**< alignment. */
 #ifndef VBOX_WITH_NEW_PHYS_CODE
-    /** HC virtual lookup ranges for chunks - R3/R0 Ptr.
-     * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges. */
+    /** R3 virtual lookup ranges for chunks.
+     * Currently only used with MM_RAM_FLAGS_DYNAMIC_ALLOC ranges.
+     * @remarks This is occationally accessed from ring-0!! (not darwin) */
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    R3PTRTYPE(PRTR3UINTPTR)             paChunkR3Ptrs;
+# else
     R3R0PTRTYPE(PRTR3UINTPTR)           paChunkR3Ptrs;
+# endif
 #endif
     /** Start of the HC mapping of the range. This is only used for MMIO2. */
     R3PTRTYPE(void *)                   pvR3;
@@ -994,8 +993,8 @@ typedef struct PGMROMRANGE
     R3PTRTYPE(struct PGMROMRANGE *) pNextR3;
     /** Pointer to the next range - R0. */
     R0PTRTYPE(struct PGMROMRANGE *) pNextR0;
-    /** Pointer to the next range - GC. */
-    RCPTRTYPE(struct PGMROMRANGE *) pNextGC;
+    /** Pointer to the next range - RC. */
+    RCPTRTYPE(struct PGMROMRANGE *) pNextRC;
     /** Pointer alignment */
     RTRCPTR                         GCPtrAlignment;
     /** Address of the range. */
@@ -1061,20 +1060,19 @@ typedef PGMMMIO2RANGE *PPGMMMIO2RANGE;
 
 
 
-/** @todo r=bird: fix typename. */
 /**
  * PGMPhysRead/Write cache entry
  */
-typedef struct PGMPHYSCACHE_ENTRY
+typedef struct PGMPHYSCACHEENTRY
 {
-    /** HC pointer to physical page */
-    R3PTRTYPE(uint8_t *)            pbHC;
+    /** R3 pointer to physical page. */
+    R3PTRTYPE(uint8_t *)            pbR3;
     /** GC Physical address for cache entry */
     RTGCPHYS                        GCPhys;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
     RTGCPHYS                        u32Padding0; /**< alignment padding. */
 #endif
-} PGMPHYSCACHE_ENTRY;
+} PGMPHYSCACHEENTRY;
 
 /**
  * PGMPhysRead/Write cache to reduce REM memory access overhead
@@ -1084,7 +1082,7 @@ typedef struct PGMPHYSCACHE
     /** Bitmap of valid cache entries */
     uint64_t                        aEntries;
     /** Cache entries */
-    PGMPHYSCACHE_ENTRY              Entry[PGM_MAX_PHYSCACHE_ENTRIES];
+    PGMPHYSCACHEENTRY               Entry[PGM_MAX_PHYSCACHE_ENTRIES];
 } PGMPHYSCACHE;
 
 
@@ -1126,7 +1124,11 @@ typedef struct PGMCHUNKR3MAPTLBE
     uint32_t                            u32Padding; /**< alignment padding. */
 #endif
     /** The chunk map. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PPGMCHUNKR3MAP) volatile  pChunk;
+#else
     R3R0PTRTYPE(PPGMCHUNKR3MAP) volatile  pChunk;
+#endif
 } PGMCHUNKR3MAPTLBE;
 /** Pointer to the an allocation chunk ring-3 mapping TLB entry. */
 typedef PGMCHUNKR3MAPTLBE *PPGMCHUNKR3MAPTLBE;
@@ -1172,15 +1174,27 @@ typedef struct PGMCHUNKR3MAPTLB
 typedef struct PGMPAGER3MAPTLBE
 {
     /** Address of the page. */
-    RTGCPHYS volatile                    GCPhys;
+    RTGCPHYS volatile                   GCPhys;
     /** The guest page. */
-    R3R0PTRTYPE(PPGMPAGE) volatile       pPage;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PPGMPAGE) volatile        pPage;
+#else
+    R3R0PTRTYPE(PPGMPAGE) volatile      pPage;
+#endif
     /** Pointer to the page mapping tracking structure, PGMCHUNKR3MAP. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PPGMCHUNKR3MAP) volatile  pMap;
+#else
     R3R0PTRTYPE(PPGMCHUNKR3MAP) volatile pMap;
+#endif
     /** The address */
-    R3R0PTRTYPE(void *) volatile         pv;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(void *) volatile          pv;
+#else
+    R3R0PTRTYPE(void *) volatile        pv;
+#endif
 #if HC_ARCH_BITS == 32
-    uint32_t                             u32Padding; /**< alignment padding. */
+    uint32_t                            u32Padding; /**< alignment padding. */
 #endif
 } PGMPAGER3MAPTLBE;
 /** Pointer to an entry in the HC physical TLB. */
@@ -1404,7 +1418,11 @@ typedef struct PGMPOOLPAGE
     /** AVL node code with the (HC) physical address of this page. */
     AVLOHCPHYSNODECORE  Core;
     /** Pointer to the HC mapping of the page. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(void *)   pvPageHC;
+#else
     R3R0PTRTYPE(void *) pvPageHC;
+#endif
     /** The guest physical address. */
 #if HC_ARCH_BITS == 32 && GC_ARCH_BITS == 64
     uint32_t            Alignment0;
@@ -1657,8 +1675,8 @@ typedef struct PGMPOOL
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#ifdef IN_GC
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)    pgmGCPoolMapPage((pVM), (pPage))
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)    pgmPoolMapPage((pVM), (pPage))
 #else
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)    ((pPage)->pvPageHC)
 #endif
@@ -1954,7 +1972,11 @@ typedef struct PGM
     /** @name 32-bit Guest Paging.
      * @{ */
     /** The guest's page directory, HC pointer. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PX86PD)           pGuestPDHC;
+#else
     R3R0PTRTYPE(PX86PD)         pGuestPDHC;
+#endif
     /** The guest's page directory, static GC mapping. */
     RCPTRTYPE(PX86PD)           pGuestPDGC;
     /** @} */
@@ -1964,11 +1986,19 @@ typedef struct PGM
     /** The guest's page directory pointer table, static GC mapping. */
     RCPTRTYPE(PX86PDPT)         pGstPaePDPTGC;
     /** The guest's page directory pointer table, HC pointer. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PX86PDPT)         pGstPaePDPTHC;
+#else
     R3R0PTRTYPE(PX86PDPT)       pGstPaePDPTHC;
+#endif
     /** The guest's page directories, HC pointers.
      * These are individual pointers and don't have to be adjecent.
      * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PX86PDPAE)        apGstPaePDsHC[4];
+#else
     R3R0PTRTYPE(PX86PDPAE)      apGstPaePDsHC[4];
+#endif
     /** The guest's page directories, static GC mapping.
      * Unlike the HC array the first entry can be accessed as a 2048 entry PD.
      * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
@@ -1982,13 +2012,21 @@ typedef struct PGM
     /** @name AMD64 Guest Paging.
      * @{ */
     /** The guest's page directory pointer table, HC pointer. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
     R3R0PTRTYPE(PX86PML4)       pGstPaePML4HC;
+#else
+    R3R0PTRTYPE(PX86PML4)       pGstPaePML4HC;
+#endif
     /** @} */
 
     /** @name 32-bit Shadow Paging
      * @{ */
     /** The 32-Bit PD - HC Ptr. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PX86PD)           pHC32BitPD;
+#else
     R3R0PTRTYPE(PX86PD)         pHC32BitPD;
+#endif
     /** The 32-Bit PD - GC Ptr. */
     RCPTRTYPE(PX86PD)           pGC32BitPD;
 #if HC_ARCH_BITS == 64
@@ -2003,7 +2041,11 @@ typedef struct PGM
     /** The four PDs for the low 4GB - HC Ptr.
      * Even though these are 4 pointers, what they point at is a single table.
      * Thus, it's possible to walk the 2048 entries starting where apHCPaePDs[0] points. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PX86PDPAE)        apHCPaePDs[4];
+#else
     R3R0PTRTYPE(PX86PDPAE)      apHCPaePDs[4];
+#endif
     /** The four PDs for the low 4GB - GC Ptr.
      * Same kind of mapping as apHCPaePDs. */
     RCPTRTYPE(PX86PDPAE)        apGCPaePDs[4];
@@ -2025,18 +2067,30 @@ typedef struct PGM
     RTRCPTR                    alignment5; /**< structure size alignment. */
 #endif
     /** The Page Map Level 4 table - HC Ptr. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PX86PML4)         pHCPaePML4;
+#else
     R3R0PTRTYPE(PX86PML4)       pHCPaePML4;
+#endif
     /** The Physical Address (HC) of the Page Map Level 4 table. */
     RTHCPHYS                    HCPhysPaePML4;
     /** The pgm pool page descriptor for the current active CR3. */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PPGMPOOLPAGE)     pHCShwAmd64CR3;
+#else
     R3R0PTRTYPE(PPGMPOOLPAGE)   pHCShwAmd64CR3;
+#endif
 
     /** @}*/
 
     /** @name Nested Shadow Paging
      * @{ */
     /** Root table; format depends on the host paging mode (AMD-V) or EPT */
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(void *)           pHCNestedRoot;
+#else
     R3R0PTRTYPE(void *)         pHCNestedRoot;
+#endif
     /** The Physical Address (HC) of the nested paging root. */
     RTHCPHYS                    HCPhysNestedRoot;
 
@@ -2147,9 +2201,9 @@ typedef struct PGM
      * This is sorted by physical address and contains no overlapping ranges. */
     R3PTRTYPE(PPGMROMRANGE)         pRomRangesR3;
     /** R0 pointer corresponding to PGM::pRomRangesR3. */
-    R0PTRTYPE(PPGMRAMRANGE)         pRomRangesR0;
-    /** GC pointer corresponding to PGM::pRomRangesR3. */
-    RCPTRTYPE(PPGMRAMRANGE)         pRomRangesGC;
+    R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
+    /** RC pointer corresponding to PGM::pRomRangesR3. */
+    RCPTRTYPE(PPGMROMRANGE)         pRomRangesRC;
     /** Alignment padding. */
     RTRCPTR                         GCPtrPadding2;
 
@@ -2246,10 +2300,12 @@ typedef struct PGM
      */
     PDMCRITSECT                     CritSect;
 
-    /** Shadow Page Pool - HC Ptr. */
-    R3R0PTRTYPE(PPGMPOOL)           pPoolHC;
-    /** Shadow Page Pool - GC Ptr. */
-    RCPTRTYPE(PPGMPOOL)             pPoolGC;
+    /** Shadow Page Pool - R3 Ptr. */
+    R3PTRTYPE(PPGMPOOL)             pPoolR3;
+    /** Shadow Page Pool - R0 Ptr. */
+    R0PTRTYPE(PPGMPOOL)             pPoolR0;
+    /** Shadow Page Pool - RC Ptr. */
+    RCPTRTYPE(PPGMPOOL)             pPoolRC;
 
     /** We're not in a state which permits writes to guest memory.
      * (Only used in strict builds.) */
@@ -2269,7 +2325,11 @@ typedef struct PGM
     struct
     {
         /** The chunk tree, ordered by chunk id. */
-        R3R0PTRTYPE(PAVLU32NODECORE)  pTree;
+#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+        R3PTRTYPE(PAVLU32NODECORE)  pTree;
+#else
+        R3R0PTRTYPE(PAVLU32NODECORE) pTree;
+#endif
         /** The chunk mapping TLB. */
         PGMCHUNKR3MAPTLB            Tlb;
         /** The number of mapped chunks. */
@@ -2663,8 +2723,8 @@ void            pgmR3PoolRelocate(PVM pVM);
 void            pgmR3PoolReset(PVM pVM);
 
 #endif /* IN_RING3 */
-#ifdef IN_GC
-void           *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+void           *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
 int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
 PPGMPOOLPAGE    pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys);
@@ -3030,7 +3090,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
 }
 #endif /* !IN_GC */
 
-#if !defined(IN_GC) /** @todo && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) */
+#if !defined(IN_GC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 
 # ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
@@ -3150,7 +3210,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
         unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
 #if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES only MapCR3 usage. */
         PRTR3UINTPTR paChunkR3Ptrs = (PRTR3UINTPTR)MMHyperR3ToCC(PGM2VM(pPGM), pRam->paChunkR3Ptrs);
-        *pHCPtr = paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK);
+        *pHCPtr = (RTHCPTR)(paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #else
         *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #endif

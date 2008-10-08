@@ -120,7 +120,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     /* Quick check for a valid guest trap. */
     if (!pPDSrc)
     {
-        LogFlow(("Trap0eHandler: guest PDPTR %d not present CR3=%VGp\n", (pvFault >> X86_PML4_SHIFT) & X86_PML4_MASK, (CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK)));
+#   if PGM_GST_TYPE == PGM_TYPE_AMD64 && GC_ARCH_BITS == 64
+        LogFlow(("Trap0eHandler: guest PML4 %d not present CR3=%VGp\n", (int)(((RTGCUINTPTR)pvFault >> X86_PML4_SHIFT) & X86_PML4_MASK), CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK));
+#   else
+        LogFlow(("Trap0eHandler: guest iPDSrc=%u not present CR3=%VGp\n", iPDSrc, CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK));
+#   endif
         STAM_STATS({ pVM->pgm.s.CTXSUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eGuestTrap; });
         TRPMSetErrorCode(pVM, uErr);
         return VINF_EM_RAW_GUEST_TRAP;
@@ -986,7 +990,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # endif /* IN_RING3 */
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE pShwPdpt = pgmPoolGetPageByHCPhys(pVM, pPml4eDst->u & X86_PML4E_PG_MASK);
@@ -1084,7 +1088,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         /* Guest PDPE not present */
         PX86PDPAE  pPDPAE  = pVM->pgm.s.CTXMID(ap,PaePDs)[0]; /* root of the 2048 PDE array */
         PX86PDEPAE pPDEDst = &pPDPAE->a[iPdpte * X86_PG_PAE_ENTRIES];
-        PPGMPOOL   pPool   = pVM->pgm.s.CTXSUFF(pPool);
+        PPGMPOOL   pPool   = pVM->pgm.s.CTX_SUFF(pPool);
 
         Assert(!(CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte].n.u1Present));
         LogFlow(("InvalidatePage: guest PDPE %d not present; clear shw pdpe\n", iPdpte));
@@ -1311,7 +1315,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
         {
             if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
-                PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+                PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
                 pgmTrackDerefGCPhys(pPool, pShwPage, &pRam->aPages[iPage]);
                 pShwPage->cPresent--;
                 pPool->cPresent--;
@@ -1325,7 +1329,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
         AssertReleaseMsgFailed(("HCPhys=%VHp wasn't found!\n", HCPhys));
 # else  /* !PGMPOOL_WITH_GCPHYS_TRACKING */
     pShwPage->cPresent--;
-    pVM->pgm.s.CTXSUFF(pPool)->cPresent--;
+    pVM->pgm.s.CTX_SUFF(pPool)->cPresent--;
 # endif /* !PGMPOOL_WITH_GCPHYS_TRACKING */
 }
 
@@ -1366,7 +1370,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE p
 # endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
     /* update statistics. */
-    pVM->pgm.s.CTXSUFF(pPool)->cPresent++;
+    pVM->pgm.s.CTX_SUFF(pPool)->cPresent++;
     pShwPage->cPresent++;
     if (pShwPage->iFirstPresent > iPTDst)
         pShwPage->iFirstPresent = iPTDst;
@@ -1804,7 +1808,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
      * Mark the PDE not present. Restart the instruction and let #PF call SyncPT.
      * Yea, I'm lazy.
      */
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPDDst);
 # else
@@ -3139,7 +3143,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PPGMMAPPING pMapping;
     unsigned    iPdNoMapping;
     const bool  fRawR0Enabled = EMIsRawRing0Enabled(pVM);
-    PPGMPOOL    pPool         = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL    pPool         = pVM->pgm.s.CTX_SUFF(pPool);
 
     /* Only check mappings if they are supposed to be put into the shadow page table. */
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
@@ -3659,7 +3663,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 /** @todo call the other two PGMAssert*() functions. */
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-    PPGMPOOL    pPool         = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL    pPool         = pVM->pgm.s.CTX_SUFF(pPool);
 # endif
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64

@@ -437,15 +437,19 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM);
 VMMDECL(unsigned) PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4);
 #endif /* VBOX_STRICT */
 
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+VMMDECL(int)    PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
+VMMDECL(int)    PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
+VMMDECL(int)    PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+VMMDECL(int)    PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+#endif
+
 
 #ifdef IN_GC
 /** @defgroup grp_pgm_gc  The PGM Guest Context API
  * @ingroup grp_pgm
  * @{
  */
-VMMRCDECL(int)  PGMGCDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
-VMMRCDECL(int)  PGMGCDynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv);
-VMMRCDECL(int)  PGMGCDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
 VMMRCDECL(int)  PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 /** @} */
 #endif /* IN_GC */
@@ -458,11 +462,6 @@ VMMRCDECL(int)  PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
  */
 VMMR0DECL(int)  PGMR0PhysAllocateHandyPages(PVM pVM);
 VMMR0DECL(int)  PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-VMMR0DECL(int)  PGMR0DynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
-VMMR0DECL(int)  PGMR0DynMapGCPageEx(PVM pVM, RTGCPHYS GCPhys, void **ppv);
-VMMR0DECL(int)  PGMR0DynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-# endif
 /** @} */
 #endif /* IN_RING0 */
 

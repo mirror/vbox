@@ -1339,19 +1339,19 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                      */
                     pRomNew->pNextR3 = pRom;
                     pRomNew->pNextR0 = pRom ? MMHyperCCToR0(pVM, pRom) : NIL_RTR0PTR;
-                    pRomNew->pNextGC = pRom ? MMHyperCCToRC(pVM, pRom) : NIL_RTRCPTR;
+                    pRomNew->pNextRC = pRom ? MMHyperCCToRC(pVM, pRom) : NIL_RTRCPTR;
 
                     if (pRomPrev)
                     {
                         pRomPrev->pNextR3 = pRomNew;
                         pRomPrev->pNextR0 = MMHyperCCToR0(pVM, pRomNew);
-                        pRomPrev->pNextGC = MMHyperCCToRC(pVM, pRomNew);
+                        pRomPrev->pNextRC = MMHyperCCToRC(pVM, pRomNew);
                     }
                     else
                     {
                         pVM->pgm.s.pRomRangesR3 = pRomNew;
                         pVM->pgm.s.pRomRangesR0 = MMHyperCCToR0(pVM, pRomNew);
-                        pVM->pgm.s.pRomRangesGC = MMHyperCCToRC(pVM, pRomNew);
+                        pVM->pgm.s.pRomRangesRC = MMHyperCCToRC(pVM, pRomNew);
                     }
 
                     REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false); /** @todo fix shadowing and REM. */

@@ -51,7 +51,7 @@ VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
        )
     {
         RTGCPHYS off = GCPhys - pVM->pgm.s.pgmphysreadcache.Entry[iCacheIndex].GCPhys;
-        return *(PGMPHYS_DATATYPE *)(pVM->pgm.s.pgmphysreadcache.Entry[iCacheIndex].pbHC + off);
+        return *(PGMPHYS_DATATYPE *)(pVM->pgm.s.pgmphysreadcache.Entry[iCacheIndex].pbR3 + off);
     }
 #endif /* PGM_PHYSMEMACCESS_CACHING */
     PGMPHYS_DATATYPE val;
@@ -93,7 +93,7 @@ VMMDECL(void) PGMPHYSFN_WRITENAME(PVM pVM, RTGCPHYS GCPhys, PGMPHYS_DATATYPE val
        )
     {
         RTGCPHYS off = GCPhys - pVM->pgm.s.pgmphyswritecache.Entry[iCacheIndex].GCPhys;
-        *(PGMPHYS_DATATYPE *)(pVM->pgm.s.pgmphyswritecache.Entry[iCacheIndex].pbHC + off) = val;
+        *(PGMPHYS_DATATYPE *)(pVM->pgm.s.pgmphyswritecache.Entry[iCacheIndex].pbR3 + off) = val;
         return;
     }
 #endif /* PGM_PHYSMEMACCESS_CACHING */

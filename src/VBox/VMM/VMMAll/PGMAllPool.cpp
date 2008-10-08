@@ -86,7 +86,7 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
 }
 
 
-#ifdef IN_GC
+#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 /**
  * Maps a pool page into the current context.
  *
@@ -94,19 +94,20 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
  * @param   pVM     The VM handle.
  * @param   pPage   The page to map.
  */
-void *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
+void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
 {
     /* general pages. */
     if (pPage->idx >= PGMPOOL_IDX_FIRST)
     {
-        Assert(pPage->idx < pVM->pgm.s.pPoolGC->cCurPages);
+        Assert(pPage->idx < pVM->pgm.s.CTX_SUFF(pPool)->cCurPages);
         void *pv;
-        int rc = PGMGCDynMapHCPage(pVM, pPage->Core.Key, &pv);
+        int rc = PGMDynMapHCPage(pVM, pPage->Core.Key, &pv);
         AssertReleaseRC(rc);
         return pv;
     }
 
     /* special pages. */
+# ifdef IN_GC
     switch (pPage->idx)
     {
         case PGMPOOL_IDX_PD:
@@ -126,8 +127,41 @@ void *pgmGCPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
     }
+
+# else  /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+    RTHCPHYS HCPhys;
+    switch (pPage->idx)
+    {
+        case PGMPOOL_IDX_PD:
+            HCPhys = pVM->pgm.s.HCPhys32BitPD;
+            break;
+        case PGMPOOL_IDX_PAE_PD:
+        case PGMPOOL_IDX_PAE_PD_0:
+            HCPhys = pVM->pgm.s.aHCPhysPaePDs[0];
+            break;
+        case PGMPOOL_IDX_PAE_PD_1:
+            HCPhys = pVM->pgm.s.aHCPhysPaePDs[1];
+            break;
+        case PGMPOOL_IDX_PAE_PD_2:
+            HCPhys = pVM->pgm.s.aHCPhysPaePDs[2];
+            break;
+        case PGMPOOL_IDX_PAE_PD_3:
+            HCPhys = pVM->pgm.s.aHCPhysPaePDs[3];
+            break;
+        case PGMPOOL_IDX_PDPT:
+            HCPhys = pVM->pgm.s.HCPhysPaePDPT;
+            break;
+        default:
+            AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
+            return NULL;
+    }
+    void *pv;
+    int rc = PGMDynMapHCPage(pVM, pPage->Core.Key, &pv);
+    AssertReleaseRC(rc);
+    return pv;
+# endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 }
-#endif /* IN_GC */
+#endif /* IN_GC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 
 #ifdef PGMPOOL_WITH_MONITORING
@@ -212,6 +246,12 @@ DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFau
 {
 #ifdef IN_GC
     return (const void *)((RTGCUINTPTR)pvFault & ~(RTGCUINTPTR)(cbEntry - 1));
+
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+    void *pvRet;
+    int rc = PGMDynMapGCPageOff(pPool->pVMHC, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
+    AssertFatalRCSuccess(rc);
+    return pvRet;
 
 #elif defined(IN_RING0)
     void *pvRet;
@@ -949,8 +989,8 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE
  */
 DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
-    STAM_PROFILE_START(&pVM->pgm.s.CTXSUFF(pPool)->CTXSUFF(StatMonitor), a);
-    PPGMPOOL        pPool = pVM->pgm.s.CTXSUFF(pPool);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pPool)->CTXSUFF(StatMonitor), a);
+    PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
     LogFlow(("pgmPoolAccessHandler: pvFault=%VGv pPage=%p:{.idx=%d} GCPhysFault=%VGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
@@ -982,7 +1022,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         if (!(Cpu.prefix & (PREFIX_REP | PREFIX_REPNE)))
         {
              rc = pgmPoolAccessHandlerSimple(pVM, pPool, pPage, &Cpu, pRegFrame, GCPhysFault, pvFault);
-             STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTXSUFF(pPool)->CTXSUFF(StatMonitor), &pPool->CTXMID(StatMonitor,Handled), a);
+             STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTXSUFF(StatMonitor), &pPool->CTXMID(StatMonitor,Handled), a);
              return rc;
         }
 
@@ -1004,7 +1044,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             )
         {
              rc = pgmPoolAccessHandlerSTOSD(pVM, pPool, pPage, &Cpu, pRegFrame, GCPhysFault, pvFault);
-             STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTXSUFF(pPool)->CTXSUFF(StatMonitor), &pPool->CTXMID(StatMonitor,RepStosd), a);
+             STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTXSUFF(StatMonitor), &pPool->CTXMID(StatMonitor,RepStosd), a);
              return rc;
         }
 
@@ -1025,7 +1065,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     rc = pgmPoolAccessHandlerFlush(pVM, pPool, pPage, &Cpu, pRegFrame, GCPhysFault, pvFault);
     if (rc == VINF_EM_RAW_EMULATE_INSTR && fReused)
         rc = VINF_SUCCESS;
-    STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTXSUFF(pPool)->CTXSUFF(StatMonitor), &pPool->CTXMID(StatMonitor,FlushPage), a);
+    STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTXSUFF(StatMonitor), &pPool->CTXMID(StatMonitor,FlushPage), a);
     return rc;
 }
 
@@ -1835,7 +1875,7 @@ static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 void pgmPoolMonitorModifiedClearAll(PVM pVM)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     LogFlow(("pgmPoolMonitorModifiedClearAll: cModifiedPages=%d\n", pPool->cModifiedPages));
 
     unsigned cPages = 0; NOREF(cPages);
@@ -1864,7 +1904,7 @@ void pgmPoolMonitorModifiedClearAll(PVM pVM)
  */
 void pgmPoolClearAll(PVM pVM)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);
     LogFlow(("pgmPoolClearAll: cUsedPages=%d\n", pPool->cUsedPages));
 
@@ -2374,7 +2414,7 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
 static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs)
 {
     LogFlow(("pgmPoolTrackFlushGCPhysPT: HCPhys=%RHp iShw=%d cRefs=%d\n", pPhysPage->HCPhys, iShw, cRefs));
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     /*
      * Assert sanity.
@@ -2462,7 +2502,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
  */
 void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool); NOREF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool); NOREF(pPool);
     LogFlow(("pgmPoolTrackFlushGCPhysPT: HCPhys=%RHp iShw=%d cRefs=%d\n", pPhysPage->HCPhys, iShw, cRefs));
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
     pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, iShw, cRefs);
@@ -2480,7 +2520,7 @@ void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint1
  */
 void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTs, f);
     LogFlow(("pgmPoolTrackFlushGCPhysPTs: HCPhys=%RHp iPhysExt\n", pPhysPage->HCPhys, iPhysExt));
 
@@ -2527,7 +2567,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
  */
 int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTsSlow, s);
     LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: cUsedPages=%d cPresent=%d HCPhys=%RHp\n",
              pPool->cUsedPages, pPool->cPresent, pPhysPage->HCPhys));
@@ -2763,7 +2803,7 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     uint16_t iPhysExt = pPool->iPhysExtFreeHead;
     if (iPhysExt == NIL_PGMPOOL_PHYSEXT_INDEX)
     {
@@ -2786,7 +2826,7 @@ PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
  */
 void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     Assert(iPhysExt < pPool->cMaxPhysExts);
     PPGMPOOLPHYSEXT pPhysExt = &pPool->CTXSUFF(paPhysExts)[iPhysExt];
     for (unsigned i = 0; i < RT_ELEMENTS(pPhysExt->aidx); i++)
@@ -2804,7 +2844,7 @@ void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
  */
 void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     const uint16_t  iPhysExtStart = iPhysExt;
     PPGMPOOLPHYSEXT pPhysExt;
@@ -2835,7 +2875,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
  */
 static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t iShwPT)
 {
-    PPGMPOOL        pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPHYSEXT paPhysExts = pPool->CTXSUFF(paPhysExts);
 
     /* special common case. */
@@ -3874,7 +3914,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, uint16_t iUser)
  */
 int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_ADV_START(&pPool->StatAlloc, a);
     LogFlow(("pgmPoolAlloc: GCPhys=%VGp enmKind=%d iUser=%#x iUserTable=%#x\n", GCPhys, enmKind, iUser, iUserTable));
     *ppPage = NULL;
@@ -3997,7 +4037,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
 void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
 {
     LogFlow(("pgmPoolFree: HCPhys=%VHp iUser=%#x iUserTable=%#x\n", HCPhys, iUser, iUserTable));
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, HCPhys), iUser, iUserTable);
 }
 
@@ -4013,7 +4053,7 @@ void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
 PPGMPOOLPAGE pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys)
 {
     /** @todo profile this! */
-    PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE pPage = pgmPoolGetPage(pPool, HCPhys);
     Log3(("pgmPoolGetPageByHCPhys: HCPhys=%VHp -> %p:{.idx=%d .GCPhys=%VGp .enmKind=%d}\n",
           HCPhys, pPage, pPage->idx, pPage->GCPhys, pPage->enmKind));
@@ -4032,6 +4072,6 @@ PPGMPOOLPAGE pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys)
 void pgmPoolFlushAll(PVM pVM)
 {
     LogFlow(("pgmPoolFlushAll:\n"));
-    pgmPoolFlushAllInt(pVM->pgm.s.CTXSUFF(pPool));
+    pgmPoolFlushAllInt(pVM->pgm.s.CTX_SUFF(pPool));
 }
 

@@ -485,7 +485,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 PGM_INVL_PG(GCPtr);
             }
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
-            PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
             pVM->pgm.s.pGstPaePML4HC = (R3R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
 
@@ -563,7 +563,7 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
         pVM->pgm.s.pHCPaePML4    = 0;
         if (pVM->pgm.s.pHCShwAmd64CR3)
         {
-            PPGMPOOL pPool = pVM->pgm.s.CTXSUFF(pPool);
+            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
             pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
             pVM->pgm.s.pHCShwAmd64CR3 = NULL;
         }
@@ -613,7 +613,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                                               pVM->pgm.s.pfnGCGstWriteHandlerCR3, 0,
                                               pVM->pgm.s.pszR3GstWriteHandlerCR3);
 # else  /* PGMPOOL_WITH_MIXED_PT_CR3 */
-        rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool),
+        rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool),
                                          pVM->pgm.s.enmShadowMode == PGMMODE_PAE
                                       || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX
                                       ? PGMPOOL_IDX_PAE_PD
@@ -639,7 +639,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 # endif
     if (pVM->pgm.s.GCPhysGstCR3Monitored != GCPhysCR3)
     {
-        rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT, GCPhysCR3);
+        rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PDPT, GCPhysCR3);
         if (VBOX_FAILURE(rc))
         {
             AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
@@ -660,7 +660,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             {
                 Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
 
-                rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i, GCPhys);
+                rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i, GCPhys);
             }
 
             if (VBOX_FAILURE(rc))
@@ -673,7 +673,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         }
         else if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
         {
-            rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i);
+            rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i);
             AssertRC(rc);
             pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
@@ -709,7 +709,7 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
         rc = PGMHandlerPhysicalDeregister(pVM, pVM->pgm.s.GCPhysGstCR3Monitored);
         AssertRCReturn(rc, rc);
 # else /* PGMPOOL_WITH_MIXED_PT_CR3 */
-        rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool),
+        rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool),
                                            pVM->pgm.s.enmShadowMode == PGMMODE_PAE
                                         || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX
                                         ? PGMPOOL_IDX_PAE_PD
@@ -727,7 +727,7 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
 
     if (pVM->pgm.s.GCPhysGstCR3Monitored != NIL_RTGCPHYS)
     {
-        rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PDPT);
+        rc = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PDPT);
         AssertRC(rc);
     }
 
@@ -737,7 +737,7 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
         if (pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] != NIL_RTGCPHYS)
         {
             Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
-            int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTXSUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i);
+            int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i);
             AssertRC(rc2);
             if (VBOX_FAILURE(rc2))
                 rc = rc2;
