@@ -838,7 +838,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
      * Conclusion, this is a guest trap.
      */
     LogFlow(("PGM: Unhandled #PF -> route trap to recompiler!\n"));
-    STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eGuestPF);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eGuestPFUnh);
     return VINF_EM_RAW_GUEST_TRAP;
 #  else
     /* present, but not a monitored page; perhaps the guest is probing physical memory */
@@ -1564,9 +1564,9 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     /*
      * Assert preconditions.
      */
-    STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPagePD[(GCPtrPage >> GST_PD_SHIFT) & GST_PD_MASK]);
     Assert(PdeSrc.n.u1Present);
     Assert(cPages);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatSyncPagePD[(GCPtrPage >> GST_PD_SHIFT) & GST_PD_MASK]);
 
     /*
      * Get the shadow PDE, find the shadow page table in the pool.
@@ -2277,7 +2277,7 @@ UpperLevelPageFault:
 PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR GCPtrPage)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
-    STAM_COUNTER_INC(&pVM->pgm.s.StatGCSyncPtPD[iPDSrc]);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatSyncPtPD[iPDSrc]);
     LogFlow(("SyncPT: GCPtrPage=%VGv\n", GCPtrPage));
 
 #if   (   PGM_GST_TYPE == PGM_TYPE_32BIT  \
@@ -2470,7 +2470,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                  * Simple AND operation. Table listed for completeness.
                  *
                  */
-                STAM_COUNTER_INC(CTXSUFF(&pVM->pgm.s.StatSynPT4k));
+                STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPT4K));
 # ifdef PGM_SYNC_N_PAGES
                 unsigned        iPTBase   = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                 unsigned        iPTDst    = iPTBase;
@@ -2530,7 +2530,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
              * We'll walk the ram range list in parallel and optimize lookups.
              * We will only sync on shadow page table at a time.
              */
-            STAM_COUNTER_INC(CTXSUFF(&pVM->pgm.s.StatSynPT4M));
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPT4M));
 
             /**
              * @todo It might be more efficient to sync only a part of the 4MB page (similar to what we do for 4kb PDs).

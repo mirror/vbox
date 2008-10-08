@@ -407,14 +407,14 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
         Log2(("PGM: Replaced shared page %#x at %RGp with %#x / %RHp\n", PGM_PAGE_GET_PAGEID(pPage),
               GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
-        STAM_COUNTER_INC(&pVM->pgm.s.StatPageReplaceShared);
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageReplaceShared));
         pVM->pgm.s.cSharedPages--;
 /** @todo err.. what about copying the page content? */
     }
     else
     {
         Log2(("PGM: Replaced zero page %RGp with %#x / %RHp\n", GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
-        STAM_COUNTER_INC(&pVM->pgm.s.StatPageReplaceZero);
+        STAM_COUNTER_INC(&pVM->pgm.s.StatRZPageReplaceZero);
         pVM->pgm.s.cZeroPages--;
 /** @todo verify that the handy page is zero! */
     }
@@ -509,12 +509,12 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
     PPGMCHUNKR3MAPTLBE pTlbe = &pVM->pgm.s.ChunkR3Map.Tlb.aEntries[PGM_CHUNKR3MAPTLB_IDX(idChunk)];
     if (pTlbe->idChunk == idChunk)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.StatChunkR3MapTlbHits);
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,ChunkR3MapTlbHits));
         pMap = pTlbe->pChunk;
     }
     else if (idChunk != NIL_GMM_CHUNKID)
     {
-        STAM_COUNTER_INC(&pVM->pgm.s.StatChunkR3MapTlbMisses);
+        STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,ChunkR3MapTlbMisses));
 
         /*
          * Find the chunk, map it if necessary.
@@ -568,7 +568,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
  */
 int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
 {
-    STAM_COUNTER_INC(&pPGM->CTXMID(StatPage,MapTlbMisses));
+    STAM_COUNTER_INC(&pPGM->CTX_MID_Z(Stat,PageMapTlbMisses));
 
     /*
      * Find the ram range.

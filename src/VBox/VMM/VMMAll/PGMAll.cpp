@@ -1160,7 +1160,7 @@ VMMDECL(int)  PGMGstSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
  */
 VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
-    STAM_PROFILE_START(&CTXMID(pVM->pgm.s.Stat,GstModifyPage), a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
 
     /*
      * Validate input.
@@ -1168,14 +1168,14 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     if (fFlags & X86_PTE_PAE_PG_MASK)
     {
         AssertMsgFailed(("fFlags=%#llx\n", fFlags));
-        STAM_PROFILE_STOP(&CTXMID(pVM->pgm.s.Stat,GstModifyPage), a);
+        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
         return VERR_INVALID_PARAMETER;
     }
 
     if (!cb)
     {
         AssertFailed();
-        STAM_PROFILE_STOP(&CTXMID(pVM->pgm.s.Stat,GstModifyPage), a);
+        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1193,7 +1193,7 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
      */
     int rc = PGM_GST_PFN(ModifyPage, pVM)(pVM, (RTGCUINTPTR)GCPtr, cb, fFlags, fMask);
 
-    STAM_PROFILE_STOP(&CTXMID(pVM->pgm.s.Stat,GstModifyPage), a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
     return rc;
 }
 
@@ -1401,7 +1401,7 @@ VMMDECL(RTHCPHYS) PGMGetInterAmd64CR3(PVM pVM)
  */
 VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
 {
-    STAM_PROFILE_START(&pVM->pgm.s.StatFlushTLB, a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLB), a);
 
     /*
      * Always flag the necessary updates; necessary for hardware acceleration
@@ -1433,9 +1433,9 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
             rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
         }
         if (fGlobal)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatFlushTLBNewCR3Global);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLBNewCR3Global));
         else
-            STAM_COUNTER_INC(&pVM->pgm.s.StatFlushTLBNewCR3);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLBNewCR3));
     }
     else
     {
@@ -1449,12 +1449,12 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
             rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
         }
         if (fGlobal)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatFlushTLBSameCR3Global);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLBSameCR3Global));
         else
-            STAM_COUNTER_INC(&pVM->pgm.s.StatFlushTLBSameCR3);
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLBSameCR3));
     }
 
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatFlushTLB, a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLB), a);
     return rc;
 }
 

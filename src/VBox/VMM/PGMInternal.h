@@ -2414,12 +2414,16 @@ typedef struct PGM
     STAMCOUNTER StatTrackOverflows;                 /**< The number of times the extent list grows to long. */
     STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
 # endif
+    STAMCOUNTER StatSyncPtPD[X86_PG_ENTRIES];       /**< SyncPT - PD distribution. */
+    STAMCOUNTER StatSyncPagePD[X86_PG_ENTRIES];     /**< SyncPage - PD distribution. */
 
     /* R3 only: */
     STAMCOUNTER StatR3DetectedConflicts;            /**< R3: Number of times PGMR3MapHasConflicts() detected a conflict. */
     STAMPROFILE StatR3ResolveConflict;              /**< R3: pgmR3SyncPTResolveConflict() profiling (includes the entire relocation). */
     STAMCOUNTER StatR3GuestPDWrite;                 /**< R3: The total number of times pgmHCGuestPDWriteHandler() was called. */
     STAMCOUNTER StatR3GuestPDWriteConflict;         /**< R3: The number of times GuestPDWriteContlict() detected a conflict. */
+    STAMCOUNTER StatR3DynRamTotal;                  /**< R3: Allocated MBs of guest ram */
+    STAMCOUNTER StatR3DynRamGrow;                   /**< R3: Nr of pgmr3PhysGrowRange calls. */
 
     /* RC only: */
     STAMPROFILE StatRCInvalidatePage;               /**< RC: PGMGCInvalidatePage() profiling. */
@@ -2465,16 +2469,18 @@ typedef struct PGM
     STAMCOUNTER StatRZTrap0eSVWrite;                /**< RC/R0: #PF err kind */
     STAMCOUNTER StatRZTrap0eSVReserved;             /**< RC/R0: #PF err kind */
     STAMCOUNTER StatRZTrap0eSNXE;                   /**< RC/R0: #PF err kind */
-    STAMCOUNTER StatRZTrap0eGuestPF;                /**< RC/R0: Real guest #PF. */
+    STAMCOUNTER StatRZTrap0eGuestPFUnh;             /**< RC/R0: Real guest #PF. */
     STAMCOUNTER StatRZTrap0eGuestPFMapping;         /**< RC/R0: Real guest #PF to HMA or other mapping. */
     STAMCOUNTER StatRZTrap0eWPEmulInRZ;             /**< RC/R0: WP=0 virtualization trap, handled. */
     STAMCOUNTER StatRZTrap0eWPEmulToR3;             /**< RC/R0: WP=0 virtualization trap, chickened out. */
+    STAMCOUNTER StatRZTrap0ePD[X86_PG_ENTRIES];     /**< RC/R0: PD distribution of the #PFs. */
     STAMCOUNTER StatRZGuestCR3WriteHandled;         /**< RC/R0: The number of times WriteHandlerCR3() was successfully called. */
     STAMCOUNTER StatRZGuestCR3WriteUnhandled;       /**< RC/R0: The number of times WriteHandlerCR3() was called and we had to fall back to the recompiler. */
     STAMCOUNTER StatRZGuestCR3WriteConflict;        /**< RC/R0: The number of times WriteHandlerCR3() was called and a conflict was detected. */
     STAMCOUNTER StatRZGuestROMWriteHandled;         /**< RC/R0: The number of times pgmPhysRomWriteHandler() was successfully called. */
     STAMCOUNTER StatRZGuestROMWriteUnhandled;       /**< RC/R0: The number of times pgmPhysRomWriteHandler() was called and we had to fall back to the recompiler */
 
+    /* HC - R3 and (maybe) R0: */
 
     /* RZ & R3: */
     STAMPROFILE StatRZSyncCR3;                      /**< RC/R0: PGMSyncCR3() profiling. */
@@ -2491,6 +2497,8 @@ typedef struct PGM
     STAMCOUNTER StatRZSyncCR3DstSkippedGlobalPT;    /**< RC/R0: The number of times a page table with only global entries wasn't flushed. */
     STAMPROFILE StatRZSyncPT;                       /**< RC/R0: PGMSyncPT() profiling. */
     STAMCOUNTER StatRZSyncPTFailed;                 /**< RC/R0: The number of times PGMSyncPT() failed. */
+    STAMCOUNTER StatRZSyncPT4K;                     /**< RC/R0: Number of 4KB syncs. */
+    STAMCOUNTER StatRZSyncPT4M;                     /**< RC/R0: Number of 4MB syncs. */
     STAMCOUNTER StatRZSyncPagePDNAs;                /**< RC/R0: The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit. */
     STAMCOUNTER StatRZSyncPagePDOutOfSync;          /**< RC/R0: The number of time we've encountered an out-of-sync PD in SyncPage. */
     STAMCOUNTER StatRZAccessedPage;                 /**< RC/R0: The number of pages marked not present for accessed bit emulation. */
@@ -2516,6 +2524,19 @@ typedef struct PGM
     STAMCOUNTER StatRZPageOutOfSyncUser;            /**< RC/R0: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
     STAMPROFILE StatRZPrefetch;                     /**< RC/R0: PGMPrefetchPage. */
+    STAMCOUNTER StatRZChunkR3MapTlbHits;            /**< RC/R0: Ring-3/0 chunk mapper TLB hits. */
+    STAMCOUNTER StatRZChunkR3MapTlbMisses;          /**< RC/R0: Ring-3/0 chunk mapper TLB misses. */
+    STAMCOUNTER StatRZPageMapTlbHits;               /**< RC/R0: Ring-3/0 page mapper TLB hits. */
+    STAMCOUNTER StatRZPageMapTlbMisses;             /**< RC/R0: Ring-3/0 page mapper TLB misses. */
+    STAMCOUNTER StatRZPageReplaceShared;            /**< RC/R0: Times a shared page has been replaced by a private one. */
+    STAMCOUNTER StatRZPageReplaceZero;              /**< RC/R0: Times the zero page has been replaced by a private one. */
+/// @todo    STAMCOUNTER StatRZPageHandyAllocs;              /**< RC/R0: The number of times we've executed GMMR3AllocateHandyPages. */
+    STAMPROFILE StatRZFlushTLB;                     /**< RC/R0: Profiling of the PGMFlushTLB() body. */
+    STAMCOUNTER StatRZFlushTLBNewCR3;               /**< RC/R0: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
+    STAMCOUNTER StatRZFlushTLBNewCR3Global;         /**< RC/R0: The number of times PGMFlushTLB was called with a new CR3, global. (switch) */
+    STAMCOUNTER StatRZFlushTLBSameCR3;              /**< RC/R0: The number of times PGMFlushTLB was called with the same CR3, non-global. (flush) */
+    STAMCOUNTER StatRZFlushTLBSameCR3Global;        /**< RC/R0: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
+    STAMPROFILE StatRZGstModifyPage;                /**< RC/R0: Profiling of the PGMGstModifyPage() body */
 
     STAMPROFILE StatR3SyncCR3;                      /**< R3: PGMSyncCR3() profiling. */
     STAMPROFILE StatR3SyncCR3Handlers;              /**< R3: Profiling of the PGMSyncCR3() update handler section. */
@@ -2531,6 +2552,8 @@ typedef struct PGM
     STAMCOUNTER StatR3SyncCR3DstCacheHit;           /**< R3: The number of times we got some kind of cache hit on a page table. */
     STAMPROFILE StatR3SyncPT;                       /**< R3: PGMSyncPT() profiling. */
     STAMCOUNTER StatR3SyncPTFailed;                 /**< R3: The number of times PGMSyncPT() failed. */
+    STAMCOUNTER StatR3SyncPT4K;                     /**< R3: Number of 4KB syncs. */
+    STAMCOUNTER StatR3SyncPT4M;                     /**< R3: Number of 4MB syncs. */
     STAMCOUNTER StatR3SyncPagePDNAs;                /**< R3: The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit. */
     STAMCOUNTER StatR3SyncPagePDOutOfSync;          /**< R3: The number of time we've encountered an out-of-sync PD in SyncPage. */
     STAMCOUNTER StatR3AccessedPage;                 /**< R3: The number of pages marked not present for accessed bit emulation. */
@@ -2556,46 +2579,19 @@ typedef struct PGM
     STAMCOUNTER StatR3PageOutOfSyncUser;            /**< R3: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
     STAMPROFILE StatR3Prefetch;                     /**< R3: PGMPrefetchPage. */
-
-    /* TODO (cleanup):  */
-
-    STAMCOUNTER StatPageHCMapTlbHits;               /** Ring-3/0 page mapper TLB hits. */
-    STAMCOUNTER StatPageHCMapTlbMisses;             /** Ring-3/0 page mapper TLB misses. */
-    STAMCOUNTER StatChunkR3MapTlbHits;              /** Ring-3/0 chunk mapper TLB hits. */
-    STAMCOUNTER StatChunkR3MapTlbMisses;            /** Ring-3/0 chunk mapper TLB misses. */
-    STAMCOUNTER StatPageReplaceShared;              /** Times a shared page has been replaced by a private one. */
-    STAMCOUNTER StatPageReplaceZero;                /** Times the zero page has been replaced by a private one. */
-    STAMCOUNTER StatPageHandyAllocs;                /** The number of times we've executed GMMR3AllocateHandyPages. */
-
-    STAMCOUNTER StatDynRamTotal;                    /** Allocated MBs of guest ram */
-    STAMCOUNTER StatDynRamGrow;                     /** Nr of pgmr3PhysGrowRange calls. */
-
-    STAMCOUNTER StatRZTrap0ePD[X86_PG_ENTRIES];
-    STAMCOUNTER StatGCSyncPtPD[X86_PG_ENTRIES];
-    STAMCOUNTER StatGCSyncPagePD[X86_PG_ENTRIES];
-
-
-    /** GC: Profiling of the PGMGstModifyPage() body */
-    STAMPROFILE StatGCGstModifyPage;
-    /** HC: Profiling of the PGMGstModifyPage() body */
-    STAMPROFILE StatHCGstModifyPage;
-
-    STAMCOUNTER StatSynPT4kGC;
-    STAMCOUNTER StatSynPT4kHC;
-    STAMCOUNTER StatSynPT4MGC;
-    STAMCOUNTER StatSynPT4MHC;
-
-    /** Profiling of the PGMFlushTLB() body. */
-    STAMPROFILE StatFlushTLB;
-    /** The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
-    STAMCOUNTER StatFlushTLBNewCR3;
-    /** The number of times PGMFlushTLB was called with a new CR3, global. (switch) */
-    STAMCOUNTER StatFlushTLBNewCR3Global;
-    /** The number of times PGMFlushTLB was called with the same CR3, non-global. (flush) */
-    STAMCOUNTER StatFlushTLBSameCR3;
-    /** The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
-    STAMCOUNTER StatFlushTLBSameCR3Global;
-
+    STAMCOUNTER StatR3ChunkR3MapTlbHits;            /**< R3: Ring-3/0 chunk mapper TLB hits. */
+    STAMCOUNTER StatR3ChunkR3MapTlbMisses;          /**< R3: Ring-3/0 chunk mapper TLB misses. */
+    STAMCOUNTER StatR3PageMapTlbHits;               /**< R3: Ring-3/0 page mapper TLB hits. */
+    STAMCOUNTER StatR3PageMapTlbMisses;             /**< R3: Ring-3/0 page mapper TLB misses. */
+    STAMCOUNTER StatR3PageReplaceShared;            /**< R3: Times a shared page has been replaced by a private one. */
+    STAMCOUNTER StatR3PageReplaceZero;              /**< R3: Times the zero page has been replaced by a private one. */
+/// @todo    STAMCOUNTER StatR3PageHandyAllocs;              /**< R3: The number of times we've executed GMMR3AllocateHandyPages. */
+    STAMPROFILE StatR3FlushTLB;                     /**< R3: Profiling of the PGMFlushTLB() body. */
+    STAMCOUNTER StatR3FlushTLBNewCR3;               /**< R3: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
+    STAMCOUNTER StatR3FlushTLBNewCR3Global;         /**< R3: The number of times PGMFlushTLB was called with a new CR3, global. (switch) */
+    STAMCOUNTER StatR3FlushTLBSameCR3;              /**< R3: The number of times PGMFlushTLB was called with the same CR3, non-global. (flush) */
+    STAMCOUNTER StatR3FlushTLBSameCR3Global;        /**< R3: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
+    STAMPROFILE StatR3GstModifyPage;                /**< R3: Profiling of the PGMGstModifyPage() body */
 #endif /* VBOX_WITH_STATISTICS */
 } PGM, *PPGM;
 
@@ -3013,7 +3009,7 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
     PPGMPAGEMAPTLBE pTlbe = &pPGM->CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
     if (pTlbe->GCPhys == (GCPhys & X86_PTE_PAE_PG_MASK))
     {
-        STAM_COUNTER_INC(&pPGM->CTXMID(StatPage,MapTlbHits));
+        STAM_COUNTER_INC(&pPGM->CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
     }
     else
