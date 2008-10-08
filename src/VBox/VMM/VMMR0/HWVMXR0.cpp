@@ -2982,7 +2982,8 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
     Assert(!pVM->hwaccm.s.fNestedPaging);
 
     /* Skip it if a TLB flush is already pending. */
-    if (!fFlushPending)
+    if (   !fFlushPending 
+        && pVM->hwaccm.s.vmx.fVPID)
         VMXR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCVirt);
 
     return VINF_SUCCESS;
