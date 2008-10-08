@@ -127,7 +127,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #    else
         LogFlow(("Trap0eHandler: guest iPDSrc=%u not present CR3=%VGp\n", iPDSrc, CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK));
 #    endif
-        STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eGuestTrap; });
+        STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2GuestTrap; });
         TRPMSetErrorCode(pVM, uErr);
         return VINF_EM_RAW_GUEST_TRAP;
     }
@@ -187,19 +187,19 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
      * If we successfully correct the write protection fault due to dirty bit
      * tracking, or this page fault is a genuine one, then return immediately.
      */
-    STAM_PROFILE_START(&pVM->pgm.s.StatCheckPageFault, e);
+    STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0eTimeCheckPageFault, e);
     rc = PGM_BTH_NAME(CheckPageFault)(pVM, uErr, &pPDDst->a[iPDDst], &pPDSrc->a[iPDSrc], (RTGCUINTPTR)pvFault);
-    STAM_PROFILE_STOP(&pVM->pgm.s.StatCheckPageFault, e);
+    STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeCheckPageFault, e);
     if (    rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT
         ||  rc == VINF_EM_RAW_GUEST_TRAP)
     {
         STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution)
-                     = rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT ? &pVM->pgm.s.StatTrap0eDirtyAndAccessedBits : &pVM->pgm.s.StatTrap0eGuestTrap; });
+                     = rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT ? &pVM->pgm.s.StatRZTrap0eTime2DirtyAndAccessed : &pVM->pgm.s.StatRZTrap0eTime2GuestTrap; });
         LogBird(("Trap0eHandler: returns %s\n", rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT ? "VINF_SUCCESS" : "VINF_EM_RAW_GUEST_TRAP"));
         return rc == VINF_PGM_HANDLED_DIRTY_BIT_FAULT ? VINF_SUCCESS : rc;
     }
 
-    STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0ePD[iPDSrc]);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0ePD[iPDSrc]);
 #  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
     /*
@@ -229,18 +229,18 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
        )
 
     {
-        STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eSyncPT; });
-        STAM_PROFILE_START(&pVM->pgm.s.StatLazySyncPT, f);
+        STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2SyncPT; });
+        STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0eTimeSyncPT, f);
         LogFlow(("=>SyncPT %04x = %08x\n", iPDSrc, PdeSrc.au32[0]));
         rc = PGM_BTH_NAME(SyncPT)(pVM, iPDSrc, pPDSrc, (RTGCUINTPTR)pvFault);
         if (VBOX_SUCCESS(rc))
         {
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatLazySyncPT, f);
+            STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeSyncPT, f);
             return rc;
         }
         Log(("SyncPT: %d failed!! rc=%d\n", iPDSrc, rc));
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
-        STAM_PROFILE_STOP(&pVM->pgm.s.StatLazySyncPT, f);
+        STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeSyncPT, f);
         return VINF_PGM_SYNC_CR3;
     }
 
@@ -254,7 +254,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
      */
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
-        STAM_PROFILE_START(&pVM->pgm.s.StatMapping, a);
+        STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0eTimeMapping, a);
         PPGMMAPPING pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
         for ( ; pMapping; pMapping = pMapping->CTX_SUFF(pNext))
         {
@@ -271,10 +271,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     while (iPT-- > 0)
                         if (pPDSrc->a[iPDSrc + iPT].n.u1Present)
                         {
-                            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eConflicts);
+                            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eConflicts);
                             Log(("Trap0e: Detected Conflict %VGv-%VGv\n", pMapping->GCPtr, pMapping->GCPtrLast));
                             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync,right? */
-                            STAM_PROFILE_STOP(&pVM->pgm.s.StatMapping, a);
+                            STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeMapping, a);
                             return VINF_PGM_SYNC_CR3;
                         }
                 }
@@ -295,8 +295,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     AssertFailed();
                     rc = VINF_EM_RAW_EMULATE_INSTR; /* can't happen with VMX */
 #   endif
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eMapHandler);
-                    STAM_PROFILE_STOP(&pVM->pgm.s.StatMapping, a);
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersMapping);
+                    STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeMapping, a);
                     return rc;
                 }
 
@@ -304,13 +304,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  * Pretend we're not here and let the guest handle the trap.
                  */
                 TRPMSetErrorCode(pVM, uErr & ~X86_TRAP_PF_P);
-                STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eMap);
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eGuestPFMapping);
                 LogFlow(("PGM: Mapping access -> route trap to recompiler!\n"));
-                STAM_PROFILE_STOP(&pVM->pgm.s.StatMapping, a);
+                STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeMapping, a);
                 return VINF_EM_RAW_GUEST_TRAP;
             }
         }
-        STAM_PROFILE_STOP(&pVM->pgm.s.StatMapping, a);
+        STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeMapping, a);
     } /* pgmAreMappingsEnabled(&pVM->pgm.s) */
 #  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
@@ -357,7 +357,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
          */
         if (GCPhys != NIL_RTGCPHYS)
         {
-            STAM_PROFILE_START(&pVM->pgm.s.StatHandlers, b);
+            STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
 
             PPGMPAGE pPage;
             rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
@@ -391,9 +391,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                     || rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
                                 {
                                     AssertRC(rc);
-                                    STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersOutOfSync);
-                                    STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                                    STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eOutOfSyncHndPhys; });
+                                    STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersOutOfSync);
+                                    STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                                    STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSyncHndPhys; });
                                     return rc;
                                 }
                             }
@@ -413,9 +413,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             else
 # endif
                                 rc = VINF_EM_RAW_EMULATE_INSTR;
-                            STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersPhysical);
-                            STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                            STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndPhys; });
+                            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersPhysical);
+                            STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                            STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2HndPhys; });
                             return rc;
                         }
                     }
@@ -437,9 +437,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 ||  !(uErr & X86_TRAP_PF_RW))
                             {
                                 AssertRC(rc);
-                                STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersOutOfSync);
-                                STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eOutOfSyncHndVirt; });
+                                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersOutOfSync);
+                                STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSyncHndVirt; });
                                 return rc;
                             }
                         }
@@ -474,9 +474,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #   else
                                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
 #   endif
-                                STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersVirtual);
-                                STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndVirt; });
+                                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersVirtual);
+                                STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2HndVirt; });
                                 return rc;
                             }
                             /* Unhandled part of a monitored page */
@@ -503,9 +503,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #   else
                                 rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
 #   endif
-                                STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersVirtualByPhys);
-                                STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndVirt; });
+                                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersVirtualByPhys);
+                                STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2HndVirt; });
                                 return rc;
                             }
                         }
@@ -520,7 +520,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      * we first check if this was a page-not-present fault for a page with only
                      * write access handlers. Restart the instruction if it wasn't a write access.
                      */
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersUnhandled);
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersUnhandled);
 
                     if (    !PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
                         &&  !(uErr & X86_TRAP_PF_P))
@@ -531,9 +531,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             ||  !(uErr & X86_TRAP_PF_RW))
                         {
                             AssertRC(rc);
-                            STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersOutOfSync);
-                            STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                            STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eOutOfSyncHndPhys; });
+                            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersOutOfSync);
+                            STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                            STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSyncHndPhys; });
                             return rc;
                         }
                     }
@@ -546,8 +546,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                              rc, pPage->HCPhys,
                              PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage) ? " phys" : "",
                              PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)  ? " virt" : ""));
-                    STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                    STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndUnhandled; });
+                    STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                    STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2HndUnhandled; });
                     return rc;
                 } /* if any kind of handler */
 
@@ -581,9 +581,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #   else
                             rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
 #   endif
-                            STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersVirtualUnmarked);
-                            STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
-                            STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eHndVirt; });
+                            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersVirtualUnmarked);
+                            STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
+                            STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2HndVirt; });
                             return rc;
                         }
                     }
@@ -596,12 +596,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  * back to the recompiler to emulate the instruction.
                  */
                 LogFlow(("pgmPhysGetPageEx %VGp failed with %Vrc\n", GCPhys, rc));
-                STAM_COUNTER_INC(&pVM->pgm.s.StatHandlersInvalid);
-                STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersInvalid);
+                STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatHandlers, b);
+            STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
 
 #  ifdef PGM_OUT_OF_SYNC_IN_GC
             /*
@@ -609,7 +609,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
              * by our handlers.
              * Check it for page out-of-sync situation.
              */
-            STAM_PROFILE_START(&pVM->pgm.s.StatOutOfSync, c);
+            STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
 
             if (!(uErr & X86_TRAP_PF_P))
             {
@@ -662,8 +662,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 int rc2 = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, 1, uErr);
                                 AssertRC(rc2);
 
-                                STAM_PROFILE_STOP(&pVM->pgm.s.StatOutOfSync, c);
-                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eCSAM; });
+                                STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
+                                STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2CSAM; });
                                 return rc;
                             }
                         }
@@ -713,8 +713,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 if (VBOX_SUCCESS(rc))
                 {
                     /* The page was successfully synced, return to the guest. */
-                    STAM_PROFILE_STOP(&pVM->pgm.s.StatOutOfSync, c);
-                    STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eOutOfSync; });
+                    STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
+                    STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSync; });
                     return VINF_SUCCESS;
                 }
             }
@@ -753,14 +753,14 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         rc = PGMShwGetPage(pVM, pvFault, &fPageShw, NULL);
                         AssertMsg(VBOX_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Vrc fPageShw=%VX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
-                        STAM_PROFILE_STOP(&pVM->pgm.s.StatOutOfSync, c);
-                        STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eOutOfSyncObsHnd; });
+                        STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
+                        STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
                         return VINF_SUCCESS;
                     }
 
                     /* Check to see if we need to emulate the instruction as X86_CR0_WP has been cleared. */
                     if (    CPUMGetGuestCPL(pVM, pRegFrame) == 0
-                        &&  ((CPUMGetGuestCR0(pVM) & (X86_CR0_WP|X86_CR0_PG)) == X86_CR0_PG)
+                        &&  ((CPUMGetGuestCR0(pVM) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG)
                         &&  (uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_P)) == (X86_TRAP_PF_RW | X86_TRAP_PF_P))
                     {
                         uint64_t fPageGst;
@@ -770,15 +770,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         {
                             rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
                             if (VBOX_SUCCESS(rc))
-                                STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eWPEmulGC);
+                                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eWPEmulInRZ);
                             else
-                                STAM_COUNTER_INC(&pVM->pgm.s.StatTrap0eWPEmulR3);
+                                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eWPEmulToR3);
                             return rc;
                         }
-                        else
-                            AssertMsgFailed(("Unexpected r/w page %x flag=%x\n", pvFault, (uint32_t)fPageGst));
+                        AssertMsgFailed(("Unexpected r/w page %RGv flag=%x rc=%Rrc\n", pvFault, (uint32_t)fPageGst, rc));
                     }
-
                 }
 
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
@@ -812,7 +810,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #    endif /* VBOX_STRICT */
 #   endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
             }
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatOutOfSync, c);
+            STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
 #  endif /* PGM_OUT_OF_SYNC_IN_GC */
         }
         else
@@ -840,7 +838,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
      * Conclusion, this is a guest trap.
      */
     LogFlow(("PGM: Unhandled #PF -> route trap to recompiler!\n"));
-    STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUnhandled);
+    STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eGuestPF);
     return VINF_EM_RAW_GUEST_TRAP;
 #  else
     /* present, but not a monitored page; perhaps the guest is probing physical memory */

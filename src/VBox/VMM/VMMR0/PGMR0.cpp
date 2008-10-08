@@ -82,7 +82,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode,
     int rc;
 
     LogFlow(("PGMTrap0eHandler: uErr=%#x pvFault=%VGp eip=%VGv\n", uErr, pvFault, pRegFrame->rip));
-    STAM_PROFILE_START(&pVM->pgm.s.StatGCTrap0e, a);
+    STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0e, a);
     STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
     /* AMD uses the host's paging mode; Intel has a single mode (EPT). */
@@ -97,34 +97,34 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode,
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSNotPresentWrite);
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eUSNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSNotPresentRead);
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eUSNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSWrite);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eUSWrite);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSReserved);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eUSReserved);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSNXE);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eUSNXE);
         else
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eUSRead);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eUSRead);
     }
     else
     {   /* Supervisor */
         if (!(uErr & X86_TRAP_PF_P))
         {
             if (uErr & X86_TRAP_PF_RW)
-                STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSVNotPresentWrite);
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eSVNotPresentWrite);
             else
-                STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSVNotPresentRead);
+                STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eSVNotPresentRead);
         }
         else if (uErr & X86_TRAP_PF_RW)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSVWrite);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eSVWrite);
         else if (uErr & X86_TRAP_PF_ID)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSNXE);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eSNXE);
         else if (uErr & X86_TRAP_PF_RSVD)
-            STAM_COUNTER_INC(&pVM->pgm.s.StatGCTrap0eSVReserved);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eSVReserved);
     }
 #endif
 
@@ -158,8 +158,8 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode,
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
     STAM_STATS({ if (!pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution))
-                    pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatTrap0eMisc; });
-    STAM_PROFILE_STOP_EX(&pVM->pgm.s.StatGCTrap0e, pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
+                    pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2Misc; });
+    STAM_PROFILE_STOP_EX(&pVM->pgm.s.StatRZTrap0e, pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution), a);
     return rc;
 }
 

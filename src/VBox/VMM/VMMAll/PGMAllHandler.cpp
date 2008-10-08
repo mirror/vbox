@@ -806,7 +806,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                 /*
                  * Set the flags and flush shadow PT entries.
                  */
-                STAM_COUNTER_INC(&pVM->pgm.s.StatHandlePhysicalReset);
+                STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PhysHandlerReset));
                 PPGMRAMRANGE pRam = pgmPhysGetRange(&pVM->pgm.s, GCPhys);
                 Assert(pRam);
                 rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
@@ -996,7 +996,7 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
  */
 int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *ppVirt, unsigned *piPage)
 {
-    STAM_PROFILE_START(CTXSUFF(&pVM->pgm.s.StatVirtHandleSearchByPhys), a);
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
     Assert(ppVirt);
 
     PPGMPHYS2VIRTHANDLER pCur;
@@ -1011,12 +1011,12 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
         *piPage = pCur - &(*ppVirt)->aPhysToVirt[0];
 
         LogFlow(("PHYS2VIRT: found match for %RGp -> %RGv *piPage=%#x\n", GCPhys, (*ppVirt)->Core.Key, *piPage));
-        STAM_PROFILE_STOP(CTXSUFF(&pVM->pgm.s.StatVirtHandleSearchByPhys), a);
+        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
         return VINF_SUCCESS;
     }
 
     *ppVirt = NULL;
-    STAM_PROFILE_STOP(CTXSUFF(&pVM->pgm.s.StatVirtHandleSearchByPhys), a);
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
 
