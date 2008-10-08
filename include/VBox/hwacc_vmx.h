@@ -1428,7 +1428,7 @@ DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
  * @param   enmFlush    Type of flush
  * @param   pDescriptor Descriptor
  */
-DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint128_t *pDescriptor);
+DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint64_t *pDescriptor);
 
 /**
  * Invalidate a page using invvpid
@@ -1436,7 +1436,7 @@ DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint128_t *pDescriptor);
  * @param   enmFlush    Type of flush
  * @param   pDescriptor Descriptor
  */
-DECLASM(int) VMXR0InvVPID(VMX_FLUSH enmFlush, uint128_t *pDescriptor);
+DECLASM(int) VMXR0InvVPID(VMX_FLUSH enmFlush, uint64_t *pDescriptor);
 
 /**
  * Executes VMREAD

@@ -2941,12 +2941,12 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx)
  */
 static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
 {
-    uint128_t descriptor;
+    uint64_t descriptor[2];
 
     Assert(pVM->hwaccm.s.fNestedPaging);
-    descriptor.Lo = pVM->hwaccm.s.vmx.GCPhysEPTP;
-    descriptor.Hi = GCPhys;
-    VMXR0InvEPT(enmFlush, &descriptor);
+    descriptor[0] = pVM->hwaccm.s.vmx.GCPhysEPTP;
+    descriptor[1] = GCPhys;
+    VMXR0InvEPT(enmFlush, &descriptor[0]);
 }
 
 /**
@@ -2959,12 +2959,12 @@ static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
  */
 static void VMXR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
 {
-    uint128_t descriptor;
+    uint64_t descriptor[2];
 
     Assert(pVM->hwaccm.s.vmx.fVPID);
-    descriptor.Lo = pVM->hwaccm.s.uCurrentASID;
-    descriptor.Hi = GCPtr;
-    VMXR0InvVPID(enmFlush, &descriptor);
+    descriptor[0] = pVM->hwaccm.s.uCurrentASID;
+    descriptor[1] = GCPtr;
+    VMXR0InvVPID(enmFlush, &descriptor[0]);
 }
 
 /**
