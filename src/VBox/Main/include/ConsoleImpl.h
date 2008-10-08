@@ -132,6 +132,7 @@ public:
     STDMETHOD(PowerButton)();
     STDMETHOD(SleepButton)();
     STDMETHOD(GetPowerButtonHandled)(BOOL *aHandled);
+    STDMETHOD(GetGuestEnteredACPIMode)(BOOL *aEntered);
     STDMETHOD(SaveState) (IProgress **aProgress);
     STDMETHOD(AdoptSavedState) (INPTR BSTR aSavedStateFile);
     STDMETHOD(DiscardSavedState)();

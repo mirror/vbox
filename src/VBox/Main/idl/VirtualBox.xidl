@@ -4437,6 +4437,13 @@
       <param name="handled" type="boolean" dir="return"/>
     </method>
 
+    <method name="getGuestEnteredACPIMode">
+      <desc>Check if the guest entered the ACPI mode G0 (working) or
+        G1 (sleeping). If this method returns false, the guest will
+        most likely not respond to external ACPI events.</desc>
+      <param name="entered" type="boolean" dir="return"/>
+    </method>
+
     <method name="saveState">
       <desc>
         Saves the current execution state of a running virtual machine

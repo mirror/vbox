@@ -898,10 +898,31 @@ static DECLCALLBACK(int) acpiPowerButtonPress(PPDMIACPIPORT pInterface)
     return VINF_SUCCESS;
 }
 
+/**
+ * Check if the ACPI power button event was handled.
+ *
+ * @returns VBox status code
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   pfHandled       Return true if the power button event was handled by the guest.
+ */
 static DECLCALLBACK(int) acpiGetPowerButtonHandled(PPDMIACPIPORT pInterface, bool *pfHandled)
 {
     ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
     *pfHandled = s->fPowerButtonHandled;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Check if the Guest entered into G0 (working) or G1 (sleeping).
+ *
+ * @returns VBox status code
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   pfEntered       Return true if the guest entered the ACPI mode.
+ */
+static DECLCALLBACK(int) acpiGetGuestEnteredACPIMode(PPDMIACPIPORT pInterface, bool *pfEntered)
+{
+    ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
+    *pfEntered = (s->pm1a_ctl & SCI_EN) != 0;
     return VINF_SUCCESS;
 }
 
@@ -1885,11 +1906,12 @@ static DECLCALLBACK(int) acpiConstruct (PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Interfaces
      */
     /* IBase */
-    s->IBase.pfnQueryInterface            = acpiQueryInterface;
+    s->IBase.pfnQueryInterface              = acpiQueryInterface;
     /* IACPIPort */
-    s->IACPIPort.pfnSleepButtonPress      = acpiSleepButtonPress;
-    s->IACPIPort.pfnPowerButtonPress      = acpiPowerButtonPress;
-    s->IACPIPort.pfnGetPowerButtonHandled = acpiGetPowerButtonHandled;
+    s->IACPIPort.pfnSleepButtonPress        = acpiSleepButtonPress;
+    s->IACPIPort.pfnPowerButtonPress        = acpiPowerButtonPress;
+    s->IACPIPort.pfnGetPowerButtonHandled   = acpiGetPowerButtonHandled;
+    s->IACPIPort.pfnGetGuestEnteredACPIMode = acpiGetGuestEnteredACPIMode;
 
    /*
     * Get the corresponding connector interface

@@ -1660,6 +1660,43 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
     return rc;
 }
 
+STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
+{
+    LogFlowThisFuncEnter();
+
+    if (!aEntered)
+        return E_POINTER;
+
+    *aEntered = FALSE;
+
+    AutoCaller autoCaller (this);
+
+    AutoWriteLock alock (this);
+
+    if (mMachineState != MachineState_Running)
+        return E_FAIL;
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC (autoVMCaller.rc());
+
+    PPDMIBASE pBase;
+    int vrc = PDMR3QueryDeviceLun (mpVM, "acpi", 0, 0, &pBase);
+    bool entered = false;
+    if (RT_SUCCESS (vrc))
+    {
+        Assert (pBase);
+        PPDMIACPIPORT pPort =
+            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        vrc = pPort ? pPort->pfnGetGuestEnteredACPIMode(pPort, &entered) : VERR_INVALID_POINTER;
+    }
+
+    *aEntered = RT_SUCCESS (vrc) ? entered : false;
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
 STDMETHODIMP Console::SleepButton()
 {
     LogFlowThisFuncEnter();
