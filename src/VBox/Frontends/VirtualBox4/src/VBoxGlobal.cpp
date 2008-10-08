@@ -2218,8 +2218,14 @@ CSession VBoxGlobal::openSession (const QUuid &aId, bool aExisting /* = false */
         return session;
     }
 
-    aExisting ? mVBox.OpenExistingSession (session, aId) :
-                mVBox.OpenSession (session, aId);
+    if (aExisting)
+        mVBox.OpenExistingSession (session, aId);
+    else
+    {
+        mVBox.OpenSession (session, aId);
+        CMachine machine = session.GetMachine ();
+        machine.SetGuestPropertyValue ("VBox/LanguageID", VBoxGlobal::languageId());
+    }
 
     if (!mVBox.isOk())
     {
