@@ -281,6 +281,10 @@ typedef struct HWACCM
         DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
         DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM));
 
+#if HC_ARCH_BITS == 32
+        uint32_t                    Alignment1;
+#endif
+
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
 
