@@ -2141,7 +2141,8 @@ static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mb
 /**
  * Initializes a packet identifier.
  *
- * @param   pMsg        Pointer to the message.
+ * @param   pTag        Pointer to the packed identifier.
+ * @param   pMsg        Pointer to the message to be identified.
  *
  * @remarks Warning!!! This function assumes 'pMsg' is an unchained message.
  */
@@ -2755,7 +2756,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis)
         rc = vboxNetFltSolarisAttachToInterface(pThis);
         if (RT_SUCCESS(rc))
             return rc;
-    
+
         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Vrc\n", rc));
         RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
         pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
@@ -2807,14 +2808,27 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                 vboxNetFltSolarisQueueLoopback(pThis, pPromiscStream, pMsg);
                 putnext(WR(pPromiscStream->Stream.pReadQueue), pMsg);
             }
+            else
+            {
+                LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit vboxNetFltSolarisMBlkFromSG failed.\n"));
+                rc = VERR_NO_MEMORY;
+            }
         }
     }
 
-    /*
-     * Create a message block and send it up the host stack (upstream).
-     */
     if (fDst & INTNETTRUNKDIR_HOST)
     {
+        /*
+         * For unplumbed interfaces we would not be bound to IP or ARP.
+         * We either bind to both or neither; so atomic reading one should be sufficient.
+         */
+        vboxnetflt_stream_t *pIpStream  = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIpStream);
+        if (!pIpStream)
+            return rc;
+
+        /*
+         * Create a message block and send it up the host stack (upstream).
+         */
         mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
         if (RT_LIKELY(pMsg))
         {
@@ -2828,35 +2842,30 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             {
                 LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST ARP\n"));
 
-                /*
-                 * Construct a DL_UNITDATA_IND style message for ARP as it doesn't understand fast path.
-                 */
-                mblk_t *pDlpiMsg;
-                int rc = vboxNetFltSolarisRawToUnitData(pMsg, &pDlpiMsg);
-                if (RT_SUCCESS(rc))
+                vboxnetflt_stream_t *pArpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvArpStream);
+                if (pArpStream)
                 {
-                    pMsg = pDlpiMsg;
-
-                    vboxnetflt_stream_t *pArpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvArpStream);
-                    if (pArpStream)
+                    /*
+                     * Construct a DL_UNITDATA_IND style message for ARP as it doesn't understand fast path.
+                     */
+                    mblk_t *pDlpiMsg;
+                    int rc = vboxNetFltSolarisRawToUnitData(pMsg, &pDlpiMsg);
+                    if (RT_SUCCESS(rc))
                     {
+                        pMsg = pDlpiMsg;
+
                         queue_t *pArpReadQueue = pArpStream->pReadQueue;
                         putnext(pArpReadQueue, pMsg);
                     }
                     else
                     {
-                        /*
-                         * For unplumbed interfaces we may not be bound to ARP.
-                         */
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData failed!\n"));
                         freemsg(pMsg);
+                        rc = VERR_NO_MEMORY;
                     }
                 }
                 else
-                {
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData failed! rc=%d\n", rc));
-                    freemsg(pMsg);
-                    rc = VERR_NO_MEMORY;
-                }
+                    freemsg(pMsg);  /* Should really never happen... */
             }
             else
             {
@@ -2865,8 +2874,8 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                  */
                 LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST\n"));
 
-                vboxnetflt_stream_t *pIpStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIpStream);
-                if (pIpStream)
+                mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
+                if (RT_LIKELY(pMsg))
                 {
                     pMsg->b_rptr += sizeof(RTNETETHERHDR);
                     queue_t *pIpReadQueue = pIpStream->pReadQueue;
@@ -2874,15 +2883,17 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                 }
                 else
                 {
-                    /*
-                     * For unplumbed interfaces we may not be bound to IP.
-                     */
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData failed!\n"));
                     freemsg(pMsg);
+                    rc = VERR_NO_MEMORY;
                 }
             }
         }
         else
-            rc = VERR_NO_MEMORY;
+        {
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkFromSG failed.\n"));
+            rc = VERR_NO_MEMORY;                
+        }
     }
 
     return rc;
