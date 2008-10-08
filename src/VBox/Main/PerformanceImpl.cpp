@@ -258,37 +258,9 @@ PerformanceCollector::GetMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
 STDMETHODIMP
 PerformanceCollector::SetupMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
                                     ComSafeArrayIn (IUnknown *, objects),
-                                    ULONG aPeriod, ULONG aCount)
-{
-    LogFlowThisFuncEnter();
-    com::SafeIfaceArray <IPerformanceMetric> tmp;
-    return SetupMetricsInt(ComSafeArrayInArg(metricNames),
-                           ComSafeArrayInArg(objects),
-                           aPeriod, aCount,
-                           false, ComSafeArrayAsOutParam(tmp));
-}
-
-STDMETHODIMP
-PerformanceCollector::SetupMetricsEx (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                      ComSafeArrayIn (IUnknown *, objects),
-                                      ULONG aPeriod, ULONG aCount,
-                                      ComSafeArrayOut (IPerformanceMetric *,
-                                                       outMetrics))
-{
-    LogFlowThisFuncEnter();
-    return SetupMetricsInt(ComSafeArrayInArg(metricNames),
-                           ComSafeArrayInArg(objects),
-                           aPeriod, aCount,
-                           true, ComSafeArrayOutArg(outMetrics));
-}
-
-HRESULT
-PerformanceCollector::SetupMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                       ComSafeArrayIn (IUnknown *, objects),
-                                       ULONG aPeriod, ULONG aCount,
-                                       bool reportAffected,
-                                       ComSafeArrayOut (IPerformanceMetric *,
-                                                        outMetrics))
+                                    ULONG aPeriod, ULONG aCount,
+                                    ComSafeArrayOut (IPerformanceMetric *,
+                                                     outMetrics))
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -319,52 +291,25 @@ PerformanceCollector::SetupMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
                           (*it)->getName()));
                 (*it)->enable();
             }
-            if (reportAffected)
-                filteredMetrics.push_back(*it);
+            filteredMetrics.push_back(*it);
         }
         
-    if (reportAffected)
-    {
-        com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
-        int i = 0;
-        for (it = filteredMetrics.begin();
-             it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
-            rc = toIPerformanceMetric(*it, &retMetrics [i++]);
-        retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
-    }
+    com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
+    int i = 0;
+    for (it = filteredMetrics.begin();
+         it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
+        rc = toIPerformanceMetric(*it, &retMetrics [i++]);
+    retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
+
     LogFlowThisFuncLeave();
     return rc;
 }
 
 STDMETHODIMP
 PerformanceCollector::EnableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                     ComSafeArrayIn (IUnknown *, objects))
-{
-    LogFlowThisFuncEnter();
-    com::SafeIfaceArray <IPerformanceMetric> tmp;
-    return EnableMetricsInt (ComSafeArrayInArg(metricNames),
-                             ComSafeArrayInArg(objects),
-                             false, ComSafeArrayAsOutParam(tmp));
-}
-
-STDMETHODIMP
-PerformanceCollector::EnableMetricsEx (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                       ComSafeArrayIn (IUnknown *, objects),
-                                       ComSafeArrayOut (IPerformanceMetric *,
-                                                        outMetrics))
-{
-    LogFlowThisFuncEnter();
-    return EnableMetricsInt (ComSafeArrayInArg(metricNames),
-                             ComSafeArrayInArg(objects),
-                             true, ComSafeArrayOutArg(outMetrics));
-}
-
-HRESULT
-PerformanceCollector::EnableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                        ComSafeArrayIn (IUnknown *, objects),
-                                        bool reportAffected,
-                                        ComSafeArrayOut (IPerformanceMetric *,
-                                                         outMetrics))
+                                     ComSafeArrayIn (IUnknown *, objects),
+                                     ComSafeArrayOut (IPerformanceMetric *,
+                                                      outMetrics))
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -383,52 +328,25 @@ PerformanceCollector::EnableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames)
         if (filter.match((*it)->getObject(), (*it)->getName()))
         {
             (*it)->enable();
-            if (reportAffected)
-                filteredMetrics.push_back(*it);
+            filteredMetrics.push_back(*it);
         }
 
-    if (reportAffected)
-    {
-        com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
-        int i = 0;
-        for (it = filteredMetrics.begin();
-             it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
-            rc = toIPerformanceMetric(*it, &retMetrics [i++]);
-        retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
-    }
+    com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
+    int i = 0;
+    for (it = filteredMetrics.begin();
+         it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
+        rc = toIPerformanceMetric(*it, &retMetrics [i++]);
+    retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
+
     LogFlowThisFuncLeave();
     return rc;
 }
 
 STDMETHODIMP
 PerformanceCollector::DisableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                      ComSafeArrayIn (IUnknown *, objects))
-{
-    LogFlowThisFuncEnter();
-    com::SafeIfaceArray <IPerformanceMetric> tmp;
-    return DisableMetricsInt (ComSafeArrayInArg(metricNames),
-                              ComSafeArrayInArg(objects),
-                              false, ComSafeArrayAsOutParam(tmp));
-}
-
-STDMETHODIMP
-PerformanceCollector::DisableMetricsEx (ComSafeArrayIn (INPTR BSTR, metricNames),
                                       ComSafeArrayIn (IUnknown *, objects),
                                       ComSafeArrayOut (IPerformanceMetric *,
                                                        outMetrics))
-{
-    LogFlowThisFuncEnter();
-    return DisableMetricsInt (ComSafeArrayInArg(metricNames),
-                              ComSafeArrayInArg(objects),
-                              true, ComSafeArrayOutArg(outMetrics));
-}
-
-HRESULT
-PerformanceCollector::DisableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                         ComSafeArrayIn (IUnknown *, objects),
-                                         bool reportAffected,
-                                         ComSafeArrayOut (IPerformanceMetric *,
-                                                          outMetrics))
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -447,19 +365,16 @@ PerformanceCollector::DisableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames
         if (filter.match((*it)->getObject(), (*it)->getName()))
         {
             (*it)->disable();
-            if (reportAffected)
-                filteredMetrics.push_back(*it);
+            filteredMetrics.push_back(*it);
         }
 
-    if (reportAffected)
-    {
-        com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
-        int i = 0;
-        for (it = filteredMetrics.begin();
-             it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
-            rc = toIPerformanceMetric(*it, &retMetrics [i++]);
-        retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
-    }
+    com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
+    int i = 0;
+    for (it = filteredMetrics.begin();
+         it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
+        rc = toIPerformanceMetric(*it, &retMetrics [i++]);
+    retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
+
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -469,36 +384,12 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames)
                                         ComSafeArrayIn (IUnknown *, objects),
                                         ComSafeArrayOut (BSTR, outMetricNames),
                                         ComSafeArrayOut (IUnknown *, outObjects),
+                                        ComSafeArrayOut (BSTR, outUnits),
+                                        ComSafeArrayOut (ULONG, outScales),
+                                        ComSafeArrayOut (ULONG, outSequenceNumbers),
                                         ComSafeArrayOut (ULONG, outDataIndices),
                                         ComSafeArrayOut (ULONG, outDataLengths),
                                         ComSafeArrayOut (LONG, outData))
-{
-    com::SafeArray <BSTR> tmpUnits;
-    com::SafeArray <ULONG> tmpScales;
-    com::SafeArray <ULONG> tmpSequenceNumbers;
-    return QueryMetricsDataEx(ComSafeArrayInArg(metricNames),
-                              ComSafeArrayInArg(objects),
-                              ComSafeArrayOutArg(outMetricNames),
-                              ComSafeArrayOutArg(outObjects),
-                              ComSafeArrayAsOutParam(tmpUnits),
-                              ComSafeArrayAsOutParam(tmpScales),
-                              ComSafeArrayAsOutParam(tmpSequenceNumbers),
-                              ComSafeArrayOutArg(outDataIndices),
-                              ComSafeArrayOutArg(outDataLengths),
-                              ComSafeArrayOutArg(outData));
-}
-
-STDMETHODIMP
-PerformanceCollector::QueryMetricsDataEx (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                          ComSafeArrayIn (IUnknown *, objects),
-                                          ComSafeArrayOut (BSTR, outMetricNames),
-                                          ComSafeArrayOut (IUnknown *, outObjects),
-                                          ComSafeArrayOut (BSTR, outUnits),
-                                          ComSafeArrayOut (ULONG, outScales),
-                                          ComSafeArrayOut (ULONG, outSequenceNumbers),
-                                          ComSafeArrayOut (ULONG, outDataIndices),
-                                          ComSafeArrayOut (ULONG, outDataLengths),
-                                          ComSafeArrayOut (LONG, outData))
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

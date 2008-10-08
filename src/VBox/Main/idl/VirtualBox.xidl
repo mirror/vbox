@@ -10556,16 +10556,21 @@
 
     <method name="setupMetrics">
       <desc>
-        Sets parameters of specified base metrics for a set of objects.
+        Sets parameters of specified base metrics for a set of objects. Returns 
+        an array of <link to="IPerformanceMetric" /> describing the metrics have 
+        been affected.
         <note>
-          @c Null metrics array means all metrics. @c Null object array means
-          all existing objects.
+          @c Null or empty metric name array means all metrics. @c Null or empty
+          object array means all existing objects. If metric name array contains 
+          a single element and object array contains many, the single metric 
+          name array element is applied to each object array element to form 
+          metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
+          Metric name filter. Comma-separated list of metrics with wildcard 
+          support.
         </desc>
       </param>
       <param name="objects" type="$unknown" dir="in" safearray="yes">
@@ -10583,137 +10588,63 @@
         <desc>
           Number of samples to retain in performance data history. Older samples
           get discarded.
+        </desc>
+      </param>
+      <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
+        <desc>
+          Array of metrics that have been modified by the call to this method.
         </desc>
       </param>
     </method>
 
     <method name="enableMetrics">
       <desc>
-        Turns on collecting specified base metrics.
+        Turns on collecting specified base metrics. Returns an array of
+        <link to="IPerformanceMetric" /> describing the metrics have been
+        affected.
         <note>
-          @c Null metrics array means all metrics. @c Null object array means
-          all existing objects.
+          @c Null or empty metric name array means all metrics. @c Null or empty
+          object array means all existing objects. If metric name array contains 
+          a single element and object array contains many, the single metric 
+          name array element is applied to each object array element to form 
+          metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
+          Metric name filter. Comma-separated list of metrics with wildcard 
+          support.
         </desc>
       </param>
       <param name="objects" type="$unknown" dir="in" safearray="yes">
         <desc>
           Set of objects to enable metrics for.
+        </desc>
+      </param>
+      <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
+        <desc>
+          Array of metrics that have been modified by the call to this method.
         </desc>
       </param>
     </method>
 
     <method name="disableMetrics">
       <desc>
-        Turns off collecting specified base metrics.
+        Turns off collecting specified base metrics. Returns an array of
+        <link to="IPerformanceMetric" /> describing the metrics have been
+        affected.
         <note>
-          @c Null metrics array means all metrics. @c Null object array means
-          all existing objects.
+          @c Null or empty metric name array means all metrics. @c Null or empty
+          object array means all existing objects. If metric name array contains 
+          a single element and object array contains many, the single metric 
+          name array element is applied to each object array element to form 
+          metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
-        </desc>
-      </param>
-      <param name="objects" type="$unknown" dir="in" safearray="yes">
-        <desc>
-          Set of objects to disable metrics for.
-        </desc>
-      </param>
-    </method>
-
-    <method name="setupMetricsEx">
-      <desc>
-        Sets parameters of specified base metrics for a set of objects.
-        Indentical to <link to="IPerformanceCollector::setupMetrics" /> except
-        that it returns an array of <link to="IPerformanceMetric" /> describing
-        the metrics have been affected.
-        <note>
-          @c Null metrics array means all metrics. @c Null object array means
-          all existing objects.
-        </note>
-      </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes">
-        <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
-        </desc>
-      </param>
-      <param name="objects" type="$unknown" dir="in" safearray="yes">
-        <desc>
-          Set of objects to setup metric parameters for.
-        </desc>
-      </param>
-      <param name="period" type="unsigned long" dir="in">
-        <desc>
-          Time interval in seconds between two consecutive samples of performace
-          data.
-        </desc>
-      </param>
-      <param name="count" type="unsigned long" dir="in">
-        <desc>
-          Number of samples to retain in performance data history. Older samples
-          get discarded.
-        </desc>
-      </param>
-      <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
-        <desc>
-          Array of metrics that have been modified by the call to this method.
-        </desc>
-      </param>
-    </method>
-
-    <method name="enableMetricsEx">
-      <desc>
-        Turns on collecting specified base metrics.
-        Indentical to <link to="IPerformanceCollector::enableMetrics" /> except
-        that it returns an array of <link to="IPerformanceMetric" /> describing
-        the metrics have been affected.
-        <note>
-          @c Null metrics array means all metrics. @c Null object array means
-          all existing objects.
-        </note>
-      </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes">
-        <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
-        </desc>
-      </param>
-      <param name="objects" type="$unknown" dir="in" safearray="yes">
-        <desc>
-          Set of objects to enable metrics for.
-        </desc>
-      </param>
-      <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
-        <desc>
-          Array of metrics that have been modified by the call to this method.
-        </desc>
-      </param>
-    </method>
-
-    <method name="disableMetricsEx">
-      <desc>
-        Turns off collecting specified base metrics.
-        Indentical to <link to="IPerformanceCollector::disableMetrics" /> except
-        that it returns an array of <link to="IPerformanceMetric" /> describing
-        the metrics have been affected.
-        <note>
-          @c Null metrics array means all metrics. @c Null object array means
-          all existing objects.
-        </note>
-      </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes">
-        <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
+          Metric name filter. Comma-separated list of metrics with wildcard 
+          support.
         </desc>
       </param>
       <param name="objects" type="$unknown" dir="in" safearray="yes">
@@ -10732,20 +10663,25 @@
       <desc>
         Queries collected metrics data for a set of objects.
 
-        The data itself and related metric information are returned in four
-        parallel and one flattened array of arrays. Elements of @c
-        returnMetricNames, @c returnObjects, @c returnDataIndices and @c
-        returnDataLengths with the same index describe one set of values
-        corresponding to a single metric.
+        The data itself and related metric information are returned in seven
+        parallel and one flattened array of arrays. Elements of 
+        <tt>returnMetricNames, returnObjects, returnUnits, returnScales,
+        returnSequenceNumbers, returnDataIndices and returnDataLengths</tt> with 
+        the same index describe one set of values corresponding to a single 
+        metric.
 
-        The @a returnData parameter is a flattened array of arrays. Each start
-        and length of a sub-array is indicated by @a returnDataIndices and @a
-        returnDataLengths. The first value for metric <tt>metricNames[i]</tt> is at
-        <tt> returnData[returnIndices[i]]</tt>.
+        The <tt>returnData</tt> parameter is a flattened array of arrays. Each 
+        start and length of a sub-array is indicated by 
+        <tt>returnDataIndices</tt> and <tt>returnDataLengths</tt>. The first 
+        value for metric <tt>metricNames[i]</tt> is at 
+        <tt>returnData[returnIndices[i]]</tt>.
 
         <note>
-          @c Null metrics array means all applicable metrics. @c Null object
-          array means all existing objects.
+          @c Null or empty metric name array means all metrics. @c Null or empty
+          object array means all existing objects. If metric name array contains 
+          a single element and object array contains many, the single metric 
+          name array element is applied to each object array element to form 
+          metric/object pairs.
         </note>
         <note>
           Data collection continues behind the scenes after call to @c
@@ -10761,8 +10697,8 @@
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
+          Metric name filter. Comma-separated list of metrics with wildcard 
+          support.
         </desc>
       </param>
       <param name="objects" type="$unknown" dir="in" safearray="yes">
@@ -10780,6 +10716,27 @@
           Objects associated with metrics returned in @c returnData.
         </desc>
       </param>
+      <param name="returnUnits" type="wstring" dir="out" safearray="yes">
+         <desc>
+           Units of measurement for each returned metric.
+         </desc>
+       </param>
+       <param name="returnScales" type="unsigned long" dir="out" safearray="yes">
+         <desc>
+           Divisor that should be applied to return values in order to get
+           floating point values. For example:
+           <tt>(double)returnData[returnDataIndices[0]+i] / returnScales[0]</tt>
+           will retrieve the floating point value of i-th sample of the first
+           metric.
+         </desc>
+       </param>
+       <param name="returnSequenceNumbers" type="unsigned long" dir="out" safearray="yes">
+         <desc>
+           Sequence numbers of the first elements of value sequences of particular metrics
+           returned in @c returnData. For aggregate metrics it is the sequence number of
+           the sample the aggregate started calculation from.
+         </desc>
+       </param>
       <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes">
         <desc>
           Indices of the first elements of value sequences of particular metrics
@@ -10798,81 +10755,6 @@
         </desc>
       </param>
     </method>
-
-    <method name="queryMetricsDataEx">
-      <desc>
-        Queries collected metrics data for a set of objects.
-
-        Indentical to <link to="IPerformanceCollector::queryMetricsData" /> except
-        that it returns three additional arrays: <tt>returnUnits</tt>,
-        <tt>returnScales</tt>, <tt>returnSequenceNumbers</tt>. All additional
-        arrays have the same size as <tt>returnMetricNames</tt>.
-        <note>
-          @c Null metrics array means all applicable metrics. @c Null object
-          array means all existing objects.
-        </note>
-      </desc>
-      <param name="metricNames" type="wstring" dir="in" safearray="yes">
-        <desc>
-          Metric name filter. Currently, only a comma-separated list of metrics
-          is supported.
-        </desc>
-      </param>
-      <param name="objects" type="$unknown" dir="in" safearray="yes">
-        <desc>
-          Set of objects to query metrics for.
-        </desc>
-      </param>
-      <param name="returnMetricNames" type="wstring" dir="out" safearray="yes">
-        <desc>
-          Names of metrics returned in @c returnData.
-        </desc>
-      </param>
-      <param name="returnObjects" type="$unknown" dir="out" safearray="yes">
-        <desc>
-          Objects associated with metrics returned in @c returnData.
-        </desc>
-      </param>
-     <param name="returnUnits" type="wstring" dir="out" safearray="yes">
-        <desc>
-          Units of measurement for each returned metric.
-        </desc>
-      </param>
-      <param name="returnScales" type="unsigned long" dir="out" safearray="yes">
-        <desc>
-          Divisor that should be applied to return values in order to get
-          floating point values. For example:
-          <tt>(double)returnData[returnDataIndices[0]+i] / returnScales[0]</tt>
-          will retrieve the floating point value of i-th sample of the first
-          metric.
-        </desc>
-      </param>
-      <param name="returnSequenceNumbers" type="unsigned long" dir="out" safearray="yes">
-        <desc>
-          Sequence numbers of the first elements of value sequences of particular metrics
-          returned in @c returnData. For aggregate metrics it is the sequence number of
-          the sample the aggregate started calculation from.
-        </desc>
-      </param>
-      <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes">
-        <desc>
-          Indices of the first elements of value sequences of particular metrics
-          returned in @c returnData.
-        </desc>
-      </param>
-      <param name="returnDataLengths" type="unsigned long" dir="out" safearray="yes">
-        <desc>
-          Lengths of value sequences of particular metrics.
-        </desc>
-      </param>
-      <param name="returnData" type="long" dir="return" safearray="yes">
-        <desc>
-          Flattened array of all metric data containing sequences of values for
-          each metric.
-        </desc>
-      </param>
-   </method>
-
 
   </interface>
 
