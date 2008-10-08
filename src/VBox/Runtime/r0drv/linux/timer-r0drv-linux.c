@@ -338,7 +338,7 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
     if (    ASMAtomicUoReadBool(&pTimer->fSuspended)
 #ifdef CONFIG_SMP
         ||  (   pTimer->fAllCpus
-             && (pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId())
+             && (RTCPUID)(pSubTimer - &pTimer->aSubTimers[0]) != RTMpCpuId())
 #endif
        )
     {
