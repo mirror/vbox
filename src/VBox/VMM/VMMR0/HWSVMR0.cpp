@@ -1872,7 +1872,7 @@ ResumeExecution:
 
                             /* Clear all breakpoint status flags and set the one we just hit. */
                             pCtx->dr[6] &= ~(X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3);
-                            pCtx->dr[6] |= RT_BIT(i);
+                            pCtx->dr[6] |= (uint64_t)RT_BIT(i);
 
                             /* Note: AMD64 Architecture Programmer's Manual 13.1:
                              * Bits 15:13 of the DR6 register is never cleared by the processor and must be cleared by software after
