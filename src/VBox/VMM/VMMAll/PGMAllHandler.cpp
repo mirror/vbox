@@ -157,7 +157,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
     /*
      * Try insert into list.
      */
-    if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, &pNew->Core))
+    if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pNew->Core))
     {
         rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pNew, pRam);
         if (rc == VINF_PGM_GCPHYS_ALIASED)
@@ -290,7 +290,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
      * Find the handler.
      */
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
         LogFlow(("PGMHandlerPhysicalDeregister: Removing Range %#VGp-%#VGp %s\n",
@@ -393,7 +393,7 @@ DECLINLINE(void) pgmHandlerPhysicalRecalcPageState(PPGM pPGM, RTGCPHYS GCPhys, b
     unsigned uState = PGM_PAGE_HNDL_PHYS_STATE_NONE;
     for (;;)
     {
-        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pPGM->CTXSUFF(pTrees)->PhysHandlers, GCPhys, fAbove);
+        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pPGM->CTX_SUFF(pTrees)->PhysHandlers, GCPhys, fAbove);
         if (    !pCur
             ||  ((fAbove ? pCur->Core.Key : pCur->Core.KeyLast) >> PAGE_SHIFT) != (GCPhys >> PAGE_SHIFT))
             break;
@@ -492,7 +492,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
      */
     int rc;
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhysCurrent);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysCurrent);
     if (pCur)
     {
         /*
@@ -522,7 +522,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                 pCur->Core.KeyLast  = GCPhysLast;
                 pCur->cPages        = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK) + 1) >> PAGE_SHIFT;
 
-                if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, &pCur->Core))
+                if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pCur->Core))
                 {
                     /*
                      * Set ram flags, flush shadow PT entries and finally tell REM about this.
@@ -608,7 +608,7 @@ VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
      */
     int rc = VINF_SUCCESS;
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
         /*
@@ -657,7 +657,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
      * Get the handler.
      */
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
         if (GCPhysSplit <= pCur->Core.KeyLast)
@@ -672,7 +672,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
             pCur->Core.KeyLast  = GCPhysSplit - 1;
             pCur->cPages        = (pCur->Core.KeyLast - (pCur->Core.Key & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
 
-            if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, &pNew->Core))
+            if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pNew->Core))
             {
                 LogFlow(("PGMHandlerPhysicalSplit: %VGp-%VGp and %VGp-%VGp\n",
                          pCur->Core.Key, pCur->Core.KeyLast, pNew->Core.Key, pNew->Core.KeyLast));
@@ -714,10 +714,10 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
      */
     int rc;
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur1 = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys1);
+    PPGMPHYSHANDLER pCur1 = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys1);
     if (pCur1)
     {
-        PPGMPHYSHANDLER pCur2 = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys2);
+        PPGMPHYSHANDLER pCur2 = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys2);
         if (pCur2)
         {
             /*
@@ -729,7 +729,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
                     &&  pCur1->pfnHandlerR0 == pCur2->pfnHandlerR0
                     &&  pCur1->pfnHandlerR3 == pCur2->pfnHandlerR3)
                 {
-                    PPGMPHYSHANDLER pCur3 = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys2);
+                    PPGMPHYSHANDLER pCur3 = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys2);
                     if (pCur3 == pCur2)
                     {
                         pCur1->Core.KeyLast  = pCur2->Core.KeyLast;
@@ -792,7 +792,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
      * Find the handler.
      */
     int rc;
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
         /*
@@ -869,7 +869,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
     /*
      * Validate the range.
      */
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
         if (    GCPhysPage >= pCur->Core.Key
@@ -923,7 +923,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
     /*
      * Validate the range.
      */
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
         if (    GCPhysPage >= pCur->Core.Key
@@ -968,7 +968,7 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
     /*
      * Find the handler.
      */
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysHandlers, GCPhys);
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
         if (    GCPhys >= pCur->Core.Key
@@ -1000,7 +1000,7 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
     Assert(ppVirt);
 
     PPGMPHYS2VIRTHANDLER pCur;
-    pCur = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->PhysToVirtHandlers, GCPhys);
+    pCur = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, GCPhys);
     if (pCur)
     {
         /* found a match! */
@@ -1038,7 +1038,7 @@ static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2V
     /** @todo Deal with partial overlapping. (Unlikly situation, so I'm too lazy to do anything about it now.) */
     /** @todo check if the current head node covers the ground we do. This is highly unlikely
      * and I'm too lazy to implement this now as it will require sorting the list and stuff like that. */
-    PPGMPHYS2VIRTHANDLER pHead = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key);
+    PPGMPHYS2VIRTHANDLER pHead = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
     AssertReleaseMsg(pHead != pPhys2Virt, ("%VGp-%VGp offVirtHandler=%#RX32\n",
                                            pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offVirtHandler));
@@ -1123,11 +1123,11 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
                     Assert(iPage == pCur->cPages - 1);
                 pPhys2Virt->Core.KeyLast = pPhys2Virt->Core.Key + cbPhys - 1; /* inclusive */
                 pPhys2Virt->offNextAlias = PGMPHYS2VIRTHANDLER_IS_HEAD | PGMPHYS2VIRTHANDLER_IN_TREE;
-                if (!RTAvlroGCPhysInsert(&pVM->pgm.s.CTXSUFF(pTrees)->PhysToVirtHandlers, &pPhys2Virt->Core))
+                if (!RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, &pPhys2Virt->Core))
                     pgmHandlerVirtualInsertAliased(pVM, pPhys2Virt);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                 else
-                    AssertReleaseMsg(RTAvlroGCPhysGet(&pVM->pgm.s.CTXSUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key) == &pPhys2Virt->Core,
+                    AssertReleaseMsg(RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key) == &pPhys2Virt->Core,
                                      ("%VGp-%VGp offNextAlias=%#RX32\n",
                                       pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offNextAlias));
 #endif
@@ -1168,7 +1168,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualDumpPhysPagesCallback(PAVLROGCPHYSNODE
  */
 void pgmHandlerVirtualDumpPhysPages(PVM pVM)
 {
-    RTAvlroGCPhysDoWithAll(CTXSUFF(&pVM->pgm.s.pTrees)->PhysToVirtHandlers, true /* from left */,
+    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, true /* from left */,
                            pgmHandlerVirtualDumpPhysPagesCallback, 0);
 }
 #endif /* VBOX_STRICT || LOG_ENABLED */
@@ -1365,10 +1365,10 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                 if (PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage))
                 {
                     /* the first */
-                    PPGMPHYSHANDLER pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pPGM->CTXSUFF(pTrees)->PhysHandlers, State.GCPhys);
+                    PPGMPHYSHANDLER pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pPGM->CTX_SUFF(pTrees)->PhysHandlers, State.GCPhys);
                     if (!pPhys)
                     {
-                        pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pPGM->CTXSUFF(pTrees)->PhysHandlers, State.GCPhys, true);
+                        pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pPGM->CTX_SUFF(pTrees)->PhysHandlers, State.GCPhys, true);
                         if (    pPhys
                             &&  pPhys->Core.Key > (State.GCPhys + PAGE_SIZE - 1))
                             pPhys = NULL;
@@ -1381,7 +1381,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                         /* more? */
                         while (pPhys->Core.KeyLast < (State.GCPhys | PAGE_OFFSET_MASK))
                         {
-                            PPGMPHYSHANDLER pPhys2 = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pPGM->CTXSUFF(pTrees)->PhysHandlers,
+                            PPGMPHYSHANDLER pPhys2 = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pPGM->CTX_SUFF(pTrees)->PhysHandlers,
                                                                                               pPhys->Core.KeyLast + 1, true);
                             if (    !pPhys2
                                 ||  pPhys2->Core.Key > (State.GCPhys | PAGE_OFFSET_MASK))
@@ -1431,7 +1431,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                     RTGCPHYS GCPhysKey = State.GCPhys;
                     for (;;)
                     {
-                        PPGMPHYS2VIRTHANDLER pPhys2Virt = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGetBestFit(&CTXSUFF(pVM->pgm.s.pTrees)->PhysToVirtHandlers,
+                        PPGMPHYS2VIRTHANDLER pPhys2Virt = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers,
                                                                                                         GCPhysKey, true /* above-or-equal */);
                         if (    !pPhys2Virt
                             ||  (pPhys2Virt->Core.Key & X86_PTE_PAE_PG_MASK) != State.GCPhys)
@@ -1458,7 +1458,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                     }
 #else
                     /* very slow */
-                    RTAvlroGCPtrDoWithAll(CTXSUFF(&pVM->pgm.s.pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOneByPhysAddr, &State);
+                    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOneByPhysAddr, &State);
 #endif
                     if (State.uVirtState != State.uVirtStateFound)
                     {
@@ -1475,7 +1475,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
      * Check that the physical addresses of the virtual handlers matches up
      * and that they are otherwise sane.
      */
-    RTAvlroGCPtrDoWithAll(CTXSUFF(&pVM->pgm.s.pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOne, &State);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOne, &State);
 
     /*
      * Do the reverse check for physical handlers.

@@ -276,7 +276,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 /*
                  * Check if the fault address is in a virtual page access handler range.
                  */
-                PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->HyperVirtHandlers, pvFault);
+                PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->HyperVirtHandlers, pvFault);
                 if (    pCur
                     &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb
                     &&  uErr & X86_TRAP_PF_RW)
@@ -365,7 +365,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          * Physical page access handler.
                          */
                         const RTGCPHYS  GCPhysFault = GCPhys | ((RTGCUINTPTR)pvFault & PAGE_OFFSET_MASK);
-                        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->PhysHandlers, GCPhysFault);
+                        PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhysFault);
                         if (pCur)
                         {
 # ifdef PGM_SYNC_N_PAGES
@@ -448,7 +448,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         /** @note r=svl: true, but lookup on virtual address should remain as a fallback as phys & virt trees might be out of sync, because the
                           *              page was changed without us noticing it (not-present -> present without invlpg or mov cr3, xxx)
                           */
-                        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->VirtHandlers, pvFault);
+                        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
                         if (pCur)
                         {
                             AssertMsg(!((RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb)
@@ -555,7 +555,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     /** @todo r=bird: Since the purpose is to catch out of sync pages with virtual handler(s) here,
                      * we should correct both the shadow page table and physical memory flags, and not only check for
                      * accesses within the handler region but for access to pages with virtual handlers. */
-                    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&CTXSUFF(pVM->pgm.s.pTrees)->VirtHandlers, pvFault);
+                    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
                     if (pCur)
                     {
                         AssertMsg(   !((RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb)

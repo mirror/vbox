@@ -249,13 +249,13 @@ DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFau
 
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     void *pvRet;
-    int rc = PGMDynMapGCPageOff(pPool->pVMHC, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
+    int rc = PGMDynMapGCPageOff(pPool->pVMR0, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
     AssertFatalRCSuccess(rc);
     return pvRet;
 
 #elif defined(IN_RING0)
     void *pvRet;
-    int rc = pgmRamGCPhys2HCPtr(&pPool->pVMHC->pgm.s, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
+    int rc = pgmRamGCPhys2HCPtr(&pPool->pVMR0->pgm.s, GCPhysFault & ~(RTGCPHYS)(cbEntry - 1), &pvRet);
     AssertFatalRCSuccess(rc);
     return pvRet;
 
@@ -305,7 +305,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             PX86PDPT    pPDPT;
             PX86PML4    pPML4;
         } uShw;
-        uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pPage);
+        uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
 
         switch (pPage->enmKind)
         {
@@ -389,8 +389,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 const unsigned iShw = off / sizeof(X86PTE);         // ASSUMING 32-bit guest paging!
                 if (uShw.pPD->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
-                    Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                    VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
                 /* paranoia / a bit assumptive. */
@@ -403,20 +403,20 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         &&  iShw2 < RT_ELEMENTS(uShw.pPD->a)
                         &&  uShw.pPD->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
                 }
 #if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
                 if (    uShw.pPD->a[iShw].n.u1Present
-                    &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                    &&  !VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX32 -> freeing it!\n", iShw, uShw.pPD->a[iShw].u));
 # ifdef IN_GC       /* TLB load - we're pushing things a bit... */
                     ASMProbeReadByte(pvAddress);
 # endif
-                    pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPD->a[iShw].u & X86_PDE_PG_MASK, pPage->idx, iShw);
+                    pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPD->a[iShw].u & X86_PDE_PG_MASK, pPage->idx, iShw);
                     uShw.pPD->a[iShw].u = 0;
                 }
 #endif
@@ -430,8 +430,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
                     if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     }
                     /* paranoia / a bit assumptive. */
@@ -443,20 +443,20 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         if (    iShw2 < RT_ELEMENTS(uShw.pPDPae->a)
                             &&  (uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                         {
-                            Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                            VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                            Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                            VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                         }
                     }
 #if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
                     if (    uShw.pPDPae->a[iShw].n.u1Present
-                        &&  !VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                        &&  !VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
 # ifdef IN_GC           /* TLB load - we're pushing things a bit... */
                         ASMProbeReadByte(pvAddress);
 # endif
-                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
+                        pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
                         uShw.pPDPae->a[iShw].u = 0;
                     }
 #endif
@@ -469,8 +469,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
-                    Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                    VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
 #ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
@@ -483,7 +483,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                        pgmPoolFree(pPool->CTX_SUFF(pVM),
                                     uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                     /* Note: hardcoded PAE implementation dependency */
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx,
@@ -503,8 +503,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (    iShw2 != iShw
                         &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
 #ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
@@ -512,7 +512,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                        pgmPoolFree(pPool->CTX_SUFF(pVM),
                                     uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                     /* Note: hardcoded PAE implementation dependency */
                                     (pPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD) ? PGMPOOL_IDX_PAE_PD : pPage->idx,
@@ -535,8 +535,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
                     if (uShw.pPDPT->a[iShw].u & PGM_PLXFLAGS_MAPPING)
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                     }
                     /* paranoia / a bit assumptive. */
@@ -549,8 +549,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                             &&  iShw2 < X86_PG_PAE_PDPE_ENTRIES
                             &&  uShw.pPDPT->a[iShw2].u & PGM_PLXFLAGS_MAPPING)
                         {
-                            Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                            VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                            Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                            VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                             LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                         }
                     }
@@ -566,8 +566,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
-                    Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                    VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                    Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
                 else
@@ -575,7 +575,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (uShw.pPDPae->a[iShw].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                        pgmPoolFree(pPool->CTX_SUFF(pVM),
                                     uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw);
@@ -593,15 +593,15 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     if (    iShw2 != iShw
                         &&  uShw.pPDPae->a[iShw2].u & PGM_PDFLAGS_MAPPING)
                     {
-                        Assert(pgmMapAreMappingsEnabled(&pPool->CTXSUFF(pVM)->pgm.s));
-                        VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+                        Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
+                        VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
                     else
                     if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM),
+                        pgmPoolFree(pPool->CTX_SUFF(pVM),
                                     uShw.pPDPae->a[iShw2].u & X86_PDE_PAE_PG_MASK,
                                     pPage->idx,
                                     iShw2);
@@ -616,13 +616,13 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                if (!VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                if (!VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
                     const unsigned iShw = off / sizeof(X86PDPE);
                     if (uShw.pPDPT->a[iShw].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPT->a[iShw].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK, pPage->idx, iShw);
+                        pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPT->a[iShw].u & X86_PDPE_PG_MASK, pPage->idx, iShw);
                         uShw.pPDPT->a[iShw].u = 0;
                     }
                     /* paranoia / a bit assumptive. */
@@ -634,7 +634,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         if (uShw.pPDPT->a[iShw2].n.u1Present)
                         {
                             LogFlow(("pgmPoolMonitorChainChanging: pdpt iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPT->a[iShw2].u));
-                            pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK, pPage->idx, iShw2);
+                            pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPT->a[iShw2].u & X86_PDPE_PG_MASK, pPage->idx, iShw2);
                             uShw.pPDPT->a[iShw2].u = 0;
                         }
                     }
@@ -647,13 +647,13 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 /* Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
-                if (!VM_FF_ISSET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3))
+                if (!VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
                     const unsigned iShw = off / sizeof(X86PDPE);
                     if (uShw.pPML4->a[iShw].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPML4->a[iShw].u));
-                        pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK, pPage->idx, iShw);
+                        pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPML4->a[iShw].u & X86_PML4E_PG_MASK, pPage->idx, iShw);
                         uShw.pPML4->a[iShw].u = 0;
                     }
                     /* paranoia / a bit assumptive. */
@@ -665,7 +665,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         if (uShw.pPML4->a[iShw2].n.u1Present)
                         {
                             LogFlow(("pgmPoolMonitorChainChanging: pml4 iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPML4->a[iShw2].u));
-                            pgmPoolFree(pPool->CTXSUFF(pVM), uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK, pPage->idx, iShw2);
+                            pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPML4->a[iShw2].u & X86_PML4E_PG_MASK, pPage->idx, iShw2);
                             uShw.pPML4->a[iShw2].u = 0;
                         }
                     }
@@ -1138,7 +1138,7 @@ DECLINLINE(void) pgmPoolHashRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
 {
 #ifndef IN_GC
-    const PVM pVM = pPool->CTXSUFF(pVM);
+    const PVM pVM = pPool->CTX_SUFF(pVM);
 #endif
     Assert(pPool->iAgeHead != pPool->iAgeTail); /* We shouldn't be here if there < 2 cached entries! */
     STAM_COUNTER_INC(&pPool->StatCacheFreeUpOne);
@@ -1284,7 +1284,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
 static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
 #ifndef IN_GC
-    const PVM pVM = pPool->CTXSUFF(pVM);
+    const PVM pVM = pPool->CTX_SUFF(pVM);
 #endif
     /*
      * Look up the GCPhys in the hash.
@@ -1560,7 +1560,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     else
     {
         Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX); Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
-        PVM pVM = pPool->CTXSUFF(pVM);
+        PVM pVM = pPool->CTX_SUFF(pVM);
         const RTGCPHYS GCPhysPage = pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
         rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
                                           GCPhysPage, GCPhysPage + (PAGE_SIZE - 1),
@@ -1632,7 +1632,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Remove the page from the monitored list or uninstall it if last.
      */
-    const PVM pVM = pPool->CTXSUFF(pVM);
+    const PVM pVM = pPool->CTX_SUFF(pVM);
     int rc;
     if (    pPage->iMonitoredNext != NIL_PGMPOOL_IDX
         ||  pPage->iMonitoredPrev != NIL_PGMPOOL_IDX)
@@ -1938,7 +1938,7 @@ void pgmPoolClearAll(PVM pVM)
                     if (pPage->cPresent)
 #endif
                     {
-                        void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pPage);
+                        void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                         STAM_PROFILE_START(&pPool->StatZeroPage, z);
                         ASMMemZeroPage(pvShw);
                         STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
@@ -1990,7 +1990,7 @@ void pgmPoolClearAll(PVM pVM)
     /*
      * Clear all the GCPhys links and rebuild the phys ext free list.
      */
-    for (PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
@@ -2000,7 +2000,7 @@ void pgmPoolClearAll(PVM pVM)
     }
 
     pPool->iPhysExtFreeHead = 0;
-    PPGMPOOLPHYSEXT paPhysExts = pPool->CTXSUFF(paPhysExts);
+    PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
     const unsigned cMaxPhysExts = pPool->cMaxPhysExts;
     for (unsigned i = 0; i < cMaxPhysExts; i++)
     {
@@ -2109,7 +2109,7 @@ static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
 DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhys, uint16_t iUser, uint32_t iUserTable)
 {
     int rc = VINF_SUCCESS;
-    PPGMPOOLUSER pUser = pPool->CTXSUFF(paUsers);
+    PPGMPOOLUSER pUser = pPool->CTX_SUFF(paUsers);
 
     LogFlow(("pgmPoolTrackInsert iUser %d iUserTable %d\n", iUser, iUserTable));
 
@@ -2151,8 +2151,8 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
 # ifdef PGMPOOL_WITH_MIXED_PT_CR3
     const bool fCanBeMonitored = true;
 # else
-    bool fCanBeMonitored = pPool->CTXSUFF(pVM)->pgm.s.GCPhysGstCR3Monitored == NIL_RTGCPHYS
-                         || (GCPhys & X86_PTE_PAE_PG_MASK) != (pPool->CTXSUFF(pVM)->pgm.s.GCPhysGstCR3Monitored & X86_PTE_PAE_PG_MASK)
+    bool fCanBeMonitored = pPool->CTX_SUFF(pVM)->pgm.s.GCPhysGstCR3Monitored == NIL_RTGCPHYS
+                         || (GCPhys & X86_PTE_PAE_PG_MASK) != (pPool->CTX_SUFF(pVM)->pgm.s.GCPhysGstCR3Monitored & X86_PTE_PAE_PG_MASK)
                          || pgmPoolIsBigPage((PGMPOOLKIND)pPage->enmKind);
 # endif
 # ifdef PGMPOOL_WITH_CACHE
@@ -2198,7 +2198,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
  */
 static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
-    PPGMPOOLUSER paUsers = pPool->CTXSUFF(paUsers);
+    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
     LogFlow(("pgmPoolTrackAddUser iUser %d iUserTable %d\n", iUser, iUserTable));
 #  ifdef VBOX_STRICT
@@ -2265,7 +2265,7 @@ static void pgmPoolTrackFreeUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iU
     /*
      * Unlink and free the specified user entry.
      */
-    PPGMPOOLUSER paUsers = pPool->CTXSUFF(paUsers);
+    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
     /* Special: For PAE and 32-bit paging, there is usually no more than one user. */
     uint16_t i = pPage->iUserHead;
@@ -2529,7 +2529,7 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
     do
     {
         Assert(iPhysExt < pPool->cMaxPhysExts);
-        pPhysExt = &pPool->CTXSUFF(paPhysExts)[iPhysExt];
+        pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
         for (unsigned i = 0; i < RT_ELEMENTS(pPhysExt->aidx); i++)
             if (pPhysExt->aidx[i] != NIL_PGMPOOL_IDX)
             {
@@ -2674,10 +2674,10 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         uint64_t       *pau64;
         uint32_t       *pau32;
     } u;
-    u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pUserPage);
+    u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pUserPage);
 
     /* Safety precaution in case we change the paging for other modes too in the future. */
-    Assert(PGMGetHyperCR3(CTXSUFF(pPool->pVM)) != pPage->Core.Key);
+    Assert(PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) != pPage->Core.Key);
 
 #ifdef VBOX_STRICT
     /*
@@ -2773,7 +2773,7 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Free all the user records.
      */
-    PPGMPOOLUSER paUsers = pPool->CTXSUFF(paUsers);
+    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
     uint16_t i = pPage->iUserHead;
     while (i != NIL_PGMPOOL_USER_INDEX)
     {
@@ -2810,7 +2810,7 @@ PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
         STAM_COUNTER_INC(&pPool->StamTrackPhysExtAllocFailures);
         return NULL;
     }
-    PPGMPOOLPHYSEXT pPhysExt = &pPool->CTXSUFF(paPhysExts)[iPhysExt];
+    PPGMPOOLPHYSEXT pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
     pPool->iPhysExtFreeHead = pPhysExt->iNext;
     pPhysExt->iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
     *piPhysExt = iPhysExt;
@@ -2828,7 +2828,7 @@ void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     Assert(iPhysExt < pPool->cMaxPhysExts);
-    PPGMPOOLPHYSEXT pPhysExt = &pPool->CTXSUFF(paPhysExts)[iPhysExt];
+    PPGMPOOLPHYSEXT pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
     for (unsigned i = 0; i < RT_ELEMENTS(pPhysExt->aidx); i++)
         pPhysExt->aidx[i] = NIL_PGMPOOL_IDX;
     pPhysExt->iNext = pPool->iPhysExtFreeHead;
@@ -2851,7 +2851,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
     do
     {
         Assert(iPhysExt < pPool->cMaxPhysExts);
-        pPhysExt = &pPool->CTXSUFF(paPhysExts)[iPhysExt];
+        pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
         for (unsigned i = 0; i < RT_ELEMENTS(pPhysExt->aidx); i++)
             pPhysExt->aidx[i] = NIL_PGMPOOL_IDX;
 
@@ -2876,7 +2876,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
 static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t iShwPT)
 {
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    PPGMPOOLPHYSEXT paPhysExts = pPool->CTXSUFF(paPhysExts);
+    PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
 
     /* special common case. */
     if (paPhysExts[iPhysExt].aidx[2] == NIL_PGMPOOL_IDX)
@@ -2984,7 +2984,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
     if (iPhysExt != MM_RAM_FLAGS_IDX_OVERFLOWED)
     {
         uint16_t        iPhysExtPrev = NIL_PGMPOOL_PHYSEXT_INDEX;
-        PPGMPOOLPHYSEXT paPhysExts = pPool->CTXSUFF(paPhysExts);
+        PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
         do
         {
             Assert(iPhysExt < pPool->cMaxPhysExts);
@@ -3006,7 +3006,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                         }
 
                     /* we can free the node. */
-                    PVM pVM = pPool->CTXSUFF(pVM);
+                    PVM pVM = pPool->CTX_SUFF(pVM);
                     const uint16_t iPhysExtNext = paPhysExts[iPhysExt].iNext;
                     if (    iPhysExtPrev == NIL_PGMPOOL_PHYSEXT_INDEX
                         &&  iPhysExtNext == NIL_PGMPOOL_PHYSEXT_INDEX)
@@ -3067,7 +3067,7 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
     /*
      * Walk range list.
      */
-    PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
     while (pRam)
     {
         RTGCPHYS off = GCPhys - pRam->GCPhys;
@@ -3104,7 +3104,7 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
     /*
      * Walk range list.
      */
-    PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
     while (pRam)
     {
         RTGCPHYS off = GCPhysHint - pRam->GCPhys;
@@ -3127,7 +3127,7 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
      * Damn, the hint didn't work. We'll have to do an expensive linear search.
      */
     STAM_COUNTER_INC(&pPool->StatTrackLinearRamSearches);
-    pRam = pPool->CTXSUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
     while (pRam)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
@@ -3399,7 +3399,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Map the shadow page and take action according to the page kind.
      */
-    void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pPage);
+    void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
     switch (pPage->enmKind)
     {
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
@@ -3407,7 +3407,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         {
             STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
             void *pvGst;
-            int rc = PGM_GCPHYS_2_PTR(pPool->CTXSUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+            int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
             pgmPoolTrackDerefPT32Bit32Bit(pPool, pPage, (PX86PT)pvShw, (PCX86PT)pvGst);
             STAM_PROFILE_STOP(&pPool->StatTrackDerefGCPhys, g);
             break;
@@ -3417,7 +3417,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         {
             STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
             void *pvGst;
-            int rc = PGM_GCPHYS_2_PTR_EX(pPool->CTXSUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+            int rc = PGM_GCPHYS_2_PTR_EX(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
             pgmPoolTrackDerefPTPae32Bit(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PT)pvGst);
             STAM_PROFILE_STOP(&pPool->StatTrackDerefGCPhys, g);
             break;
@@ -3427,7 +3427,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         {
             STAM_PROFILE_START(&pPool->StatTrackDerefGCPhys, g);
             void *pvGst;
-            int rc = PGM_GCPHYS_2_PTR(pPool->CTXSUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+            int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
             pgmPoolTrackDerefPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst);
             STAM_PROFILE_STOP(&pPool->StatTrackDerefGCPhys, g);
             break;
@@ -3527,7 +3527,7 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
             uint64_t *pau64;
             uint32_t *pau32;
         } u;
-        u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pPage);
+        u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
 
         /*
          * Mark stuff not present.
@@ -3559,7 +3559,7 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
     /*
      * Paranoia (to be removed), flag a global CR3 sync.
      */
-    VM_FF_SET(pPool->CTXSUFF(pVM), VM_FF_PGM_SYNC_CR3);
+    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
 }
 
 
@@ -3593,7 +3593,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
 
 #ifdef IN_RING3
-        Assert(pPage->Core.Key == MMPage2Phys(pPool->pVMHC, pPage->pvPageHC));
+        Assert(pPage->Core.Key == MMPage2Phys(pPool->pVMR3, pPage->pvPageR3));
 #endif
 #ifdef PGMPOOL_WITH_MONITORING
         if (pPage->fMonitored)
@@ -3632,7 +3632,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
      */
     pPool->cPresent = 0;
     pPool->iUserFreeHead = 0;
-    PPGMPOOLUSER paUsers = pPool->CTXSUFF(paUsers);
+    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
     const unsigned cMaxUsers = pPool->cMaxUsers;
     for (unsigned i = 0; i < cMaxUsers; i++)
     {
@@ -3647,7 +3647,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     /*
      * Clear all the GCPhys links and rebuild the phys ext free list.
      */
-    for (PPGMRAMRANGE pRam = pPool->CTXSUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
+    for (PPGMRAMRANGE pRam = pPool->CTX_SUFF(pVM)->pgm.s.CTX_SUFF(pRamRanges);
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
@@ -3657,7 +3657,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
     }
 
     pPool->iPhysExtFreeHead = 0;
-    PPGMPOOLPHYSEXT paPhysExts = pPool->CTXSUFF(paPhysExts);
+    PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
     const unsigned cMaxPhysExts = pPool->cMaxPhysExts;
     for (unsigned i = 0; i < cMaxPhysExts; i++)
     {
@@ -3705,7 +3705,7 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
         if (pPage->fMonitored)
         {
-            PVM pVM = pPool->CTXSUFF(pVM);
+            PVM pVM = pPool->CTX_SUFF(pVM);
             int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1),
                                                        pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
                                                        pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
@@ -3761,9 +3761,9 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     /*
      * Quietly reject any attempts at flushing the currently active shadow CR3 mapping
      */
-    if (PGMGetHyperCR3(CTXSUFF(pPool->pVM)) == pPage->Core.Key)
+    if (PGMGetHyperCR3(pPool->CTX_SUFF(pVM)) == pPage->Core.Key)
     {
-        AssertMsg(pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, ("Can't free the shadow CR3! (%VGp vs %VGp kind=%d\n", PGMGetHyperCR3(CTXSUFF(pPool->pVM)), pPage->Core.Key, pPage->enmKind));
+        AssertMsg(pPage->enmKind == PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, ("Can't free the shadow CR3! (%VGp vs %VGp kind=%d\n", PGMGetHyperCR3(pPool->CTX_SUFF(pVM)), pPage->Core.Key, pPage->enmKind));
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
         return VINF_SUCCESS;
     }
@@ -3863,9 +3863,9 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, uint16_t iUser)
     {
         STAM_PROFILE_ADV_SUSPEND(&pPool->StatAlloc, a);
 #ifdef IN_RING3
-        int rc = PGMR3PoolGrow(pPool->pVMHC);
+        int rc = PGMR3PoolGrow(pPool->pVMR3);
 #else
-        int rc = CTXALLMID(VMM, CallHost)(pPool->CTXSUFF(pVM), VMMCALLHOST_PGM_POOL_GROW, 0);
+        int rc = CTXALLMID(VMM, CallHost)(pPool->CTX_SUFF(pVM), VMMCALLHOST_PGM_POOL_GROW, 0);
 #endif
         if (VBOX_FAILURE(rc))
             return rc;

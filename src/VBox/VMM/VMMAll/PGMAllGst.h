@@ -512,7 +512,7 @@ try_again:
                     AssertRC(rc);
                     goto try_again;
                 }
-                pVM->pgm.s.pHCPaePML4    = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTXSUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
+                pVM->pgm.s.pHCPaePML4    = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
                 pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.pHCShwAmd64CR3->Core.Key;
             }
 # endif
@@ -939,7 +939,7 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
     State.pVM   = pVM;
     State.fTodo = pVM->pgm.s.fSyncFlags;
     State.cr4   = cr4;
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, true, PGM_GST_NAME(VirtHandlerUpdateOne), &State);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, PGM_GST_NAME(VirtHandlerUpdateOne), &State);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3HandlerVirtualUpdate), a);
 
 
@@ -950,7 +950,7 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
     {
         STAM_PROFILE_START(&pVM->pgm.s.CTXMID(Stat,SyncCR3HandlerVirtualReset), b);
         Log(("pgmR3VirtualHandlersUpdate: resets bits\n"));
-        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTXSUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualResetOne, pVM);
+        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualResetOne, pVM);
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
         STAM_PROFILE_STOP(&pVM->pgm.s.CTXMID(Stat,SyncCR3HandlerVirtualReset), b);
     }
