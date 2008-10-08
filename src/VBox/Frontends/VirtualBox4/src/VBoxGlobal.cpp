@@ -2224,7 +2224,9 @@ CSession VBoxGlobal::openSession (const QUuid &aId, bool aExisting /* = false */
     {
         mVBox.OpenSession (session, aId);
         CMachine machine = session.GetMachine ();
-        machine.SetGuestPropertyValue ("/VirtualBox/HostInfo/GUI/LanguageID", VBoxGlobal::languageId());
+        /* Make sure that the language is in two letter code */
+        QLocale lang (VBoxGlobal::languageId());
+        machine.SetGuestPropertyValue ("/VirtualBox/HostInfo/GUI/LanguageID", lang.name());
     }
 
     if (!mVBox.isOk())
