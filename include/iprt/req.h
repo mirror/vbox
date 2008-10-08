@@ -206,7 +206,9 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies);
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Arguments may not be wider than the host pointer size!
+ *                          The arguments must be of integer or pointer type and
+ *                          not bigger in size than uintptr_t. Do not try pass
+ *                          64-bit integers directly in portable code.
  * @param   ...             Function arguments.
  */
 RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
@@ -232,7 +234,9 @@ RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNR
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Arguments may not be wider than the host pointer size!
+ *                          The arguments must be of integer or pointer type and
+ *                          not bigger in size than uintptr_t. Do not try pass
+ *                          64-bit integers directly in portable code.
  * @param   ...             Function arguments.
  */
 RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
@@ -260,7 +264,9 @@ RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, 
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Arguments may not be wider than the host pointer size!
+ *                          The arguments must be of integer or pointer type and
+ *                          not bigger in size than uintptr_t. Do not try pass
+ *                          64-bit integers directly in portable code.
  * @param   ...             Function arguments.
  */
 RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
@@ -288,7 +294,9 @@ RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, un
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Arguments may not be wider than the host pointer size!
+ *                          The arguments must be of integer or pointer type and
+ *                          not bigger in size than uintptr_t. Do not try pass
+ *                          64-bit integers directly in portable code.
  * @param   Args            Variable argument vector.
  */
 RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
