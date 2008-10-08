@@ -324,7 +324,7 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, unsigned *pcbDirEntry)
      * Setup the returned data.
      */
     pDir->fDataUnread  = false;
-    pDirEntry->INodeId = 0;
+    pDirEntry->INodeId = 0; /** @todo we can use the fileid here if we must (see GetFileInformationByHandle). */
     pDirEntry->enmType = pDir->Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
                        ? RTDIRENTRYTYPE_DIRECTORY : RTDIRENTRYTYPE_FILE;
     pDirEntry->cbName  = (uint16_t)cchName;
@@ -478,8 +478,8 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEn
             pDirEntry->Info.Attr.u.Unix.uid             = ~0U;
             pDirEntry->Info.Attr.u.Unix.gid             = ~0U;
             pDirEntry->Info.Attr.u.Unix.cHardlinks      = 1;
-            pDirEntry->Info.Attr.u.Unix.INodeIdDevice   = 0;
-            pDirEntry->Info.Attr.u.Unix.INodeId         = 0;
+            pDirEntry->Info.Attr.u.Unix.INodeIdDevice   = 0; /** @todo Use the volume serial number (see GetFileInformationByHandle). */
+            pDirEntry->Info.Attr.u.Unix.INodeId         = 0; /** @todo Use the fileid (see GetFileInformationByHandle). */
             pDirEntry->Info.Attr.u.Unix.fFlags          = 0;
             pDirEntry->Info.Attr.u.Unix.GenerationId    = 0;
             pDirEntry->Info.Attr.u.Unix.Device          = 0;

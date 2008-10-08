@@ -237,8 +237,8 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
             pObjInfo->Attr.u.Unix.uid             = ~0U;
             pObjInfo->Attr.u.Unix.gid             = ~0U;
             pObjInfo->Attr.u.Unix.cHardlinks      = 1;
-            pObjInfo->Attr.u.Unix.INodeIdDevice   = 0;
-            pObjInfo->Attr.u.Unix.INodeId         = 0;
+            pObjInfo->Attr.u.Unix.INodeIdDevice   = 0; /** @todo use volume serial number */
+            pObjInfo->Attr.u.Unix.INodeId         = 0; /** @todo use fileid (see GetFileInformationByHandle). */
             pObjInfo->Attr.u.Unix.fFlags          = 0;
             pObjInfo->Attr.u.Unix.GenerationId    = 0;
             pObjInfo->Attr.u.Unix.Device          = 0;
