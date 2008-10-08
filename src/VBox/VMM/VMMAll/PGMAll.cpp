@@ -1819,7 +1819,7 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     }
 
     /*
-     * Pass it on to PGMDynMapHCPageOff.
+     * Pass it on to PGMDynMapHCPage.
      */
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
     int rc = PGMDynMapHCPage(pVM, HCPhys, ppv);
