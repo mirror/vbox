@@ -353,6 +353,23 @@ typedef EPTPT *PEPTPT;
 /** Pointer to a const extended table. */
 typedef const EPTPT *PCEPTPT;
 
+/**
+ * VPID and EPT flush types
+ */
+typedef enum
+{
+    /* Invalidate a specific page. */
+    VMX_FLUSH_PAGE                              = 0,
+    /* Invalidate one context (VPID or EPT) */
+    VMX_FLUSH_SINGLE_CONTEXT                    = 1,
+    /* Invalidate all contexts (VPIDs or EPTs) */
+    VMX_FLUSH_ALL_CONTEXTS                      = 2,
+    /* Invalidate a single VPID context retaining global mappings. */
+    VMX_FLUSH_SINGLE_CONTEXT_WITHOUT_GLOBAL     = 3,
+    /** 32bit hackishness. */
+    VMX_FLUSH_32BIT_HACK                        = 0x7fffffff
+} VMX_FLUSH;
+
 /** @} */
 
 
@@ -1404,6 +1421,22 @@ the_end:
  * @param   pData           Ptr to store VM field value
  */
 DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
+
+/**
+ * Invalidate a page using invept
+ * @returns VBox status code
+ * @param   enmFlush    Type of flush
+ * @param   pDescriptor Descriptor
+ */
+DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint128_t *pDescriptor);
+
+/**
+ * Invalidate a page using invvpid
+ * @returns VBox status code
+ * @param   enmFlush    Type of flush
+ * @param   pDescriptor Descriptor
+ */
+DECLASM(int) VMXR0InvVPID(VMX_FLUSH enmFlush, uint128_t *pDescriptor);
 
 /**
  * Executes VMREAD
