@@ -201,14 +201,14 @@ static void fd_init (fdrive_t *drv, BlockDriverState *bs)
 }
 #endif
 
-static int _fd_sector (uint8_t head, uint8_t track,
+static unsigned _fd_sector (uint8_t head, uint8_t track,
                         uint8_t sect, uint8_t last_sect)
 {
-    return (((track * 2) + head) * last_sect) + sect - 1;
+    return (((track * 2) + head) * last_sect) + sect - 1; /* sect >= 1 */
 }
 
 /* Returns current position, in sectors, for given drive */
-static int fd_sector (fdrive_t *drv)
+static unsigned fd_sector (fdrive_t *drv)
 {
     return _fd_sector(drv->head, drv->track, drv->sect, drv->last_sect);
 }
@@ -2739,7 +2739,7 @@ static DECLCALLBACK(void) fdcDetach (PPDMDEVINS pDevIns,
 static DECLCALLBACK(void) fdcReset (PPDMDEVINS pDevIns)
 {
     fdctrl_t *fdctrl = PDMINS_2_DATA (pDevIns, fdctrl_t *);
-    int i;
+    unsigned i;
     LogFlow (("fdcReset:\n"));
 
     fdctrl_reset(fdctrl, 0);
@@ -2770,7 +2770,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
 {
     int            rc;
     fdctrl_t       *fdctrl = PDMINS_2_DATA(pDevIns, fdctrl_t*);
-    int            i;
+    unsigned       i;
     bool           mem_mapped;
     uint16_t       io_base;
     uint8_t        irq_lvl, dma_chann;
