@@ -156,8 +156,9 @@ int main(int argc, char *argv[])
                 int64_t  i64AbsDiff;
                 struct timeval tv;
 
+#undef USE_ADJTIME
+#ifdef USE_ADJTIME
                 gettimeofday(&tv, NULL);
-#if 0
                 u64Now     = (uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec / 1000;
                 i64Diff    = (int64_t)(req.time - u64Now);
                 i64AbsDiff = i64Diff < 0 ? -i64Diff : i64Diff;
