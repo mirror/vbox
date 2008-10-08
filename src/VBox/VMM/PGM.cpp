@@ -1493,12 +1493,21 @@ static int pgmR3InitPaging(PVM pVM)
 static void pgmR3InitStats(PVM pVM)
 {
     PPGM pPGM = &pVM->pgm.s;
+    unsigned i;
 
     /*
      * Note! The layout of this function matches the member layout exactly!
      */
 
-    /* Common */
+    /* Common - misc variables */
+    STAM_REG(pVM, &pPGM->cAllPages,                         STAMTYPE_U32,     "/PGM/Page/cAllPages",                STAMUNIT_OCCURENCES,     "The total number of pages.");
+    STAM_REG(pVM, &pPGM->cPrivatePages,                     STAMTYPE_U32,     "/PGM/Page/cPrivatePages",            STAMUNIT_OCCURENCES,     "The number of private pages.");
+    STAM_REG(pVM, &pPGM->cSharedPages,                      STAMTYPE_U32,     "/PGM/Page/cSharedPages",             STAMUNIT_OCCURENCES,     "The number of shared pages.");
+    STAM_REG(pVM, &pPGM->cZeroPages,                        STAMTYPE_U32,     "/PGM/Page/cZeroPages",               STAMUNIT_OCCURENCES,     "The number of zero backed pages.");
+    STAM_REG(pVM, &pPGM->ChunkR3Map.c,                      STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                      STAMUNIT_OCCURENCES, "Number of mapped chunks.");
+    STAM_REG(pVM, &pPGM->ChunkR3Map.cMax,                   STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",                   STAMUNIT_OCCURENCES, "Maximum number of mapped chunks.");
+
+    /* Common - stats */
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAM_REG(pVM, &pPGM->StatTrackVirgin,                   STAMTYPE_COUNTER, "/PGM/Track/Virgin",                  STAMUNIT_OCCURENCES,     "The number of first time shadowings");
     STAM_REG(pVM, &pPGM->StatTrackAliased,                  STAMTYPE_COUNTER, "/PGM/Track/Aliased",                 STAMUNIT_OCCURENCES,     "The number of times switching to cRef2, i.e. the page is being shadowed by two PTs.");
@@ -1507,12 +1516,20 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatTrackOverflows,                STAMTYPE_COUNTER, "/PGM/Track/Overflows",               STAMUNIT_OCCURENCES,     "The number of times the extent list grows to long.");
     STAM_REG(pVM, &pPGM->StatTrackDeref,                    STAMTYPE_PROFILE, "/PGM/Track/Deref",                   STAMUNIT_OCCURENCES,     "Profiling of SyncPageWorkerTrackDeref (expensive).");
 #endif
+    for (i = 0; i < RT_ELEMENTS(pPGM->StatSyncPtPD); i++)
+        STAMR3RegisterF(pVM, &pPGM->StatSyncPtPD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                        "The number of SyncPT per PD n.", "/PGM/PDSyncPT/%04X", i);
+    for (i = 0; i < RT_ELEMENTS(pPGM->StatSyncPagePD); i++)
+        STAMR3RegisterF(pVM, &pPGM->StatSyncPagePD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                        "The number of SyncPage per PD n.", "/PGM/PDSyncPage/%04X", i);
 
     /* R3 only: */
     STAM_REG(pVM, &pPGM->StatR3DetectedConflicts,           STAMTYPE_COUNTER, "/PGM/R3/DetectedConflicts",          STAMUNIT_OCCURENCES,     "The number of times PGMR3CheckMappingConflicts() detected a conflict.");
     STAM_REG(pVM, &pPGM->StatR3ResolveConflict,             STAMTYPE_PROFILE, "/PGM/R3/ResolveConflict",            STAMUNIT_TICKS_PER_CALL, "pgmR3SyncPTResolveConflict() profiling (includes the entire relocation).");
     STAM_REG(pVM, &pPGM->StatR3GuestPDWrite,                STAMTYPE_COUNTER, "/PGM/R3/PDWrite",                    STAMUNIT_OCCURENCES,     "The total number of times pgmHCGuestPDWriteHandler() was called.");
     STAM_REG(pVM, &pPGM->StatR3GuestPDWriteConflict,        STAMTYPE_COUNTER, "/PGM/R3/PDWriteConflict",            STAMUNIT_OCCURENCES,     "The number of times pgmHCGuestPDWriteHandler() detected a conflict.");
+    STAM_REG(pVM, &pPGM->StatR3DynRamTotal,                 STAMTYPE_COUNTER, "/PGM/DynAlloc/TotalAlloc",           STAMUNIT_MEGABYTES,      "Allocated MBs of guest ram.");
+    STAM_REG(pVM, &pPGM->StatR3DynRamGrow,                  STAMTYPE_COUNTER, "/PGM/DynAlloc/Grow",                 STAMUNIT_OCCURENCES,     "Nr of pgmr3PhysGrowRange calls.");
 
     /* GC only: */
     STAM_REG(pVM, &pPGM->StatRCInvalidatePage,              STAMTYPE_PROFILE, "/PGM/RC/InvalidatePage",             STAMUNIT_TICKS_PER_CALL, "PGMGCInvalidatePage() profiling.");
@@ -1547,28 +1564,31 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatRZTrap0eHandlersVirtualUnmarked,STAMTYPE_COUNTER,"/PGM/RZ/Trap0e/Handlers/VirtualUnmarked",STAMUNIT_OCCURENCES,     "Number of traps due to virtual access handlers by virtual address (without proper physical flags).");
     STAM_REG(pVM, &pPGM->StatRZTrap0eHandlersUnhandled,     STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Handlers/Unhandled",      STAMUNIT_OCCURENCES,     "Number of traps due to access outside range of monitored page(s).");
     STAM_REG(pVM, &pPGM->StatRZTrap0eHandlersInvalid,       STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Handlers/Invalid",        STAMUNIT_OCCURENCES,     "Number of traps due to access to invalid physical memory.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eUSNotPresentRead,      STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/User/NPRead",             STAMUNIT_OCCURENCES,     "Number of user mode not present read page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eUSNotPresentWrite,     STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/User/NPWrite",            STAMUNIT_OCCURENCES,     "Number of user mode not present write page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eUSWrite,               STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/User/Write",              STAMUNIT_OCCURENCES,     "Number of user mode write page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eUSReserved,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/User/Reserved",           STAMUNIT_OCCURENCES,     "Number of user mode reserved bit page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eUSNXE,                 STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/User/NXE",                STAMUNIT_OCCURENCES,     "Number of user mode NXE page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eUSRead,                STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/User/Read",               STAMUNIT_OCCURENCES,     "Number of user mode read page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eSVNotPresentRead,      STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Supervisor/NPRead",       STAMUNIT_OCCURENCES,     "Number of supervisor mode not present read page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eSVNotPresentWrite,     STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Supervisor/NPWrite",      STAMUNIT_OCCURENCES,     "Number of supervisor mode not present write page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eSVWrite,               STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Supervisor/Write",        STAMUNIT_OCCURENCES,     "Number of supervisor mode write page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eSVReserved,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Supervisor/Reserved",     STAMUNIT_OCCURENCES,     "Number of supervisor mode reserved bit page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eSNXE,                  STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Supervisor/NXE",          STAMUNIT_OCCURENCES,     "Number of supervisor mode NXE page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPF,               STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPF",                 STAMUNIT_OCCURENCES,     "Number of real guest page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eUSNotPresentRead,      STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/User/NPRead",         STAMUNIT_OCCURENCES,     "Number of user mode not present read page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eUSNotPresentWrite,     STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/User/NPWrite",        STAMUNIT_OCCURENCES,     "Number of user mode not present write page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eUSWrite,               STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/User/Write",          STAMUNIT_OCCURENCES,     "Number of user mode write page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eUSReserved,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/User/Reserved",       STAMUNIT_OCCURENCES,     "Number of user mode reserved bit page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eUSNXE,                 STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/User/NXE",            STAMUNIT_OCCURENCES,     "Number of user mode NXE page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eUSRead,                STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/User/Read",           STAMUNIT_OCCURENCES,     "Number of user mode read page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eSVNotPresentRead,      STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/NPRead",   STAMUNIT_OCCURENCES,     "Number of supervisor mode not present read page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eSVNotPresentWrite,     STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/NPWrite",  STAMUNIT_OCCURENCES,     "Number of supervisor mode not present write page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eSVWrite,               STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/Write",    STAMUNIT_OCCURENCES,     "Number of supervisor mode write page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eSVReserved,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/Reserved", STAMUNIT_OCCURENCES,     "Number of supervisor mode reserved bit page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eSNXE,                  STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/NXE",      STAMUNIT_OCCURENCES,     "Number of supervisor mode NXE page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPFUnh,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPFUnhandled",        STAMUNIT_OCCURENCES,     "Number of real guest page faults from the 'unhandled' case.");
     STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPFMapping,        STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPFInMapping",        STAMUNIT_OCCURENCES,     "Number of real guest page faults in a mapping.");
     STAM_REG(pVM, &pPGM->StatRZTrap0eWPEmulInRZ,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/WP/InRZ",                 STAMUNIT_OCCURENCES,     "Number of guest page faults due to X86_CR0_WP emulation.");
     STAM_REG(pVM, &pPGM->StatRZTrap0eWPEmulToR3,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/WP/ToR3",                 STAMUNIT_OCCURENCES,     "Number of guest page faults due to X86_CR0_WP emulation (forward to R3 for emulation).");
+    for (i = 0; i < RT_ELEMENTS(pPGM->StatRZTrap0ePD); i++)
+        STAMR3RegisterF(pVM, &pPGM->StatRZTrap0ePD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                        "The number of traps in page directory n.", "/PGM/RZ/Trap0e/PD/%04X", i);
     STAM_REG(pVM, &pPGM->StatRZGuestCR3WriteHandled,        STAMTYPE_COUNTER, "/PGM/RZ/CR3WriteHandled",                STAMUNIT_OCCURENCES,     "The number of times the Guest CR3 change was successfully handled.");
     STAM_REG(pVM, &pPGM->StatRZGuestCR3WriteUnhandled,      STAMTYPE_COUNTER, "/PGM/RZ/CR3WriteUnhandled",              STAMUNIT_OCCURENCES,     "The number of times the Guest CR3 change was passed back to the recompiler.");
     STAM_REG(pVM, &pPGM->StatRZGuestCR3WriteConflict,       STAMTYPE_COUNTER, "/PGM/RZ/CR3WriteConflict",               STAMUNIT_OCCURENCES,     "The number of times the Guest CR3 monitoring detected a conflict.");
-    STAM_REG(pVM, &pPGM->StatRZGuestROMWriteHandled,        STAMTYPE_COUNTER, "/PGM/GC/ROMWriteHandled",                STAMUNIT_OCCURENCES,     "The number of times the Guest ROM change was successfully handled.");
-    STAM_REG(pVM, &pPGM->StatRZGuestROMWriteUnhandled,      STAMTYPE_COUNTER, "/PGM/GC/ROMWriteUnhandled",              STAMUNIT_OCCURENCES,     "The number of times the Guest ROM change was passed back to the recompiler.");
+    STAM_REG(pVM, &pPGM->StatRZGuestROMWriteHandled,        STAMTYPE_COUNTER, "/PGM/RZ/ROMWriteHandled",                STAMUNIT_OCCURENCES,     "The number of times the Guest ROM change was successfully handled.");
+    STAM_REG(pVM, &pPGM->StatRZGuestROMWriteUnhandled,      STAMTYPE_COUNTER, "/PGM/RZ/ROMWriteUnhandled",              STAMUNIT_OCCURENCES,     "The number of times the Guest ROM change was passed back to the recompiler.");
 
-    /* R0 only: */
+    /* HC only: */
 
     /* RZ & R3: */
     STAM_REG(pVM, &pPGM->StatRZSyncCR3,                     STAMTYPE_PROFILE, "/PGM/RZ/SyncCR3",                        STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMSyncCR3() body.");
@@ -1585,6 +1605,8 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatRZSyncCR3DstSkippedGlobalPT,   STAMTYPE_COUNTER, "/PGM/RZ/SyncCR3/DstSkippedGlobalPT",     STAMUNIT_OCCURENCES,     "The number of times a page table with only global entries wasn't flushed.");
     STAM_REG(pVM, &pPGM->StatRZSyncPT,                      STAMTYPE_PROFILE, "/PGM/RZ/SyncPT",                         STAMUNIT_TICKS_PER_CALL, "Profiling of the pfnSyncPT() body.");
     STAM_REG(pVM, &pPGM->StatRZSyncPTFailed,                STAMTYPE_COUNTER, "/PGM/RZ/SyncPT/Failed",                  STAMUNIT_OCCURENCES,     "The number of times pfnSyncPT() failed.");
+    STAM_REG(pVM, &pPGM->StatRZSyncPT4K,                    STAMTYPE_COUNTER, "/PGM/RZ/SyncPT/4K",                      STAMUNIT_OCCURENCES,     "Nr of 4K PT syncs");
+    STAM_REG(pVM, &pPGM->StatRZSyncPT4M,                    STAMTYPE_COUNTER, "/PGM/RZ/SyncPT/4M",                      STAMUNIT_OCCURENCES,     "Nr of 4M PT syncs");
     STAM_REG(pVM, &pPGM->StatRZSyncPagePDNAs,               STAMTYPE_COUNTER, "/PGM/RZ/SyncPagePDNAs",                  STAMUNIT_OCCURENCES,     "The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit.");
     STAM_REG(pVM, &pPGM->StatRZSyncPagePDOutOfSync,         STAMTYPE_COUNTER, "/PGM/RZ/SyncPagePDOutOfSync",            STAMUNIT_OCCURENCES,     "The number of time we've encountered an out-of-sync PD in SyncPage.");
     STAM_REG(pVM, &pPGM->StatRZAccessedPage,                STAMTYPE_COUNTER, "/PGM/RZ/AccessedPage",               STAMUNIT_OCCURENCES,     "The number of pages marked not present for accessed bit emulation.");
@@ -1610,61 +1632,75 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatRZPageOutOfSyncSupervisor,     STAMTYPE_COUNTER, "/PGM/RZ/OutOfSync/SuperVisor",       STAMUNIT_OCCURENCES,     "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
     STAM_REG(pVM, &pPGM->StatRZPageOutOfSyncUser,           STAMTYPE_COUNTER, "/PGM/RZ/OutOfSync/User",             STAMUNIT_OCCURENCES,     "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
     STAM_REG(pVM, &pPGM->StatRZPrefetch,                    STAMTYPE_PROFILE, "/PGM/RZ/Prefetch",                   STAMUNIT_TICKS_PER_CALL, "PGMPrefetchPage profiling.");
+    STAM_REG(pVM, &pPGM->StatRZChunkR3MapTlbHits,           STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbHitsRZ",          STAMUNIT_OCCURENCES,     "TLB hits.");
+    STAM_REG(pVM, &pPGM->StatRZChunkR3MapTlbMisses,         STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbMissesRZ",        STAMUNIT_OCCURENCES,     "TLB misses.");
+    STAM_REG(pVM, &pPGM->StatRZPageMapTlbHits,              STAMTYPE_COUNTER, "/PGM/RZ/Page/MapTlbHits",            STAMUNIT_OCCURENCES,     "TLB hits.");
+    STAM_REG(pVM, &pPGM->StatRZPageMapTlbMisses,            STAMTYPE_COUNTER, "/PGM/RZ/Page/MapTlbMisses",          STAMUNIT_OCCURENCES,     "TLB misses.");
+    STAM_REG(pVM, &pPGM->StatRZPageReplaceShared,           STAMTYPE_COUNTER, "/PGM/RZ/Page/ReplacedShared",        STAMUNIT_OCCURENCES,     "Times a shared page was replaced.");
+    STAM_REG(pVM, &pPGM->StatRZPageReplaceZero,             STAMTYPE_COUNTER, "/PGM/RZ/Page/ReplacedZero",          STAMUNIT_OCCURENCES,     "Times the zero page was replaced.");
+/// @todo    STAM_REG(pVM, &pPGM->StatRZPageHandyAllocs,             STAMTYPE_COUNTER, "/PGM/RZ/Page/HandyAllocs",               STAMUNIT_OCCURENCES, "Number of times we've allocated more handy pages.");
+    STAM_REG(pVM, &pPGM->StatRZFlushTLB,                    STAMTYPE_PROFILE, "/PGM/RZ/FlushTLB",                   STAMUNIT_OCCURENCES,     "Profiling of the PGMFlushTLB() body.");
+    STAM_REG(pVM, &pPGM->StatRZFlushTLBNewCR3,              STAMTYPE_COUNTER, "/PGM/RZ/FlushTLB/NewCR3",            STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with a new CR3, non-global. (switch)");
+    STAM_REG(pVM, &pPGM->StatRZFlushTLBNewCR3Global,        STAMTYPE_COUNTER, "/PGM/RZ/FlushTLB/NewCR3Global",      STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with a new CR3, global. (switch)");
+    STAM_REG(pVM, &pPGM->StatRZFlushTLBSameCR3,             STAMTYPE_COUNTER, "/PGM/RZ/FlushTLB/SameCR3",           STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, non-global. (flush)");
+    STAM_REG(pVM, &pPGM->StatRZFlushTLBSameCR3Global,       STAMTYPE_COUNTER, "/PGM/RZ/FlushTLB/SameCR3Global",     STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, global. (flush)");
+    STAM_REG(pVM, &pPGM->StatRZGstModifyPage,               STAMTYPE_PROFILE, "/PGM/RZ/GstModifyPage",              STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMGstModifyPage() body.");
 
-    /* TODO: */
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3,                     STAMTYPE_PROFILE, "/PGM/R3/SyncCR3",                        STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMSyncCR3() body.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3Handlers,             STAMTYPE_PROFILE, "/PGM/R3/SyncCR3/Handlers",               STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMSyncCR3() update handler section.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3HandlerVirtualUpdate, STAMTYPE_PROFILE, "/PGM/R3/SyncCR3/Handlers/VirtualUpdate", STAMUNIT_TICKS_PER_CALL, "Profiling of the virtual handler updates.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3HandlerVirtualReset,  STAMTYPE_PROFILE, "/PGM/R3/SyncCR3/Handlers/VirtualReset",  STAMUNIT_TICKS_PER_CALL, "Profiling of the virtual handler resets.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3Global,               STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/Global",                 STAMUNIT_OCCURENCES,     "The number of global CR3 syncs.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3NotGlobal,            STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/NotGlobal",              STAMUNIT_OCCURENCES,     "The number of non-global CR3 syncs.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3DstCacheHit,          STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/DstChacheHit",           STAMUNIT_OCCURENCES,     "The number of times we got some kind of a cache hit.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3DstFreed,             STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/DstFreed",               STAMUNIT_OCCURENCES,     "The number of times we've had to free a shadow entry.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3DstFreedSrcNP,        STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/DstFreedSrcNP",          STAMUNIT_OCCURENCES,     "The number of times we've had to free a shadow entry for which the source entry was not present.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3DstNotPresent,        STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/DstNotPresent",          STAMUNIT_OCCURENCES,     "The number of times we've encountered a not present shadow entry for a present guest entry.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3DstSkippedGlobalPD,   STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/DstSkippedGlobalPD",     STAMUNIT_OCCURENCES,     "The number of times a global page directory wasn't flushed.");
+    STAM_REG(pVM, &pPGM->StatR3SyncCR3DstSkippedGlobalPT,   STAMTYPE_COUNTER, "/PGM/R3/SyncCR3/DstSkippedGlobalPT",     STAMUNIT_OCCURENCES,     "The number of times a page table with only global entries wasn't flushed.");
+    STAM_REG(pVM, &pPGM->StatR3SyncPT,                      STAMTYPE_PROFILE, "/PGM/R3/SyncPT",                         STAMUNIT_TICKS_PER_CALL, "Profiling of the pfnSyncPT() body.");
+    STAM_REG(pVM, &pPGM->StatR3SyncPTFailed,                STAMTYPE_COUNTER, "/PGM/R3/SyncPT/Failed",                  STAMUNIT_OCCURENCES,     "The number of times pfnSyncPT() failed.");
+    STAM_REG(pVM, &pPGM->StatR3SyncPT4K,                    STAMTYPE_COUNTER, "/PGM/R3/SyncPT/4K",                      STAMUNIT_OCCURENCES,     "Nr of 4K PT syncs");
+    STAM_REG(pVM, &pPGM->StatR3SyncPT4M,                    STAMTYPE_COUNTER, "/PGM/R3/SyncPT/4M",                      STAMUNIT_OCCURENCES,     "Nr of 4M PT syncs");
+    STAM_REG(pVM, &pPGM->StatR3SyncPagePDNAs,               STAMTYPE_COUNTER, "/PGM/R3/SyncPagePDNAs",                  STAMUNIT_OCCURENCES,     "The number of time we've marked a PD not present from SyncPage to virtualize the accessed bit.");
+    STAM_REG(pVM, &pPGM->StatR3SyncPagePDOutOfSync,         STAMTYPE_COUNTER, "/PGM/R3/SyncPagePDOutOfSync",            STAMUNIT_OCCURENCES,     "The number of time we've encountered an out-of-sync PD in SyncPage.");
+    STAM_REG(pVM, &pPGM->StatR3AccessedPage,                STAMTYPE_COUNTER, "/PGM/R3/AccessedPage",               STAMUNIT_OCCURENCES,     "The number of pages marked not present for accessed bit emulation.");
+    STAM_REG(pVM, &pPGM->StatR3DirtyBitTracking,            STAMTYPE_PROFILE, "/PGM/R3/DirtyPage",                  STAMUNIT_TICKS_PER_CALL, "Profiling the dirty bit tracking in CheckPageFault().");
+    STAM_REG(pVM, &pPGM->StatR3DirtyPage,                   STAMTYPE_COUNTER, "/PGM/R3/DirtyPage/Mark",             STAMUNIT_OCCURENCES,     "The number of pages marked read-only for dirty bit tracking.");
+    STAM_REG(pVM, &pPGM->StatR3DirtyPageBig,                STAMTYPE_COUNTER, "/PGM/R3/DirtyPage/MarkBig",          STAMUNIT_OCCURENCES,     "The number of 4MB pages marked read-only for dirty bit tracking.");
+    STAM_REG(pVM, &pPGM->StatR3DirtyPageSkipped,            STAMTYPE_COUNTER, "/PGM/R3/DirtyPage/Skipped",          STAMUNIT_OCCURENCES,     "The number of pages already dirty or readonly.");
+    STAM_REG(pVM, &pPGM->StatR3DirtyPageTrap,               STAMTYPE_COUNTER, "/PGM/R3/DirtyPage/Trap",             STAMUNIT_OCCURENCES,     "The number of traps generated for dirty bit tracking.");
+    STAM_REG(pVM, &pPGM->StatR3DirtiedPage,                 STAMTYPE_COUNTER, "/PGM/R3/DirtyPage/SetDirty",         STAMUNIT_OCCURENCES,     "The number of pages marked dirty because of write accesses.");
+    STAM_REG(pVM, &pPGM->StatR3DirtyTrackRealPF,            STAMTYPE_COUNTER, "/PGM/R3/DirtyPage/RealPF",           STAMUNIT_OCCURENCES,     "The number of real pages faults during dirty bit tracking.");
+    STAM_REG(pVM, &pPGM->StatR3PageAlreadyDirty,            STAMTYPE_COUNTER, "/PGM/R3/DirtyPage/AlreadySet",       STAMUNIT_OCCURENCES,     "The number of pages already marked dirty because of write accesses.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePage,              STAMTYPE_PROFILE, "/PGM/R3/InvalidatePage",             STAMUNIT_TICKS_PER_CALL, "PGMInvalidatePage() profiling.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePage4KBPages,      STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/4KBPages",    STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() was called for a 4KB page.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePage4MBPages,      STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/4MBPages",    STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() was called for a 4MB page.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePage4MBPagesSkip,  STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/4MBPagesSkip",STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() skipped a 4MB page.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePagePDMappings,    STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/PDMappings",  STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict).");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePagePDNAs,         STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/PDNAs",       STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() was called for a not accessed page directory.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePagePDNPs,         STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/PDNPs",       STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() was called for a not present page directory.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePagePDOutOfSync,   STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/PDOutOfSync", STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() was called for an out of sync page directory.");
+    STAM_REG(pVM, &pPGM->StatR3InvalidatePageSkipped,       STAMTYPE_COUNTER, "/PGM/R3/InvalidatePage/Skipped",     STAMUNIT_OCCURENCES,     "The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3.");
+    STAM_REG(pVM, &pPGM->StatR3VirtHandlerSearchByPhys,     STAMTYPE_PROFILE, "/PGM/R3/VirtHandlerSearchByPhys",    STAMUNIT_TICKS_PER_CALL, "Profiling of pgmHandlerVirtualFindByPhysAddr.");
+    STAM_REG(pVM, &pPGM->StatR3PhysHandlerReset,            STAMTYPE_COUNTER, "/PGM/R3/PhysHandlerReset",           STAMUNIT_OCCURENCES,     "The number of times PGMHandlerPhysicalReset is called.");
+    STAM_REG(pVM, &pPGM->StatR3PageOutOfSyncSupervisor,     STAMTYPE_COUNTER, "/PGM/R3/OutOfSync/SuperVisor",       STAMUNIT_OCCURENCES,     "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
+    STAM_REG(pVM, &pPGM->StatR3PageOutOfSyncUser,           STAMTYPE_COUNTER, "/PGM/R3/OutOfSync/User",             STAMUNIT_OCCURENCES,     "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
+    STAM_REG(pVM, &pPGM->StatR3Prefetch,                    STAMTYPE_PROFILE, "/PGM/R3/Prefetch",                   STAMUNIT_TICKS_PER_CALL, "PGMPrefetchPage profiling.");
+    STAM_REG(pVM, &pPGM->StatR3ChunkR3MapTlbHits,           STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbHitsR3",          STAMUNIT_OCCURENCES,     "TLB hits.");
+    STAM_REG(pVM, &pPGM->StatR3ChunkR3MapTlbMisses,         STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbMissesR3",        STAMUNIT_OCCURENCES,     "TLB misses.");
+    STAM_REG(pVM, &pPGM->StatR3PageMapTlbHits,              STAMTYPE_COUNTER, "/PGM/R3/Page/MapTlbHits",            STAMUNIT_OCCURENCES,     "TLB hits.");
+    STAM_REG(pVM, &pPGM->StatR3PageMapTlbMisses,            STAMTYPE_COUNTER, "/PGM/R3/Page/MapTlbMisses",          STAMUNIT_OCCURENCES,     "TLB misses.");
+    STAM_REG(pVM, &pPGM->StatR3PageReplaceShared,           STAMTYPE_COUNTER, "/PGM/R3/Page/ReplacedShared",        STAMUNIT_OCCURENCES,     "Times a shared page was replaced.");
+    STAM_REG(pVM, &pPGM->StatR3PageReplaceZero,             STAMTYPE_COUNTER, "/PGM/R3/Page/ReplacedZero",          STAMUNIT_OCCURENCES,     "Times the zero page was replaced.");
+/// @todo    STAM_REG(pVM, &pPGM->StatR3PageHandyAllocs,             STAMTYPE_COUNTER, "/PGM/R3/Page/HandyAllocs",               STAMUNIT_OCCURENCES, "Number of times we've allocated more handy pages.");
+    STAM_REG(pVM, &pPGM->StatR3FlushTLB,                    STAMTYPE_PROFILE, "/PGM/R3/FlushTLB",                   STAMUNIT_OCCURENCES,     "Profiling of the PGMFlushTLB() body.");
+    STAM_REG(pVM, &pPGM->StatR3FlushTLBNewCR3,              STAMTYPE_COUNTER, "/PGM/R3/FlushTLB/NewCR3",            STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with a new CR3, non-global. (switch)");
+    STAM_REG(pVM, &pPGM->StatR3FlushTLBNewCR3Global,        STAMTYPE_COUNTER, "/PGM/R3/FlushTLB/NewCR3Global",      STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with a new CR3, global. (switch)");
+    STAM_REG(pVM, &pPGM->StatR3FlushTLBSameCR3,             STAMTYPE_COUNTER, "/PGM/R3/FlushTLB/SameCR3",           STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, non-global. (flush)");
+    STAM_REG(pVM, &pPGM->StatR3FlushTLBSameCR3Global,       STAMTYPE_COUNTER, "/PGM/R3/FlushTLB/SameCR3Global",     STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, global. (flush)");
+    STAM_REG(pVM, &pPGM->StatR3GstModifyPage,               STAMTYPE_PROFILE, "/PGM/R3/GstModifyPage",              STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMGstModifyPage() body.");
 
-
-    STAM_REG(pVM, &pPGM->StatFlushTLB,                      STAMTYPE_PROFILE, "/PGM/FlushTLB",                      STAMUNIT_OCCURENCES,     "Profiling of the PGMFlushTLB() body.");
-    STAM_REG(pVM, &pPGM->StatFlushTLBNewCR3,                STAMTYPE_COUNTER, "/PGM/FlushTLB/NewCR3",               STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with a new CR3, non-global. (switch)");
-    STAM_REG(pVM, &pPGM->StatFlushTLBNewCR3Global,          STAMTYPE_COUNTER, "/PGM/FlushTLB/NewCR3Global",         STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with a new CR3, global. (switch)");
-    STAM_REG(pVM, &pPGM->StatFlushTLBSameCR3,               STAMTYPE_COUNTER, "/PGM/FlushTLB/SameCR3",              STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, non-global. (flush)");
-    STAM_REG(pVM, &pPGM->StatFlushTLBSameCR3Global,         STAMTYPE_COUNTER, "/PGM/FlushTLB/SameCR3Global",        STAMUNIT_OCCURENCES,     "The number of times PGMFlushTLB was called with the same CR3, global. (flush)");
-
-
-    STAM_REG(pVM, &pPGM->StatHCGstModifyPage,               STAMTYPE_PROFILE, "/PGM/HC/GstModifyPage",              STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMGstModifyPage() body.");
-    STAM_REG(pVM, &pPGM->StatGCGstModifyPage,               STAMTYPE_PROFILE, "/PGM/GC/GstModifyPage",              STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMGstModifyPage() body.");
-
-    STAM_REG(pVM, &pPGM->StatR3SyncPT,                      STAMTYPE_PROFILE, "/PGM/R3/SyncPT",                     STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMR3SyncPT() body.");
-    STAM_REG(pVM, &pPGM->StatSynPT4kGC,                     STAMTYPE_COUNTER, "/PGM/GC/SyncPT/4k",                  STAMUNIT_OCCURENCES,     "Nr of 4k PT syncs");
-    STAM_REG(pVM, &pPGM->StatSynPT4kHC,                     STAMTYPE_COUNTER, "/PGM/HC/SyncPT/4k",                  STAMUNIT_OCCURENCES,     "Nr of 4k PT syncs");
-    STAM_REG(pVM, &pPGM->StatSynPT4MGC,                     STAMTYPE_COUNTER, "/PGM/GC/SyncPT/4M",                  STAMUNIT_OCCURENCES,     "Nr of 4M PT syncs");
-    STAM_REG(pVM, &pPGM->StatSynPT4MHC,                     STAMTYPE_COUNTER, "/PGM/HC/SyncPT/4M",                  STAMUNIT_OCCURENCES,     "Nr of 4M PT syncs");
-
-    STAM_REG(pVM, &pPGM->StatDynRamTotal,                   STAMTYPE_COUNTER, "/PGM/RAM/TotalAlloc",                STAMUNIT_MEGABYTES,      "Allocated mbs of guest ram.");
-    STAM_REG(pVM, &pPGM->StatDynRamGrow,                    STAMTYPE_COUNTER, "/PGM/RAM/Grow",                      STAMUNIT_OCCURENCES,     "Nr of pgmr3PhysGrowRange calls.");
-
-    STAM_REG(pVM, &pPGM->StatPageHCMapTlbHits,              STAMTYPE_COUNTER, "/PGM/PageHCMap/TlbHits",                 STAMUNIT_OCCURENCES, "TLB hits.");
-    STAM_REG(pVM, &pPGM->StatPageHCMapTlbMisses,            STAMTYPE_COUNTER, "/PGM/PageHCMap/TlbMisses",               STAMUNIT_OCCURENCES, "TLB misses.");
-    STAM_REG(pVM, &pPGM->ChunkR3Map.c,                      STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                      STAMUNIT_OCCURENCES, "Number of mapped chunks.");
-    STAM_REG(pVM, &pPGM->ChunkR3Map.cMax,                   STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",                   STAMUNIT_OCCURENCES, "Maximum number of mapped chunks.");
-    STAM_REG(pVM, &pPGM->StatChunkR3MapTlbHits,             STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbHits",                STAMUNIT_OCCURENCES, "TLB hits.");
-    STAM_REG(pVM, &pPGM->StatChunkR3MapTlbMisses,           STAMTYPE_COUNTER, "/PGM/ChunkR3Map/TlbMisses",              STAMUNIT_OCCURENCES, "TLB misses.");
-    STAM_REG(pVM, &pPGM->StatPageReplaceShared,             STAMTYPE_COUNTER, "/PGM/Page/ReplacedShared",               STAMUNIT_OCCURENCES, "Times a shared page was replaced.");
-    STAM_REG(pVM, &pPGM->StatPageReplaceZero,               STAMTYPE_COUNTER, "/PGM/Page/ReplacedZero",                 STAMUNIT_OCCURENCES, "Times the zero page was replaced.");
-    STAM_REG(pVM, &pPGM->StatPageHandyAllocs,               STAMTYPE_COUNTER, "/PGM/Page/HandyAllocs",                  STAMUNIT_OCCURENCES, "Number of times we've allocated more handy pages.");
-    STAM_REG(pVM, &pPGM->cAllPages,                         STAMTYPE_U32,     "/PGM/Page/cAllPages",                    STAMUNIT_OCCURENCES, "The total number of pages.");
-    STAM_REG(pVM, &pPGM->cPrivatePages,                     STAMTYPE_U32,     "/PGM/Page/cPrivatePages",                STAMUNIT_OCCURENCES, "The number of private pages.");
-    STAM_REG(pVM, &pPGM->cSharedPages,                      STAMTYPE_U32,     "/PGM/Page/cSharedPages",                 STAMUNIT_OCCURENCES, "The number of shared pages.");
-    STAM_REG(pVM, &pPGM->cZeroPages,                        STAMTYPE_U32,     "/PGM/Page/cZeroPages",                   STAMUNIT_OCCURENCES, "The number of zero backed pages.");
-
-
-    for (unsigned i = 0; i < X86_PG_ENTRIES; i++)
-    {
-        /** @todo r=bird: We need a STAMR3RegisterF()! */
-        char szName[32];
-
-        RTStrPrintf(szName, sizeof(szName), "/PGM/GC/PD/Trap0e/%04X", i);
-        int rc = STAMR3Register(pVM, &pPGM->StatRZTrap0ePD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, "The number of traps in page directory n.");
-        AssertRC(rc);
-
-        RTStrPrintf(szName, sizeof(szName), "/PGM/GC/PD/SyncPt/%04X", i);
-        rc = STAMR3Register(pVM, &pPGM->StatGCSyncPtPD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, "The number of syncs per PD n.");
-        AssertRC(rc);
-
-        RTStrPrintf(szName, sizeof(szName), "/PGM/GC/PD/SyncPage/%04X", i);
-        rc = STAMR3Register(pVM, &pPGM->StatGCSyncPagePD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, "The number of out of sync pages per page directory n.");
-        AssertRC(rc);
-    }
 }
 #endif /* VBOX_WITH_STATISTICS */
 
