@@ -995,22 +995,22 @@ typedef struct PDMAPICREG
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   iCpu            Target CPU.
+     * @param   idCpu           Target CPU.
      * @param   u32Reg          MSR to write.
      * @param   u64Value        Value to write.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnWriteMSRR3, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnWriteMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
 
     /**
      * Read MSR in APIC range.
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance of the APIC.
-     * @param   iCpu            Target CPU.
+     * @param   idCpu           Target CPU.
      * @param   u32Reg          MSR to read.
      * @param   pu64Value       Value read.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnReadMSRR3, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnReadMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
 
     /**
      * Private interface between the IOAPIC and APIC.

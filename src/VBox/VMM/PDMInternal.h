@@ -409,9 +409,9 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
     DECLR3CALLBACKMEMBER(uint8_t,   pfnGetTPRR3,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnWriteMSRR3 */
-    DECLR3CALLBACKMEMBER(uint32_t,  pfnWriteMSRR3, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value));
+    DECLR3CALLBACKMEMBER(uint32_t,  pfnWriteMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
-    DECLR3CALLBACKMEMBER(uint32_t,  pfnReadMSRR3, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value));
+    DECLR3CALLBACKMEMBER(uint32_t,  pfnReadMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
     /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
     DECLR3CALLBACKMEMBER(void,      pfnBusDeliverR3,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
@@ -431,9 +431,9 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
     DECLR0CALLBACKMEMBER(uint8_t,   pfnGetTPRR0,(PPDMDEVINS pDevIns));
      /** @copydoc PDMAPICREG::pfnWriteMSRR3 */
-    DECLR0CALLBACKMEMBER(uint32_t,  pfnWriteMSRR0, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value));
+    DECLR0CALLBACKMEMBER(uint32_t,  pfnWriteMSRR0, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
-    DECLR0CALLBACKMEMBER(uint32_t,  pfnReadMSRR0, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value));
+    DECLR0CALLBACKMEMBER(uint32_t,  pfnReadMSRR0, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
     /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
     DECLR0CALLBACKMEMBER(void,      pfnBusDeliverR0,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
@@ -453,9 +453,9 @@ typedef struct PDMAPIC
     /** @copydoc PDMAPICREG::pfnGetTPRR3 */
     DECLRCCALLBACKMEMBER(uint8_t,   pfnGetTPRRC,(PPDMDEVINS pDevIns));
     /** @copydoc PDMAPICREG::pfnWriteMSRR3 */
-    DECLRCCALLBACKMEMBER(uint32_t,  pfnWriteMSRRC, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value));
+    DECLRCCALLBACKMEMBER(uint32_t,  pfnWriteMSRRC, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
     /** @copydoc PDMAPICREG::pfnReadMSRR3 */
-    DECLRCCALLBACKMEMBER(uint32_t,  pfnReadMSRRC, (PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value));
+    DECLRCCALLBACKMEMBER(uint32_t,  pfnReadMSRRC, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
     /** @copydoc PDMAPICREG::pfnBusDeliverR3 */
     DECLRCCALLBACKMEMBER(void,      pfnBusDeliverRC,(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                      uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode));
