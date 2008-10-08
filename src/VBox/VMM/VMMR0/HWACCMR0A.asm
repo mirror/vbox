@@ -855,18 +855,25 @@ ENDPROC VMXGetActivateVMCS
 ; */
 ;DECLASM(int) VMXR0InvEPT(VMX_FLUSH enmFlush, uint128_t *pDescriptor);
 BEGINPROC VMXR0InvEPT
-%ifdef ASM_CALL64_GCC
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
     mov         eax, 0ffffffffh
     and         rdi, rax
     xor         rax, rax
-;    invept      rdi, rsi
-    DB          0x66, 0x0F, 0x38, 0x80, 0xA
-%else
+;    invept      rdi, qword [rsi]
+    DB          0x66, 0x0F, 0x38, 0x80, 0x3E
+ %else
     mov         eax, 0ffffffffh
     and         rcx, rax
     xor         rax, rax
-;    invept      rcx, rdx
+;    invept      rcx, qword [rdx]
     DB          0x66, 0x0F, 0x38, 0x80, 0xA
+ %endif
+%else
+    mov         eax, [esp + 4]
+    mov         ecx, [esp + 8]
+;    invept      eax, qword [ecx]
+    DB          0x66, 0x0F, 0x38, 0x80, 0x1
 %endif
     jnc         .valid_vmcs
     mov         eax, VERR_VMX_INVALID_VMCS_PTR
@@ -885,18 +892,25 @@ ENDPROC VMXR0InvEPT
 ; */
 ;DECLASM(int) VMXR0InvVPID(VMX_FLUSH enmFlush, uint128_t *pDescriptor);
 BEGINPROC VMXR0InvVPID
-%ifdef ASM_CALL64_GCC
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
     mov         eax, 0ffffffffh
     and         rdi, rax
     xor         rax, rax
-    ;invvpid     rdi, rsi
-    DB          0x66, 0x0F, 0x38, 0x81, 0xA
-%else
+    ;invvpid     rdi, qword [rsi]
+    DB          0x66, 0x0F, 0x38, 0x81, 0x3E
+ %else
     mov         eax, 0ffffffffh
     and         rcx, rax
     xor         rax, rax
-;    invvpid     rcx, rdx
+;    invvpid     rcx, qword [rdx]
     DB          0x66, 0x0F, 0x38, 0x81, 0xA
+ %endif
+%else
+    mov         eax, [esp + 4]
+    mov         ecx, [esp + 8]
+;    invept      eax, qword [ecx]
+    DB          0x66, 0x0F, 0x38, 0x81, 0x1
 %endif
     jnc         .valid_vmcs
     mov         eax, VERR_VMX_INVALID_VMCS_PTR
