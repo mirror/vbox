@@ -147,42 +147,27 @@ public:
                            ComSafeArrayOut (IPerformanceMetric *, outMetrics));
     STDMETHOD(SetupMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
                              ComSafeArrayIn (IUnknown *, objects),
-                             ULONG aPeriod, ULONG aCount);
+                             ULONG aPeriod, ULONG aCount,
+                             ComSafeArrayOut (IPerformanceMetric *,
+                                              outMetrics));
     STDMETHOD(EnableMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
-                              ComSafeArrayIn (IUnknown *, objects));
+                              ComSafeArrayIn (IUnknown *, objects),
+                              ComSafeArrayOut (IPerformanceMetric *,
+                                               outMetrics));
     STDMETHOD(DisableMetrics) (ComSafeArrayIn (INPTR BSTR, metricNames),
-                               ComSafeArrayIn (IUnknown *, objects));
+                               ComSafeArrayIn (IUnknown *, objects),
+                               ComSafeArrayOut (IPerformanceMetric *,
+                                                outMetrics));
     STDMETHOD(QueryMetricsData) (ComSafeArrayIn (INPTR BSTR, metricNames),
                                  ComSafeArrayIn (IUnknown *, objects),
                                  ComSafeArrayOut (BSTR, outMetricNames),
                                  ComSafeArrayOut (IUnknown *, outObjects),
+                                 ComSafeArrayOut (BSTR, outUnits),
+                                 ComSafeArrayOut (ULONG, outScales),
+                                 ComSafeArrayOut (ULONG, outSequenceNumbers),
                                  ComSafeArrayOut (ULONG, outDataIndices),
                                  ComSafeArrayOut (ULONG, outDataLengths),
                                  ComSafeArrayOut (LONG, outData));
-
-    STDMETHOD(SetupMetricsEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
-                               ComSafeArrayIn (IUnknown *, objects),
-                               ULONG aPeriod, ULONG aCount,
-                               ComSafeArrayOut (IPerformanceMetric *,
-                                                outMetrics));
-    STDMETHOD(EnableMetricsEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                ComSafeArrayIn (IUnknown *, objects),
-                                ComSafeArrayOut (IPerformanceMetric *,
-                                                 outMetrics));
-    STDMETHOD(DisableMetricsEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                 ComSafeArrayIn (IUnknown *, objects),
-                                 ComSafeArrayOut (IPerformanceMetric *,
-                                                  outMetrics));
-    STDMETHOD(QueryMetricsDataEx) (ComSafeArrayIn (INPTR BSTR, metricNames),
-                                   ComSafeArrayIn (IUnknown *, objects),
-                                   ComSafeArrayOut (BSTR, outMetricNames),
-                                   ComSafeArrayOut (IUnknown *, outObjects),
-                                   ComSafeArrayOut (BSTR, outUnits),
-                                   ComSafeArrayOut (ULONG, outScales),
-                                   ComSafeArrayOut (ULONG, outSequenceNumbers),
-                                   ComSafeArrayOut (ULONG, outDataIndices),
-                                   ComSafeArrayOut (ULONG, outDataLengths),
-                                   ComSafeArrayOut (LONG, outData));
 
     // public methods only for internal purposes
 
@@ -202,20 +187,6 @@ public:
 private:
     HRESULT toIPerformanceMetric(pm::Metric *src, IPerformanceMetric **dst);
     HRESULT toIPerformanceMetric(pm::BaseMetric *src, IPerformanceMetric **dst);
-    HRESULT SetupMetricsInt(ComSafeArrayIn (INPTR BSTR, metricNames),
-                            ComSafeArrayIn (IUnknown *, objects),
-                            ULONG aPeriod, ULONG aCount, bool reportAffected,
-                            ComSafeArrayOut (IPerformanceMetric *, outMetrics));
-    HRESULT EnableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
-                              ComSafeArrayIn (IUnknown *, objects),
-                              bool reportAffected,
-                              ComSafeArrayOut (IPerformanceMetric *,
-                                               outMetrics));
-    HRESULT DisableMetricsInt (ComSafeArrayIn (INPTR BSTR, metricNames),
-                               ComSafeArrayIn (IUnknown *, objects),
-                               bool reportAffected,
-                               ComSafeArrayOut (IPerformanceMetric *,
-                                                outMetrics));
                             
     static void staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     void samplerCallback();

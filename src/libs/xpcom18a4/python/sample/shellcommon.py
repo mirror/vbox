@@ -22,19 +22,12 @@ class PerfCollector:
         """
         self.collector = vb.performanceCollector 
 
-    def _update_metric_params(self):
-        metrics = self.collector.getMetrics(['*'], None)
-        self.metrics = {}
-        for m in metrics:
-            self.metrics[str(m.object) + "/" + str(m.metricName)] = m
-
     def setup(self, names, objects, period, nsamples):
         """ Discards all previously collected values for the specified
         metrics, sets the period of collection and the number of retained
         samples, enables collection.
         """
         self.collector.setupMetrics(names, objects, period, nsamples)
-        self._update_metric_params()
 
     def enable(self, names, objects):
         """ Resumes metric collection for the specified metrics.
@@ -57,24 +50,22 @@ class PerfCollector:
         'values': collected data
         'values_as_string': pre-processed values ready for 'print' statement
         """
-        (values, names_out, objects_out, indices, lengths) = self.collector.queryMetricsData(names, objects)
+        (values, names_out, objects_out, units, scales, sequence_numbers,
+            indices, lengths) = self.collector.queryMetricsData(names, objects)
         out = []
         for i in xrange(0, len(names_out)):
-            metric = self.metrics[str(objects_out[i]) + "/" + str(names_out[i])]
-            unit = str(metric.getUnit())
-            if unit == '%':
-                scale = 1000.
+            scale = int(scales[i])
+            if scale != 1:
                 fmt = '%.2f%s'
             else:
-                scale = 1
                 fmt = '%d %s'
             out.append({
                 'name':str(names_out[i]),
                 'object':str(objects_out[i]),
-                'unit':str(metric.getUnit()),
+                'unit':str(units[i]),
                 'scale':scale,
                 'values':[int(values[j]) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))],
-                'values_as_string':'['+', '.join([fmt % (int(values[j])/scale, unit) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))])+']'
+                'values_as_string':'['+', '.join([fmt % (int(values[j])/scale, units[i]) for j in xrange(int(indices[i]), int(indices[i])+int(lengths[i]))])+']'
             })
         return out
 

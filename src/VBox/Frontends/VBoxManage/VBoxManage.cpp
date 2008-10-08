@@ -7767,46 +7767,6 @@ static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
     return Bstr("unknown");
 }
 
-static int countMatchingMetrics(ComPtr<IVirtualBox> aVirtualBox,
-                                ComPtr<IPerformanceCollector> performanceCollector,
-                                ComSafeArrayIn(INPTR BSTR, metrics),
-                                ComSafeArrayIn(IUnknown *, objects),
-                                bool listMatches)
-{
-    HRESULT rc;
-    com::SafeIfaceArray<IPerformanceMetric> metricInfo;
-
-    CHECK_ERROR(performanceCollector,
-        GetMetrics(ComSafeArrayInArg(metrics),
-                   ComSafeArrayInArg(objects),
-                   ComSafeArrayAsOutParam(metricInfo)));
-
-    if (metricInfo.size())
-    {
-        if (listMatches)
-        {
-            ComPtr<IUnknown> object;
-            Bstr metricName;
-            RTPrintf("The following metrics will be collected:\n\n"
-                     "Object     Metric\n"
-                     "---------- --------------------\n");
-            for (size_t i = 0; i < metricInfo.size(); i++)
-            {
-                CHECK_ERROR(metricInfo[i], COMGETTER(Object)(object.asOutParam()));
-                CHECK_ERROR(metricInfo[i], COMGETTER(MetricName)(metricName.asOutParam()));
-                RTPrintf("%-10ls %-20ls\n",
-                    getObjectName(aVirtualBox, object).raw(), metricName.raw());
-            }
-            RTPrintf("\n");
-        }
-    }
-    else
-    {
-        RTPrintf("No metrics match the specified filter!\n");
-    }
-    return metricInfo.size();
-}
-
 static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
                                 ComSafeArrayIn(IPerformanceMetric*, aMetrics))
 {
@@ -7933,22 +7893,14 @@ static int handleMetricsSetup(int argc, char *argv[],
     if (FAILED(rc))
         return 1;
 
+    com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
+    CHECK_ERROR(performanceCollector,
+        SetupMetrics(ComSafeArrayAsInParam(metrics),
+                     ComSafeArrayAsInParam(objects), period, samples,
+                     ComSafeArrayAsOutParam(affectedMetrics)));
     if (listMatches)
-    {
-        com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
-        CHECK_ERROR(performanceCollector,
-            SetupMetricsEx(ComSafeArrayAsInParam(metrics),
-                           ComSafeArrayAsInParam(objects), period, samples,
-                           ComSafeArrayAsOutParam(affectedMetrics)));
         listAffectedMetrics(aVirtualBox,
                             ComSafeArrayAsInParam(affectedMetrics));
-    }
-    else
-    {
-        CHECK_ERROR(performanceCollector,
-            SetupMetrics(ComSafeArrayAsInParam(metrics),
-                         ComSafeArrayAsInParam(objects), period, samples));
-    }
     
     return 0;
 }
@@ -7974,6 +7926,9 @@ static int handleMetricsQuery(int argc, char *argv[],
 
     com::SafeArray<BSTR>          retNames;
     com::SafeIfaceArray<IUnknown> retObjects;
+    com::SafeArray<BSTR>          retUnits;
+    com::SafeArray<ULONG>         retScales;
+    com::SafeArray<ULONG>         retSequenceNumbers;
     com::SafeArray<ULONG>         retIndices;
     com::SafeArray<ULONG>         retLengths;
     com::SafeArray<LONG>          retData;
@@ -7981,6 +7936,9 @@ static int handleMetricsQuery(int argc, char *argv[],
                                              ComSafeArrayAsInParam(objects),
                                              ComSafeArrayAsOutParam(retNames),
                                              ComSafeArrayAsOutParam(retObjects),
+                                             ComSafeArrayAsOutParam(retUnits),
+                                             ComSafeArrayAsOutParam(retScales),
+                                             ComSafeArrayAsOutParam(retSequenceNumbers),
                                              ComSafeArrayAsOutParam(retIndices),
                                              ComSafeArrayAsOutParam(retLengths),
                                              ComSafeArrayAsOutParam(retData)) );
@@ -7989,32 +7947,17 @@ static int handleMetricsQuery(int argc, char *argv[],
              "---------- -------------------- --------------------------------------------\n");
     for (unsigned i = 0; i < retNames.size(); i++)
     {
-        // Get info for the metric
-        com::SafeArray<BSTR> nameOfMetric(1);
-        Bstr tmpName(retNames[i]);
-        tmpName.detachTo (&nameOfMetric[0]);
-        com::SafeIfaceArray<IUnknown> anObject(1);
-        ComPtr<IUnknown> tmpObject(retObjects[i]);
-        tmpObject.queryInterfaceTo(&anObject[0]);
-        com::SafeIfaceArray <IPerformanceMetric> metricInfo;
-        CHECK_RC_BREAK (performanceCollector->GetMetrics( ComSafeArrayAsInParam(nameOfMetric),
-                                               ComSafeArrayAsInParam(anObject),
-                                               ComSafeArrayAsOutParam(metricInfo) ));
-        BSTR metricUnitBSTR;
-        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(Unit) (&metricUnitBSTR));
-        Bstr metricUnit(metricUnitBSTR);
+        Bstr metricUnit(retUnits[i]);
         Bstr metricName(retNames[i]);
-        LONG minVal, maxVal;
-        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MinimumValue) (&minVal));
-        CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MaximumValue) (&maxVal));
         RTPrintf("%-10ls %-20ls ", getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
         const char *separator = "";
         for (unsigned j = 0; j < retLengths[i]; j++)
         {
-            if (strcmp((const char *)metricUnit.raw(), "%"))
+            if (retScales[i] == 1)
                 RTPrintf("%s%d %ls", separator, retData[retIndices[i] + j], metricUnit.raw());
             else
-                RTPrintf("%s%d.%02d%%", separator, retData[retIndices[i] + j] / 1000, (retData[retIndices[i] + j] / 10) % 100);
+                RTPrintf("%s%d.%02d%ls", separator, retData[retIndices[i] + j] / retScales[i],
+                         (retData[retIndices[i] + j] * 100 / retScales[i]) % 100, metricUnit.raw());
             separator = ", ";
         }
         RTPrintf("\n");
@@ -8120,15 +8063,16 @@ static int handleMetricsCollect(int argc, char *argv[],
         return 1;
 
 
-    if (countMatchingMetrics(aVirtualBox, performanceCollector,
-                             ComSafeArrayAsInParam(metrics),
-                             ComSafeArrayAsInParam(objects),
-                             listMatches) == 0)
-        return 1;
-
+    com::SafeIfaceArray<IPerformanceMetric> affectedMetrics;
     CHECK_ERROR(performanceCollector,
         SetupMetrics(ComSafeArrayAsInParam(baseMetrics),
-                     ComSafeArrayAsInParam(objects), period, samples));
+                     ComSafeArrayAsInParam(objects), period, samples,
+                     ComSafeArrayAsOutParam(affectedMetrics)));
+    if (listMatches)
+        listAffectedMetrics(aVirtualBox,
+                            ComSafeArrayAsInParam(affectedMetrics));
+    if (!affectedMetrics.size())
+        return 1;
 
     if (isDetached)
     {
@@ -8152,6 +8096,9 @@ static int handleMetricsCollect(int argc, char *argv[],
         getTimestamp(ts, sizeof(ts));
         com::SafeArray<BSTR>          retNames;
         com::SafeIfaceArray<IUnknown> retObjects;
+        com::SafeArray<BSTR>          retUnits;
+        com::SafeArray<ULONG>         retScales;
+        com::SafeArray<ULONG>         retSequenceNumbers;
         com::SafeArray<ULONG>         retIndices;
         com::SafeArray<ULONG>         retLengths;
         com::SafeArray<LONG>          retData;
@@ -8159,38 +8106,25 @@ static int handleMetricsCollect(int argc, char *argv[],
                                                  ComSafeArrayAsInParam(objects),
                                                  ComSafeArrayAsOutParam(retNames),
                                                  ComSafeArrayAsOutParam(retObjects),
+                                                 ComSafeArrayAsOutParam(retUnits),
+                                                 ComSafeArrayAsOutParam(retScales),
+                                                 ComSafeArrayAsOutParam(retSequenceNumbers),
                                                  ComSafeArrayAsOutParam(retIndices),
                                                  ComSafeArrayAsOutParam(retLengths),
                                                  ComSafeArrayAsOutParam(retData)) );
         for (unsigned i = 0; i < retNames.size(); i++)
         {
-
-            // Get info for the metric
-            com::SafeArray<BSTR> nameOfMetric(1);
-            Bstr tmpName(retNames[i]);
-            tmpName.detachTo (&nameOfMetric[0]);
-            com::SafeIfaceArray<IUnknown> anObject(1);
-            ComPtr<IUnknown> tmpObject(retObjects[i]);
-            tmpObject.queryInterfaceTo(&anObject[0]);
-            com::SafeIfaceArray <IPerformanceMetric> metricInfo;
-            CHECK_RC_BREAK (performanceCollector->GetMetrics( ComSafeArrayAsInParam(nameOfMetric),
-                                                   ComSafeArrayAsInParam(anObject),
-                                                   ComSafeArrayAsOutParam(metricInfo) ));
-            BSTR metricUnitBSTR;
-            CHECK_RC_BREAK (metricInfo[0]->COMGETTER(Unit) (&metricUnitBSTR));
-            Bstr metricUnit(metricUnitBSTR);
+            Bstr metricUnit(retUnits[i]);
             Bstr metricName(retNames[i]);
-            LONG minVal, maxVal;
-            CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MinimumValue) (&minVal));
-            CHECK_RC_BREAK (metricInfo[0]->COMGETTER(MaximumValue) (&maxVal));
             RTPrintf("%-12s %-10ls %-20ls ", ts, getObjectName(aVirtualBox, retObjects[i]).raw(), metricName.raw());
             const char *separator = "";
             for (unsigned j = 0; j < retLengths[i]; j++)
             {
-                if (strcmp((const char *)metricUnit.raw(), "%"))
+                if (retScales[i] == 1)
                     RTPrintf("%s%d %ls", separator, retData[retIndices[i] + j], metricUnit.raw());
                 else
-                    RTPrintf("%s%d.%02d%%", separator, retData[retIndices[i] + j] / 1000, retData[retIndices[i] + j] % 100);
+                    RTPrintf("%s%d.%02d%ls", separator, retData[retIndices[i] + j] / retScales[i],
+                             (retData[retIndices[i] + j] * 100 / retScales[i]) % 100, metricUnit.raw());
                 separator = ", ";
             }
             RTPrintf("\n");
