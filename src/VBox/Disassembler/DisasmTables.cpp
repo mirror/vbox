@@ -724,7 +724,27 @@ const OPCODE g_aTwoByteMapX86_PF66[256] =
     OP("comisd %Vpd,%Wpd",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_COMISD,  OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* 3 */
+#if 1
     INVALID_OPCODE_BLOCK
+#else
+    /** @todo */
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("3 byte escape A4",   IDX_ParseThreeByteEsc4,0,              0,        OP_3B_ESC4,  OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    OP("3 byte escape A5",   IDX_ParseThreeByteEsc5,0,              0,        OP_3B_ESC5,  OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+#endif
 
     /* 4 */
     INVALID_OPCODE_BLOCK
