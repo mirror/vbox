@@ -206,7 +206,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies);
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
+ *                          Arguments may not be wider than the host pointer size!
  * @param   ...             Function arguments.
  */
 RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
@@ -232,7 +232,7 @@ RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNR
  *                          wait till it's completed.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
+ *                          Arguments may not be wider than the host pointer size!
  * @param   ...             Function arguments.
  */
 RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
@@ -260,7 +260,7 @@ RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, 
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
+ *                          Arguments may not be wider than the host pointer size!
  * @param   ...             Function arguments.
  */
 RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
@@ -288,7 +288,7 @@ RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, un
  * @param   fFlags          A combination of the RTREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
- *                          Not possible to pass 64-bit arguments!
+ *                          Arguments may not be wider than the host pointer size!
  * @param   Args            Variable argument vector.
  */
 RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
