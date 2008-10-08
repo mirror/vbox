@@ -93,6 +93,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_QT4GUI),VirtualBox,) \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQtCore.so.4,) \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQtGui.so.4,) \
+	$(if $(VBOX_WITH_QT4GUI),accessible/libqtaccessiblewidgets.so,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	VBoxSettings.so \
@@ -245,6 +246,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 	$(QUIET)$(MKDIR) -p $(SOLARIS_INST_DIR)/etc
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(MKDIR) -p $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST),)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p $(SOLARIS_INST_DIR)/accessible,)
 	$(QUIET)$(if $(and $(VBOX_WITH_QT4GUI), $(not $(VBOX_WITH_SEPARATE_SDK))),$(MKDIR) -p $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(PATH_BIN)/additions/VBoxGuestAdditions.iso               $(SOLARIS_INST_DIR)/additions/)
 	$(QUIET)$(if $(VBOX_WITH_VRDP_RDESKTOP),$(MKDIR) -p $(SOLARIS_INST_DIR)/rdesktop-vrdp-keymaps,)
@@ -283,6 +285,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQtXml.so.4            $(SOLARIS_INST_DIR)/libVBoxQtXml.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQtSql.so.4            $(SOLARIS_INST_DIR)/libVBoxQtSql.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/lib/libVBoxQt3Support.so.4       $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_BIN)/accessible/libqtaccessiblewidgets.so    $(SOLARIS_INST_DIR)/accessible/libqtaccessiblewidgets.so,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig      $(SOLARIS_INST_DIR)/VBoxQtconfig,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARIS_INST_DIR)/VBoxDbg.so,)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxPython.so                           $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so)
@@ -333,6 +336,7 @@ endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtXml.so.4,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQtSql.so.4,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/libVBoxQt3Support.so.4,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/accessible/libqtaccessiblewidgets.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VBoxQtconfig,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_DEBUGGER_GUI),strip $(SOLARIS_INST_DIR)/VBoxDbg.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_PYTHON),strip $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so,),)
@@ -444,6 +448,7 @@ $(PATH_BIN)/$(DBG_ARCHIVE): \
 	$(call MSG_L1,Installing debug binaries $(SOLARIS_DBG_DIR))
 	$(QUIET)$(RM) -Rf -- $(SOLARIS_DBG_DIR)
 	$(QUIET)$(MKDIR) -p -- $(SOLARIS_DBG_DIR)/components
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(MKDIR) -p -- $(SOLARIS_DBG_DIR)/accessible,)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON), $(MKDIR) -p -- $(SOLARIS_DBG_DIR)/$(VBOX_SOL_PYTHON_INST),)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxdrv                                                            $(SOLARIS_DBG_DIR)/vboxdrv
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/vboxflt                                                            $(SOLARIS_DBG_DIR)/vboxflt
@@ -472,6 +477,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox                                $(SOLARIS_DBG_DIR)/VirtualBox,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/libVBoxQtCore.so.4                        $(SOLARIS_DBG_DIR)/libVBoxQtCore.so.4,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/libVBoxQtGui.so.4                         $(SOLARIS_DBG_DIR)/libVBoxQtGui.so.4,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/accessible/libqtaccessiblewidgets.so      $(SOLARIS_DBG_DIR)/accessible/libqtaccessiblewidgets.so,)
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox.so                             $(SOLARIS_DBG_DIR)/VirtualBox.so,)
 endif
