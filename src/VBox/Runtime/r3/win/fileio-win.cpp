@@ -667,8 +667,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
             pObjInfo->Attr.u.Unix.uid             = ~0U;
             pObjInfo->Attr.u.Unix.gid             = ~0U;
             pObjInfo->Attr.u.Unix.cHardlinks      = Data.nNumberOfLinks ? Data.nNumberOfLinks : 1;
-            pObjInfo->Attr.u.Unix.INodeIdDevice   = 0;
-            pObjInfo->Attr.u.Unix.INodeId         = 0;
+            pObjInfo->Attr.u.Unix.INodeIdDevice   = 0; /** @todo Use the volume serial number (see GetFileInformationByHandle). */
+            pObjInfo->Attr.u.Unix.INodeId         = 0; /** @todo Use the fileid (see GetFileInformationByHandle). */
             pObjInfo->Attr.u.Unix.fFlags          = 0;
             pObjInfo->Attr.u.Unix.GenerationId    = 0;
             pObjInfo->Attr.u.Unix.Device          = 0;
