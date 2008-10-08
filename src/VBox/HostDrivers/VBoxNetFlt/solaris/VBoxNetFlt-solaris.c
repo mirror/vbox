@@ -1521,8 +1521,10 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     RTStrPrintf(szDev, sizeof(szDev), "/dev/net/%s", pThis->szName);
     int rc = ldi_open_by_name(szDev, FREAD | FWRITE, kcred, &pThis->u.s.hIface, DevId);
     if (   rc
-        && rc == ENODEV)
+        && rc == ENODEV)    /* ENODEV is returned when resolvepath fails, not ENOENT */
     {
+        /** @todo support VLAN PPA hacks and vanity namings? */
+
         /*
          * Fallback to style-2 open.
          */
