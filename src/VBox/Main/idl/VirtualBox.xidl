@@ -10421,7 +10421,7 @@
 
   <interface
     name="IPerformanceCollector" extends="$unknown"
-    uuid="4cbdd29e-e801-4fd1-b721-42a1c22b2d95"
+    uuid="e22e1acb-ac4a-43bb-a31c-17321659b0c6"
     wsmap="managed"
   >
     <desc>
