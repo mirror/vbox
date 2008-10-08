@@ -1575,8 +1575,9 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatRZTrap0eSVWrite,               STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/Write",    STAMUNIT_OCCURENCES,     "Number of supervisor mode write page faults.");
     STAM_REG(pVM, &pPGM->StatRZTrap0eSVReserved,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/Reserved", STAMUNIT_OCCURENCES,     "Number of supervisor mode reserved bit page faults.");
     STAM_REG(pVM, &pPGM->StatRZTrap0eSNXE,                  STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/Err/Supervisor/NXE",      STAMUNIT_OCCURENCES,     "Number of supervisor mode NXE page faults.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPFUnh,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPFUnhandled",        STAMUNIT_OCCURENCES,     "Number of real guest page faults from the 'unhandled' case.");
-    STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPFMapping,        STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPFInMapping",        STAMUNIT_OCCURENCES,     "Number of real guest page faults in a mapping.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPF,               STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPF",                 STAMUNIT_OCCURENCES,     "Number of real guest page faults.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPFUnh,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPF/Unhandled",       STAMUNIT_OCCURENCES,     "Number of real guest page faults from the 'unhandled' case.");
+    STAM_REG(pVM, &pPGM->StatRZTrap0eGuestPFMapping,        STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/GuestPF/InMapping",       STAMUNIT_OCCURENCES,     "Number of real guest page faults in a mapping.");
     STAM_REG(pVM, &pPGM->StatRZTrap0eWPEmulInRZ,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/WP/InRZ",                 STAMUNIT_OCCURENCES,     "Number of guest page faults due to X86_CR0_WP emulation.");
     STAM_REG(pVM, &pPGM->StatRZTrap0eWPEmulToR3,            STAMTYPE_COUNTER, "/PGM/RZ/Trap0e/WP/ToR3",                 STAMUNIT_OCCURENCES,     "Number of guest page faults due to X86_CR0_WP emulation (forward to R3 for emulation).");
     for (i = 0; i < RT_ELEMENTS(pPGM->StatRZTrap0ePD); i++)
