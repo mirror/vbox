@@ -1766,7 +1766,7 @@ void pgmUnlock(PVM pVM)
  */
 VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 {
-    AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("GCPhys=%VGp\n", GCPhys));
+    AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("GCPhys=%RGp\n", GCPhys));
 
     /*
      * Get the ram range.
@@ -1776,7 +1776,7 @@ VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
         pRam = pRam->CTX_SUFF(pNext);
     if (!pRam)
     {
-        AssertMsgFailed(("Invalid physical address %VGp!\n", GCPhys));
+        AssertMsgFailed(("Invalid physical address %RGp!\n", GCPhys));
         return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
     }
 
@@ -1822,7 +1822,10 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
      * Pass it on to PGMDynMapHCPageOff.
      */
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
-    return PGMDynMapHCPageOff(pVM, HCPhys, ppv);
+    int rc = PGMDynMapHCPhys(pVM, HCPhys, ppv);
+    if (RT_SUCCESS(rc))
+        *ppv = (void *)((uintptr_t)*ppv | (GCPhys & PAGE_OFFSET_MASK));
+    return rc;
 }
 
 
@@ -1835,11 +1838,14 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
  * @returns VBox status.
  * @param   pVM         VM handle.
  * @param   HCPhys      HC Physical address of the page.
- * @param   ppv         Where to store the address of the mapping.
+ * @param   ppv         Where to store the address of the mapping. This is the
+ *                      address of the PAGE not the exact address corresponding
+ *                      to HCPhys. Use PGMDynMapHCPageOff if you care for the
+ *                      page offset.
  */
 VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
-    AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%VHp\n", HCPhys));
+    AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
 # ifdef IN_GC
 
     /*
@@ -1912,7 +1918,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
  */
 VMMDECL(int) PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
-    int rc = PGMDynMapHCPage(pVM, HCPhys, ppv);
+    int rc = PGMDynMapHCPage(pVM, HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, ppv);
     if (RT_SUCCESS(rc))
         *ppv = (void *)((uintptr_t)*ppv | (HCPhys & PAGE_OFFSET_MASK));
     return rc;
