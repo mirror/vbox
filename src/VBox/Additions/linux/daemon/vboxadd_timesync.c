@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     /* command line parsing */
     for (;;)
     {
-        c = getopt_long(argc, argv, "", options, NULL);
+        c = getopt_long(argc, argv, "i:dh", options, NULL);
         if (c == -1)
             break;
         switch (c)
@@ -150,24 +150,53 @@ int main(int argc, char *argv[])
         {
             if (VBOX_SUCCESS(req.header.rc))
             {
-                /** Set the system time.
-                 *  @@todo r=frank: This is too choppy. Adapt time smoother and try
-                 *                  to prevent negative time differences. */
+                /* Adapt time smoothly and try to prevent negative time differences. */
+                uint64_t u64Now;
+                int64_t  i64Diff;
+                int64_t  i64AbsDiff;
                 struct timeval tv;
-                tv.tv_sec  =  req.time / (uint64_t)1000;
-                tv.tv_usec = (req.time % (uint64_t)1000) * 1000;
-                settimeofday(&tv, NULL);
+
+                gettimeofday(&tv, NULL);
+#if 0
+                u64Now     = (uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec / 1000;
+                i64Diff    = (int64_t)(req.time - u64Now);
+                i64AbsDiff = i64Diff < 0 ? -i64Diff : i64Diff;
+
+                if (i64AbsDiff < 300000)
+                {
+                    /* difference less than 5 minutes => smoothly adapt the guest time */
+                    int32_t i32Diff = (int32_t)i64Diff;
+                    int32_t i32Sec, i32Micro;
+                    struct timeval delta;
+
+                    i32Sec   = i32Diff / 1000;
+                    i32Micro = (i32Diff % 1000) * 1000;
+
+                    if (i32Micro < 0)
+                        i32Micro = -i32Micro;
+                    delta.tv_sec  = i32Sec;
+                    delta.tv_usec = i32Micro;
+
+                    /* adjtime on Linux adjusts the time about 5 ms per 10 seconds, even
+                     * for very huge differences */
+                    adjtime(&delta, NULL);
+                }
+                else
+#endif
+                {
+                    /* difference more than 5 minutes => set the time with all consequences */
+                    tv.tv_sec  =  req.time / (uint64_t)1000;
+                    tv.tv_usec = (req.time % (uint64_t)1000) * 1000;
+                    settimeofday(&tv, NULL);
+                }
             }
             else
-            {
                 printf("Error querying host time! header.rc = %d\n", req.header.rc);
-            }
         }
         else
-        {
             printf("Error performing VMM request! errno = %d\n", errno);
-        }
-	    /* wait for the next run */
+
+        /* wait for the next run */
         safe_sleep(secInterval);
 
     } while (1);
