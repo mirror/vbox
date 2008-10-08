@@ -278,7 +278,8 @@ typedef struct HWACCM
         R0PTRTYPE(uint8_t *)        pMSRExitLoad;
 
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int, pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
+        DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
+        DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM));
 
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
@@ -290,6 +291,9 @@ typedef struct HWACCM
         uint64_t                    cr0_mask;
         /** Current CR4 mask. */
         uint64_t                    cr4_mask;
+
+        /** Current EPTP. */
+        RTGCPHYS                    GCPhysEPTP;
 
         /** VMX MSR values */
         struct
@@ -318,6 +322,10 @@ typedef struct HWACCM
 
         /** The last known guest paging mode. */
         PGMMODE                     enmCurrGuestMode;
+
+        /** Flush types for invept & invvpid; they depend on capabilities. */
+        VMX_FLUSH                   enmFlushPage;
+        VMX_FLUSH                   enmFlushContext;
 
         /** Real-mode emulation state. */
         struct
