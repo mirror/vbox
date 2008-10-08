@@ -1604,41 +1604,41 @@ typedef struct PGMPOOL
     STAMCOUNTER     StamTrackPhysExtAllocFailures;
 # endif
 # ifdef PGMPOOL_WITH_MONITORING
-    /** Profiling the GC PT access handler. */
-    STAMPROFILE     StatMonitorGC;
+    /** Profiling the RC/R0 access handler. */
+    STAMPROFILE     StatMonitorRZ;
     /** Times we've failed interpreting the instruction. */
-    STAMCOUNTER     StatMonitorGCEmulateInstr;
-    /** Profiling the pgmPoolFlushPage calls made from the GC PT access handler. */
-    STAMPROFILE     StatMonitorGCFlushPage;
+    STAMCOUNTER     StatMonitorRZEmulateInstr;
+    /** Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler. */
+    STAMPROFILE     StatMonitorRZFlushPage;
     /** Times we've detected fork(). */
-    STAMCOUNTER     StatMonitorGCFork;
-    /** Profiling the GC access we've handled (except REP STOSD). */
-    STAMPROFILE     StatMonitorGCHandled;
+    STAMCOUNTER     StatMonitorRZFork;
+    /** Profiling the RC/R0 access we've handled (except REP STOSD). */
+    STAMPROFILE     StatMonitorRZHandled;
     /** Times we've failed interpreting a patch code instruction. */
-    STAMCOUNTER     StatMonitorGCIntrFailPatch1;
+    STAMCOUNTER     StatMonitorRZIntrFailPatch1;
     /** Times we've failed interpreting a patch code instruction during flushing. */
-    STAMCOUNTER     StatMonitorGCIntrFailPatch2;
+    STAMCOUNTER     StatMonitorRZIntrFailPatch2;
     /** The number of times we've seen rep prefixes we can't handle. */
-    STAMCOUNTER     StatMonitorGCRepPrefix;
+    STAMCOUNTER     StatMonitorRZRepPrefix;
     /** Profiling the REP STOSD cases we've handled. */
-    STAMPROFILE     StatMonitorGCRepStosd;
+    STAMPROFILE     StatMonitorRZRepStosd;
 
-    /** Profiling the HC PT access handler. */
-    STAMPROFILE     StatMonitorHC;
+    /** Profiling the R3 access handler. */
+    STAMPROFILE     StatMonitorR3;
     /** Times we've failed interpreting the instruction. */
-    STAMCOUNTER     StatMonitorHCEmulateInstr;
-    /** Profiling the pgmPoolFlushPage calls made from the HC PT access handler. */
-    STAMPROFILE     StatMonitorHCFlushPage;
+    STAMCOUNTER     StatMonitorR3EmulateInstr;
+    /** Profiling the pgmPoolFlushPage calls made from the R3 access handler. */
+    STAMPROFILE     StatMonitorR3FlushPage;
     /** Times we've detected fork(). */
-    STAMCOUNTER     StatMonitorHCFork;
-    /** Profiling the HC access we've handled (except REP STOSD). */
-    STAMPROFILE     StatMonitorHCHandled;
+    STAMCOUNTER     StatMonitorR3Fork;
+    /** Profiling the R3 access we've handled (except REP STOSD). */
+    STAMPROFILE     StatMonitorR3Handled;
     /** The number of times we've seen rep prefixes we can't handle. */
-    STAMCOUNTER     StatMonitorHCRepPrefix;
+    STAMCOUNTER     StatMonitorR3RepPrefix;
     /** Profiling the REP STOSD cases we've handled. */
-    STAMPROFILE     StatMonitorHCRepStosd;
+    STAMPROFILE     StatMonitorR3RepStosd;
     /** The number of times we're called in an async thread an need to flush. */
-    STAMCOUNTER     StatMonitorHCAsync;
+    STAMCOUNTER     StatMonitorR3Async;
     /** The high wather mark for cModifiedPages. */
     uint16_t        cModifiedPagesHigh;
     uint16_t        Alignment2[3];      /**< Align the next member on a 64-bit boundrary. */

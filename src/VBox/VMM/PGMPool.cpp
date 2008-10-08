@@ -342,23 +342,23 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->StamTrackPhysExtAllocFailures,STAMTYPE_COUNTER,   "/PGM/Pool/Track/PhysExtAllocFailures", STAMUNIT_OCCURENCES, "The number of failing pgmPoolTrackPhysExtAlloc calls.");
 # endif
 # ifdef PGMPOOL_WITH_MONITORING
-    STAM_REG(pVM, &pPool->StatMonitorGC,                STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/GC",                 STAMUNIT_TICKS_PER_CALL, "Profiling the GC PT access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorGCEmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/GCEmulateInstr",     STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
-    STAM_REG(pVM, &pPool->StatMonitorGCFlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/GCFlushPage",        STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the GC PT access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorGCFork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/GCFork",             STAMUNIT_OCCURENCES,     "Times we've detected fork().");
-    STAM_REG(pVM, &pPool->StatMonitorGCHandled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/GCHandled",          STAMUNIT_TICKS_PER_CALL, "Profiling the GC access we've handled (except REP STOSD).");
-    STAM_REG(pVM, &pPool->StatMonitorGCIntrFailPatch1,  STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/GCIntrFailPatch1",   STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction.");
-    STAM_REG(pVM, &pPool->StatMonitorGCIntrFailPatch2,  STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/GCIntrFailPatch2",   STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction during flushing.");
-    STAM_REG(pVM, &pPool->StatMonitorGCRepPrefix,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/GCRepPrefix",        STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");
-    STAM_REG(pVM, &pPool->StatMonitorGCRepStosd,        STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/GCRepStosd",         STAMUNIT_TICKS_PER_CALL, "Profiling the REP STOSD cases we've handled.");
-    STAM_REG(pVM, &pPool->StatMonitorHC,                STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/HC",                 STAMUNIT_TICKS_PER_CALL, "Profiling the HC PT access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorHCEmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/HCEmulateInstr",     STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
-    STAM_REG(pVM, &pPool->StatMonitorHCFlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/HCFlushPage",        STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the HC PT access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorHCFork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/HCFork",             STAMUNIT_OCCURENCES,     "Times we've detected fork().");
-    STAM_REG(pVM, &pPool->StatMonitorHCHandled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/HCHandled",          STAMUNIT_TICKS_PER_CALL, "Profiling the HC access we've handled (except REP STOSD).");
-    STAM_REG(pVM, &pPool->StatMonitorHCRepPrefix,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/HCRepPrefix",        STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");
-    STAM_REG(pVM, &pPool->StatMonitorHCRepStosd,        STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/HCRepStosd",         STAMUNIT_TICKS_PER_CALL, "Profiling the REP STOSD cases we've handled.");
-    STAM_REG(pVM, &pPool->StatMonitorHCAsync,           STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/HCAsync",            STAMUNIT_OCCURENCES,     "Times we're called in an async thread and need to flush.");
+    STAM_REG(pVM, &pPool->StatMonitorRZ,                STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ",                 STAMUNIT_TICKS_PER_CALL, "Profiling the RC/R0 access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorRZEmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/EmulateInstr",    STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
+    STAM_REG(pVM, &pPool->StatMonitorRZFlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorRZFork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/Fork",            STAMUNIT_OCCURENCES,     "Times we've detected fork().");
+    STAM_REG(pVM, &pPool->StatMonitorRZHandled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/Handled",         STAMUNIT_TICKS_PER_CALL, "Profiling the RC/R0 access we've handled (except REP STOSD).");
+    STAM_REG(pVM, &pPool->StatMonitorRZIntrFailPatch1,  STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/IntrFailPatch1",  STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction.");
+    STAM_REG(pVM, &pPool->StatMonitorRZIntrFailPatch2,  STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/IntrFailPatch2",  STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction during flushing.");
+    STAM_REG(pVM, &pPool->StatMonitorRZRepPrefix,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/RepPrefix",       STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");
+    STAM_REG(pVM, &pPool->StatMonitorRZRepStosd,        STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/RepStosd",        STAMUNIT_TICKS_PER_CALL, "Profiling the REP STOSD cases we've handled.");
+    STAM_REG(pVM, &pPool->StatMonitorR3,                STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3",                 STAMUNIT_TICKS_PER_CALL, "Profiling the R3 access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorR3EmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/EmulateInstr",    STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
+    STAM_REG(pVM, &pPool->StatMonitorR3FlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the R3 access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorR3Fork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Fork",            STAMUNIT_OCCURENCES,     "Times we've detected fork().");
+    STAM_REG(pVM, &pPool->StatMonitorR3Handled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/Handled",         STAMUNIT_TICKS_PER_CALL, "Profiling the R3 access we've handled (except REP STOSD).");
+    STAM_REG(pVM, &pPool->StatMonitorR3RepPrefix,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/RepPrefix",       STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");
+    STAM_REG(pVM, &pPool->StatMonitorR3RepStosd,        STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/RepStosd",        STAMUNIT_TICKS_PER_CALL, "Profiling the REP STOSD cases we've handled.");
+    STAM_REG(pVM, &pPool->StatMonitorR3Async,           STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Async",           STAMUNIT_OCCURENCES,     "Times we're called in an async thread and need to flush.");
     STAM_REG(pVM, &pPool->cModifiedPages,               STAMTYPE_U16,       "/PGM/Pool/Monitor/cModifiedPages",     STAMUNIT_PAGES,          "The current cModifiedPages value.");
     STAM_REG(pVM, &pPool->cModifiedPagesHigh,           STAMTYPE_U16_RESET, "/PGM/Pool/Monitor/cModifiedPagesHigh", STAMUNIT_PAGES,          "The high watermark for cModifiedPages.");
 # endif
@@ -513,7 +513,7 @@ static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE 
  */
 static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
-    STAM_PROFILE_START(&pVM->pgm.s.pPoolR3->StatMonitorHC, a);
+    STAM_PROFILE_START(&pVM->pgm.s.pPoolR3->StatMonitorR3, a);
     PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
     PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)pvUser;
     LogFlow(("pgmR3PoolAccessHandler: GCPhys=%VGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
@@ -530,7 +530,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
     {
         Log(("pgmR3PoolAccessHandler: async thread, requesting EMT to flush the page: %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
-        STAM_COUNTER_INC(&pPool->StatMonitorHCAsync);
+        STAM_COUNTER_INC(&pPool->StatMonitorR3Async);
         if (!pPage->fReusedFlushPending)
         {
             int rc = VMR3ReqCallEx(pPool->pVMR3, NULL, 0, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID, (PFNRT)pgmR3PoolFlushReusedPage, 2, pPool, pPage);
@@ -547,7 +547,7 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
             GCPhys += 4;
             pgmPoolMonitorChainChanging(pPool, pPage, GCPhys, pvPhys, NULL);
         }
-        STAM_PROFILE_STOP(&pPool->StatMonitorHC, a);
+        STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
     else if (    (pPage->fCR3Mix || pPage->cModifications < 96) /* it's cheaper here. */
              &&  cbBuf <= 4)
@@ -557,12 +557,12 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
             pgmPoolMonitorModifiedInsert(pPool, pPage);
         /** @todo r=bird: making unsafe assumption about not crossing entries here! */
         pgmPoolMonitorChainChanging(pPool, pPage, GCPhys, pvPhys, NULL);
-        STAM_PROFILE_STOP(&pPool->StatMonitorHC, a);
+        STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
     }
     else
     {
         pgmPoolMonitorChainFlush(pPool, pPage); /* ASSUME that VERR_PGM_POOL_CLEARED can be ignored here and that FFs will deal with it in due time. */
-        STAM_PROFILE_STOP_EX(&pPool->StatMonitorHC, &pPool->StatMonitorHCFlushPage, a);
+        STAM_PROFILE_STOP_EX(&pPool->StatMonitorR3, &pPool->StatMonitorR3FlushPage, a);
     }
 
     return VINF_PGM_HANDLER_DO_DEFAULT;
