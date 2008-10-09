@@ -2784,18 +2784,16 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     rc = PGM_BTH_NAME_NESTED_AMD64(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 #endif
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
-# define PGM_TYPE_MAX_SHADOW  PGM_TYPE_AMD64
-#else
-# define PGM_TYPE_MAX_SHADOW  PGM_TYPE_PAE
-#endif
-
     /* The shadow part of the nested callback mode depends on the host paging mode (AMD-V only). */
     switch(pVM->pgm.s.enmHostMode)
     {
     case SUPPAGINGMODE_32_BIT:
     case SUPPAGINGMODE_32_BIT_GLOBAL:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_MAX_SHADOW;i++)
+#ifdef VBOX_WITH_64_BITS_GUESTS
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+#else
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
+#endif
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
@@ -2806,7 +2804,11 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     case SUPPAGINGMODE_PAE_NX:
     case SUPPAGINGMODE_PAE_GLOBAL:
     case SUPPAGINGMODE_PAE_GLOBAL_NX:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_MAX_SHADOW;i++)
+#ifdef VBOX_WITH_64_BITS_GUESTS
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+#else
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
+#endif
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_PAE(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
@@ -2817,7 +2819,11 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     case SUPPAGINGMODE_AMD64_GLOBAL:
     case SUPPAGINGMODE_AMD64_NX:
     case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_MAX_SHADOW;i++)
+#ifdef VBOX_WITH_64_BITS_GUESTS
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+#else
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
+#endif
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
