@@ -1486,6 +1486,7 @@ static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *
                 {
                     LogFlow((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: Success! Found %s at %d.\n", DEVICE_NAME, i));
                     *pModPos = i;
+                    RTMemFree(StrList.sl_modlist);
                     return VINF_SUCCESS;
                 }
             }
@@ -1494,6 +1495,8 @@ static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *
         }
         else
             LogRel((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: failed to get module information. rc=%d\n"));
+
+        RTMemFree(StrList.sl_modlist);
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: failed to get list of modules on host interface. rc=%d\n", rc));
