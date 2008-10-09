@@ -845,6 +845,7 @@ static const DBGCCMD    g_aCmds[] =
 #define PGM_SHW_NAME_R0_STR(name)   PGM_SHW_NAME_R0_AMD64_STR(name)
 #include "PGMShw.h"
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
@@ -866,6 +867,7 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_GST_NAME
 #undef PGM_GST_NAME_RC_STR
 #undef PGM_GST_NAME_R0_STR
+#endif
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
@@ -961,6 +963,7 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_GST_NAME_RC_STR
 #undef PGM_GST_NAME_R0_STR
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
@@ -981,6 +984,7 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_GST_NAME
 #undef PGM_GST_NAME_RC_STR
 #undef PGM_GST_NAME_R0_STR
+#endif
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
@@ -1076,6 +1080,7 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_GST_NAME_RC_STR
 #undef PGM_GST_NAME_R0_STR
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
@@ -1096,6 +1101,7 @@ static const DBGCCMD    g_aCmds[] =
 #undef PGM_GST_NAME
 #undef PGM_GST_NAME_RC_STR
 #undef PGM_GST_NAME_R0_STR
+#endif
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
@@ -2736,12 +2742,14 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     rc = PGM_GST_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_PAE_PAE(InitData)(    pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_AMD64, PGM_TYPE_AMD64)];
     pModeData->uShwType = PGM_TYPE_AMD64;
     pModeData->uGstType = PGM_TYPE_AMD64;
     rc = PGM_SHW_NAME_AMD64(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_AMD64(InitData)(       pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_AMD64_AMD64(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+#endif
 
     /* The nested paging mode. */
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_REAL)];
@@ -2768,18 +2776,26 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     rc = PGM_GST_NAME_PAE(InitData)(         pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_PAE(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_AMD64)];
     pModeData->uShwType = PGM_TYPE_NESTED;
     pModeData->uGstType = PGM_TYPE_AMD64;
     rc = PGM_GST_NAME_AMD64(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_NESTED_AMD64(InitData)( pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+#endif
+
+#ifdef VBOX_WITH_64_BITS_GUESTS
+# define PGM_TYPE_MAX_SHADOW  PGM_TYPE_AMD64
+#else
+# define PGM_TYPE_MAX_SHADOW  PGM_TYPE_PAE
+#endif
 
     /* The shadow part of the nested callback mode depends on the host paging mode (AMD-V only). */
     switch(pVM->pgm.s.enmHostMode)
     {
     case SUPPAGINGMODE_32_BIT:
     case SUPPAGINGMODE_32_BIT_GLOBAL:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_MAX_SHADOW;i++)
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
@@ -2790,7 +2806,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     case SUPPAGINGMODE_PAE_NX:
     case SUPPAGINGMODE_PAE_GLOBAL:
     case SUPPAGINGMODE_PAE_GLOBAL_NX:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_MAX_SHADOW;i++)
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_PAE(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
@@ -2801,7 +2817,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     case SUPPAGINGMODE_AMD64_GLOBAL:
     case SUPPAGINGMODE_AMD64_NX:
     case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_MAX_SHADOW;i++)
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
@@ -2841,12 +2857,14 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     rc = PGM_GST_NAME_PAE(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_PAE(InitData)(    pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
     pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_EPT, PGM_TYPE_AMD64)];
     pModeData->uShwType = PGM_TYPE_EPT;
     pModeData->uGstType = PGM_TYPE_AMD64;
     rc = PGM_SHW_NAME_EPT(InitData)(        pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_GST_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
     rc = PGM_BTH_NAME_EPT_AMD64(InitData)(  pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -3375,6 +3393,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             break;
         }
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
         case PGMMODE_AMD64_NX:
         case PGMMODE_AMD64:
             GCPhysCR3 = CPUMGetGuestCR3(pVM) & 0xfffffffffffff000ULL; /** @todo define this mask! */
@@ -3398,6 +3417,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 default: AssertFailed(); break;
             }
             break;
+#endif
 
         default:
             AssertReleaseMsgFailed(("enmGuestMode=%d\n", enmGuestMode));

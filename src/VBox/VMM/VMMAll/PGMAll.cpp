@@ -199,6 +199,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
@@ -212,6 +213,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
+#endif
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
@@ -259,6 +261,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
@@ -267,6 +270,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
+#endif
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
@@ -322,6 +326,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
 
+#ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
 #define PGM_GST_TYPE                PGM_TYPE_AMD64
 #define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
@@ -332,6 +337,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_BTH_NAME
 #undef PGM_GST_TYPE
 #undef PGM_GST_NAME
+#endif
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
