@@ -1050,6 +1050,30 @@ typedef enum
 /** @} */
 
 
+/** @name VMX_EXIT_EPT_VIOLATION
+ * @{
+ */
+/** Set if the violation was caused by a data read. */
+#define VMX_EXIT_QUALIFICATION_EPT_DATA_READ            RT_BIT(0)
+/** Set if the violation was caused by a data write. */
+#define VMX_EXIT_QUALIFICATION_EPT_DATA_WRITE           RT_BIT(1)
+/** Set if the violation was caused by an insruction fetch. */
+#define VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH          RT_BIT(2)
+/** AND of the present bit of all EPT structures. */
+#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_READ           RT_BIT(3)
+/** AND of the write bit of all EPT structures. */
+#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_WRITE          RT_BIT(4)
+/** AND of the execute bit of all EPT structures. */
+#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_EXECUTE        RT_BIT(5)
+/** Set if the guest linear address field contains the faulting address. */
+#define VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID     RT_BIT(7)
+/** If bit 7 is one: (reserved otherwise)
+ *  0 - violation due to physical address access.
+ *  1 - violation caused by page walk or access/dirty bit updates
+ */
+#define VMX_EXIT_QUALIFICATION_EPT_PAGE_WALK_ACCESS     RT_BIT(8)
+/** @} */
+
 
 /** @name VMX_EXIT_PORT_IO
  * @{
