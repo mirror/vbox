@@ -1073,10 +1073,10 @@ typedef enum
 /** Set if the guest linear address field contains the faulting address. */
 #define VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID     RT_BIT(7)
 /** If bit 7 is one: (reserved otherwise)
- *  0 - violation due to physical address access.
- *  1 - violation caused by page walk or access/dirty bit updates
+ *  1 - violation due to physical address access.
+ *  0 - violation caused by page walk or access/dirty bit updates
  */
-#define VMX_EXIT_QUALIFICATION_EPT_PAGE_WALK_ACCESS     RT_BIT(8)
+#define VMX_EXIT_QUALIFICATION_EPT_TRANSLATED_ACCESS    RT_BIT(8)
 /** @} */
 
 
