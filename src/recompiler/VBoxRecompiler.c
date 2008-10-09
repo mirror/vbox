@@ -953,7 +953,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         AssertRC(rc2);
     }
 
-    Log2(("REMR3EmulateInstruction: returns %Vrc (cs:eip=%04x:%08x)\n",
+    Log2(("REMR3EmulateInstruction: returns %Vrc (cs:eip=%04x:%VGv)\n",
           rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     return rc;
 }
@@ -973,7 +973,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
  */
 REMR3DECL(int) REMR3Run(PVM pVM)
 {
-    Log2(("REMR3Run: (cs:eip=%04x:%08x)\n", pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
+    Log2(("REMR3Run: (cs:eip=%04x:%VGv)\n", pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     Assert(pVM->rem.s.fInREM);
 
     TMNotifyStartOfExecution(pVM);
@@ -1081,7 +1081,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
             break;
     }
 
-    Log2(("REMR3Run: returns %Vrc (cs:eip=%04x:%08x)\n", rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
+    Log2(("REMR3Run: returns %Vrc (cs:eip=%04x:%VGv)\n", rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     return rc;
 }
 
@@ -1438,7 +1438,7 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
      */
     if (!fGlobal && !(env->cr[4] & X86_CR4_PGE))
         fGlobal = true;
-    Log(("remR3FlushTLB: CR0=%VGp CR3=%VGp CR4=%VGp %s\n", env->cr[0], env->cr[3], env->cr[4], fGlobal ? " global" : ""));
+    Log(("remR3FlushTLB: CR0=%RGr CR3=%RGr CR4=%RGr %s\n", env->cr[0], env->cr[3], env->cr[4], fGlobal ? " global" : ""));
 
     /*
      * Update the control registers before calling PGMR3FlushTLB.
@@ -1562,7 +1562,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
 #endif
         if(pVM->rem.s.uPendingException == uTrap && ++pVM->rem.s.cPendingExceptions > 512)
         {
-            LogRel(("VERR_REM_TOO_MANY_TRAPS -> uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%08x\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
+            LogRel(("VERR_REM_TOO_MANY_TRAPS -> uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%VGv\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
             remR3RaiseRC(env->pVM, VERR_REM_TOO_MANY_TRAPS);
             return VERR_REM_TOO_MANY_TRAPS;
         }
@@ -4617,7 +4617,7 @@ void remR3DumpLnxSyscall(PVM pVM)
     {
         default:
             if (uEAX < ELEMENTS(apsz))
-                Log(("REM: linux syscall %3d: %s (eip=%VGv ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x ebp=%08x)\n",
+                Log(("REM: linux syscall %3d: %s (eip=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x ebp=%08x)\n",
                      uEAX, apsz[uEAX], CPUMGetGuestEIP(pVM), CPUMGetGuestEBX(pVM), CPUMGetGuestECX(pVM),
                      CPUMGetGuestEDX(pVM), CPUMGetGuestESI(pVM), CPUMGetGuestEDI(pVM), CPUMGetGuestEBP(pVM)));
             else
