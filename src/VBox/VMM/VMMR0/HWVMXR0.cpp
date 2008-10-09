@@ -1186,18 +1186,18 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     {
         if (pVM->hwaccm.s.fNestedPaging)
         {
-            RTHCPHYS GCPhys;
 
             AssertMsg(PGMGetEPTCR3(pVM) == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n", PGMGetEPTCR3(pVM), PGMGetHyperCR3(pVM)));
-            GCPhys = PGMGetEPTCR3(pVM);
+            pVM->hwaccm.s.vmx.GCPhysEPTP = PGMGetEPTCR3(pVM);
 
-            Assert(!(GCPhys & 0xfff));
+            Assert(!(pVM->hwaccm.s.vmx.GCPhysEPTP & 0xfff));
             /** @todo Check the IA32_VMX_EPT_VPID_CAP MSR for other supported memory types. */
-            GCPhys |=   VMX_EPT_MEMTYPE_WB
-                     | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_FULL, GCPhys);
+            pVM->hwaccm.s.vmx.GCPhysEPTP |=   VMX_EPT_MEMTYPE_WB
+                                           | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
+            
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_FULL, pVM->hwaccm.s.vmx.GCPhysEPTP);
 #if HC_ARCH_BITS == 32
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_HIGH, (uint32_t)(GCPhys >> 32ULL));
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_HIGH, (uint32_t)(pVM->hwaccm.s.vmx.GCPhysEPTP >> 32ULL));
 #endif
             AssertRC(rc);
 
@@ -2948,7 +2948,7 @@ static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
     uint64_t descriptor[2];
 
     Assert(pVM->hwaccm.s.fNestedPaging);
-    descriptor[0] = PGMGetEPTCR3(pVM);
+    descriptor[0] = pVM->hwaccm.s.vmx.GCPhysEPTP;
     descriptor[1] = GCPhys;
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
     AssertRC(rc);
