@@ -1626,9 +1626,9 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
             uint32_t eip, selCS, uEFlags;
 
             /* Iret crashes are bad as we have already changed the flags on the stack */
-            rc  = PGMPhysReadGCPtr(pVM, &eip,     pCtx->esp, 4);
-            rc |= PGMPhysReadGCPtr(pVM, &selCS,   pCtx->esp+4, 4);
-            rc |= PGMPhysReadGCPtr(pVM, &uEFlags, pCtx->esp+8, 4);
+            rc  = PGMPhysSimpleReadGCPtr(pVM, &eip,     pCtx->esp, 4);
+            rc |= PGMPhysSimpleReadGCPtr(pVM, &selCS,   pCtx->esp+4, 4);
+            rc |= PGMPhysSimpleReadGCPtr(pVM, &uEFlags, pCtx->esp+8, 4);
             if (rc == VINF_SUCCESS)
             {
                 if (    (uEFlags & X86_EFL_VM)
@@ -1636,16 +1636,16 @@ int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                 {
                     uint32_t selSS, esp;
 
-                    rc |= PGMPhysReadGCPtr(pVM, &esp,     pCtx->esp + 12, 4);
-                    rc |= PGMPhysReadGCPtr(pVM, &selSS,   pCtx->esp + 16, 4);
+                    rc |= PGMPhysSimpleReadGCPtr(pVM, &esp,     pCtx->esp + 12, 4);
+                    rc |= PGMPhysSimpleReadGCPtr(pVM, &selSS,   pCtx->esp + 16, 4);
 
                     if (uEFlags & X86_EFL_VM)
                     {
                         uint32_t selDS, selES, selFS, selGS;
-                        rc  = PGMPhysReadGCPtr(pVM, &selES,   pCtx->esp + 20, 4);
-                        rc |= PGMPhysReadGCPtr(pVM, &selDS,   pCtx->esp + 24, 4);
-                        rc |= PGMPhysReadGCPtr(pVM, &selFS,   pCtx->esp + 28, 4);
-                        rc |= PGMPhysReadGCPtr(pVM, &selGS,   pCtx->esp + 32, 4);
+                        rc  = PGMPhysSimpleReadGCPtr(pVM, &selES,   pCtx->esp + 20, 4);
+                        rc |= PGMPhysSimpleReadGCPtr(pVM, &selDS,   pCtx->esp + 24, 4);
+                        rc |= PGMPhysSimpleReadGCPtr(pVM, &selFS,   pCtx->esp + 28, 4);
+                        rc |= PGMPhysSimpleReadGCPtr(pVM, &selGS,   pCtx->esp + 32, 4);
                         if (rc == VINF_SUCCESS)
                         {
                             Log(("Patch code: IRET->VM stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));

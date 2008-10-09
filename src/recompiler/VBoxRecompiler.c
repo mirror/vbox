@@ -4948,7 +4948,7 @@ void remR3DumpOBsdSyscall(PVM pVM)
             if (uEAX < ELEMENTS(apsz))
             {
                 uint32_t au32Args[8] = {0};
-                PGMPhysReadGCPtr(pVM, au32Args, CPUMGetGuestESP(pVM), sizeof(au32Args));
+                PGMPhysSimpleReadGCPtr(pVM, au32Args, CPUMGetGuestESP(pVM), sizeof(au32Args));
                 RTLogPrintf("REM: OpenBSD syscall %3d: %s (eip=%08x %08x %08x %08x %08x %08x %08x %08x %08x)\n",
                             uEAX, apsz[uEAX], CPUMGetGuestEIP(pVM), au32Args[0], au32Args[1], au32Args[2], au32Args[3],
                             au32Args[4], au32Args[5], au32Args[6], au32Args[7]);

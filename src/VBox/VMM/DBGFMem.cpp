@@ -146,7 +146,7 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pv
         ||  DBGFADDRESS_IS_PHYS(pAddress) )
         rc = PGMPhysReadGCPhys(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     else
-        rc = PGMPhysReadGCPtr(pVM, pvBuf, pAddress->FlatPtr, cbRead);
+        rc = PGMPhysSimpleReadGCPtr(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     return rc;
 }
 
@@ -204,7 +204,7 @@ static DECLCALLBACK(int) dbgfR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, ch
         ||  DBGFADDRESS_IS_PHYS(pAddress) )
         rc = PGMPhysReadGCPhys(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
     else
-        rc = PGMPhysReadGCPtr(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
+        rc = PGMPhysSimpleReadGCPtr(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
 
     /*
      * Make sure the result is terminated and that overflow is signaled.

@@ -2059,7 +2059,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
     if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
 
-    int rc = PGMPhysReadGCPtr(pVM, pvDst, GCVirtSrc, cb);
+    int rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCVirtSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
@@ -2079,7 +2079,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
     if (!VM_IS_EMT(pVM))
         return VERR_ACCESS_DENIED;
 
-    int rc = PGMPhysWriteGCPtr(pVM, GCVirtDst, pvSrc, cb);
+    int rc = PGMPhysSimpleWriteGCPtr(pVM, GCVirtDst, pvSrc, cb);
 
     LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 

@@ -717,7 +717,7 @@ static const REMPARMDESC g_aArgsPGMPhysRead[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
 };
-static const REMPARMDESC g_aArgsPGMPhysReadGCPtr[] =
+static const REMPARMDESC g_aArgsPGMPhysSimpleReadGCPtr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
@@ -1094,8 +1094,7 @@ static REMFNDESC g_aVMMImports[] =
     { "PGMPhysIsGCPhysValid",                   (void *)(uintptr_t)&PGMPhysIsGCPhysValid,           &g_aArgsPGMPhysIsGCPhysValid[0],            RT_ELEMENTS(g_aArgsPGMPhysIsGCPhysValid),              REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PGMPhysIsA20Enabled",                    (void *)(uintptr_t)&PGMPhysIsA20Enabled,            &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "PGMPhysRead",                            (void *)(uintptr_t)&PGMPhysRead,                    &g_aArgsPGMPhysRead[0],                     RT_ELEMENTS(g_aArgsPGMPhysRead),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "PGMPhysReadGCPtr",                       (void *)(uintptr_t)&PGMPhysReadGCPtr,               &g_aArgsPGMPhysReadGCPtr[0],                RT_ELEMENTS(g_aArgsPGMPhysReadGCPtr),                  REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "PGMPhysReadGCPtr",                       (void *)(uintptr_t)&PGMPhysReadGCPtr,               &g_aArgsPGMPhysReadGCPtr[0],                RT_ELEMENTS(g_aArgsPGMPhysReadGCPtr),                  REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "PGMPhysSimpleReadGCPtr",                 (void *)(uintptr_t)&PGMPhysSimpleReadGCPtr,         &g_aArgsPGMPhysSimpleReadGCPtr[0],          RT_ELEMENTS(g_aArgsPGMPhysSimpleReadGCPtr),            REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMPhysWrite",                           (void *)(uintptr_t)&PGMPhysWrite,                   &g_aArgsPGMPhysWrite[0],                    RT_ELEMENTS(g_aArgsPGMPhysWrite),                      REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "PGMChangeMode",                          (void *)(uintptr_t)&PGMChangeMode,                  &g_aArgsPGMChangeMode[0],                   RT_ELEMENTS(g_aArgsPGMChangeMode),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMFlushTLB",                            (void *)(uintptr_t)&PGMFlushTLB,                    &g_aArgsPGMFlushTLB[0],                     RT_ELEMENTS(g_aArgsPGMFlushTLB),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },

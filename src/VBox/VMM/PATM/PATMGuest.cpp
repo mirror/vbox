@@ -110,7 +110,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
 
     /* check the epilog of KiFastSystemCall */
     lpfnKiFastSystemCall = pInstrGC - 2;
-    rc = PGMPhysReadGCPtr(pVM, uTemp, lpfnKiFastSystemCall, sizeof(uFnKiFastSystemCall));
+    rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, lpfnKiFastSystemCall, sizeof(uFnKiFastSystemCall));
     if (    VBOX_FAILURE(rc)
         ||  memcmp(uFnKiFastSystemCall, uTemp, sizeof(uFnKiFastSystemCall)))
     {
@@ -120,7 +120,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     /* Now search for KiIntSystemCall */
     for (i=0;i<64;i++)
     {
-        rc = PGMPhysReadGCPtr(pVM, uTemp, pInstrGC + i, sizeof(uFnKiIntSystemCall));
+        rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, pInstrGC + i, sizeof(uFnKiIntSystemCall));
         if(VBOX_FAILURE(rc))
         {
             break;
@@ -145,13 +145,13 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     }
 
     // make a copy of the guest code bytes that will be overwritten
-    rc = PGMPhysReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, SIZEOF_NEARJUMP32);
+    rc = PGMPhysSimpleReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, SIZEOF_NEARJUMP32);
     AssertRC(rc);
 
     /* Now we simply jump from the fast version to the 'old and slow' system call */
     uTemp[0] = 0xE9;
     *(RTGCPTR32 *)&uTemp[1] = lpfnKiIntSystemCall - (pInstrGC + SIZEOF_NEARJUMP32);
-    rc = PGMPhysWriteGCPtrDirty(pVM, pInstrGC, uTemp, SIZEOF_NEARJUMP32);
+    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pInstrGC, uTemp, SIZEOF_NEARJUMP32);
     if (VBOX_FAILURE(rc))
     {
         Log(("MMR3PhysWriteGCVirt failed with rc=%d!!\n", rc));
@@ -188,8 +188,8 @@ int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
 
     /* Guest OS specific patch; check heuristics first */
 
-    rc = PGMPhysReadGCPtr(pVM, uTemp, pInstrGC, RT_MAX(sizeof(uFnOpenBSDHandlerPrefix1), sizeof(uFnOpenBSDHandlerPrefix2)));
-    if (    VBOX_FAILURE(rc) 
+    rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, pInstrGC, RT_MAX(sizeof(uFnOpenBSDHandlerPrefix1), sizeof(uFnOpenBSDHandlerPrefix2)));
+    if (    VBOX_FAILURE(rc)
         || (    memcmp(uFnOpenBSDHandlerPrefix1, uTemp, sizeof(uFnOpenBSDHandlerPrefix1))
             &&  memcmp(uFnOpenBSDHandlerPrefix2, uTemp, sizeof(uFnOpenBSDHandlerPrefix2))))
     {

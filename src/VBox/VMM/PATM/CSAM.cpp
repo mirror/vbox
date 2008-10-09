@@ -629,7 +629,7 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigne
 
     if (PAGE_ADDRESS(pInstrGC) != PAGE_ADDRESS(pSrc + size - 1) && !PATMIsPatchGCAddr(pVM, pSrc))
     {
-        return PGMPhysReadGCPtr(pVM, pDest, pSrc, size);
+        return PGMPhysSimpleReadGCPtr(pVM, pDest, pSrc, size);
     }
     else
     {
@@ -1205,7 +1205,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
                 &&  cpu.param1.flags == USE_DISPLACEMENT32)
             {
                 addr = 0;
-                PGMPhysReadGCPtr(pVM, &addr, (RTRCUINTPTR)cpu.param1.disp32, sizeof(addr));
+                PGMPhysSimpleReadGCPtr(pVM, &addr, (RTRCUINTPTR)cpu.param1.disp32, sizeof(addr));
             }
             else
                 addr = CSAMResolveBranch(&cpu, pCurInstrGC);
@@ -1356,7 +1356,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
 
     Assert((pInstr & PAGE_OFFSET_MASK) == 0);
 
-    rc = PGMPhysReadGCPtr(pVM, &val[0], pInstr, sizeof(val[0]));
+    rc = PGMPhysSimpleReadGCPtr(pVM, &val[0], pInstr, sizeof(val[0]));
     AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
@@ -1364,7 +1364,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
         return ~0ULL;
     }
 
-    rc = PGMPhysReadGCPtr(pVM, &val[1], pInstr+1024, sizeof(val[0]));
+    rc = PGMPhysSimpleReadGCPtr(pVM, &val[1], pInstr+1024, sizeof(val[0]));
     AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
@@ -1372,7 +1372,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
         return ~0ULL;
     }
 
-    rc = PGMPhysReadGCPtr(pVM, &val[2], pInstr+2048, sizeof(val[0]));
+    rc = PGMPhysSimpleReadGCPtr(pVM, &val[2], pInstr+2048, sizeof(val[0]));
     AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
@@ -1380,7 +1380,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
         return ~0ULL;
     }
 
-    rc = PGMPhysReadGCPtr(pVM, &val[3], pInstr+3072, sizeof(val[0]));
+    rc = PGMPhysSimpleReadGCPtr(pVM, &val[3], pInstr+3072, sizeof(val[0]));
     AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
@@ -1388,7 +1388,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
         return ~0ULL;
     }
 
-    rc = PGMPhysReadGCPtr(pVM, &val[4], pInstr+4092, sizeof(val[0]));
+    rc = PGMPhysSimpleReadGCPtr(pVM, &val[4], pInstr+4092, sizeof(val[0]));
     AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
@@ -2339,7 +2339,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     else
     {
         /* Slow method when it crosses a page boundary. */
-        rc = PGMPhysReadGCPtr(pVM, aIDT, GCPtrIDT,  cGates*sizeof(VBOXIDTE));
+        rc = PGMPhysSimpleReadGCPtr(pVM, aIDT, GCPtrIDT,  cGates*sizeof(VBOXIDTE));
         if (VBOX_FAILURE(rc))
         {
             AssertMsgRC(rc, ("Failed to read IDTE! rc=%Vrc\n", rc));

@@ -424,11 +424,11 @@ VMMDECL(void)   PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t
 #ifndef IN_GC /* Only ring 0 & 3. */
 VMMDECL(int)    PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb);
 VMMDECL(int)    PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb);
-VMMDECL(int)    PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
-VMMDECL(int)    PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
+VMMDECL(int)    PGMPhysSimpleReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
+VMMDECL(int)    PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 VMMDECL(int)    PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 VMMDECL(int)    PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
-VMMDECL(int)    PGMPhysWriteGCPtrDirty(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
+VMMDECL(int)    PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 VMMDECL(int)    PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 #endif /* !IN_GC */
 VMMDECL(int)    PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb);

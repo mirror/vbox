@@ -861,7 +861,7 @@ VMMR3DECL(int) MMR3ReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t cb)
 {
     if (GCPtr - pVM->mm.s.pvHyperAreaGC < pVM->mm.s.cbHyperArea)
         return MMR3HyperReadGCVirt(pVM, pvDst, GCPtr, cb);
-    return PGMPhysReadGCPtr(pVM, pvDst, GCPtr, cb);
+    return PGMPhysSimpleReadGCPtr(pVM, pvDst, GCPtr, cb);
 }
 
 
@@ -881,6 +881,6 @@ VMMR3DECL(int) MMR3WriteGCVirt(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
 {
     if (GCPtrDst - pVM->mm.s.pvHyperAreaGC < pVM->mm.s.cbHyperArea)
         return VERR_ACCESS_DENIED;
-    return PGMPhysWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
+    return PGMPhysSimpleWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
 }
 
