@@ -1189,10 +1189,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         {
             RTHCPHYS GCPhys;
 
-            Assert(pVM->hwaccm.s.vmx.GCPhysEPTP == PGMGetHyperCR3(pVM));
+            AssertMsg(pVM->hwaccm.s.vmx.GCPhysEPTP == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n, pVM->hwaccm.s.vmx.GCPhysEPTP, PGMGetHyperCR3(pVM)));
             GCPhys = pVM->hwaccm.s.vmx.GCPhysEPTP;
 
-            Assert(!(val & 0xfff));
+            Assert(!(GCPhys & 0xfff));
             /** @todo Check the IA32_VMX_EPT_VPID_CAP MSR for other supported memory types. */
             GCPhys |=   VMX_EPT_MEMTYPE_WB
                      | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
@@ -2951,7 +2951,8 @@ static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
     Assert(pVM->hwaccm.s.fNestedPaging);
     descriptor[0] = pVM->hwaccm.s.vmx.GCPhysEPTP;
     descriptor[1] = GCPhys;
-    VMXR0InvEPT(enmFlush, &descriptor[0]);
+    int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
+    AssertRC(rc);
 }
 
 /**
@@ -2969,7 +2970,8 @@ static void VMXR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
     Assert(pVM->hwaccm.s.vmx.fVPID);
     descriptor[0] = pVM->hwaccm.s.uCurrentASID;
     descriptor[1] = GCPtr;
-    VMXR0InvVPID(enmFlush, &descriptor[0]);
+    int rc = VMXR0InvVPID(enmFlush, &descriptor[0]);
+    AssertRC(rc);
 }
 
 /**
