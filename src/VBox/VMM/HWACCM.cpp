@@ -572,9 +572,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 #ifdef HWACCM_VTX_WITH_EPT
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                 pVM->hwaccm.s.fNestedPaging = pVM->hwaccm.s.fAllowNestedPaging;
-#endif
 
-#ifdef HWACCM_VTX_WITH_VPID
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                 pVM->hwaccm.s.vmx.fVPID = true;
 #endif
