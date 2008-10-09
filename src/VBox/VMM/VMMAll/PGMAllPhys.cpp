@@ -1732,7 +1732,6 @@ end:
  */
 VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb)
 {
-# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
     /*
      * Treat the first page as a special case.
      */
@@ -1788,75 +1787,6 @@ VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, s
         cb -= PAGE_SIZE;
     }
     /* won't ever get here. */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE*/
-
-    /*
-     * Anything to be done?
-     */
-    if (!cb)
-        return VINF_SUCCESS;
-
-    /*
-     * Loop ram ranges.
-     */
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        RTGCPHYS off = GCPhysSrc - pRam->GCPhys;
-        if (off < pRam->cb)
-        {
-            if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-            {
-                /* Copy page by page as we're not dealing with a linear HC range. */
-                for (;;)
-                {
-                    /* convert */
-                    void *pvSrc;
-                    int rc = pgmRamGCPhys2HCPtrWithRange(pVM, pRam, GCPhysSrc, &pvSrc);
-                    if (VBOX_FAILURE(rc))
-                        return rc;
-
-                    /* copy */
-                    size_t cbRead = PAGE_SIZE - ((RTGCUINTPTR)GCPhysSrc & PAGE_OFFSET_MASK);
-                    if (cbRead >= cb)
-                    {
-                        memcpy(pvDst, pvSrc, cb);
-                        return VINF_SUCCESS;
-                    }
-                    memcpy(pvDst, pvSrc, cbRead);
-
-                    /* next */
-                    cb         -= cbRead;
-                    pvDst       = (uint8_t *)pvDst + cbRead;
-                    GCPhysSrc  += cbRead;
-                }
-            }
-            else if (pRam->pvR3)
-            {
-                /* read */
-                size_t cbRead = pRam->cb - off;
-                if (cbRead >= cb)
-                {
-                    memcpy(pvDst, (uint8_t *)pRam->pvR3 + off, cb);
-                    return VINF_SUCCESS;
-                }
-                memcpy(pvDst, (uint8_t *)pRam->pvR3 + off, cbRead);
-
-                /* next */
-                cb        -= cbRead;
-                pvDst      = (uint8_t *)pvDst + cbRead;
-                GCPhysSrc += cbRead;
-            }
-            else
-                return VERR_PGM_PHYS_PAGE_RESERVED;
-        }
-        else if (GCPhysSrc < pRam->GCPhysLast)
-            break;
-    }
-    return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE*/
 }
 
 
