@@ -4205,7 +4205,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 
         case TITLEBAR_SAVE:
         {
-            AssertMsg(u32User >= 0 && u32User <= 100, ("%d\n", u32User));
+            AssertMsg(u32User <= 100, ("%d\n", u32User));
             RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                         " - Saving %d%%...", u32User);
             break;
@@ -4213,7 +4213,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 
         case TITLEBAR_SNAPSHOT:
         {
-            AssertMsg(u32User >= 0 && u32User <= 100, ("%d\n", u32User));
+            AssertMsg(u32User <= 100, ("%d\n", u32User));
             RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                         " - Taking snapshot %d%%...", u32User);
             break;
