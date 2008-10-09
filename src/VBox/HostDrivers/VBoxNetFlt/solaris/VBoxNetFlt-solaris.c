@@ -2360,6 +2360,9 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
         pCur->cbPacket = 0;
         if (pPrev)
         {
+            if (!pCur->pNext)
+                pPromiscStream->pTail = pPrev;
+
             pPrev->pNext = pCur->pNext;
             pCur->pNext = pPromiscStream->pHead;
             pPromiscStream->pHead = pCur;
