@@ -341,10 +341,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 #ifdef HWACCM_VTX_WITH_EPT
         if (pVM->hwaccm.s.fNestedPaging)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;
+#endif /* HWACCM_VTX_WITH_EPT */
+#ifdef HWACCM_VTX_WITH_VPID
         else
         if (pVM->hwaccm.s.vmx.fVPID)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;
-#endif
+#endif /* HWACCM_VTX_WITH_VPID */
+
         /* Mask away the bits that the CPU doesn't support */
         /** @todo make sure they don't conflict with the above requirements. */
         val &= pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
@@ -488,6 +491,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVEPT_CAPS_CONTEXT)
             pVM->hwaccm.s.vmx.enmFlushContext = VMX_FLUSH_SINGLE_CONTEXT;
     }
+#ifdef HWACCM_VTX_WITH_VPID
     else
     if (pVM->hwaccm.s.vmx.fVPID)
     {
@@ -507,6 +511,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         if (pVM->hwaccm.s.vmx.msr.vmx_eptcaps & MSR_IA32_VMX_EPT_CAPS_INVVPID_CAPS_CONTEXT)
             pVM->hwaccm.s.vmx.enmFlushContext = VMX_FLUSH_SINGLE_CONTEXT;
     }
+#endif /* HWACCM_VTX_WITH_VPID */
     else
         pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = VMXR0SetupTLBDummy;
 
@@ -1553,6 +1558,7 @@ static void VMXR0SetupTLBEPT(PVM pVM)
 #endif
 }
 
+#ifdef HWACCM_VTX_WITH_VPID
 /**
  * Setup the tagged TLB for VPID
  *
@@ -1625,6 +1631,7 @@ static void VMXR0SetupTLBVPID(PVM pVM)
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatNoFlushTLBWorldSwitch);
 #endif
 }
+#endif /* HWACCM_VTX_WITH_VPID */
 
 /**
  * Runs guest code in a VT-x VM.
@@ -1802,7 +1809,10 @@ ResumeExecution:
 
 #if defined(HWACCM_VTX_WITH_EPT) && defined(LOG_ENABLED)
     if (    pVM->hwaccm.s.fNestedPaging
-        ||  pVM->hwaccm.s.vmx.fVPID)
+# ifdef HWACCM_VTX_WITH_VPID
+        ||  pVM->hwaccm.s.vmx.fVPID
+# endif /* HWACCM_VTX_WITH_VPID */
+        )
     {
         pCpu = HWACCMR0GetCurrentCpu();
         if (    pVM->hwaccm.s.idLastCpu   != pCpu->idCpu
@@ -2983,6 +2993,7 @@ static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
     AssertRC(rc);
 }
 
+#ifdef HWACCM_VTX_WITH_VPID
 /**
  * Flush the TLB (EPT)
  *
@@ -3001,6 +3012,7 @@ static void VMXR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
     int rc = VMXR0InvVPID(enmFlush, &descriptor[0]);
     AssertRC(rc);
 }
+#endif /* HWACCM_VTX_WITH_VPID */
 
 /**
  * Invalidates a guest page
@@ -3016,10 +3028,12 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
     /* @todo Only relevant if we want to use VPID. */
     Assert(!pVM->hwaccm.s.fNestedPaging);
 
+#ifdef HWACCM_VTX_WITH_VPID
     /* Skip it if a TLB flush is already pending. */
     if (   !fFlushPending 
         && pVM->hwaccm.s.vmx.fVPID)
         VMXR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCVirt);
+#endif /* HWACCM_VTX_WITH_VPID */
 
     return VINF_SUCCESS;
 }
