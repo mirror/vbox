@@ -342,7 +342,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         if (pVM->hwaccm.s.fNestedPaging)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;
         else
-        if (pVM->hwaccm.s.fVPID)
+        if (pVM->hwaccm.s.vmx.fVPID)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;
 #endif
         /* Mask away the bits that the CPU doesn't support */
