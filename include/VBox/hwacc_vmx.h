@@ -88,7 +88,7 @@ typedef union EPTPML4E
     /** Normal view. */
     EPTPML4EBITS    n;
     /** Unsigned integer view. */
-    X86PGUINT       u;
+    X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
     uint64_t        au64[1];
     /** 32 bit unsigned integer view. */
@@ -154,7 +154,7 @@ typedef union EPTPDPTE
     /** Normal view. */
     EPTPDPTEBITS    n;
     /** Unsigned integer view. */
-    X86PGUINT       u;
+    X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
     uint64_t        au64[1];
     /** 32 bit unsigned integer view. */
@@ -257,7 +257,7 @@ typedef union EPTPDE
     /** 2MB view (big). */
     EPTPDE2MBITS    b;
     /** Unsigned integer view. */
-    X86PGUINT       u;
+    X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
     uint64_t        au64[1];
     /** 32 bit unsigned integer view. */
@@ -326,7 +326,7 @@ typedef union EPTPTE
     /** Normal view. */
     EPTPTEBITS      n;
     /** Unsigned integer view. */
-    X86PGUINT       u;
+    X86PGPAEUINT    u;
     /** 64 bit unsigned integer view. */
     uint64_t        au64[1];
     /** 32 bit unsigned integer view. */
