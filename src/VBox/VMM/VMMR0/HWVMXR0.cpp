@@ -1186,7 +1186,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     {
         if (pVM->hwaccm.s.fNestedPaging)
         {
-
             AssertMsg(PGMGetEPTCR3(pVM) == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n", PGMGetEPTCR3(pVM), PGMGetHyperCR3(pVM)));
             pVM->hwaccm.s.vmx.GCPhysEPTP = PGMGetEPTCR3(pVM);
 
@@ -2263,16 +2262,44 @@ ResumeExecution:
 
     case VMX_EXIT_EPT_VIOLATION:        /* 48 EPT violation. An attempt to access memory with a guest-physical address was disallowed by the configuration of the EPT paging structures. */
     {
-        Log2(("EPT Page fault at %VGv error code %x\n", exitQualification ,errCode));
+        RTGCPHYS GCPhys;
+
         Assert(pVM->hwaccm.s.fNestedPaging);
 
-        /* Exit qualification contains the linear address of the page fault. */
+        if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID)
+        {
+            /* Read the fault address. */
+            rc = VMXReadVMCS(VMX_VMCS_EXIT_GUEST_LINEAR_ADDR, &val);
+            AssertRC(rc);
+            GCPhys = val;
+        }
+        else
+        {
+            /* If not set, then the violation occurred when loading the PDPTEs as part of a mov cr3 instructions. */
+            GCPhys = pCtx->cr3;
+        }
+
+        /* Determine the kind of violation. */
+        errCode = 0;
+        if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH)
+            errCode |= X86_TRAP_PF_ID;
+
+        if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_DATA_WRITE)
+            errCode |= X86_TRAP_PF_RW;
+
+        /* If the page is present, then it's a page level protection fault. */
+        if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT)
+            errCode |= X86_TRAP_PF_P;
+
+        Log2(("EPT Page fault %x at %VGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
+
+        /* GCPhys contains the guest physical address of the page fault. */
         TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
         TRPMSetErrorCode(pVM, errCode);
-        TRPMSetFaultAddress(pVM, exitQualification );
+        TRPMSetFaultAddress(pVM, GCPhys);
 
         /* Handle the pagefault trap for the nested shadow table. */
-        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), exitQualification );
+        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), GCPhys);
         Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Vrc\n", pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
