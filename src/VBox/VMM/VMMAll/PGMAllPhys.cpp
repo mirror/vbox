@@ -643,7 +643,8 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
 VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-# if defined(IN_GC) && defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+/** @todo this needs to be fixed, it really ain't right. */
     /* Until a physical TLB is implemented for GC or/and R0-darwin, let PGMDynMapGCPageEx handle it. */
     return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
 
@@ -698,6 +699,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
      * Temporary fallback code.
      */
 # if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+/** @todo @bugref{3202}: check up this path. */
     return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
 # else
     return PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1, ppv);
@@ -1716,7 +1718,7 @@ end:
     return;
 }
 
-#ifndef IN_GC /* Ring 0 & 3 only */
+#ifndef IN_GC /* Ring 0 & 3 only. (Just not needed in GC.) */
 
 /**
  * Read from guest physical memory by GC physical address, bypassing
@@ -1730,6 +1732,65 @@ end:
  */
 VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb)
 {
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
+    /*
+     * Treat the first page as a special case.
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+
+    /* map the 1st page */
+    void const *pvSrc;
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhysSrc, &pvSrc, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* optimize for the case where access is completely within the first page. */
+    size_t cbPage = PAGE_SIZE - (GCPhysSrc & PAGE_OFFSET_MASK);
+    if (RT_LIKELY(cb < cbPage))
+    {
+        memcpy(pvDst, pvSrc, cb);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        return VINF_SUCCESS;
+    }
+
+    /* copy to the end of the page. */
+    memcpy(pvDst, pvSrc, cbPage);
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
+    GCPhysSrc += cbPage;
+    pvDst = (uint8_t *)pvDst + cbPage;
+    cb -= cbPage;
+
+    /*
+     * Page by page.
+     */
+    for (;;)
+    {
+        /* map the page */
+        rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhysSrc, &pvSrc, &Lock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* last page? */
+        if (cb < PAGE_SIZE)
+        {
+            memcpy(pvDst, pvSrc, cb);
+            PGMPhysReleasePageMappingLock(pVM, &Lock);
+            return VINF_SUCCESS;
+        }
+
+        /* copy the entire page and advance */
+        memcpy(pvDst, pvSrc, PAGE_SIZE);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        GCPhysSrc += PAGE_SIZE;
+        pvDst = (uint8_t *)pvDst + PAGE_SIZE;
+        cb -= PAGE_SIZE;
+    }
+    /* won't ever get here. */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE*/
+
     /*
      * Anything to be done?
      */
@@ -1746,11 +1807,6 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
         RTGCPHYS off = GCPhysSrc - pRam->GCPhys;
         if (off < pRam->cb)
         {
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            /* map hcphys and copy */
-            AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
             {
                 /* Copy page by page as we're not dealing with a linear HC range. */
@@ -1795,12 +1851,12 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
             }
             else
                 return VERR_PGM_PHYS_PAGE_RESERVED;
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         }
         else if (GCPhysSrc < pRam->GCPhysLast)
             break;
     }
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE*/
 }
 
 
@@ -1818,13 +1874,75 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
  */
 VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb)
 {
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
+    LogFlow(("PGMPhysWriteGCPhys: %RGp %zu\n", GCPhysDst, cb));
+
+    /*
+     * Treat the first page as a special case.
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+
+    /* map the 1st page */
+    void *pvDst;
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysDst, &pvDst, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* optimize for the case where access is completely within the first page. */
+    size_t cbPage = PAGE_SIZE - (GCPhysDst & PAGE_OFFSET_MASK);
+    if (RT_LIKELY(cb < cbPage))
+    {
+        memcpy(pvDst, pvSrc, cb);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        return VINF_SUCCESS;
+    }
+
+    /* copy to the end of the page. */
+    memcpy(pvDst, pvSrc, cbPage);
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
+    GCPhysDst += cbPage;
+    pvSrc = (const uint8_t *)pvSrc + cbPage;
+    cb -= cbPage;
+
+    /*
+     * Page by page.
+     */
+    for (;;)
+    {
+        /* map the page */
+        rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysDst, &pvDst, &Lock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* last page? */
+        if (cb < PAGE_SIZE)
+        {
+            memcpy(pvDst, pvSrc, cb);
+            PGMPhysReleasePageMappingLock(pVM, &Lock);
+            return VINF_SUCCESS;
+        }
+
+        /* copy the entire page and advance */
+        memcpy(pvDst, pvSrc, PAGE_SIZE);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        GCPhysDst += PAGE_SIZE;
+        pvSrc = (const uint8_t *)pvSrc + PAGE_SIZE;
+        cb -= PAGE_SIZE;
+    }
+    /* won't ever get here. */
+
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE*/
+
     /*
      * Anything to be done?
      */
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysWriteGCPhys: %VGp %d\n", GCPhysDst, cb));
+    LogFlow(("PGMPhysWriteGCPhys: %RGp %zu\n", GCPhysDst, cb));
 
     /*
      * Loop ram ranges.
@@ -1836,14 +1954,6 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
         RTGCPHYS off = GCPhysDst - pRam->GCPhys;
         if (off < pRam->cb)
         {
-# ifdef VBOX_WITH_NEW_PHYS_CODE
-/** @todo PGMRamGCPhys2HCPtrWithRange. */
-# endif
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            /* map hcphys and copy */
-            AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
             {
                 /* Copy page by page as we're not dealing with a linear HC range. */
@@ -1888,12 +1998,12 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
             }
             else
                 return VERR_PGM_PHYS_PAGE_RESERVED;
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         }
         else if (GCPhysDst < pRam->GCPhysLast)
             break;
     }
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE*/
 }
 
 
@@ -1909,8 +2019,67 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
  * @param   GCPtrSrc    The source address (GC pointer).
  * @param   cb          The number of bytes to read.
  */
-VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
+VMMDECL(int) PGMPhysSimpleReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
+    /*
+     * Treat the first page as a special case.
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+
+    /* map the 1st page */
+    void const *pvSrc;
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPtr2CCPtrReadOnly(pVM, GCPtrSrc, &pvSrc, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* optimize for the case where access is completely within the first page. */
+    size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
+    if (RT_LIKELY(cb < cbPage))
+    {
+        memcpy(pvDst, pvSrc, cb);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        return VINF_SUCCESS;
+    }
+
+    /* copy to the end of the page. */
+    memcpy(pvDst, pvSrc, cbPage);
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
+    GCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCPtrSrc + cbPage);
+    pvDst = (uint8_t *)pvDst + cbPage;
+    cb -= cbPage;
+
+    /*
+     * Page by page.
+     */
+    for (;;)
+    {
+        /* map the page */
+        rc = PGMPhysGCPtr2CCPtrReadOnly(pVM, GCPtrSrc, &pvSrc, &Lock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* last page? */
+        if (cb < PAGE_SIZE)
+        {
+            memcpy(pvDst, pvSrc, cb);
+            PGMPhysReleasePageMappingLock(pVM, &Lock);
+            return VINF_SUCCESS;
+        }
+
+        /* copy the entire page and advance */
+        memcpy(pvDst, pvSrc, PAGE_SIZE);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        GCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCPtrSrc + PAGE_SIZE);
+        pvDst = (uint8_t *)pvDst + PAGE_SIZE;
+        cb -= PAGE_SIZE;
+    }
+    /* won't ever get here. */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
+
     /*
      * Anything to do?
      */
@@ -1923,17 +2092,11 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         void *pvSrc;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        /* map hcphys and copy */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrSrc, &pvSrc);
         if (VBOX_FAILURE(rc))
             return rc;
         memcpy(pvDst, pvSrc, cb);
         return VINF_SUCCESS;
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
     }
 
     /*
@@ -1943,15 +2106,9 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     {
         /* convert */
         void *pvSrc;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        /* map hcphys and copy */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrSrc, &pvSrc);
         if (VBOX_FAILURE(rc))
             return rc;
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
         /* copy */
         size_t cbRead = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
@@ -1967,6 +2124,7 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
         pvDst       = (uint8_t *)pvDst + cbRead;
         GCPtrSrc   += cbRead;
     }
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 
@@ -1982,15 +2140,74 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
  * @param   pvSrc       The source address.
  * @param   cb          The number of bytes to write.
  */
-VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
+    /*
+     * Treat the first page as a special case.
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+
+    /* map the 1st page */
+    void *pvDst;
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* optimize for the case where access is completely within the first page. */
+    size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
+    if (RT_LIKELY(cb < cbPage))
+    {
+        memcpy(pvDst, pvSrc, cb);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        return VINF_SUCCESS;
+    }
+
+    /* copy to the end of the page. */
+    memcpy(pvDst, pvSrc, cbPage);
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
+    GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbPage);
+    pvSrc = (const uint8_t *)pvSrc + cbPage;
+    cb -= cbPage;
+
+    /*
+     * Page by page.
+     */
+    for (;;)
+    {
+        /* map the page */
+        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* last page? */
+        if (cb < PAGE_SIZE)
+        {
+            memcpy(pvDst, pvSrc, cb);
+            PGMPhysReleasePageMappingLock(pVM, &Lock);
+            return VINF_SUCCESS;
+        }
+
+        /* copy the entire page and advance */
+        memcpy(pvDst, pvSrc, PAGE_SIZE);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + PAGE_SIZE);
+        pvSrc = (const uint8_t *)pvSrc + PAGE_SIZE;
+        cb -= PAGE_SIZE;
+    }
+    /* won't ever get here. */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
+
     /*
      * Anything to do?
      */
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysWriteGCPtr: %VGv %d\n", GCPtrDst, cb));
+    LogFlow(("PGMPhysSimpleWriteGCPtr: %VGv %d\n", GCPtrDst, cb));
 
     /*
      * Optimize writes within a single page.
@@ -1998,15 +2215,9 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         void *pvDst;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        /* map hcphys and copy */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
         if (VBOX_FAILURE(rc))
             return rc;
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         memcpy(pvDst, pvSrc, cb);
         return VINF_SUCCESS;
     }
@@ -2018,15 +2229,9 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     {
         /* convert */
         void *pvDst;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        /* map hcphys and copy */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
         if (VBOX_FAILURE(rc))
             return rc;
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
         /* copy */
         size_t cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
@@ -2042,7 +2247,9 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
         pvSrc       = (uint8_t *)pvSrc + cbWrite;
         GCPtrDst   += cbWrite;
     }
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
 }
+
 
 /**
  * Read from guest physical memory referenced by GC pointer.
@@ -2056,7 +2263,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
  * @param   GCPtrSrc    The source address (GC pointer).
  * @param   cb          The number of bytes to read.
  */
-/** @todo use the PGMPhysReadGCPtr name and rename the unsafe one to something appropriate */
+/** @todo use the PGMPhysSimpleReadGCPtr name and rename the unsafe one to something appropriate */
 VMMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
     RTGCPHYS    GCPhys;
@@ -2189,13 +2396,14 @@ VMMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
     }
 }
 
+
 /**
  * Write to guest physical memory referenced by GC pointer and update the PTE.
  *
  * This function uses the current CR3/CR0/CR4 of the guest and will
- * bypass access handlers and set any dirty and accessed bits in the PTE.
+ * bypass access handlers but will set any dirty and accessed bits in the PTE.
  *
- * If you don't want to set the dirty bit, use PGMPhysWriteGCPtr().
+ * If you don't want to set the dirty bit, use PGMPhysSimpleWriteGCPtr().
  *
  * @returns VBox status.
  * @param   pVM         VM handle.
@@ -2203,8 +2411,72 @@ VMMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
  * @param   pvSrc       The source address.
  * @param   cb          The number of bytes to write.
  */
-VMMDECL(int) PGMPhysWriteGCPtrDirty(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
+    /*
+     * Treat the first page as a special case.
+     * Btw. this is the same code as in PGMPhyssimpleWriteGCPtr excep for the PGMGstModifyPage.
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+
+    /* map the 1st page */
+    void *pvDst;
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* optimize for the case where access is completely within the first page. */
+    size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
+    if (RT_LIKELY(cb < cbPage))
+    {
+        memcpy(pvDst, pvSrc, cb);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+        return VINF_SUCCESS;
+    }
+
+    /* copy to the end of the page. */
+    memcpy(pvDst, pvSrc, cbPage);
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
+    rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+    GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbPage);
+    pvSrc = (const uint8_t *)pvSrc + cbPage;
+    cb -= cbPage;
+
+    /*
+     * Page by page.
+     */
+    for (;;)
+    {
+        /* map the page */
+        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* last page? */
+        if (cb < PAGE_SIZE)
+        {
+            memcpy(pvDst, pvSrc, cb);
+            PGMPhysReleasePageMappingLock(pVM, &Lock);
+            rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+            return VINF_SUCCESS;
+        }
+
+        /* copy the entire page and advance */
+        memcpy(pvDst, pvSrc, PAGE_SIZE);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+        GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + PAGE_SIZE);
+        pvSrc = (const uint8_t *)pvSrc + PAGE_SIZE;
+        cb -= PAGE_SIZE;
+    }
+    /* won't ever get here. */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
+
     /*
      * Anything to do?
      */
@@ -2255,6 +2527,7 @@ VMMDECL(int) PGMPhysWriteGCPtrDirty(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc
         GCPtrDst   += cbWrite;
         pvSrc       = (char *)pvSrc + cbWrite;
     }
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 #endif /* !IN_GC */
@@ -2322,7 +2595,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
                     break;
                 case VERR_PGM_PHYS_PAGE_RESERVED:
                 case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset(pvDst, 0, cb);
+                    memset(pvDst, 0, cb); /** @todo this is wrong, it should be 0xff */
                     break;
                 default:
                     return rc;
@@ -2362,7 +2635,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
                     memcpy(pvDst, (uint8_t *)pvSrc1 + (GCPtrSrc & PAGE_OFFSET_MASK), cb1);
                     break;
                 case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset(pvDst, 0, cb1);
+                    memset(pvDst, 0, cb1); /** @todo this is wrong, it should be 0xff */
                     break;
                 default:
                     return rc;
@@ -2376,7 +2649,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
                     memcpy((uint8_t *)pvDst + cb1, pvSrc2, cb2);
                     break;
                 case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset((uint8_t *)pvDst + cb1, 0, cb2);
+                    memset((uint8_t *)pvDst + cb1, 0, cb2);  /** @todo this is wrong, it should be 0xff */
                     break;
                 default:
                     return rc;

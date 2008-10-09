@@ -559,7 +559,7 @@ int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdat
 
     if (PAGE_ADDRESS(pDisInfo->pInstrGC) != PAGE_ADDRESS(pSrc + size - 1) && !PATMIsPatchGCAddr(pDisInfo->pVM, pSrc))
     {
-        return PGMPhysReadGCPtr(pDisInfo->pVM, pDest, pSrc, size);
+        return PGMPhysSimpleReadGCPtr(pDisInfo->pVM, pDest, pSrc, size);
     }
     else
     {
@@ -653,7 +653,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                 memcpy(oldInstr, pPatch->patch.aPrivInstr, pPatch->patch.cbPrivInstr);
                 *(RTRCPTR *)&oldInstr[pPatch->patch.cbPrivInstr - sizeof(RTRCPTR)] = pRec->pDest;
 
-                rc = PGMPhysReadGCPtr(pVM, curInstr, pPatch->patch.pPrivInstrGC, pPatch->patch.cbPrivInstr);
+                rc = PGMPhysSimpleReadGCPtr(pVM, curInstr, pPatch->patch.pPrivInstrGC, pPatch->patch.cbPrivInstr);
                 Assert(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
                 pRec->pDest = (RTRCPTR)((RTRCUINTPTR)pRec->pDest + delta);
@@ -680,7 +680,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                 if (VBOX_SUCCESS(rc))
                 {
                     *(RTRCPTR *)&curInstr[pPatch->patch.cbPrivInstr - sizeof(RTRCPTR)] = pRec->pDest;
-                    rc = PGMPhysWriteGCPtrDirty(pVM, pRec->pSource, curInstr, pPatch->patch.cbPrivInstr);
+                    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pRec->pSource, curInstr, pPatch->patch.cbPrivInstr);
                     AssertRC(rc);
                 }
             }
@@ -730,7 +730,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                 /*
                  * Read old patch jump and compare it to the one we previously installed
                  */
-                rc = PGMPhysReadGCPtr(pVM, temp, pPatch->patch.pPrivInstrGC, pPatch->patch.cbPatchJump);
+                rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->patch.pPrivInstrGC, pPatch->patch.cbPatchJump);
                 Assert(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
                 if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
@@ -753,7 +753,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                 else
                 if (VBOX_SUCCESS(rc))
                 {
-                    rc = PGMPhysWriteGCPtrDirty(pVM, pJumpOffGC, &displ, sizeof(displ));
+                    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pJumpOffGC, &displ, sizeof(displ));
                     AssertRC(rc);
                 }
                 else
@@ -2531,7 +2531,7 @@ static int patmGenJumpToPatch(PVM pVM, PPATCHINFO pPatch, bool fAddFixup = true)
         temp[0] = 0xE9;  //jmp
         *(uint32_t *)&temp[1] = (RTRCUINTPTR)PATCHCODE_PTR_GC(pPatch) - ((RTRCUINTPTR)pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32);    //return address
     }
-    rc = PGMPhysWriteGCPtrDirty(pVM, pPatch->pPrivInstrGC, temp, pPatch->cbPatchJump);
+    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pPatch->pPrivInstrGC, temp, pPatch->cbPatchJump);
     AssertRC(rc);
 
     if (rc == VINF_SUCCESS)
@@ -2569,7 +2569,7 @@ static int patmRemoveJumpToPatch(PVM pVM, PPATCHINFO pPatch)
 #endif
 
     /* Restore original code (privileged instruction + following instructions that were overwritten because of the 5/6 byte jmp). */
-    int rc = PGMPhysWriteGCPtrDirty(pVM, pPatch->pPrivInstrGC, pPatch->aPrivInstr, pPatch->cbPatchJump);
+    int rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pPatch->pPrivInstrGC, pPatch->aPrivInstr, pPatch->cbPatchJump);
 #ifdef DEBUG
     if (rc == VINF_SUCCESS)
     {
@@ -2628,7 +2628,7 @@ static int patmGenCallToPatch(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTargetGC, boo
     temp[0] = pPatch->aPrivInstr[0];
     *(uint32_t *)&temp[1] = (uint32_t)pTargetGC - ((uint32_t)pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32);    //return address
 
-    rc = PGMPhysWriteGCPtrDirty(pVM, pPatch->pPrivInstrGC, temp, pPatch->cbPatchJump);
+    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pPatch->pPrivInstrGC, temp, pPatch->cbPatchJump);
     AssertRC(rc);
 
     return rc;
@@ -2794,7 +2794,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     /* make a copy of the guest code bytes that will be overwritten */
     pPatch->cbPatchJump = SIZEOF_NEARJUMP32;
 
-    rc = PGMPhysReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+    rc = PGMPhysSimpleReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
     AssertRC(rc);
 
     if (pPatch->flags & PATMFL_INT3_REPLACEMENT_BLOCK)
@@ -3526,7 +3526,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     // make a copy of the guest code bytes that will be overwritten
     pPatch->cbPatchJump = SIZEOF_NEARJUMP32;
 
-    rc = PGMPhysReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+    rc = PGMPhysSimpleReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
     AssertRC(rc);
 
     /* Now replace the original call in the guest code */
@@ -3602,13 +3602,13 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
 #endif
 
     /* Save original instruction. */
-    rc = PGMPhysReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
+    rc = PGMPhysSimpleReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
     AssertRC(rc);
 
     pPatch->cbPatchJump = pPatch->cbPrivInstr;  /* bit of a misnomer in this case; size of replacement instruction. */
 
     /* Replace address with that of the cached item. */
-    rc = PGMPhysWriteGCPtrDirty(pVM, pInstrGC + pCpu->opsize - sizeof(RTRCPTR), &pVM->patm.s.mmio.pCachedData, sizeof(RTRCPTR));
+    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pInstrGC + pCpu->opsize - sizeof(RTRCPTR), &pVM->patm.s.mmio.pCachedData, sizeof(RTRCPTR));
     AssertRC(rc);
     if (VBOX_FAILURE(rc))
     {
@@ -3715,7 +3715,7 @@ static int patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
     Assert(pPatch->uState != PATCH_ENABLED);
 
     /* Replace first opcode byte with 'int 3'. */
-    rc = PGMPhysWriteGCPtrDirty(pVM, pPatch->pPrivInstrGC, &ASMInt3, sizeof(ASMInt3));
+    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pPatch->pPrivInstrGC, &ASMInt3, sizeof(ASMInt3));
     AssertRC(rc);
 
     pPatch->cbPatchJump = sizeof(ASMInt3);
@@ -3739,7 +3739,7 @@ static int patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch)
     Assert(pPatch->uState == PATCH_ENABLED || pPatch->uState == PATCH_DIRTY);
 
     /* Restore first opcode byte. */
-    rc = PGMPhysWriteGCPtrDirty(pVM, pPatch->pPrivInstrGC, pPatch->aPrivInstr, sizeof(ASMInt3));
+    rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pPatch->pPrivInstrGC, pPatch->aPrivInstr, sizeof(ASMInt3));
     AssertRC(rc);
     return rc;
 }
@@ -3775,7 +3775,7 @@ VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t
 #endif
 
     /* Save the original instruction. */
-    rc = PGMPhysReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
+    rc = PGMPhysSimpleReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPrivInstr);
     AssertRC(rc);
     pPatch->cbPatchJump = sizeof(ASMInt3);  /* bit of a misnomer in this case; size of replacement instruction. */
 
@@ -3879,7 +3879,7 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
     Assert(pCpu->opsize >= SIZEOF_NEARJUMP32);
     pPatch->cbPatchJump = pCpu->opsize;
 
-    rc = PGMPhysReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+    rc = PGMPhysSimpleReadGCPtr(pVM, pPatch->aPrivInstr, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
     AssertRC(rc);
 
     /* Now insert a jump in the guest code. */
@@ -5009,7 +5009,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
                     Assert(pPatch->cbPatchJump < sizeof(temp));
 
                     /* Let's first check if the guest code is still the same. */
-                    rc = PGMPhysReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+                    rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
                     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT);
                     if (rc == VINF_SUCCESS)
                     {
@@ -5051,7 +5051,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
             Assert(pPatch->cbPatchJump < sizeof(temp));
 
             /* Let's first check if the guest code is still the same. */
-            rc = PGMPhysReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+            rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
             Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT);
             if (rc == VINF_SUCCESS)
             {
@@ -5233,7 +5233,7 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
                     Assert(pPatch->cbPatchJump < sizeof(temp));
 
                     // let's first check if the guest code is still the same
-                    int rc = PGMPhysReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+                    int rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
                     AssertRC(rc);
 
                     if (memcmp(temp, pPatch->aPrivInstr, pPatch->cbPatchJump))
@@ -5272,7 +5272,7 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
                 Assert(pPatch->cbPatchJump < sizeof(temp));
 
                 /* Let's first check if the guest code is still the same. */
-                int rc = PGMPhysReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+                int rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
                 AssertRC(rc);
 
                 if (memcmp(temp, pPatch->aPrivInstr, pPatch->cbPatchJump))
@@ -5918,7 +5918,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 #endif
 
                 /* Copy the new instruction. */
-                rc = PGMPhysReadGCPtr(pVM, pCurPatchInstrHC, pCurInstrGC, CpuNew.opsize);
+                rc = PGMPhysSimpleReadGCPtr(pVM, pCurPatchInstrHC, pCurInstrGC, CpuNew.opsize);
                 AssertRC(rc);
 
                 /* Add a new lookup record for the duplicated instruction. */
@@ -6187,7 +6187,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
             rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
             AssertRC(rc);
 
-            rc = PGMPhysReadGCPtr(pVM, &retaddr, pCtx->esp, sizeof(retaddr));
+            rc = PGMPhysSimpleReadGCPtr(pVM, &retaddr, pCtx->esp, sizeof(retaddr));
             AssertRC(rc);
 
             Log(("Return failed at %VRv (%VRv)\n", pEip, pNewEip));

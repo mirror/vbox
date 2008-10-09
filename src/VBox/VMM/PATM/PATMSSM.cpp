@@ -359,7 +359,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         AssertCompile(sizeof(patmInfo.uCurrentPatchIdx) == sizeof(uint32_t));
         rc = SSMR3GetS32(pSSM, &patmInfo.uCurrentPatchIdx);
         AssertRCReturn(rc, rc);
-               
+
         AssertCompile(sizeof(patmInfo.pPatchedInstrGCLowest) == sizeof(RTRCPTR));
         rc = SSMR3GetRCPtr(pSSM, &patmInfo.pPatchedInstrGCLowest);
         AssertRCReturn(rc, rc);
@@ -399,7 +399,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         AssertCompile(sizeof(patmInfo.savedstate.cPatches) == sizeof(uint32_t));
         rc = SSMR3GetU32(pSSM, &patmInfo.savedstate.cPatches);
         AssertRCReturn(rc, rc);
-        
+
     }
 #endif
 
@@ -439,7 +439,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     Log(("pGCStateGC  %VRv vs old %VRv\n", pVM->patm.s.pGCStateGC, patmInfo.pGCStateGC));
     Log(("pGCStackGC  %VRv vs old %VRv\n", pVM->patm.s.pGCStackGC, patmInfo.pGCStackGC));
     Log(("pCPUMCtxGC  %VRv vs old %VRv\n", pVM->patm.s.pCPUMCtxGC, patmInfo.pCPUMCtxGC));
-    
+
 
     /** @note patch statistics are not restored. */
 
@@ -669,7 +669,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
     /*
      * Correct absolute fixups in the global patch. (helper functions)
-     * Bit of a mess. Uses the new patch record, but restored patch functions. 
+     * Bit of a mess. Uses the new patch record, but restored patch functions.
      */
     PRELOCREC pRec = 0;
     AVLPVKEY  key  = 0;
@@ -730,14 +730,14 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
         if (pRec->pSource && !PATMIsPatchGCAddr(pVM, pRec->pSource))
             break;
 
-        if (    *pFixup >= patmInfo.pGCStateGC 
+        if (    *pFixup >= patmInfo.pGCStateGC
             &&  *pFixup <  patmInfo.pGCStateGC + sizeof(PATMGCSTATE))
         {
             LogFlow(("Changing absolute GCState at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStateGC) + pVM->patm.s.pGCStateGC));
             *pFixup = (*pFixup - patmInfo.pGCStateGC) + pVM->patm.s.pGCStateGC;
         }
         else
-        if (    *pFixup >= patmInfo.pCPUMCtxGC 
+        if (    *pFixup >= patmInfo.pCPUMCtxGC
             &&  *pFixup <  patmInfo.pCPUMCtxGC + sizeof(CPUMCTX))
         {
             LogFlow(("Changing absolute CPUMCTX at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC));
@@ -847,21 +847,21 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
                 *pFixup = (*pFixup - patmInfo.pCPUMCtxGC) + pVM->patm.s.pCPUMCtxGC;
         }
         else
-        if (    *pFixup >= patmInfo.pStatsGC 
+        if (    *pFixup >= patmInfo.pStatsGC
             &&  *pFixup <  patmInfo.pStatsGC + PATM_STAT_MEMSIZE)
         {
             LogFlow(("Changing absolute Stats at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC));
             *pFixup = (*pFixup - patmInfo.pStatsGC) + pVM->patm.s.pStatsGC;
         }
         else
-        if (    *pFixup >= patmInfo.pGCStackGC 
+        if (    *pFixup >= patmInfo.pGCStackGC
             &&  *pFixup <  patmInfo.pGCStackGC + PATM_STACK_TOTAL_SIZE)
         {
             LogFlow(("Changing absolute Stack at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pGCStackGC) + pVM->patm.s.pGCStackGC));
             *pFixup = (*pFixup - patmInfo.pGCStackGC) + pVM->patm.s.pGCStackGC;
         }
         else
-        if (    *pFixup >= patmInfo.pPatchMemGC 
+        if (    *pFixup >= patmInfo.pPatchMemGC
             &&  *pFixup <  patmInfo.pPatchMemGC + patmInfo.cbPatchMem)
         {
             LogFlow(("Changing absolute PatchMem at %VRv from %VRv to %VRv\n", patmInfo.pPatchMemGC + offset, *pFixup, (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC));
@@ -955,7 +955,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             /*
              * Read old patch jump and compare it to the one we previously installed
              */
-            int rc = PGMPhysReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
+            int rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
             Assert(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
             if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
@@ -978,7 +978,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             else
             if (VBOX_SUCCESS(rc))
             {
-                rc = PGMPhysWriteGCPtrDirty(pVM, pJumpOffGC, &displ, sizeof(displ));
+                rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pJumpOffGC, &displ, sizeof(displ));
                 AssertRC(rc);
             }
             else
@@ -1005,7 +1005,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
         *(RTRCUINTPTR *)pRec->pRelocPos = displ;
         pRec->pSource = pSource;
         break;
- 
+
     }
 }
 }

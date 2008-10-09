@@ -115,12 +115,12 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
     DISCPUSTATE  *pCpu     = (DISCPUSTATE *)pvUserdata;
     PVM           pVM      = (PVM)pCpu->apvUserData[0];
 # ifdef IN_RING0
-    int rc = PGMPhysReadGCPtr(pVM, pDest, pSrc, cb);
-    AssertMsgRC(rc, ("PGMPhysReadGCPtr failed for pSrc=%VGv cb=%x\n", pSrc, cb));
+    int rc = PGMPhysSimpleReadGCPtr(pVM, pDest, pSrc, cb);
+    AssertMsgRC(rc, ("PGMPhysSimpleReadGCPtr failed for pSrc=%VGv cb=%x\n", pSrc, cb));
 # else /* IN_RING3 */
     if (!PATMIsPatchGCAddr(pVM, pSrc))
     {
-        int rc = PGMPhysReadGCPtr(pVM, pDest, pSrc, cb);
+        int rc = PGMPhysSimpleReadGCPtr(pVM, pDest, pSrc, cb);
         AssertRC(rc);
     }
     else
@@ -2576,16 +2576,16 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         /* no break */
 #endif
     default:
-        /* In X2APIC specification this range is reserved for APIC control. */ 
+        /* In X2APIC specification this range is reserved for APIC control. */
         if ((pRegFrame->ecx >= MSR_IA32_APIC_START) && (pRegFrame->ecx < MSR_IA32_APIC_END))
             rc = PDMApicReadMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, &val);
-        else 
+        else
             /* We should actually trigger a #GP here, but don't as that might cause more trouble. */
             val = 0;
         break;
     }
     Log(("EMInterpretRdmsr %s (%x) -> val=%VX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
-    if (rc == VINF_SUCCESS) 
+    if (rc == VINF_SUCCESS)
     {
         pRegFrame->eax = (uint32_t) val;
         pRegFrame->edx = (uint32_t) (val >> 32ULL);
@@ -2721,7 +2721,7 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         break;
 
     default:
-        /* In X2APIC specification this range is reserved for APIC control. */ 
+        /* In X2APIC specification this range is reserved for APIC control. */
         if ((pRegFrame->ecx >=  MSR_IA32_APIC_START) && (pRegFrame->ecx <  MSR_IA32_APIC_END))
             return PDMApicWriteMSR(pVM, VMMGetCpuId(pVM), pRegFrame->ecx, val);
 

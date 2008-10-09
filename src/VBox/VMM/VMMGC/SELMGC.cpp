@@ -450,7 +450,7 @@ l_tryagain:
 
 #else /* !IN_GC */
         /* Reading too much. Could be cheaper than two seperate calls though. */
-        rc = PGMPhysReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
+        rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
         if (VBOX_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));

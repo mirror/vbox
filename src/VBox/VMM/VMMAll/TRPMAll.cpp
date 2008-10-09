@@ -381,7 +381,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_GC
             rc = MMGCRamRead(pVM, &pCallerGC, (void *)pRegFrame->esp, sizeof(pCallerGC));
 #else
-            rc = PGMPhysReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
+            rc = PGMPhysSimpleReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
 #endif
             if (VBOX_SUCCESS(rc))
             {
@@ -450,7 +450,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_GC
         rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
-        rc = PGMPhysReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
+        rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
         if (VBOX_FAILURE(rc))
         {
@@ -465,7 +465,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_GC
             rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
-            rc = PGMPhysReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
+            rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
         }
         if (    VBOX_SUCCESS(rc)
@@ -510,7 +510,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_GC
                 rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
-                rc = PGMPhysReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
+                rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
 #endif
                 if (VBOX_FAILURE(rc))
                 {
@@ -525,7 +525,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef IN_GC
                     rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
-                    rc = PGMPhysReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
+                    rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
 #endif
                     if (VBOX_FAILURE(rc))
                     {
