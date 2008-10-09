@@ -106,7 +106,7 @@ AssertCompileSize(EPTPML4E, 8);
  * EPT PML4 Table.
  */
 #pragma pack(1)
-typedef union EPTPML4
+typedef struct EPTPML4
 {
     EPTPML4E    a[EPT_PG_ENTRIES];
 } EPTPML4;
@@ -173,7 +173,7 @@ AssertCompileSize(EPTPDPTE, 8);
  * EPT Page Directory Pointer Table.
  */
 #pragma pack(1)
-typedef union EPTPDPT
+typedef struct EPTPDPT
 {
     EPTPDPTE    a[EPT_PG_ENTRIES];
 } EPTPDPT;
@@ -278,7 +278,7 @@ AssertCompileSize(EPTPDE, 8);
  * EPT Page Directory Table.
  */
 #pragma pack(1)
-typedef union EPTPD
+typedef struct EPTPD
 {
     EPTPDE      a[EPT_PG_ENTRIES];
 } EPTPD;
@@ -348,7 +348,7 @@ AssertCompileSize(EPTPTE, 8);
  * EPT Page Table.
  */
 #pragma pack(1)
-typedef union EPTPT
+typedef struct EPTPT
 {
     EPTPTE      a[EPT_PG_ENTRIES];
 } EPTPT;
