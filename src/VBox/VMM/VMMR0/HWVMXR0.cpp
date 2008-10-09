@@ -1430,13 +1430,14 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, CPUMCTX *pCtx)
     val = (valShadow & pVM->hwaccm.s.vmx.cr4_mask) | (val & ~pVM->hwaccm.s.vmx.cr4_mask);
     CPUMSetGuestCR4(pVM, val);
 
-    /* Can be updated behind our back in the nested paging case. */
-    CPUMSetGuestCR2(pVM, ASMGetCR2());
-
     /* Note: no reason to sync back the CRx registers. They can't be changed by the guest. */
     /* Note: only in the nested paging case can CR3 & CR4 be changed by the guest. */
-    if (pVM->hwaccm.s.fNestedPaging)
+    if (    pVM->hwaccm.s.fNestedPaging
+        &&  !CPUMIsGuestInRealModeEx(pCtx))
     {
+        /* Can be updated behind our back in the nested paging case. */
+        CPUMSetGuestCR2(pVM, ASMGetCR2());
+
         VMXReadVMCS(VMX_VMCS_GUEST_CR3, &val);
 
         if (val != pCtx->cr3)
