@@ -1189,7 +1189,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         {
             RTHCPHYS GCPhys;
 
-            AssertMsg(pVM->hwaccm.s.vmx.GCPhysEPTP == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n, pVM->hwaccm.s.vmx.GCPhysEPTP, PGMGetHyperCR3(pVM)));
+            AssertMsg(pVM->hwaccm.s.vmx.GCPhysEPTP == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n", pVM->hwaccm.s.vmx.GCPhysEPTP, PGMGetHyperCR3(pVM)));
             GCPhys = pVM->hwaccm.s.vmx.GCPhysEPTP;
 
             Assert(!(GCPhys & 0xfff));
