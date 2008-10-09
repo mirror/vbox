@@ -79,6 +79,7 @@ int vboxVMInfoInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartT
 
     gCtx.pEnv = pEnv;
     gCtx.fFirstRun = TRUE;
+    gCtx.iUserCount = INT32_MAX; /* value which isn't reached in real life. */
 
     int rc = VbglR3GuestPropConnect(&gCtx.iInfoSvcClientID);
     if (!RT_SUCCESS(rc))
@@ -114,8 +115,10 @@ void vboxVMInfoDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     /** @todo Temporary solution: Zap all values which are not valid anymore when VM goes down (reboot/shutdown).
      * Needs to be replaced with "temporary properties" later. */
 
-    vboxVMInfoWriteProp(pCtx, "GuestInfo/OS/LoggedInUsersList", "");
+    vboxVMInfoWriteProp(pCtx, "GuestInfo/OS/LoggedInUsersList", NULL);
     vboxVMInfoWritePropInt(pCtx, "GuestInfo/OS/LoggedInUsers", 0);
+    if (pCtx->iUserCount != 0)
+        vboxVMInfoWriteProp(pCtx, "GuestInfo/OS/NoLoggedInUsers", "true");
 
     const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
     VbglR3GuestPropDelSet(pCtx->iInfoSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
