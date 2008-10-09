@@ -101,8 +101,7 @@ $$(PATH_VgaBiosBin)/vgabios.tmp $$(PATH_VgaBiosBin)/vgabios.lst: $$(PATH_VgaBios
 # 6. checksums
 $$(PATH_VgaBiosBin)/vgabios.bin: $$(PATH_VgaBiosBin)/vgabios.tmp $$(VBOX_BIOSSUMS)
 	$(call MSG_TOOL,biossums,VgaBiosBin,$<,$@)
-	$(QUIET)$(CP) -f $(PATH_VgaBiosBin)/vgabios.tmp $@
-	$(QUIET)$(VBOX_BIOSSUMS) $@
+	$(QUIET)$(VBOX_BIOSSUMS) $< $@
 
 #
 # The VGA BIOS Logo.

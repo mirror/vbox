@@ -87,8 +87,7 @@ $$(PATH_PcBiosBin)/pcbios.tmp + $$(PATH_PcBiosBin)/pcbios.lst: $$(PATH_PcBiosBin
 # 5. calculate checksums for the final BIOS image.
 $$(PATH_PcBiosBin)/pcbios.bin: $$(PATH_PcBiosBin)/pcbios.tmp $$(VBOX_BIOSSUMS)
 	$(call MSG_TOOL,biossums,PcBiosBin,$<,$@)
-	$(QUIET)$(CP) -f $(PATH_PcBiosBin)/pcbios.tmp $(PATH_PcBiosBin)/pcbios.bin
-	$(QUIET)$(VBOX_BIOSSUMS) $(PATH_PcBiosBin)/pcbios.bin
+	$(QUIET)$(VBOX_BIOSSUMS) $< $@
 
 # 6. create the symbol table.
 $$(PATH_PcBiosBin)/pcbios-syms.h: $$(PATH_PcBiosBin)/pcbios.lst $(MAKEFILE_CURRENT)
