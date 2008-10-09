@@ -2021,7 +2021,6 @@ VMMDECL(int) PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *p
  */
 VMMDECL(int) PGMPhysSimpleReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
-# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
     /*
      * Treat the first page as a special case.
      */
@@ -2077,54 +2076,6 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size
         cb -= PAGE_SIZE;
     }
     /* won't ever get here. */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
-
-    /*
-     * Anything to do?
-     */
-    if (!cb)
-        return VINF_SUCCESS;
-
-    /*
-     * Optimize reads within a single page.
-     */
-    if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
-    {
-        void *pvSrc;
-        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrSrc, &pvSrc);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        memcpy(pvDst, pvSrc, cb);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page by page.
-     */
-    for (;;)
-    {
-        /* convert */
-        void *pvSrc;
-        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrSrc, &pvSrc);
-        if (VBOX_FAILURE(rc))
-            return rc;
-
-        /* copy */
-        size_t cbRead = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
-        if (cbRead >= cb)
-        {
-            memcpy(pvDst, pvSrc, cb);
-            return VINF_SUCCESS;
-        }
-        memcpy(pvDst, pvSrc, cbRead);
-
-        /* next */
-        cb         -= cbRead;
-        pvDst       = (uint8_t *)pvDst + cbRead;
-        GCPtrSrc   += cbRead;
-    }
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 
