@@ -341,6 +341,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 #ifdef HWACCM_VTX_WITH_EPT
         if (pVM->hwaccm.s.fNestedPaging)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;
+        else
+        if (pVM->hwaccm.s.fVPID)
+            val |= VMX_VMCS_CTRL_PROC_EXEC2_VPID;
 #endif
         /* Mask away the bits that the CPU doesn't support */
         /** @todo make sure they don't conflict with the above requirements. */
