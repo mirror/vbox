@@ -188,7 +188,7 @@ typedef const EPTPDPT *PCEPTPDPT;
  * EPT Page Directory Table Entry. Bit view.
  */
 #pragma pack(1)
-typedef union EPTPDEBITS
+typedef struct EPTPDEBITS
 {
     /** Present bit. */
     uint64_t    u1Present       : 1;
@@ -221,7 +221,7 @@ AssertCompileSize(EPTPDEBITS, 8);
  * EPT 2MB Page Directory Table Entry. Bit view.
  */
 #pragma pack(1)
-typedef union EPTPDE2MBITS
+typedef struct EPTPDE2MBITS
 {
     /** Present bit. */
     uint64_t    u1Present       : 1;
@@ -293,7 +293,7 @@ typedef const EPTPD *PCEPTPD;
  * EPT Page Table Entry. Bit view.
  */
 #pragma pack(1)
-typedef union EPTPTEBITS
+typedef struct EPTPTEBITS
 {
     /** Present bit. */
     uint64_t    u1Present       : 1;
