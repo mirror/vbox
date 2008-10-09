@@ -572,7 +572,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 #ifdef HWACCM_VTX_WITH_EPT
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                 pVM->hwaccm.s.fNestedPaging = pVM->hwaccm.s.fAllowNestedPaging;
-
+            else
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
                 pVM->hwaccm.s.vmx.fVPID = true;
 #endif
@@ -624,6 +624,15 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 LogRel(("HWACCM: VMX enabled!\n"));
                 if (pVM->hwaccm.s.fNestedPaging)
                     LogRel(("HWACCM:    Enabled nested paging\n"));
+                if (pVM->hwaccm.s.vmx.fVPID)
+                    LogRel(("HWACCM:    Enabled VPID\n"));
+
+                if (   pVM->hwaccm.s.fNestedPaging
+                    || pVM->hwaccm.s.vmx.fVPID)
+                {
+                    LogRel(("HWACCM: enmFlushPage    %d\n", pVM->hwaccm.s.vmx.enmFlushPage));
+                    LogRel(("HWACCM: enmFlushContext %d\n", pVM->hwaccm.s.vmx.enmFlushContext));
+                }
             }
             else
             {
