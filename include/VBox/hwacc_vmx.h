@@ -71,6 +71,7 @@ typedef struct EPTPML4EBITS
     uint64_t    u12Available    : 12;
 } EPTPML4EBITS;
 #pragma pack()
+AssertCompileSize(EPTPML4EBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
 #define EPT_PML4E_PG_MASK       X86_PML4E_PG_MASK_FULL
@@ -137,6 +138,7 @@ typedef struct EPTPDPTEBITS
     uint64_t    u12Available    : 12;
 } EPTPDPTEBITS;
 #pragma pack()
+AssertCompileSize(EPTPDPTEBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
 #define EPT_PDPTE_PG_MASK       X86_PDPE_PG_MASK_FULL
@@ -206,6 +208,7 @@ typedef union EPTPDEBITS
     uint64_t    u12Available    : 12;
 } EPTPDEBITS;
 #pragma pack()
+AssertCompileSize(EPTPDEBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
 #define EPT_PDE_PG_MASK         X86_PDE_PAE_PG_MASK_FULL
@@ -242,6 +245,7 @@ typedef union EPTPDE2MBITS
     uint64_t    u12Available    : 12;
 } EPTPDE2MBITS;
 #pragma pack()
+AssertCompileSize(EPTPDE2MBITS, 8);
 
 /** Bits 21-51 - - EPT - Physical Page number of the next level. */
 #define EPT_PDE2M_PG_MASK       ( 0x000fffffffe00000ULL )
@@ -309,6 +313,7 @@ typedef union EPTPTEBITS
     uint64_t    u12Available    : 12;
 } EPTPTEBITS;
 #pragma pack()
+AssertCompileSize(EPTPTEBITS, 8);
 
 /** Bits 12-51 - - EPT - Physical Page number of the next level. */
 #define EPT_PTE_PG_MASK         X86_PTE_PAE_PG_MASK_FULL
