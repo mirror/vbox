@@ -1540,6 +1540,7 @@ static void VMXR0SetupTLBEPT(PVM pVM)
         Assert(!pCpu->fFlushTLB);
 
     pVM->hwaccm.s.idLastCpu = pCpu->idCpu;
+    pCpu->fFlushTLB         = false;
 
     if (pVM->hwaccm.s.fForceTLBFlush)
         VMXR0FlushEPT(pVM, pVM->hwaccm.s.vmx.enmFlushContext, 0);
