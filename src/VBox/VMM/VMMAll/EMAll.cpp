@@ -329,7 +329,7 @@ DECLINLINE(int) emRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
     PGMPhysRead(pVM, GCPhys, pDest, cb);
     return VINF_SUCCESS;
 #else
-    return PGMPhysReadGCPtrSafe(pVM, pDest, GCSrc, cb);
+    return PGMPhysReadGCPtr(pVM, pDest, GCSrc, cb);
 #endif
 }
 
@@ -360,7 +360,7 @@ DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
     return VINF_SUCCESS;
 
 #else
-    return PGMPhysWriteGCPtrSafe(pVM, GCDest, pSrc, cb);
+    return PGMPhysWriteGCPtr(pVM, GCDest, pSrc, cb);
 #endif
 }
 
@@ -1339,7 +1339,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     {
         LogFlow(("emInterpretStosWD dest=%04X:%VGv (%VGv) cbSize=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize));
 
-        rc = PGMPhysWriteGCPtrSafe(pVM, GCDest, &pRegFrame->rax, cbSize);
+        rc = PGMPhysWriteGCPtr(pVM, GCDest, &pRegFrame->rax, cbSize);
         if (VBOX_FAILURE(rc))
             return VERR_EM_INTERPRETER;
         Assert(rc == VINF_SUCCESS);
@@ -1380,7 +1380,7 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
         /* REP case */
         while (cTransfers)
         {
-            rc = PGMPhysWriteGCPtrSafe(pVM, GCDest, &pRegFrame->rax, cbSize);
+            rc = PGMPhysWriteGCPtr(pVM, GCDest, &pRegFrame->rax, cbSize);
             if (VBOX_FAILURE(rc))
             {
                 rc = VERR_EM_INTERPRETER;

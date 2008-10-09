@@ -1325,7 +1325,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
             RTLogRelPrintf("***\n"
                            "ss:sp=0000:%04x ", esp);
             uint32_t Start = esp & ~(uint32_t)63;
-            int rc = PGMPhysReadGCPhys(pVM, abBuf, Start, 0x100);
+            int rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, Start, 0x100);
             if (VBOX_SUCCESS(rc))
                 RTLogRelPrintf("0000:%04x TO 0000:%04x:\n"
                                "%.*Rhxd\n",
@@ -1337,7 +1337,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
             /* grub ... */
             if (esp < 0x2000 && esp > 0x1fc0)
             {
-                rc = PGMPhysReadGCPhys(pVM, abBuf, 0x8000, 0x800);
+                rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, 0x8000, 0x800);
                 if (VBOX_SUCCESS(rc))
                     RTLogRelPrintf("0000:8000 TO 0000:87ff:\n"
                                    "%.*Rhxd\n",
@@ -1346,7 +1346,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
             /* microsoft cdrom hang ... */
             if (true)
             {
-                rc = PGMPhysReadGCPhys(pVM, abBuf, 0x8000, 0x200);
+                rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, 0x8000, 0x200);
                 if (VBOX_SUCCESS(rc))
                     RTLogRelPrintf("2000:0000 TO 2000:01ff:\n"
                                    "%.*Rhxd\n",

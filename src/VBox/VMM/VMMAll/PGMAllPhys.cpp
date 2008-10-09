@@ -1130,7 +1130,7 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
 /**
  * Read physical memory.
  *
- * This API respects access handlers and MMIO. Use PGMPhysReadGCPhys() if you
+ * This API respects access handlers and MMIO. Use PGMPhysSimpleReadGCPhys() if you
  * want to ignore those.
  *
  * @param   pVM             VM Handle.
@@ -1388,7 +1388,7 @@ end:
 /**
  * Write to physical memory.
  *
- * This API respects access handlers and MMIO. Use PGMPhysReadGCPhys() if you
+ * This API respects access handlers and MMIO. Use PGMPhysSimpleReadGCPhys() if you
  * want to ignore those.
  *
  * @param   pVM             VM Handle.
@@ -1730,7 +1730,7 @@ end:
  * @param   GCPhysSrc   The source address (GC physical address).
  * @param   cb          The number of bytes to read.
  */
-VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb)
+VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb)
 {
 # if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
     /*
@@ -1872,10 +1872,10 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
  * @param   pvSrc       The source buffer.
  * @param   cb          The number of bytes to write.
  */
-VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb)
 {
 # if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
-    LogFlow(("PGMPhysWriteGCPhys: %RGp %zu\n", GCPhysDst, cb));
+    LogFlow(("PGMPhysSimpleWriteGCPhys: %RGp %zu\n", GCPhysDst, cb));
 
     /*
      * Treat the first page as a special case.
@@ -1942,7 +1942,7 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysWriteGCPhys: %RGp %zu\n", GCPhysDst, cb));
+    LogFlow(("PGMPhysSimpleWriteGCPhys: %RGp %zu\n", GCPhysDst, cb));
 
     /*
      * Loop ram ranges.
@@ -2397,8 +2397,7 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void 
  * @param   GCPtrSrc    The source address (GC pointer).
  * @param   cb          The number of bytes to read.
  */
-/** @todo use the PGMPhysSimpleReadGCPtr name and rename the unsafe one to something appropriate */
-VMMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
+VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
     RTGCPHYS    GCPhys;
     int         rc;
@@ -2409,7 +2408,7 @@ VMMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysReadGCPtrSafe: %VGv %d\n", GCPtrSrc, cb));
+    LogFlow(("PGMPhysReadGCPtr: %VGv %d\n", GCPtrSrc, cb));
 
     /*
      * Optimize reads within a single page.
@@ -2471,7 +2470,7 @@ VMMDECL(int) PGMPhysReadGCPtrSafe(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t
  * @param   cb          The number of bytes to write.
  */
 /** @todo use the PGMPhysWriteGCPtr name and rename the unsafe one to something appropriate */
-VMMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
     RTGCPHYS    GCPhys;
     int         rc;
@@ -2482,7 +2481,7 @@ VMMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysWriteGCPtrSafe: %VGv %d\n", GCPtrDst, cb));
+    LogFlow(("PGMPhysWriteGCPtr: %VGv %d\n", GCPtrDst, cb));
 
     /*
      * Optimize writes within a single page.
