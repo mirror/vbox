@@ -2167,7 +2167,6 @@ VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSr
  */
 VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
 {
-# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
     /*
      * Treat the first page as a special case.
      * Btw. this is the same code as in PGMPhyssimpleWriteGCPtr excep for the PGMGstModifyPage.
@@ -2228,60 +2227,6 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void 
         cb -= PAGE_SIZE;
     }
     /* won't ever get here. */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
-
-    /*
-     * Anything to do?
-     */
-    if (!cb)
-        return VINF_SUCCESS;
-
-    /*
-     * Optimize writes within a single page.
-     */
-    if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
-    {
-        void *pvDst;
-        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        memcpy(pvDst, pvSrc, cb);
-        rc = PGMGstModifyPage(pVM, GCPtrDst, cb, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
-        AssertRC(rc);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page by page.
-     */
-    for (;;)
-    {
-        /* convert */
-        void *pvDst;
-        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
-        if (VBOX_FAILURE(rc))
-            return rc;
-
-        /* mark the guest page as accessed and dirty. */
-        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
-        AssertRC(rc);
-
-        /* copy */
-        size_t  cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
-        if (cbWrite >= cb)
-        {
-            memcpy(pvDst, pvSrc, cb);
-            return VINF_SUCCESS;
-        }
-        memcpy(pvDst, pvSrc, cbWrite);
-
-        /* next */
-        cb         -= cbWrite;
-        GCPtrDst   += cbWrite;
-        pvSrc       = (char *)pvSrc + cbWrite;
-    }
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
 }
 
 
