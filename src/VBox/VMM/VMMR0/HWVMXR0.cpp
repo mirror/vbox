@@ -2278,7 +2278,8 @@ ResumeExecution:
 
         Assert(pVM->hwaccm.s.fNestedPaging);
 
-        if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID)
+        if ((exitQualification & (VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID | VMX_EXIT_QUALIFICATION_EPT_TRANSLATED_ACCESS)) 
+             ==                  (VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID | VMX_EXIT_QUALIFICATION_EPT_TRANSLATED_ACCESS))
         {
             /* Read the fault address. */
             rc = VMXReadVMCS(VMX_VMCS_EXIT_GUEST_LINEAR_ADDR, &val);
@@ -2287,8 +2288,22 @@ ResumeExecution:
         }
         else
         {
-            /* If not set, then the violation occurred when loading the PDPTEs as part of a mov cr3 instructions. */
-            GCPhys = pCtx->cr3;
+            Assert(!(pCtx->cr0 & X86_CR0_PG) || (pCtx->cr4 & X86_CR4_PAE));
+
+            /* If not set, then the violation occurred when loading the PDPTEs as part of a mov cr3 instruction
+             * or while accessing our real & protected mode without paging page directory.
+             */
+            if (!(pCtx->cr0 & X86_CR0_PG))
+            {
+                /* We convert it here every time as pci regions could be reconfigured. */
+                rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeEPTPageTable, &GCPhys);
+                AssertRC(rc);
+            }
+            else
+            {
+                /* It applies to the guest's CR3. */
+                GCPhys = pCtx->cr3;
+            }
         }
 
         /* Determine the kind of violation. */
