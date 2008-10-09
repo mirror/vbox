@@ -23,7 +23,7 @@
 /**
  * Read physical memory. (one byte/word/dword)
  *
- * This API respects access handlers and MMIO. Use PGMPhysReadGCPhys() if you
+ * This API respects access handlers and MMIO. Use PGMPhysSimpleReadGCPhys() if you
  * want to ignore those.
  *
  * @param   pVM             VM Handle.
@@ -64,7 +64,7 @@ VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
 /**
  * Write to physical memory. (one byte/word/dword)
  *
- * This API respects access handlers and MMIO. Use PGMPhysReadGCPhys() if you
+ * This API respects access handlers and MMIO. Use PGMPhysSimpleReadGCPhys() if you
  * want to ignore those.
  *
  * @param   pVM             VM Handle.

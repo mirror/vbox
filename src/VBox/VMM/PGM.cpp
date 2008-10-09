@@ -228,7 +228,7 @@
  * unnecessary modifications.
  *
  * Allocation points:
- *      - PGMPhysWriteGCPhys and PGMPhysWrite.
+ *      - PGMPhysSimpleWriteGCPhys and PGMPhysWrite.
  *      - Replacing a zero page mapping at \#PF.
  *      - Replacing a shared page mapping at \#PF.
  *      - ROM registration (currently MMR3RomRegister).

@@ -897,7 +897,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
 #ifdef IN_GC
         *(uint32_t *)pu32 = pRegFrame->eax;
 #else
-        PGMPhysWriteGCPhys(pVM, GCPhysFault, &pRegFrame->eax, 4);
+        PGMPhysSimpleWriteGCPhys(pVM, GCPhysFault, &pRegFrame->eax, 4);
 #endif
         pu32           += 4;
         GCPhysFault    += 4;
