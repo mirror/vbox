@@ -2252,6 +2252,140 @@ VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSr
 
 
 /**
+ * Write to guest physical memory referenced by GC pointer and update the PTE.
+ *
+ * This function uses the current CR3/CR0/CR4 of the guest and will
+ * bypass access handlers but will set any dirty and accessed bits in the PTE.
+ *
+ * If you don't want to set the dirty bit, use PGMPhysSimpleWriteGCPtr().
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   GCPtrDst    The destination address (GC pointer).
+ * @param   pvSrc       The source address.
+ * @param   cb          The number of bytes to write.
+ */
+VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
+{
+# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
+    /*
+     * Treat the first page as a special case.
+     * Btw. this is the same code as in PGMPhyssimpleWriteGCPtr excep for the PGMGstModifyPage.
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+
+    /* map the 1st page */
+    void *pvDst;
+    PGMPAGEMAPLOCK Lock;
+    int rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* optimize for the case where access is completely within the first page. */
+    size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
+    if (RT_LIKELY(cb < cbPage))
+    {
+        memcpy(pvDst, pvSrc, cb);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+        return VINF_SUCCESS;
+    }
+
+    /* copy to the end of the page. */
+    memcpy(pvDst, pvSrc, cbPage);
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
+    rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+    GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbPage);
+    pvSrc = (const uint8_t *)pvSrc + cbPage;
+    cb -= cbPage;
+
+    /*
+     * Page by page.
+     */
+    for (;;)
+    {
+        /* map the page */
+        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* last page? */
+        if (cb < PAGE_SIZE)
+        {
+            memcpy(pvDst, pvSrc, cb);
+            PGMPhysReleasePageMappingLock(pVM, &Lock);
+            rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+            return VINF_SUCCESS;
+        }
+
+        /* copy the entire page and advance */
+        memcpy(pvDst, pvSrc, PAGE_SIZE);
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
+        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
+        GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + PAGE_SIZE);
+        pvSrc = (const uint8_t *)pvSrc + PAGE_SIZE;
+        cb -= PAGE_SIZE;
+    }
+    /* won't ever get here. */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
+
+    /*
+     * Anything to do?
+     */
+    if (!cb)
+        return VINF_SUCCESS;
+
+    /*
+     * Optimize writes within a single page.
+     */
+    if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
+    {
+        void *pvDst;
+        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
+        if (VBOX_FAILURE(rc))
+            return rc;
+        memcpy(pvDst, pvSrc, cb);
+        rc = PGMGstModifyPage(pVM, GCPtrDst, cb, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+        AssertRC(rc);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Page by page.
+     */
+    for (;;)
+    {
+        /* convert */
+        void *pvDst;
+        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
+        if (VBOX_FAILURE(rc))
+            return rc;
+
+        /* mark the guest page as accessed and dirty. */
+        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
+        AssertRC(rc);
+
+        /* copy */
+        size_t  cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
+        if (cbWrite >= cb)
+        {
+            memcpy(pvDst, pvSrc, cb);
+            return VINF_SUCCESS;
+        }
+        memcpy(pvDst, pvSrc, cbWrite);
+
+        /* next */
+        cb         -= cbWrite;
+        GCPtrDst   += cbWrite;
+        pvSrc       = (char *)pvSrc + cbWrite;
+    }
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
+}
+
+
+/**
  * Read from guest physical memory referenced by GC pointer.
  *
  * This function uses the current CR3/CR0/CR4 of the guest and will
@@ -2396,143 +2530,7 @@ VMMDECL(int) PGMPhysWriteGCPtrSafe(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc,
     }
 }
 
-
-/**
- * Write to guest physical memory referenced by GC pointer and update the PTE.
- *
- * This function uses the current CR3/CR0/CR4 of the guest and will
- * bypass access handlers but will set any dirty and accessed bits in the PTE.
- *
- * If you don't want to set the dirty bit, use PGMPhysSimpleWriteGCPtr().
- *
- * @returns VBox status.
- * @param   pVM         VM handle.
- * @param   GCPtrDst    The destination address (GC pointer).
- * @param   pvSrc       The source address.
- * @param   cb          The number of bytes to write.
- */
-VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb)
-{
-# if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(VBOX_WITH_NEW_PHYS_CODE)
-    /*
-     * Treat the first page as a special case.
-     * Btw. this is the same code as in PGMPhyssimpleWriteGCPtr excep for the PGMGstModifyPage.
-     */
-    if (!cb)
-        return VINF_SUCCESS;
-
-    /* map the 1st page */
-    void *pvDst;
-    PGMPAGEMAPLOCK Lock;
-    int rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* optimize for the case where access is completely within the first page. */
-    size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
-    if (RT_LIKELY(cb < cbPage))
-    {
-        memcpy(pvDst, pvSrc, cb);
-        PGMPhysReleasePageMappingLock(pVM, &Lock);
-        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
-        return VINF_SUCCESS;
-    }
-
-    /* copy to the end of the page. */
-    memcpy(pvDst, pvSrc, cbPage);
-    PGMPhysReleasePageMappingLock(pVM, &Lock);
-    rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
-    GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbPage);
-    pvSrc = (const uint8_t *)pvSrc + cbPage;
-    cb -= cbPage;
-
-    /*
-     * Page by page.
-     */
-    for (;;)
-    {
-        /* map the page */
-        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrDst, &pvDst, &Lock);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        /* last page? */
-        if (cb < PAGE_SIZE)
-        {
-            memcpy(pvDst, pvSrc, cb);
-            PGMPhysReleasePageMappingLock(pVM, &Lock);
-            rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
-            return VINF_SUCCESS;
-        }
-
-        /* copy the entire page and advance */
-        memcpy(pvDst, pvSrc, PAGE_SIZE);
-        PGMPhysReleasePageMappingLock(pVM, &Lock);
-        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D)); AssertRC(rc);
-        GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + PAGE_SIZE);
-        pvSrc = (const uint8_t *)pvSrc + PAGE_SIZE;
-        cb -= PAGE_SIZE;
-    }
-    /* won't ever get here. */
-
-# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
-
-    /*
-     * Anything to do?
-     */
-    if (!cb)
-        return VINF_SUCCESS;
-
-    /*
-     * Optimize writes within a single page.
-     */
-    if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
-    {
-        void *pvDst;
-        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
-        if (VBOX_FAILURE(rc))
-            return rc;
-        memcpy(pvDst, pvSrc, cb);
-        rc = PGMGstModifyPage(pVM, GCPtrDst, cb, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
-        AssertRC(rc);
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page by page.
-     */
-    for (;;)
-    {
-        /* convert */
-        void *pvDst;
-        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
-        if (VBOX_FAILURE(rc))
-            return rc;
-
-        /* mark the guest page as accessed and dirty. */
-        rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
-        AssertRC(rc);
-
-        /* copy */
-        size_t  cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
-        if (cbWrite >= cb)
-        {
-            memcpy(pvDst, pvSrc, cb);
-            return VINF_SUCCESS;
-        }
-        memcpy(pvDst, pvSrc, cbWrite);
-
-        /* next */
-        cb         -= cbWrite;
-        GCPtrDst   += cbWrite;
-        pvSrc       = (char *)pvSrc + cbWrite;
-    }
-# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 && !VBOX_WITH_NEW_PHYS_CODE */
-}
-
 #endif /* !IN_GC */
-
-
 
 /**
  * Performs a read of guest virtual memory for instruction emulation.
