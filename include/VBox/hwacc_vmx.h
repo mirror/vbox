@@ -1060,7 +1060,7 @@ typedef enum
 /** Set if the violation was caused by an insruction fetch. */
 #define VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH          RT_BIT(2)
 /** AND of the present bit of all EPT structures. */
-#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_READ           RT_BIT(3)
+#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT        RT_BIT(3)
 /** AND of the write bit of all EPT structures. */
 #define VMX_EXIT_QUALIFICATION_EPT_ENTRY_WRITE          RT_BIT(4)
 /** AND of the execute bit of all EPT structures. */
