@@ -296,9 +296,6 @@ typedef struct HWACCM
         /** Current CR4 mask. */
         uint64_t                    cr4_mask;
 
-        /** Current EPTP. */
-        RTHCPHYS                    GCPhysEPTP;
-
         /** VMX MSR values */
         struct
         {

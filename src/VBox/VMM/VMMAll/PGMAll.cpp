@@ -1264,6 +1264,15 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
     }
 }
 
+/**
+ * Gets the current CR3 register value for the EPT paging memory context.
+ * @returns CR3 value.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(RTHCPHYS) PGMGetEPTCR3(PVM pVM)
+{
+    return pVM->pgm.s.HCPhysNestedRoot;
+}
 
 /**
  * Gets the CR3 register value for the 32-Bit shadow memory context.

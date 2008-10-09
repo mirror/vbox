@@ -473,7 +473,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     if (pVM->hwaccm.s.fNestedPaging)
     {
         pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = VMXR0SetupTLBEPT;
-        pVM->hwaccm.s.vmx.GCPhysEPTP = PGMGetHyperCR3(pVM);
 
         /* Default values for flushing. */
         pVM->hwaccm.s.vmx.enmFlushPage    = VMX_FLUSH_ALL_CONTEXTS;
@@ -1189,8 +1188,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         {
             RTHCPHYS GCPhys;
 
-            AssertMsg(pVM->hwaccm.s.vmx.GCPhysEPTP == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n", pVM->hwaccm.s.vmx.GCPhysEPTP, PGMGetHyperCR3(pVM)));
-            GCPhys = pVM->hwaccm.s.vmx.GCPhysEPTP;
+            AssertMsg(PGMGetEPTCR3(pVM) == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n", PGMGetEPTCR3(pVM), PGMGetHyperCR3(pVM)));
+            GCPhys = PGMGetEPTCR3(pVM);
 
             Assert(!(GCPhys & 0xfff));
             /** @todo Check the IA32_VMX_EPT_VPID_CAP MSR for other supported memory types. */
@@ -2949,7 +2948,7 @@ static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
     uint64_t descriptor[2];
 
     Assert(pVM->hwaccm.s.fNestedPaging);
-    descriptor[0] = pVM->hwaccm.s.vmx.GCPhysEPTP;
+    descriptor[0] = PGMGetEPTCR3(pVM);
     descriptor[1] = GCPhys;
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
     AssertRC(rc);
