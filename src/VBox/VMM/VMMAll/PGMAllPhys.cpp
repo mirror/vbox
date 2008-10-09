@@ -1716,7 +1716,7 @@ end:
     return;
 }
 
-#if !defined(IN_GC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* Ring 0 & 3 only */  /** @todo @bugref{1865,3202}: this'll be fun! */
+#ifndef IN_GC /* Ring 0 & 3 only */
 
 /**
  * Read from guest physical memory by GC physical address, bypassing
@@ -1746,6 +1746,11 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
         RTGCPHYS off = GCPhysSrc - pRam->GCPhys;
         if (off < pRam->cb)
         {
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            /* map hcphys and copy */
+            AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
             {
                 /* Copy page by page as we're not dealing with a linear HC range. */
@@ -1790,6 +1795,7 @@ VMMDECL(int) PGMPhysReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t 
             }
             else
                 return VERR_PGM_PHYS_PAGE_RESERVED;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         }
         else if (GCPhysSrc < pRam->GCPhysLast)
             break;
@@ -1830,9 +1836,14 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
         RTGCPHYS off = GCPhysDst - pRam->GCPhys;
         if (off < pRam->cb)
         {
-#ifdef VBOX_WITH_NEW_PHYS_CODE
+# ifdef VBOX_WITH_NEW_PHYS_CODE
 /** @todo PGMRamGCPhys2HCPtrWithRange. */
-#endif
+# endif
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            /* map hcphys and copy */
+            AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
             if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
             {
                 /* Copy page by page as we're not dealing with a linear HC range. */
@@ -1877,6 +1888,7 @@ VMMDECL(int) PGMPhysWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, 
             }
             else
                 return VERR_PGM_PHYS_PAGE_RESERVED;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         }
         else if (GCPhysDst < pRam->GCPhysLast)
             break;
@@ -1911,11 +1923,17 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         void *pvSrc;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        /* map hcphys and copy */
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrSrc, &pvSrc);
         if (VBOX_FAILURE(rc))
             return rc;
         memcpy(pvDst, pvSrc, cb);
         return VINF_SUCCESS;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
     }
 
     /*
@@ -1925,9 +1943,15 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     {
         /* convert */
         void *pvSrc;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        /* map hcphys and copy */
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrSrc, &pvSrc);
         if (VBOX_FAILURE(rc))
             return rc;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
         /* copy */
         size_t cbRead = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
@@ -1974,9 +1998,15 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         void *pvDst;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        /* map hcphys and copy */
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
         if (VBOX_FAILURE(rc))
             return rc;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         memcpy(pvDst, pvSrc, cb);
         return VINF_SUCCESS;
     }
@@ -1988,9 +2018,15 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     {
         /* convert */
         void *pvDst;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        /* map hcphys and copy */
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo @bugref{3202} */
+
+# else  /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrDst, &pvDst);
         if (VBOX_FAILURE(rc))
             return rc;
+# endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
         /* copy */
         size_t cbWrite = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
