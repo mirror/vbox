@@ -344,7 +344,7 @@ int vboxVMInfoUser(VBOXINFORMATIONCONTEXT* a_pCtx)
         else if (a_pCtx->iUserCount == 0)
             vboxVMInfoWriteProp(a_pCtx, "GuestInfo/OS/NoLoggedInUsers", "false");
     }
-    a_pCtx->iPrevUserCount = iUserCount;
+    a_pCtx->iUserCount = iUserCount;
 
     return ret;
 }
