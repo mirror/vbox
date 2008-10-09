@@ -28,14 +28,6 @@ include	$(KBUILD_PATH)/subheader.kmk
 VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 
 #
-# Build program for calculating the PC BIOS checksums.
-#
-BLDPROGS += pcbiossums
-pcbiossums_TEMPLATE = VBOXBLDPROG
-pcbiossums_SOURCES  = biossums.c
-
-
-#
 # The library containing the PC BIOS image.
 #
 LIBRARIES += PcBiosBin
@@ -93,10 +85,10 @@ $$(PATH_PcBiosBin)/pcbios.tmp + $$(PATH_PcBiosBin)/pcbios.lst: $$(PATH_PcBiosBin
 	$(QUIET)$(REDIRECT) -ri $^ -- $(VBOX_AS86) -b $(PATH_PcBiosBin)/pcbios.tmp -u- -w- -g -0 -j -O -l $(PATH_PcBiosBin)/pcbios.lst
 
 # 5. calculate checksums for the final BIOS image.
-$$(PATH_PcBiosBin)/pcbios.bin: $$(PATH_PcBiosBin)/pcbios.tmp $$(TARGET_pcbiossums)
-	$(call MSG_TOOL,pcbiossums,PcBiosBin,$<,$@)
+$$(PATH_PcBiosBin)/pcbios.bin: $$(PATH_PcBiosBin)/pcbios.tmp $$(VBOX_BIOSSUMS)
+	$(call MSG_TOOL,biossums,PcBiosBin,$<,$@)
 	$(QUIET)$(CP) -f $(PATH_PcBiosBin)/pcbios.tmp $(PATH_PcBiosBin)/pcbios.bin
-	$(QUIET)$(TARGET_pcbiossums) $(PATH_PcBiosBin)/pcbios.bin
+	$(QUIET)$(VBOX_BIOSSUMS) $(PATH_PcBiosBin)/pcbios.bin
 
 # 6. create the symbol table.
 $$(PATH_PcBiosBin)/pcbios-syms.h: $$(PATH_PcBiosBin)/pcbios.lst $(MAKEFILE_CURRENT)
