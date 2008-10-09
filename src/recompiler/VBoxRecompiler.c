@@ -2845,7 +2845,7 @@ REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
  */
 REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
 {
-    Log(("REMR3NotifyHandlerPhysicalRegister: enmType=%d GCPhys=%VGp cb=%d fHasHCHandler=%d\n",
+    Log(("REMR3NotifyHandlerPhysicalRegister: enmType=%d GCPhys=%VGp cb=%VGp fHasHCHandler=%d\n",
           enmType, GCPhys, cb, fHasHCHandler));
     VM_ASSERT_EMT(pVM);
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
@@ -2925,7 +2925,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
  */
 REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
-    Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%VGp GCPhysNew=%VGp cb=%d fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
+    Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%VGp GCPhysNew=%VGp cb=%VGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
           enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM));
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
