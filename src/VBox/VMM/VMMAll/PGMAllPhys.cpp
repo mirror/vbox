@@ -1747,7 +1747,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, s
 
     /* optimize for the case where access is completely within the first page. */
     size_t cbPage = PAGE_SIZE - (GCPhysSrc & PAGE_OFFSET_MASK);
-    if (RT_LIKELY(cb < cbPage))
+    if (RT_LIKELY(cb <= cbPage))
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -1772,7 +1772,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, s
             return rc;
 
         /* last page? */
-        if (cb < PAGE_SIZE)
+        if (cb <= PAGE_SIZE)
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -1821,7 +1821,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *p
 
     /* optimize for the case where access is completely within the first page. */
     size_t cbPage = PAGE_SIZE - (GCPhysDst & PAGE_OFFSET_MASK);
-    if (RT_LIKELY(cb < cbPage))
+    if (RT_LIKELY(cb <= cbPage))
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -1846,7 +1846,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *p
             return rc;
 
         /* last page? */
-        if (cb < PAGE_SIZE)
+        if (cb <= PAGE_SIZE)
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -1893,7 +1893,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size
 
     /* optimize for the case where access is completely within the first page. */
     size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
-    if (RT_LIKELY(cb < cbPage))
+    if (RT_LIKELY(cb <= cbPage))
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -1918,7 +1918,7 @@ VMMDECL(int) PGMPhysSimpleReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size
             return rc;
 
         /* last page? */
-        if (cb < PAGE_SIZE)
+        if (cb <= PAGE_SIZE)
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -1965,7 +1965,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSr
 
     /* optimize for the case where access is completely within the first page. */
     size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
-    if (RT_LIKELY(cb < cbPage))
+    if (RT_LIKELY(cb <= cbPage))
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -1990,7 +1990,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSr
             return rc;
 
         /* last page? */
-        if (cb < PAGE_SIZE)
+        if (cb <= PAGE_SIZE)
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -2040,7 +2040,7 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void 
 
     /* optimize for the case where access is completely within the first page. */
     size_t cbPage = PAGE_SIZE - ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
-    if (RT_LIKELY(cb < cbPage))
+    if (RT_LIKELY(cb <= cbPage))
     {
         memcpy(pvDst, pvSrc, cb);
         PGMPhysReleasePageMappingLock(pVM, &Lock);
@@ -2067,7 +2067,7 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void 
             return rc;
 
         /* last page? */
-        if (cb < PAGE_SIZE)
+        if (cb <= PAGE_SIZE)
         {
             memcpy(pvDst, pvSrc, cb);
             PGMPhysReleasePageMappingLock(pVM, &Lock);
