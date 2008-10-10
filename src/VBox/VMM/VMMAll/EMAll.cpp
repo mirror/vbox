@@ -1758,6 +1758,15 @@ static int emInterpretIret(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     return VERR_EM_INTERPRETER;
 }
 
+/**
+ * WBINVD Emulation.
+ */
+static int emInterpretWbInvd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    /* Nothing to do. */
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Interpret INVLPG
@@ -2883,13 +2892,13 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
 #endif
         INTERPRET_CASE(OP_HLT,Hlt);
         INTERPRET_CASE(OP_IRET,Iret);
+        INTERPRET_CASE(OP_WBINVD,WbInvd);
 #ifdef VBOX_WITH_STATISTICS
 #ifndef IN_GC
         INTERPRET_STAT_CASE(OP_CMPXCHG8B, CmpXchg8b);
         INTERPRET_STAT_CASE(OP_XADD, XAdd);
 #endif
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);
-        INTERPRET_STAT_CASE(OP_WBINVD,WbInvd);
 #endif
         default:
             Log3(("emInterpretInstructionCPU: opcode=%d\n", pCpu->pCurInstr->opcode));
