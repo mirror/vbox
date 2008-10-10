@@ -2058,10 +2058,6 @@ ResumeExecution:
                     Log(("Guest page fault at %VGv cr2=%VGv error code %x rsp=%VGv\n", (RTGCPTR)pCtx->rip, exitQualification, errCode, (RTGCPTR)pCtx->rsp));
 
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
-                    /* The error code might have been changed. */
-                    errCode = TRPMGetErrorCode(pVM);
-
-                    TRPMResetTrap(pVM);
 
                     /* Now we must update CR2. */
                     pCtx->cr2 = exitQualification;
@@ -2440,7 +2436,7 @@ ResumeExecution:
             switch (VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification))
             {
             case 0:
-                pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+                pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_GUEST_CR3;
                 break;
             case 2:
                 break;
