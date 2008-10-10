@@ -743,6 +743,17 @@ DECLINLINE(bool) CPUMIsGuestInPagedProtectedMode(PVM pVM)
 }
 
 /**
+ * Tests if the guest is running in paged protected or not.
+ *
+ * @returns true if in paged protected mode, otherwise false.
+ * @param   pVM     The VM handle.
+ */
+DECLINLINE(bool) CPUMIsGuestInPagedProtectedModeEx(PCPUMCTX pCtx)
+{
+    return (pCtx->cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG);
+}
+
+/**
  * Tests if the guest is running in long mode or not.
  *
  * @returns true if in long mode, otherwise false.

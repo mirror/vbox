@@ -1075,17 +1075,17 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         val |= X86_CR0_PE | X86_CR0_PG;
         if (pVM->hwaccm.s.fNestedPaging)
         {
-            if (!(pCtx->cr0 & X86_CR0_PG))
-            {
-                /* Reenable cr3 read/write monitoring as our identity mapped page table is active. */
-                pVM->hwaccm.s.vmx.proc_ctls |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT 
-                                               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
-            }
-            else
+            if (CPUMIsGuestInPagedProtectedModeEx(pCtx))
             {
                 /* Disable cr3 read/write monitoring as we don't need it for EPT. */
                 pVM->hwaccm.s.vmx.proc_ctls &=  ~(  VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT 
                                                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT);
+            }
+            else
+            {
+                /* Reenable cr3 read/write monitoring as our identity mapped page table is active. */
+                pVM->hwaccm.s.vmx.proc_ctls |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT 
+                                               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
             }
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
             AssertRC(rc);
@@ -1206,7 +1206,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 #endif
             AssertRC(rc);
 
-            if (!(pCtx->cr0 & X86_CR0_PG))
+            if (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
             {
                 RTGCPHYS GCPhys;
 
@@ -2445,7 +2445,7 @@ ResumeExecution:
             case 2:
                 break;
             case 3:
-                Assert(!pVM->hwaccm.s.fNestedPaging || !(pCtx->cr0 & X86_CR0_PG));
+                Assert(!pVM->hwaccm.s.fNestedPaging || !CPUMIsGuestInPagedProtectedModeEx(pCtx));
                 pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
                 break;
             case 4:
@@ -2473,7 +2473,7 @@ ResumeExecution:
             Log2(("VMX: mov x, crx\n"));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxRead);
 
-            Assert(!pVM->hwaccm.s.fNestedPaging || !(pCtx->cr0 & X86_CR0_PG) || VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != USE_REG_CR3);
+            Assert(!pVM->hwaccm.s.fNestedPaging || !CPUMIsGuestInPagedProtectedModeEx(pCtx) || VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != USE_REG_CR3);
 
             /* CR8 reads only cause an exit when the TPR shadow feature isn't present. */
             Assert(VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8 || !(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
