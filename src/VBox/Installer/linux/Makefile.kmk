@@ -331,6 +331,7 @@ BLDDIRS += $(foreach d,\
 	archive \
 	archive/components \
 	archive/nls \
+	$(if $(VBOX_WITH_QT4_SUN),archive/accessible,) \
 	archive/additions \
 	install\
 ,$(VBOX_LNX_INST_OUT_DIR)/$(d)/)
