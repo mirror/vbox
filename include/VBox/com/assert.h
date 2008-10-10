@@ -243,8 +243,13 @@
  *  Does the same as CHECK_ERROR(), but executes the |break| statement on
  *  failure.
  */
-#define CHECK_ERROR_BREAK(iface, method) \
+#if defined(__GNUC__)
+ #define CHECK_ERROR_BREAK(iface, method) \
+    ({ CHECK_ERROR (iface, method); if (FAILED (rc)) break; })
+#else
+ #define CHECK_ERROR_BREAK(iface, method) \
     if (1) { CHECK_ERROR (iface, method); if (FAILED (rc)) break; } else do {} while (0)
+#endif
 
 #define CHECK_ERROR_NOCALL() \
     do { \
