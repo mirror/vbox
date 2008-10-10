@@ -138,6 +138,10 @@ static STAMCOUNTER    gStatREMTRChange;
 static STAMCOUNTER    gStatSelOutOfSync[6];
 static STAMCOUNTER    gStatSelOutOfSyncStateBack[6];
 static STAMCOUNTER    gStatFlushTBs;
+/* in exec.c */
+extern uint32_t       tlb_flush_count;
+extern uint32_t       tb_flush_count;
+extern uint32_t       tb_phys_invalidate_count;
 #endif
 
 /*
@@ -390,6 +394,10 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[3],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/DS",        STAMUNIT_OCCURENCES,     "DS out of sync");
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[4],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/FS",        STAMUNIT_OCCURENCES,     "FS out of sync");
     STAM_REG(pVM, &gStatSelOutOfSyncStateBack[5],    STAMTYPE_COUNTER, "/REM/StateBack/SelOutOfSync/GS",        STAMUNIT_OCCURENCES,     "GS out of sync");
+
+    STAM_REG(pVM, &tb_flush_count,          STAMTYPE_U32_RESET, "/REM/TbFlushCount",     STAMUNIT_OCCURENCES, "tb_flush() calls");
+    STAM_REG(pVM, &tb_phys_invalidate_count,STAMTYPE_U32_RESET, "/REM/TbPhysInvldCount", STAMUNIT_OCCURENCES, "tb_phys_invalidate() calls");
+    STAM_REG(pVM, &tlb_flush_count,         STAMTYPE_U32_RESET, "/REM/TlbFlushCount",    STAMUNIT_OCCURENCES, "tlb_flush() calls");
 
 
 #endif

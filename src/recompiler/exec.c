@@ -170,11 +170,17 @@ FILE *logfile;
 int loglevel;
 
 /* statistics */
+#ifndef VBOX
 static int tlb_flush_count;
 static int tb_flush_count;
-#ifndef VBOX
 static int tb_phys_invalidate_count;
-#endif /* !VBOX */
+#else  /* VBOX */
+# ifdef VBOX_WITH_STATISTICS
+uint32_t tlb_flush_count;
+uint32_t tb_flush_count;
+uint32_t tb_phys_invalidate_count;
+# endif
+#endif /* VBOX */
 
 static void page_init(void)
 {
@@ -377,7 +383,9 @@ void tb_flush(CPUState *env1)
     code_gen_ptr = code_gen_buffer;
     /* XXX: flush processor icache at this point if cache flush is
        expensive */
+#if !defined(VBOX) || defined(VBOX_WITH_STATISTICS)
     tb_flush_count++;
+#endif
 }
 
 #ifdef DEBUG_TB_CHECK
@@ -558,9 +566,9 @@ static inline void tb_phys_invalidate(TranslationBlock *tb, unsigned int page_ad
     }
     tb->jmp_first = (TranslationBlock *)((long)tb | 2); /* fail safe */
 
-#ifndef VBOX
+#if !defined(VBOX) || defined(VBOX_WITH_STATISTICS)
     tb_phys_invalidate_count++;
-#endif /* !VBOX */
+#endif
 }
 
 #ifdef VBOX
@@ -1376,7 +1384,9 @@ void tlb_flush(CPUState *env, int flush_global)
         kqemu_flush(env, flush_global);
     }
 #endif
+#if !defined(VBOX) || defined(VBOX_WITH_STATISTICS)
     tlb_flush_count++;
+#endif
 }
 
 static inline void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
