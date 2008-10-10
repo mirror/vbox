@@ -160,7 +160,7 @@ ifdef VBOX_WITH_QT4GUI
 	VirtualBox.desktop \
 	$(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html) \
  	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
-	$(if $(VBOX_WITH_QT4_SUN),$(notdir accessible/libqtaccessiblewidgets.so),) \
+	$(if $(VBOX_WITH_QT4_SUN),accessible/libqtaccessiblewidgets.so,) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
 endif
 
