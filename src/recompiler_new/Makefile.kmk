@@ -36,13 +36,8 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-BLDPROGS             += dyngen
-ifneq ($(or $(eq $(KBUILD_TARGET_ARCH),amd64) , $(VBOX_TARGET_MAC_OS_X_VERSION_10_5)),)
- SYSMODS             += VBoxREM2
- REM_MOD             += VBoxREM2
-else
- REM_MOD             += VBoxREM
-endif
+
+REM_MOD              += VBoxREM
 DLLS                 += VBoxREM
 IMPORT_LIBS          += VBoxREMImp
 
@@ -58,7 +53,6 @@ OTHER_CLEAN          += \
 VBOX_PATH_RECOMPILER_SRC := $(PATH_SUB_CURRENT)
 TEMPLATE_DUMMY = dummy template (move to kBuild)
 
-
 #
 # L4 must use the no-crt path because it's lacking math stuff it seems...
 # Darwin must use the non-crt path because it can't compile op.c nativly.
@@ -72,34 +66,6 @@ ifeq ($(REM_MOD),VBoxREM2)
  REM_USE_NOCRT := 1
 endif
 
-
-#
-# The dyngen build tool.
-#
-ifeq ($(KBUILD_HOST),win)
- dyngen_TOOL          = MINGW32
- dyngen_SDKS          = W32API
- # On 64-bit Windows we pretend to be 32-bit.
- dyngen_BLD_TRG_ARCH  = x86
- dyngen_BLD_TRG_CPU   = i386
- dyngen_CFLAGS        = -Wall -g -fno-strict-aliasing
- dyngen_TEMPLATE      = DUMMY
-else
- dyngen_TEMPLATE      = VBOXBLDPROG
-endif
-dyngen_DEFS          += REM_PHYS_ADDR_IN_TLB
-ifeq ($(KBUILD_TARGET_ARCH),amd64)
- dyngen_DEFS         += HOST_X86_64=1
-endif
-dyngen_CFLAGS        += -Wno-missing-prototypes -Wno-missing-declarations
-dyngen_INCS           = \
-	Sun \
-	target-i386 \
-	fpu \
-	.
-dyngen_SOURCES        = dyngen.c
-
-
 #
 # The VBoxREM.[dll|so|..] or VBoxREM2.rel.
 #
@@ -107,35 +73,41 @@ $(REM_MOD)_DEFS             = IN_REM_R3 REM_INCLUDE_CPU_H
 $(REM_MOD)_DEFS            += REM_PHYS_ADDR_IN_TLB
 #$(REM_MOD)_DEFS          += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 
-$(REM_MOD)_INCS             = \
-	Sun \
-	Sun/crt\
-	target-i386 \
-	fpu \
-	$(PATH_$(REM_MOD)) \
+$(REM_MOD)_INCS             = 	  \
+	Sun 			  \
+	Sun/crt			  \
+	target-i386 		  \
+	tcg                       \
+	fpu 			  \
+	$(PATH_$(REM_MOD)) 	  \
 	$(PATH_ROOT)/src/VBox/VMM \
 	.
 
-$(REM_MOD)_SOURCES          = \
-	VBoxRecompiler.c \
-	cpu-exec.c \
-	exec.c \
-	translate-all.c \
-	translate-op.c \
-	fpu/softfloat-native.c \
-	target-i386/helper.c \
-	target-i386/helper2.c \
+$(REM_MOD)_SOURCES          = 	\
+	VBoxRecompiler.c 	\
+	cpu-exec.c 		\
+	exec.c 			\
+	translate-all.c 	\
+	translate-op.c   	\
+	tcg/tcg.c        	\
+        tcg/tcg-dyngen.c 	\
+	tcg/tcg-runtime.c 	\
+	fpu/softfloat-native.c 	\
+	target-i386/helper.c 	\
+	target-i386/helper2.c 	\
 	target-i386/translate.c
+
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
+ $(REM_MOD)_INCS             +=  tcg/x86_64
+ $(REM_MOD)_SOURCES          +=  tcg/x86_64/tcg-target.c
+else
+ $(REM_MOD)_INCS             +=  tcg/i386
+ $(REM_MOD)_SOURCES          +=  tcg/i386/tcg-target.c
+endif
+
+
 $(REM_MOD)_SOURCES.debug = \
 	Sun/testmath.c
-ifeq ($(filter-out win os2,$(KBUILD_TARGET)),)
- $(REM_MOD)_SOURCES        += target-i386/op.c
- FILE_OP_OBJ                = $(PATH_$(REM_MOD))/target-i386/op.o
-else # The remaining targets can be using gcc-4 and needs checking.
- $(REM_MOD)_SOURCES        += $(PATH_$(REM_MOD))/op.S
- FILE_OP_OBJ                = $(PATH_$(REM_MOD))/gen/op.o
- $(REM_MOD)_CLEAN           = $(FILE_OP_OBJ) $(PATH_$(REM_MOD))/op.S.dep
-endif
 $(REM_MOD)_SOURCES.win.x86  = $(REM_MOD).def
 ifneq ($(REM_MOD),VBoxREM2)
  $(REM_MOD)_POST_CMDS       = $(VBOX_SIGN_IMAGE_CMDS)
@@ -237,21 +209,18 @@ else # !REM_USE_NOCRT
 endif # !REM_USE_NOCRT
 
 # Extra flags for these source modules.
-target-i386/op.c_CFLAGS         = -O2 -fno-strict-aliasing -fomit-frame-pointer -falign-functions=0 -fno-reorder-blocks -fno-optimize-sibling-calls
-target-i386/op.c_CFLAGS.x86     = -fno-gcse -fno-instrument-functions -mpreferred-stack-boundary=2
-target-i386/op.c_CFLAGS.darwin.x86 = -m128bit-long-double -mpreferred-stack-boundary=4
 target-i386/helper.c_CFLAGS.x86 = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
 cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
 cpu-exec.c_CFLAGS.solaris.amd64 = -O2 -fomit-frame-pointer -fno-strict-aliasing
 
 
-translate-all.c_DEPS = \
-	$(PATH_$(REM_MOD))/op.h \
-	$(PATH_$(REM_MOD))/opc.h \
-	$(PATH_$(REM_MOD))/gen-op.h
+# transitional rule
+$(PATH_$(REM_MOD))/op.h:
+	$(APPEND)    $@ ''
+
+translate-all.c_DEPS = 
 translate-op.c_DEPS = $(translate-all.c_DEPS)
 target-i386/translate.c_DEPS = $(translate-all.c_DEPS)
-
 
 #
 # The math testcase as a standalone program for testing and debugging purposes.
@@ -337,152 +306,4 @@ $$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MA
 
 include $(KBUILD_PATH)/subfooter.kmk
 
-
-#
-# Generate the op.S file somehow...
-#
-# Gathering the flags, defines and include dirs for the command is a lot
-# of work. Unfortunately, there is only a highly specialized kBuild function
-# for doing this, so we're currently left to our own devices here.
-#
-# Add something like VBOX_RECOMPILER_OP_GCC = gcc-3.4.6 to LocalConfig.kmk
-# to be 100% sure that you get a working op.S. My gcc 4.1.1 seems to work
-# fine, so feel free to try VBOX_RECOMPILER_OP_GCC = gcc.
-#
-# The op-undefined.lst is generated by finding all the undefined symbols
-# in one (or more) ELF op.o files using nm.
-#
-ifndef VBOX_RECOMPILER_OP_GCC
- ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
-  VBOX_RECOMPILER_OP_GCC ?= $(notdir $(firstword $(which i386-elf-gcc-3.4 i386-elf-gcc-3.4.6 i386-elf-gcc-3.4.3 i386-elf-gcc) i386-elf-gcc)) # (port install i386-gcc-elf)
-  VBOX_RECOMPILER_OP_GCC_OK := yes
-  VBOX_RECOMPILER_OP_GCC_INCS ?= $(abspath $(dir $(shell LC_ALL=C $(VBOX_RECOMPILER_OP_GCC) -print-libgcc-file-name)))/include
- endif
- ifndef VBOX_RECOMPILER_OP_GCC
-  VBOX_RECOMPILER_OP_GCC := $(TOOL_$(VBOX_GCC_TOOL)_CC)
-  VBOX_RECOMPILER_OP_GCC_OK := dunno
- endif
-else
- # If set, assume it's an OK compiler.
- VBOX_RECOMPILER_OP_GCC_OK := yes
-endif
-
-
-# The command sans -o op.S.tmp.
-COMPILE_OP_CMDS_3 = $(VBOX_RECOMPILER_OP_GCC) \
-	-S -s \
-	$(filter-out -g -O0, \
-		$($(REM_MOD)_CFLAGS) $($(REM_MOD)_CFLAGS.$(KBUILD_TYPE)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CFLAGS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
-		$(target-i386/op.c_CFLAGS) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET)) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET_ARCH)) $(target-i386/op.c_CFLAGS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
-		) \
-	$(addprefix -I, $(abspathex \
-		$($(REM_MOD)_CINCS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CINCS.$(KBUILD_TARGET)) $($(REM_MOD)_CINCS) $(CINCS) \
-		$($(REM_MOD)_INCS.$(KBUILD_TARGET_ARCH))  $($(REM_MOD)_INCS.$(KBUILD_TARGET))  $($(REM_MOD)_INCS) $(INCS) \
-		, $($(REM_MOD)_PATH))) \
-	$(addprefix -D, \
-		$($(REM_MOD)_CDEFS.$(KBUILD_TARGET_ARCH)) $($(REM_MOD)_CDEFS.$(KBUILD_TARGET)) $($(REM_MOD)_CDEFS) $(CDEFS.$(KBUILD_TARGET)) $(CDEFS.$(KBUILD_TARGET_ARCH)) $(CDEFS.$(KBUILD_TYPE)) $(CDEFS) \
-		$($(REM_MOD)_DEFS.$(KBUILD_TARGET_ARCH))  $($(REM_MOD)_DEFS.$(KBUILD_TARGET))  $($(REM_MOD)_DEFS)  $(DEFS.$(KBUILD_TARGET))  $(DEFS.$(KBUILD_TARGET_ARCH))  $(DEFS.$(KBUILD_TYPE))  $(DEFS) \
-		) \
-	-Wp,-MD,$(PATH_$(REM_MOD))/op.S.dep \
-        -Wp,-MT,$(PATH_$(REM_MOD))/op.S \
-        -Wp,-MP \
-	$(VBOX_PATH_RECOMPILER_SRC)/target-i386/op.c
-
-# Use the right GCC includes.
-ifdef VBOX_RECOMPILER_OP_GCC_INCS
-COMPILE_OP_CMDS_2 = $(subst $(VBOX_PATH_GCC_INCS),$(VBOX_RECOMPILER_OP_GCC_INCS),$(COMPILE_OP_CMDS_3))
-else
-COMPILE_OP_CMDS_2 = $(COMPILE_OP_CMDS_3)
-endif
-
-# Drop incompatible options when using the cross-compiler on darwin.
-ifeq ($(KBUILD_TARGET),darwin)
- ifeq ($(filter-out i386-elf-gcc%, $(VBOX_RECOMPILER_OP_GCC)),)
-  COMPILE_OP_CMDS = $(filter-out -mdynamic-no-pic -mno-dynamic-no-pic -fno-stack-protector -Wno-missing-field-initializers, $(COMPILE_OP_CMDS_2))
- endif
-else if1of ($(KBUILD_TARGET),linux)
- ifneq ($(TOOL_$(VBOX_GCC_TOOL)_CC),$(VBOX_RECOMPILER_OP_GCC))
-  VBOX_RECOMPILER_OP_CHECK_CC_GCC = $(shell \
-    if $(VBOX_RECOMPILER_OP_GCC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
-    then echo "$(1)"; \
-    else echo "$(2)"; fi; )
-  COMPILE_OP_CMDS = \
-    $(filter-out -fno-stack-protector -Wextra -Wno-missing-field-initializers, $(COMPILE_OP_CMDS_2)) \
-    $(call VBOX_RECOMPILER_OP_CHECK_CC_GCC,-fno-stack-protector)
- endif
-endif
-COMPILE_OP_CMDS ?= $(COMPILE_OP_CMDS_2)
-
-# include the dependencies
--include $(PATH_$(REM_MOD))/op.S.dep
-
-# The rule.
-$(PATH_$(REM_MOD))/op.S: \
-		$(VBOX_PATH_RECOMPILER_SRC)/target-i386/op.c \
-		$(VBOX_PATH_RECOMPILER_SRC)/Sun/staged-op-elf-$(KBUILD_TARGET_ARCH).S \
-		$(VBOX_PATH_RECOMPILER_SRC)/Sun/op-validate.sed \
-		$(VBOX_PATH_RECOMPILER_SRC)/Sun/op-darwin.sed \
-		$(VBOX_PATH_RECOMPILER_SRC)/Sun/op-undefined.lst \
-		$(VBOX_PATH_RECOMPILER_SRC)/Makefile.kmk \
-		$$(comp-cmds COMPILE_OP_CMDS,COMPILE_OP_CMDS_PREV,FORCE) \
-		| $(call DIRDEP,$(PATH_$(REM_MOD)))
-	$(RM) -f $@ $@.tmp $@.tmp2 $@.dep
-ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),yes)
-	$(call MSG_COMPILE,VBoxREM,$<,$@,AS)
-	$(addsuffix $(SP)\$(NL)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp
-else ifeq ($(VBOX_RECOMPILER_OP_GCC_OK),dunno) # (permit 3.x.x and 4.1.x+ for now)
-	major_ver=`$(VBOX_RECOMPILER_OP_GCC) -dumpversion | $(SED) -e 's/^\([2-9]\)\..*$$/\1/'`; \
-	minor_ver=`$(VBOX_RECOMPILER_OP_GCC) -dumpversion | $(SED) -e 's/^[2-9]\.\([0-9]\)\..*$$/\1/'`; \
-	bugfix_ver=`$(VBOX_RECOMPILER_OP_GCC) -dumpversion | $(SED) -e 's/^[2-9]\.[0-9]\.\([0-9]\).*$$/\1/'`; \
-	if test "$$major_ver" = "3" -o "(" "$$major_ver" = "4" -a "$$minor_ver" != "0" ")"; then \
-		$(ECHO_EXT) "Compiling $< => $@ [gcc v$${major_ver}.$${minor_ver}.$${bugfix_ver}]" && \
-		$(addsuffix $(SP)\$(NL)$(TAB)$(TAB)  ,$(COMPILE_OP_CMDS)) -o $@.tmp; \
-	else \
-		$(ECHO_EXT) "Using staged op.S [gcc v$${major_ver}.$${minor_ver}.$${bugfix_ver}]" && \
-		$(CP_EXT) -f $(VBOX_PATH_RECOMPILER_SRC)/Sun/staged-op-elf-$(KBUILD_TARGET_ARCH).S $@.tmp; \
-	fi
-else
-	$(CP) $(VBOX_PATH_RECOMPILER_SRC)/Sun/staged-op-elf-$(KBUILD_TARGET_ARCH).S $@.tmp
-endif
-	$(SED) -f $(VBOX_PATH_RECOMPILER_SRC)/Sun/op-validate.sed $@.tmp
-ifeq ($(KBUILD_TARGET),darwin)
-	$(SED) -f $(VBOX_PATH_RECOMPILER_SRC)/Sun/op-darwin.sed $@.tmp > $@.tmp2
-	$(SED) -e 's/^\(.*\)$$/#define \1 _\1/' $(VBOX_PATH_RECOMPILER_SRC)/Sun/op-undefined.lst > $@.tmp
-	$(CAT_EXT) $@.tmp2 >> $@.tmp
-endif
-	$(MV) -f $@.tmp $@
-	$(QUIET2)$(APPEND) "$@.dep"
-	$(QUIET2)$(APPEND) "$@.dep" 'define COMPILE_OP_CMDS_PREV'
-	$(QUIET2)$(APPEND) "$@.dep" '$(subst $(NL),'$(NL)$(TAB)@$(APPEND) "$@.dep" ',$(COMPILE_OP_CMDS))'
-	$(QUIET2)$(APPEND) "$@.dep" 'endef'
-
-
-# Hack for crosscompiling.
-DYNGEN = $(PATH_dyngen)/dyngen$(HOSTSUFF_EXE)
-DYNGEN_EXEC = $(DYNGEN)
-ifneq ($(KBUILD_HOST),$(KBUILD_TARGET)) # hack for crosscompiling.
- ifeq ($(KBUILD_TARGET),win)
-  DYNGEN       = $(PATH_dyngen)/dyngen.exe
-  DYNGEN_EXEC := $(EXEC_X86_WIN32) $(DYNGEN_EXEC)
- endif
-endif
-
-# The dyngen rules.
-$(PATH_$(REM_MOD))/op.h:     $(FILE_OP_OBJ) $(DYNGEN)
-	$(call MSG_TOOL,dyngen,VBoxREM,$<,$@)
-	$(QUIET)$(DYNGEN_EXEC) -o $@ $<
-
-$(PATH_$(REM_MOD))/opc.h:    $(FILE_OP_OBJ) $(DYNGEN)
-	$(call MSG_TOOL,dyngen,VBoxREM,$<,$@)
-	$(QUIET)$(DYNGEN_EXEC) -c -o $@ $<
-
-$(PATH_$(REM_MOD))/gen-op.h: $(FILE_OP_OBJ) $(DYNGEN)
-	$(call MSG_TOOL,dyngen,VBoxREM,$<,$@)
-	$(QUIET)$(DYNGEN_EXEC) -g -o $@ $<
-
-
-# Some aliases
-do_dyngen: $(PATH_$(REM_MOD))/gen-op.h $(PATH_$(REM_MOD))/opc.h $(PATH_$(REM_MOD))/op.h
 importlib: $(LIB_REM)
-op.S: $(PATH_$(REM_MOD))/op.S
-
