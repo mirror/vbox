@@ -8925,6 +8925,7 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
 {
     LogFlowThisFunc (("\n"));
 
+#ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -8956,6 +8957,9 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
     flags.detachTo(ComSafeArrayOutArg (aFlags));
     mHWData->mPropertyServiceActive = true;
     return S_OK;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNames),
@@ -8964,6 +8968,8 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
                                                   ComSafeArrayIn(INPTR BSTR, aFlags))
 {
     LogFlowThisFunc (("\n"));
+
+#ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -9005,6 +9011,52 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
     /* Restore the mRegistered flag. */
     mData->mRegistered = TRUE;
     return S_OK;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aValue,
+                                                ULONG64 aTimestamp, INPTR BSTR aFlags)
+{
+    LogFlowThisFunc (("\n"));
+
+#ifdef VBOX_WITH_GUEST_PROPS
+    if (!VALID_PTR(aName))
+        return E_INVALIDARG;
+    if ((aValue != NULL) && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
+        return E_INVALIDARG;  /* aValue can be NULL to indicate deletion */
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    mHWData.backup();
+    for (HWData::GuestPropertyList::iterator iter = mHWData->mGuestProperties.begin();
+         iter != mHWData->mGuestProperties.end(); ++iter)
+        if (aName == iter->mName)
+        {
+            mHWData->mGuestProperties.erase(iter);
+            break;
+        }
+    if (aValue != NULL)
+    {
+        HWData::GuestProperty property = { aName, aValue, aTimestamp, aFlags };
+        mHWData->mGuestProperties.push_back(property);
+    }
+
+    /* send a callback notification if appropriate */
+    alock.leave();
+    // doGuestPropertyCallback(aName, aValue, aFlags);
+
+    return S_OK;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 // public methods only for internal purposes

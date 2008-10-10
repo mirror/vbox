@@ -1809,6 +1809,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_CFGM_NODE, 3, &parms[0]);
 
+            /* Register the host notification callback */
+            parms[0].type = VBOX_HGCM_SVC_PARM_CALLBACK;
+            parms[0].u.callback.pFunction = Console::doGuestPropNotification;
+            parms[0].u.callback.pvData = pvConsole;
+
+            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::REGISTER_CALLBACK, 1, &parms[0]);
+
             Log(("Set VBoxGuestPropSvc property store\n"));
         }
     }
