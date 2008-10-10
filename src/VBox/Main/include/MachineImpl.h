@@ -844,6 +844,8 @@ public:
               ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
     STDMETHOD(PushGuestProperties) (ComSafeArrayIn(INPTR BSTR, aNames), ComSafeArrayIn(INPTR BSTR, aValues),
               ComSafeArrayIn(ULONG64, aTimestamps), ComSafeArrayIn(INPTR BSTR, aFlags));
+    STDMETHOD(PushGuestProperty) (INPTR BSTR aName, INPTR BSTR aValue,
+                                  ULONG64 aTimestamp, INPTR BSTR aFlags);
 
     // public methods only for internal purposes
 

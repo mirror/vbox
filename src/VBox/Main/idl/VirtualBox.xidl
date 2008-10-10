@@ -2250,7 +2250,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="de04566a-7125-444b-949e-34e9f3ec3676"
+     uuid="4042ddf2-93d3-4749-8517-dde3f17ea630"
      internal="yes"
      wsmap="suppress"
      >
@@ -2526,25 +2526,50 @@
       </desc>
       <param name="name" type="wstring" dir="in" safearray="yes">
         <desc>
-          The names of the properties returned.
+          The names of the properties.
         </desc>
       </param>
       <param name="value" type="wstring" dir="in" safearray="yes">
         <desc>
-          The values of the properties returned.  The array entries match the
+          The values of the properties.  The array entries match the
           corresponding entries in the @a name array.
         </desc>
       </param>
       <param name="timestamp" type="unsigned long long" dir="in" safearray="yes">
         <desc>
-          The timestamps of the properties returned.  The array entries match
+          The timestamps of the properties.  The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="in" safearray="yes">
         <desc>
-          The flags of the properties returned.  The array entries match the
+          The flags of the properties.  The array entries match the
           corresponding entries in the @a name array.
+        </desc>
+      </param>
+    </method>
+    <method name="pushGuestProperty">
+      <desc>
+        Update a single guest property in IMachine.
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>
+          The name of the property to be updated.
+        </desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>
+          The value of the property.
+        </desc>
+      </param>
+      <param name="timestamp" type="unsigned long long" dir="in">
+        <desc>
+          The timestamp of the property.
+        </desc>
+      </param>
+      <param name="flags" type="wstring" dir="in">
+        <desc>
+          The flags of the property.
         </desc>
       </param>
     </method>

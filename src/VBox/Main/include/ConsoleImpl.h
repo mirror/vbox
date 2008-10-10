@@ -40,6 +40,9 @@ class VMMDev;
 
 #include <VBox/vrdpapi.h>
 #include <VBox/pdmdrv.h>
+#ifdef VBOX_WITH_GUEST_PROPS
+# include <VBox/HostServices/GuestPropertySvc.h>  /* For the property notification callback */
+#endif
 
 struct VUSBIRHCONFIG;
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
@@ -483,6 +486,10 @@ private:
 
     static DECLCALLBACK(void)   saveStateFileExec (PSSMHANDLE pSSM, void *pvUser);
     static DECLCALLBACK(int)    loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version);
+
+#ifdef VBOX_WITH_GUEST_PROPS
+    static DECLCALLBACK(void)   doGuestPropNotification (PVBOXHGCMCALLBACKHDR pHeader);
+#endif
 
     bool mSavedStateDataLoaded : 1;
 
