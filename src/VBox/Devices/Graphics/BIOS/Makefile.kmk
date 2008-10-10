@@ -30,7 +30,9 @@ VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 #
 # Build program for calculating the VGA BIOS checksums.
 #
-BLDPROGS += vbetables-gen
+BLDPROGS += vgabiossums vbetables-gen
+vgabiossums_TEMPLATE   = VBOXBLDPROG
+vgabiossums_SOURCES    = biossums.c
 vbetables-gen_TEMPLATE = VBOXBLDPROG
 vbetables-gen_SOURCES  = vbetables-gen.c
 
@@ -99,9 +101,10 @@ $$(PATH_VgaBiosBin)/vgabios.tmp $$(PATH_VgaBiosBin)/vgabios.lst: $$(PATH_VgaBios
 	$(QUIET)$(REDIRECT) -ri $^ -- $(VBOX_AS86) -b $(PATH_VgaBiosBin)/vgabios.tmp -u- -w- -g -0 -j -O -l $(PATH_VgaBiosBin)/vgabios.lst
 
 # 6. checksums
-$$(PATH_VgaBiosBin)/vgabios.bin: $$(PATH_VgaBiosBin)/vgabios.tmp $$(VBOX_BIOSSUMS)
-	$(call MSG_TOOL,biossums,VgaBiosBin,$<,$@)
-	$(QUIET)$(VBOX_BIOSSUMS) $< $@
+$$(PATH_VgaBiosBin)/vgabios.bin: $$(PATH_VgaBiosBin)/vgabios.tmp $$(TARGET_vgabiossums)
+	$(call MSG_TOOL,vgabiossums,VgaBiosBin,$<,$@)
+	$(QUIET)$(CP) -f $(PATH_VgaBiosBin)/vgabios.tmp $@
+	$(QUIET)$(TARGET_vgabiossums) $@
 
 #
 # The VGA BIOS Logo.
