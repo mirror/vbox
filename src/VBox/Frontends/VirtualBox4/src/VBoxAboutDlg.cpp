@@ -45,10 +45,14 @@ bool VBoxAboutDlg::event (QEvent *aEvent)
 void VBoxAboutDlg::retranslateUi()
 {
     setWindowTitle (tr ("VirtualBox - About"));
+    QString aboutText =  tr ("VirtualBox Graphical User Interface");
+    QString versionText = tr ("Version %1");
 #if VBOX_OSE
-    mAboutText = tr ("VirtualBox Graphical User Interface Version %1\n%2").arg (mVersion).arg (QString ("%1 2004-2008 Sun Microsystems, Inc.").arg (QChar (0xa9)));
+    mAboutText = aboutText + " " + versionText.arg (mVersion) + "\n" +
+                 QString ("%1 2004-2008 Sun Microsystems, Inc.").arg (QChar (0xa9));
 #else /* VBOX_OSE */
-    mAboutText = tr ("VirtualBox Graphical User Interface\nVersion %1").arg (mVersion);
+    mAboutText = aboutText + "\n" +
+                 versionText.arg (mVersion);
 #endif /* VBOX_OSE */
 }
 
