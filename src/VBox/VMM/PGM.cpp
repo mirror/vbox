@@ -609,34 +609,34 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int pgmR3InitPaging(PVM pVM);
+static int                pgmR3InitPaging(PVM pVM);
 static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
-static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
-static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
+static DECLCALLBACK(int)  pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
+static DECLCALLBACK(int)  pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
+static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
 #ifdef VBOX_STRICT
 static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 #endif
-static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static int               pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
-static void              pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst);
-static PGMMODE           pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
+static DECLCALLBACK(int)  pgmR3Save(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static int                pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
+static void               pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst);
+static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
 
 #ifdef VBOX_WITH_STATISTICS
-static void pgmR3InitStats(PVM pVM);
+static void               pgmR3InitStats(PVM pVM);
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER
 /** @todo all but the two last commands must be converted to 'info'. */
-static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 # ifdef VBOX_STRICT
-static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 # endif
 #endif
 
@@ -847,32 +847,33 @@ static const DBGCCMD    g_aCmds[] =
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
-#define PGM_GST_TYPE                PGM_TYPE_AMD64
-#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
-#define PGM_GST_NAME_RC_STR(name)   PGM_GST_NAME_RC_AMD64_STR(name)
-#define PGM_GST_NAME_R0_STR(name)   PGM_GST_NAME_R0_AMD64_STR(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_AMD64(name)
-#define PGM_BTH_NAME_RC_STR(name)   PGM_BTH_NAME_RC_AMD64_AMD64_STR(name)
-#define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_AMD64_AMD64_STR(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
-#include "PGMGst.h"
-#include "PGMBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_BTH_NAME_RC_STR
-#undef PGM_BTH_NAME_R0_STR
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#undef PGM_GST_NAME_RC_STR
-#undef PGM_GST_NAME_R0_STR
-#endif
+# define PGM_GST_TYPE               PGM_TYPE_AMD64
+# define PGM_GST_NAME(name)         PGM_GST_NAME_AMD64(name)
+# define PGM_GST_NAME_RC_STR(name)  PGM_GST_NAME_RC_AMD64_STR(name)
+# define PGM_GST_NAME_R0_STR(name)  PGM_GST_NAME_R0_AMD64_STR(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_AMD64_AMD64(name)
+# define PGM_BTH_NAME_RC_STR(name)  PGM_BTH_NAME_RC_AMD64_AMD64_STR(name)
+# define PGM_BTH_NAME_R0_STR(name)  PGM_BTH_NAME_R0_AMD64_AMD64_STR(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+# define BTH_PGMPOOLKIND_PT_FOR_BIG PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+# include "PGMGst.h"
+# include "PGMBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_BIG
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_BTH_NAME_RC_STR
+# undef PGM_BTH_NAME_R0_STR
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+# undef PGM_GST_NAME_RC_STR
+# undef PGM_GST_NAME_R0_STR
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
 #undef PGM_SHW_NAME_RC_STR
 #undef PGM_SHW_NAME_R0_STR
+
 
 /*
  * Shadow - Nested paging mode
@@ -965,31 +966,32 @@ static const DBGCCMD    g_aCmds[] =
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
-#define PGM_GST_TYPE                PGM_TYPE_AMD64
-#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
-#define PGM_GST_NAME_RC_STR(name)   PGM_GST_NAME_RC_AMD64_STR(name)
-#define PGM_GST_NAME_R0_STR(name)   PGM_GST_NAME_R0_AMD64_STR(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_AMD64(name)
-#define PGM_BTH_NAME_RC_STR(name)   PGM_BTH_NAME_RC_NESTED_AMD64_STR(name)
-#define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_NESTED_AMD64_STR(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
-#include "PGMBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_BTH_NAME_RC_STR
-#undef PGM_BTH_NAME_R0_STR
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#undef PGM_GST_NAME_RC_STR
-#undef PGM_GST_NAME_R0_STR
-#endif
+# define PGM_GST_TYPE               PGM_TYPE_AMD64
+# define PGM_GST_NAME(name)         PGM_GST_NAME_AMD64(name)
+# define PGM_GST_NAME_RC_STR(name)  PGM_GST_NAME_RC_AMD64_STR(name)
+# define PGM_GST_NAME_R0_STR(name)  PGM_GST_NAME_R0_AMD64_STR(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NESTED_AMD64(name)
+# define PGM_BTH_NAME_RC_STR(name)  PGM_BTH_NAME_RC_NESTED_AMD64_STR(name)
+# define PGM_BTH_NAME_R0_STR(name)  PGM_BTH_NAME_R0_NESTED_AMD64_STR(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+# define BTH_PGMPOOLKIND_PT_FOR_BIG PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+# include "PGMBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_BIG
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_BTH_NAME_RC_STR
+# undef PGM_BTH_NAME_R0_STR
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+# undef PGM_GST_NAME_RC_STR
+# undef PGM_GST_NAME_R0_STR
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
 #undef PGM_SHW_NAME_RC_STR
 #undef PGM_SHW_NAME_R0_STR
+
 
 /*
  * Shadow - EPT
@@ -1082,31 +1084,33 @@ static const DBGCCMD    g_aCmds[] =
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
-#define PGM_GST_TYPE                PGM_TYPE_AMD64
-#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
-#define PGM_GST_NAME_RC_STR(name)   PGM_GST_NAME_RC_AMD64_STR(name)
-#define PGM_GST_NAME_R0_STR(name)   PGM_GST_NAME_R0_AMD64_STR(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_AMD64(name)
-#define PGM_BTH_NAME_RC_STR(name)   PGM_BTH_NAME_RC_EPT_AMD64_STR(name)
-#define PGM_BTH_NAME_R0_STR(name)   PGM_BTH_NAME_R0_EPT_AMD64_STR(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
-#include "PGMBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_BTH_NAME_RC_STR
-#undef PGM_BTH_NAME_R0_STR
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#undef PGM_GST_NAME_RC_STR
-#undef PGM_GST_NAME_R0_STR
-#endif
+# define PGM_GST_TYPE               PGM_TYPE_AMD64
+# define PGM_GST_NAME(name)         PGM_GST_NAME_AMD64(name)
+# define PGM_GST_NAME_RC_STR(name)  PGM_GST_NAME_RC_AMD64_STR(name)
+# define PGM_GST_NAME_R0_STR(name)  PGM_GST_NAME_R0_AMD64_STR(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_EPT_AMD64(name)
+# define PGM_BTH_NAME_RC_STR(name)  PGM_BTH_NAME_RC_EPT_AMD64_STR(name)
+# define PGM_BTH_NAME_R0_STR(name)  PGM_BTH_NAME_R0_EPT_AMD64_STR(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+# define BTH_PGMPOOLKIND_PT_FOR_BIG PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+# include "PGMBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_BIG
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_BTH_NAME_RC_STR
+# undef PGM_BTH_NAME_R0_STR
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
+# undef PGM_GST_NAME_RC_STR
+# undef PGM_GST_NAME_R0_STR
+#endif /* VBOX_WITH_64_BITS_GUESTS */
 
 #undef PGM_SHW_TYPE
 #undef PGM_SHW_NAME
 #undef PGM_SHW_NAME_RC_STR
 #undef PGM_SHW_NAME_R0_STR
+
+
 
 /**
  * Initiates the paging of VM.
@@ -1380,7 +1384,7 @@ static int pgmR3InitPaging(PVM pVM)
 
     /*
      * Allocate pages for the three possible guest contexts (AMD64, PAE and plain 32-Bit).
-     * We allocate pages for all three posibilities to in order to simplify mappings and
+     * We allocate pages for all three posibilities in order to simplify mappings and
      * avoid resource failure during mode switches. So, we need to cover all levels of the
      * of the first 4GB down to PD level.
      * As with the intermediate context, AMD64 uses the PAE PDPT and PDs.
@@ -1472,13 +1476,15 @@ static int pgmR3InitPaging(PVM pVM)
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
-        LogRel(("Debug: HCPhys32BitPD=%VHp aHCPhysPaePDs={%VHp,%VHp,%VHp,%VHp} HCPhysPaePDPT=%VHp HCPhysPaePML4=%VHp\n",
-                pVM->pgm.s.HCPhys32BitPD, pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
-                pVM->pgm.s.HCPhysPaePDPT, pVM->pgm.s.HCPhysPaePML4));
-        LogRel(("Debug: HCPhysInterPD=%VHp HCPhysInterPaePDPT=%VHp HCPhysInterPaePML4=%VHp\n",
+        LogRel(("Debug: HCPhys32BitPD=%VHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysPaePDPT=%RHp HCPhysPaePML4=%RHp\n",
+                pVM->pgm.s.HCPhys32BitPD,
+                pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
+                pVM->pgm.s.HCPhysPaePDPT,
+                pVM->pgm.s.HCPhysPaePML4));
+        LogRel(("Debug: HCPhysInterPD=%RHp HCPhysInterPaePDPT=%RHp HCPhysInterPaePML4=%RHp\n",
                 pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPT, pVM->pgm.s.HCPhysInterPaePML4));
-        LogRel(("Debug: apInterPTs={%VHp,%VHp} apInterPaePTs={%VHp,%VHp} apInterPaePDs={%VHp,%VHp,%VHp,%VHp} pInterPaePDPT64=%VHp\n",
-                MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[1]),
+        LogRel(("Debug: apInterPTs={%RHp,%RHp} apInterPaePTs={%RHp,%RHp} apInterPaePDs={%RHp,%RHp,%RHp,%RHp} pInterPaePDPT64=%RHp\n",
+                MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[0]),    MMPage2Phys(pVM, pVM->pgm.s.apInterPTs[1]),
                 MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePTs[1]),
                 MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[1]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[2]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[3]),
                 MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT64)));
@@ -1711,6 +1717,7 @@ static void pgmR3InitStats(PVM pVM)
 }
 #endif /* VBOX_WITH_STATISTICS */
 
+
 /**
  * Init the PGM bits that rely on VMMR0 and MM to be fully initialized.
  *
@@ -1736,13 +1743,12 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
     /*
      * Reserve space for the dynamic mappings.
      */
-    /** @todo r=bird: Need to verify that the checks for crossing PTs are correct here. They seems to be assuming 4MB PTs.. */
     rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping", &GCPtr);
     if (VBOX_SUCCESS(rc))
         pVM->pgm.s.pbDynPageMapBaseGC = GCPtr;
 
     if (    VBOX_SUCCESS(rc)
-        &&  (pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_SHIFT) != ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_SHIFT))
+        &&  (pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_PAE_SHIFT) != ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_PAE_SHIFT))
     {
         rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping not crossing", &GCPtr);
         if (VBOX_SUCCESS(rc))
@@ -1750,7 +1756,7 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
     }
     if (VBOX_SUCCESS(rc))
     {
-        AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_SHIFT));
+        AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_PAE_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_PAE_SHIFT));
         MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
     }
     return rc;
