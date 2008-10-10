@@ -604,8 +604,8 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
             for (unsigned i=0;i<X86_PG_ENTRIES;i++)
             {
-                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
-                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].b.u10PageNo  = _4M * i;
+                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u  = _4M * i;
+                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u |= X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
             }
 
             /* We convert it here every time as pci regions could be reconfigured. */
