@@ -1218,6 +1218,9 @@ endif
 # bin2c (convert binary files into C arrays)
 VBOX_BIN2C     ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 
+# biossums (set BIOS checksums)
+VBOX_BIOSSUMS  ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
+
 # mkisofs
 ifeq ($(KBUILD_HOST),win)
  VBOX_MKISOFS  ?= $(PATH_DEVTOOLS_BLD)/bin/mkisofs.exe
