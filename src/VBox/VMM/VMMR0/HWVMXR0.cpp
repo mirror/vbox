@@ -1156,7 +1156,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             }
         }
         else
-        if (!(pCtx->cr0 & X86_CR0_PG))
+        if (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
         {
             /* We use 4 MB pages in our identity mapping page table for real and protected mode without paging. */
             val |= X86_CR4_PSE;
@@ -2841,7 +2841,7 @@ ResumeExecution:
         Log(("VMX_VMCS_GUEST_CR0        %RX64\n", val));
 
         VMXReadVMCS(VMX_VMCS_GUEST_CR3, &val);
-        Log(("VMX_VMCS_HOST_CR3         %VGp\n", val));
+        Log(("VMX_VMCS_GUEST_CR3        %VGp\n", val));
 
         VMXReadVMCS(VMX_VMCS_GUEST_CR4, &val);
         Log(("VMX_VMCS_GUEST_CR4        %RX64\n", val));
