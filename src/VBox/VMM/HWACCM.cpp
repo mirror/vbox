@@ -296,6 +296,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             &&  pVM->hwaccm.s.vmx.msr.feature_ctrl != 0)
         {
             uint64_t val;
+            RTGCPHYS GCPhys = 0;
 
             LogRel(("HWACCM: Host CR4=%08X\n", pVM->hwaccm.s.vmx.hostCR4));
             LogRel(("HWACCM: MSR_IA32_FEATURE_CONTROL      = %VX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
@@ -606,6 +607,15 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->hwaccm.s.vmx.pRealModeEPTPageTable->a[i].u = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
                 pVM->hwaccm.s.vmx.pRealModeEPTPageTable->a[i].b.u10PageNo  = _4M * i;
             }
+
+            /* We convert it here every time as pci regions could be reconfigured. */
+            rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
+            AssertRC(rc);            
+            LogRel(("HWACCM: Real Mode TSS guest physaddr  = %VGp\n", GCPhys));
+
+            rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeEPTPageTable, &GCPhys);
+            AssertRC(rc);            
+            LogRel(("HWACCM: Real Mode EPT CR3             = %VGp\n", GCPhys));
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
