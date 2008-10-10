@@ -916,6 +916,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 pCtx->gsHid.u32Limit &= 0xffff;
                 pCtx->ssHid.u32Limit &= 0xffff;
 
+                Assert(pCtx->csHid.u64Base <= 0xfffff);
                 Assert(pCtx->dsHid.u64Base <= 0xfffff);
                 Assert(pCtx->esHid.u64Base <= 0xfffff);
                 Assert(pCtx->fsHid.u64Base <= 0xfffff);
@@ -2303,7 +2304,7 @@ ResumeExecution:
         if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT)
             errCode |= X86_TRAP_PF_P;
 
-        Log2(("EPT Page fault %x at %VGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
+        Log(("EPT Page fault %x at %VGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
         /* GCPhys contains the guest physical address of the page fault. */
         TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
@@ -2987,6 +2988,7 @@ static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
 {
     uint64_t descriptor[2];
 
+    LogFlow(("VMXR0FlushEPT %d %VGv\n", enmFlush, GCPhys));
     Assert(pVM->hwaccm.s.fNestedPaging);
     descriptor[0] = pVM->hwaccm.s.vmx.GCPhysEPTP;
     descriptor[1] = GCPhys;
