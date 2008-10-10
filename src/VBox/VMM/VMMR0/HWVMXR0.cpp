@@ -2057,6 +2057,8 @@ ResumeExecution:
                      */
                     Log(("Guest page fault at %VGv cr2=%VGv error code %x rsp=%VGv\n", (RTGCPTR)pCtx->rip, exitQualification, errCode, (RTGCPTR)pCtx->rsp));
 
+                    Assert(CPUMIsGuestInPagedProtectedModeEx(pCtx));
+
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
 
                     /* Now we must update CR2. */
