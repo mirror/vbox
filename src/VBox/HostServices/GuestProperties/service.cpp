@@ -213,8 +213,8 @@ private:
     int validateValue(char *pszValue, uint32_t cbValue);
     int getPropValue(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify);
+    int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void notifyHost(const char *pszProperty);
     static DECLCALLBACK(int) reqNotify(PFNVBOXHGCMCALLBACK pfnCallback,
@@ -445,7 +445,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * @param   paParms the array of HGCM parameters
  * @thread  HGCM
  */
-int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify)
 {
     int rc = VINF_SUCCESS;
     char *pszName, *pszValue, *pszFlags;
@@ -523,7 +523,8 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      */
     if (RT_SUCCESS(rc))
     {
-        notifyHost(pszName);
+        if (notify)
+            notifyHost(pszName);
         Log2(("Set string %s, rc=%Rrc, value=%s\n", pszName, rc, pszValue));
     }
     LogFlowThisFunc(("rc = %Rrc\n", rc));
@@ -540,7 +541,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * @param   paParms the array of HGCM parameters
  * @thread  HGCM
  */
-int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify)
 {
     int rc = VINF_SUCCESS;
     char *pszName;
@@ -558,7 +559,8 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
     {
         CFGMR3RemoveValue(mpValueNode, pszName);
-        notifyHost(pszName);
+        if (notify)
+            notifyHost(pszName);
     }
     LogFlowThisFunc(("rc = %Rrc\n", rc));
     return rc;
@@ -878,19 +880,19 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         /* The guest wishes to set a property */
         case SET_PROP:
             LogFlowFunc(("SET_PROP\n"));
-            rc = setProperty(cParms, paParms);
+            rc = setProperty(cParms, paParms, true);
             break;
 
         /* The guest wishes to set a property value */
         case SET_PROP_VALUE:
             LogFlowFunc(("SET_PROP_VALUE\n"));
-            rc = setProperty(cParms, paParms);
+            rc = setProperty(cParms, paParms, true);
             break;
 
         /* The guest wishes to remove a configuration value */
         case DEL_PROP:
             LogFlowFunc(("DEL_PROP\n"));
-            rc = delProperty(cParms, paParms);
+            rc = delProperty(cParms, paParms, true);
             break;
 
         /* The guest wishes to enumerate all properties */
@@ -971,19 +973,19 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         /* The host wishes to set a configuration value */
         case SET_PROP_HOST:
             LogFlowFunc(("SET_PROP_HOST\n"));
-            rc = setProperty(cParms, paParms);
+            rc = setProperty(cParms, paParms, false);
             break;
 
         /* The host wishes to set a configuration value */
         case SET_PROP_VALUE_HOST:
             LogFlowFunc(("SET_PROP_VALUE_HOST\n"));
-            rc = setProperty(cParms, paParms);
+            rc = setProperty(cParms, paParms, false);
             break;
 
         /* The host wishes to remove a configuration value */
         case DEL_PROP_HOST:
             LogFlowFunc(("DEL_PROP_HOST\n"));
-            rc = delProperty(cParms, paParms);
+            rc = delProperty(cParms, paParms, false);
             break;
 
         /* The host wishes to enumerate all properties */
