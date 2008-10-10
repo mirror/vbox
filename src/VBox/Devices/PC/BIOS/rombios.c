@@ -10151,7 +10151,7 @@ pci_routing_table_structure:
   dw 0,0 ;; Miniport data
   db 0,0,0,0,0,0,0,0,0,0,0 ;; reserved
 #ifdef VBOX
-  db 0x21 ;; checksum
+  db 0x00 ;; checksum (set by biossums)
 #else /* !VBOX */
   db 0x07 ;; checksum
 #endif /* !VBOX */
@@ -12011,15 +12011,9 @@ int08_store_ticks:
 // The SMBIOS header
 .org 0xff30
 .align 16
- db   0x5f, 0x53, 0x4d, 0x5f          ; "_SM_" signature
- ; calculate Entry Point Structure checksum - note that we already
- ; know the checksum for the DMI header paragraph is zero
-       db ( - ( 0x5f + 0x53 + 0x4d + 0x5f \
-               + 0x1f \
-               + ((VBOX_SMBIOS_MAJOR_VER    ) & 0xff) + ((VBOX_SMBIOS_MINOR_VER    ) & 0xff) \
-               + ((VBOX_SMBIOS_MAXSS        ) & 0xff) + ((VBOX_SMBIOS_MAXSS   >>  8) & 0xff) \
-          )) & 0xff
- db 0x1f                              ; EPS length - defined by standard
+ db 0x5f, 0x53, 0x4d, 0x5f            ; "_SM_" signature
+ db 0x00                              ; checksum (set by biossums)
+ db 0x1f                              ; EPS length, defined by standard
  db VBOX_SMBIOS_MAJOR_VER             ; SMBIOS major version
  db VBOX_SMBIOS_MINOR_VER             ; SMBIOS minor version
  dw VBOX_SMBIOS_MAXSS                 ; Maximum structure size
@@ -12027,15 +12021,8 @@ int08_store_ticks:
  db 0x00, 0x00, 0x00, 0x00, 0x00
 
 // The DMI header
- db   0x5f, 0x44, 0x4d, 0x49, 0x5f    ; "_DMI_" signature
- ; calculate the DMI header checksum
- db ( - ( 0x5f + 0x44 + 0x4d + 0x49 + 0x5f \
-         + ((VBOX_DMI_TABLE_BASE      ) & 0xff) + ((VBOX_DMI_TABLE_BASE >>  8) & 0xff) \
-         + ((VBOX_DMI_TABLE_BASE >> 16) & 0xff) + ((VBOX_DMI_TABLE_BASE >> 24) & 0xff) \
-         + ((VBOX_DMI_TABLE_SIZE      ) & 0xff) + ((VBOX_DMI_TABLE_SIZE >>  8) & 0xff) \
-         + ((VBOX_DMI_TABLE_ENTR      ) & 0xff) + ((VBOX_DMI_TABLE_ENTR >>  8) & 0xff) \
-         + VBOX_DMI_TABLE_VER \
-    )) & 0xff
+ db 0x5f, 0x44, 0x4d, 0x49, 0x5f      ; "_DMI_" signature
+ db 0x00                              ; checksum (set by biossums)
  dw VBOX_DMI_TABLE_SIZE               ; DMI tables length
  dd VBOX_DMI_TABLE_BASE               ; DMI tables base
  dw VBOX_DMI_TABLE_ENTR               ; DMI tables entries
