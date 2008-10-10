@@ -28,3 +28,5 @@
 #ifdef VBOX_WITH_64_BITS_GUESTS
 #define TARGET_X86_64
 #endif
+
+#define unlikely(cond) RT_UNLIKELY(cond)
