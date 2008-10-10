@@ -22,13 +22,9 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-BLDPROGS += bin2c biossums
-
+BLDPROGS += bin2c
 bin2c_TEMPLATE = VBOXBLDPROG
 bin2c_SOURCES = bin2c.c
-
-biossums_TEMPLATE = VBOXBLDPROG
-biossums_SOURCES = biossums.c
 
 include $(KBUILD_PATH)/subfooter.kmk
 

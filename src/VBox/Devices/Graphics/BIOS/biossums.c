@@ -77,21 +77,6 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
   fclose(stream);
-#ifdef VBOX
-  modified = 1;
-  if (bios_len <= 0x1000)             /*  4k */
-      bios_len = 0x1000;
-  else if (bios_len <= 0x8000)        /* 32k */
-      bios_len = 0x8000;
-  else if (bios_len <= 0xC000)        /* 48k */
-      bios_len = 0xC000;
-  else if (bios_len > 0xC000)         /* 64k */
-     bios_len = MAX_BIOS_DATA;
-  else if ((bios_len & 0x1FF) != 0)
-    bios_len = (bios_len + 0x200) & ~0x1FF;
-  else
-    modified = 0;
-#else
   modified = 0;
   if (bios_len < 0x8000) {
     bios_len = 0x8000;
@@ -100,7 +85,6 @@ int main(int argc, char* argv[])
     bios_len = (bios_len + 0x200) & ~0x1FF;
     modified = 1;
   }
-#endif
   bios_len_byte = (byte)(bios_len / 512);
   if (bios_len_byte != bios_data[2]) {
     if (modified == 0) {
@@ -160,14 +144,26 @@ int main(int argc, char* argv[])
     }
   } while (cur_val != new_val);
 
-  printf("\n");
-
   if (modified == 1) {
+#ifdef VBOX
+    size_t new_bios_len;
+#endif
     if ((stream = fopen( argv[1], "wb")) == NULL) {
       printf("Error opening %s for writing.\n", argv[1]);
       exit(EXIT_FAILURE);
     }
-    if (fwrite(bios_data, 1, bios_len, stream) < (size_t)bios_len) {
+#ifdef VBOX
+    if (bios_len <= 0x8000)             /* 32k */
+        new_bios_len = 0x8000;
+    else if (bios_len <= 0xC000)        /* 48k */
+        new_bios_len = 0xC000;
+    else if (bios_len > 0xC000)         /* 64k */
+        new_bios_len = MAX_BIOS_DATA;
+
+    if (fwrite(bios_data, 1, new_bios_len, stream) < new_bios_len) {
+#else
+    if (fwrite(bios_data, 1, bios_len, stream) < bios_len) {
+#endif
       printf("Error writing %ld KBytes to %s.\n", bios_len / 1024, argv[1]);
       fclose(stream);
       exit(EXIT_FAILURE);
