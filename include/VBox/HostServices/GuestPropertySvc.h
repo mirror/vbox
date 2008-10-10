@@ -45,32 +45,52 @@ enum eHostFn
 {
     /** Pass the address of the cfgm node used by the service as a database. */
     SET_CFGM_NODE = 1,
-    /** 
-     * Get the value attached to a configuration property key
-     * The parameter format matches that of GET_PROP. 
+    /**
+     * Get the value attached to a guest property
+     * The parameter format matches that of GET_PROP.
      */
     GET_PROP_HOST = 2,
-    /** 
-     * Set the value attached to a configuration property key
+    /**
+     * Set the value attached to a guest property
      * The parameter format matches that of SET_PROP.
      */
     SET_PROP_HOST = 3,
-    /** 
-     * Set the value attached to a configuration property key
+    /**
+     * Set the value attached to a guest property
      * The parameter format matches that of SET_PROP_VALUE.
      */
     SET_PROP_VALUE_HOST = 4,
-    /** 
-     * Remove the value attached to a configuration property key
+    /**
+     * Remove a guest property.
      * The parameter format matches that of DEL_PROP.
      */
     DEL_PROP_HOST = 5,
-    /** 
+    /**
      * Enumerate guest properties.
      * The parameter format matches that of ENUM_PROPS.
      */
-    ENUM_PROPS_HOST = 6
+    ENUM_PROPS_HOST = 6,
+    /**
+     * Register a callback with the service which will be called when a
+     * property is modified.  The callback is a function returning void and
+     * taking a pointer to a HOSTCALLBACKDATA structure.
+     */
+    REGISTER_CALLBACK = 7
 };
+
+typedef struct _HOSTCALLBACKDATA
+{
+    /** Callback structure header */
+    VBOXHGCMCALLBACKHDR hdr;
+    /** The name of the property that was changed */
+    const char *pcszName;
+    /** The new property value, or NULL if the property was deleted */
+    const char *pcszValue;
+    /** The timestamp of the modification */
+    uint64_t u64Timestamp;
+    /** The flags field of the modified property */
+    const char *pcszFlags;
+} HOSTCALLBACKDATA, *PHOSTCALLBACKDATA;
 
 /**
  * The service functions which are called by guest.  The numbers may not change,
@@ -90,18 +110,14 @@ enum eGuestFn
     ENUM_PROPS = 5
 };
 
-/** Prefix for extra data keys used by the get and set key value functions */
-#define VBOX_SHARED_INFO_KEY_PREFIX          "Guest/"
-/** Helper macro for the length of the prefix VBOX_SHARED_INFO_KEY_PREFIX */
-#define VBOX_SHARED_INFO_PREFIX_LEN          (sizeof(VBOX_SHARED_INFO_KEY_PREFIX) - 1)
 /** Maximum length for property names */
 enum { MAX_NAME_LEN = 64 };
 /** Maximum length for property values */
 enum { MAX_VALUE_LEN = 128 };
-/** Maximum length for extra data key values used by the get and set key value functions */
+/** Maximum length for the property flags field */
 enum { MAX_FLAGS_LEN = 128 };
 /** Maximum number of properties per guest */
-enum { MAX_KEYS = 256 };
+enum { MAX_PROPS = 256 };
 
 /**
  * HGCM parameter structures.  Packing is explicitly defined as this is a wire format.
@@ -149,7 +165,7 @@ typedef struct _SetProperty
     VBoxGuestHGCMCallInfo hdr;
 
     /**
-     * The property key.  (IN pointer)
+     * The property name.  (IN pointer)
      * This must fit to a number of criteria, namely
      *  - Only Utf8 strings are allowed
      *  - Less than or equal to MAX_NAME_LEN bytes in length
@@ -159,7 +175,7 @@ typedef struct _SetProperty
 
     /**
      * The value of the property (IN pointer)
-     * Criteria as for the key parameter, but with length less than or equal to
+     * Criteria as for the name parameter, but with length less than or equal to
      * MAX_VALUE_LEN.  
      */
     HGCMFunctionParameter value;
@@ -179,7 +195,7 @@ typedef struct _SetPropertyValue
     VBoxGuestHGCMCallInfo hdr;
 
     /**
-     * The property key.  (IN pointer)
+     * The property name.  (IN pointer)
      * This must fit to a number of criteria, namely
      *  - Only Utf8 strings are allowed
      *  - Less than or equal to MAX_NAME_LEN bytes in length
@@ -189,7 +205,7 @@ typedef struct _SetPropertyValue
 
     /**
      * The value of the property (IN pointer)
-     * Criteria as for the key parameter, but with length less than or equal to
+     * Criteria as for the name parameter, but with length less than or equal to
      * MAX_VALUE_LEN.  
      */
     HGCMFunctionParameter value;
