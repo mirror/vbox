@@ -2289,6 +2289,8 @@ ResumeExecution:
         GCPhys |= (val << 32ULL);      
 #endif
 
+        Assert(((exitQualification >> 7) & 3) != 2);
+
         /* Determine the kind of violation. */
         errCode = 0;
         if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH)
@@ -2735,6 +2737,7 @@ ResumeExecution:
     {
     case VMX_EXIT_EXCEPTION:            /* 0 Exception or non-maskable interrupt (NMI). */
     case VMX_EXIT_EXTERNAL_IRQ:         /* 1 External interrupt. */
+    case VMX_EXIT_EPT_VIOLATION:
         /* Already handled above. */
         break;
 
