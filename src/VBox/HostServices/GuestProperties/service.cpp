@@ -29,15 +29,13 @@
  * are waiting for notification.
  *
  * The service currently consists of two threads.  One of these is the main
- * HGCM service thread which waits for requests from the guest and schedules
- * these to the second thread.  The second thread deals with the requests
- * sequentially by calling the callback provided by the service owner,
- * notifying the guest clients when it has finished dealing with a given
- * request.
+ * HGCM service thread which deals with requests from the guest and from the
+ * host.  The second thread sends the host asynchronous notifications of
+ * changes made by the guest and deals with notification timeouts.
  *
- * Guest requests to wait for notification are dealt with differently.  They
- * are added to a list of open notification requests but do not schedule
- * anything in the request thread except for a possible timeout.
+ * Guest requests to wait for notification are added to a list of open
+ * notification requests and completed when a corresponding guest property
+ * is changed or when the request times out.
  */
 
 #define LOG_GROUP LOG_GROUP_HGCM
@@ -56,6 +54,8 @@
 #include <iprt/autores.h>
 #include <iprt/time.h>
 #include <iprt/cpputils.h>
+#include <iprt/req.h>
+#include <iprt/thread.h>
 #include <VBox/log.h>
 
 #include <VBox/cfgm.h>
@@ -91,6 +91,21 @@ static void VBoxHGCMParmUInt64Set (VBOXHGCMSVCPARM *pParm, uint64_t u64)
     pParm->u.uint64 = u64;
 }
 
+/** Extract a callback pointer value from an HGCM parameter structure */
+static int VBoxHGCMParmPtrGet (VBOXHGCMSVCPARM *pParm,
+                               PFNVBOXHGCMCALLBACK *ppfnCallback,
+                               void **ppvData)
+{
+    if (pParm->type == VBOX_HGCM_SVC_PARM_CALLBACK)
+    {
+        *ppfnCallback = pParm->u.callback.pFunction;
+        *ppvData      = pParm->u.callback.pvData;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_INVALID_PARAMETER;
+}
+
 
 namespace guestProp {
 
@@ -110,11 +125,31 @@ private:
     PCFGMNODE mpTimestampNode;
     /** Pointer to our configuration flags node. */
     PCFGMNODE mpFlagsNode;
+    /** @todo we should have classes for thread and request handler thread */
+    /** Queue of outstanding property change notifications */
+    RTREQQUEUE *mReqQueue;
+    /** Thread for processing the request queue */
+    RTTHREAD mReqThread;
+    /** Tell the thread that it should exit */
+    bool mfExitThread;
+    /** Callback function supplied by the host for notification of updates
+     * to properties */
+    PFNVBOXHGCMCALLBACK mpfnHostCallback;
+    /** User data pointer to be supplied to the host callback function */
+    void *mpvHostData;
 
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
         : mpHelpers(pHelpers), mpValueNode(NULL), mpTimestampNode(NULL),
-          mpFlagsNode(NULL) {}
+          mpFlagsNode(NULL), mfExitThread(false), mpfnHostCallback(NULL),
+          mpvHostData(NULL)
+    {
+        int rc = RTReqCreateQueue(&mReqQueue);
+        rc = RTThreadCreate(&mReqThread, reqThreadFn, this, 0, RTTHREADTYPE_MSG_PUMP,
+                                RTTHREADFLAGS_WAITABLE, "GuestPropReq");
+        if (!RT_SUCCESS(rc))
+            throw rc;
+    }
 
     /**
      * @copydoc VBOXHGCMSVCHELPERS::pfnUnload
@@ -124,8 +159,11 @@ public:
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-        delete pSelf;
-        return VINF_SUCCESS;
+        int rc = pSelf->uninit();
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            delete pSelf;
+        return rc;
     }
 
     /**
@@ -170,41 +208,68 @@ public:
         return pSelf->hostCall(u32Function, cParms, paParms);
     }
 private:
-    int validateKey(const char *pszKey, uint32_t cbKey);
+    static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
+    int validateName(const char *pszName, uint32_t cbName);
     int validateValue(char *pszValue, uint32_t cbValue);
-    int getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int getPropValue(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    void notifyHost(const char *pszProperty);
+    static DECLCALLBACK(int) reqNotify(PFNVBOXHGCMCALLBACK pfnCallback,
+                                       void *pvData, char *pszName,
+                                       char *pszValue, uint32_t u32TimeHigh,
+                                       uint32_t u32TimeLow, char *pszFlags);
+    /**
+     * Empty request function for terminating the request thread.
+     * @returns VINF_EOF to cause the request processing function to return
+     * @todo    return something more appropriate
+     */
+    static DECLCALLBACK(int) reqVoid() { return VINF_EOF; }
+
     void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                void *pvClient, uint32_t eFunction, uint32_t cParms,
                VBOXHGCMSVCPARM paParms[]);
     int hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int uninit ();
 };
 
 
 /**
- * Checking that the key passed by the guest fits our criteria for a
- * configuration key.
+ * Thread function for processing the request queue
+ * @copydoc FNRTTHREAD
+ */
+DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
+{
+    SELF *pSelf = reinterpret_cast<SELF *>(pvUser);
+    while (!pSelf->mfExitThread)
+        RTReqProcess(pSelf->mReqQueue, RT_INDEFINITE_WAIT);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checking that the name passed by the guest fits our criteria for a
+ * property name.
  *
  * @returns IPRT status code
- * @param   pszKey    the key passed by the guest
- * @param   cbKey     the number of bytes pszKey points to, including the
+ * @param   pszName   the name passed by the guest
+ * @param   cbName    the number of bytes pszName points to, including the
  *                    terminating '\0'
  * @thread  HGCM
  */
-int Service::validateKey(const char *pszKey, uint32_t cbKey)
+int Service::validateName(const char *pszName, uint32_t cbName)
 {
-    LogFlowFunc(("cbKey=%d\n", cbKey));
+    LogFlowFunc(("cbName=%d\n", cbName));
 
     /*
-     * Validate the key, checking that it's proper UTF-8 and has
+     * Validate the name, checking that it's proper UTF-8 and has
      * a string terminator.
      */
-    int rc = RTStrValidateEncodingEx(pszKey, RT_MIN(cbKey, MAX_NAME_LEN),
+    int rc = RTStrValidateEncodingEx(pszName, RT_MIN(cbName, (uint32_t) MAX_NAME_LEN),
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
-    if (RT_SUCCESS(rc) && (cbKey < 2))
+    if (RT_SUCCESS(rc) && (cbName < 2))
         rc = VERR_INVALID_PARAMETER;
 
     LogFlowFunc(("returning %Rrc\n", rc));
@@ -214,10 +279,10 @@ int Service::validateKey(const char *pszKey, uint32_t cbKey)
 
 /**
  * Check that the data passed by the guest fits our criteria for the value of
- * a configuration key.
+ * a guest property.
  *
  * @returns IPRT status code
- * @param   pszValue  the value to store in the key
+ * @param   pszValue  the value to store in the property
  * @param   cbValue   the number of bytes in the buffer pszValue points to
  * @thread  HGCM
  */
@@ -232,7 +297,7 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
      */
     int rc = VINF_SUCCESS;
     if (cbValue)
-        rc = RTStrValidateEncodingEx(pszValue, RT_MIN(cbValue, MAX_VALUE_LEN),
+        rc = RTStrValidateEncodingEx(pszValue, RT_MIN(cbValue, (uint32_t) MAX_VALUE_LEN),
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
     if (RT_SUCCESS(rc))
         LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
@@ -242,10 +307,10 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
 
 
 /**
- * Retrieve a value from the guest registry by key, checking the validity
+ * Retrieve a value from the property registry by name, checking the validity
  * of the arguments passed.  If the guest has not allocated enough buffer
  * space for the value then we return VERR_OVERFLOW and set the size of the
- * buffer needed in the "size" HGCM parameter.  If the key was not found at
+ * buffer needed in the "size" HGCM parameter.  If the name was not found at
  * all, we return VERR_NOT_FOUND.
  *
  * @returns iprt status value
@@ -253,35 +318,35 @@ int Service::validateValue(char *pszValue, uint32_t cbValue)
  * @param   paParms the array of HGCM parameters
  * @thread  HGCM
  */
-int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::getPropValue(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    char *pszKey, *pszValue;
-    uint32_t cbKey, cbValue;
+    char *pszName, *pszValue;
+    uint32_t cbName, cbValue;
     size_t cbValueActual;
 
     LogFlowThisFunc(("\n"));
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
-        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* key */
+        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* name */
         || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* value */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszKey, &cbKey);
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cbName);
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cbValue);
     if (RT_SUCCESS(rc))
-        rc = validateKey(pszKey, cbKey);
+        rc = validateName(pszName, cbName);
     if (RT_SUCCESS(rc))
-        rc = CFGMR3QuerySize(mpValueNode, pszKey, &cbValueActual);
+        rc = CFGMR3QuerySize(mpValueNode, pszName, &cbValueActual);
     if (RT_SUCCESS(rc))
         VBoxHGCMParmUInt32Set(&paParms[2], cbValueActual);
     if (RT_SUCCESS(rc) && (cbValueActual > cbValue))
         rc = VERR_BUFFER_OVERFLOW;
     if (RT_SUCCESS(rc))
-        rc = CFGMR3QueryString(mpValueNode, pszKey, pszValue, cbValue);
+        rc = CFGMR3QueryString(mpValueNode, pszName, pszValue, cbValue);
     if (RT_SUCCESS(rc))
-        Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszKey, rc, cbValue, pszValue));
+        Log2(("Queried string %s, rc=%Rrc, value=%.*s\n", pszName, rc, cbValue, pszValue));
     else if (VERR_CFGM_VALUE_NOT_FOUND == rc)
         rc = VERR_NOT_FOUND;
     LogFlowThisFunc(("rc = %Rrc\n", rc));
@@ -290,10 +355,10 @@ int Service::getKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 
 
 /**
- * Retrieve a value from the guest registry by key, checking the validity
+ * Retrieve a value from the property registry by name, checking the validity
  * of the arguments passed.  If the guest has not allocated enough buffer
  * space for the value then we return VERR_OVERFLOW and set the size of the
- * buffer needed in the "size" HGCM parameter.  If the key was not found at
+ * buffer needed in the "size" HGCM parameter.  If the name was not found at
  * all, we return VERR_NOT_FOUND.
  *
  * @returns iprt status value
@@ -308,9 +373,9 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     uint32_t cchName, cchBuf;
     size_t cchValue, cchFlags, cchBufActual;
 
-/*
- * Get and validate the parameters
- */
+    /*
+     * Get and validate the parameters
+     */
     LogFlowThisFunc(("\n"));
     if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)    /* name */
@@ -322,14 +387,14 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cchBuf);
     if (RT_SUCCESS(rc))
-        rc = validateKey(pszName, cchName);
+        rc = validateName(pszName, cchName);
     /* Get the value size */
     if (RT_SUCCESS(rc))
         rc = CFGMR3QuerySize(mpValueNode, pszName, &cchValue);
 
-/*
- * Read and set the values we will return
- */
+    /*
+     * Read and set the values we will return
+     */
     /* Get the flags size */
     cchFlags = 1;  /* Empty string if no flags set. */
     if (RT_SUCCESS(rc) && (mpFlagsNode != NULL))
@@ -357,9 +422,9 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         CFGMR3QueryU64(mpTimestampNode, pszName, &u64Timestamp);
     VBoxHGCMParmUInt64Set(&paParms[2], u64Timestamp);
 
-/*
- * Done!  Do exit logging and return.
- */
+    /*
+     * Done!  Do exit logging and return.
+     */
     if (RT_SUCCESS(rc))
         Log2(("Queried string %S, value=%.*S, timestamp=%lld, flags=%.*S\n",
               pszName, cchValue, pchBuf, u64Timestamp, cchFlags,
@@ -372,7 +437,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 
 
 /**
- * Set a value in the guest registry by key, checking the validity
+ * Set a value in the property registry by name, checking the validity
  * of the arguments passed.
  *
  * @returns iprt status value
@@ -380,68 +445,94 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * @param   paParms the array of HGCM parameters
  * @thread  HGCM
  */
-int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    char *pszKey, *pszValue;
-    uint32_t cchKey, cchValue;
+    char *pszName, *pszValue, *pszFlags;
+    uint32_t cchName, cchValue, cchFlags = 0;
 
     LogFlowThisFunc(("\n"));
-    if (   (cParms < 2) || (cParms > 4)  /* Hardcoded value as the next lines depend on it. */
-        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* key */
-        || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* value */
-        || ((3 == cParms) && (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR)) 
-       )
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszKey, &cchKey);
-    if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cchValue);
-    if (RT_SUCCESS(rc))
-        rc = validateKey(pszKey, cchKey);
-    if (RT_SUCCESS(rc))
-        rc = validateValue(pszValue, cchValue);
-    if (RT_SUCCESS(rc))
+    /*
+     * First of all, make sure that we won't exceed the maximum number of properties.
+     */
     {
-        /* Limit the number of keys that we can set. */
         unsigned cChildren = 0;
         for (PCFGMNODE pChild = CFGMR3GetFirstChild(mpValueNode); pChild != 0; pChild = CFGMR3GetNextChild(pChild))
             ++cChildren;
-        if (cChildren >= MAX_KEYS)
+        if (cChildren >= MAX_PROPS)
             rc = VERR_TOO_MUCH_DATA;
     }
+    /*
+     * General parameter correctness checking.
+     */
+    if (   RT_SUCCESS(rc)
+        && (   (cParms < 2) || (cParms > 4)  /* Hardcoded value as the next lines depend on it. */
+            || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* name */
+            || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* value */
+            || ((3 == cParms) && (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR))  /* flags */
+           )
+       )
+        rc = VERR_INVALID_PARAMETER;
+    /*
+     * And check the values passed in the parameters for correctness.
+     */
+    if (RT_SUCCESS(rc))
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cchName);
+    if (RT_SUCCESS(rc))
+        rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pszValue, &cchValue);
+    if (RT_SUCCESS(rc))
+        rc = validateName(pszName, cchName);
+    if (RT_SUCCESS(rc))
+        rc = validateValue(pszValue, cchValue);
     /* For now, we do not support any flags */
     if (RT_SUCCESS(rc) && (3 == cParms))
     {
-        char *pszFlags;
-        uint32_t cchFlags = 0;
         rc = VBoxHGCMParmPtrGet(&paParms[2], (void **) &pszFlags, &cchFlags);
         for (size_t i = 0; (i < cchFlags - 1) && RT_SUCCESS(rc); ++i)
             if (pszFlags[i] != ' ')
                 rc = VERR_INVALID_PARAMETER;
     }
+    /*
+     * Set the actual value
+     */
     if (RT_SUCCESS(rc))
     {
         RTTIMESPEC time;
-        CFGMR3RemoveValue(mpValueNode, pszKey);
+        CFGMR3RemoveValue(mpValueNode, pszName);
         if (mpTimestampNode != NULL)
-            CFGMR3RemoveValue(mpTimestampNode, pszKey);
+            CFGMR3RemoveValue(mpTimestampNode, pszName);
         if ((3 == cParms) && (mpFlagsNode != NULL))
-            CFGMR3RemoveValue(mpFlagsNode, pszKey);
-        rc = CFGMR3InsertString(mpValueNode, pszKey, pszValue);
+            CFGMR3RemoveValue(mpFlagsNode, pszName);
+        rc = CFGMR3InsertString(mpValueNode, pszName, pszValue);
         if (RT_SUCCESS(rc))
-            rc = CFGMR3InsertInteger(mpTimestampNode, pszKey,
+            rc = CFGMR3InsertInteger(mpTimestampNode, pszName,
                                      RTTimeSpecGetNano(RTTimeNow(&time)));
+        if (RT_SUCCESS(rc) && (3 == cParms))
+            rc = CFGMR3InsertString(mpFlagsNode, pszName, pszFlags);
+        /* If we are not setting flags, make sure that there are some */
+        if (RT_SUCCESS(rc) && (mpFlagsNode != NULL) && (cParms != 3))
+        {
+            CFGMVALUETYPE dummy;
+            if (   CFGMR3QueryType(mpFlagsNode, pszName, &dummy)
+                == VERR_CFGM_VALUE_NOT_FOUND)
+                rc = CFGMR3InsertString(mpFlagsNode, pszName, "");
+        }
     }
+    /*
+     * Send a notification to the host and return.
+     */
     if (RT_SUCCESS(rc))
-        Log2(("Set string %s, rc=%Rrc, value=%s\n", pszKey, rc, pszValue));
+    {
+        notifyHost(pszName);
+        Log2(("Set string %s, rc=%Rrc, value=%s\n", pszName, rc, pszValue));
+    }
     LogFlowThisFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
 
 /**
- * Remove a value in the guest registry by key, checking the validity
+ * Remove a value in the property registry by name, checking the validity
  * of the arguments passed.
  *
  * @returns iprt status value
@@ -449,23 +540,26 @@ int Service::setKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * @param   paParms the array of HGCM parameters
  * @thread  HGCM
  */
-int Service::delKey(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    char *pszKey;
-    uint32_t cbKey;
+    char *pszName;
+    uint32_t cbName;
 
     LogFlowThisFunc(("\n"));
     if (   (cParms != 1)  /* Hardcoded value as the next lines depend on it. */
-        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* key */
+        || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* name */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
-        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszKey, &cbKey);
+        rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cbName);
     if (RT_SUCCESS(rc))
-        rc = validateKey(pszKey, cbKey);
+        rc = validateName(pszName, cbName);
     if (RT_SUCCESS(rc))
-        CFGMR3RemoveValue(mpValueNode, pszKey);
+    {
+        CFGMR3RemoveValue(mpValueNode, pszName);
+        notifyHost(pszName);
+    }
     LogFlowThisFunc(("rc = %Rrc\n", rc));
     return rc;
 }
@@ -566,7 +660,9 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      * increments of size BLOCK: */
     enum
     {
+        /* Calculate the increment, not yet rounded down */
         BLOCKINCRFULL = (MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 2048),
+        /* And this is the increment after rounding */
         BLOCKINCR = BLOCKINCRFULL - BLOCKINCRFULL % 1024
     };
     int rc = VINF_SUCCESS;
@@ -656,6 +752,101 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     return rc;
 }
 
+/**
+ * Notify the service owner that a property has been added/deleted/changed
+ * @param pszProperty the name of the property which has changed
+ * @note this call allocates memory which the reqNotify request is expected to
+ *       free again, using RTStrFree().
+ *
+ * @thread  HGCM service
+ */
+void Service::notifyHost(const char *pszProperty)
+{
+    char szValue[MAX_VALUE_LEN];
+    uint64_t u64Timestamp = 0;
+    char szFlags[MAX_FLAGS_LEN];
+    char *pszName = NULL, *pszValue = NULL, *pszFlags = NULL;
+
+    if (NULL == mpfnHostCallback)
+        return;  /* Nothing to do. */
+    int rc = CFGMR3QueryString(mpValueNode, pszProperty, szValue,
+                               sizeof(szValue));
+    /*
+     * First case: if the property exists then send the host its current value
+     */
+    if (rc != VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        if (RT_SUCCESS(rc) && (mpTimestampNode != NULL))
+            rc = CFGMR3QueryU64(mpTimestampNode, pszProperty, &u64Timestamp);
+        if (RT_SUCCESS(rc) && (mpFlagsNode != NULL))
+            rc = CFGMR3QueryString(mpFlagsNode, pszProperty, szFlags,
+                                   sizeof(szFlags));
+        if (RT_SUCCESS(rc))
+            rc = RTStrDupEx(&pszName, pszProperty);
+        if (RT_SUCCESS(rc) && (mpTimestampNode != NULL))
+            rc = RTStrDupEx(&pszValue, szValue);
+        if (RT_SUCCESS(rc) && (mpFlagsNode != NULL))
+            rc = RTStrDupEx(&pszFlags, szFlags);
+        if (RT_SUCCESS(rc))
+            rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
+                             (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
+                             mpvHostData, pszName, pszValue, u64Timestamp / 0xffff,
+                             u64Timestamp % 0xffff, pszFlags);
+        if (!RT_SUCCESS(rc)) /* clean up */
+        {
+            RTStrFree(pszName);
+            RTStrFree(pszValue);
+            RTStrFree(pszFlags);
+        }
+    }
+    else
+    /*
+     * Second case: if the property does not exist then send the host an empty
+     * value
+     */
+    {
+        rc = RTStrDupEx(&pszName, pszProperty);
+        if (RT_SUCCESS(rc))
+            rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
+                             (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
+                             mpvHostData, pszName, NULL, 0, 0, NULL);
+    }
+    if (!RT_SUCCESS(rc)) /* clean up if we failed somewhere */
+    {
+        RTStrFree(pszName);
+        RTStrFree(pszValue);
+        RTStrFree(pszFlags);
+    }
+}
+
+/**
+ * Notify the service owner that a property has been added/deleted/changed.
+ * asynchronous part.
+ * @param pszProperty the name of the property which has changed
+ * @note this call allocates memory which the reqNotify request is expected to
+ *       free again, using RTStrFree().
+ *
+ * @thread  request thread
+ */
+int Service::reqNotify(PFNVBOXHGCMCALLBACK pfnCallback, void *pvData,
+                       char *pszName, char *pszValue, uint32_t u32TimeHigh,
+                       uint32_t u32TimeLow, char *pszFlags)
+{
+    HOSTCALLBACKDATA HostCallbackData;
+    HostCallbackData.hdr.u32Magic = VBOXHGCMCALLBACKMAGIC;
+    HostCallbackData.hdr.cbStruct = sizeof(HostCallbackData);
+    HostCallbackData.hdr.pvData   = pvData;
+    HostCallbackData.pcszName     = pszName;
+    HostCallbackData.pcszValue    = pszValue;
+    HostCallbackData.u64Timestamp = u32TimeHigh * 0xffff + u32TimeLow;
+    HostCallbackData.pcszFlags    = pszFlags;
+    pfnCallback(&HostCallbackData.hdr);
+    RTStrFree(pszName);
+    RTStrFree(pszValue);
+    RTStrFree(pszFlags);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Handle an HGCM service call.
@@ -687,19 +878,19 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         /* The guest wishes to set a property */
         case SET_PROP:
             LogFlowFunc(("SET_PROP\n"));
-            rc = setKey(cParms, paParms);
+            rc = setProperty(cParms, paParms);
             break;
 
         /* The guest wishes to set a property value */
         case SET_PROP_VALUE:
             LogFlowFunc(("SET_PROP_VALUE\n"));
-            rc = setKey(cParms, paParms);
+            rc = setProperty(cParms, paParms);
             break;
 
         /* The guest wishes to remove a configuration value */
         case DEL_PROP:
             LogFlowFunc(("DEL_PROP\n"));
-            rc = delKey(cParms, paParms);
+            rc = delProperty(cParms, paParms);
             break;
 
         /* The guest wishes to enumerate all properties */
@@ -734,6 +925,7 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
     {
         /* Set the root CFGM node used.  This should be called when instantiating
          * the service. */
+        /* This whole case is due to go away, so I will not clean it up. */
         case SET_CFGM_NODE:
         {
             LogFlowFunc(("SET_CFGM_NODE\n"));
@@ -779,19 +971,19 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         /* The host wishes to set a configuration value */
         case SET_PROP_HOST:
             LogFlowFunc(("SET_PROP_HOST\n"));
-            rc = setKey(cParms, paParms);
+            rc = setProperty(cParms, paParms);
             break;
 
         /* The host wishes to set a configuration value */
         case SET_PROP_VALUE_HOST:
             LogFlowFunc(("SET_PROP_VALUE_HOST\n"));
-            rc = setKey(cParms, paParms);
+            rc = setProperty(cParms, paParms);
             break;
 
         /* The host wishes to remove a configuration value */
         case DEL_PROP_HOST:
-            LogFlowFunc(("DEL_CONFIG_KEY_HOST\n"));
-            rc = delKey(cParms, paParms);
+            LogFlowFunc(("DEL_PROP_HOST\n"));
+            rc = delProperty(cParms, paParms);
             break;
 
         /* The host wishes to enumerate all properties */
@@ -799,12 +991,43 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
             LogFlowFunc(("ENUM_PROPS\n"));
             rc = enumProps(cParms, paParms);
             break;
+        case REGISTER_CALLBACK:
+            if ((1 != cParms) || (paParms[0].type != VBOX_HGCM_SVC_PARM_CALLBACK))
+                rc = VERR_INVALID_PARAMETER;
+            else
+            {
+                PFNVBOXHGCMCALLBACK pfnCallback = NULL;
+                void *pvData = NULL;
+                rc = VBoxHGCMParmPtrGet (&paParms[0], &pfnCallback, &pvData);
+                mpfnHostCallback = pfnCallback;
+                mpvHostData = pvData;
+            }
+            break;
         default:
             rc = VERR_NOT_SUPPORTED;
             break;
     }
 
     LogFlowFunc(("rc = %Vrc\n", rc));
+    return rc;
+}
+
+int Service::uninit()
+{
+    int rc;
+    unsigned count = 0;
+
+    mfExitThread = true;
+    rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT, (PFNRT)reqVoid, 0);
+    if (RT_SUCCESS(rc))
+        do
+        {
+            rc = RTThreadWait(mReqThread, 1000, NULL);
+            ++count;
+            Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
+        } while ((VERR_TIMEOUT == rc) && (count < 300));
+    if (RT_SUCCESS(rc))
+        RTReqDestroyQueue(mReqQueue);
     return rc;
 }
 
@@ -837,10 +1060,12 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         else
         {
             std::auto_ptr<Service> apService;
+            /* No exceptions may propogate outside. */
             try {
                 apService = std::auto_ptr<Service>(new Service(ptable->pHelpers));
+            } catch (int rcThrown) {
+                rc = rcThrown;
             } catch (...) {
-                /* No exceptions may propogate outside. */
                 rc = VERR_UNRESOLVED_ERROR;
             }
 
