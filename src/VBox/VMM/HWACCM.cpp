@@ -601,11 +601,11 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in 
              * real and protected mode without paging with EPT.
              */
-            pVM->hwaccm.s.vmx.pRealModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
+            pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
             for (unsigned i=0;i<X86_PG_ENTRIES;i++)
             {
-                pVM->hwaccm.s.vmx.pRealModeEPTPageTable->a[i].u = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
-                pVM->hwaccm.s.vmx.pRealModeEPTPageTable->a[i].b.u10PageNo  = _4M * i;
+                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
+                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].b.u10PageNo  = _4M * i;
             }
 
             /* We convert it here every time as pci regions could be reconfigured. */
@@ -613,9 +613,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             AssertRC(rc);            
             LogRel(("HWACCM: Real Mode TSS guest physaddr  = %VGp\n", GCPhys));
 
-            rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeEPTPageTable, &GCPhys);
+            rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
             AssertRC(rc);            
-            LogRel(("HWACCM: Real Mode EPT CR3             = %VGp\n", GCPhys));
+            LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %VGp\n", GCPhys));
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);

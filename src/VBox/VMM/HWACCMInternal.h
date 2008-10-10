@@ -239,8 +239,8 @@ typedef struct HWACCM
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
 
-        /** Virtual address of the identity page table used for real mode emulation in EPT mode. */
-        R3PTRTYPE(PX86PD)           pRealModeEPTPageTable;
+        /** Virtual address of the identity page table used for real mode and protected mode without paging emulation in EPT mode. */
+        R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
 
         /** R0 memory object for the virtual APIC mmio cache. */
         RTR0MEMOBJ                  pMemObjAPIC;
