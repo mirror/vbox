@@ -160,6 +160,7 @@ ifdef VBOX_WITH_QT4GUI
 	VirtualBox.desktop \
 	$(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html) \
  	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
+	$(if $(VBOX_WITH_QT4_SUN),$(notdir accessible/libqtaccessiblewidgets.so),) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
 endif
 
@@ -173,25 +174,18 @@ endif
 # Documentation
 ifdef VBOX_WITH_DOCS_PACKING
  VBOX_LNX_NO_STRIP += \
-	UserManual.pdf
+	UserManual.pdf \
+	VirtualBox.chm
  VBOX_LNX_STRIP_BIN += \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
- ifneq ($(wildcard $(PATH_BIN)/VirtualBox.chm),)
-  # our 64-bit tinderboxes are not able to generate VirtualBox.chm so far
-  # but for building .deb/.rpm packages we use precompiled binaries.
-  VBOX_LNX_NO_STRIP += \
-	VirtualBox.chm
- endif
 endif
 
 # VRDP
 ifdef VBOX_WITH_VRDP
  VBOX_LNX_STRIP_BIN += \
 	VBoxVRDP.so
-
  VBOX_LNX_NO_STRIP += \
 	rdesktop-vrdp.tar.gz
-
  ifdef VBOX_WITH_VRDP_RDESKTOP
   VBOX_LNX_NO_STRIP += \
 	rdesktop-vrdp-keymaps
