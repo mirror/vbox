@@ -483,6 +483,8 @@ typedef struct PDMIOAPIC
     DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 } PDMIOAPIC;
 
+/** Maximum number of PCI busses for a VM. */
+#define PDM_PCI_BUSSES_MAX 8
 
 /**
  * PDM PCI Bus instance.
@@ -823,7 +825,7 @@ typedef struct PDM
     /** List of initialized critical sections. (LIFO) */
     R3PTRTYPE(PPDMCRITSECTINT)      pCritSects;
     /** PCI Buses. */
-    PDMPCIBUS                       aPciBuses[1];
+    PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
     /** The register PIC device. */
     PDMPIC                          Pic;
     /** The registerd APIC device. */
