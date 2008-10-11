@@ -146,6 +146,10 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (VBOX_FAILURE(rc))
         return rc;
 #endif
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePCIBridge);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
 
     return VINF_SUCCESS;
 }

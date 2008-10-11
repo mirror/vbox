@@ -201,7 +201,7 @@ typedef struct PCIDevice
 #ifdef __PCIDEVICEINT_DECLARED__
         PCIDEVICEINT        s;
 #endif
-        char                padding[224];
+        char                padding[256];
     } Int;
 
     /** Read only data.
