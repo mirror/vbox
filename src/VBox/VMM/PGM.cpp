@@ -601,6 +601,9 @@
 #include <iprt/asm.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
+#ifdef DEBUG_bird
+# include <iprt/env.h>
+#endif
 #include <VBox/param.h>
 #include <VBox/err.h>
 
@@ -1827,11 +1830,11 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         AssertRCReturn(rc, rc);
     }
 
-    /* Note that AMD uses all the 8 reserved bits for the address (so 40 bits in total); Intel only goes up to 36 bits, so
-     * we stick to 36 as well.
-     *
-     * @todo How to test for the 40 bits support? Long mode seems to be the test criterium.
+    /*
+     * Note that AMD uses all the 8 reserved bits for the address (so 40 bits in total);
+     * Intel only goes up to 36 bits, so we stick to 36 as well.
      */
+    /** @todo How to test for the 40 bits support? Long mode seems to be the test criterium. */
     uint32_t u32Dummy, u32Features;
     CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
 
@@ -1840,16 +1843,17 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     else
         pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1;
 
-    LogRel(("PGMR3InitFinalize: 4 MB PSE mask %VGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
+    LogRel(("PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
 
     return rc;
 }
 
 
 /**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
+ * Applies relocations to data and code managed by this component.
+ *
+ * This function will be called at init and whenever the VMM need to relocate it
+ * self inside the GC.
  *
  * @param   pVM     The VM.
  * @param   offDelta    Relocation delta relative to old location.
@@ -1931,8 +1935,8 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Physical and virtual handlers.
      */
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3RelocatePhysHandler, &offDelta);
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers, true, pgmR3RelocateVirtHandler, &offDelta);
+    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,     true, pgmR3RelocatePhysHandler,      &offDelta);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers,      true, pgmR3RelocateVirtHandler,      &offDelta);
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &offDelta);
 
     /*
@@ -2305,9 +2309,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         if (pMapping->GCPtr != GCPtr)
         {
             AssertMsg((GCPtr >> X86_PD_SHIFT << X86_PD_SHIFT) == GCPtr, ("GCPtr=%VGv\n", GCPtr));
-#if HC_ARCH_BITS == 64
-LogRel(("Mapping: %VGv -> %VGv %s\n", pMapping->GCPtr, GCPtr, pMapping->pszDesc));
-#endif
             pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr, GCPtr);
         }
         else
@@ -2574,21 +2575,17 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
         if (PdeSrc.n.u1Present)
         {
             if (PdeSrc.b.u1Size && fPSE)
-            {
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %VGp P=%d U=%d RW=%d G=%d - BIG\n",
                                 iPD,
                                 pgmGstGet4MBPhysPage(&pVM->pgm.s, PdeSrc),
                                 PdeSrc.b.u1Present, PdeSrc.b.u1User, PdeSrc.b.u1Write, PdeSrc.b.u1Global && fPGE);
-            }
             else
-            {
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %VGp P=%d U=%d RW=%d [G=%d]\n",
                                 iPD,
                                 PdeSrc.u & X86_PDE_PG_MASK,
                                 PdeSrc.n.u1Present, PdeSrc.n.u1User, PdeSrc.n.u1Write, PdeSrc.b.u1Global && fPGE);
-            }
         }
     }
 }
@@ -2980,10 +2977,6 @@ static void pgmR3ModeDataSwitch(PVM pVM, PGMMODE enmShw, PGMMODE enmGst)
 }
 
 
-#ifdef DEBUG_bird
-#include <stdlib.h> /* getenv() remove me! */
-#endif
-
 /**
  * Calculates the shadow paging mode.
  *
@@ -3029,11 +3022,11 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                     enmShadowMode = PGMMODE_PAE;
                     enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
 #ifdef DEBUG_bird
-if (getenv("VBOX_32BIT"))
-{
-                    enmShadowMode = PGMMODE_32_BIT;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_32;
-}
+                    if (RTEnvExist("VBOX_32BIT"))
+                    {
+                        enmShadowMode = PGMMODE_32_BIT;
+                        enmSwitcher = VMMSWITCHER_PAE_TO_32;
+                    }
 #endif
                     break;
 
@@ -3065,11 +3058,11 @@ if (getenv("VBOX_32BIT"))
                     enmShadowMode = PGMMODE_PAE;
                     enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
 #ifdef DEBUG_bird
-if (getenv("VBOX_32BIT"))
-{
-                    enmShadowMode = PGMMODE_32_BIT;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_32;
-}
+                    if (RTEnvExist("VBOX_32BIT"))
+                    {
+                        enmShadowMode = PGMMODE_32_BIT;
+                        enmSwitcher = VMMSWITCHER_PAE_TO_32;
+                    }
 #endif
                     break;
 
@@ -3157,6 +3150,7 @@ if (getenv("VBOX_32BIT"))
     *penmSwitcher = enmSwitcher;
     return enmShadowMode;
 }
+
 
 /**
  * Performs the actual mode change.
@@ -3267,14 +3261,15 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         }
     }
 
-    /* We must flush the PGM pool cache if the guest mode changes; we don't always
+    /** @todo This is a bug!
+     *
+     * We must flush the PGM pool cache if the guest mode changes; we don't always
      * switch shadow paging mode (e.g. protected->32-bit) and shouldn't reuse
      * the shadow page tables.
      *
      * That only applies when switching between paging and non-paging modes.
-     *
-     * @todo A20 setting
      */
+   /** @todo A20 setting */
     if (   pVM->pgm.s.CTX_SUFF(pPool)
         && !HWACCMIsNestedPagingActive(pVM)
         && PGMMODE_WITH_PAGING(pVM->pgm.s.enmGuestMode) != PGMMODE_WITH_PAGING(enmGuestMode))
@@ -3379,7 +3374,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 
                 VMSetRuntimeError(pVM, true, "PAEmode",
                                   N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. Experimental PAE support can be enabled using the -pae option with VBoxManage"));
-                /* we must return TRUE here otherwise the recompiler will assert */
+                /* we must return VINF_SUCCESS here otherwise the recompiler will assert */
                 return VINF_SUCCESS;
             }
             GCPhysCR3 = CPUMGetGuestCR3(pVM) & X86_CR3_PAE_PAGE_MASK;
@@ -4066,9 +4061,8 @@ VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fL
     return pgmR3DumpHierarchyHC32BitPD(pVM, cr3 & X86_CR3_PAGE_MASK, cr4, cMaxDepth, pHlp);
 }
 
-
-
 #ifdef VBOX_WITH_DEBUGGER
+
 /**
  * The '.pgmram' command.
  *
@@ -4209,7 +4203,8 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
     return VINF_SUCCESS;
 }
-#endif
+#endif /* VBOX_STRICT */
+
 
 /**
  * The '.pgmsyncalways' command.
@@ -4245,7 +4240,7 @@ static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     }
 }
 
-#endif
+#endif /* VBOX_WITH_DEBUGGER */
 
 /**
  * pvUser argument of the pgmR3CheckIntegrity*Node callbacks.
@@ -4437,3 +4432,4 @@ VMMR3DECL(int) PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable)
 
     return VINF_SUCCESS;
 }
+
