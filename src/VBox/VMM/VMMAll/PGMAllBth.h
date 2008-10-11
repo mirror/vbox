@@ -111,10 +111,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, (RTGCUINTPTR)pvFault, &iPDSrc);
 
 #    elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    unsigned     iPDSrc;
-    PX86PML4E    pPml4eSrc;
-    X86PDPE      PdpeSrc;
-    PGSTPD       pPDSrc;
+    unsigned        iPDSrc;
+    PX86PML4E       pPml4eSrc;
+    X86PDPE         PdpeSrc;
+    PGSTPD          pPDSrc;
 
     pPDSrc = pgmGstGetLongModePDPtr(&pVM->pgm.s, pvFault, &pPml4eSrc, &PdpeSrc, &iPDSrc);
     Assert(pPml4eSrc);
@@ -132,14 +132,17 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         return VINF_EM_RAW_GUEST_TRAP;
     }
 #   endif
-#  else
+
+#  else  /* !PGM_WITH_PAGING */
     PGSTPD          pPDSrc = NULL;
     const unsigned  iPDSrc = 0;
-#  endif
+#  endif /* !PGM_WITH_PAGING */
+
 
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDDst = (RTGCUINTPTR)pvFault >> SHW_PD_SHIFT;
     PX86PD          pPDDst = pVM->pgm.s.CTXMID(p,32BitPD);
+
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPDDst = (RTGCUINTPTR)pvFault >> SHW_PD_SHIFT;
     PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0];       /* We treat this as a PD with 2048 entries, so no need to and with SHW_PD_MASK to get iPDDst */
@@ -157,9 +160,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PX86PDPAE       pPDDst;
 #   if PGM_GST_TYPE == PGM_TYPE_PROT
     /* AMD-V nested paging */
-    X86PML4E     Pml4eSrc;
-    X86PDPE      PdpeSrc;
-    PX86PML4E    pPml4eSrc = &Pml4eSrc;
+    X86PML4E        Pml4eSrc;
+    X86PDPE         PdpeSrc;
+    PX86PML4E       pPml4eSrc = &Pml4eSrc;
 
     /* Fake PML4 & PDPT entry; access control handled on the page table level, so allow everything. */
     Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A;
@@ -173,6 +176,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         return rc;
     }
     Assert(pPDDst);
+
 #  elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPDDst = (((RTGCUINTPTR)pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PEPTPD          pPDDst;

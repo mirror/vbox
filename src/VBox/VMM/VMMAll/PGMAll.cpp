@@ -184,163 +184,165 @@ typedef struct PGMHVUSTATE
 /*
  * Shadow - AMD64 mode
  */
-#define PGM_SHW_TYPE                PGM_TYPE_AMD64
-#define PGM_SHW_NAME(name)          PGM_SHW_NAME_AMD64(name)
-#include "PGMAllShw.h"
+# define PGM_SHW_TYPE               PGM_TYPE_AMD64
+# define PGM_SHW_NAME(name)         PGM_SHW_NAME_AMD64(name)
+# include "PGMAllShw.h"
 
 /* Guest - protected mode */
-#define PGM_GST_TYPE                PGM_TYPE_PROT
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_PROT(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PHYS
-#include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_PROT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_PROT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_AMD64_PROT(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_PAE_PT_FOR_PHYS
+# include "PGMAllBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
+# ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
-#define PGM_GST_TYPE                PGM_TYPE_AMD64
-#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_AMD64_AMD64(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-#define BTH_PGMPOOLKIND_PT_FOR_BIG  PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
-#include "PGMAllGst.h"
-#include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_BIG
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#endif
+#  define PGM_GST_TYPE              PGM_TYPE_AMD64
+#  define PGM_GST_NAME(name)        PGM_GST_NAME_AMD64(name)
+#  define PGM_BTH_NAME(name)        PGM_BTH_NAME_AMD64_AMD64(name)
+#  define BTH_PGMPOOLKIND_PT_FOR_PT PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+#  define BTH_PGMPOOLKIND_PT_FOR_BIG PGMPOOLKIND_PAE_PT_FOR_PAE_2MB
+#  include "PGMAllGst.h"
+#  include "PGMAllBth.h"
+#  undef BTH_PGMPOOLKIND_PT_FOR_BIG
+#  undef BTH_PGMPOOLKIND_PT_FOR_PT
+#  undef PGM_BTH_NAME
+#  undef PGM_GST_TYPE
+#  undef PGM_GST_NAME
+# endif /* VBOX_WITH_64_BITS_GUESTS */
 
-#undef PGM_SHW_TYPE
-#undef PGM_SHW_NAME
+# undef PGM_SHW_TYPE
+# undef PGM_SHW_NAME
+
 
 /*
  * Shadow - Nested paging mode
  */
-#define PGM_SHW_TYPE                PGM_TYPE_NESTED
-#define PGM_SHW_NAME(name)          PGM_SHW_NAME_NESTED(name)
-#include "PGMAllShw.h"
+# define PGM_SHW_TYPE               PGM_TYPE_NESTED
+# define PGM_SHW_NAME(name)         PGM_SHW_NAME_NESTED(name)
+# include "PGMAllShw.h"
 
 /* Guest - real mode */
-#define PGM_GST_TYPE                PGM_TYPE_REAL
-#define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_REAL(name)
-#include "PGMAllBth.h"
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_REAL
+# define PGM_GST_NAME(name)         PGM_GST_NAME_REAL(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NESTED_REAL(name)
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
 /* Guest - protected mode */
-#define PGM_GST_TYPE                PGM_TYPE_PROT
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_PROT(name)
-#include "PGMAllBth.h"
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_PROT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_PROT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NESTED_PROT(name)
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
 /* Guest - 32-bit mode */
-#define PGM_GST_TYPE                PGM_TYPE_32BIT
-#define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_32BIT(name)
-#include "PGMAllBth.h"
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_32BIT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_32BIT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NESTED_32BIT(name)
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
 /* Guest - PAE mode */
-#define PGM_GST_TYPE                PGM_TYPE_PAE
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PAE(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_PAE(name)
-#include "PGMAllBth.h"
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_PAE
+# define PGM_GST_NAME(name)         PGM_GST_NAME_PAE(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_NESTED_PAE(name)
+# include "PGMAllBth.h"
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
+# ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
-#define PGM_GST_TYPE                PGM_TYPE_AMD64
-#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_NESTED_AMD64(name)
-#include "PGMAllBth.h"
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#endif
+#  define PGM_GST_TYPE              PGM_TYPE_AMD64
+#  define PGM_GST_NAME(name)        PGM_GST_NAME_AMD64(name)
+#  define PGM_BTH_NAME(name)        PGM_BTH_NAME_NESTED_AMD64(name)
+#  include "PGMAllBth.h"
+#  undef PGM_BTH_NAME
+#  undef PGM_GST_TYPE
+#  undef PGM_GST_NAME
+# endif /* VBOX_WITH_64_BITS_GUESTS */
 
-#undef PGM_SHW_TYPE
-#undef PGM_SHW_NAME
+# undef PGM_SHW_TYPE
+# undef PGM_SHW_NAME
+
 
 /*
  * Shadow - EPT
  */
-#define PGM_SHW_TYPE                PGM_TYPE_EPT
-#define PGM_SHW_NAME(name)          PGM_SHW_NAME_EPT(name)
-#include "PGMAllShw.h"
+# define PGM_SHW_TYPE               PGM_TYPE_EPT
+# define PGM_SHW_NAME(name)         PGM_SHW_NAME_EPT(name)
+# include "PGMAllShw.h"
 
 /* Guest - real mode */
-#define PGM_GST_TYPE                PGM_TYPE_REAL
-#define PGM_GST_NAME(name)          PGM_GST_NAME_REAL(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_REAL(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
-#include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_REAL
+# define PGM_GST_NAME(name)         PGM_GST_NAME_REAL(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_EPT_REAL(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_EPT_PT_FOR_PHYS
+# include "PGMAllBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
 /* Guest - protected mode */
-#define PGM_GST_TYPE                PGM_TYPE_PROT
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PROT(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PROT(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
-#include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_PROT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_PROT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_EPT_PROT(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_EPT_PT_FOR_PHYS
+# include "PGMAllBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
 /* Guest - 32-bit mode */
-#define PGM_GST_TYPE                PGM_TYPE_32BIT
-#define PGM_GST_NAME(name)          PGM_GST_NAME_32BIT(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_32BIT(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
-#include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_32BIT
+# define PGM_GST_NAME(name)         PGM_GST_NAME_32BIT(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_EPT_32BIT(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_EPT_PT_FOR_PHYS
+# include "PGMAllBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
 /* Guest - PAE mode */
-#define PGM_GST_TYPE                PGM_TYPE_PAE
-#define PGM_GST_NAME(name)          PGM_GST_NAME_PAE(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_PAE(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
-#include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
+# define PGM_GST_TYPE               PGM_TYPE_PAE
+# define PGM_GST_NAME(name)         PGM_GST_NAME_PAE(name)
+# define PGM_BTH_NAME(name)         PGM_BTH_NAME_EPT_PAE(name)
+# define BTH_PGMPOOLKIND_PT_FOR_PT  PGMPOOLKIND_EPT_PT_FOR_PHYS
+# include "PGMAllBth.h"
+# undef BTH_PGMPOOLKIND_PT_FOR_PT
+# undef PGM_BTH_NAME
+# undef PGM_GST_TYPE
+# undef PGM_GST_NAME
 
-#ifdef VBOX_WITH_64_BITS_GUESTS
+# ifdef VBOX_WITH_64_BITS_GUESTS
 /* Guest - AMD64 mode */
-#define PGM_GST_TYPE                PGM_TYPE_AMD64
-#define PGM_GST_NAME(name)          PGM_GST_NAME_AMD64(name)
-#define PGM_BTH_NAME(name)          PGM_BTH_NAME_EPT_AMD64(name)
-#define BTH_PGMPOOLKIND_PT_FOR_PT   PGMPOOLKIND_EPT_PT_FOR_PHYS
-#include "PGMAllBth.h"
-#undef BTH_PGMPOOLKIND_PT_FOR_PT
-#undef PGM_BTH_NAME
-#undef PGM_GST_TYPE
-#undef PGM_GST_NAME
-#endif
+#  define PGM_GST_TYPE              PGM_TYPE_AMD64
+#  define PGM_GST_NAME(name)        PGM_GST_NAME_AMD64(name)
+#  define PGM_BTH_NAME(name)        PGM_BTH_NAME_EPT_AMD64(name)
+#  define BTH_PGMPOOLKIND_PT_FOR_PT PGMPOOLKIND_EPT_PT_FOR_PHYS
+#  include "PGMAllBth.h"
+#  undef BTH_PGMPOOLKIND_PT_FOR_PT
+#  undef PGM_BTH_NAME
+#  undef PGM_GST_TYPE
+#  undef PGM_GST_NAME
+# endif /* VBOX_WITH_64_BITS_GUESTS */
 
-#undef PGM_SHW_TYPE
-#undef PGM_SHW_NAME
+# undef PGM_SHW_TYPE
+# undef PGM_SHW_NAME
 
 #endif /* !IN_GC */
 
@@ -643,7 +645,7 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 
     /** @todo merge PGMGCInvalidatePage with this one */
 
-#ifndef IN_RING3
+# ifndef IN_RING3
     /*
      * Notify the recompiler so it can record this instruction.
      * Failure happens when it's out of space. We'll return to HC in that case.
@@ -651,13 +653,13 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
     rc = REMNotifyInvalidatePage(pVM, GCPtrPage);
     if (VBOX_FAILURE(rc))
         return rc;
-#endif
+# endif
 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
     rc = PGM_BTH_PFN(InvalidatePage, pVM)(pVM, GCPtrPage);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
 
-#ifndef IN_RING0
+# ifndef IN_RING0
     /*
      * Check if we have a pending update of the CR3 monitoring.
      */
@@ -669,18 +671,18 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
         Assert(pVM->pgm.s.GCPhysCR3 == pVM->pgm.s.GCPhysGstCR3Monitored);
         rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     }
-#endif
+# endif
 
-#ifdef IN_RING3
+# ifdef IN_RING3
     /*
      * Inform CSAM about the flush
      */
     /** @note this is to check if monitored pages have been changed; when we implement callbacks for virtual handlers, this is no longer required. */
     CSAMR3FlushPage(pVM, GCPtrPage);
-#endif
+# endif
     return rc;
 }
-#endif
+#endif /* !IN_GC */
 
 
 /**
@@ -779,9 +781,11 @@ VMMDECL(int)  PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     return PGM_SHW_PFN(ModifyPage, pVM)(pVM, (RTGCUINTPTR)GCPtr, cb, fFlags, fMask);
 }
 
+
 /**
- * Syncs the SHADOW page directory pointer for the specified address. Allocates
- * backing pages in case the PDPT entry is missing.
+ * Syncs the SHADOW page directory pointer for the specified address.
+ *
+ * Allocates backing pages in case the PDPT entry is missing.
  *
  * @returns VBox status.
  * @param   pVM         VM handle.
@@ -832,6 +836,7 @@ VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, P
     return VINF_SUCCESS;
 }
 
+
 /**
  * Gets the SHADOW page directory pointer for the specified address.
  *
@@ -863,6 +868,7 @@ VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX8
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
 }
+
 
 #ifndef IN_GC
 /**
