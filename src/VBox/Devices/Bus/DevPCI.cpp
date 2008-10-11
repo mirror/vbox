@@ -79,9 +79,7 @@ typedef struct PCIBus
     /** Start device number. */
     int32_t             iDevSearch;
 
-#if HC_ARCH_BITS == 64
     uint32_t            Alignment0[2];
-#endif
 
     /** Array of PCI devices. */
     R3PTRTYPE(PPCIDEVICE) devices[256];
