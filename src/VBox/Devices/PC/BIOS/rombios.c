@@ -9769,7 +9769,7 @@ pci_pro_f02: ;; find pci device
   jne pci_pro_f03
   shl ecx, #16
   mov cx, dx
-  xor bx, bx
+  xor ebx, ebx
   mov di, #0x00
 pci_pro_devloop:
   call pci_pro_select_reg
@@ -9781,15 +9781,15 @@ pci_pro_devloop:
   je  pci_pro_ok
   dec si
 pci_pro_nextdev:
-  inc bx
-  cmp bx, #0x0100
+  inc ebx
+  cmp ebx, #0x10000
   jne pci_pro_devloop
   mov ah, #0x86
   jmp pci_pro_fail
 pci_pro_f03: ;; find class code
   cmp al, #0x03
   jne pci_pro_f08
-  xor bx, bx
+  xor ebx, ebx
   mov di, #0x08
 pci_pro_devloop2:
   call pci_pro_select_reg
@@ -9802,8 +9802,8 @@ pci_pro_devloop2:
   je  pci_pro_ok
   dec si
 pci_pro_nextdev2:
-  inc bx
-  cmp bx, #0x0100
+  inc ebx
+  cmp ebx, #0x10000
   jne pci_pro_devloop2
   mov ah, #0x86
   jmp pci_pro_fail
@@ -9953,7 +9953,7 @@ pci_real_f02: ;; find pci device
   jne pci_real_f03
   shl ecx, #16
   mov cx, dx
-  xor bx, bx
+  xor ebx, ebx
   mov di, #0x00
 pci_real_devloop:
   call pci_real_select_reg
@@ -9965,8 +9965,8 @@ pci_real_devloop:
   je  pci_real_ok
   dec si
 pci_real_nextdev:
-  inc bx
-  cmp bx, #0x0100
+  inc ebx
+  cmp ebx, #0x10000
   jne pci_real_devloop
   mov dx, cx
   shr ecx, #16
@@ -9975,7 +9975,7 @@ pci_real_nextdev:
 pci_real_f03: ;; find class code
   cmp al, #0x03
   jne pci_real_f08
-  xor bx, bx
+  xor ebx, ebx
   mov di, #0x08
 pci_real_devloop2:
   call pci_real_select_reg
@@ -9988,8 +9988,8 @@ pci_real_devloop2:
   je  pci_real_ok
   dec si
 pci_real_nextdev2:
-  inc bx
-  cmp bx, #0x0100
+  inc ebx
+  cmp ebx, #0x10000
   jne pci_real_devloop2
   mov dx, cx
   shr ecx, #16
