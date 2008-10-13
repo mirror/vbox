@@ -551,6 +551,28 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExNestedPagingEnabled)(BOOL *enabl
 }
 
 /**
+ * Returns the current VPID flag.
+ *
+ * @returns COM status code
+ * @param   enabled address of result variable
+ */
+STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExVPIDEnabled)(BOOL *enabled)
+{
+    if (!enabled)
+        return E_POINTER;
+
+    AutoWriteLock alock (this);
+    CHECK_READY();
+
+    Console::SafeVMPtrQuiet pVM (mParent);
+    if (pVM.isOk())
+        *enabled = HWACCMR3IsVPIDActive(pVM.raw());
+    else
+        *enabled = false;
+    return S_OK;
+}
+
+/**
  * Returns the current PAE flag.
  *
  * @returns COM status code

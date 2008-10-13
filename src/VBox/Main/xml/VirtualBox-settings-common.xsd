@@ -416,6 +416,10 @@
   <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
+<xsd:complexType name="THWVirtExVPIDType">
+  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+</xsd:complexType>
+
 <xsd:complexType name="TPAEType">
   <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
 </xsd:complexType>
@@ -424,6 +428,7 @@
   <xsd:sequence>
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/>
+    <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
   </xsd:sequence>
 </xsd:complexType>

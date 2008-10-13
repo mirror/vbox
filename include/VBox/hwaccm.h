@@ -110,6 +110,8 @@ VMMR3DECL(bool) HWACCMR3IsActive(PVM pVM);
 VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM);
 VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM);
 VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode);
+VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM);
+
 /** @} */
 #endif /* IN_RING3 */
 

@@ -254,6 +254,7 @@ public:
         ULONG          mMonitorCount;
         TSBool_T       mHWVirtExEnabled;
         BOOL           mHWVirtExNestedPagingEnabled;
+        BOOL           mHWVirtExVPIDEnabled;
         BOOL           mPAEEnabled;
 
         DeviceType_T   mBootOrder [SchemaDefs::MaxBootPosition];
@@ -488,6 +489,8 @@ public:
     STDMETHOD(COMSETTER(HWVirtExEnabled))(TSBool_T enabled);
     STDMETHOD(COMGETTER(HWVirtExNestedPagingEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(HWVirtExNestedPagingEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(HWVirtExVPIDEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(HWVirtExVPIDEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(PAEEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(PAEEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
