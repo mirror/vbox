@@ -22,9 +22,16 @@ echo "This script will unload the VirtualBox kernel module..."
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    # stop and unregister webservice daemon
+    # stop and unregister webservice SMF
     /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
     /usr/sbin/svccfg delete svc:/application/virtualbox/webservice:default
+
+    # stop and unregister zoneaccess SMF (if present)
+    zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess"`
+    if test ! -z "$zoneaccessfound"; then
+        /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
+        /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess
+    fi
 
     # vboxdrv.sh would've been installed, we just need to call it.
     /opt/VirtualBox/vboxdrv.sh stopall
