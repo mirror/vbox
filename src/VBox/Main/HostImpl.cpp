@@ -118,9 +118,15 @@ extern "C" char *getfullrawname(char *);
 # include <iprt/ctype.h>
 #endif
 
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+# include <Netcfgn.h>
+#endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
+
 #include <stdio.h>
 
 #include <algorithm>
+
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -672,6 +678,360 @@ static bool vboxSolarisSameNIC(ComObjPtr <HostNetworkInterface> Iface1, ComObjPt
 
 #endif
 
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+# define VBOX_APP_NAME L"VirtualBox"
+# define VBOX_NETCFG_LOCK_TIME_OUT     5000
+
+/*
+* Release reference
+*/
+static VOID vboxNetCfgWinReleaseRef (IN IUnknown* punk)
+{
+    if(punk)
+    {
+        punk->Release();
+    }
+
+    return;
+}
+
+/*
+* Get a reference to INetCfg.
+*
+*    fGetWriteLock  [in]  If TRUE, Write lock.requested.
+*    lpszAppName    [in]  Application name requesting the reference.
+*    ppnc           [out] Reference to INetCfg.
+*    lpszLockedBy   [in]  Optional. Application who holds the write lock.
+*
+* Returns:   S_OK on sucess, otherwise an error code.
+*/
+static HRESULT vboxNetCfgWinQueryINetCfg (IN BOOL fGetWriteLock,
+                    IN LPCWSTR lpszAppName,
+                    OUT INetCfg** ppnc,
+                    OUT LPWSTR *lpszLockedBy)
+{
+    INetCfg      *pnc = NULL;
+    INetCfgLock  *pncLock = NULL;
+    HRESULT      hr = S_OK;
+
+    /*
+    * Initialize the output parameters.
+    */
+    *ppnc = NULL;
+
+    if ( lpszLockedBy )
+    {
+        *lpszLockedBy = NULL;
+    }
+    /*
+    * Create the object implementing INetCfg.
+    */
+    hr = CoCreateInstance( CLSID_CNetCfg,
+                            NULL, CLSCTX_INPROC_SERVER,
+                            IID_INetCfg,
+                            (void**)&pnc );
+    if ( hr == S_OK )
+    {
+
+        if ( fGetWriteLock )
+        {
+
+            /*
+            * Get the locking reference
+            */
+            hr = pnc->QueryInterface( IID_INetCfgLock,
+                                        (LPVOID *)&pncLock );
+            if ( hr == S_OK )
+            {
+                /*
+                * Attempt to lock the INetCfg for read/write
+                */
+                hr = pncLock->AcquireWriteLock( VBOX_NETCFG_LOCK_TIME_OUT,
+                                                    lpszAppName,
+                                                    lpszLockedBy);
+                if (hr == S_FALSE )
+                {
+                    hr = NETCFG_E_NO_WRITE_LOCK;
+                }
+            }
+        }
+
+        if ( hr == S_OK )
+        {
+            /*
+            * Initialize the INetCfg object.
+            */
+            hr = pnc->Initialize( NULL );
+
+            if ( hr == S_OK )
+            {
+                *ppnc = pnc;
+                pnc->AddRef();
+            }
+            else
+            {
+                /*
+                * Initialize failed, if obtained lock, release it
+                */
+                if ( pncLock )
+                {
+                    pncLock->ReleaseWriteLock();
+                }
+            }
+        }
+
+        vboxNetCfgWinReleaseRef( pncLock );
+        vboxNetCfgWinReleaseRef( pnc );
+    }
+
+    return hr;
+}
+
+/*
+* Get a reference to INetCfg.
+*
+*    pnc           [in] Reference to INetCfg to release.
+*    fHasWriteLock [in] If TRUE, reference was held with write lock.
+*
+* Returns:   S_OK on sucess, otherwise an error code.
+*
+*/
+static HRESULT vboxNetCfgWinReleaseINetCfg (IN INetCfg* pnc,
+                        IN BOOL fHasWriteLock)
+{
+    INetCfgLock    *pncLock = NULL;
+    HRESULT        hr = S_OK;
+
+    /*
+    * Uninitialize INetCfg
+    */
+    hr = pnc->Uninitialize();
+
+    /*
+    * If write lock is present, unlock it
+    */
+    if ( hr == S_OK && fHasWriteLock )
+    {
+
+        /*
+        * Get the locking reference
+        */
+        hr = pnc->QueryInterface( IID_INetCfgLock,
+                                (LPVOID *)&pncLock);
+        if ( hr == S_OK )
+        {
+        hr = pncLock->ReleaseWriteLock();
+        vboxNetCfgWinReleaseRef( pncLock );
+        }
+    }
+
+    vboxNetCfgWinReleaseRef( pnc );
+
+    return hr;
+}
+
+static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc)
+{
+    LPWSTR              lpszName;
+    GUID                lpszIfGuid;
+    HRESULT hr;
+    int rc = VERR_GENERAL_FAILURE;
+
+    hr = pncc->GetDisplayName( &lpszName );
+    if(hr == S_OK)
+    {
+        size_t cUnicodeName = wcslen(lpszName) + 1;
+        size_t cbAnsiName = cUnicodeName * 2;
+        char * pAnsiName = (char *)alloca(cbAnsiName);
+        if(pAnsiName)
+        {
+            if(WideCharToMultiByte(CP_ACP, 0, lpszName, cUnicodeName, pAnsiName,
+                    cbAnsiName, NULL, NULL))
+            {
+                hr = pncc->GetInstanceGuid(&lpszIfGuid);
+                if (hr == S_OK)
+                {
+                    /* create a new object and add it to the list */
+                    ComObjPtr <HostNetworkInterface> iface;
+                    iface.createObject();
+                    /* remove the curly bracket at the end */
+                    if (SUCCEEDED (iface->init (pAnsiName, Guid (lpszIfGuid))))
+                    {
+                        pPist->push_back (iface);
+                        rc = VINF_SUCCESS;
+                    }
+                }
+            }
+        }
+        CoTaskMemFree(lpszName);
+    }
+
+    return rc;
+}
+
+/*
+ * Get network component's binding path enumerator reference.
+ *
+ * Arguments:
+ *    pncc           [in]  Network component reference.
+ *    dwBindingType  [in]  EBP_ABOVE or EBP_BELOW.
+ *    ppencbp        [out] Enumerator reference.
+ *
+ * Returns:   S_OK on sucess, otherwise an error code.
+ */
+
+static HRESULT vboxNetCfgWinGetBindingPathEnum (IN INetCfgComponent *pncc,
+                              IN DWORD dwBindingType,
+                              OUT IEnumNetCfgBindingPath **ppencbp)
+{
+    INetCfgComponentBindings *pnccb = NULL;
+    HRESULT                  hr;
+
+    *ppencbp = NULL;
+
+    /* Get component's binding. */
+    hr = pncc->QueryInterface( IID_INetCfgComponentBindings,
+                               (PVOID *)&pnccb );
+
+    if ( hr == S_OK )
+    {
+
+        /* Get binding path enumerator reference. */
+        hr = pnccb->EnumBindingPaths( dwBindingType,
+                                      ppencbp );
+
+        vboxNetCfgWinReleaseRef( pnccb );
+    }
+
+    return hr;
+}
+
+/*
+ * Enumerates the first binding path.
+ *
+ * Arguments:
+ *    pencc      [in]  Binding path enumerator reference.
+ *    ppncc      [out] Binding path reference.
+ *
+ * Returns:   S_OK on sucess, otherwise an error code.
+ */
+static HRESULT vboxNetCfgWinGetFirstBindingPath (IN IEnumNetCfgBindingPath *pencbp,
+                               OUT INetCfgBindingPath **ppncbp)
+{
+    ULONG   ulCount;
+    HRESULT hr;
+
+    *ppncbp = NULL;
+
+    pencbp->Reset();
+
+    hr = pencbp->Next( 1,
+                       ppncbp,
+                       &ulCount );
+
+    return hr;
+}
+
+/*
+ * Get binding interface enumerator reference.
+ *
+ * Arguments:
+ *    pncbp          [in]  Binding path reference.
+ *    ppencbp        [out] Enumerator reference.
+ *
+ * Returns:   S_OK on sucess, otherwise an error code.
+ */
+static HRESULT vboxNetCfgWinGetBindingInterfaceEnum (IN INetCfgBindingPath *pncbp,
+                                   OUT IEnumNetCfgBindingInterface **ppencbi)
+{
+    HRESULT hr;
+
+    *ppencbi = NULL;
+
+    hr = pncbp->EnumBindingInterfaces( ppencbi );
+
+    return hr;
+}
+
+/* Enumerates the first binding interface.
+ *
+ * Arguments:
+ *    pencbi      [in]  Binding interface enumerator reference.
+ *    ppncbi      [out] Binding interface reference.
+ *
+ * Returns:   S_OK on sucess, otherwise an error code.
+ */
+static HRESULT vboxNetCfgWinGetFirstBindingInterface (IN IEnumNetCfgBindingInterface *pencbi,
+                                    OUT INetCfgBindingInterface **ppncbi)
+{
+    ULONG   ulCount;
+    HRESULT hr;
+
+    *ppncbi = NULL;
+
+    pencbi->Reset();
+
+    hr = pencbi->Next( 1,
+                       ppncbi,
+                       &ulCount );
+
+    return hr;
+}
+
+/*
+ * Enumerate the next binding interface.
+ *
+ * The function behaves just like vboxNetCfgWinGetFirstBindingInterface if
+ * it is called right after vboxNetCfgWinGetBindingInterfaceEnum.
+ *
+ * Arguments:
+ *    pencbi      [in]  Binding interface enumerator reference.
+ *    ppncbi      [out] Binding interface reference.
+ *
+ * Returns:   S_OK on sucess, otherwise an error code.
+ */
+static HRESULT vboxNetCfgWinGetNextBindingInterface (IN IEnumNetCfgBindingInterface *pencbi,
+                                   OUT INetCfgBindingInterface **ppncbi)
+{
+    ULONG   ulCount;
+    HRESULT hr;
+
+    *ppncbi = NULL;
+
+    hr = pencbi->Next( 1,
+                       ppncbi,
+                       &ulCount );
+
+    return hr;
+}
+
+/* Enumerate the next binding path.
+ * The function behaves just like vboxNetCfgWinGetFirstBindingPath if
+ * it is called right after vboxNetCfgWinGetBindingPathEnum.
+ *
+ * Arguments:
+ *    pencbp      [in]  Binding path enumerator reference.
+ *    ppncbp      [out] Binding path reference.
+ *
+ * Returns:   S_OK on sucess, otherwise an error code.
+ */
+static HRESULT vboxNetCfgWinGetNextBindingPath (IN IEnumNetCfgBindingPath *pencbp,
+                              OUT INetCfgBindingPath **ppncbp)
+{
+    ULONG   ulCount;
+    HRESULT hr;
+
+    *ppncbp = NULL;
+
+    hr = pencbp->Next( 1,
+                       ppncbp,
+                       &ulCount );
+
+    return hr;
+}
+
+#endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
+
 /**
  * Returns a list of host network interfaces.
  *
@@ -784,7 +1144,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                         char szNICDesc[LIFNAMSIZ + 256];
                         char *pszIface = Ifaces[i].lifr_name;
                         strcpy(szNICDesc, pszIface);
-                        
+
                         vboxSolarisAddLinkHostIface(pszIface, &list);
                     }
                 }
@@ -795,6 +1155,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 #endif
 
 # elif defined RT_OS_WINDOWS
+#  ifndef VBOX_WITH_NETFLT
     static const char *NetworkKey = "SYSTEM\\CurrentControlSet\\Control\\Network\\"
                                     "{4D36E972-E325-11CE-BFC1-08002BE10318}";
     HKEY hCtrlNet;
@@ -850,6 +1211,65 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         }
     }
     RegCloseKey (hCtrlNet);
+#  else /* #  if defined VBOX_WITH_NETFLT */
+    INetCfg              *pNc;
+    INetCfgComponent     *pMpNcc;
+    INetCfgComponent     *pTcpIpNcc;
+    LPWSTR               lpszApp;
+    HRESULT              hr;
+    IEnumNetCfgBindingPath      *pEnumBp;
+    INetCfgBindingPath          *pBp;
+    IEnumNetCfgBindingInterface *pEnumBi;
+    INetCfgBindingInterface *pBi;
+
+    /* we are using the INetCfg API for getting the list of miniports */
+    hr = vboxNetCfgWinQueryINetCfg( FALSE,
+                       VBOX_APP_NAME,
+                       &pNc,
+                       &lpszApp );
+    if(hr == S_OK)
+    {
+        /* for now we just get all miniports the MS_TCPIP protocol binds to */
+        hr = pNc->FindComponent(L"MS_TCPIP", &pTcpIpNcc);
+        if(hr == S_OK)
+        {
+            hr = vboxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
+            if ( hr == S_OK )
+            {
+                hr = vboxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
+                while( hr == S_OK )
+                {
+                    hr = vboxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
+                    if ( hr == S_OK )
+                    {
+                        hr = vboxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
+                        while(hr == S_OK)
+                        {
+                            hr = pBi->GetLowerComponent( &pMpNcc );
+                            if(hr == S_OK)
+                            {
+                                vboxNetWinAddComponent(&list, pMpNcc);
+                                vboxNetCfgWinReleaseRef( pMpNcc );
+                            }
+                            vboxNetCfgWinReleaseRef(pBi);
+
+                            hr = vboxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
+                        }
+                        vboxNetCfgWinReleaseRef(pEnumBi);
+                    }
+                    vboxNetCfgWinReleaseRef(pBp);
+
+                    hr = vboxNetCfgWinGetNextBindingPath(pEnumBp, &pBp);
+                }
+                vboxNetCfgWinReleaseRef(pEnumBp);
+            }
+            vboxNetCfgWinReleaseRef(pTcpIpNcc);
+        }
+        vboxNetCfgWinReleaseINetCfg(pNc, FALSE);
+    }
+#  endif /* #  if defined VBOX_WITH_NETFLT */
+
+
 # endif /* RT_OS_WINDOWS */
 
     ComObjPtr <HostNetworkInterfaceCollection> collection;

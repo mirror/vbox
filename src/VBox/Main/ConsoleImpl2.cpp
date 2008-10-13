@@ -1211,7 +1211,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 # endif
                     }
 
-#elif defined(VBOX_WITH_NETFLT) && !defined(RT_OS_WINDOWS) /** @todo merge in the windows stuff too */
+#elif defined(VBOX_WITH_NETFLT)
                     /*
                      * This is the new VBoxNetFlt+IntNet stuff.
                      */
@@ -1258,6 +1258,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     if (pszSpace)
                         *pszSpace = '\0';
                     const char *pszTrunk = szTrunk;
+# elif defined(RT_OS_WINDOWS)
+                    ComPtr<IHostNetworkInterfaceCollection> coll;
+                    hrc = host->COMGETTER(NetworkInterfaces)(coll.asOutParam());    H();
+                    ComPtr<IHostNetworkInterface> hostInterface;
+                    rc = coll->FindByName(HifName, hostInterface.asOutParam());
+                    if (!SUCCEEDED(rc))
+                    {
+                        return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                          N_("Inexistent host networking interface, name '%ls'"),
+                                          HifName.raw());
+                    }
+                    const char *pszTrunk = pszHifName;
 # else
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
