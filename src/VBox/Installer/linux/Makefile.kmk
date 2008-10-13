@@ -174,8 +174,8 @@ endif
 # Documentation
 ifdef VBOX_WITH_DOCS_PACKING
  VBOX_LNX_NO_STRIP += \
-	UserManual.pdf \
-	VirtualBox.chm
+	$(notdir $(wildcard $(PATH_BIN)/UserManual*.pdf)) \
+	$(notdir $(wildcard $(PATH_BIN)/VirtualBox*.chm))
  VBOX_LNX_STRIP_BIN += \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
 endif
