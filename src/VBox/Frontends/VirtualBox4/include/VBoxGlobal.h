@@ -515,6 +515,7 @@ public:
     /* VirtualBox helpers */
 
 #if defined(Q_WS_X11) && !defined(VBOX_OSE)
+    double findLicenseFile (const QStringList &aFilesList, QRegExp aPattern, QString &aLicenseFile) const;
     bool showVirtualBoxLicense();
 #endif
 
