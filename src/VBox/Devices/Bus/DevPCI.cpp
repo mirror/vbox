@@ -481,8 +481,11 @@ static void pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, in
     config_addr = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
     if (iBus != 0)
     {
+        /** @todo r=bird: Guess you should cache the pci-bridges instead of searching
+         *        the full array, that way we don't need to make assumptions about
+         *        multi function devices. */
         /*
-         * Search for a fitting bridge. Becuase we don't support multi function devices at the moment
+         * Search for a fitting bridge. Because we don't support multi function devices at the moment
          * we only search all devices with function 0 to speed things up.
          * If no bridge is found the write will be ignored.
          */
@@ -534,7 +537,7 @@ static uint32_t pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len)
     if (iBus != 0)
     {
         /*
-         * Search for a fitting bridge. Becuase we don't support multi function devices at the moment
+         * Search for a fitting bridge. Because we don't support multi function devices at the moment
          * we only search all devices with function 0 to speed things up.
          * If no bridge is found the read will be ignored.
          */
@@ -635,7 +638,7 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, int i
     }
 }
 
-static inline int get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
+DECLINLINE(int) get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
 {
     return (pGlobals->pci_irq_levels[irq_num] != 0);
 }
@@ -1841,7 +1844,7 @@ const PDMDEVREG g_DevicePCI =
     /* pszDescription */
     "i440FX PCI bridge and PIIX3 ISA bridge.",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_BUS_PCI | PDM_DEVREG_CLASS_BUS_ISA,
     /* cMaxInstances */
@@ -1928,7 +1931,7 @@ static void pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDe
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
     {
         /*
-         * Search for a fitting bridge. Becuase we don't support multi function devices at the moment
+         * Search for a fitting bridge. Because we don't support multi function devices at the moment
          * we only search all devices with function 0 to speed things up.
          * If no bridge is found the write will be ignored.
          */
@@ -2304,7 +2307,7 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
         return rc;
 
     pBus->iDevSearch = 0;
-    /* 
+    /*
      * The iBus property doesn't really represent the bus number
      * because the guest and the BIOS can choose different bus numbers
      * for them.
@@ -2336,14 +2339,14 @@ const PDMDEVREG g_DevicePCIBridge =
     PDM_DEVREG_VERSION,
     /* szDeviceName */
     "pcibridge",
-    /* szGCMod */
+    /* szRCMod */
     "VBoxDDGC.gc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
     "82801 Mobile PCI to PCI bridge",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32 | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_BUS_PCI,
     /* cMaxInstances */
