@@ -40,7 +40,7 @@
 
 #include "../Builtins.h"
 
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) && !defined(VBOX_NETFLT_ONDEMAND_BIND)
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
 # include "win/DrvIntNet-win.h"
 #endif
 
@@ -924,35 +924,20 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return rc;
     }
 # endif
-    /* Temporary hack: attach to a network with the name 'if=en0' and you're hitting the wire. */
-    if (    !OpenReq.szTrunk[0]
-        &&   OpenReq.enmTrunkType == kIntNetTrunkType_None
-        &&  !strncmp(pThis->szNetwork, "if=en", sizeof("if=en") - 1)
-        &&  RT_C_IS_DIGIT(pThis->szNetwork[sizeof("if=en") - 1])
-        &&  !pThis->szNetwork[sizeof("if=en")])
-    {
-        OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
-        strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("if=") - 1]);
-    }
-    /* Temporary hack: attach to a network with the name 'wif=en0' and you're on the air. */
-    if (    !OpenReq.szTrunk[0]
-        &&   OpenReq.enmTrunkType == kIntNetTrunkType_None
-        &&  !strncmp(pThis->szNetwork, "wif=en", sizeof("wif=en") - 1)
-        &&  RT_C_IS_DIGIT(pThis->szNetwork[sizeof("wif=en") - 1])
-        &&  !pThis->szNetwork[sizeof("wif=en")])
-    {
-        OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
-        OpenReq.fFlags |= INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE;
-        strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("wif=") - 1]);
-    }
 
-    //TODO: temporary hack, remove this
-    if (OpenReq.enmTrunkType == kIntNetTrunkType_None)
+    if(OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
     {
-        OpenReq.enmTrunkType = kIntNetTrunkType_NetFlt;
-        strcpy(OpenReq.szTrunk, &pThis->szNetwork[sizeof("if=") - 1]);
-    }
+        char szBindName[INTNET_MAX_TRUNK_NAME];
+        size_t cBindName = INTNET_MAX_TRUNK_NAME;
 
+        rc = drvIntNetWinIfNameToBindName(OpenReq.szTrunk, szBindName, cBindName);
+        if (RT_FAILURE(rc))
+        {
+            return rc;
+        }
+
+        strcpy(OpenReq.szTrunk, szBindName);
+    }
 #endif
 
     /*
