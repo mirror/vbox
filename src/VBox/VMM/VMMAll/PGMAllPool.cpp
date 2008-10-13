@@ -2486,6 +2486,32 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
             break;
         }
 
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
+        {
+            const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
+            PEPTPT          pPT = (PEPTPT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
+            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
+                if ((pPT->a[i].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
+                {
+                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", i, pPT->a[i], cRefs));
+                    pPT->a[i].u = 0;
+                    cRefs--;
+                    if (!cRefs)
+                        return;
+                }
+#if defined(DEBUG) && !defined(IN_RING0) ///@todo RTLogPrintf is missing in R0.
+            RTLogPrintf("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent);
+            for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
+                if ((pPT->a[i].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
+                {
+                    RTLogPrintf("i=%d cRefs=%d\n", i, cRefs--);
+                    pPT->a[i].u = 0;
+                }
+#endif
+            AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
+            break;
+        }
+
         default:
             AssertFatalMsgFailed(("enmKind=%d iShw=%d\n", pPage->enmKind, iShw));
     }
