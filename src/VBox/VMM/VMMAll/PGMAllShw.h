@@ -134,7 +134,7 @@ __END_DECLS
  */
 PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
-#if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
+#if PGM_SHW_TYPE == PGM_TYPE_NESTED
     return VERR_PAGE_TABLE_NOT_PRESENT;
 
 #else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
@@ -180,7 +180,19 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
     const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
     X86PDEPAE      Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
+# elif PGM_SHW_TYPE == PGM_TYPE_EPT
+    const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    PEPTPD          pPDDst;
+    EPTPDE          Pde;
 
+    int rc = PGMShwGetEPTPDPtr(pVM, GCPtr, NULL, &pPDDst);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertRC(rc);
+        return rc;
+    }
+    Assert(pPDDst);
+    Pde = pPDDst->a[iPd];
 # else /* PGM_TYPE_32BIT */
     const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
     X86PDE Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
@@ -202,7 +214,8 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     }
     else /* mapping: */
     {
-# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+# if    PGM_SHW_TYPE == PGM_TYPE_AMD64 \
+     || PGM_SHW_TYPE == PGM_TYPE_EPT
         AssertFailed(); /* can't happen */
 # else
         Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
@@ -241,7 +254,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
         *pHCPhys = Pte.u & SHW_PTE_PG_MASK;
 
     return VINF_SUCCESS;
-#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
+#endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
 }
 
 
@@ -261,7 +274,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
  */
 PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
-# if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
+# if PGM_SHW_TYPE == PGM_TYPE_NESTED
     return VERR_PAGE_TABLE_NOT_PRESENT;
 
 # else /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
@@ -306,6 +319,19 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
         X86PDEPAE Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
 
+# elif PGM_SHW_TYPE == PGM_TYPE_EPT
+        const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
+        PEPTPD          pPDDst;
+        EPTPDE          Pde;
+
+        rc = PGMShwGetEPTPDPtr(pVM, GCPtr, NULL, &pPDDst);
+        if (rc != VINF_SUCCESS)
+        {
+            AssertRC(rc);
+            return rc;
+        }
+        Assert(pPDDst);
+        Pde = pPDDst->a[iPd];
 # else /* PGM_TYPE_32BIT */
         const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
         X86PDE Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
@@ -328,7 +354,11 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
             {
                 pPT->a[iPTE].u = (pPT->a[iPTE].u & (fMask | SHW_PTE_PG_MASK)) | (fFlags & ~SHW_PTE_PG_MASK);
                 Assert(pPT->a[iPTE].n.u1Present);
+# if PGM_SHW_TYPE == PGM_TYPE_EPT
+                HWACCMInvalidatePhysPage(pVM, (RTGCPHYS)GCPtr);
+# else
                 PGM_INVL_PG(GCPtr);
+# endif
             }
 
             /* next page */
@@ -339,6 +369,6 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
             iPTE++;
         }
     }
-# endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
+# endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED */
 }
 

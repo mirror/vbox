@@ -234,7 +234,7 @@ typedef struct EPTPDE2MBITS
     /** Ignore PAT memory type */
     uint64_t    u1IgnorePAT     : 1;
     /** Big page (must be 1 here). */
-    uint64_t    u1Big           : 1;
+    uint64_t    u1Size          : 1;
     /** Available for software. */
     uint64_t    u4Available     : 4;
     /** Reserved (must be 0). */
