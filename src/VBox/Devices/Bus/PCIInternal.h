@@ -85,19 +85,14 @@ typedef struct PCIDEVICEINT
     R0PTRTYPE(struct PCIBus *)      pBusR0;
     /** Pointer to the PCI bus of the device. - RC ptr */
     RCPTRTYPE(struct PCIBus *)      pBusRC;
-
 #if HC_ARCH_BITS == 64
-    uint32_t                        Alignment0;
+    RTRCPTR                         Alignment0;
 #endif
 
     /** Read config callback. */
     R3PTRTYPE(PFNPCICONFIGREAD)     pfnConfigRead;
     /** Write config callback. */
     R3PTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment1;
-#endif
 
     /** Set if the specific device fun was requested by PDM.
      * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
@@ -106,10 +101,6 @@ typedef struct PCIDEVICEINT
     bool                            fPciToPciBridge;
     /** Current state of the IRQ pin of the device. */
     int32_t                         uIrqPinState;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment2;
-#endif
 
     /** Read config callback for PCI bridges to pass requests
      *  to devices on another bus.
