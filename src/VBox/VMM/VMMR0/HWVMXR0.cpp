@@ -2281,11 +2281,12 @@ ResumeExecution:
         rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
         AssertRC(rc);
 #else
+        uint32_t val_hi;
         rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &val);
         AssertRC(rc);
-        GCPhys = val;
-        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_HIGH, &val);
-        GCPhys |= (val << 32ULL);      
+        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_HIGH, &val_hi);
+        AssertRC(rc);
+        GCPhys = RT_MAKE_U64(val, val_hi);
 #endif
 
         Assert(((exitQualification >> 7) & 3) != 2);
