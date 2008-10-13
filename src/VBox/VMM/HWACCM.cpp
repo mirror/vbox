@@ -196,6 +196,10 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnableNestedPaging", &pVM->hwaccm.s.fAllowNestedPaging, false);
     AssertRC(rc);
 
+    /* VT-x VPID: disabled by default. */
+    rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnableVPID", &pVM->hwaccm.s.fAllowVPID, false);
+    AssertRC(rc);
+
     /* HWACCM support must be explicitely enabled in the configuration file. */
     rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "HWVirtExt/"), "Enabled", &pVM->hwaccm.s.fAllowed, false);
     AssertRC(rc);
@@ -575,9 +579,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 pVM->hwaccm.s.fNestedPaging = pVM->hwaccm.s.fAllowNestedPaging;
 #endif /* HWACCM_VTX_WITH_EPT */
 #ifdef HWACCM_VTX_WITH_VPID
-            else
-            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
-                pVM->hwaccm.s.vmx.fVPID = true;
+            if (    (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
+                &&  !pVM->hwaccm.s.fNestedPaging)    /* VPID and EPT are mutually exclusive. */
+                pVM->hwaccm.s.vmx.fVPID = pVM->hwaccm.s.fAllowVPID;
 #endif /* HWACCM_VTX_WITH_VPID */
 
             /* Only try once. */
@@ -951,6 +955,18 @@ VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM)
 {
     return pVM->hwaccm.s.fNestedPaging;
 }
+
+/**
+ * Checks if we are currently using VPID in VT-x mode.
+ *
+ * @returns boolean
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM)
+{
+    return pVM->hwaccm.s.vmx.fVPID;
+}
+
 
 /**
  * Checks if internal events are pending. In that case we are not allowed to dispatch interrupts.

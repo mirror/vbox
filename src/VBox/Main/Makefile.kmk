@@ -26,9 +26,9 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Include sub-makefile(s).
 #
-ifdef VBOX_WITH_WEBSERVICES
- include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
-endif
+#ifdef VBOX_WITH_WEBSERVICES
+# include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
+#endif
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 

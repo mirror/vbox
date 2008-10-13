@@ -2644,7 +2644,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="1e509de4-d96c-4f44-8b94-860194f710ac"
+     uuid="9797b8f2-0631-4db8-813d-4c63356b223b"
      wsmap="managed"
      >
     <desc>
@@ -2872,6 +2872,14 @@
         This setting determines whether VirtualBox will try to make use of
         the nested paging extension of Intel VT-x and AMD-V. Note that in case
         such extensions are not available, they will not be used.
+      </desc>
+    </attribute>
+
+    <attribute name="HWVirtExVPIDEnabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox will try to make use of
+        the VPID extension of Intel VT-x. Note that in case such extensions are
+        not available, they will not be used.
       </desc>
     </attribute>
 
@@ -8870,7 +8878,7 @@
 
   <interface
      name="IMachineDebugger" extends="$unknown"
-     uuid="54ebce96-fa7d-4a4d-bc81-a7db41c29637"
+     uuid="0de52346-938b-4020-a33b-471be542f3ff"
      wsmap="suppress"
      >
     <method name="resetStats">
@@ -8941,6 +8949,13 @@
       <desc>
         Flag indicating whether the VM is currently making use of the nested paging
         CPU hardware virtualization extension.
+      </desc>
+    </attribute>
+
+    <attribute name="HWVirtExVPIDEnabled" type="boolean" readonly="yes">
+      <desc>
+        Flag indicating whether the VM is currently making use of the VPID
+        VT-x extension.
       </desc>
     </attribute>
 

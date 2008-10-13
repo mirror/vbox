@@ -189,6 +189,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->COMGETTER(HWVirtExNestedPagingEnabled)(&fEnableNestedPaging);   H();
     rc = CFGMR3InsertInteger(pRoot, "EnableNestedPaging", fEnableNestedPaging);     RC_CHECK();
 
+    /* VPID (VT-x) */
+    BOOL fEnableVPID = false;
+    hrc = pMachine->COMGETTER(HWVirtExVPIDEnabled)(&fEnableVPID);   H();
+    rc = CFGMR3InsertInteger(pRoot, "EnableVPID", fEnableVPID);     RC_CHECK();
+
     /* Physical Address Extension (PAE) */
     BOOL fEnablePAE = false;
     hrc = pMachine->COMGETTER(PAEEnabled)(&fEnablePAE);                             H();
