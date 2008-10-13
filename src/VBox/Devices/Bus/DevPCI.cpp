@@ -846,7 +846,6 @@ static void pci_set_io_region_addr(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t u
 
     /* Read memory type first. */
     uint8_t uRessourceType = pci_config_readb(pGlobals, uBus, uDevFn, ofs);
-    AssertMsg(uRessourceType != 0xff, ("Device non existent\n"));
 
     /* Read command register. */
     cmd = pci_config_readw(pGlobals, uBus, uDevFn, PCI_COMMAND);
