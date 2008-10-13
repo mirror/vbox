@@ -1895,23 +1895,37 @@
       <desc>
         Opens a new direct session with the given virtual machine.
 
-        Within the direct session context, it is possible to change
-        all VM settings, as well as to execute the VM in the process
-        space of the session object. There can be only one direct
-        session open at a time for every virtual machine. In VirtualBox
-        terminology, the machine becomes "mutable" after a session has
-        been opened.
+        A direct session acts as a local lock on the given VM.
+        There can be only one direct session open at a time for every
+        virtual machine, protecting the VM from being manipulated by
+        conflicting actions from different processes. Only after a
+        direct session has been opened, one can change all VM settings
+        and execute the VM in the process space of the session object.
+
+        Sessions therefore can be compared to mutex semaphores that
+        lock a given VM for modification and execution.
+        See <link to="ISession">ISession</link> for details.
+
+        <note>Unless you are writing a new VM frontend, you will not
+        want to execute a VM in the current process. To spawn a new
+        process that executes a VM, use
+        <link to="IVirtualBox::openRemoteSession" />
+        instead.</note>
 
         Upon successful return, the session object can be used to
         get access to the machine and to the VM console.
 
-        Note that the "mutable" machine object, on which you may want
-        to invoke IMachine methods to change its settings, will be a
-        different object from the immutable IMachine objects returned
-        by various IVirtualBox methods. To obtain a mutable
-        IMachine object, upon which you can invoke settings methods,
-        use the "machine" attribute of the ISession object which represents
-        your open session.
+        In VirtualBox terminology, the machine becomes "mutable" after
+        a session has been opened. Note that the "mutable" machine
+        object, on which you may invoke IMachine methods to change its
+        settings, will be a different object from the immutable IMachine
+        objects returned by various IVirtualBox methods. To obtain a
+        mutable IMachine object (upon which you can invoke settings methods),
+        use the <link to="ISession::machine" /> attribute.
+
+        One must always call <link to="ISession::close" /> to release the
+        lock on the machine, or the machine's state will eventually be
+        set to "Aborted".
 
         In other words, to change settings on a machine, the following
         sequence is typically performed:
@@ -1920,13 +1934,13 @@
         <li>Call this method (openSession) to have a machine locked for
         the current session.</li>
 
-        <li>Obtain a mutable IMachine object from ISession::machine.</li>
+        <li>Obtain a mutable IMachine object from <link to="ISession::machine" />.</li>
 
         <li>Change the settings of the machine.</li>
 
-        <li>Call IMachine::saveSettings.</li>
+        <li>Call <link to="IMachine::saveSettings" />.</li>
 
-        <li>Close the session by calling <link to="#close" />.</li>
+        <li>Close the session by calling <link to="ISession::close" />.</li>
         </ol>
       </desc>
       <param name="session" type="ISession" dir="in">
@@ -1947,22 +1961,37 @@
 
     <method name="openRemoteSession">
       <desc>
-        Opens a new remote session with the given virtual machine.
+        Spawns a new process that executes a virtual machine (called a
+        "remote session").
 
         Opening a remote session causes the VirtualBox server to start a new
-        process that opens a direct session with the given VM.  The remote
-        session provides some level of control over the VM execution to the
-        caller (using the IConsole interface); however, within the remote
-        session context, not all VM settings are available for modification.
+        process that opens a direct session with the given VM. As a result, the
+        VM is locked by that direct session in the new process, preventing
+        conflicting changes from other processes. Since sessions act as locks
+        that such prevent conflicting changes, one cannot open a remote session
+        for a VM that already has another open session (direct or remote), or
+        is currently in the process of opening one (see <link to="IMachine::sessionState"/>).
+
+        While the remote session still provides some level of control over the
+        VM execution to the caller (using the <link to="IConsole" /> interface),
+        not all VM settings are available for modification within the remote
+        session context.
 
         This operation can take some time (a new VM is started in a new process,
-        for which memory and other resources need to be set up, which can take
-        a few seconds). Because of this, a progress object is returned to allow the
-        caller to wait for this asynchronous operation to be completed. Until then,
-        the remote session object remains in the closed state and accessing the
-        machine or its console through it is invalid. It is recommended to use
+        for which memory and other resources need to be set up). Because of this,
+        an <link to="IProgress" /> is returned to allow the caller to wait for this
+        asynchronous operation to be completed. Until then, the remote session
+        object remains in the closed state, and accessing the machine or its
+        console through it is invalid. It is recommended to use
         <link to="IProgress::waitForCompletion" /> or similar calls to wait for
         completion.
+
+        As with all <link to="ISession" /> objects, it is recommended to call
+        <link to="ISession::close" /> on the local session object once openRemoteSession()
+        has been called. However, the session's state (see <link to="ISession::state" />)
+        will not return to "Closed" until the remote session has also closed (i.e.
+        until the VM is no longer running). In that case, however, the state of
+        the session will automatically change back to "Closed".
 
         Currently supported session types (values of the @a type
         argument) are:
@@ -1986,18 +2015,6 @@
         omitted, this variable will be removed from the resulting environment.
         If the environment string is @c null, the server environment is
         inherited by the started process as is.
-
-        <note>
-          It is an error to open a remote session with the machine
-          that already has an open direct session or waits until the
-          previous request to open the remote session is completed
-          (see <link to="IMachine::sessionState"/>).
-        </note>
-
-        <note>
-          The opened @a session will be automatically closed when
-          the corresponding direct session dies or gets closed.
-        </note>
 
         <see>openExistingSession</see>
       </desc>
@@ -10142,19 +10159,20 @@
       The ISession interface represents a serialization primitive for virtual
       machines.
 
-      Within VirtualBox, every time one wishes to manipulate a virtual machine
-      (for example, change its settings or start execution), an instance of
-      the ISession interface is required. One first creates a local session
-      object that implements the ISession interface and then passes the
-      created object with the method call that opens the given session and
-      thus initiates the machine manipulation. The session serves several
-      purposes: it identifies to the inter-process VirtualBox code which
-      process is currently working with the virtual machine, and it ensures
+      With VirtualBox, every time one wishes to manipulate a virtual machine
+      (e.g. change its settings or start execution), a session object is
+      required. Such an object must be passed to one of the session methods
+      that open the given session, which then initiates the machine manipulation.
+
+      A session serves several purposes: it identifies to the inter-process VirtualBox
+      code which process is currently working with the virtual machine, and it ensures
       that there are no incompatible requests from several processes for the
-      same virtual machine.
+      same virtual machine. Session objects can therefore be thought of as mutex
+      semaphores that lock virtual machines to prevent conflicting accesses from
+      several processes.
 
       How sessions objects are used depends on whether you use the Main API
-      via COM or via the web service:
+      via COM or via the webservice:
 
       <ul>
       <li>When using the COM API directly, an object of the Session class from the
@@ -10233,15 +10251,33 @@
 
     <method name="close">
       <desc>
-        Closes this session.
+        Closes a session that was previously opened.
+
+        It is recommended that every time an "open session" method (such as
+        <link to="IVirtualBox::openRemoteSession" /> or
+        <link to="IVirtualBox::openSession" />) has been called to
+        manipulate a virtual machine, the caller invoke
+        ISession::close() when it's done doing so. Since sessions are
+        serialization primitives much like ordinary mutexes, they are
+        best used the same way: for each "open" call, there should be
+        a matching "close" call, even when errors occur.
+
+        Otherwise, if a direct session for a machine opened with
+        <link to="IVirtualBox::openSession()"/> is not explicitly closed
+        when the application terminates, the state of the machine will
+        be set to <link to="MachineState::Aborted" /> on the server.
+
+        Generally, it is recommended to close all open sessions explicitly
+        before terminating the application (no matter what is the reason of
+        the termination).
+
         <note>
-          If a direct session for a machine opened with
-          <link to="IVirtualBox::openSession()"/> is not explicitly
-          closed when the application terminates, the state of the
-          machine will be set to <link to="MachineState::Aborted"/>
-          on the server. Generally, it is recommended to close all
-          open sessions explicitly before terminating the application
-          (no matter what is the reason of the termination).
+          Do not expect the session state (<link to="ISession::state" />
+          to return to "Closed" immediately after you invoke
+          ISession::close(), particularly if you have started a remote
+          session to execute the VM in a new process. The session state will
+          automatically return to "Closed" once the VM is no longer executing,
+          which can of course take a very long time.
         </note>
       </desc>
     </method>
@@ -10494,11 +10530,11 @@
       samples can be set. Only base metrics can be enabled and disabled. All
       sub-metrics are collected when their base metric is collected.
       Collected values for any set of sub-metrics can be queried with
-      <link to="IPerformanceCollector::queryMetricsData" />. When setting up 
-      metric parameters, querying metric data, enabling or disabling metrics 
-      wildcards can be used in metric names to specify a subset of metrics. For 
-      example, to select all CPU-related metrics use <tt>CPU/*</tt>, all 
-      averages can be queried using <tt>*:avg</tt> and so on. To query metric 
+      <link to="IPerformanceCollector::queryMetricsData" />. When setting up
+      metric parameters, querying metric data, enabling or disabling metrics
+      wildcards can be used in metric names to specify a subset of metrics. For
+      example, to select all CPU-related metrics use <tt>CPU/*</tt>, all
+      averages can be queried using <tt>*:avg</tt> and so on. To query metric
       values without aggregates <tt>*:</tt> can be used.
 
       The valid names for base metrics are:
@@ -10596,20 +10632,20 @@
 
     <method name="setupMetrics">
       <desc>
-        Sets parameters of specified base metrics for a set of objects. Returns 
-        an array of <link to="IPerformanceMetric" /> describing the metrics have 
+        Sets parameters of specified base metrics for a set of objects. Returns
+        an array of <link to="IPerformanceMetric" /> describing the metrics have
         been affected.
         <note>
           @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains 
-          a single element and object array contains many, the single metric 
-          name array element is applied to each object array element to form 
+          object array means all existing objects. If metric name array contains
+          a single element and object array contains many, the single metric
+          name array element is applied to each object array element to form
           metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Comma-separated list of metrics with wildcard 
+          Metric name filter. Comma-separated list of metrics with wildcard
           support.
         </desc>
       </param>
@@ -10644,15 +10680,15 @@
         affected.
         <note>
           @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains 
-          a single element and object array contains many, the single metric 
-          name array element is applied to each object array element to form 
+          object array means all existing objects. If metric name array contains
+          a single element and object array contains many, the single metric
+          name array element is applied to each object array element to form
           metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Comma-separated list of metrics with wildcard 
+          Metric name filter. Comma-separated list of metrics with wildcard
           support.
         </desc>
       </param>
@@ -10675,15 +10711,15 @@
         affected.
         <note>
           @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains 
-          a single element and object array contains many, the single metric 
-          name array element is applied to each object array element to form 
+          object array means all existing objects. If metric name array contains
+          a single element and object array contains many, the single metric
+          name array element is applied to each object array element to form
           metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Comma-separated list of metrics with wildcard 
+          Metric name filter. Comma-separated list of metrics with wildcard
           support.
         </desc>
       </param>
@@ -10704,23 +10740,23 @@
         Queries collected metrics data for a set of objects.
 
         The data itself and related metric information are returned in seven
-        parallel and one flattened array of arrays. Elements of 
+        parallel and one flattened array of arrays. Elements of
         <tt>returnMetricNames, returnObjects, returnUnits, returnScales,
-        returnSequenceNumbers, returnDataIndices and returnDataLengths</tt> with 
-        the same index describe one set of values corresponding to a single 
+        returnSequenceNumbers, returnDataIndices and returnDataLengths</tt> with
+        the same index describe one set of values corresponding to a single
         metric.
 
-        The <tt>returnData</tt> parameter is a flattened array of arrays. Each 
-        start and length of a sub-array is indicated by 
-        <tt>returnDataIndices</tt> and <tt>returnDataLengths</tt>. The first 
-        value for metric <tt>metricNames[i]</tt> is at 
+        The <tt>returnData</tt> parameter is a flattened array of arrays. Each
+        start and length of a sub-array is indicated by
+        <tt>returnDataIndices</tt> and <tt>returnDataLengths</tt>. The first
+        value for metric <tt>metricNames[i]</tt> is at
         <tt>returnData[returnIndices[i]]</tt>.
 
         <note>
           @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains 
-          a single element and object array contains many, the single metric 
-          name array element is applied to each object array element to form 
+          object array means all existing objects. If metric name array contains
+          a single element and object array contains many, the single metric
+          name array element is applied to each object array element to form
           metric/object pairs.
         </note>
         <note>
@@ -10737,7 +10773,7 @@
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
         <desc>
-          Metric name filter. Comma-separated list of metrics with wildcard 
+          Metric name filter. Comma-separated list of metrics with wildcard
           support.
         </desc>
       </param>
