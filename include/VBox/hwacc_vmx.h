@@ -1379,26 +1379,6 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  *
  * @returns VBox status code
  * @param   idxField        VMCS index
- * @param   u64Val          16, 32 or 64 bits value
- */
-#if HC_ARCH_BITS == 64
-DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
-#else
-DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
-{
-    int rc;
-
-    rc  = VMXWriteVMCS32(idxField,    u64Val);
-    rc |= VMXWriteVMCS32(idxField+1,  u64Val >> 32ULL);
-    return rc;
-}
-#endif
-
-/**
- * Executes VMWRITE
- *
- * @returns VBox status code
- * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
  */
 #if HC_ARCH_BITS == 64
@@ -1447,6 +1427,26 @@ the_end:
         add    esp, 4
     }
 # endif
+    return rc;
+}
+#endif
+
+/**
+ * Executes VMWRITE
+ *
+ * @returns VBox status code
+ * @param   idxField        VMCS index
+ * @param   u64Val          16, 32 or 64 bits value
+ */
+#if HC_ARCH_BITS == 64
+DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
+#else
+DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
+{
+    int rc;
+
+    rc  = VMXWriteVMCS32(idxField,    u64Val);
+    rc |= VMXWriteVMCS32(idxField+1,  u64Val >> 32ULL);
     return rc;
 }
 #endif
