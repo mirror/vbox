@@ -1785,18 +1785,17 @@ VMMDECL(int) EMInterpretInvlpg(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC)
      * (in absence of segment override prefixes)????
      */
 #ifdef IN_GC
-    // Note: we could also use PGMFlushPage here, but it currently doesn't always use invlpg!!!!!!!!!!
-    LogFlow(("GC: EMULATE: invlpg %08X\n", pAddrGC));
-    rc = PGMGCInvalidatePage(pVM, pAddrGC);
-#else
-    rc = PGMInvalidatePage(pVM, pAddrGC);
+    LogFlow(("RC: EMULATE: invlpg %RGv\n", pAddrGC));
 #endif
-    if (VBOX_SUCCESS(rc))
+    rc = PGMInvalidatePage(pVM, pAddrGC);
+    if (    rc == VINF_SUCCESS
+        ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
-    Log(("PGMInvalidatePage %VGv returned %VGv (%d)\n", pAddrGC, rc, rc));
-    Assert(rc == VERR_REM_FLUSHED_PAGES_OVERFLOW);
-    /** @todo r=bird: we shouldn't ignore returns codes like this... I'm 99% sure the error is fatal. */
-    return VERR_EM_INTERPRETER;
+    AssertMsgReturn(   rc == VERR_REM_FLUSHED_PAGES_OVERFLOW
+                    || rc == VINF_EM_RAW_EMULATE_INSTR,
+                    ("%Rrc addr=%RGv\n", rc, pAddrGC),
+                    VERR_EM_INTERPRETER);
+    return rc;
 }
 
 
@@ -1829,16 +1828,17 @@ static int emInterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
      * (in absence of segment override prefixes)????
      */
 #ifdef IN_GC
-    // Note: we could also use PGMFlushPage here, but it currently doesn't always use invlpg!!!!!!!!!!
-    LogFlow(("GC: EMULATE: invlpg %08X\n", addr));
-    rc = PGMGCInvalidatePage(pVM, addr);
-#else
-    rc = PGMInvalidatePage(pVM, addr);
+    LogFlow(("RC: EMULATE: invlpg %RGv\n", addr));
 #endif
-    if (VBOX_SUCCESS(rc))
+    rc = PGMInvalidatePage(pVM, addr);
+    if (    rc == VINF_SUCCESS
+        ||  rc == VINF_PGM_SYNC_CR3 /* we can rely on the FF */)
         return VINF_SUCCESS;
-    /** @todo r=bird: we shouldn't ignore returns codes like this... I'm 99% sure the error is fatal. */
-    return VERR_EM_INTERPRETER;
+    AssertMsgReturn(   rc == VERR_REM_FLUSHED_PAGES_OVERFLOW
+                    || rc == VINF_EM_RAW_EMULATE_INSTR,
+                    ("%Rrc addr=%RGv\n", rc, addr),
+                    VERR_EM_INTERPRETER);
+    return rc;
 }
 
 

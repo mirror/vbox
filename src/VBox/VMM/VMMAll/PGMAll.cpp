@@ -623,40 +623,70 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
 }
 
 
-#ifndef IN_GC
 /**
  * Emulation of the invlpg instruction (HC only actually).
  *
- * @returns VBox status code.
+ * @returns VBox status code, special care required.
+ * @retval  VINF_PGM_SYNC_CR3 - handled.
+ * @retval  VINF_EM_RAW_EMULATE_INSTR - not handled (RC only).
+ * @retval  VERR_REM_FLUSHED_PAGES_OVERFLOW - not handled.
+ *
  * @param   pVM         VM handle.
  * @param   GCPtrPage   Page to invalidate.
- * @remark  ASSUMES the page table entry or page directory is
- *          valid. Fairly safe, but there could be edge cases!
+ *
+ * @remark  ASSUMES the page table entry or page directory is valid. Fairly
+ *          safe, but there could be edge cases!
+ *
  * @todo    Flush page or page directory only if necessary!
  */
 VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
     int rc;
-
     Log3(("PGMInvalidatePage: GCPtrPage=%VGv\n", GCPtrPage));
 
-    /** @todo merge PGMGCInvalidatePage with this one */
-
-# ifndef IN_RING3
+#ifndef IN_RING3
     /*
      * Notify the recompiler so it can record this instruction.
      * Failure happens when it's out of space. We'll return to HC in that case.
      */
     rc = REMNotifyInvalidatePage(pVM, GCPtrPage);
-    if (VBOX_FAILURE(rc))
+    if (rc != VINF_SUCCESS)
         return rc;
-# endif
+#endif /* !IN_RING3 */
 
+
+#ifdef IN_GC
+    /*
+     * Check for conflicts and pending CR3 monitoring updates.
+     */
+    if (!pVM->pgm.s.fMappingsFixed)
+    {
+        if (    pgmGetMapping(pVM, GCPtrPage)
+            &&  PGMGstGetPage(pVM, GCPtrPage, NULL, NULL) != VERR_PAGE_TABLE_NOT_PRESENT)
+        {
+            LogFlow(("PGMGCInvalidatePage: Conflict!\n"));
+            VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRCInvlPgConflict);
+            return VINF_PGM_SYNC_CR3;
+        }
+
+        if (pVM->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
+        {
+            LogFlow(("PGMGCInvalidatePage: PGM_SYNC_MONITOR_CR3 -> reinterpret instruction in R3\n"));
+            STAM_COUNTER_INC(&pVM->pgm.s.StatRCInvlPgSyncMonCR3);
+            return VINF_EM_RAW_EMULATE_INSTR;
+        }
+    }
+#endif /* IN_GC */
+
+    /*
+     * Call paging mode specific worker.
+     */
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
     rc = PGM_BTH_PFN(InvalidatePage, pVM)(pVM, GCPtrPage);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
 
-# ifndef IN_RING0
+#ifdef IN_RING3
     /*
      * Check if we have a pending update of the CR3 monitoring.
      */
@@ -668,18 +698,17 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
         Assert(pVM->pgm.s.GCPhysCR3 == pVM->pgm.s.GCPhysGstCR3Monitored);
         rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     }
-# endif
 
-# ifdef IN_RING3
     /*
      * Inform CSAM about the flush
+     *
+     * Note: This is to check if monitored pages have been changed; when we implement
+     *       callbacks for virtual handlers, this is no longer required.
      */
-    /* note: This is to check if monitored pages have been changed; when we implement callbacks for virtual handlers, this is no longer required. */
     CSAMR3FlushPage(pVM, GCPtrPage);
-# endif
+#endif /* IN_RING3 */
     return rc;
 }
-#endif /* !IN_GC */
 
 
 /**

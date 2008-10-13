@@ -1547,9 +1547,10 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR3DynRamGrow,                  STAMTYPE_COUNTER, "/PGM/DynAlloc/Grow",                 STAMUNIT_OCCURENCES,     "Nr of pgmr3PhysGrowRange calls.");
 
     /* GC only: */
-    STAM_REG(pVM, &pPGM->StatRCInvalidatePage,              STAMTYPE_PROFILE, "/PGM/RC/InvalidatePage",             STAMUNIT_TICKS_PER_CALL, "PGMGCInvalidatePage() profiling.");
     STAM_REG(pVM, &pPGM->StatRCDynMapCacheHits,             STAMTYPE_COUNTER, "/PGM/RC/DynMapCache/Hits" ,          STAMUNIT_OCCURENCES,     "Number of dynamic page mapping cache hits.");
     STAM_REG(pVM, &pPGM->StatRCDynMapCacheMisses,           STAMTYPE_COUNTER, "/PGM/RC/DynMapCache/Misses" ,        STAMUNIT_OCCURENCES,     "Number of dynamic page mapping cache misses.");
+    STAM_REG(pVM, &pPGM->StatRCInvlPgConflict,              STAMTYPE_COUNTER, "/PGM/RC/InvlPgConflict",             STAMUNIT_OCCURENCES,     "Number of times PGMInvalidatePage() detected a mapping conflict.");
+    STAM_REG(pVM, &pPGM->StatRCInvlPgSyncMonCR3,            STAMTYPE_COUNTER, "/PGM/RC/InvlPgSyncMonitorCR3",       STAMUNIT_OCCURENCES,     "Number of times PGMInvalidatePage() ran into PGM_SYNC_MONITOR_CR3.");
 
     /* RZ only: */
     STAM_REG(pVM, &pPGM->StatRZTrap0e,                      STAMTYPE_PROFILE, "/PGM/RZ/Trap0e",                     STAMUNIT_TICKS_PER_CALL, "Profiling of the PGMTrap0eHandler() body.");
