@@ -834,7 +834,7 @@ static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
             Pdpe = PGMGstGetPaePDPtr(pVM, i);
             int rc = VMXWriteVMCS(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
 #if HC_ARCH_BITS == 32
-            rc |=   VMXWriteVMCS(VMX_VMCS_GUEST_PDPTR0_FULL + i*2 + 1, Pdpe.u >> 32ULL);
+            rc    |= VMXWriteVMCS(VMX_VMCS_GUEST_PDPTR0_FULL + i*2 + 1, Pdpe.u >> 32ULL);
 #endif
             AssertRC(rc);
         }
@@ -3056,9 +3056,10 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
     bool fFlushPending = pVM->hwaccm.s.fForceTLBFlush;
 
-    /* @todo Only relevant if we want to use VPID. */
-    Assert(!pVM->hwaccm.s.fNestedPaging);
-
+    /* Only relevant if we want to use VPID. 
+     * In the nested paging case we still see such calls, but
+     * can safely ignore them. (e.g. after cr3 updates)
+     */
 #ifdef HWACCM_VTX_WITH_VPID
     /* Skip it if a TLB flush is already pending. */
     if (   !fFlushPending 
