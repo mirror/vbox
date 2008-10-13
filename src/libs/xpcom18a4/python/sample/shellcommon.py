@@ -153,10 +153,14 @@ def startVm(mgr,vb,mach,type,perf):
     rc = progress.resultCode
     print "Completed:", completed, "rc:",rc
     if int(rc) == 0:
-        # @todo Nikolay, what is the point in ignoring exceptions?
+        # we ignore exceptions to allow starting VM even if 
+        # perf collector cannot be started
         try:
             perf.setup(['*'], [mach], 10, 15)
         except:
+            print e
+            if g_verbose:
+                traceback.print_exc()
             pass
     session.close()
 
@@ -408,6 +412,8 @@ def runCommand(ctx, cmd):
 def interpret(ctx):
     vbox = ctx['vb']
     print "Running VirtualBox version %s" %(vbox.version)
+
+    ctx['perf'] = PerfCollector(vbox)
 
     autoCompletion(commands, ctx)
 
