@@ -999,12 +999,20 @@
  */
 #define RT_ABS(Value)           ((Value) >= 0 ? (Value) : -(Value))
 
+/** @def RT_LODWORD
+ * Gets the low dword (=uint32_t) of something. */
+#define RT_LODWORD(a)            ((a) & UINT32_C(0xfffffffff))
+
+/** @def RT_HIDWORD
+ * Gets the high dword (=uint32_t) og a 64-bit of something. */
+#define RT_LODWORD(a)            ((a) >> 32)
+
 /** @def RT_LOWORD
  * Gets the low word (=uint16_t) of something. */
 #define RT_LOWORD(a)            ((a) & 0xffff)
 
 /** @def RT_HIWORD
- * Gets the high word (=uint16_t) of a 32 bit something. */
+ * Gets the high word (=uint16_t) of a 32-bit something. */
 #define RT_HIWORD(a)            ((a) >> 16)
 
 /** @def RT_LOBYTE
@@ -1012,7 +1020,7 @@
 #define RT_LOBYTE(a)            ((a) & 0xff)
 
 /** @def RT_HIBYTE
- * Gets the low byte of a 16 bit something. */
+ * Gets the low byte of a 16-bit something. */
 #define RT_HIBYTE(a)            ((a) >> 8)
 
 /** @def RT_BYTE1
