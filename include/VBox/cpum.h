@@ -805,6 +805,19 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCCPUMCTX pCtx)
     return pCtx->csHid.Attr.n.u1Long;
 }
 
+/**
+ * Tests if the guest is running in PAE mode or not.
+ *
+ * @returns true if in PAE mode, otherwise false.
+ * @param   pCtx    Current CPU context
+ */
+DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
+{
+    return (    CPUMIsGuestInPagedProtectedModeEx(pCtx)
+            &&  (pCtx->cr4 & X86_CR4_PAE)
+            &&  !CPUMIsGuestInLongModeEx(pCtx));
+}
+
 /** @} */
 
 
