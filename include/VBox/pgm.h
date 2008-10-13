@@ -531,11 +531,11 @@ VMMR3DECL(int)      PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enm
                                                  PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
                                                  const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
                                                  const char *pszModRC, const char *pszHandlerRC, RTRCPTR pvUserRC, const char *pszDesc);
-VMMDECL(int)        PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
-                                                R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3,
-                                                R3PTRTYPE(PFNPGMR3VIRTHANDLER) pfnHandlerR3,
-                                                RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
-                                                R3PTRTYPE(const char *) pszDesc);
+VMMDECL(int)        PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
+                                                  R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3,
+                                                  R3PTRTYPE(PFNPGMR3VIRTHANDLER) pfnHandlerR3,
+                                                  RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
+                                                  R3PTRTYPE(const char *) pszDesc);
 VMMR3DECL(int)      PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
                                                 PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                 PFNPGMR3VIRTHANDLER pfnHandlerR3,

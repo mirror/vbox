@@ -39,10 +39,10 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void              pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE);
-static void              pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
-static int               pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
-static void              pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPhys, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
+static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE);
+static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
+static int  pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
+static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPhys, unsigned cPages, PX86PT pPTDefault, PX86PTPAE pPTPaeDefault);
 
 
 
@@ -785,6 +785,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
     }
 }
 
+
 /**
  * Relocates a mapping to a new address.
  *
@@ -951,6 +952,7 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
     return VERR_PGM_NO_HYPERVISOR_ADDRESS;
 }
 
+
 /**
  * Resolves a conflict between a page table based GC mapping and
  * the Guest OS page tables. (PAE bits version)
@@ -1026,6 +1028,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     return VERR_PGM_NO_HYPERVISOR_ADDRESS;
 }
 
+
 /**
  * Checks guest PD for conflicts with VMM GC mappings.
  *
@@ -1074,9 +1077,8 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
                 }
         }
     }
-    else
-    if (   PGMGetGuestMode(pVM) == PGMMODE_PAE
-        || PGMGetGuestMode(pVM) == PGMMODE_PAE_NX)
+    else if (   PGMGetGuestMode(pVM) == PGMMODE_PAE
+             || PGMGetGuestMode(pVM) == PGMMODE_PAE_NX)
     {
         for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
         {
@@ -1128,7 +1130,6 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
  */
 VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
-/** @todo remove this simplicity hack */
     /*
      * Simplicity over speed... Chop the request up into chunks
      * which don't cross pages.
