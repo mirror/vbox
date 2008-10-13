@@ -337,9 +337,10 @@ VMMDECL(int)        PGMGstSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fF
 VMMDECL(int)        PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 VMMDECL(X86PDPE)    PGMGstGetPaePDPtr(PVM pVM, unsigned iPdPt);
 
+VMMDECL(int)        PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 VMMDECL(int)        PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal);
-VMMDECL(int)        PGMUpdateCR3(PVM pVM, uint64_t cr3);
 VMMDECL(int)        PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
+VMMDECL(int)        PGMUpdateCR3(PVM pVM, uint64_t cr3);
 VMMDECL(int)        PGMChangeMode(PVM pVM, uint64_t cr0, uint64_t cr4, uint64_t efer);
 VMMDECL(PGMMODE)    PGMGetGuestMode(PVM pVM);
 VMMDECL(PGMMODE)    PGMGetShadowMode(PVM pVM);
@@ -431,7 +432,6 @@ VMMDECL(int)        PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const voi
 VMMDECL(int)        PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 VMMDECL(int)        PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
-VMMDECL(int)        PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 #endif /* !IN_GC */
 VMMDECL(int)        PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb);
 #ifdef VBOX_STRICT
@@ -453,7 +453,6 @@ VMMDECL(int)        PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv);
  * @ingroup grp_pgm
  * @{
  */
-VMMRCDECL(int)      PGMGCInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 /** @} */
 #endif /* IN_GC */
 

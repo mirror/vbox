@@ -1109,8 +1109,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
  	        if (   pPDEDst[iPD].n.u1Present
  	            && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
  	        {
-                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdpte * X86_PG_PAE_ENTRIES + iPD);
-                pPDEDst[iPD].u = 0;
+                    pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdpte * X86_PG_PAE_ENTRIES + iPD);
+                    pPDEDst[iPD].u = 0;
  	        }
 	    }
         if (!(pPdptDst->a[iPdpte].u & PGM_PLXFLAGS_MAPPING))
