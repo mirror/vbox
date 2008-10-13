@@ -211,7 +211,6 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
 }
 
 
-
 /**
  * Register a access handler for a virtual range.
  *
@@ -220,30 +219,29 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
  * @param   enmType         Handler type. Any of the PGMVIRTHANDLERTYPE_* enums.
  * @param   GCPtr           Start address.
  * @param   GCPtrLast       Last address (inclusive).
- * @param   pfnInvalidateHC The HC invalidate callback (can be 0)
- * @param   pfnHandlerHC    The HC handler.
- * @param   pszHandlerGC    The GC handler symbol name.
- * @param   pszModGC        The GC handler module.
+ * @param   pfnInvalidateR3 The R3 invalidate callback (can be 0)
+ * @param   pfnHandlerR3    The R3 handler.
+ * @param   pszHandlerRC    The RC handler symbol name.
+ * @param   pszModRC        The RC handler module.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-/** @todo rename this function to PGMR3HandlerVirtualRegister */
 VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
-                                           PFNPGMR3VIRTINVALIDATE pfnInvalidateHC,
-                                           PFNPGMR3VIRTHANDLER pfnHandlerHC,
-                                           const char *pszHandlerGC, const char *pszModGC,
+                                           PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
+                                           PFNPGMR3VIRTHANDLER pfnHandlerR3,
+                                           const char *pszHandlerRC, const char *pszModRC,
                                            const char *pszDesc)
 {
-    LogFlow(("PGMR3HandlerVirtualRegisterEx: enmType=%d GCPtr=%VGv GCPtrLast=%VGv pszHandlerGC=%p:{%s} pszModGC=%p:{%s} pszDesc=%s\n",
-             enmType, GCPtr, GCPtrLast, pszHandlerGC, pszHandlerGC, pszModGC, pszModGC, pszDesc));
+    LogFlow(("PGMR3HandlerVirtualRegisterEx: enmType=%d GCPtr=%VGv GCPtrLast=%VGv pszHandlerRC=%p:{%s} pszModRC=%p:{%s} pszDesc=%s\n",
+             enmType, GCPtr, GCPtrLast, pszHandlerRC, pszHandlerRC, pszModRC, pszModRC, pszDesc));
 
     /*
      * Validate input.
      */
-    if (!pszModGC)
-        pszModGC = VMMGC_MAIN_MODULE_NAME;
-    if (!pszModGC || !*pszModGC || !pszHandlerGC || !*pszHandlerGC)
+    if (!pszModRC)
+        pszModRC = VMMGC_MAIN_MODULE_NAME;
+    if (!pszModRC || !*pszModRC || !pszHandlerRC || !*pszHandlerRC)
     {
-        AssertMsgFailed(("pfnHandlerGC or/and pszModGC is missing\n"));
+        AssertMsgFailed(("pfnHandlerGC or/and pszModRC is missing\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -251,11 +249,11 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
      * Resolve the GC handler.
      */
     RTGCPTR32 pfnHandlerGC;
-    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModGC, pszHandlerGC, &pfnHandlerGC);
+    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, pszHandlerRC, &pfnHandlerGC);
     if (VBOX_SUCCESS(rc))
-        return PGMHandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateHC, pfnHandlerHC, pfnHandlerGC, pszDesc);
+        return PGMR3HandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerGC, pszDesc);
 
-    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Vrc.\n", pszModGC, pszHandlerGC, rc));
+    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Vrc.\n", pszModRC, pszHandlerRC, rc));
     return rc;
 }
 
@@ -274,14 +272,13 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
  * @param   pszDesc         Pointer to description string. This must not be freed.
  * @thread  EMT
  */
-/** @todo rename this to PGMR3HandlerVirtualRegisterEx. */
 /** @todo create a template for virtual handlers (see async i/o), we're wasting space
  * duplicating the function pointers now. (Or we will once we add the missing callbacks.) */
-VMMDECL(int) PGMHandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
-                                         R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3,
-                                         R3PTRTYPE(PFNPGMR3VIRTHANDLER) pfnHandlerR3,
-                                         RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
-                                         R3PTRTYPE(const char *) pszDesc)
+VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, RTGCPTR GCPtr, RTGCPTR GCPtrLast,
+                                           R3PTRTYPE(PFNPGMR3VIRTINVALIDATE) pfnInvalidateR3,
+                                           R3PTRTYPE(PFNPGMR3VIRTHANDLER) pfnHandlerR3,
+                                           RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
+                                           R3PTRTYPE(const char *) pszDesc)
 {
     Log(("PGMR3HandlerVirtualRegister: enmType=%d GCPtr=%RGv GCPtrLast=%RGv pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pfnHandlerRC=%RGv pszDesc=%s\n",
          enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc));

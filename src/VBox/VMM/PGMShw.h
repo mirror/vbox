@@ -114,17 +114,17 @@ PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 
 #if PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
         /* GC */
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_SHW_NAME_RC_STR(GetPage),  &pModeData->pfnRCShwGetPage);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_SHW_NAME_RC_STR(GetPage),    &pModeData->pfnRCShwGetPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_RC_STR(GetPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_SHW_NAME_RC_STR(ModifyPage),  &pModeData->pfnRCShwModifyPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_RC_STR(ModifyPage),  rc), rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_SHW_NAME_RC_STR(ModifyPage), &pModeData->pfnRCShwModifyPage);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_RC_STR(ModifyPage), rc), rc);
 #endif /* Not AMD64 shadow paging. */
 
         /* Ring-0 */
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(GetPage),  &pModeData->pfnR0ShwGetPage);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_SHW_NAME_R0_STR(GetPage),    &pModeData->pfnR0ShwGetPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(GetPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_SHW_NAME_R0_STR(ModifyPage),  &pModeData->pfnR0ShwModifyPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(ModifyPage),  rc), rc);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_SHW_NAME_R0_STR(ModifyPage), &pModeData->pfnR0ShwModifyPage);
+        AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_SHW_NAME_R0_STR(ModifyPage), rc), rc);
     }
     return VINF_SUCCESS;
 }
