@@ -55,11 +55,11 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx);
 #else
 #define VMXR0ReportWorldSwitchError(a, b, c)      do { } while (0);
 #endif /* VBOX_STRICT */
-static void VMXR0SetupTLBEPT(PVM pVM);
-static void VMXR0SetupTLBVPID(PVM pVM);
-static void VMXR0SetupTLBDummy(PVM pVM);
-static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys);
-static void VMXR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr);
+static void vmxR0SetupTLBEPT(PVM pVM);
+static void vmxR0SetupTLBVPID(PVM pVM);
+static void vmxR0SetupTLBDummy(PVM pVM);
+static void vmxR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys);
+static void vmxR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr);
 
 
 static void VMXR0CheckError(PVM pVM, int rc)
@@ -475,7 +475,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* Choose the right TLB setup function. */
     if (pVM->hwaccm.s.fNestedPaging)
     {
-        pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = VMXR0SetupTLBEPT;
+        pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = vmxR0SetupTLBEPT;
 
         /* Default values for flushing. */
         pVM->hwaccm.s.vmx.enmFlushPage    = VMX_FLUSH_ALL_CONTEXTS;
@@ -495,7 +495,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     else
     if (pVM->hwaccm.s.vmx.fVPID)
     {
-        pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = VMXR0SetupTLBVPID;
+        pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = vmxR0SetupTLBVPID;
 
         /* Default values for flushing. */
         pVM->hwaccm.s.vmx.enmFlushPage    = VMX_FLUSH_ALL_CONTEXTS;
@@ -513,7 +513,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     }
 #endif /* HWACCM_VTX_WITH_VPID */
     else
-        pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = VMXR0SetupTLBDummy;
+        pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = vmxR0SetupTLBDummy;
 
 
 vmx_end:
@@ -817,6 +817,26 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
     return rc;
 }
 
+/**
+ * Prefetch the 4 PDPT pointers (PAE and nested paging only)
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   pCtx        Guest context
+ */ 
+static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
+{
+    if (CPUMIsGuestInPAEModeEx(pCtx))
+    {
+        X86PDPE Pdpe;
+
+        for (unsigned i=0;i<4;i++)
+        {
+            Pdpe = PGMGstGetPaePDPtr(pVM, i);
+            int rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
+            AssertRC(rc);
+        }
+    }
+}
 
 /**
  * Loads the guest state
@@ -1225,6 +1245,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             {
                 /* Save the real guest CR3 in VMX_VMCS_GUEST_CR3 */
                 val = pCtx->cr3;
+                /* Prefetch the four PDPT entries in PAE mode. */
+                vmxR0PrefetchPAEPdptrs(pVM, pCtx);
             }
         }
         else
@@ -1453,6 +1475,8 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, CPUMCTX *pCtx)
             CPUMSetGuestCR3(pVM, val);
             PGMUpdateCR3(pVM, val);
         }
+        /* Prefetch the four PDPT entries in PAE mode. */
+        vmxR0PrefetchPAEPdptrs(pVM, pCtx);
     }
 
     /* Sync back DR7 here. */
@@ -1515,7 +1539,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, CPUMCTX *pCtx)
  *
  * @param   pVM         The VM to operate on.
  */
-static void VMXR0SetupTLBDummy(PVM pVM)
+static void vmxR0SetupTLBDummy(PVM pVM)
 {
     return;
 }
@@ -1526,7 +1550,7 @@ static void VMXR0SetupTLBDummy(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-static void VMXR0SetupTLBEPT(PVM pVM)
+static void vmxR0SetupTLBEPT(PVM pVM)
 {
     PHWACCM_CPUINFO pCpu;
 
@@ -1551,7 +1575,7 @@ static void VMXR0SetupTLBEPT(PVM pVM)
     pCpu->fFlushTLB         = false;
 
     if (pVM->hwaccm.s.fForceTLBFlush)
-        VMXR0FlushEPT(pVM, pVM->hwaccm.s.vmx.enmFlushContext, 0);
+        vmxR0FlushEPT(pVM, pVM->hwaccm.s.vmx.enmFlushContext, 0);
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVM->hwaccm.s.fForceTLBFlush)
@@ -1568,7 +1592,7 @@ static void VMXR0SetupTLBEPT(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-static void VMXR0SetupTLBVPID(PVM pVM)
+static void vmxR0SetupTLBVPID(PVM pVM)
 {
     PHWACCM_CPUINFO pCpu;
 
@@ -1625,7 +1649,7 @@ static void VMXR0SetupTLBVPID(PVM pVM)
     AssertRC(rc);
 
     if (pVM->hwaccm.s.fForceTLBFlush)
-        VMXR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushContext, 0);
+        vmxR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushContext, 0);
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVM->hwaccm.s.fForceTLBFlush)
@@ -2985,11 +3009,11 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx)
  * @param   enmFlush    Type of flush
  * @param   GCPhys      Physical address of the page to flush
  */
-static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
+static void vmxR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
 {
     uint64_t descriptor[2];
 
-    LogFlow(("VMXR0FlushEPT %d %VGv\n", enmFlush, GCPhys));
+    LogFlow(("vmxR0FlushEPT %d %VGv\n", enmFlush, GCPhys));
     Assert(pVM->hwaccm.s.fNestedPaging);
     descriptor[0] = pVM->hwaccm.s.vmx.GCPhysEPTP;
     descriptor[1] = GCPhys;
@@ -3006,7 +3030,7 @@ static void VMXR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
  * @param   enmFlush    Type of flush
  * @param   GCPtr       Virtual address of the page to flush
  */
-static void VMXR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
+static void vmxR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
 {
     uint64_t descriptor[2];
 
@@ -3036,7 +3060,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
     /* Skip it if a TLB flush is already pending. */
     if (   !fFlushPending 
         && pVM->hwaccm.s.vmx.fVPID)
-        VMXR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCVirt);
+        vmxR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCVirt);
 #endif /* HWACCM_VTX_WITH_VPID */
 
     return VINF_SUCCESS;
@@ -3059,7 +3083,7 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
-        VMXR0FlushEPT(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCPhys);
+        vmxR0FlushEPT(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCPhys);
 
     return VINF_SUCCESS;
 }

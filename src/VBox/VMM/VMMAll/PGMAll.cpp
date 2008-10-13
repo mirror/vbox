@@ -1210,6 +1210,19 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     return rc;
 }
 
+/**
+ * Gets the specified page directory pointer table entry.
+ *
+ * @returns PDP entry
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   iPdpt       PDPT index
+ */
+VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdpt)
+{
+    Assert(iPdpt <= 3);
+    return pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[iPdpt & 3];
+}
+
 
 /**
  * Gets the current CR3 register value for the shadow memory context.
