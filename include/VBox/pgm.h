@@ -335,8 +335,6 @@ VMMDECL(int)    PGMGstGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPH
 VMMDECL(bool)   PGMGstIsPagePresent(PVM pVM, RTGCPTR GCPtr);
 VMMDECL(int)    PGMGstSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 VMMDECL(int)    PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdPt);
-
 VMMDECL(int)    PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal);
 VMMDECL(int)    PGMUpdateCR3(PVM pVM, uint64_t cr3);
 VMMDECL(int)    PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);

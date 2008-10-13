@@ -136,9 +136,9 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
 
 #define VMX_WRITE_SELREG(REG, reg) \
 {                                                                                               \
-        rc  = VMXWriteVMCS32(VMX_VMCS_GUEST_FIELD_##REG,      pCtx->reg);                       \
-        rc |= VMXWriteVMCS32(VMX_VMCS_GUEST_##REG##_LIMIT,    pCtx->reg##Hid.u32Limit);         \
-        rc |= VMXWriteVMCS64(VMX_VMCS_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);          \
+        rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_##REG,      pCtx->reg);                         \
+        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_LIMIT,    pCtx->reg##Hid.u32Limit);           \
+        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);            \
         if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
             val = pCtx->reg##Hid.Attr.u;                                                        \
         else                                                                                    \
@@ -155,7 +155,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx);
         else                                                                                    \
             val = 0x10000;  /* Invalid guest state error otherwise. (BIT(16) = Unusable) */     \
                                                                                                 \
-        rc |= VMXWriteVMCS32(VMX_VMCS_GUEST_##REG##_ACCESS_RIGHTS, val);                        \
+        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_ACCESS_RIGHTS, val);                          \
 }
 
 #define VMX_READ_SELREG(REG, reg) \
