@@ -126,6 +126,48 @@ static int vdiValidatePreHeader(PVDIPREHEADER pPreHdr)
 }
 
 /**
+ * Internal: translate VD image type enum to VDI image type enum.
+ */
+static VDIIMAGETYPE vdiTranslateTypeVD2VDI(VDIMAGETYPE enmType)
+{
+    switch (enmType)
+    {
+        case VD_IMAGE_TYPE_NORMAL:
+            return VDI_IMAGE_TYPE_NORMAL;
+        case VD_IMAGE_TYPE_FIXED:
+            return VDI_IMAGE_TYPE_FIXED;
+        case VD_IMAGE_TYPE_UNDO:
+            return VDI_IMAGE_TYPE_UNDO;
+        case VD_IMAGE_TYPE_DIFF:
+            return VDI_IMAGE_TYPE_DIFF;
+        default:
+            AssertMsgFailed(("invalid VDIMAGETYPE enmType=%d\n", (int)enmType));
+            return VDI_IMAGE_TYPE_NORMAL;
+    }
+}
+
+/**
+ * Internal: translate VDI image type enum to VD image type enum.
+ */
+static VDIMAGETYPE vdiTranslateTypeVDI2VD(VDIIMAGETYPE enmType)
+{
+    switch (enmType)
+    {
+        case VDI_IMAGE_TYPE_NORMAL:
+            return VD_IMAGE_TYPE_NORMAL;
+        case VDI_IMAGE_TYPE_FIXED:
+            return VD_IMAGE_TYPE_FIXED;
+        case VDI_IMAGE_TYPE_UNDO:
+            return VD_IMAGE_TYPE_UNDO;
+        case VDI_IMAGE_TYPE_DIFF:
+            return VD_IMAGE_TYPE_DIFF;
+        default:
+            AssertMsgFailed(("invalid VDIIMAGETYPE enmType=%d\n", (int)enmType));
+            return VD_IMAGE_TYPE_INVALID;
+    }
+}
+
+/**
  * Internal: Init VDI header. Always use latest header version.
  * @param   pHeader     Assumes it was initially initialized to all zeros.
  */
@@ -136,9 +178,7 @@ static void vdiInitHeader(PVDIHEADER pHeader, VDIMAGETYPE enmType,
 {
     pHeader->uVersion = VDI_IMAGE_VERSION;
     pHeader->u.v1.cbHeader = sizeof(VDIHEADER1);
-    pHeader->u.v1.u32Type = (uint32_t)(  enmType == VD_IMAGE_TYPE_NORMAL
-                                       ? VDI_IMAGE_TYPE_NORMAL
-                                       : VDI_IMAGE_TYPE_DIFF);
+    pHeader->u.v1.u32Type = (uint32_t)vdiTranslateTypeVD2VDI(enmType);
     pHeader->u.v1.fFlags = (uImageFlags & VD_VDI_IMAGE_FLAGS_ZERO_EXPAND) ? 1 : 0;
 #ifdef VBOX_STRICT
     char achZero[VDI_IMAGE_COMMENT_SIZE] = {0};
@@ -1152,9 +1192,7 @@ static int vdiGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     Assert(VALID_PTR(penmImageType));
 
     if (pImage)
-        *penmImageType =   getImageType(&pImage->Header) == VDI_IMAGE_TYPE_NORMAL
-                         ? VD_IMAGE_TYPE_NORMAL
-                         : VD_IMAGE_TYPE_DIFF;
+        *penmImageType = vdiTranslateTypeVDI2VD(getImageType(&pImage->Header));
     else
         rc = VERR_VDI_NOT_OPENED;
 
