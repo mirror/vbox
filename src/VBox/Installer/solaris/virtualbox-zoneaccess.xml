@@ -1,0 +1,79 @@
+<?xml version='1.0'?>
+<!--
+# Sun xVM VirtualBox
+# Solaris SMF service manifest for Solaris 10 Zone Access.
+#
+     Copyright (C) 2008 Sun Microsystems, Inc.
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+     Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+     Clara, CA 95054 USA or visit http://www.sun.com if you need
+     additional information or have any questions.
+-->
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+
+<service_bundle type='manifest' name='SUNWvbox:zoneaccess'>
+
+<service
+    name='application/virtualbox/zoneaccess'
+    type='service'
+    version='1'>
+
+    <create_default_instance enabled='false' />
+
+    <single_instance/>
+
+    <!-- Wait for devices to be initialized as we depend on vboxdrv -->
+    <dependency
+        name='milestone'
+        grouping='require_all'
+        restart_on='none'
+        type='service'>
+        <service_fmri value='svc:/milestone/devices:default' />
+    </dependency>
+
+    <!-- Wait for local filesystems to be mounted (just to be safe, don't start too early) -->
+    <dependency
+        name='filesystem-local'
+        grouping='require_all'
+        restart_on='none'
+        type='service'>
+        <service_fmri value='svc:/system/filesystem/local:default' />
+    </dependency>
+
+    <exec_method
+        type='method'
+        name='start'
+        exec='/opt/VirtualBox/zoneaccess.sh'
+        timeout_seconds='30' >
+        <method_context>
+            <method_credential user='root' group='root' />
+        </method_context>
+    </exec_method>
+
+    <exec_method
+        type='method'
+        name='stop'
+        exec=':kill'
+        timeout_seconds='30' >
+        <method_context>
+            <method_credential user='root' group='root' />
+        </method_context>
+    </exec_method>
+
+    <template>
+        <common_name>
+            <loctext xml:lang='C'>VirtualBox Zone Access Service.</loctext>
+        </common_name>
+    </template>
+</service>
+
+</service_bundle>
+
