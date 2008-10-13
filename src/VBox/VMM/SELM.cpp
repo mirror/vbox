@@ -389,7 +389,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     pVM->selm.s.Tss.offIoBitmap = sizeof(VBOXTSS);
 
     /* trap 08 */
-    pVM->selm.s.TssTrap08.cr3    = PGMGetInterGCCR3(pVM);                   /* this should give use better survival chances. */
+    pVM->selm.s.TssTrap08.cr3    = PGMGetInterRCCR3(pVM);                   /* this should give use better survival chances. */
     pVM->selm.s.TssTrap08.ss0    = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.TssTrap08.ss     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
     pVM->selm.s.TssTrap08.esp0   = VMMGetStackGC(pVM) - PAGE_SIZE / 2;  /* upper half can be analysed this way. */
@@ -473,7 +473,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
 VMMR3DECL(void) SELMR3PagingModeChanged(PVM pVM)
 {
     pVM->selm.s.Tss.cr3       = PGMGetHyperCR3(pVM);
-    pVM->selm.s.TssTrap08.cr3 = PGMGetInterGCCR3(pVM);
+    pVM->selm.s.TssTrap08.cr3 = PGMGetInterRCCR3(pVM);
 }
 
 

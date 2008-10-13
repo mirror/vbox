@@ -402,7 +402,7 @@ VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
         else if (uErr & X86_TRAP_PF_RSVD)
             STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eSVReserved);
     }
-#endif
+#endif /* VBOX_WITH_STATISTICS */
 
     /*
      * Call the worker.
@@ -475,6 +475,7 @@ PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
  * @param   Addr        Guest virtual address to check
  * @param   cbSize      Access size
  * @param   fAccess     Access type (r/w, user/supervisor (X86_PTE_*))
+ * @remarks Current not in use.
  */
 VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_t fAccess)
 {
@@ -530,15 +531,11 @@ VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32
  */
 VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_t fAccess)
 {
-    /*
-     * Validate input.
-     */
-    if (fAccess & ~(X86_PTE_US | X86_PTE_RW))
-    {
-        AssertMsgFailed(("PGMVerifyAccess: invalid access type %08x\n", fAccess));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsg(!(fAccess & ~(X86_PTE_US | X86_PTE_RW)), ("PGMVerifyAccess: invalid access type %08x\n", fAccess));
 
+    /*
+     * Get going.
+     */
     uint64_t fPageGst;
     int rc = PGMGstGetPage(pVM, (RTGCPTR)Addr, &fPageGst, NULL);
     if (VBOX_FAILURE(rc))
@@ -566,8 +563,8 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
     if (!HWACCMIsNestedPagingActive(pVM))
     {
         /*
-        * Next step is to verify if we protected this page for dirty bit tracking or for CSAM scanning
-        */
+         * Next step is to verify if we protected this page for dirty bit tracking or for CSAM scanning
+         */
         rc = PGMShwGetPage(pVM, (RTGCPTR)Addr, NULL, NULL);
         if (    rc == VERR_PAGE_NOT_PRESENT
             ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
@@ -677,7 +674,7 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
     /*
      * Inform CSAM about the flush
      */
-    /** @note this is to check if monitored pages have been changed; when we implement callbacks for virtual handlers, this is no longer required. */
+    /* note: This is to check if monitored pages have been changed; when we implement callbacks for virtual handlers, this is no longer required. */
     CSAMR3FlushPage(pVM, GCPtrPage);
 # endif
     return rc;
@@ -752,21 +749,10 @@ VMMDECL(int) PGMShwSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
  *                      Be very CAREFUL when ~'ing constants which could be 32-bit!
  * @remark  You must use PGMMapModifyPage() for pages in a mapping.
  */
-VMMDECL(int)  PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+VMMDECL(int) PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
-    /*
-     * Validate input.
-     */
-    if (fFlags & X86_PTE_PAE_PG_MASK)
-    {
-        AssertMsgFailed(("fFlags=%#llx\n", fFlags));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!cb)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
+    Assert(cb);
 
     /*
      * Align the input.
@@ -869,8 +855,8 @@ VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX8
     return VINF_SUCCESS;
 }
 
-
 #ifndef IN_GC
+
 /**
  * Syncs the SHADOW page directory pointer for the specified address. Allocates
  * backing pages in case the PDPT or PML4 entry is missing.
@@ -908,10 +894,12 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
 
             PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
 
-            rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e, &pShwPage);
+            rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK,
+                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e, &pShwPage);
         }
         else
-            rc = pgmPoolAlloc(pVM, GCPtr + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4e, &pShwPage);
+            rc = pgmPoolAlloc(pVM, GCPtr + RT_BIT_64(63) /* hack: make the address unique */,
+                              PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4e, &pShwPage);
 
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
@@ -977,6 +965,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     return VINF_SUCCESS;
 }
 
+
 /**
  * Gets the SHADOW page directory pointer for the specified address.
  *
@@ -1017,6 +1006,7 @@ VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPd
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
 }
+
 
 /**
  * Syncs the SHADOW EPT page directory pointer for the specified address. Allocates
@@ -1105,7 +1095,7 @@ VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, P
     return VINF_SUCCESS;
 }
 
-#endif
+#endif /* IN_GC */
 
 /**
  * Gets effective Guest OS page information.
@@ -1178,19 +1168,8 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     /*
      * Validate input.
      */
-    if (fFlags & X86_PTE_PAE_PG_MASK)
-    {
-        AssertMsgFailed(("fFlags=%#llx\n", fFlags));
-        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (!cb)
-    {
-        AssertFailed();
-        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
+    Assert(cb);
 
     LogFlow(("PGMGstModifyPage %VGv %d bytes fFlags=%08llx fMask=%08llx\n", GCPtr, cb, fFlags, fMask));
 
@@ -1209,6 +1188,7 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
     return rc;
 }
+
 
 /**
  * Gets the specified page directory pointer table entry.
@@ -1257,6 +1237,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
     }
 }
 
+
 /**
  * Gets the current CR3 register value for the nested memory context.
  * @returns CR3 value.
@@ -1283,6 +1264,7 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
     }
 }
 
+
 /**
  * Gets the current CR3 register value for the EPT paging memory context.
  * @returns CR3 value.
@@ -1292,6 +1274,7 @@ VMMDECL(RTHCPHYS) PGMGetEPTCR3(PVM pVM)
 {
     return pVM->pgm.s.HCPhysNestedRoot;
 }
+
 
 /**
  * Gets the CR3 register value for the 32-Bit shadow memory context.
@@ -1359,11 +1342,11 @@ VMMDECL(RTHCPHYS) PGMGetInterHCCR3(PVM pVM)
 
 
 /**
- * Gets the current CR3 register value for the GC intermediate memory context.
+ * Gets the current CR3 register value for the RC intermediate memory context.
  * @returns CR3 value.
  * @param   pVM         The VM handle.
  */
-VMMDECL(RTHCPHYS) PGMGetInterGCCR3(PVM pVM)
+VMMDECL(RTHCPHYS) PGMGetInterRCCR3(PVM pVM)
 {
     switch (pVM->pgm.s.enmShadowMode)
     {
@@ -1493,9 +1476,13 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
     return rc;
 }
 
+
 /**
- * Performs and schedules necessary updates following a CR3 load or reload,
- * without actually flushing the TLB as with PGMFlushTLB.
+ * Performs and schedules necessary updates following a CR3 load or reload when
+ * using nested or extended paging.
+ *
+ * This API is an alterantive to PDMFlushTLB that avoids actually flushing the
+ * TLB and triggering a SyncCR3.
  *
  * This will normally involve mapping the guest PD or nPDPT
  *
@@ -1534,6 +1521,7 @@ VMMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
     AssertRC(rc);
     return rc;
 }
+
 
 /**
  * Synchronize the paging structures.
@@ -1933,6 +1921,11 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     return VINF_SUCCESS;
 
 #else  /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+    /** @todo @bugref{3202}: Implement ring-0 mapping cache similar to the one in
+     *        RC. To begin with, a simple but expensive one based on
+     *        RTR0MemObjEnterPhys can be used to get things started. Later a
+     *        global cache with mappings per CPU (to avoid shootdown) should be
+     *        employed. */
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 #endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
@@ -1960,7 +1953,6 @@ VMMDECL(int) PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 }
 
 #endif /* IN_GC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
-
 #ifdef VBOX_STRICT
 
 /**

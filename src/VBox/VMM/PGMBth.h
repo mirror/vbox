@@ -52,14 +52,14 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     Assert(pModeData->uShwType == PGM_SHW_TYPE); Assert(pModeData->uGstType == PGM_GST_TYPE);
 
     /* Ring 3 */
-    pModeData->pfnR3BthRelocate          = PGM_BTH_NAME(Relocate);
-    pModeData->pfnR3BthSyncCR3           = PGM_BTH_NAME(SyncCR3);
-    pModeData->pfnR3BthInvalidatePage    = PGM_BTH_NAME(InvalidatePage);
-    pModeData->pfnR3BthSyncPage          = PGM_BTH_NAME(SyncPage);
-    pModeData->pfnR3BthPrefetchPage      = PGM_BTH_NAME(PrefetchPage);
+    pModeData->pfnR3BthRelocate             = PGM_BTH_NAME(Relocate);
+    pModeData->pfnR3BthSyncCR3              = PGM_BTH_NAME(SyncCR3);
+    pModeData->pfnR3BthInvalidatePage       = PGM_BTH_NAME(InvalidatePage);
+    pModeData->pfnR3BthSyncPage             = PGM_BTH_NAME(SyncPage);
+    pModeData->pfnR3BthPrefetchPage         = PGM_BTH_NAME(PrefetchPage);
     pModeData->pfnR3BthVerifyAccessSyncPage = PGM_BTH_NAME(VerifyAccessSyncPage);
 #ifdef VBOX_STRICT
-    pModeData->pfnR3BthAssertCR3         = PGM_BTH_NAME(AssertCR3);
+    pModeData->pfnR3BthAssertCR3            = PGM_BTH_NAME(AssertCR3);
 #endif
 
     if (fResolveGCAndR0)
@@ -68,39 +68,39 @@ PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
 
 #if PGM_SHW_TYPE != PGM_TYPE_AMD64 && PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
         /* GC */
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_BTH_NAME_RC_STR(Trap0eHandler),  &pModeData->pfnRCBthTrap0eHandler);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(Trap0eHandler),       &pModeData->pfnRCBthTrap0eHandler);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_RC_STR(Trap0eHandler),  rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_BTH_NAME_RC_STR(InvalidatePage), &pModeData->pfnRCBthInvalidatePage);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(InvalidatePage),      &pModeData->pfnRCBthInvalidatePage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_RC_STR(InvalidatePage), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_BTH_NAME_RC_STR(SyncCR3), &pModeData->pfnRCBthSyncCR3);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(SyncCR3),             &pModeData->pfnRCBthSyncCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_RC_STR(SyncPage), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_BTH_NAME_RC_STR(SyncPage), &pModeData->pfnRCBthSyncPage);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(SyncPage),            &pModeData->pfnRCBthSyncPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_RC_STR(SyncPage), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_BTH_NAME_RC_STR(PrefetchPage), &pModeData->pfnRCBthPrefetchPage);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(PrefetchPage),        &pModeData->pfnRCBthPrefetchPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_RC_STR(PrefetchPage), rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_BTH_NAME_RC_STR(VerifyAccessSyncPage), &pModeData->pfnRCBthVerifyAccessSyncPage);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(VerifyAccessSyncPage),&pModeData->pfnRCBthVerifyAccessSyncPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_RC_STR(VerifyAccessSyncPage), rc), rc);
 # ifdef VBOX_STRICT
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, PGM_BTH_NAME_RC_STR(AssertCR3), &pModeData->pfnRCBthAssertCR3);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_BTH_NAME_RC_STR(AssertCR3),           &pModeData->pfnRCBthAssertCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_RC_STR(AssertCR3), rc), rc);
 # endif
 #endif /* Not AMD64 shadow paging. */
 
         /* Ring 0 */
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(Trap0eHandler),  &pModeData->pfnR0BthTrap0eHandler);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(Trap0eHandler),       &pModeData->pfnR0BthTrap0eHandler);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_R0_STR(Trap0eHandler),  rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(InvalidatePage), &pModeData->pfnR0BthInvalidatePage);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(InvalidatePage),      &pModeData->pfnR0BthInvalidatePage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_R0_STR(InvalidatePage), rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(SyncCR3), &pModeData->pfnR0BthSyncCR3);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(SyncCR3),             &pModeData->pfnR0BthSyncCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_R0_STR(SyncCR3), rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(SyncPage), &pModeData->pfnR0BthSyncPage);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(SyncPage),            &pModeData->pfnR0BthSyncPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_R0_STR(SyncPage), rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(PrefetchPage), &pModeData->pfnR0BthPrefetchPage);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(PrefetchPage),        &pModeData->pfnR0BthPrefetchPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_R0_STR(PrefetchPage), rc), rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(VerifyAccessSyncPage), &pModeData->pfnR0BthVerifyAccessSyncPage);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(VerifyAccessSyncPage),&pModeData->pfnR0BthVerifyAccessSyncPage);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_R0_STR(VerifyAccessSyncPage), rc), rc);
 #ifdef VBOX_STRICT
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, PGM_BTH_NAME_R0_STR(AssertCR3), &pModeData->pfnR0BthAssertCR3);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_BTH_NAME_R0_STR(AssertCR3),           &pModeData->pfnR0BthAssertCR3);
         AssertMsgRCReturn(rc, ("%s -> rc=%Vrc\n", PGM_BTH_NAME_R0_STR(AssertCR3), rc), rc);
 #endif
     }

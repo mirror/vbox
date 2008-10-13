@@ -59,6 +59,7 @@
 # define SHW_PT_SHIFT           X86_PT_SHIFT
 # define SHW_PT_MASK            X86_PT_MASK
 # define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PD
+
 #elif PGM_SHW_TYPE == PGM_TYPE_EPT
 # define SHWPT                  EPTPT
 # define PSHWPT                 PEPTPT
@@ -79,6 +80,7 @@
 # define SHW_PDPE_PG_MASK       EPT_PDPE_PG_MASK
 # define SHW_TOTAL_PD_ENTRIES   (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
 # define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_NESTED_ROOT      /* do not use! exception is real mode & protected mode without paging. */
+
 #else
 # define SHWPT                  X86PTPAE
 # define PSHWPT                 PX86PTPAE
@@ -94,19 +96,19 @@
 # define SHW_PTE_PG_MASK        X86_PTE_PAE_PG_MASK
 # define SHW_PT_SHIFT           X86_PT_PAE_SHIFT
 # define SHW_PT_MASK            X86_PT_PAE_MASK
-#if PGM_SHW_TYPE == PGM_TYPE_AMD64
-# define SHW_PDPT_SHIFT         X86_PDPT_SHIFT
-# define SHW_PDPT_MASK          X86_PDPT_MASK_AMD64
-# define SHW_PDPE_PG_MASK       X86_PDPE_PG_MASK
-# define SHW_TOTAL_PD_ENTRIES   (X86_PG_AMD64_ENTRIES*X86_PG_AMD64_PDPE_ENTRIES)
-# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PAE_PD      /* do not use! exception is real mode & protected mode without paging. */
-#else /* 32 bits PAE mode */
-# define SHW_PDPT_SHIFT         X86_PDPT_SHIFT
-# define SHW_PDPT_MASK          X86_PDPT_MASK_PAE
-# define SHW_PDPE_PG_MASK       X86_PDPE_PG_MASK
-# define SHW_TOTAL_PD_ENTRIES   (X86_PG_PAE_ENTRIES*X86_PG_PAE_PDPE_ENTRIES)
-# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PAE_PD
-#endif
+# if PGM_SHW_TYPE == PGM_TYPE_AMD64
+#  define SHW_PDPT_SHIFT        X86_PDPT_SHIFT
+#  define SHW_PDPT_MASK         X86_PDPT_MASK_AMD64
+#  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
+#  define SHW_TOTAL_PD_ENTRIES  (X86_PG_AMD64_ENTRIES*X86_PG_AMD64_PDPE_ENTRIES)
+#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_PAE_PD      /* do not use! exception is real mode & protected mode without paging. */
+# else /* 32 bits PAE mode */
+#  define SHW_PDPT_SHIFT        X86_PDPT_SHIFT
+#  define SHW_PDPT_MASK         X86_PDPT_MASK_PAE
+#  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
+#  define SHW_TOTAL_PD_ENTRIES  (X86_PG_PAE_ENTRIES*X86_PG_PAE_PDPE_ENTRIES)
+#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_PAE_PD
+# endif
 #endif
 
 
@@ -142,31 +144,31 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
      * Get the PDE.
      */
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
-    bool      fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+    bool            fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
     X86PDEPAE Pde;
 
     /* PML4 */
-    const unsigned iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    const unsigned  iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     X86PML4E Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
     if (!Pml4e.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     /* PDPT */
-    PX86PDPT pPDPT;
+    PX86PDPT        pPDPT;
     int rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
     if (VBOX_FAILURE(rc))
         return rc;
-    const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-    X86PDPE Pdpe = pPDPT->a[iPDPT];
+    const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+    X86PDPE         Pdpe = pPDPT->a[iPDPT];
     if (!Pdpe.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     /* PD */
-    PX86PDPAE pPd;
+    PX86PDPAE       pPd;
     rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
     if (VBOX_FAILURE(rc))
         return rc;
-    const unsigned iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
+    const unsigned  iPd = (GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK;
     Pde = pPd->a[iPd];
 
     /* Merge accessed, write, user and no-execute bits into the PDE. */
@@ -176,10 +178,11 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     Pde.n.u1NoExecute &= Pml4e.n.u1NoExecute & Pdpe.lm.u1NoExecute;
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    bool           fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
-    const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-    const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-    X86PDEPAE      Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
+    bool            fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+    const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+    const unsigned  iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+    X86PDEPAE       Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
+
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PEPTPD          pPDDst;
@@ -193,9 +196,10 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     }
     Assert(pPDDst);
     Pde = pPDDst->a[iPd];
+
 # else /* PGM_TYPE_32BIT */
-    const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
-    X86PDE Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
+    const unsigned  iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
+    X86PDE          Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
 # endif
     if (!Pde.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -205,7 +209,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     /*
      * Get PT entry.
      */
-    PSHWPT pPT;
+    PSHWPT          pPT;
     if (!(Pde.u & PGM_PDFLAGS_MAPPING))
     {
         int rc = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
@@ -229,8 +233,8 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
 #  endif
 # endif
     }
-    const unsigned iPt = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
-    SHWPTE Pte = pPT->a[iPt];
+    const unsigned  iPt = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
+    SHWPTE          Pte = pPT->a[iPt];
     if (!Pte.n.u1Present)
         return VERR_PAGE_NOT_PRESENT;
 
@@ -289,25 +293,25 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
          * Get the PDE.
          */
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
-        X86PDEPAE Pde;
+        X86PDEPAE       Pde;
         /* PML4 */
-        const unsigned iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-        X86PML4E Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
+        const unsigned  iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+        X86PML4E        Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
         if (!Pml4e.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
         /* PDPT */
-        PX86PDPT pPDPT;
+        PX86PDPT        pPDPT;
         rc = PGM_HCPHYS_2_PTR(pVM, Pml4e.u & X86_PML4E_PG_MASK, &pPDPT);
         if (VBOX_FAILURE(rc))
             return rc;
-        const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-        X86PDPE Pdpe = pPDPT->a[iPDPT];
+        const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+        X86PDPE         Pdpe = pPDPT->a[iPDPT];
         if (!Pdpe.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
         /* PD */
-        PX86PDPAE pPd;
+        PX86PDPAE       pPd;
         rc = PGM_HCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPd);
         if (VBOX_FAILURE(rc))
             return rc;
@@ -315,8 +319,8 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         Pde = pPd->a[iPd];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-        const unsigned iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-        const unsigned iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+        const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
+        const unsigned  iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
         X86PDEPAE Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
@@ -332,9 +336,10 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         }
         Assert(pPDDst);
         Pde = pPDDst->a[iPd];
+
 # else /* PGM_TYPE_32BIT */
-        const unsigned iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
-        X86PDE Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
+        const unsigned  iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
+        X86PDE          Pde = CTXMID(pVM->pgm.s.p,32BitPD)->a[iPd];
 # endif
         if (!Pde.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -342,12 +347,12 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         /*
          * Map the page table.
          */
-        PSHWPT pPT;
+        PSHWPT          pPT;
         rc = PGM_HCPHYS_2_PTR(pVM, Pde.u & SHW_PDE_PG_MASK, &pPT);
         if (VBOX_FAILURE(rc))
             return rc;
 
-        unsigned iPTE = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
+        unsigned        iPTE = (GCPtr >> SHW_PT_SHIFT) & SHW_PT_MASK;
         while (iPTE < RT_ELEMENTS(pPT->a))
         {
             if (pPT->a[iPTE].n.u1Present)
