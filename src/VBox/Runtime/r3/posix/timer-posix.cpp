@@ -372,11 +372,11 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
         siginfo_t SigInfo = {0};
         if (RT_LIKELY(sigwaitinfo(&SigSet, &SigInfo) >= 0))
         {
-            LogFlow(("rttimerThread: signo=%d pTimer=%p\n", SigInfo.si_signo, SigInfo._sifields._timer.si_sigval.sival_ptr));
+            LogFlow(("rttimerThread: signo=%d pTimer=%p\n", SigInfo.si_signo, SigInfo.si_value.sival_ptr));
             if (RT_LIKELY(   SigInfo.si_signo == RT_TIMER_SIGNAL
                           && SigInfo.si_code == SI_TIMER)) /* The SI_TIMER check is *essential* because of the pthread_kill. */
             {
-                PRTTIMER pTimer = (PRTTIMER)SigInfo._sifields._timer.si_sigval.sival_ptr;
+                PRTTIMER pTimer = (PRTTIMER)SigInfo.si_value.sival_ptr;
                 AssertPtr(pTimer);
                 if (RT_UNLIKELY(    !VALID_PTR(pTimer)
                                 ||  ASMAtomicUoReadU8(&pTimer->fSuspended)
@@ -388,7 +388,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
 
                 /* auto suspend one-shot timers. */
                 if (RT_UNLIKELY(!pTimer->u64NanoInterval))
-                    ASMAtomicWriteU8(&pTimer->fSuspended, true); /** @todo Can't we do a simple assigment here? */
+                    ASMAtomicWriteU8(&pTimer->fSuspended, true);
             }
         }
     }
