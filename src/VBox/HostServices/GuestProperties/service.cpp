@@ -793,8 +793,8 @@ void Service::notifyHost(const char *pszProperty)
             rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
                              (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
                              mpvHostData, pszName, pszValue,
-                             (uint32_t) u64Timestamp / 0xffffffff,
-                             (uint32_t) u64Timestamp % 0xffffffff, pszFlags);
+                             (uint32_t) (u64Timestamp / 0xffffffff),
+                             (uint32_t) (u64Timestamp % 0xffffffff), pszFlags);
         if (!RT_SUCCESS(rc)) /* clean up */
         {
             RTStrFree(pszName);
@@ -841,7 +841,7 @@ int Service::reqNotify(PFNVBOXHGCMCALLBACK pfnCallback, void *pvData,
     HostCallbackData.hdr.pvData   = pvData;
     HostCallbackData.pcszName     = pszName;
     HostCallbackData.pcszValue    = pszValue;
-    HostCallbackData.u64Timestamp = u32TimeHigh * 0xffff + u32TimeLow;
+    HostCallbackData.u64Timestamp = RT_MAKE_U64(u32TimeLow, u32TimeHigh);
     HostCallbackData.pcszFlags    = pszFlags;
     pfnCallback(&HostCallbackData.hdr);
     RTStrFree(pszName);
