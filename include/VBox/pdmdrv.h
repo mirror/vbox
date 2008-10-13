@@ -818,6 +818,13 @@ DECLINLINE(int) PDMDrvHlpSSMRegister(PPDMDRVINS pDrvIns, const char *pszName, ui
                                             pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 }
 
+/**
+ * @copydoc PDMDRVHLPR3::pfnTMTimerCreate
+ */
+DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer)
+{
+    return pDrvIns->pDrvHlp->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pszDesc, ppTimer);
+}
 
 /**
  * @copydoc PDMDRVHLP::pfnSTAMRegister
