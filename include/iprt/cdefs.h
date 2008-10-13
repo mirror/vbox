@@ -1001,7 +1001,7 @@
 
 /** @def RT_LODWORD
  * Gets the low dword (=uint32_t) of something. */
-#define RT_LODWORD(a)            ((a) & UINT32_C(0xfffffffff))
+#define RT_LODWORD(a)            ((a) & UINT32_C(0xffffffff))
 
 /** @def RT_HIDWORD
  * Gets the high dword (=uint32_t) og a 64-bit of something. */
