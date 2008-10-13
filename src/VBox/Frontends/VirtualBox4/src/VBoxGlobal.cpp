@@ -2068,6 +2068,23 @@ QString VBoxGlobal::platformInfo()
 }
 
 #if defined(Q_WS_X11) && !defined(VBOX_OSE)
+double VBoxGlobal::findLicenseFile (const QStringList &aFilesList, QRegExp aPattern, QString &aLicenseFile) const
+{
+    double maxVersionNumber = 0;
+    aLicenseFile = "";
+    for (int index = 0; index < aFilesList.count(); ++ index)
+    {
+        aPattern.indexIn (aFilesList [index]);
+        QString version = aPattern.cap (1);
+        if (maxVersionNumber < version.toDouble())
+        {
+            maxVersionNumber = version.toDouble();
+            aLicenseFile = aFilesList [index];
+        }
+    }
+    return maxVersionNumber;
+}
+
 bool VBoxGlobal::showVirtualBoxLicense()
 {
     /* get the apps doc path */
@@ -2080,27 +2097,29 @@ bool VBoxGlobal::showVirtualBoxLicense()
     docDir.setFilter (QDir::Files);
     docDir.setNameFilters (QStringList ("License-*.html"));
 
-    /* get the license files list and search for the latest license */
+    /* Make sure that the language is in two letter code.
+     * Note: if languageId() returns an empty string lang.name() will
+     * return "C" which is an valid language code. */
+    QLocale lang (VBoxGlobal::languageId());
+
     QStringList filesList = docDir.entryList();
-    double maxVersionNumber = 0;
-    for (int index = 0; index < filesList.count(); ++ index)
-    {
-        QRegExp regExp ("License-([\\d\\.]+).html");
-        regExp.indexIn (filesList [index]);
-        QString version = regExp.cap (1);
-        if (maxVersionNumber < version.toDouble())
-            maxVersionNumber = version.toDouble();
-    }
-    if (!maxVersionNumber)
+    QString licenseFile;
+    /* First try to find a localized version of the license file. */
+    double versionNumber = findLicenseFile (filesList, QRegExp (QString ("License-([\\d\\.]+)-%1.html").arg (lang.name())), licenseFile);
+    /* If there wasn't a localized version of the currently selected language,
+     * search for the generic one. */
+    if (versionNumber == 0)
+        versionNumber = findLicenseFile (filesList, QRegExp ("License-([\\d\\.]+).html"), licenseFile);
+    /* Check the version again. */
+    if (!versionNumber)
     {
         vboxProblem().cannotFindLicenseFiles (path);
         return false;
     }
 
     /* compose the latest license file full path */
-    QString latestVersion = QString::number (maxVersionNumber);
-    QString latestFilePath = docDir.absoluteFilePath (
-        QString ("License-%1.html").arg (latestVersion));
+    QString latestVersion = QString::number (versionNumber);
+    QString latestFilePath = docDir.absoluteFilePath (licenseFile);
 
     /* check for the agreed license version */
     QString licenseAgreed = virtualBox().GetExtraData (VBoxDefs::GUI_LicenseKey);
@@ -2944,11 +2963,15 @@ QString VBoxGlobal::helpFile() const
     char szDocsPath[RTPATH_MAX];
     int rc = RTPathAppDocs (szDocsPath, sizeof (szDocsPath));
     AssertRC (rc);
+    /* Make sure that the language is in two letter code.
+     * Note: if languageId() returns an empty string lang.name() will
+     * return "C" which is an valid language code. */
+    QLocale lang (VBoxGlobal::languageId());
 
     /* Construct the path and the filename */
     QString manual = QString ("%1/%2_%3.%4").arg (szDocsPath)
                                             .arg (name)
-                                            .arg (vboxGlobal().languageId())
+                                            .arg (lang.name())
                                             .arg (suffix);
     /* Check if a help file with that name exists */
     QFileInfo fi (manual);
