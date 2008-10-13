@@ -40,6 +40,7 @@
 #endif
 
 #define HWACCM_VMX_EMULATE_REALMODE
+#define HWACCM_VTX_WITH_EPT
 
 __BEGIN_DECLS
 
