@@ -694,13 +694,28 @@ static void vboxClipboardAddFormat(const char *pszName, g_eClipboardFormats eFor
  */
 static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
 {
+    LogRel (("Shared clipboard: starting host clipboard thread\n"));
+
+    /* Set up a timer to poll the host clipboard */
+    XtAppAddTimeOut(g_ctx.appContext, 200 /* ms */, vboxClipboardTimerProc, 0);
+
+    XtAppMainLoop(g_ctx.appContext);
+    g_ctx.formatList.clear();
+    RTSemEventDestroy(g_ctx.waitForData);
+    RTSemMutexDestroy(g_ctx.asyncMutex);
+    LogRel (("Shared clipboard: host clipboard thread terminated successfully\n"));
+    return VINF_SUCCESS;
+}
+
+int vboxClipboardInitX11 (void)
+{
+
     /* Create a window and make it a clipboard viewer. */
     int cArgc = 0;
     char *pcArgv = 0;
     int rc = VINF_SUCCESS;
     // static String szFallbackResources[] = { (char*)"*.width: 1", (char*)"*.height: 1", NULL };
     Display *pDisplay;
-    LogRel (("vboxClipboardThread: starting clipboard thread\n"));
 
     /* Make sure we are thread safe */
     XtToolkitThreadInitialize();
@@ -711,65 +726,61 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
     g_ctx.appContext = XtCreateApplicationContext();
     // XtAppSetFallbackResources(g_ctx.appContext, szFallbackResources);
     pDisplay = XtOpenDisplay(g_ctx.appContext, 0, 0, "VBoxClipboard", 0, 0, &cArgc, &pcArgv);
-    if (pDisplay == 0)
+    if (NULL == pDisplay)
     {
-        LogRel(("vboxClipboardThread: failed to connect to the host clipboard - the window system may not be running.\n"));
-        return VERR_NOT_SUPPORTED;
+        LogRel(("Shared clipboard: failed to connect to the host clipboard - the window system may not be running.\n"));
+        rc = VERR_NOT_SUPPORTED;
     }
-    g_ctx.widget = XtVaAppCreateShell(0, "VBoxClipboard", applicationShellWidgetClass, pDisplay,
-                                      XtNwidth, 1, XtNheight, 1, NULL);
-    if (g_ctx.widget == 0)
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("vboxClipboardThread: failed to construct the X11 window for the clipboard manager.\n"));
-        AssertReturn(g_ctx.widget != 0, VERR_ACCESS_DENIED);
+        g_ctx.widget = XtVaAppCreateShell(0, "VBoxClipboard", applicationShellWidgetClass, pDisplay,
+                                          XtNwidth, 1, XtNheight, 1, NULL);
+        if (NULL == g_ctx.widget)
+        {
+            LogRel(("Shared clipboard: failed to construct the X11 window for the host clipboard manager.\n"));
+            rc = VERR_NO_MEMORY;
+        }
     }
-    RTThreadUserSignal(self);
-    XtSetMappedWhenManaged(g_ctx.widget, false);
-    XtRealizeWidget(g_ctx.widget);
+    if (RT_SUCCESS(rc))
+    {
+        XtSetMappedWhenManaged(g_ctx.widget, false);
+        XtRealizeWidget(g_ctx.widget);
 
-    /* Get hold of the atoms which we need */
-    g_ctx.atomClipboard = XInternAtom(XtDisplay(g_ctx.widget), "CLIPBOARD", false /* only_if_exists */);
-    g_ctx.atomPrimary   = XInternAtom(XtDisplay(g_ctx.widget), "PRIMARY",   false);
-    g_ctx.atomTargets   = XInternAtom(XtDisplay(g_ctx.widget), "TARGETS",   false);
-    g_ctx.atomMultiple  = XInternAtom(XtDisplay(g_ctx.widget), "MULTIPLE",  false);
-    g_ctx.atomTimestamp = XInternAtom(XtDisplay(g_ctx.widget), "TIMESTAMP", false);
-    g_ctx.atomUtf16     = XInternAtom(XtDisplay(g_ctx.widget),
-                                      "text/plain;charset=ISO-10646-UCS-2", false);
-    g_ctx.atomUtf8      = XInternAtom(XtDisplay(g_ctx.widget), "UTF_STRING", false);
-    /* And build up the vector of supported formats */
-    g_ctx.atomCText     = XInternAtom(XtDisplay(g_ctx.widget), "COMPOUND_TEXT", false);
-    /* And build up the vector of supported formats */
+        /* Get hold of the atoms which we need */
+        g_ctx.atomClipboard = XInternAtom(XtDisplay(g_ctx.widget), "CLIPBOARD", false /* only_if_exists */);
+        g_ctx.atomPrimary   = XInternAtom(XtDisplay(g_ctx.widget), "PRIMARY",   false);
+        g_ctx.atomTargets   = XInternAtom(XtDisplay(g_ctx.widget), "TARGETS",   false);
+        g_ctx.atomMultiple  = XInternAtom(XtDisplay(g_ctx.widget), "MULTIPLE",  false);
+        g_ctx.atomTimestamp = XInternAtom(XtDisplay(g_ctx.widget), "TIMESTAMP", false);
+        g_ctx.atomUtf16     = XInternAtom(XtDisplay(g_ctx.widget),
+                                          "text/plain;charset=ISO-10646-UCS-2", false);
+        g_ctx.atomUtf8      = XInternAtom(XtDisplay(g_ctx.widget), "UTF_STRING", false);
+        /* And build up the vector of supported formats */
+        g_ctx.atomCText     = XInternAtom(XtDisplay(g_ctx.widget), "COMPOUND_TEXT", false);
+        /* And build up the vector of supported formats */
 #ifdef USE_UTF16
-    vboxClipboardAddFormat("text/plain;charset=ISO-10646-UCS-2", UTF16,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("text/plain;charset=ISO-10646-UCS-2", UTF16,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
 #endif
 #ifdef USE_UTF8
-    vboxClipboardAddFormat("UTF8_STRING", UTF8,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    vboxClipboardAddFormat("text/plain;charset=UTF-8", UTF8,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    vboxClipboardAddFormat("text/plain;charset=utf-8", UTF8,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    vboxClipboardAddFormat("STRING", UTF8,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    vboxClipboardAddFormat("TEXT", UTF8,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    vboxClipboardAddFormat("text/plain", UTF8,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("UTF8_STRING", UTF8,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("text/plain;charset=UTF-8", UTF8,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("text/plain;charset=utf-8", UTF8,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("STRING", UTF8,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("TEXT", UTF8,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("text/plain", UTF8,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
 #endif
 #ifdef USE_CTEXT
-    vboxClipboardAddFormat("COMPOUND_TEXT", CTEXT,
-                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        vboxClipboardAddFormat("COMPOUND_TEXT", CTEXT,
+                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
 #endif
-
-    /* Set up a timer to poll the host clipboard */
-    XtAppAddTimeOut(g_ctx.appContext, 200 /* ms */, vboxClipboardTimerProc, 0);
-
-    XtAppMainLoop(g_ctx.appContext);
-    g_ctx.formatList.clear();
-    RTSemEventDestroy(g_ctx.waitForData);
-    RTSemMutexDestroy(g_ctx.asyncMutex);
-    LogRel (("vboxClipboardThread: clipboard thread terminated successfully with return code %Vrc\n", rc));
+    }
     return rc;
 }
 
@@ -785,57 +796,29 @@ int vboxClipboardInit (void)
          * connected to an X11 server. Don't actually try to do this then, just fail
          * silently and report success on every call. This is important for VBoxHeadless.
          */
-        LogRel(("vboxClipboardInit: no X11 detected -- host clipboard disabled\n"));
+        LogRelFunc(("no X11 detected -- host clipboard disabled\n"));
         g_fHaveX11 = false;
         return VINF_SUCCESS;
     }
 
     g_fHaveX11 = true;
 
-    LogRel(("vboxClipboardInit: initializing host clipboard\n"));
+    LogRel(("Initializing host clipboard service\n"));
     RTSemEventCreate(&g_ctx.waitForData);
     RTSemMutexCreate(&g_ctx.asyncMutex);
-    rc = RTThreadCreate(&g_ctx.thread, vboxClipboardThread, 0, 0, RTTHREADTYPE_IO,
-                        RTTHREADFLAGS_WAITABLE, "SHCLIP");
-    AssertRC(rc);
+    rc = vboxClipboardInitX11();
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Wait for the thread to initialize.
-         *
-         * We must *NOT* return failure on a timeout because then the code will be
-         * unloaded and we'll be SIGSEGV'ing in the thread.
-         */
-        /** @todo r=bird: This isn't very reliable, waiting for just one second and
-         *        not signalling on failure. *grumble* */
-        int rcThread = VERR_WRONG_ORDER;
-        rc = RTThreadUserWait(g_ctx.thread, 1000);
-        if (RT_SUCCESS(rc))
-        {
-            /* paranoia: check that the thread is actually running */
-            rc = RTThreadWait(g_ctx.thread, 0, &rcThread);
-            Assert(rc == VERR_TIMEOUT);
-            if (RT_FAILURE(rc))
-                return VINF_SUCCESS;
-            LogRel(("vboxClipboardInit: thread died unexpectedly, rcThread=%Rrc, rcWait=%Rrc\n", rcThread, rc));
-        }
-        else
-        {
-            LogRel(("vboxClipboardInit: thread failed to start in a timely manner, rc=%Rrc\n", rc));
-            rc = RTThreadWait(g_ctx.thread, 30000, &rcThread);
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("vboxClipboardInit: thread still running! (rcThread=%Rrc, rcWait=%Rrc)\n", rcThread, rc));
-                return VINF_SUCCESS;
-            }
-            LogRel(("vboxClipboardInit: rcThread=%Rrc, rcWait=%Rrc\n", rcThread, rc));
-            rc = RT_FAILURE(rcThread) ? rcThread : VERR_INTERNAL_ERROR;
-        }
+        rc = RTThreadCreate(&g_ctx.thread, vboxClipboardThread, 0, 0,
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
+        if (!RT_SUCCESS(rc))
+            LogRel(("Failed to start the host shared clipboard thread."));
     }
-    else
-        LogRel(("vboxClipboardInit: failed to create the clipboard thread. rc=%Rrc\n", rc));
-    RTSemEventDestroy(g_ctx.waitForData);
-    RTSemMutexDestroy(g_ctx.asyncMutex);
+    if (!RT_SUCCESS(rc))
+    {
+        RTSemEventDestroy(g_ctx.waitForData);
+        RTSemMutexDestroy(g_ctx.asyncMutex);
+    }
     return rc;
 }
 
