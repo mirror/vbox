@@ -53,10 +53,14 @@
 typedef int32_t target_long;
 typedef uint32_t target_ulong;
 #define TARGET_FMT_lx "%08x"
+#define TARGET_FMT_ld "%d"
+#define TARGET_FMT_lu "%u"
 #elif TARGET_LONG_SIZE == 8
 typedef int64_t target_long;
 typedef uint64_t target_ulong;
 #define TARGET_FMT_lx "%016" PRIx64
+#define TARGET_FMT_ld "%" PRId64
+#define TARGET_FMT_lu "%" PRIu64
 #else
 #error TARGET_LONG_SIZE undefined
 #endif
@@ -69,14 +73,13 @@ typedef uint64_t target_ulong;
 
 #if TARGET_PHYS_ADDR_BITS == 32
 typedef uint32_t target_phys_addr_t;
+#define TARGET_FMT_plx "%08x"
 #elif TARGET_PHYS_ADDR_BITS == 64
 typedef uint64_t target_phys_addr_t;
+#define TARGET_FMT_plx "%016" PRIx64
 #else
 #error TARGET_PHYS_ADDR_BITS undefined
 #endif
-
-/* address in the RAM (different from a physical address) */
-typedef unsigned long ram_addr_t;
 
 #define HOST_LONG_SIZE (HOST_LONG_BITS / 8)
 
@@ -91,6 +94,7 @@ typedef unsigned long ram_addr_t;
 #define EXCP_RC             0x11027 /* a EM rc was raised (VMR3Reset/Suspend/PowerOff). */
 #endif /* VBOX */
 #define MAX_BREAKPOINTS 32
+#define MAX_WATCHPOINTS 32
 
 #define TB_JMP_CACHE_BITS 12
 #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
@@ -106,33 +110,82 @@ typedef unsigned long ram_addr_t;
 #define CPU_TLB_BITS 8
 #define CPU_TLB_SIZE (1 << CPU_TLB_BITS)
 
+#if TARGET_PHYS_ADDR_BITS == 32 && TARGET_LONG_BITS == 32
+#define CPU_TLB_ENTRY_BITS 4
+#else
+#define CPU_TLB_ENTRY_BITS 5
+#endif
+
 typedef struct CPUTLBEntry {
-    /* bit 31 to TARGET_PAGE_BITS : virtual address 
-       bit TARGET_PAGE_BITS-1..IO_MEM_SHIFT : if non zero, memory io
-                                              zone number
+    /* bit TARGET_LONG_BITS to TARGET_PAGE_BITS : virtual address
+       bit TARGET_PAGE_BITS-1..4  : Nonzero for accesses that should not
+                                    go directly to ram.
        bit 3                      : indicates that the entry is invalid
        bit 2..0                   : zero
     */
     target_ulong addr_read; 
     target_ulong addr_write; 
     target_ulong addr_code; 
-    /* addend to virtual address to get physical address */
-    target_phys_addr_t addend; 
+      /* Addend to virtual address to get physical address.  IO accesses
+       use the correcponding iotlb value.  */
+#if TARGET_PHYS_ADDR_BITS == 64
+    /* on i386 Linux make sure it is aligned */
+    target_phys_addr_t addend __attribute__((aligned(8)));
+#else
+    target_phys_addr_t addend;
+#endif
+    /* padding to get a power of two size */
+    uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) - 
+                  (sizeof(target_ulong) * 3 + 
+                   ((-sizeof(target_ulong) * 3) & (sizeof(target_phys_addr_t) - 1)) + 
+                   sizeof(target_phys_addr_t))];
 } CPUTLBEntry;
+
+#ifdef WORDS_BIGENDIAN
+typedef struct icount_decr_u16 {
+    uint16_t high;
+    uint16_t low;
+} icount_decr_u16;
+#else
+typedef struct icount_decr_u16 {
+    uint16_t low;
+    uint16_t high;
+} icount_decr_u16;
+#endif
+
+
+#define CPU_TEMP_BUF_NLONGS 128
+#ifdef VBOX
+struct TCGContext;
 
 #define CPU_COMMON                                                      \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
     /* soft mmu support */                                              \
-    /* in order to avoid passing too many arguments to the memory       \
-       write helpers, we store some rarely used information in the CPU  \
+    /* in order to avoid passing too many arguments to the MMIO         \
+       helpers, we store some rarely used information in the CPU        \
        context) */                                                      \
-    unsigned long mem_write_pc; /* host pc at which the memory was      \
-                                   written */                           \
-    target_ulong mem_write_vaddr; /* target virtual addr at which the   \
-                                     memory was written */              \
-    /* 0 = kernel, 1 = user */                                          \
-    CPUTLBEntry tlb_table[2][CPU_TLB_SIZE];                             \
+    unsigned long mem_io_pc; /* host pc at which the memory was         \
+                                accessed */                             \
+    target_ulong mem_io_vaddr; /* target virtual addr at which the      \
+                                     memory was accessed */             \
+    uint32_t halted; /* Nonzero if the CPU is in suspend state */       \
+    uint32_t interrupt_request;                                         \
+    /* The meaning of the MMU modes is defined in the target code. */   \
+    CPUTLBEntry tlb_table[NB_MMU_MODES][CPU_TLB_SIZE];                  \
+    target_phys_addr_t iotlb[NB_MMU_MODES][CPU_TLB_SIZE];               \
     struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
+    /* buffer for temporaries in the code generator */                  \
+    long temp_buf[CPU_TEMP_BUF_NLONGS];                                 \
+                                                                        \
+    int64_t icount_extra; /* Instructions until next timer event.  */   \
+    /* Number of cycles left, with interrupt flag in high bit.          \
+       This allows a single read-compare-cbranch-write sequence to test \
+       for both decrementer underflow and exceptions.  */               \
+    union {                                                             \
+        uint32_t u32;                                                   \
+        icount_decr_u16 u16;                                            \
+    } icount_decr;                                                      \
+    uint32_t can_do_io; /* nonzero if memory mapped IO is safe.  */     \
                                                                         \
     /* from this point: preserved by CPU reset */                       \
     /* ice debug support */                                             \
@@ -140,9 +193,85 @@ typedef struct CPUTLBEntry {
     int nb_breakpoints;                                                 \
     int singlestep_enabled;                                             \
                                                                         \
+    struct {                                                            \
+        target_ulong vaddr;                                             \
+        int type; /* PAGE_READ/PAGE_WRITE */                            \
+    } watchpoint[MAX_WATCHPOINTS];                                      \
+    int nb_watchpoints;                                                 \
+    int watchpoint_hit;                                                 \
+                                                                        \
+    /* Core interrupt code */                                           \
+    jmp_buf jmp_env;                                                    \
+    int exception_index;                                                \
+                                                                        \
+    int user_mode_only;                                                 \
+                                                                        \
     void *next_cpu; /* next CPU sharing TB cache */                     \
     int cpu_index; /* CPU index (informative) */                        \
+    int running; /* Nonzero if cpu is currently running(usermode).  */  \
     /* user data */                                                     \
-    void *opaque;
+    void *opaque;                                                       \
+                                                                        \
+    const char *cpu_model_str;                                          \
+    /* Codegenerator context */                                         \
+    struct TCGContext *tcg_context;
+#else
+
+#define CPU_COMMON                                                      \
+    struct TranslationBlock *current_tb; /* currently executing TB  */  \
+    /* soft mmu support */                                              \
+    /* in order to avoid passing too many arguments to the MMIO         \
+       helpers, we store some rarely used information in the CPU        \
+       context) */                                                      \
+    unsigned long mem_io_pc; /* host pc at which the memory was         \
+                                accessed */                             \
+    target_ulong mem_io_vaddr; /* target virtual addr at which the      \
+                                     memory was accessed */             \
+    uint32_t halted; /* Nonzero if the CPU is in suspend state */       \
+    uint32_t interrupt_request;                                         \
+    /* The meaning of the MMU modes is defined in the target code. */   \
+    CPUTLBEntry tlb_table[NB_MMU_MODES][CPU_TLB_SIZE];                  \
+    target_phys_addr_t iotlb[NB_MMU_MODES][CPU_TLB_SIZE];               \
+    struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
+    /* buffer for temporaries in the code generator */                  \
+    long temp_buf[CPU_TEMP_BUF_NLONGS];                                 \
+                                                                        \
+    int64_t icount_extra; /* Instructions until next timer event.  */   \
+    /* Number of cycles left, with interrupt flag in high bit.          \
+       This allows a single read-compare-cbranch-write sequence to test \
+       for both decrementer underflow and exceptions.  */               \
+    union {                                                             \
+        uint32_t u32;                                                   \
+        icount_decr_u16 u16;                                            \
+    } icount_decr;                                                      \
+    uint32_t can_do_io; /* nonzero if memory mapped IO is safe.  */     \
+                                                                        \
+    /* from this point: preserved by CPU reset */                       \
+    /* ice debug support */                                             \
+    target_ulong breakpoints[MAX_BREAKPOINTS];                          \
+    int nb_breakpoints;                                                 \
+    int singlestep_enabled;                                             \
+                                                                        \
+    struct {                                                            \
+        target_ulong vaddr;                                             \
+        int type; /* PAGE_READ/PAGE_WRITE */                            \
+    } watchpoint[MAX_WATCHPOINTS];                                      \
+    int nb_watchpoints;                                                 \
+    int watchpoint_hit;                                                 \
+                                                                        \
+    /* Core interrupt code */                                           \
+    jmp_buf jmp_env;                                                    \
+    int exception_index;                                                \
+                                                                        \
+    int user_mode_only;                                                 \
+                                                                        \
+    void *next_cpu; /* next CPU sharing TB cache */                     \
+    int cpu_index; /* CPU index (informative) */                        \
+    int running; /* Nonzero if cpu is currently running(usermode).  */  \
+    /* user data */                                                     \
+    void *opaque;                                                       \
+                                                                        \
+    const char *cpu_model_str;                                          
+#endif
 
 #endif

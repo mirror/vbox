@@ -25,6 +25,8 @@
 # define NULL 0
 #endif
 
+#define unlikely(cond)      RT_UNLIKELY(cond)
+
 #else /* !VBOX */
 
 #include <stdarg.h>

@@ -41,6 +41,9 @@ REM_MOD              += VBoxREM
 DLLS                 += VBoxREM
 IMPORT_LIBS          += VBoxREMImp
 
+DEFS                 += VBOX_WITH_NEW_RECOMPILER
+
+
 OTHER_CLEAN          += \
 	$(PATH_$(REM_MOD))/op.h \
 	$(PATH_$(REM_MOD))/opc.h \
@@ -217,10 +220,6 @@ cpu-exec.c_CFLAGS.solaris.amd64 = -O2 -fomit-frame-pointer -fno-strict-aliasing
 # transitional rule
 $(PATH_$(REM_MOD))/op.h:
 	$(APPEND)    $@ ''
-
-translate-all.c_DEPS = 
-translate-op.c_DEPS = $(translate-all.c_DEPS)
-target-i386/translate.c_DEPS = $(translate-all.c_DEPS)
 
 #
 # The math testcase as a standalone program for testing and debugging purposes.

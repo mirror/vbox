@@ -1029,9 +1029,11 @@ ifdef VBOX_PATH_APP_DOCS
 endif
 ## @todo eliminate these guys.
 ifdef VBOX_WITH_INTERNAL_NETWORKING
-DEFS += VBOX_WITH_INTERNAL_NETWORKING
+ DEFS += VBOX_WITH_INTERNAL_NETWORKING
 endif
-
+ifdef VBOX_WITH_NEW_RECOMPILER
+ DEFS += VBOX_WITH_NEW_RECOMPILER
+endif
 
 #
 # Compiler optimization flags.

@@ -41,68 +41,9 @@
 /* at least 4 register variables are defined */
 register struct CPUX86State *env asm(AREG0);
 
-#if TARGET_LONG_BITS > HOST_LONG_BITS
-
-/* no registers can be used */
-#define T0 (env->t0)
-#define T1 (env->t1)
-#define T2 (env->t2)
-
-#else
-
-/* XXX: use unsigned long instead of target_ulong - better code will
-   be generated for 64 bit CPUs */
-register target_ulong T0 asm(AREG1);
-register target_ulong T1 asm(AREG2);
-register target_ulong T2 asm(AREG3);
-
-/* if more registers are available, we define some registers too */
-#ifdef AREG4
-register target_ulong EAX asm(AREG4);
-#define reg_EAX
+#ifndef VBOX
+#include "qemu-log.h"
 #endif
-
-#ifdef AREG5
-register target_ulong ESP asm(AREG5);
-#define reg_ESP
-#endif
-
-#ifdef AREG6
-register target_ulong EBP asm(AREG6);
-#define reg_EBP
-#endif
-
-#ifdef AREG7
-register target_ulong ECX asm(AREG7);
-#define reg_ECX
-#endif
-
-#ifdef AREG8
-register target_ulong EDX asm(AREG8);
-#define reg_EDX
-#endif
-
-#ifdef AREG9
-register target_ulong EBX asm(AREG9);
-#define reg_EBX
-#endif
-
-#ifdef AREG10
-register target_ulong ESI asm(AREG10);
-#define reg_ESI
-#endif
-
-#ifdef AREG11
-register target_ulong EDI asm(AREG11);
-#define reg_EDI
-#endif
-
-#endif /* ! (TARGET_LONG_BITS > HOST_LONG_BITS) */
-
-#define A0 T2
-
-extern FILE *logfile;
-extern int loglevel;
 
 #ifndef reg_EAX
 #define EAX (env->regs[R_EAX])
@@ -141,47 +82,20 @@ extern int loglevel;
 #define ST(n)  (env->fpregs[(env->fpstt + (n)) & 7].d)
 #define ST1    ST(1)
 
-#ifdef USE_FP_CONVERT
-#define FP_CONVERT  (env->fp_convert)
-#endif
-
 #include "cpu.h"
 #include "exec-all.h"
 
-typedef struct CCTable {
-    int (*compute_all)(void); /* return all the flags */
-    int (*compute_c)(void);  /* return the C flag */
-} CCTable;
-
-extern CCTable cc_table[];
-
-void load_seg(int seg_reg, int selector);
-void helper_ljmp_protected_T0_T1(int next_eip);
-void helper_lcall_real_T0_T1(int shift, int next_eip);
-void helper_lcall_protected_T0_T1(int shift, int next_eip);
-void helper_iret_real(int shift);
-void helper_iret_protected(int shift, int next_eip);
-void helper_lret_protected(int shift, int addend);
-void helper_lldt_T0(void);
-void helper_ltr_T0(void);
-void helper_movl_crN_T0(int reg);
-void helper_movl_drN_T0(int reg);
-void helper_invlpg(target_ulong addr);
-void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
-void cpu_x86_flush_tlb(CPUX86State *env, target_ulong addr);
-int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr, 
-                             int is_write, int is_user, int is_softmmu);
-void tlb_fill(target_ulong addr, int is_write, int is_user, 
-              void *retaddr);
+int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr,
+                             int is_write, int mmu_idx, int is_softmmu);
 void __hidden cpu_lock(void);
 void __hidden cpu_unlock(void);
-void do_interrupt(int intno, int is_int, int error_code, 
+void do_interrupt(int intno, int is_int, int error_code,
                   target_ulong next_eip, int is_hw);
-void do_interrupt_user(int intno, int is_int, int error_code, 
+void do_interrupt_user(int intno, int is_int, int error_code,
                        target_ulong next_eip);
-void raise_interrupt(int intno, int is_int, int error_code, 
+void raise_interrupt(int intno, int is_int, int error_code,
                      int next_eip_addend);
 void raise_exception_err(int exception_index, int error_code);
 void raise_exception(int exception_index);
@@ -196,42 +110,22 @@ void OPPROTO op_movw_eflags_T0_vme(void);
 void OPPROTO op_cli_vme(void);
 void OPPROTO op_sti_vme(void);
 #endif
-void helper_divl_EAX_T0(void);
-void helper_idivl_EAX_T0(void);
-void helper_mulq_EAX_T0(void);
-void helper_imulq_EAX_T0(void);
-void helper_imulq_T0_T1(void);
-void helper_divq_EAX_T0(void);
-void helper_idivq_EAX_T0(void);
-void helper_bswapq_T0(void);
-void helper_cmpxchg8b(void);
-void helper_single_step(void);
-void helper_cpuid(void);
-void helper_enter_level(int level, int data32);
-void helper_enter64_level(int level, int data64);
-void helper_sysenter(void);
-void helper_sysexit(void);
-void helper_syscall(int next_eip_addend);
-void helper_sysret(int dflag);
-void helper_rdtsc(void);
-void helper_rdmsr(void);
-void helper_wrmsr(void);
-void helper_lsl(void);
-void helper_lar(void);
-void helper_verr(void);
-void helper_verw(void);
-void helper_rsm(void);
 
-#ifdef VBOX
-void helper_external_event(void);
-void helper_record_call(void);
+/* n must be a constant to be efficient */
+static inline target_long lshift(target_long x, int n)
+{
+    if (n >= 0)
+        return x << n;
+    else
+        return x >> (-n);
+}
 
-/* in helper.c */
-void sync_seg(CPUX86State *env1, int seg_reg, int selector);
-void sync_ldtr(CPUX86State *env1, int selector);
-int  sync_tr(CPUX86State *env1, int selector);
+#include "helper.h"
 
-#endif
+static inline void svm_check_intercept(uint32_t type)
+{
+    helper_svm_check_intercept_param(type, 0);
+}
 
 void check_iob_T0(void);
 void check_iow_T0(void);
@@ -292,6 +186,12 @@ static inline void stfl(target_ulong ptr, float v)
 #define floatx_to_int64 floatx80_to_int64
 #define floatx_to_int32_round_to_zero floatx80_to_int32_round_to_zero
 #define floatx_to_int64_round_to_zero floatx80_to_int64_round_to_zero
+#define int32_to_floatx int32_to_floatx80
+#define int64_to_floatx int64_to_floatx80
+#define float32_to_floatx float32_to_floatx80
+#define float64_to_floatx float64_to_floatx80
+#define floatx_to_float32 floatx80_to_float32
+#define floatx_to_float64 floatx80_to_float64
 #define floatx_abs floatx80_abs
 #define floatx_chs floatx80_chs
 #define floatx_round_to_int floatx80_round_to_int
@@ -324,6 +224,12 @@ static inline void stfl(target_ulong ptr, float v)
 #define floatx_to_int64 float64_to_int64
 #define floatx_to_int32_round_to_zero float64_to_int32_round_to_zero
 #define floatx_to_int64_round_to_zero float64_to_int64_round_to_zero
+#define int32_to_floatx int32_to_float64
+#define int64_to_floatx int64_to_float64
+#define float32_to_floatx float32_to_float64
+#define float64_to_floatx(x, e) (x)
+#define floatx_to_float32 float64_to_float32
+#define floatx_to_float64(x, e) (x)
 #define floatx_abs float64_abs
 #define floatx_chs float64_chs
 #define floatx_round_to_int float64_round_to_int
@@ -331,6 +237,7 @@ static inline void stfl(target_ulong ptr, float v)
 #define floatx_compare_quiet float64_compare_quiet
 #endif
 
+#ifdef VBOX
 extern CPU86_LDouble sin(CPU86_LDouble x);
 extern CPU86_LDouble cos(CPU86_LDouble x);
 extern CPU86_LDouble sqrt(CPU86_LDouble x);
@@ -340,6 +247,7 @@ extern CPU86_LDouble tan(CPU86_LDouble x);
 extern CPU86_LDouble atan2(CPU86_LDouble, CPU86_LDouble);
 extern CPU86_LDouble floor(CPU86_LDouble x);
 extern CPU86_LDouble ceil(CPU86_LDouble x);
+#endif
 
 #define RC_MASK         0xc00
 #define RC_NEAR		0x000
@@ -505,41 +413,9 @@ static inline void helper_fstt(CPU86_LDouble f, target_ulong ptr)
 
 extern const CPU86_LDouble f15rk[7];
 
-void helper_fldt_ST0_A0(void);
-void helper_fstt_ST0_A0(void);
 void fpu_raise_exception(void);
-CPU86_LDouble helper_fdiv(CPU86_LDouble a, CPU86_LDouble b);
-void helper_fbld_ST0_A0(void);
-void helper_fbst_ST0_A0(void);
-void helper_f2xm1(void);
-void helper_fyl2x(void);
-void helper_fptan(void);
-void helper_fpatan(void);
-void helper_fxtract(void);
-void helper_fprem1(void);
-void helper_fprem(void);
-void helper_fyl2xp1(void);
-void helper_fsqrt(void);
-void helper_fsincos(void);
-void helper_frndint(void);
-void helper_fscale(void);
-void helper_fsin(void);
-void helper_fcos(void);
-void helper_fxam_ST0(void);
-void helper_fstenv(target_ulong ptr, int data32);
-void helper_fldenv(target_ulong ptr, int data32);
-void helper_fsave(target_ulong ptr, int data32);
-void helper_frstor(target_ulong ptr, int data32);
-void helper_fxsave(target_ulong ptr, int data64);
-void helper_fxrstor(target_ulong ptr, int data64);
 void restore_native_fp_state(CPUState *env);
 void save_native_fp_state(CPUState *env);
-float approx_rsqrt(float a);
-float approx_rcp(float a);
-void update_fp_status(void);
-void helper_hlt(void);
-void helper_monitor(void);
-void helper_mwait(void);
 
 extern const uint8_t parity_table[256];
 extern const uint8_t rclw_table[32];
@@ -613,4 +489,30 @@ static inline void regs_to_env(void)
 #ifdef reg_EDI
     env->regs[R_EDI] = EDI;
 #endif
+}
+
+static inline int cpu_halted(CPUState *env) {
+    /* handle exit of HALTED state */
+    if (!env->halted)
+        return 0;
+    /* disable halt condition */
+    if (((env->interrupt_request & CPU_INTERRUPT_HARD) &&
+         (env->eflags & IF_MASK)) ||
+        (env->interrupt_request & CPU_INTERRUPT_NMI)) {
+        env->halted = 0;
+        return 0;
+    }
+    return EXCP_HALTED;
+}
+
+/* load efer and update the corresponding hflags. XXX: do consistency
+   checks with cpuid bits ? */
+static inline void cpu_load_efer(CPUState *env, uint64_t val)
+{
+    env->efer = val;
+    env->hflags &= ~(HF_LMA_MASK | HF_SVME_MASK);
+    if (env->efer & MSR_EFER_LMA)
+        env->hflags |= HF_LMA_MASK;
+    if (env->efer & MSR_EFER_SVME)
+        env->hflags |= HF_SVME_MASK;
 }
