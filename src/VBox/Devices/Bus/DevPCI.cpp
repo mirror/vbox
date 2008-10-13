@@ -522,12 +522,12 @@ static uint32_t pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len)
 {
     uint8_t iBus, iDevice;
     uint32_t config_addr;
-    uint32_t val;
+    uint32_t val = 0xffffffff;
 
     if (!(pGlobals->uConfigReg & (1 << 31)))
-        goto fail;
+        goto the_end;
     if ((pGlobals->uConfigReg & 0x3) != 0)
-        goto fail;
+        goto the_end;
     iBus = (pGlobals->uConfigReg >> 16) & 0xff;
     iDevice = (pGlobals->uConfigReg >> 8) & 0xff;
     config_addr = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
@@ -565,19 +565,6 @@ static uint32_t pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len)
 
         pci_dev = pGlobals->PciBus.devices[iDevice];
         if (!pci_dev) {
-        fail:
-            switch(len) {
-            case 1:
-                val = 0xff;
-                break;
-            case 2:
-                val = 0xffff;
-                break;
-            default:
-            case 4:
-                val = 0xffffffff;
-                break;
-            }
             goto the_end;
         }
         val = pci_dev->Int.s.pfnConfigRead(pci_dev, config_addr, len);
