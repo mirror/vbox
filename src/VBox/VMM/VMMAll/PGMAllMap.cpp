@@ -54,7 +54,6 @@ VMMDECL(int) PGMMap(PVM pVM, RTGCUINTPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPage
     AssertMsg(RT_ALIGN_T(GCPtr, PAGE_SIZE, RTGCUINTPTR) == GCPtr, ("Invalid alignment GCPtr=%#x\n", GCPtr));
     AssertMsg(cbPages > 0 && RT_ALIGN_32(cbPages, PAGE_SIZE) == cbPages, ("Invalid cbPages=%#x\n",  cbPages));
     AssertMsg(!(fFlags & X86_PDE_PG_MASK), ("Invalid flags %#x\n", fFlags));
-    //Assert(HCPhys < _4G); ---  Don't *EVER* try 32-bit shadow mode on a PAE/AMD64 box with memory above 4G !!!
 
     /* hypervisor defaults */
     if (!fFlags)
@@ -147,16 +146,8 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     /*
      * Validate input.
      */
-    if (fFlags & X86_PTE_PAE_PG_MASK)
-    {
-        AssertMsgFailed(("fFlags=%#x\n", fFlags));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!cb)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#x\n", fFlags));
+    Assert(cb);
 
     /*
      * Align the input.
@@ -174,12 +165,10 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
         RTGCUINTPTR off = (RTGCUINTPTR)GCPtr - (RTGCUINTPTR)pCur->GCPtr;
         if (off < pCur->cb)
         {
-            if (off + cb > pCur->cb)
-            {
-                AssertMsgFailed(("Invalid page range %#x LB%#x. mapping '%s' %#x to %#x\n",
-                                 GCPtr, cb, pCur->pszDesc, pCur->GCPtr, pCur->GCPtrLast));
-                return VERR_INVALID_PARAMETER;
-            }
+            AssertMsgReturn(off + cb <= pCur->cb,
+                            ("Invalid page range %#x LB%#x. mapping '%s' %#x to %#x\n",
+                             GCPtr, cb, pCur->pszDesc, pCur->GCPtr, pCur->GCPtrLast),
+                            VERR_INVALID_PARAMETER);
 
             /*
              * Perform the requested operation.

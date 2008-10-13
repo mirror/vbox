@@ -98,7 +98,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     /*
      * Get PDs.
      */
-    int       rc;
+    int             rc;
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 #   if PGM_GST_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDSrc = (RTGCUINTPTR)pvFault >> GST_PD_SHIFT;
@@ -676,11 +676,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             }
                         }
 #    ifdef CSAM_DETECT_NEW_CODE_PAGES
-                        else
-                        if (    uErr == X86_TRAP_PF_RW
-                            &&  pRegFrame->ecx >= 0x100         /* early check for movswd count */
-                            &&  pRegFrame->ecx < 0x10000
-                           )
+                        else if (    uErr == X86_TRAP_PF_RW
+                                 &&  pRegFrame->ecx >= 0x100         /* early check for movswd count */
+                                 &&  pRegFrame->ecx < 0x10000)
                         {
                             /* In case of a write to a non-present supervisor shadow page, we'll take special precautions
                              * to detect loading of new code pages.
@@ -884,7 +882,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 #if    PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)   \
     && PGM_SHW_TYPE != PGM_TYPE_NESTED \
     && PGM_SHW_TYPE != PGM_TYPE_EPT
-    int rc;
+    int             rc;
 
     LogFlow(("InvalidatePage %VGv\n", GCPtrPage));
     /*
@@ -1964,9 +1962,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 }
 
 
-
 #if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-
 /**
  * Investigate page fault and handle write protection page faults caused by
  * dirty bit tracking.
@@ -2018,7 +2014,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
        )
     {
         uPageFaultLevel = 0;
-        goto UpperLevelPageFault;
+        goto l_UpperLevelPageFault;
     }
     Assert(pPdpeSrc);
 
@@ -2039,7 +2035,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
        )
     {
         uPageFaultLevel = 1;
-        goto UpperLevelPageFault;
+        goto l_UpperLevelPageFault;
     }
 # endif
 
@@ -2055,7 +2051,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
         ||  (fUserLevelFault && !pPdeSrc->n.u1User) )
     {
         uPageFaultLevel = 2;
-        goto UpperLevelPageFault;
+        goto l_UpperLevelPageFault;
     }
 
     /*
@@ -2232,8 +2228,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     return rc;
 
 
-UpperLevelPageFault:
-    /* Pagefault detected while checking the PML4E, PDPE or PDE.
+l_UpperLevelPageFault:
+    /*
+     * Pagefault detected while checking the PML4E, PDPE or PDE.
      * Single exit handler to get rid of duplicate code paths.
      */
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,DirtyTrackRealPF));
@@ -2273,7 +2270,6 @@ UpperLevelPageFault:
     }
     return VINF_EM_RAW_GUEST_TRAP;
 }
-
 #endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
 
@@ -2302,7 +2298,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     && PGM_SHW_TYPE != PGM_TYPE_NESTED    \
     && PGM_SHW_TYPE != PGM_TYPE_EPT
 
-    int rc = VINF_SUCCESS;
+    int             rc = VINF_SUCCESS;
 
     /*
      * Validate input a little bit.
@@ -2702,8 +2698,8 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;             /* no mask; flat index into the 2048 entry array. */
     PX86PDPAE       pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
-    const unsigned  iPdpte   = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
+    const unsigned  iPdpte = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    const unsigned  iPDDst = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
@@ -2711,7 +2707,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     Assert(pPDDst);
 
     /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpte].u & X86_PDPE_PG_MASK);
+    PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(pVM, pPdptDst->a[iPdpte].u & X86_PDPE_PG_MASK);
     Assert(pShwPde);
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPdpte = (GCPtrPage >> EPT_PDPT_SHIFT) & EPT_PDPT_MASK;
@@ -2852,9 +2848,9 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 
 #  if PGM_GST_TYPE == PGM_TYPE_PROT
         /* AMD-V nested paging */
-        X86PML4E     Pml4eSrc;
-        X86PDPE      PdpeSrc;
-        PX86PML4E    pPml4eSrc = &Pml4eSrc;
+        X86PML4E        Pml4eSrc;
+        X86PDPE         PdpeSrc;
+        PX86PML4E       pPml4eSrc = &Pml4eSrc;
 
         /* Fake PML4 & PDPT entry; access control handled on the page table level, so allow everything. */
         Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX | X86_PML4E_A;
@@ -2888,6 +2884,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         }
     }
     return rc;
+
 #elif PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
     return VINF_SUCCESS; /* ignore */
 #endif
@@ -2923,10 +2920,10 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
         CSAMMarkPage(pVM, (RTRCPTR)GCPtrPage, true);
     }
 # endif
+
     /*
      * Get guest PD and index.
      */
-
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDSrc = (RTGCUINTPTR)GCPtrPage >> GST_PD_SHIFT;
@@ -2955,15 +2952,15 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     PGSTPD          pPDSrc = NULL;
     const unsigned  iPDSrc = 0;
 # endif
-    int         rc = VINF_SUCCESS;
+    int             rc = VINF_SUCCESS;
 
     /*
      * First check if the shadow pd is present.
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    PX86PDE     pPdeDst = &pVM->pgm.s.CTXMID(p,32BitPD)->a[GCPtrPage >> SHW_PD_SHIFT];
+    PX86PDE         pPdeDst = &pVM->pgm.s.CTXMID(p,32BitPD)->a[GCPtrPage >> SHW_PD_SHIFT];
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    PX86PDEPAE  pPdeDst = &pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[GCPtrPage >> SHW_PD_SHIFT];
+    PX86PDEPAE      pPdeDst = &pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[GCPtrPage >> SHW_PD_SHIFT];
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PX86PDPAE       pPDDst;
@@ -2971,9 +2968,9 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 
 #  if PGM_GST_TYPE == PGM_TYPE_PROT
     /* AMD-V nested paging */
-    X86PML4E     Pml4eSrc;
-    X86PDPE      PdpeSrc;
-    PX86PML4E    pPml4eSrc = &Pml4eSrc;
+    X86PML4E        Pml4eSrc;
+    X86PDPE         PdpeSrc;
+    PX86PML4E       pPml4eSrc = &Pml4eSrc;
 
     /* Fake PML4 & PDPT entry; access control handled on the page table level, so allow everything. */
     Pml4eSrc.u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_NX | X86_PML4E_A;
@@ -3368,13 +3365,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
                     Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
 #  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
+
                     /*
-                    * Sync page directory entry.
-                    *
-                    * The current approach is to allocated the page table but to set
-                    * the entry to not-present and postpone the page table synching till
-                    * it's actually used.
-                    */
+                     * Sync page directory entry.
+                     *
+                     * The current approach is to allocated the page table but to set
+                     * the entry to not-present and postpone the page table synching till
+                     * it's actually used.
+                     */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                     for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
@@ -3474,8 +3472,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  endif
                 {
                     /*
-                    * Check if there is any page directory to mark not present here.
-                    */
+                     * Check if there is any page directory to mark not present here.
+                     */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                     for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
@@ -3624,7 +3622,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     unsigned    cErrors = 0;
 
 #if PGM_GST_TYPE == PGM_TYPE_PAE
-    /* @todo currently broken; crashes below somewhere */
+    /** @todo currently broken; crashes below somewhere */
     AssertFailed();
 #endif
 
@@ -3633,17 +3631,17 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     || PGM_GST_TYPE == PGM_TYPE_AMD64
 
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-    bool        fBigPagesSupported = true;
+    bool            fBigPagesSupported = true;
 #  else
-    bool        fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
+    bool            fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
 #  endif
-    PPGM        pPGM = &pVM->pgm.s;
-    RTGCPHYS    GCPhysGst;              /* page address derived from the guest page tables. */
-    RTHCPHYS    HCPhysShw;              /* page address derived from the shadow page tables. */
+    PPGM            pPGM = &pVM->pgm.s;
+    RTGCPHYS        GCPhysGst;              /* page address derived from the guest page tables. */
+    RTHCPHYS        HCPhysShw;              /* page address derived from the shadow page tables. */
 # ifndef IN_RING0
-    RTHCPHYS    HCPhys;                 /* general usage. */
+    RTHCPHYS        HCPhys;                 /* general usage. */
 # endif
-    int         rc;
+    int             rc;
 
     /*
      * Check that the Guest CR3 and all its mappings are correct.
@@ -3674,17 +3672,17 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
     unsigned        cPDEs       = X86_PG_ENTRIES;
-    unsigned        ulIncrement = X86_PG_ENTRIES * PAGE_SIZE;
+    unsigned        cIncrement  = X86_PG_ENTRIES * PAGE_SIZE;
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     unsigned        cPDEs       = X86_PG_PAE_ENTRIES * 4;   /* treat it as a 2048 entry table. */
 #  else
     unsigned        cPDEs       = X86_PG_PAE_ENTRIES;
 #  endif
-    unsigned        ulIncrement = X86_PG_PAE_ENTRIES * PAGE_SIZE;
+    unsigned        cIncrement  = X86_PG_PAE_ENTRIES * PAGE_SIZE;
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     unsigned        cPDEs       = X86_PG_PAE_ENTRIES;
-    unsigned        ulIncrement = X86_PG_PAE_ENTRIES * PAGE_SIZE;
+    unsigned        cIncrement  = X86_PG_PAE_ENTRIES * PAGE_SIZE;
 # endif
     if (cb != ~(RTGCUINTPTR)0)
         cPDEs = RT_MIN(cb >> SHW_PD_SHIFT, 1);
@@ -3692,7 +3690,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 /** @todo call the other two PGMAssert*() functions. */
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-    PPGMPOOL    pPool         = pVM->pgm.s.CTX_SUFF(pPool);
+    PPGMPOOL        pPool       = pVM->pgm.s.CTX_SUFF(pPool);
 # endif
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -3700,9 +3698,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
     for (; iPml4e < X86_PG_PAE_ENTRIES; iPml4e++)
     {
-        PPGMPOOLPAGE pShwPdpt = NULL;
-        PX86PML4E    pPml4eSrc, pPml4eDst;
-        RTGCPHYS     GCPhysPdptSrc;
+        PPGMPOOLPAGE    pShwPdpt = NULL;
+        PX86PML4E       pPml4eSrc;
+        PX86PML4E       pPml4eDst;
+        RTGCPHYS        GCPhysPdptSrc;
 
         pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPml4e];
         pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e];
@@ -3710,7 +3709,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
         if (!pPml4eDst->n.u1Present)
         {
-            GCPtr += UINT64_C(_2M * 512 * 512);
+            GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
             continue;
         }
 
@@ -3724,7 +3723,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         if (pPml4eSrc->n.u1Present != pPml4eDst->n.u1Present)
         {
             AssertMsgFailed(("Present bit doesn't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64\n", pPml4eDst->u, pPml4eSrc->u));
-            GCPtr += UINT64_C(_2M * 512 * 512);
+            GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
             cErrors++;
             continue;
         }
@@ -3732,7 +3731,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         if (GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
             AssertMsgFailed(("Physical address doesn't match! iPml4e %d pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64 Phys %RX64 vs %RX64\n", iPml4e, pPml4eDst->u, pPml4eSrc->u, pShwPdpt->GCPhys, GCPhysPdptSrc));
-            GCPtr += UINT64_C(_2M * 512 * 512);
+            GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
             cErrors++;
             continue;
         }
@@ -3742,7 +3741,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
             ||  pPml4eDst->n.u1NoExecute != pPml4eSrc->n.u1NoExecute)
         {
             AssertMsgFailed(("User/Write/NoExec bits don't match! pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64\n", pPml4eDst->u, pPml4eSrc->u));
-            GCPtr += UINT64_C(_2M * 512 * 512);
+            GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
             cErrors++;
             continue;
         }
@@ -3832,11 +3831,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         {
 # endif
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-            const GSTPD *pPDSrc = CTXSUFF(pPGM->pGuestPD);
+            const GSTPD    *pPDSrc = CTXSUFF(pPGM->pGuestPD);
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
-            const X86PD    *pPDDst = pPGM->CTXMID(p,32BitPD);
+            PCX86PD         pPDDst = pPGM->CTXMID(p,32BitPD);
 #  else
-            const PX86PDPAE pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0];       /* We treat this as a PD with 2048 entries, so no need to and with SHW_PD_MASK to get iPDDst */
+            PCX86PDPAE      pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]; /* We treat this as a PD with 2048 entries, so no need to and with SHW_PD_MASK to get iPDDst */
 #  endif
 # endif
             /*
@@ -3847,7 +3846,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
             for (;
                 iPDDst < cPDEs;
-                iPDDst++, GCPtr += ulIncrement)
+                iPDDst++, GCPtr += cIncrement)
             {
                 const SHWPDE PdeDst = pPDDst->a[iPDDst];
                 if (PdeDst.u & PGM_PDFLAGS_MAPPING)

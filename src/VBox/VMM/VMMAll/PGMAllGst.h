@@ -59,6 +59,7 @@
 # define GSTPDE                     SHWPDE
 # define PGSTPDE                    PSHWPDE
 # define GST_PTE_PG_MASK            SHW_PTE_PG_MASK
+
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT
 # define GSTPT                      X86PT
 # define PGSTPT                     PX86PT
@@ -80,6 +81,7 @@
 # define GST_PT_SHIFT               X86_PT_SHIFT
 # define GST_PT_MASK                X86_PT_MASK
 # define GST_CR3_PAGE_MASK          X86_CR3_PAGE_MASK
+
 #elif   PGM_GST_TYPE == PGM_TYPE_PAE \
      || PGM_GST_TYPE == PGM_TYPE_AMD64
 # define GSTPT                      X86PTPAE
@@ -502,7 +504,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 }
 
                 Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-try_again:
+l_try_again:
                 rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.pHCShwAmd64CR3);
                 if (rc == VERR_PGM_POOL_FLUSHED)
                 {
@@ -510,7 +512,7 @@ try_again:
                     Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
                     rc = pgmPoolSyncCR3(pVM);
                     AssertRC(rc);
-                    goto try_again;
+                    goto l_try_again;
                 }
                 pVM->pgm.s.pHCPaePML4    = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
                 pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.pHCShwAmd64CR3->Core.Key;
@@ -648,6 +650,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         }
         pVM->pgm.s.GCPhysGstCR3Monitored = GCPhysCR3;
     }
+
     /*
      * Do the 4 PDs.
      */
@@ -782,8 +785,8 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
         return 0;
 #endif
 
-    unsigned    offPage = GCPtr & PAGE_OFFSET_MASK;
-    unsigned    iPage = 0;
+    unsigned        offPage = GCPtr & PAGE_OFFSET_MASK;
+    unsigned        iPage = 0;
     while (iPage < pCur->cPages)
     {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -1042,8 +1045,6 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
 }
 
 #endif /* PGM_TYPE_32BIT && !IN_RING3 */
-
-
 #if PGM_GST_TYPE == PGM_TYPE_PAE && !defined(IN_RING3)
 
 /**
