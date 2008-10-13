@@ -424,7 +424,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     {
         /** @todo the PCI device vs. PDM device designed is a bit flawed if we have to
          * support a PDM device with multiple PCI devices. This might become a problem
-         * when upgrading the chipset for instance...
+         * when upgrading the chipset for instance because of multiple functions in some
+         * devices...
          */
         AssertMsgFailed(("Only one PCI device per device is currently implemented!\n"));
         return VERR_INTERNAL_ERROR;
@@ -432,28 +433,25 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
 
     /*
      * Choose the PCI bus for the device.
-     * This is simple. If the device was configured for a particular bus, 
-     * the PCIBusNo configuration value will be set.
-     * If not the default bus is 0.
+     *
+     * This is simple. If the device was configured for a particular bus, the PCIBusNo
+     * configuration value will be set. If not the default bus is 0.
      */
-    uint8_t u8Bus;
     int rc;
     PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusR3;
-
-    rc = CFGMR3QueryU8Def(pDevIns->Internal.s.pCfgHandle, "PCIBusNo", &u8Bus, 0);
-
-    /* Sanity checks. */
-    AssertMsgRCReturn(rc, ("Configuration error: PCIBusNo query failed with rc=%Vrc (%s/%d)\n",
-                           rc, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance), rc);
-
-    AssertMsgReturn(u8Bus < RT_ELEMENTS(pVM->pdm.s.aPciBuses),
-                    ("Configuration error: PCIBusNo=%d, max is %d. (%s/%d)\n", u8Bus,
-                     RT_ELEMENTS(pVM->pdm.s.aPciBuses), pDevIns->pDevReg->szDeviceName,
-                     pDevIns->iInstance),
-                    VERR_INTERNAL_ERROR);
-
-    pBus = pDevIns->Internal.s.pPciBusR3 = &pVM->pdm.s.aPciBuses[u8Bus];
-    if (pBus)
+    if (!pBus)
+    {
+        uint8_t u8Bus;
+        rc = CFGMR3QueryU8Def(pDevIns->Internal.s.pCfgHandle, "PCIBusNo", &u8Bus, 0);
+        AssertLogRelMsgRCReturn(rc, ("Configuration error: PCIBusNo query failed with rc=%Rrc (%s/%d)\n",
+                                     rc, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance), rc);
+        AssertLogRelMsgReturn(u8Bus < RT_ELEMENTS(pVM->pdm.s.aPciBuses),
+                              ("Configuration error: PCIBusNo=%d, max is %d. (%s/%d)\n", u8Bus,
+                               RT_ELEMENTS(pVM->pdm.s.aPciBuses), pDevIns->pDevReg->szDeviceName, pDevIns->iInstance),
+                              VERR_PDM_NO_PCI_BUS);
+        pBus = pDevIns->Internal.s.pPciBusR3 = &pVM->pdm.s.aPciBuses[u8Bus];
+    }
+    if (pBus->pDevInsR3)
     {
         if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
             pDevIns->Internal.s.pPciBusR0 = MMHyperR3ToR0(pVM, pDevIns->Internal.s.pPciBusR3);
@@ -530,7 +528,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     }
     else
     {
-        AssertMsgFailed(("Configuration error: No PCI bus available. This could be related to init order too!\n"));
+        AssertLogRelMsgFailed(("Configuration error: No PCI bus available. This could be related to init order too!\n"));
         rc = VERR_PDM_NO_PCI_BUS;
     }
 
