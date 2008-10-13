@@ -233,20 +233,13 @@ ifdef VBOX_WITH_DOCS_FROM_BUILD_SERVER
 INSTALLS += buildserver-docs
 buildserver-docs_INST = $(INST_BIN)
 buildserver-docs_MODE = 0644
-buildserver-docs_SOURCES = \
-	$(wildcard $(PATH_TARGET)/VirtualBox*.chm) \
-	$(wildcard $(PATH_TARGET)/UserManual*.pdf)
-buildserver-docs_CLEANS = \
-	$(PATH_TARGET)/VBoxDocumentation.zip \
-	$(PATH_TARGET)/VBoxDocumentation.zip.tmp \
-	$(wildcard $(PATH_TARGET)/VirtualBox*.chm) \
-	$(wildcard $(PATH_TARGET)/UserManual*.pdf)
+buildserver-docs_SOURCES = $(PATH_TARGET)/VirtualBox.chm $(PATH_TARGET)/UserManual.pdf
+buildserver-docs_CLEANS = $(PATH_TARGET)/VBoxDocumentation.zip $(PATH_TARGET)/VBoxDocumentation.zip.tmp $(PATH_TARGET)/VirtualBox.chm $(PATH_TARGET)/UserManual.pdf
 
 ## @todo including this directly is a hack, but using the tool variables
 # is simply too tempting. Could all go away once we have plain unzip targets.
 include $(KBUILD_PATH)/tools/ZIP.kmk
 
-## @todo this only applies safely to en_US!
 $(PATH_TARGET)/VirtualBox.chm + $(PATH_TARGET)/UserManual.pdf: $(PATH_TARGET)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
