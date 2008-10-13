@@ -1160,6 +1160,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         {
             /* We use 4 MB pages in our identity mapping page table for real and protected mode without paging. */
             val |= X86_CR4_PSE;
+            /* Our identity mapping is a 32 bits page directory. */
+            val &= ~X86_CR4_PAE;
         }
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
