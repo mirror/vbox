@@ -1381,7 +1381,18 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  * @param   idxField        VMCS index
  * @param   u64Val          16, 32 or 64 bits value
  */
+#if HC_ARCH_BITS == 64
 DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
+#else
+DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
+{
+    int rc;
+
+    rc  = VMXWriteVMCS32(idxField,    u64Val);
+    rc |= VMXWriteVMCS32(idxField+1,  u64Val >> 32ULL);
+    return rc;
+}
+#endif
 
 /**
  * Executes VMWRITE
@@ -1390,7 +1401,12 @@ DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
  * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64
+DECLINLINE(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val)
+{
+    return VMXWriteVMCS64(idxField, u32Val);
+}
+#elif RT_INLINE_ASM_EXTERNAL
 DECLASM(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val);
 #else
 DECLINLINE(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val)
@@ -1434,12 +1450,6 @@ the_end:
     return rc;
 }
 #endif
-
-#if HC_ARCH_BITS == 64
-#define VMXWriteVMCS VMXWriteVMCS64
-#else
-#define VMXWriteVMCS VMXWriteVMCS32
-#endif /* HC_ARCH_BITS == 64 */
 
 
 /**
