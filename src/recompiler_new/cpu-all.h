@@ -133,6 +133,11 @@ static inline void tswap64s(uint64_t *s)
 #define bswaptls(s) bswap64s(s)
 #endif
 
+typedef union {
+    float32 f;
+    uint32_t l;
+} CPU_FloatU;
+
 /* NOTE: arm FPA is horrible as double 32 bit words are stored in big
    endian ! */
 typedef union {
@@ -151,6 +156,36 @@ typedef union {
 #endif
     uint64_t ll;
 } CPU_DoubleU;
+
+#ifdef TARGET_SPARC
+typedef union {
+    float128 q;
+#if defined(WORDS_BIGENDIAN) \
+    || (defined(__arm__) && !defined(__VFP_FP__) && !defined(CONFIG_SOFTFLOAT))
+    struct {
+        uint32_t upmost;
+        uint32_t upper;
+        uint32_t lower;
+        uint32_t lowest;
+    } l;
+    struct {
+        uint64_t upper;
+        uint64_t lower;
+    } ll;
+#else
+    struct {
+        uint32_t lowest;
+        uint32_t lower;
+        uint32_t upper;
+        uint32_t upmost;
+    } l;
+    struct {
+        uint64_t lower;
+        uint64_t upper;
+    } ll;
+#endif
+} CPU_QuadU;
+#endif
 
 /* CPU memory access without any memory or io remapping */
 
@@ -830,10 +865,12 @@ extern unsigned long qemu_host_page_mask;
 /* original state of the write flag (used when tracking self-modifying
    code */
 #define PAGE_WRITE_ORG 0x0010
+#define PAGE_RESERVED  0x0020
 
 void page_dump(FILE *f);
 int page_get_flags(target_ulong address);
 void page_set_flags(target_ulong start, target_ulong end, int flags);
+int page_check_range(target_ulong start, target_ulong len, int flags);
 void page_unprotect_range(target_ulong data, target_ulong data_size);
 
 #define SINGLE_CPU_DEFINES
@@ -907,7 +944,8 @@ void cpu_dump_state(CPUState *env, FILE *f,
 DECLNORETURN(void) cpu_abort(CPUState *env, const char *fmt, ...);
 extern CPUState *first_cpu;
 extern CPUState *cpu_single_env;
-extern int code_copy_enabled;
+extern int64_t qemu_icount;
+extern int use_icount;
 
 #define CPU_INTERRUPT_EXIT   0x01 /* wants exit from main loop */
 #define CPU_INTERRUPT_HARD   0x02 /* hardware interrupt pending */
@@ -916,28 +954,40 @@ extern int code_copy_enabled;
 #define CPU_INTERRUPT_FIQ    0x10 /* Fast interrupt pending.  */
 #define CPU_INTERRUPT_HALT   0x20 /* CPU halt wanted */
 #define CPU_INTERRUPT_SMI    0x40 /* (x86 only) SMI interrupt pending */
+#define CPU_INTERRUPT_DEBUG  0x80 /* Debug event occured.  */
+#define CPU_INTERRUPT_VIRQ   0x100 /* virtual interrupt pending.  */
+#define CPU_INTERRUPT_NMI    0x200 /* NMI pending. */
 
 #ifdef VBOX
 /** Executes a single instruction. cpu_exec() will normally return EXCP_SINGLE_INSTR. */
-#define CPU_INTERRUPT_SINGLE_INSTR              0x0200
+#define CPU_INTERRUPT_SINGLE_INSTR              0x0400
 /** Executing a CPU_INTERRUPT_SINGLE_INSTR request, quit the cpu_loop. (for exceptions and suchlike) */
-#define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT    0x0400
+#define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT    0x0800
 /** VM execution was interrupted by VMR3Reset, VMR3Suspend or VMR3PowerOff. */
-#define CPU_INTERRUPT_RC                        0x0800
+#define CPU_INTERRUPT_RC                        0x1000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_EXIT             0x1000
+#define CPU_INTERRUPT_EXTERNAL_EXIT             0x2000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_HARD             0x2000
+#define CPU_INTERRUPT_EXTERNAL_HARD             0x4000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_TIMER            0x4000
+#define CPU_INTERRUPT_EXTERNAL_TIMER            0x8000
 /** Exit current TB to process an external interrupt request (also in op.c!!) */
-#define CPU_INTERRUPT_EXTERNAL_DMA              0x8000
+#define CPU_INTERRUPT_EXTERNAL_DMA              0x10000
 #endif /* VBOX */
 void cpu_interrupt(CPUState *s, int mask);
 void cpu_reset_interrupt(CPUState *env, int mask);
 
+int cpu_watchpoint_insert(CPUState *env, target_ulong addr, int type);
+int cpu_watchpoint_remove(CPUState *env, target_ulong addr);
+void cpu_watchpoint_remove_all(CPUState *env);
 int cpu_breakpoint_insert(CPUState *env, target_ulong pc);
 int cpu_breakpoint_remove(CPUState *env, target_ulong pc);
+void cpu_breakpoint_remove_all(CPUState *env);
+
+#define SSTEP_ENABLE  0x1  /* Enable simulated HW single stepping */
+#define SSTEP_NOIRQ   0x2  /* Do not use IRQ while single stepping */
+#define SSTEP_NOTIMER 0x4  /* Do not Timers while single stepping */
+
 void cpu_single_step(CPUState *env, int enabled);
 void cpu_reset(CPUState *s);
 
@@ -982,6 +1032,13 @@ int cpu_inw(CPUState *env, int addr);
 int cpu_inl(CPUState *env, int addr);
 #endif
 
+/* address in the RAM (different from a physical address) */
+#ifdef USE_KQEMU
+typedef uint32_t ram_addr_t;
+#else
+typedef unsigned long ram_addr_t;
+#endif
+
 /* memory API */
 
 #ifndef VBOX
@@ -1006,7 +1063,7 @@ extern uint8_t *phys_ram_dirty;
 #define IO_MEM_RAM         (0 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_ROM         (1 << IO_MEM_SHIFT) /* hardcoded offset */
 #define IO_MEM_UNASSIGNED  (2 << IO_MEM_SHIFT)
-#define IO_MEM_NOTDIRTY    (4 << IO_MEM_SHIFT) /* used internally, never use directly */
+#define IO_MEM_NOTDIRTY    (3 << IO_MEM_SHIFT)
 #if defined(VBOX) && !defined(VBOX_WITH_NEW_PHYS_CODE)
 #define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
 #endif
@@ -1014,14 +1071,28 @@ extern uint8_t *phys_ram_dirty;
    exception, the write memory callback gets the ram offset instead of
    the physical address */
 #define IO_MEM_ROMD        (1)
+#define IO_MEM_SUBPAGE     (2)
+#define IO_MEM_SUBWIDTH    (4)
+
+/* Flags stored in the low bits of the TLB virtual address.  These are
+   defined so that fast path ram access is all zeros.  */
+/* Zero if TLB entry is valid.  */
+#define TLB_INVALID_MASK   (1 << 3)
+/* Set if TLB entry references a clean RAM page.  The iotlb entry will
+   contain the page physical address.  */
+#define TLB_NOTDIRTY    (1 << 4)
+/* Set if TLB entry is an IO callback.  */
+#define TLB_MMIO        (1 << 5)
 
 typedef void CPUWriteMemoryFunc(void *opaque, target_phys_addr_t addr, uint32_t value);
 typedef uint32_t CPUReadMemoryFunc(void *opaque, target_phys_addr_t addr);
 
 void cpu_register_physical_memory(target_phys_addr_t start_addr,
-                                  unsigned long size,
-                                  unsigned long phys_offset);
+                                  ram_addr_t size,
+                                  ram_addr_t phys_offset);
 uint32_t cpu_get_physical_page_desc(target_phys_addr_t addr);
+ram_addr_t qemu_ram_alloc(ram_addr_t);
+void qemu_ram_free(ram_addr_t addr);
 int cpu_register_io_memory(int io_index,
                            CPUReadMemoryFunc **mem_read,
                            CPUWriteMemoryFunc **mem_write,
@@ -1046,6 +1117,7 @@ uint32_t lduw_phys(target_phys_addr_t addr);
 uint32_t ldl_phys(target_phys_addr_t addr);
 uint64_t ldq_phys(target_phys_addr_t addr);
 void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val);
+void stq_phys_notdirty(target_phys_addr_t addr, uint64_t val);
 void stb_phys(target_phys_addr_t addr, uint32_t val);
 void stw_phys(target_phys_addr_t addr, uint32_t val);
 void stl_phys(target_phys_addr_t addr, uint32_t val);
@@ -1058,6 +1130,8 @@ int cpu_memory_rw_debug(CPUState *env, target_ulong addr,
 
 #define VGA_DIRTY_FLAG  0x01
 #define CODE_DIRTY_FLAG 0x02
+#define KQEMU_DIRTY_FLAG     0x04
+#define MIGRATION_DIRTY_FLAG 0x08
 
 /* read dirty bit (return 0 or 1) */
 static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
@@ -1103,6 +1177,10 @@ static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
 void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
                                      int dirty_flags);
 void cpu_tlb_update_dirty(CPUState *env);
+
+int cpu_physical_memory_set_dirty_tracking(int enable);
+
+int cpu_physical_memory_get_dirty_tracking(void);
 
 void dump_exec_info(FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...));

@@ -288,7 +288,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     /*
      * Init the recompiler.
      */
-    if (!cpu_x86_init(&pVM->rem.s.Env))
+    if (!cpu_x86_init(&pVM->rem.s.Env, "vbox"))
     {
         AssertMsgFailed(("cpu_x86_init failed - impossible!\n"));
         return VERR_GENERAL_FAILURE;
@@ -3805,7 +3805,8 @@ REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM)
         if (VM_IS_EMT(pVM))
             cpu_interrupt(cpu_single_env, CPU_INTERRUPT_HARD);
         else
-            ASMAtomicOrS32(&cpu_single_env->interrupt_request, CPU_INTERRUPT_EXTERNAL_HARD);
+            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request, 
+                           CPU_INTERRUPT_EXTERNAL_HARD);
     }
 }
 
@@ -3840,7 +3841,8 @@ REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM)
         if (VM_IS_EMT(pVM))
             cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
         else
-            ASMAtomicOrS32(&cpu_single_env->interrupt_request, CPU_INTERRUPT_EXTERNAL_TIMER);
+            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request, 
+                           CPU_INTERRUPT_EXTERNAL_TIMER);
     }
 }
 
@@ -3859,7 +3861,8 @@ REMR3DECL(void) REMR3NotifyDmaPending(PVM pVM)
         if (VM_IS_EMT(pVM))
             cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
         else
-            ASMAtomicOrS32(&cpu_single_env->interrupt_request, CPU_INTERRUPT_EXTERNAL_DMA);
+            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request, 
+                           CPU_INTERRUPT_EXTERNAL_DMA);
     }
 }
 
@@ -3878,7 +3881,8 @@ REMR3DECL(void) REMR3NotifyQueuePending(PVM pVM)
         if (VM_IS_EMT(pVM))
             cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
         else
-            ASMAtomicOrS32(&cpu_single_env->interrupt_request, CPU_INTERRUPT_EXTERNAL_EXIT);
+            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request, 
+                           CPU_INTERRUPT_EXTERNAL_EXIT);
     }
 }
 
@@ -3897,7 +3901,8 @@ REMR3DECL(void) REMR3NotifyFF(PVM pVM)
         if (VM_IS_EMT(pVM))
             cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
         else
-            ASMAtomicOrS32(&cpu_single_env->interrupt_request, CPU_INTERRUPT_EXTERNAL_EXIT);
+            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request, 
+                           CPU_INTERRUPT_EXTERNAL_EXIT);
     }
 }
 

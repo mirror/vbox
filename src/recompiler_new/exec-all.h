@@ -66,23 +66,28 @@
 #define DISAS_UPDATE  2 /* cpu state was modified dynamically */
 #define DISAS_TB_JUMP 3 /* only pc was modified statically */
 
-struct TranslationBlock;
+typedef struct TranslationBlock TranslationBlock;
 
 /* XXX: make safe guess about sizes */
-#define MAX_OP_PER_INSTR 32
+#define MAX_OP_PER_INSTR 64
+/* A Call op needs up to 6 + 2N parameters (N = number of arguments).  */
+#define MAX_OPC_PARAM 10
 #define OPC_BUF_SIZE 512
 #define OPC_MAX_SIZE (OPC_BUF_SIZE - MAX_OP_PER_INSTR)
 
-#define OPPARAM_BUF_SIZE (OPC_BUF_SIZE * 3)
+/* Maximum size a TCG op can expand to.  This is complicated because a
+   single op may require several host instructions and regirster reloads.
+   For now take a wild guess at 128 bytes, which should allow at least
+   a couple of fixup instructions per argument.  */
+#define TCG_MAX_OP_SIZE 128
 
-extern uint16_t gen_opc_buf[OPC_BUF_SIZE];
-extern uint32_t gen_opparam_buf[OPPARAM_BUF_SIZE];
-extern long gen_labels[OPC_BUF_SIZE];
-extern int nb_gen_labels;
+#define OPPARAM_BUF_SIZE (OPC_BUF_SIZE * MAX_OPC_PARAM)
+
 extern target_ulong gen_opc_pc[OPC_BUF_SIZE];
 extern target_ulong gen_opc_npc[OPC_BUF_SIZE];
 extern uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
 extern uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
+extern uint16_t gen_opc_icount[OPC_BUF_SIZE];
 extern target_ulong gen_opc_jump_pc[2];
 extern uint32_t gen_opc_hflags[OPC_BUF_SIZE];
 
@@ -91,78 +96,56 @@ typedef void (GenOpFunc1)(long);
 typedef void (GenOpFunc2)(long, long);
 typedef void (GenOpFunc3)(long, long, long);
 
-#if defined(TARGET_I386)
-
-void optimize_flags_init(void);
-
-#endif
-
+#ifndef VBOX
 extern FILE *logfile;
 extern int loglevel;
+#endif
 
-int gen_intermediate_code(CPUState *env, struct TranslationBlock *tb);
-int gen_intermediate_code_pc(CPUState *env, struct TranslationBlock *tb);
-void dump_ops(const uint16_t *opc_buf, const uint32_t *opparam_buf);
+void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb);
+void gen_intermediate_code_pc(CPUState *env, struct TranslationBlock *tb);
+void gen_pc_load(CPUState *env, struct TranslationBlock *tb,
+                 unsigned long searched_pc, int pc_pos, void *puc);
+
+unsigned long code_gen_max_block_size(void);
+void cpu_gen_init(void);
 int cpu_gen_code(CPUState *env, struct TranslationBlock *tb,
-                 int max_code_size, int *gen_code_size_ptr);
+                 int *gen_code_size_ptr);
 int cpu_restore_state(struct TranslationBlock *tb,
                       CPUState *env, unsigned long searched_pc,
                       void *puc);
-int cpu_gen_code_copy(CPUState *env, struct TranslationBlock *tb,
-                      int max_code_size, int *gen_code_size_ptr);
 int cpu_restore_state_copy(struct TranslationBlock *tb,
                            CPUState *env, unsigned long searched_pc,
                            void *puc);
 void cpu_resume_from_signal(CPUState *env1, void *puc);
+void cpu_io_recompile(CPUState *env, void *retaddr);
+TranslationBlock *tb_gen_code(CPUState *env, 
+                              target_ulong pc, target_ulong cs_base, int flags,
+                              int cflags);
 void cpu_exec_init(CPUState *env);
 int page_unprotect(target_ulong address, unsigned long pc, void *puc);
-void tb_invalidate_phys_page_range(target_ulong start, target_ulong end,
+void tb_invalidate_phys_page_range(target_phys_addr_t start, target_phys_addr_t end,
                                    int is_cpu_write_access);
 void tb_invalidate_page_range(target_ulong start, target_ulong end);
 void tlb_flush_page(CPUState *env, target_ulong addr);
 void tlb_flush(CPUState *env, int flush_global);
 int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
                       target_phys_addr_t paddr, int prot,
-                      int is_user, int is_softmmu);
-static inline int tlb_set_page(CPUState *env, target_ulong vaddr,
+                      int mmu_idx, int is_softmmu);
+static inline int tlb_set_page(CPUState *env1, target_ulong vaddr,
                                target_phys_addr_t paddr, int prot,
-                               int is_user, int is_softmmu)
+                               int mmu_idx, int is_softmmu)
 {
     if (prot & PAGE_READ)
         prot |= PAGE_EXEC;
-    return tlb_set_page_exec(env, vaddr, paddr, prot, is_user, is_softmmu);
+    return tlb_set_page_exec(env1, vaddr, paddr, prot, mmu_idx, is_softmmu);
 }
 
-#define CODE_GEN_MAX_SIZE        65536
 #define CODE_GEN_ALIGN           16 /* must be >= of the size of a icache line */
 
 #define CODE_GEN_PHYS_HASH_BITS     15
 #define CODE_GEN_PHYS_HASH_SIZE     (1 << CODE_GEN_PHYS_HASH_BITS)
 
-/* maximum total translate dcode allocated */
-
-/* NOTE: the translated code area cannot be too big because on some
-   archs the range of "fast" function calls is limited. Here is a
-   summary of the ranges:
-
-   i386  : signed 32 bits
-   arm   : signed 26 bits
-   ppc   : signed 24 bits
-   sparc : signed 32 bits
-   alpha : signed 23 bits
-*/
-
-#if defined(__alpha__)
-#define CODE_GEN_BUFFER_SIZE     (2 * 1024 * 1024)
-#elif defined(__ia64)
-#define CODE_GEN_BUFFER_SIZE     (4 * 1024 * 1024)	/* range of addl */
-#elif defined(__powerpc__)
-#define CODE_GEN_BUFFER_SIZE     (6 * 1024 * 1024)
-#else
-#define CODE_GEN_BUFFER_SIZE     (16 * 1024 * 1024)
-#endif
-
-//#define CODE_GEN_BUFFER_SIZE     (128 * 1024)
+#define MIN_CODE_GEN_BUFFER_SIZE     (1024 * 1024)
 
 /* estimated block size for TB allocation */
 /* XXX: use a per code average code fragment size and modulate it
@@ -173,29 +156,27 @@ static inline int tlb_set_page(CPUState *env, target_ulong vaddr,
 #define CODE_GEN_AVG_BLOCK_SIZE 64
 #endif
 
-#define CODE_GEN_MAX_BLOCKS    (CODE_GEN_BUFFER_SIZE / CODE_GEN_AVG_BLOCK_SIZE)
-
-#if defined(__powerpc__)
+#if defined(__powerpc__) || defined(__x86_64__) || defined(__arm__)
 #define USE_DIRECT_JUMP
 #endif
 #if defined(__i386__) && !defined(_WIN32)
 #define USE_DIRECT_JUMP
 #endif
+
 #ifdef VBOX /* bird: not safe in next step because of threading & cpu_interrupt. */
 #undef USE_DIRECT_JUMP
 #endif /* VBOX */
 
-typedef struct TranslationBlock {
+struct TranslationBlock {
     target_ulong pc;   /* simulated PC corresponding to this block (EIP + CS base) */
     target_ulong cs_base; /* CS base for this block */
     unsigned int flags; /* flags defining in which context the code was generated */
     uint16_t size;      /* size of target code for this block (1 <=
                            size <= TARGET_PAGE_SIZE) */
     uint16_t cflags;    /* compile flags */
-#define CF_CODE_COPY   0x0001 /* block was generated in code copy mode */
-#define CF_TB_FP_USED  0x0002 /* fp ops are used in the TB */
-#define CF_FP_USED     0x0004 /* fp ops are used in the TB or in a chained TB */
-#define CF_SINGLE_INSN 0x0008 /* compile only a single instruction */
+#define CF_COUNT_MASK  0x7fff
+#define CF_LAST_IO     0x8000 /* Last insn may be an IO access.  */
+
 #ifdef VBOX
 #define CF_RAW_MODE    0x0010 /* block was generated in raw mode */
 #endif
@@ -225,7 +206,8 @@ typedef struct TranslationBlock {
        jmp_first */
     struct TranslationBlock *jmp_next[2];
     struct TranslationBlock *jmp_first;
-} TranslationBlock;
+    uint32_t icount;
+};
 
 static inline unsigned int tb_jmp_cache_hash_page(target_ulong pc)
 {
@@ -248,14 +230,16 @@ static inline unsigned int tb_phys_hash_func(unsigned long pc)
 }
 
 TranslationBlock *tb_alloc(target_ulong pc);
+void tb_free(TranslationBlock *tb);
 void tb_flush(CPUState *env);
 void tb_link_phys(TranslationBlock *tb,
                   target_ulong phys_pc, target_ulong phys_page2);
+void tb_phys_invalidate(TranslationBlock *tb, target_ulong page_addr);
 
 extern TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];
 
-extern uint8_t code_gen_buffer[CODE_GEN_BUFFER_SIZE];
 extern uint8_t *code_gen_ptr;
+extern int code_gen_max_blocks;
 
 #if defined(USE_DIRECT_JUMP)
 
@@ -341,75 +325,6 @@ TranslationBlock *tb_find_pc(unsigned long pc_ptr);
 
 #define ASM_OP_LABEL_NAME(n, opname) \
     ASM_NAME(__op_label) #n "." ASM_NAME(opname)
-
-#if defined(__powerpc__)
-
-/* we patch the jump instruction directly */
-#define GOTO_TB(opname, tbparam, n)\
-do {\
-    asm volatile (ASM_DATA_SECTION\
-		  ASM_OP_LABEL_NAME(n, opname) ":\n"\
-		  ".long 1f\n"\
-		  ASM_PREVIOUS_SECTION \
-                  "b " ASM_NAME(__op_jmp) #n "\n"\
-		  "1:\n");\
-} while (0)
-
-#elif defined(__i386__) && defined(USE_DIRECT_JUMP)
-
-/* we patch the jump instruction directly */
-#define GOTO_TB(opname, tbparam, n)\
-do {\
-    asm volatile (".section .data\n"\
-		  ASM_OP_LABEL_NAME(n, opname) ":\n"\
-		  ".long 1f\n"\
-		  ASM_PREVIOUS_SECTION \
-                  "jmp " ASM_NAME(__op_jmp) #n "\n"\
-		  "1:\n");\
-} while (0)
-
-#else
-
-/* jump to next block operations (more portable code, does not need
-   cache flushing, but slower because of indirect jump) */
-# ifdef VBOX /* bird: GCC4 (and Ming 3.4.x?) will remove the two unused static
-                variables. I've added a dummy __asm__ statement which reference
-                the two variables to prevent this. */
-#  if __GNUC__ >= 4
-#   define GOTO_TB(opname, tbparam, n)\
-    do {\
-        static void __attribute__((unused)) *dummy ## n = &&dummy_label ## n;\
-        static void __attribute__((unused)) *__op_label ## n \
-            __asm__(ASM_OP_LABEL_NAME(n, opname)) = &&label ## n;\
-        __asm__ ("" : : "m" (__op_label ## n), "m" (dummy ## n));\
-        goto *(void *)(uintptr_t)(((TranslationBlock *)tbparam)->tb_next[n]);\
-    label ## n: ;\
-    dummy_label ## n: ;\
-    } while (0)
-#  else
-#   define GOTO_TB(opname, tbparam, n)\
-    do {\
-        static void __attribute__((unused)) *dummy ## n = &&dummy_label ## n;\
-        static void __attribute__((unused)) *__op_label ## n \
-            __asm__(ASM_OP_LABEL_NAME(n, opname)) = &&label ## n;\
-        goto *(void *)(uintptr_t)(((TranslationBlock *)tbparam)->tb_next[n]);\
-    label ## n: ;\
-    dummy_label ## n: ;\
-    } while (0)
-#  endif
-# else /* !VBOX */
-#define GOTO_TB(opname, tbparam, n)\
-do {\
-    static void __attribute__((unused)) *dummy ## n = &&dummy_label ## n;\
-    static void __attribute__((unused)) *__op_label ## n \
-        __asm__(ASM_OP_LABEL_NAME(n, opname)) = &&label ## n;\
-    goto *(void *)(((TranslationBlock *)tbparam)->tb_next[n]);\
-label ## n: ;\
-dummy_label ## n: ;\
-} while (0)
-# endif /* !VBOX */
-
-#endif
 
 extern CPUWriteMemoryFunc *io_mem_write[IO_MEM_NB_ENTRIES][4];
 extern CPUReadMemoryFunc *io_mem_read[IO_MEM_NB_ENTRIES][4];
@@ -582,7 +497,7 @@ extern int tb_invalidated_flag;
 void tlb_fill(target_ulong addr, int is_write, int is_user,
               void *retaddr);
 
-#define ACCESS_TYPE 3
+#define ACCESS_TYPE (NB_MMU_MODES + 1)
 #define MEMSUFFIX _code
 #define env cpu_single_env
 
@@ -659,6 +574,21 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
 # else
     return addr + env->tlb_table[is_user][index].addend - (unsigned long)phys_ram_base;
 # endif
+}
+
+
+/* Deterministic execution requires that IO only be performed on the last
+   instruction of a TB so that interrupts take effect immediately.  */
+static inline int can_do_io(CPUState *env)
+{
+    if (!use_icount)
+        return 1;
+
+    /* If not executing code then assume we are ok.  */
+    if (!env->current_tb)
+        return 1;
+
+    return env->can_do_io != 0;
 }
 #endif
 

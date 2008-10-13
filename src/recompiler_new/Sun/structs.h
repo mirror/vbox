@@ -229,8 +229,6 @@ REM_STRUCT_TABLE(CPUState) =
     REM_OFFSETOF(CPUState, fp_status),
     REM_OFFSETOF(CPUState, ft0),
     REM_SIZEOFMEMB(CPUState, ft0),
-    REM_OFFSETOF(CPUState, fp_convert),
-    REM_SIZEOFMEMB(CPUState, fp_convert),
     REM_OFFSETOF(CPUState, sse_status),
     REM_OFFSETOF(CPUState, mxcsr),
     REM_OFFSETOF(CPUState, xmm_regs),
@@ -265,8 +263,8 @@ REM_STRUCT_TABLE(CPUState) =
 
     /* cpu-defs.h */
     REM_OFFSETOF(CPUState, current_tb),
-    REM_OFFSETOF(CPUState, mem_write_pc),
-    REM_OFFSETOF(CPUState, mem_write_vaddr),
+    REM_OFFSETOF(CPUState, mem_io_pc),
+    REM_OFFSETOF(CPUState, mem_io_vaddr),
     REM_OFFSETOF(CPUState, tlb_table),
     REM_SIZEOFMEMB(CPUState, tlb_table),
     REM_OFFSETOF(CPUState, tb_jmp_cache),

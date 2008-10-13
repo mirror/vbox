@@ -72,7 +72,7 @@ else  # !VBOX_ONLY_ADDITIONS
  SUBDIRS = VBox/Runtime	bldprogs libs VBox 
 
  ifdef VBOX_WITH_NEW_RECOMPILER
-  SUBDIRS += recompiler_new
+   SUBDIRS += recompiler_new
  else
    SUBDIRS += recompiler
  endif
