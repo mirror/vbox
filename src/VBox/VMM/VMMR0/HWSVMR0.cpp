@@ -2217,74 +2217,8 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
  */
 VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
-    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.fForceTLBFlush;
-
     Assert(pVM->hwaccm.s.fNestedPaging);
-
-    /* Skip it if a TLB flush is already pending. */
-    if (!fFlushPending)
-    {
-        CPUMCTX    *pCtx;
-        int         rc;
-        SVM_VMCB   *pVMCB;
-
-        rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-        AssertRCReturn(rc, rc);
-
-        Log2(("SVMR0InvalidatePhysPage %VGp\n", GCPhys));
-        AssertReturn(pVM, VERR_INVALID_PARAMETER);
-        Assert(pVM->hwaccm.s.svm.fSupported);
-
-        pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
-        AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
-
-        /*
-         * Only allow 32 & 64 bits code.
-         */
-        DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid);
-        if (enmMode != CPUMODE_16BIT)
-        {
-            RTGCPTR pbCode;
-            int rc = SELMValidateAndConvertCSAddr(pVM, pCtx->eflags, pCtx->ss, pCtx->cs, &pCtx->csHid, (RTGCPTR)pCtx->rip, &pbCode);
-            if (VBOX_SUCCESS(rc))
-            {
-                uint32_t    cbOp;
-                DISCPUSTATE Cpu;
-                OP_PARAMVAL param1;
-                RTGCPTR     addr;
-
-                Cpu.mode = enmMode;
-                rc = EMInterpretDisasOneEx(pVM, pbCode, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
-                AssertRCReturn(rc, rc);
-                Assert(cbOp == Cpu.opsize);
-
-                int rc = DISQueryParamVal(CPUMCTX2CORE(pCtx), &Cpu, &Cpu.param1, &param1, PARAM_SOURCE);
-                AssertRCReturn(rc, VERR_EM_INTERPRETER);
-
-                switch(param1.type)
-                {
-                case PARMTYPE_IMMEDIATE:
-                case PARMTYPE_ADDRESS:
-                    AssertReturn((param1.flags & (PARAM_VAL32|PARAM_VAL64)), VERR_EM_INTERPRETER);
-
-                    addr = param1.val.val64;
-                    break;
-
-                default:
-                    AssertFailed();
-                    return VERR_EM_INTERPRETER;
-                }
-
-                /* Manually invalidate the page for the VM's TLB. */
-                Log(("SVMR0InvalidatePhysPage Phys=%VGp Virt=%VGv ASID=%d\n", GCPhys, addr, pVMCB->ctrl.TLBCtrl.n.u32ASID));
-                SVMInvlpgA(addr, pVMCB->ctrl.TLBCtrl.n.u32ASID);
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushPhysPageManual);
-
-                return VINF_SUCCESS;
-            }
-        }
-        AssertFailed();
-        return VERR_EM_INTERPRETER;
-    }
+    /* invlpga only invalidates TLB entries for guest virtual addresses; we have no choice but to force a TLB flush here. */
+    pVM->hwaccm.s.fForceTLBFlush = true;   
     return VINF_SUCCESS;
 }
