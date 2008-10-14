@@ -31,7 +31,7 @@ typedef struct _VBOXINFORMATIONCONTEXT
     uint32_t iInfoSvcClientID;
     fnWTSGetActiveConsoleSessionId pfnWTSGetActiveConsoleSessionId;
     BOOL fFirstRun;
-    uint32_t iUserCount;
+    uint32_t cUsers;
 } VBOXINFORMATIONCONTEXT;
 
 /* Some wrappers. */
