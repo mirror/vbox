@@ -901,7 +901,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                     VTX_CORRECT_PROT_SEL(es);
                     VTX_CORRECT_PROT_SEL(fs);
                     VTX_CORRECT_PROT_SEL(gs);
-                    VTX_CORRECT_PROT_SEL(ss);
                     pVM->hwaccm.s.vmx.RealMode.fValid = false;
                 }
             }
