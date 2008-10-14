@@ -43,7 +43,6 @@
 
 #include <string.h>
 
-#include "Network/nat/nat.h"
 #endif
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
@@ -53,6 +52,10 @@
 #include <iprt/cidr.h>
 
 #include "Builtins.h"
+
+#ifdef VBOX_NAT_SOURCES
+#include "Network/nat/nat.h"
+#endif
 
 
 /*******************************************************************************
@@ -612,8 +615,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;
         struct nat_output_callbacks cb;
         cb.noc_guest_out = drvNATOutput;
-        nat_init(&cb);
-        ipfw_nat_init();
+        nat_init(&cb, pDrvIns);
 #endif
 #if 0
             g_fThreadTerm = true;
@@ -629,6 +631,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #endif
     return rc;
 }
+
 
 
 
