@@ -238,6 +238,8 @@
 #define OP_MOVD         191
 #define OP_MOVQ         192
 #define OP_PSHUFW       193
+#define OP_3B_ESC4      194
+#define OP_3B_ESC5      195
 
 #define OP_PCMPEQB      196
 #define OP_PCMPEQW      197
@@ -383,11 +385,27 @@
 #define OP_CVTTPD2DQ    353
 #define OP_MOVNTDQ      354
 
-#define OP_PMASKMOVDQU  369
+#define OP_PSHUFB       355
+#define OP_PHADDW       356
+#define OP_PHADDD       357
+#define OP_PHADDSW      358
+#define OP_PMADDUBSW    359
+#define OP_PHSUBW       360
+#define OP_PHSUBD       361
+#define OP_PHSUBSW      362
+#define OP_PSIGNB       363
+#define OP_PSIGNW       364
+#define OP_PSIGND       365
+#define OP_PMULHRSW     366
+#define OP_PBLENDVB     367
+#define OP_BLENDVPS     368
+#define OP_BLENDVPD     369
+#define OP_PTEST        370
+#define OP_PABSB        371
+#define OP_PABSW        372
+#define OP_PABSD        373
 
-
-
-
+#define OP_PMASKMOVDQU  376
 #define OP_MOVSD        377
 #define OP_CVTSI2SD     378
 #define OP_CVTTSD2SI    379
@@ -597,6 +615,8 @@
 #define OP_VMRESUME     657
 #define OP_VMPTRLD      658
 #define OP_VMPTRST      659
+#define OP_INVEPT       660
+#define OP_INVVPID      661
 
 /* 64 bits instruction */
 #define OP_MOVSXD       700
@@ -780,6 +800,7 @@
 #define OP_PARM_Md              (OP_PARM_M+OP_PARM_d)
 #define OP_PARM_Mp              (OP_PARM_M+OP_PARM_p)
 #define OP_PARM_Mq              (OP_PARM_M+OP_PARM_q)
+#define OP_PARM_Mdq             (OP_PARM_M+OP_PARM_dq)
 #define OP_PARM_Ms              (OP_PARM_M+OP_PARM_s)
 #define OP_PARM_Ob              (OP_PARM_O+OP_PARM_b)
 #define OP_PARM_Ov              (OP_PARM_O+OP_PARM_v)

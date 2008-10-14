@@ -33,6 +33,11 @@ BEGINCODE
 
 align 16
 BEGINPROC   TestProc
+;    invept      eax, qword [ecx]
+    DB          0x66, 0x0F, 0x38, 0x80, 0x1
+;    invept      eax, qword [ecx]
+    DB          0x66, 0x0F, 0x38, 0x81, 0x1
+      mov   eax, dword [ecx]
       mov   word [edi], 0123ah
       movzx eax,byte  [edx]
       movzx eax,word  [edx]
@@ -70,6 +75,16 @@ ENDPROC   TestProc
 BITS 64
 align 16
 BEGINPROC TestProc64
+ ;    invept      rdi, qword [rsi]
+    DB          0x66, 0x0F, 0x38, 0x80, 0x3E
+;    invept      rcx, qword [rdx]
+    DB          0x66, 0x0F, 0x38, 0x80, 0xA
+    ;invvpid     rdi, qword [rsi]
+    DB          0x66, 0x0F, 0x38, 0x81, 0x3E
+;    invvpid     rcx, qword [rdx]
+    DB          0x66, 0x0F, 0x38, 0x81, 0xA
+      mov   rdi, [rsi]
+      mov   rcx, [rdx]
       db 48h
       db 0c7h
       db 42h

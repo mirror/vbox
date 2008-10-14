@@ -112,7 +112,9 @@ PFNDISPARSE  pfnFullDisasm[IDX_ParseMax] =
     ParseEscFP,
     ParseNopPause,
     ParseImmByteSX,
-    ParseImmZ
+    ParseImmZ,
+    ParseThreeByteEsc4,
+    ParseThreeByteEsc5
 };
 
 PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
@@ -154,7 +156,9 @@ PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
     ParseEscFP,
     ParseNopPause,
     ParseImmByteSX_SizeOnly,
-    ParseImmZ_SizeOnly
+    ParseImmZ_SizeOnly,
+    ParseThreeByteEsc4,
+    ParseThreeByteEsc5
 };
 
 /**
@@ -1728,8 +1732,10 @@ unsigned ParseTwoByteEsc(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pP
     const OPCODE *pOpcode;
     int           size    = sizeof(uint8_t);
 
-    //2nd byte
+    /* 2nd byte */
     pCpu->opcode = DISReadByte(pCpu, lpszCodeBlock);
+
+    /* default to the non-prefixed table. */
     pOpcode      = &g_aTwoByteMapX86[pCpu->opcode];
 
     /* Handle opcode table extensions that rely on the address, repe or repne prefix byte.  */
@@ -1773,6 +1779,100 @@ unsigned ParseTwoByteEsc(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pP
             break;
         }
     }
+
+    size += ParseInstruction(lpszCodeBlock+size, pOpcode, pCpu);
+    return size;
+}
+//*****************************************************************************
+//*****************************************************************************
+unsigned ParseThreeByteEsc4(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
+{
+    const OPCODE *pOpcode;
+    int           size    = sizeof(uint8_t);
+
+    /* 3rd byte */
+    pCpu->opcode = DISReadByte(pCpu, lpszCodeBlock);
+
+    /* default to the non-prefixed table. */
+    if (g_apThreeByteMapX86_0F38[pCpu->opcode >> 4])
+    {
+        pOpcode = g_apThreeByteMapX86_0F38[pCpu->opcode >> 4];
+        pOpcode = &pOpcode[pCpu->opcode & 0xf];
+    }
+    else
+        pOpcode = &g_InvalidOpcode[0];
+
+    /* Handle opcode table extensions that rely on the address, repne prefix byte.  */
+    /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
+    switch (pCpu->lastprefix)
+    {
+    case OP_OPSIZE: /* 0x66 */
+        if (g_apThreeByteMapX86_660F38[pCpu->opcode >> 4])
+        {
+            pOpcode = g_apThreeByteMapX86_660F38[pCpu->opcode >> 4];
+            pOpcode = &pOpcode[pCpu->opcode & 0xf];
+
+            if (pOpcode->opcode != OP_INVALID)
+            {
+                /* Table entry is valid, so use the extension table. */
+
+                /* Cancel prefix changes. */
+                pCpu->prefix &= ~PREFIX_OPSIZE;
+                pCpu->opmode  = pCpu->mode;
+            }
+        }
+        break;
+
+    case OP_REPNE:   /* 0xF2 */
+        if (g_apThreeByteMapX86_F20F38[pCpu->opcode >> 4])
+        {
+            pOpcode = g_apThreeByteMapX86_F20F38[pCpu->opcode >> 4];
+            pOpcode = &pOpcode[pCpu->opcode & 0xf];
+
+            if (pOpcode->opcode != OP_INVALID)
+            {
+                /* Table entry is valid, so use the extension table. */
+            
+                /* Cancel prefix changes. */
+                pCpu->prefix &= ~PREFIX_REPNE;
+            }
+        }
+        break;
+    }
+
+    size += ParseInstruction(lpszCodeBlock+size, pOpcode, pCpu);
+    return size;
+}
+//*****************************************************************************
+//*****************************************************************************
+unsigned ParseThreeByteEsc5(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
+{
+    const OPCODE *pOpcode;
+    int           size    = sizeof(uint8_t);
+
+    /* 3rd byte */
+    pCpu->opcode = DISReadByte(pCpu, lpszCodeBlock);
+
+    /** @todo Should we take the first or last prefix byte in case of multiple prefix bytes??? */
+    Assert(pCpu->lastprefix == OP_OPSIZE);
+
+    /* default to the non-prefixed table. */
+    if (g_apThreeByteMapX86_660F3A[pCpu->opcode >> 4])
+    {
+        pOpcode = g_apThreeByteMapX86_660F3A[pCpu->opcode >> 4];
+        pOpcode = &pOpcode[pCpu->opcode & 0xf];
+
+        if (pOpcode->opcode != OP_INVALID)
+        {
+            /* Table entry is valid, so use the extension table. */
+
+            /* Cancel prefix changes. */
+            pCpu->prefix &= ~PREFIX_OPSIZE;
+            pCpu->opmode  = pCpu->mode;
+        }
+    }
+    else
+        pOpcode = &g_InvalidOpcode[0];
 
     size += ParseInstruction(lpszCodeBlock+size, pOpcode, pCpu);
     return size;
