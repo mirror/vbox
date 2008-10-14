@@ -932,7 +932,8 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
 {
     PRTUTF16 pu16GuestText, pu16HostText;
     char *pcGuestText;
-    unsigned cbHostText, cwHostText, cwGuestText, cbGuestText;
+    unsigned cbHostText, cwHostText, cwGuestText, cbGuestTextBuffer;
+    size_t cbGuestTextActual;
     int rc;
 
     LogFlowFunc(("\n"));
@@ -941,7 +942,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
                                    reinterpret_cast<void **>(&pu16HostText), &cbHostText);
     if ((rc != VINF_SUCCESS) || cbHostText == 0)
     {
-        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbGuestText));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
         g_ctx.hostFormats = 0;
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -966,8 +967,8 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         return false;
     }
     /* Now convert the Utf16 Linux text to Utf8 */
-    cbGuestText = cwGuestText * 3;  /* Should always be enough. */
-    pcGuestText = XtMalloc(cbGuestText);
+    cbGuestTextBuffer = cwGuestText * 3;  /* Should always be enough. */
+    pcGuestText = XtMalloc(cbGuestTextBuffer);
     if (pcGuestText == 0)
     {
         RTMemFree(reinterpret_cast<char *>(pu16GuestText));
@@ -975,7 +976,8 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         return false;
     }
     /* Our runtime can't cope with endian markers. */
-    rc = RTUtf16ToUtf8Ex(pu16GuestText + 1, cwGuestText - 1, &pcGuestText, cbGuestText, 0);
+    cbGuestTextActual = 0;
+    rc = RTUtf16ToUtf8Ex(pu16GuestText + 1, cwGuestText - 1, &pcGuestText, cbGuestTextBuffer, &cbGuestTextActual);
     RTMemFree(reinterpret_cast<char *>(pu16GuestText));
     if (rc != VINF_SUCCESS)
     {
@@ -983,10 +985,10 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
         LogFlowFunc(("rc = false\n"));
         return false;
     }
-    LogFlow(("vboxClipboardConvertUtf8: converted text is %.*s\n", cbGuestText, pcGuestText));
+    LogFlow(("vboxClipboardConvertUtf8: converted text is %.*s\n", cbGuestTextActual, pcGuestText));
     *atomTypeReturn = g_ctx.atomUtf8;
     *pValReturn = reinterpret_cast<XtPointer>(pcGuestText);
-    *pcLenReturn = cbGuestText;
+    *pcLenReturn = (unsigned long)cbGuestTextActual;
     *piFormatReturn = 8;
     LogFlowFunc(("rc = true\n"));
     return true;
