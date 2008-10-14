@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Threads, Ring-0 Driver, NT.
+ * IPRT - RTThreadPreemptIsEnabled, Generic ring-0 driver implementation.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,69 +31,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-nt-kernel.h"
-
 #include <iprt/thread.h>
-#include <iprt/err.h>
-
-__BEGIN_DECLS
-NTSTATUS NTAPI ZwYieldExecution(void);
-__END_DECLS
-
-
-RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
-{
-    return (RTNATIVETHREAD)PsGetCurrentThread();
-}
-
-
-RTDECL(int)   RTThreadSleep(unsigned cMillies)
-{
-    LARGE_INTEGER Interval;
-    Interval.QuadPart = -(int64_t)cMillies * 10000;
-    NTSTATUS rcNt = KeDelayExecutionThread(KernelMode, TRUE, &Interval);
-    switch (rcNt)
-    {
-        case STATUS_SUCCESS:
-            return VINF_SUCCESS;
-        case STATUS_ALERTED:
-        case STATUS_USER_APC:
-            return VERR_INTERRUPTED;
-        default:
-            return RTErrConvertFromNtStatus(rcNt);
-    }
-}
-
-
-RTDECL(bool) RTThreadYield(void)
-{
-    return ZwYieldExecution() != STATUS_NO_YIELD_PERFORMED;
-}
+#include <iprt/assert.h>
 
 
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    KIRQL Irql = KeGetCurrentIrql();
-    return Irql <= APC_LEVEL;
-}
-
-
-RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
-{
-    AssertPtr(pState);
-    Assert(pState->uchOldIrql == 255);
-    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
-
-    KeRaiseIrql(DISPATCH_LEVEL, &pState->uchOldIrql);
-}
-
-
-RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
-{
-    AssertPtr(pState);
-
-    KeLowerIrql(pState->uchOldIrql);
-    pState->uchOldIrql = 255;
+    return true;
 }
 

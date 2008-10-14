@@ -216,8 +216,8 @@ RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUse
                            RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
 
 /**
- * Create a new thread. 
- *  
+ * Create a new thread.
+ *
  * Same as RTThreadCreate except the name is given in the RTStrPrintfV form.
  *
  * @returns iprt status code.
@@ -234,8 +234,8 @@ RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUs
                             RTTHREADTYPE enmType, uint32_t fFlags, const char *pszNameFmt, va_list va);
 
 /**
- * Create a new thread. 
- *  
+ * Create a new thread.
+ *
  * Same as RTThreadCreate except the name is given in the RTStrPrintf form.
  *
  * @returns iprt status code.
@@ -370,6 +370,58 @@ RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies);
  * @param       Thread          The thread to reset.
  */
 RTDECL(int) RTThreadUserReset(RTTHREAD Thread);
+
+#ifdef IN_RING0
+
+/**
+ * Check if preemption is currently enabled or not for the current thread.
+ *
+ * @returns true if preemtion is enabled, false if preemetion is disabled.
+ * @param       hThread         Must be NIL_RTTHREAD for now.
+ */
+RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread);
+
+/**
+ * Preemption state saved by RTThreadPreemptDisable and used by
+ * RTThreadPreemptRestore to restore the previous state.
+ */
+typedef struct RTTHREADPREEMPTSTATE
+{
+#ifdef RT_OS_WINDOWS
+    /** The old IRQL. Don't touch. */
+    unsigned char uchOldIrql;
+# define RTTHREADPREEMPTSTATE_INITIALIZER { 255 }
+#else
+    /** Dummy unused placeholder. */
+    unsigned char uchDummy;
+# define RTTHREADPREEMPTSTATE_INITIALIZER { 0 }
+#endif
+} RTTHREADPREEMPTSTATE;
+/** Pointer to a preemption state. */
+typedef RTTHREADPREEMPTSTATE *PRTTHREADPREEMPTSTATE;
+
+/**
+ * Disable preemption.
+ *
+ * A call to this function must be matched by exactly one call to
+ * RTThreadPreemptRestore().
+ *
+ * @param   pState              Where to store the preemption state.
+ */
+RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState);
+
+/**
+ * Restores the preemption state, undoing a previous call to
+ * RTThreadPreemptDisable.
+ *
+ * A call to this function must be matching a previous call to
+ * RTThreadPreemptDisable.
+ *
+ * @param  pState               The state return by RTThreadPreemptDisable.
+ */
+RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState);
+
+#endif /* IN_RING0 */
 
 
 #ifdef IN_RING3
