@@ -975,6 +975,9 @@ RuntimeR0Drv_SOURCES.linux = \
 	generic/RTAssertDoBreakpoint-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/mppresent-generic.cpp \
+	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/memobj-r0drv-linux.c \
@@ -1009,6 +1012,9 @@ RuntimeR0Drv_SOURCES.win = \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
+	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/assert-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
@@ -1053,6 +1059,9 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
@@ -1102,6 +1111,9 @@ RuntimeR0Drv_SOURCES.os2 = \
 	os2/sys0.asm \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/os2/alloc-r0drv-os2.cpp \
 	r0drv/os2/assert-r0drv-os2.cpp \
@@ -1148,6 +1160,9 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
@@ -1195,6 +1210,9 @@ ifdef VBOX_WITH_SOLARIS_VBI
  	r0drv/solaris/vbi/timer-r0drv-solaris.c
 else  # !VBOX_WITH_SOLARIS_VBI
  RuntimeR0Drv_SOURCES.solaris += \
+	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
+	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/solaris/mpnotification-r0drv-solaris.c \
  	r0drv/solaris/alloc-r0drv-solaris.c \
  	r0drv/solaris/assert-r0drv-solaris.c \

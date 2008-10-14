@@ -478,11 +478,14 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 /** Generic invalid state warning. */
 #define VWRN_INVALID_STATE                  79
 /** Generic out of resources error. */
-#define VERR_OUT_OF_RESOURCES              (-80)
+#define VERR_OUT_OF_RESOURCES               (-80)
 /** Generic out of resources warning. */
 #define VWRN_OUT_OF_RESOURCES               80
 /** No more handles available, too many open handles. */
-#define VERR_NO_MORE_HANDLES               (-81)
+#define VERR_NO_MORE_HANDLES                (-81)
+/** Preemption is disabled.
+ * The requested operation can only be performed when preemption is enabled. */
+#define VERR_PREEMPT_DISABLED               (-82)
 /** @} */
 
 

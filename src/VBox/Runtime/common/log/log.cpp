@@ -142,6 +142,11 @@ DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
 #ifndef IN_GC
     if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
     {
+# if defined(IN_RING0) \
+  && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS))
+        if (!RTThreadPreemptIsEnabled())
+            return VERR_PREEMPT_DISABLED;
+# endif
         int rc = RTSemFastMutexRequest(pLogger->MutexSem);
         if (RT_FAILURE(rc))
             return rc;
