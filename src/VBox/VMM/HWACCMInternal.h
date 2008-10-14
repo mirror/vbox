@@ -357,7 +357,7 @@ typedef struct HWACCM
             RTSEL                       fs;
             RTSEL                       gs;
             RTSEL                       ss;
-            RTSEL                       padding5[3];
+            RTSEL                       padding5[1];
             uint32_t                    eip;
             X86EFLAGS                   eflags;
             uint32_t                    fValid;
