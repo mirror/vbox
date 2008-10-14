@@ -235,11 +235,11 @@ INSTALLS += buildserver-docs
 buildserver-docs_INST = $(INST_BIN)
 buildserver-docs_MODE = 0644
 buildserver-docs_SOURCES = \
-	$(addprefix $(PATH_TARGET)/,
+	$(addprefix $(PATH_TARGET)/, \
 		VirtualBox.chm UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
 buildserver-docs_CLEANS = \
-	$(addprefix $(PATH_TARGET)/,
+	$(addprefix $(PATH_TARGET)/, \
 		VBoxDocumentation.zip VBoxDocumentation.zip.tmp \
 		VirtualBox.chm UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
