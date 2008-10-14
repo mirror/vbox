@@ -419,6 +419,7 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
         case OP_BTR:        return "Btr";
         case OP_BTS:        return "Bts";
         case OP_BTC:        return "Btc";
+        case OP_LMSW:       return "Lmsw";
         case OP_CMPXCHG:    return pCpu->prefix & PREFIX_LOCK ? "Lock CmpXchg"   : "CmpXchg";
         case OP_CMPXCHG8B:  return pCpu->prefix & PREFIX_LOCK ? "Lock CmpXchg8b" : "CmpXchg8b";
 
@@ -1936,6 +1937,35 @@ VMMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
     return CPUMSetGuestCR0(pVM, NewCr0);
 }
 
+/**
+ * LMSW Emulation.
+ */
+static int emInterpretLmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    OP_PARAMVAL param1;
+    uint32_t    val;
+
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    switch(param1.type)
+    {
+    case PARMTYPE_IMMEDIATE:
+    case PARMTYPE_ADDRESS:
+        if(!(param1.flags & (PARAM_VAL32|PARAM_VAL64)))
+            return VERR_EM_INTERPRETER;
+        val = param1.val.val32;
+        break;
+
+    default:
+        return VERR_EM_INTERPRETER;
+    }
+
+    LogFlow(("emInterpretLmsw %x\n", val));
+    return EMInterpretLMSW(pVM, val);
+}
+
 
 /**
  * Interpret CLTS
@@ -2872,6 +2902,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE_EX_DUAL_PARAM2(OP_LIDT, LIdt, LIGdt);
         INTERPRET_CASE_EX_DUAL_PARAM2(OP_LGDT, LGdt, LIGdt);
 #endif
+        INTERPRET_CASE(OP_LMSW,Lmsw);
         INTERPRET_CASE(OP_CLTS,Clts);
         INTERPRET_CASE(OP_MONITOR, Monitor);
         INTERPRET_CASE(OP_MWAIT, MWait);
