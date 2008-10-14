@@ -375,7 +375,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_DOCS_PACKING),$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual_$(f).pdf $(SOLARIS_INST_DIR/)))
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
-	$(QUIET)$(if $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_LICENSE_BINS)            $(SOLARIS_INST_DIR)/)
+	$(QUIET)$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(VBOX_LICENSE_BINS)     $(SOLARIS_INST_DIR)/)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARIS_INST_DIR)/components/VBoxXPCOMBase.xpt
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARIS_INST_DIR)/components/VirtualBox_XPCOM.xpt
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls,)
