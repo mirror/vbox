@@ -264,6 +264,12 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
 
     Log3(("VMMDevNotifyGuest: u32EventMask = 0x%08X.\n", u32EventMask));
 
+    /*
+     * Drop notifications if the VM is not running yet/anymore.
+     */
+    if (PDMDevHlpVMState(pDevIns) != VMSTATE_RUNNING)
+        return;
+
     /* No need to wait for the completion of this request. It is a notification
      * about something, which has already happened.
      */
