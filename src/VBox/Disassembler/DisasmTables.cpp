@@ -78,8 +78,13 @@ static char SZINVALID_OPCODE[] = "Invalid Opcode";
     INVALID_OPCODE,\
     INVALID_OPCODE,
 
-/* Tables for the elegant Intel X86 instruction set */
+/* Invalid opcode */
+const OPCODE g_InvalidOpcode[1] = 
+{
+    INVALID_OPCODE
+};
 
+/* Tables for the elegant Intel X86 instruction set */
 const OPCODE g_aOneByteMapX86[256] =
 {
     /* 0 */
@@ -453,7 +458,7 @@ const OPCODE g_aTwoByteMapX86[256] =
     OP("sysexit",            0,              0,          0,          OP_SYSEXIT, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_CONTROLFLOW | OPTYPE_UNCOND_CONTROLFLOW),
     INVALID_OPCODE,
     INVALID_OPCODE,
-    INVALID_OPCODE,
+    OP("3 byte escape A4",   IDX_ParseThreeByteEsc4,0,              0,        OP_3B_ESC4,  OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -724,10 +729,6 @@ const OPCODE g_aTwoByteMapX86_PF66[256] =
     OP("comisd %Vpd,%Wpd",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_COMISD,  OP_PARM_Vpd,        OP_PARM_Wpd,    OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* 3 */
-#if 1
-    INVALID_OPCODE_BLOCK
-#else
-    /** @todo */
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
@@ -744,7 +745,6 @@ const OPCODE g_aTwoByteMapX86_PF66[256] =
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
-#endif
 
     /* 4 */
     INVALID_OPCODE_BLOCK
@@ -931,7 +931,22 @@ const OPCODE g_aTwoByteMapX86_PFF2[256] =
     INVALID_OPCODE,
 
     /* 3 */
-    INVALID_OPCODE_BLOCK
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("3 byte escape A4",   IDX_ParseThreeByteEsc4,0,              0,        OP_3B_ESC4,  OP_PARM_NONE,      OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
 
     /* 4 */
     INVALID_OPCODE_BLOCK
@@ -1216,6 +1231,328 @@ const OPCODE g_aTwoByteMapX86_PFF3[256] =
 
     /* f */
     INVALID_OPCODE_BLOCK
+};
+
+/** Three byte opcode map (0xF 0x38 0x0x) */
+const OPCODE g_aThreeByteMapX86_0F38_0[16] =
+{
+    /* 0 */
+    OP("pshufb %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSHUFB,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phaddw %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHADDW,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phaddd %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHADDD,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phaddsw %Pq,%Qq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHADDSW,     OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pmaddubsw %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMADDUBSW,   OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phsubw %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHSUBW,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phsubd %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHSUBD,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phsubsw %Pq,%Qq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHSUBSW,     OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("psignb %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSIGNB,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("psignw %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSIGNW,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("psignd %Pq,%Qq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSIGND,      OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pmulhrsw %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMULHRSW,    OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+};
+
+/** Three byte opcode map (0x0F 0x38 0x1x) */
+const OPCODE g_aThreeByteMapX86_0F38_1[16] =
+{
+    /* 1 */
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("pabsb %Pq,%Qq",           IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PABSB,     OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pabsw %Pq,%Qq",           IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PABSW,     OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pabsd %Pq,%Qq",           IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PABSD,     OP_PARM_Pq,          OP_PARM_Qq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+};
+
+/* These tables are mostly sparse, so use another level of indirection to save space. */
+const OPCODE *g_apThreeByteMapX86_0F38[16] =
+{
+    /* 0 */
+    &g_aThreeByteMapX86_0F38_0[0],
+
+    /* 1 */
+    &g_aThreeByteMapX86_0F38_1[0],
+
+    /* 2 */
+    NULL,
+
+    /* 3 */
+    NULL,
+
+    /* 4 */
+    NULL,
+
+    /* 5 */
+    NULL,
+
+    /* 6 */
+    NULL,
+
+    /* 7 */
+    NULL,
+
+    /* 8 */
+    NULL,
+
+    /* 9 */
+    NULL,
+
+    /* a */
+    NULL,
+
+    /* b */
+    NULL,
+
+    /* c */
+    NULL,
+
+    /* d */
+    NULL,
+
+    /* e */
+    NULL,
+
+    /* f */
+    NULL,
+};
+
+/** Three byte opcode map (0x66 0x0F 0x38 0x0x) */
+const OPCODE g_aThreeByteMapX86_660F38_0[16] =
+{
+    /* 0 */
+    OP("pshufb %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSHUFB,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phaddw %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHADDW,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phaddd %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHADDD,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phaddsw %Vdq,%Wdq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHADDSW,     OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pmaddubsw %Vdq,%Wdq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMADDUBSW,   OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phsubw %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHSUBW,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phsubd %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHSUBD,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("phsubsw %Vdq,%Wdq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PHSUBSW,     OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("psignb %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSIGNB,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("psignw %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSIGNW,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("psignd %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSIGND,      OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pmulhrsw %Vdq,%Wdq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMULHRSW,    OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+};
+
+/** Three byte opcode map (0x66 0x0F 0x38 0x1x) */
+const OPCODE g_aThreeByteMapX86_660F38_1[16] =
+{
+    /* 1 */
+    OP("pblendvb %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PBLENDVB,    OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("blendvps %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BLENDVPS,    OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("blendvpd %Vdq,%Wdq",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_BLENDVPD,    OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    OP("ptest %Vdq,%Wdq",           IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PTEST,       OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    OP("pabsb %Vdq,%Wdq",           IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PABSB,       OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pabsw %Vdq,%Wdq",           IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PABSW,       OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("pabsd %Vdq,%Wdq",           IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PABSD,       OP_PARM_Vdq,          OP_PARM_Wdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+};
+
+/** @todo remainder missing (too lazy now) */
+
+/** Three byte opcode map (0x66 0x0F 0x38 0x8x) */
+const OPCODE g_aThreeByteMapX86_660F38_8[16] =
+{
+    /* 8 */
+    OP("invept %Gd,%Mdq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_INVEPT,      OP_PARM_Gd,          OP_PARM_Mdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("invvpid %Gd,%Mdq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_INVEPT,      OP_PARM_Gd,          OP_PARM_Mdq,     OP_PARM_NONE,   OPTYPE_HARMLESS),
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+    INVALID_OPCODE,
+};
+
+/** Three byte opcode map with prefix 0x66 (0xF 0x38) */
+const OPCODE *g_apThreeByteMapX86_660F38[16] =
+{
+    /* 0 */
+    &g_aThreeByteMapX86_660F38_0[0],
+
+    /* 1 */
+    &g_aThreeByteMapX86_660F38_1[0],
+
+    /* 2 */
+    NULL,
+
+    /* 3 */
+    NULL,
+
+    /* 4 */
+    NULL,
+
+    /* 5 */
+    NULL,
+
+    /* 6 */
+    NULL,
+
+    /* 7 */
+    NULL,
+
+    /* 8 */
+    &g_aThreeByteMapX86_660F38_8[0],
+
+    /* 9 */
+    NULL,
+
+    /* a */
+    NULL,
+
+    /* b */
+    NULL,
+
+    /* c */
+    NULL,
+
+    /* d */
+    NULL,
+
+    /* e */
+    NULL,
+
+    /* f */
+    NULL,
+};
+
+/** Three byte opcode map with prefix 0xF2 (0xF 0x38) */
+/** @todo remainder missing (too lazy now) */
+const OPCODE *g_apThreeByteMapX86_F20F38[16] =
+{
+    /* 0 */
+    NULL,
+
+    /* 1 */
+    NULL,
+
+    /* 2 */
+    NULL,
+
+    /* 3 */
+    NULL,
+
+    /* 4 */
+    NULL,
+
+    /* 5 */
+    NULL,
+
+    /* 6 */
+    NULL,
+
+    /* 7 */
+    NULL,
+
+    /* 8 */
+    NULL,
+
+    /* 9 */
+    NULL,
+
+    /* a */
+    NULL,
+
+    /* b */
+    NULL,
+
+    /* c */
+    NULL,
+
+    /* d */
+    NULL,
+
+    /* e */
+    NULL,
+
+    /* f */
+    NULL,
+};
+
+/** Three byte opcode map with prefix 0x66 (0xF 0x3A) */
+/** @todo remainder missing (too lazy now) */
+const OPCODE *g_apThreeByteMapX86_660F3A[16] = 
+{
+    /* 0 */
+    NULL,
+
+    /* 1 */
+    NULL,
+
+    /* 2 */
+    NULL,
+
+    /* 3 */
+    NULL,
+
+    /* 4 */
+    NULL,
+
+    /* 5 */
+    NULL,
+
+    /* 6 */
+    NULL,
+
+    /* 7 */
+    NULL,
+
+    /* 8 */
+    NULL,
+
+    /* 9 */
+    NULL,
+
+    /* a */
+    NULL,
+
+    /* b */
+    NULL,
+
+    /* c */
+    NULL,
+
+    /* d */
+    NULL,
+
+    /* e */
+    NULL,
+
+    /* f */
+    NULL,
 };
 
 /* 3DNow! map (0x0F 0x0F prefix) */

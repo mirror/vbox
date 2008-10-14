@@ -25,6 +25,8 @@
 
 #include <VBox/dis.h>
 
+extern const OPCODE g_InvalidOpcode[1];
+
 extern const OPCODE g_aOneByteMapX86[256];
 extern const OPCODE g_aOneByteMapX64[256];
 extern const OPCODE g_aTwoByteMapX86[256];
@@ -37,6 +39,18 @@ extern const OPCODE g_aTwoByteMapX86_PFF2[256];
 
 /** Two byte opcode map with prefix 0xF3 */
 extern const OPCODE g_aTwoByteMapX86_PFF3[256];
+
+/** Three byte opcode map (0xF 0x38) */
+extern const OPCODE *g_apThreeByteMapX86_0F38[16];
+
+/** Three byte opcode map with prefix 0x66 (0xF 0x38) */
+extern const OPCODE *g_apThreeByteMapX86_660F38[16];
+
+/** Three byte opcode map with prefix 0xF2 (0xF 0x38) */
+extern const OPCODE *g_apThreeByteMapX86_F20F38[16];
+
+/** Three byte opcode map with prefix 0x66 (0xF 0x3A) */
+extern const OPCODE *g_apThreeByteMapX86_660F3A[16];
 
 /** Opcode extensions (Group tables)
  * @{ */
