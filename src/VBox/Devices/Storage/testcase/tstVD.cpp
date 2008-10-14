@@ -21,6 +21,7 @@
 
 #include <VBox/err.h>
 #include <VBox/VBoxHDD-new.h>
+#include <iprt/dir.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/file.h>
@@ -90,6 +91,68 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     VDDumpImages(pVD);
 
     VDClose(pVD, fDelete);
+    if (fDelete)
+    {
+        RTFILE File;
+        rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
+        if (VBOX_SUCCESS(rc))
+        {
+            RTFileClose(File);
+            return VERR_INTERNAL_ERROR;
+        }
+    }
+
+#undef CHECK
+    return 0;
+}
+
+static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
+{
+    int rc;
+    PVBOXHDD pVD = NULL;
+    PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
+    PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACE      VDIError;
+    VDINTERFACEERROR VDIErrorCallbacks;
+
+#define CHECK(str) \
+    do \
+    { \
+        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        if (VBOX_FAILURE(rc)) \
+        { \
+            VDCloseAll(pVD); \
+            return rc; \
+        } \
+    } while (0)
+
+    /* Create error interface. */
+    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
+    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    VDIErrorCallbacks.pfnError = tstVDError;
+
+    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                        NULL, &pVDIfs);
+    AssertRC(rc);
+
+    rc = VDCreate(&VDIError, &pVD);
+    CHECK("VDCreate()");
+
+    rc = VDOpen(pVD, pszBackend, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
+    CHECK("VDOpen()");
+
+    VDDumpImages(pVD);
+
+    VDClose(pVD, true);
+    RTFILE File;
+    rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTFileClose(File);
+        return VERR_INTERNAL_ERROR;
+    }
+
 #undef CHECK
     return 0;
 }
@@ -622,6 +685,152 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     return 0;
 }
 
+static int tstVmdkRename(const char *src, const char *dst)
+{
+    int rc;
+    PVBOXHDD pVD = NULL;
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACE      VDIError;
+    VDINTERFACEERROR VDIErrorCallbacks;
+
+#define CHECK(str) \
+    do \
+    { \
+        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        if (VBOX_FAILURE(rc)) \
+        { \
+            VDCloseAll(pVD); \
+            return rc; \
+        } \
+    } while (0)
+
+    /* Create error interface. */
+    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
+    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    VDIErrorCallbacks.pfnError = tstVDError;
+
+    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                        NULL, &pVDIfs);
+    AssertRC(rc);
+
+    rc = VDCreate(&VDIError, &pVD);
+    CHECK("VDCreate()");
+
+    rc = VDOpen(pVD, "VMDK", src, VD_OPEN_FLAGS_NORMAL, NULL);
+    CHECK("VDOpen()");
+    rc = VDCopy(pVD, 0, pVD, "VMDK", dst, true, 0, NULL, NULL, NULL);
+    CHECK("VDCopy()");
+
+    VDCloseAll(pVD);
+#undef CHECK
+    return 0;
+}
+
+static int tstVmdkCreateRenameOpen(const char *src, const char *dst,
+                                   uint64_t cbSize, VDIMAGETYPE enmType,
+                                   unsigned uFlags)
+{
+    int rc = tstVDCreateDelete("VMDK", src, cbSize, enmType, uFlags, false);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    rc = tstVmdkRename(src, dst);
+    if (VBOX_FAILURE(rc))
+        return rc;
+
+    PVBOXHDD pVD = NULL;
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACE      VDIError;
+    VDINTERFACEERROR VDIErrorCallbacks;
+
+#define CHECK(str) \
+    do \
+    { \
+        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        if (VBOX_FAILURE(rc)) \
+        { \
+            VDCloseAll(pVD); \
+            return rc; \
+        } \
+    } while (0)
+
+    /* Create error interface. */
+    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
+    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    VDIErrorCallbacks.pfnError = tstVDError;
+
+    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
+                        NULL, &pVDIfs);
+    AssertRC(rc);
+
+    rc = VDCreate(&VDIError, &pVD);
+    CHECK("VDCreate()");
+
+    rc = VDOpen(pVD, "VMDK", dst, VD_OPEN_FLAGS_NORMAL, NULL);
+    CHECK("VDOpen()");
+
+    VDClose(pVD, true);
+    CHECK("VDClose()");
+    VDDestroy(pVD);
+#undef CHECK
+    return rc;
+}
+
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+#define DST_PATH "tmp\\tmpVDRename.vmdk"
+#else
+#define DST_PATH "tmp/tmpVDRename.vmdk"
+#endif
+
+static void tstVmdk()
+{
+    int rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", "tmpVDRename.vmdk", _4G,
+                                 VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: VMDK rename (single extent, embedded descriptor, same dir) test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", "tmpVDRename.vmdk", _4G,
+                                 VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: VMDK rename (multiple extent, separate descriptor, same dir) test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", DST_PATH, _4G,
+                                 VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: VMDK rename (single extent, embedded descriptor, another dir) test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", DST_PATH, _4G,
+                                 VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: VMDK rename (multiple extent, separate descriptor, another dir) test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+
+    RTFILE File;
+    rc = RTFileOpen(&File, DST_PATH, RTFILE_O_CREATE | RTFILE_O_WRITE);
+    if (VBOX_SUCCESS(rc))
+        RTFileClose(File);
+
+    rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", DST_PATH, _4G,
+                                 VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G);
+    if (VBOX_SUCCESS(rc))
+    {
+        RTPrintf("tstVD: VMDK rename (multiple extent, separate descriptor, another dir, already exists) test failed!\n");
+        g_cErrors++;
+    }
+    RTFileDelete(DST_PATH);
+    RTFileDelete("tmpVDCreate.vmdk");
+    RTFileDelete("tmpVDCreate-s001.vmdk");
+    RTFileDelete("tmpVDCreate-s002.vmdk");
+    RTFileDelete("tmpVDCreate-s003.vmdk");
+}
 
 int main(int argc, char *argv[])
 {
@@ -652,6 +861,53 @@ int main(int argc, char *argv[])
     RTFileDelete("tmpVDDiff.vmdk");
     RTFileDelete("tmpVDBase.vhd");
     RTFileDelete("tmpVDDiff.vhd");
+    RTFileDelete("tmpVDCreate-s001.vmdk");
+    RTFileDelete("tmpVDCreate-s002.vmdk");
+    RTFileDelete("tmpVDCreate-s003.vmdk");
+    RTFileDelete("tmpVDRename.vmdk");
+    RTFileDelete("tmpVDRename-s001.vmdk");
+    RTFileDelete("tmpVDRename-s002.vmdk");
+    RTFileDelete("tmpVDRename-s003.vmdk");
+    RTFileDelete("tmp/tmpVDRename.vmdk");
+    RTFileDelete("tmp/tmpVDRename-s001.vmdk");
+    RTFileDelete("tmp/tmpVDRename-s002.vmdk");
+    RTFileDelete("tmp/tmpVDRename-s003.vmdk");
+
+    if (!RTDirExists("tmp"))
+    {
+        rc = RTDirCreate("tmp", RTFS_UNIX_IRWXU);
+        if (VBOX_FAILURE(rc))
+        {
+            RTPrintf("tstVD: Failed to create 'tmp' directory! rc=%Vrc\n", rc);
+            g_cErrors++;
+        }
+    }
+
+    rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
+                           VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
+                           true);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: dynamic VMDK create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
+                           VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
+                           false);
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: dynamic VMDK create test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+    rc = tstVDOpenDelete("VMDK", "tmpVDCreate.vmdk");
+    if (VBOX_FAILURE(rc))
+    {
+        RTPrintf("tstVD: VMDK delete test failed! rc=%Vrc\n", rc);
+        g_cErrors++;
+    }
+#if 1
+    tstVmdk();
+#endif
 #if 1
     rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
@@ -669,6 +925,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: fixed VDI create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
+#endif
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
@@ -701,6 +958,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: fixed split VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
+#if 1
     rc = tstVDCreateDelete("VHD", "tmpVDCreate.vhd", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
@@ -742,7 +1000,6 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VMDK test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#endif
 
     rc = tstVDCreateWriteOpenRead("VHD", "tmpVDCreate.vhd", u32Seed);
     if (VBOX_FAILURE(rc))
@@ -757,6 +1014,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VHD test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
+#endif
 
     /*
      * Clean up any leftovers.
@@ -770,6 +1028,13 @@ int main(int argc, char *argv[])
     RTFileDelete("tmpVDDiff.vmdk");
     RTFileDelete("tmpVDBase.vhd");
     RTFileDelete("tmpVDDiff.vhd");
+    RTFileDelete("tmpVDCreate-s001.vmdk");
+    RTFileDelete("tmpVDCreate-s002.vmdk");
+    RTFileDelete("tmpVDCreate-s003.vmdk");
+    RTFileDelete("tmpVDRename.vmdk");
+    RTFileDelete("tmpVDRename-s001.vmdk");
+    RTFileDelete("tmpVDRename-s002.vmdk");
+    RTFileDelete("tmpVDRename-s003.vmdk");
 
     /*
      * Summary
