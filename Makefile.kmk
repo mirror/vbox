@@ -248,7 +248,7 @@ buildserver-docs_CLEANS = \
 # is simply too tempting. Could all go away once we have plain unzip targets.
 include $(KBUILD_PATH)/tools/ZIP.kmk
 
-$(PATH_TARGET)/VirtualBox.chm + UserManual.pdf $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),+ $(PATH_TARGET)/VirtualBox_$(f).chm + $(PATH_TARGET)/UserManual_$(f).pdf) : $(PATH_TARGET)/VBoxDocumentation.zip
+$(PATH_TARGET)/VirtualBox.chm + $(PATH_TARGET)/UserManual.pdf $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),+ $(PATH_TARGET)/VirtualBox_$(f).chm + $(PATH_TARGET)/UserManual_$(f).pdf) : $(PATH_TARGET)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
 
