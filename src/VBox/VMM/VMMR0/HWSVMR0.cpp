@@ -2219,6 +2219,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 {
     Assert(pVM->hwaccm.s.fNestedPaging);
     /* invlpga only invalidates TLB entries for guest virtual addresses; we have no choice but to force a TLB flush here. */
-    pVM->hwaccm.s.fForceTLBFlush = true;   
+    pVM->hwaccm.s.fForceTLBFlush = true;
+    STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBInvlpga);
     return VINF_SUCCESS;
 }
