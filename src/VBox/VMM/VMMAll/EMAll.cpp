@@ -1925,14 +1925,13 @@ VMMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
 {
     uint64_t OldCr0 = CPUMGetGuestCR0(pVM);
 
-    /* don't use this path to go into protected mode! */
-    Assert(OldCr0 & X86_CR0_PE);
-    if (!(OldCr0 & X86_CR0_PE))
-        return VERR_EM_INTERPRETER;
-
     /* Only PE, MP, EM and TS can be changed; note that PE can't be cleared by this instruction. */
     uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
                     | (u16Data &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
+
+    /* don't use this path to go into protected mode! */
+    if ((OldCr0 & X86_CR0_PE) != (NewCr0 & X86_CR0_PE))
+        return VERR_EM_INTERPRETER;
 
     return CPUMSetGuestCR0(pVM, NewCr0);
 }
