@@ -359,6 +359,7 @@ typedef struct HWACCM
             RTSEL                       ss;
             RTSEL                       padding5[3];
             uint32_t                    eip;
+            X86EFLAGS                   eflags;
             uint32_t                    fValid;
         } RealMode;
 
