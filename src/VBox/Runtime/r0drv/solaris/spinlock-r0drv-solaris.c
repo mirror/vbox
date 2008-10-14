@@ -32,6 +32,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
+#include <sys/spl.h>
 
 #include <iprt/spinlock.h>
 #include <iprt/err.h>
@@ -71,7 +72,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
      * Initialize & return.
      */
     pSpinlockInt->u32Magic = RTSPINLOCK_MAGIC;
-    mutex_init(&pSpinlockInt->Mtx, "IPRT Spinlock", MUTEX_DRIVER, NULL);
+    mutex_init(&pSpinlockInt->Mtx, "IPRT Spinlock", MUTEX_SPIN, (void *)ipltospl(DISP_LEVEL));
     *pSpinlock = pSpinlockInt;
     return VINF_SUCCESS;
 }
