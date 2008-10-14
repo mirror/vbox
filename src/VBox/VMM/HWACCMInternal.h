@@ -497,6 +497,7 @@ typedef struct HWACCM
     STAMCOUNTER             StatNoFlushTLBWorldSwitch;
     STAMCOUNTER             StatFlushTLBCRxChange;
     STAMCOUNTER             StatFlushASID;
+    STAMCOUNTER             StatFlushTLBInvlpga;
 
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchToR3;
