@@ -159,8 +159,7 @@ ifdef VBOX_WITH_QT4GUI
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so)
  VBOX_LNX_NO_STRIP += \
 	VirtualBox.desktop \
-	$(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html) \
-	$(if $(VBOX_OSE),,$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),License-$(VBOX_LICENSE_VER)-$(f).html)) \
+	$(VBOX_LICENSE_FILES) \
  	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
 	$(if $(VBOX_WITH_QT4_SUN),accessible/libqtaccessiblewidgets.so,) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)

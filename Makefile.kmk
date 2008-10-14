@@ -49,9 +49,9 @@ ifndef VBOX_OSE
  nobin_INST = $(INST_BIN)
  nobin_MODE = 0644
  nobin_SOURCES =
- ifdef VBOX_LICENSE_FILE
+ ifdef VBOX_LICENSE_FILES
   nobin_SOURCES += \
-  	$(VBOX_BRAND_LICENSE_HTML)=>$(VBOX_LICENSE_FILE) \
+  	$(VBOX_BRAND_LICENSE_HTML)=>$(License-$(VBOX_LICENSE_VER).html) \
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),$(VBOX_BRAND_$(f)_LICENSE_HTML)=>License-$(VBOX_LICENSE_VER)-$(f).html)
  endif
 endif # !OSE
