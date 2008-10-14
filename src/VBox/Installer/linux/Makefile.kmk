@@ -55,9 +55,10 @@ OTHER_CLEAN   += \
 		VirtualBox.tar.bz2 \
 		LICENSE) \
 	$(wildcard $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-*) \
-	$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
-	$(VBOX_LNX_INST_OUT_DIR)/vboxnet.sh \
-	$(VBOX_LNX_INST_OUT_DIR)/install.sh
+	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/,\
+		vboxdrv.sh \
+		vboxnet.sh \
+		install.sh)
 
 #
 # Linux installs.
@@ -159,6 +160,7 @@ ifdef VBOX_WITH_QT4GUI
  VBOX_LNX_NO_STRIP += \
 	VirtualBox.desktop \
 	$(if $(VBOX_OSE),,License-$(VBOX_LICENSE_VER).html) \
+	$(if $(VBOX_OSE),,$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),License-$(VBOX_LICENSE_VER)-$(f).html)) \
  	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/libVBox*)),) \
 	$(if $(VBOX_WITH_QT4_SUN),accessible/libqtaccessiblewidgets.so,) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
@@ -174,8 +176,8 @@ endif
 # Documentation
 ifdef VBOX_WITH_DOCS_PACKING
  VBOX_LNX_NO_STRIP += \
-	$(notdir $(wildcard $(PATH_BIN)/UserManual*.pdf)) \
-	$(notdir $(wildcard $(PATH_BIN)/VirtualBox*.chm))
+	VirtualBox.chm UserManual.pdf \
+	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
  VBOX_LNX_STRIP_BIN += \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
 endif
