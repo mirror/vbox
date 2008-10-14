@@ -434,25 +434,26 @@ endif
 #
 # Branding
 #
-VBOX_BRAND_BIOS_LOGO           := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/sun_logo.bmp
-VBOX_BRAND_LICENSE_HTML        := $(PATH_ROOT)/doc/License.html
-VBOX_BRAND_LICENSE_RTF         := $(PATH_ROOT)/doc/License.rtf
-VBOX_BRAND_LICENSE_TXT         := $(PATH_ROOT)/doc/License.txt
-VBOX_BRAND_LICENSE_VER         :=
-VBOX_BRAND_GUI_ABOUT_PNG       := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about.png
-VBOX_BRAND_GUI_ABOUT_16PX_PNG  := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about_16px.png
-VBOX_BRAND_GUI_VBOX_16PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_16px.png
-VBOX_BRAND_GUI_VBOX_20PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_20px.png
-VBOX_BRAND_GUI_VBOX_32PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_32px.png
-VBOX_BRAND_GUI_VBOX_40PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_40px.png
-VBOX_BRAND_GUI_VBOX_48PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_48px.png
-VBOX_BRAND_GUI_VBOX_64PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_64px.png
-VBOX_BRAND_GUI_CUBE_42PX_PNG   := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_cube_42px.png
-VBOX_BRAND_WIN_INST_DLGBMP     := $(PATH_ROOT)/src/VBox/Installer/win/Binary/Dialog.bmp
-VBOX_BRAND_WIN_INST_EXT        :=
-VBOX_BRAND_WIN_ADD_INST_DLGBMP := $(PATH_ROOT)/src/VBox/Additions/WINNT/Installer/welcome.bmp
-VBOX_BRAND_DARWIN_DISKIMAGE_BG := $(PATH_ROOT)/src/VBox/Installer/darwin/DiskImage/vbox_folder.tiff
-VBOX_BRAND_DARWIN_INSTALLER_BG := $(PATH_ROOT)/src/VBox/Installer/darwin/VirtualBox_mpkg/background.tif
+VBOX_BRAND_BIOS_LOGO                 := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/sun_logo.bmp
+VBOX_BRAND_LICENSE_HTML              := $(PATH_ROOT)/doc/License.html
+VBOX_BRAND_LICENSE_RTF               := $(PATH_ROOT)/doc/License.rtf
+VBOX_BRAND_LICENSE_TXT               := $(PATH_ROOT)/doc/License.txt
+VBOX_BRAND_LICENSE_VER               :=
+VBOX_BRAND_GUI_ABOUT_PNG             := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about.png
+VBOX_BRAND_GUI_ABOUT_16PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/about_16px.png
+VBOX_BRAND_GUI_VBOX_16PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_16px.png
+VBOX_BRAND_GUI_VBOX_20PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_20px.png
+VBOX_BRAND_GUI_VBOX_32PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_32px.png
+VBOX_BRAND_GUI_VBOX_40PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_40px.png
+VBOX_BRAND_GUI_VBOX_48PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_48px.png
+VBOX_BRAND_GUI_VBOX_64PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_64px.png
+VBOX_BRAND_GUI_CUBE_42PX_PNG         := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox4/images/NonOSE/VirtualBox_cube_42px.png
+VBOX_BRAND_WIN_INST_DLGBMP           := $(PATH_ROOT)/src/VBox/Installer/win/Binary/Dialog.bmp
+VBOX_BRAND_WIN_INST_EXT              :=
+VBOX_BRAND_WIN_ADD_INST_DLGBMP       := $(PATH_ROOT)/src/VBox/Additions/WINNT/Installer/welcome.bmp
+VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE := $(PATH_ROOT)/src/VBox/Installer/darwin/DiskImage/DS_Store
+VBOX_BRAND_DARWIN_DISKIMAGE_BG       := $(PATH_ROOT)/src/VBox/Installer/darwin/DiskImage/vbox_folder.tiff
+VBOX_BRAND_DARWIN_INSTALLER_BG       := $(PATH_ROOT)/src/VBox/Installer/darwin/VirtualBox_mpkg/background.tif
 
 #
 # Skip stuff.
