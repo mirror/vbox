@@ -35,6 +35,8 @@
 
 #include <iprt/thread.h>
 #include <iprt/err.h>
+#include <iprt/assert.h>
+#include <iprt/asm.h>
 
 __BEGIN_DECLS
 NTSTATUS NTAPI ZwYieldExecution(void);
@@ -75,7 +77,13 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
     KIRQL Irql = KeGetCurrentIrql();
-    return Irql <= APC_LEVEL;
+    if (Irql > APC_LEVEL)
+        return false;
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+    if (!(ASMGetFlags() & 0x00000200 /* X86_EFL_IF */))
+        return false;
+#endif
+    return true;
 }
 
 

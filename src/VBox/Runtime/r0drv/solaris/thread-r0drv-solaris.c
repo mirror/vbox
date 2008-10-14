@@ -35,6 +35,7 @@
 
 #include <iprt/thread.h>
 #include <iprt/err.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 
 
@@ -101,7 +102,13 @@ RTDECL(bool) RTThreadYield(void)
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    return curthread->t_preempt == 0;
+    if (curthread->t_preempt != 0)
+        return false;
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+    if (!(ASMGetFlags() & 0x00000200 /* X86_EFL_IF */))
+        return false;
+#endif
+    return true;
 }
 
 
