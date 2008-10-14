@@ -79,7 +79,7 @@ int vboxVMInfoInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartT
 
     gCtx.pEnv = pEnv;
     gCtx.fFirstRun = TRUE;
-    gCtx.iUserCount = INT32_MAX; /* value which isn't reached in real life. */
+    gCtx.cUsers = INT32_MAX; /* value which isn't reached in real life. */
 
     int rc = VbglR3GuestPropConnect(&gCtx.iInfoSvcClientID);
     if (!RT_SUCCESS(rc))
@@ -117,7 +117,7 @@ void vboxVMInfoDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 
     vboxVMInfoWriteProp(pCtx, "GuestInfo/OS/LoggedInUsersList", NULL);
     vboxVMInfoWritePropInt(pCtx, "GuestInfo/OS/LoggedInUsers", 0);
-    if (pCtx->iUserCount != 0)
+    if (pCtx->cUsers != 0)
         vboxVMInfoWriteProp(pCtx, "GuestInfo/OS/NoLoggedInUsers", "true");
 
     const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
