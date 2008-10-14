@@ -234,7 +234,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		$(VBOX_PATH_SOL_INST_SRC)/Makefile.kmk \
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg,) \
-		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
+		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT) \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		$(if $(and $(not $(VBOX_OSE)),$(VBOX_WITH_QT4GUI)),$(PATH_BIN)/License-$(VBOX_LICENSE_VER).html) \
 		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
@@ -419,7 +419,7 @@ endif
 
 $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 		$(VBOX_VERSION_STAMP) \
-		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
+		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT) \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		$(VBOX_PATH_SOL_INST_SRC)/vbi/vboxkern.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbi/makepackage.sh \

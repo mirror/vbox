@@ -226,7 +226,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_VERSION_STAMP) \
 		$(VBOX_PATH_LNX_INST_SRC)/routines.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/deffiles \
-		$(if $(VBOX_OSE),,$(PATH_ROOT)/doc/License.txt) \
+		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxnet.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh
@@ -234,7 +234,7 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 	$(QUIET)$(RM) -f $(wildcard $(PATH_BIN)/VirtualBox-*.run)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/routines.sh          $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/deffiles             $(VBOX_LNX_INST_STAGE_DIR)/
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_ROOT)/doc/License.txt $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
+	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT))   $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxnet.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/install.sh            $(VBOX_LNX_INST_STAGE_DIR)/
