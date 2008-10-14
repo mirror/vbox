@@ -225,8 +225,10 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatRZWrmsr,                STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Wrmsr",      STAMUNIT_OCCURENCES,   "The number of times WRMSR was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3StosWD,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Stoswd",     STAMUNIT_OCCURENCES,   "The number of times STOSWD was successfully interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZStosWD,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Stoswd",     STAMUNIT_OCCURENCES,   "The number of times STOSWD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatRZWbInvd,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/WbInvd",     STAMUNIT_OCCURENCES,    "The number of times WBINVD was successfully interpreted.");
-    STAM_REG_USED(pVM, &pStats->StatR3WbInvd,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/WbInvd",     STAMUNIT_OCCURENCES,    "The number of times WBINVD was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZWbInvd,               STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/WbInvd",     STAMUNIT_OCCURENCES,   "The number of times WBINVD was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3WbInvd,               STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/WbInvd",     STAMUNIT_OCCURENCES,   "The number of times WBINVD was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZLmsw,                 STAMTYPE_COUNTER, "/EM/RZ/Interpret/Success/Lmsw",       STAMUNIT_OCCURENCES,   "The number of times LMSW was successfully interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3Lmsw,                 STAMTYPE_COUNTER, "/EM/R3/Interpret/Success/Lmsw",       STAMUNIT_OCCURENCES,   "The number of times LMSW was successfully interpreted.");
 
     STAM_REG(pVM, &pStats->StatRZInterpretFailed,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
     STAM_REG(pVM, &pStats->StatR3InterpretFailed,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed",            STAMUNIT_OCCURENCES,    "The number of times an instruction was not interpreted.");
@@ -277,6 +279,8 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     STAM_REG_USED(pVM, &pStats->StatR3FailedRdmsr,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Rdmsr",      STAMUNIT_OCCURENCES,    "The number of times RDMSR was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatRZFailedWrmsr,          STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Wrmsr",      STAMUNIT_OCCURENCES,    "The number of times WRMSR was not interpreted.");
     STAM_REG_USED(pVM, &pStats->StatR3FailedWrmsr,          STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Wrmsr",      STAMUNIT_OCCURENCES,    "The number of times WRMSR was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatRZFailedLmsw,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Lmsw",       STAMUNIT_OCCURENCES,    "The number of times LMSW was not interpreted.");
+    STAM_REG_USED(pVM, &pStats->StatR3FailedLmsw,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Lmsw",       STAMUNIT_OCCURENCES,    "The number of times LMSW was not interpreted.");
 
     STAM_REG_USED(pVM, &pStats->StatRZFailedMisc,           STAMTYPE_COUNTER, "/EM/RZ/Interpret/Failed/Misc",       STAMUNIT_OCCURENCES,    "The number of times some misc instruction was encountered.");
     STAM_REG_USED(pVM, &pStats->StatR3FailedMisc,           STAMTYPE_COUNTER, "/EM/R3/Interpret/Failed/Misc",       STAMUNIT_OCCURENCES,    "The number of times some misc instruction was encountered.");

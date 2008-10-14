@@ -145,6 +145,8 @@ typedef struct EMSTATS
     STAMCOUNTER             StatRZWrmsr;
     STAMCOUNTER             StatRZWbInvd;
     STAMCOUNTER             StatR3WbInvd;
+    STAMCOUNTER             StatRZLmsw;
+    STAMCOUNTER             StatR3Lmsw;
 
     STAMCOUNTER             StatRZInterpretFailed;
     STAMCOUNTER             StatR3InterpretFailed;
@@ -195,6 +197,8 @@ typedef struct EMSTATS
     STAMCOUNTER             StatR3FailedWrmsr;
     STAMCOUNTER             StatRZFailedRdmsr;
     STAMCOUNTER             StatRZFailedWrmsr;
+    STAMCOUNTER             StatRZFailedLmsw;
+    STAMCOUNTER             StatR3FailedLmsw;
 
     STAMCOUNTER             StatRZFailedAdd;
     STAMCOUNTER             StatR3FailedAdd;
