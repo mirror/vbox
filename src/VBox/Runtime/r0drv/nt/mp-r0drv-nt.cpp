@@ -86,6 +86,7 @@ RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
+    /** @todo use KeQueryMaximumProcessorCount on vista+ */
     return MAXIMUM_PROCESSORS - 1;
 }
 
@@ -107,21 +108,24 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     /* Cannot easily distinguish between online and offline cpus. */
-    /** @todo online/present cpu stuff must be corrected for proper W2K8 support. */
+    /** @todo online/present cpu stuff must be corrected for proper W2K8 support
+     *        (KeQueryMaximumProcessorCount). */
     return RTMpIsCpuOnline(idCpu);
 }
 
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
-    /** @todo online/present cpu stuff must be corrected for proper W2K8 support. */
+    /** @todo online/present cpu stuff must be corrected for proper W2K8 support
+     *        (KeQueryMaximumProcessorCount). */
     return RTMpGetOnlineSet(pSet);
 }
 
 
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
-    /** @todo online/present cpu stuff must be corrected for proper W2K8 support. */
+    /** @todo online/present cpu stuff must be corrected for proper W2K8 support
+     *        (KeQueryMaximumProcessorCount). */
     return RTMpGetOnlineCount();
 }
 
