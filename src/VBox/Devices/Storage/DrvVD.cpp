@@ -810,7 +810,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                  VDIsReadOnly(pThis->pDisk) ? "read-only" : "read-write"));
         else
         {
-           AssertMsgFailed(("Failed to open image '%s' rc=%Rrc\n", pszName, rc));
+           rc = PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                    N_("Failed to open image '%s' in %s mode rc=%Rrc\n"), pszName,
+                                    (uOpenFlags & VD_OPEN_FLAGS_READONLY) ? "readonly" : "read-write", rc);
            break;
         }
 

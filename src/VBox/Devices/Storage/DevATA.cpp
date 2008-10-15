@@ -5009,9 +5009,19 @@ static bool ataWaitForAllAsyncIOIsIdle(PPDMDEVINS pDevIns, unsigned cMillies)
         for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         {
             pCtl = &pThis->aCts[i];
-            fAllIdle &= ataAsyncIOIsIdle(pCtl, false);
-            if (!fAllIdle)
-                break;
+
+            /*
+             * Only check if the thread is idling if the request mutex is set up.
+             * It is possible that the creation of the first controller failed and that
+             * the request mutex is not initialized on the second one yet
+             * But it would be called without the following check.
+             */
+            if (pCtl->AsyncIORequestMutex != NIL_RTSEMEVENT)
+            {
+                fAllIdle &= ataAsyncIOIsIdle(pCtl, false);
+                if (!fAllIdle)
+                    break;
+            }
         }
         if (    fAllIdle
             ||  RTTimeMilliTS() - u64Start >= cMillies)
@@ -5955,7 +5965,6 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             }
             else
             {
-                AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
                 switch (rc)
                 {
                     case VERR_ACCESS_DENIED:
