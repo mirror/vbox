@@ -1156,7 +1156,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszM
 #ifdef VBOX_WITH_HARDENING
     int rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
     if (RT_FAILURE(rc))
-        LogRel(("SUPR3HardenedVerifyFile: %s: Verification of \"%s\" failed, rc=%Rrc\n", pszMsg, rc));
+        LogRel(("SUPR3HardenedVerifyFile: %s: Verification of \"%s\" failed, rc=%Rrc\n", pszMsg, pszFilename, rc));
     return rc;
 #else
     return VINF_SUCCESS;
