@@ -924,15 +924,15 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return rc;
     }
 # endif
-
     if(OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
     {
         char szBindName[INTNET_MAX_TRUNK_NAME];
-        size_t cBindName = INTNET_MAX_TRUNK_NAME;
+        int cBindName = INTNET_MAX_TRUNK_NAME;
 
-        rc = drvIntNetWinIfNameToBindName(OpenReq.szTrunk, szBindName, cBindName);
+        rc = drvIntNetWinIfGuidToBindName(OpenReq.szTrunk, szBindName, cBindName);
         if (RT_FAILURE(rc))
         {
+            Assert(0);
             return rc;
         }
 
