@@ -833,36 +833,37 @@ static HRESULT vboxNetCfgWinReleaseINetCfg (IN INetCfg* pnc,
 static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc)
 {
     LPWSTR              lpszName;
-    GUID                lpszIfGuid;
+    GUID                IfGuid;
     HRESULT hr;
     int rc = VERR_GENERAL_FAILURE;
 
     hr = pncc->GetDisplayName( &lpszName );
+    Assert(hr == S_OK);
     if(hr == S_OK)
     {
         size_t cUnicodeName = wcslen(lpszName) + 1;
-        size_t cbAnsiName = cUnicodeName * 2;
-        char * pAnsiName = (char *)alloca(cbAnsiName);
-        if(pAnsiName)
-        {
-            if(WideCharToMultiByte(CP_ACP, 0, lpszName, cUnicodeName, pAnsiName,
-                    cbAnsiName, NULL, NULL))
-            {
-                hr = pncc->GetInstanceGuid(&lpszIfGuid);
+        size_t uniLen = (cUnicodeName * 2 + sizeof (OLECHAR) - 1) / sizeof (OLECHAR);
+        Bstr name (uniLen + 1 /* extra zero */);
+        wcscpy((wchar_t *) name.mutableRaw(), lpszName);
+
+                hr = pncc->GetInstanceGuid(&IfGuid);
+                Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
                     /* create a new object and add it to the list */
                     ComObjPtr <HostNetworkInterface> iface;
                     iface.createObject();
                     /* remove the curly bracket at the end */
-                    if (SUCCEEDED (iface->init (pAnsiName, Guid (lpszIfGuid))))
+                    if (SUCCEEDED (iface->init (name, Guid (IfGuid))))
                     {
                         pPist->push_back (iface);
                         rc = VINF_SUCCESS;
                     }
+                    else
+                    {
+                        Assert(0);
+                    }
                 }
-            }
-        }
         CoTaskMemFree(lpszName);
     }
 
@@ -1227,25 +1228,32 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                        VBOX_APP_NAME,
                        &pNc,
                        &lpszApp );
+    Assert(hr == S_OK);
     if(hr == S_OK)
     {
         /* for now we just get all miniports the MS_TCPIP protocol binds to */
         hr = pNc->FindComponent(L"MS_TCPIP", &pTcpIpNcc);
+        Assert(hr == S_OK);
         if(hr == S_OK)
         {
             hr = vboxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
+            Assert(hr == S_OK);
             if ( hr == S_OK )
             {
                 hr = vboxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
+                Assert(hr == S_OK || hr == S_FALSE);
                 while( hr == S_OK )
                 {
                     hr = vboxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
+                    Assert(hr == S_OK);
                     if ( hr == S_OK )
                     {
                         hr = vboxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
+                        Assert(hr == S_OK);
                         while(hr == S_OK)
                         {
                             hr = pBi->GetLowerComponent( &pMpNcc );
+                            Assert(hr == S_OK);
                             if(hr == S_OK)
                             {
                                 vboxNetWinAddComponent(&list, pMpNcc);

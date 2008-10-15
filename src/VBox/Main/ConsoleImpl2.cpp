@@ -1265,11 +1265,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     rc = coll->FindByName(HifName, hostInterface.asOutParam());
                     if (!SUCCEEDED(rc))
                     {
+                        AssertBreakpoint();
                         return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                           N_("Inexistent host networking interface, name '%ls'"),
                                           HifName.raw());
                     }
-                    const char *pszTrunk = pszHifName;
+
+                    Guid hostIFGuid;
+                    hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());    H();
+                    char szDriverGUID[RTUUID_STR_LENGTH];
+                    strcpy(szDriverGUID , hostIFGuid.toString().raw());
+                    const char *pszTrunk = szDriverGUID;
 # else
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
