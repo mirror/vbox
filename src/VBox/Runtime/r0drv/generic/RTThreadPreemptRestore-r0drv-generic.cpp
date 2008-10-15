@@ -37,8 +37,13 @@
 
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
+#ifdef RT_OS_WINDOWS
+    /** @todo I disabled this because it did not build on Windows */
+    AssertReleaseMsgFailed(("This has not yet been implemented on Windows!\n"));
+#else
     AssertPtr(pState);
     Assert(pState->uchDummy == 42);
     pState->uchDummy = 0;
+#endif
 }
 
