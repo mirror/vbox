@@ -1022,6 +1022,8 @@ void VBoxConsoleWnd::closeView()
     /* close & destroy the debugger gui */
     dbgDestroy();
 #endif
+    /* Make sure all events are delievered */
+    qApp->processEvents();
 
     console->detach();
 

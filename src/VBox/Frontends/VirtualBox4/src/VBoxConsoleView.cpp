@@ -712,7 +712,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     CDisplay display = mConsole.GetDisplay();
     Assert (!display.isNull());
 
-    mFrameBuf = 0;
+    mFrameBuf = NULL;
 
     LogFlowFunc (("Rendering mode: %d\n", mode));
 
@@ -850,6 +850,7 @@ VBoxConsoleView::~VBoxConsoleView()
         display.SetupInternalFramebuffer (0);
         /* release the reference */
         mFrameBuf->Release();
+        mFrameBuf = NULL;
     }
 
     mConsole.UnregisterCallback (mCallback);
@@ -3017,7 +3018,8 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
     if (mPausedShot.isNull())
     {
         /* delegate the paint function to the VBoxFrameBuffer interface */
-        mFrameBuf->paintEvent (pe);
+        if (mFrameBuf)
+            mFrameBuf->paintEvent (pe);
 #ifdef Q_WS_MAC
         /* Update the dock icon if we are in the running state */
         if (isRunning())
@@ -3041,7 +3043,7 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
     }
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
-    if (mode == VBoxDefs::Quartz2DMode)
+    if (mode == VBoxDefs::Quartz2DMode && mFrameBuf)
         mFrameBuf->paintEvent (pe);
     else
 #endif
