@@ -371,8 +371,9 @@ endif
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf               $(SOLARIS_INST_DIR)/vboxdrv.conf
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf            $(SOLARIS_INST_DIR)/vboxflt.conf
-	$(QUIET)$(if $(VBOX_WITH_DOCS_PACKING),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual.pdf                    $(SOLARIS_INST_DIR)/)
-	$(QUIET)$(if $(VBOX_WITH_DOCS_PACKING),$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(INSTALL) -m 0644 $(PATH_BIN)/UserManual_$(f).pdf $(SOLARIS_INST_DIR/)))
+	$(QUIET)$(if $(VBOX_WITH_DOCS_PACKING),$(INSTALL) -m 0644 \
+		$(PATH_BIN)/UserManual.pdf \
+		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf)                       $(SOLARIS_INST_DIR)/)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
 	$(QUIET)$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(VBOX_LICENSE_BINS)     $(SOLARIS_INST_DIR)/)
