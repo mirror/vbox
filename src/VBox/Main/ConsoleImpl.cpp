@@ -4493,13 +4493,14 @@ HRESULT Console::powerDown()
         char szPropValue[MAX_VALUE_LEN + 1];
         char szPropFlags[MAX_FLAGS_LEN + 1];
         ULONG64 u64Timestamp = 0;  /* default */
-        szPropFlags[0] = '\0';  /* default */
         vrc = CFGMR3GetValueName (pValue, szPropName, sizeof(szPropName));
         if (RT_SUCCESS(vrc))
             vrc = CFGMR3QueryString (pValues, szPropName, szPropValue, sizeof(szPropValue));
         if (RT_SUCCESS(vrc))
         {
-            CFGMR3QueryString (pFlags, szPropName, szPropFlags, sizeof(szPropFlags));
+            uint32_t fFlags;
+            CFGMR3QueryU32 (pFlags, szPropName, &fFlags);
+            writeFlags(fFlags, szPropFlags);
             CFGMR3QueryU64 (pTimestamps, szPropName, &u64Timestamp);
             Bstr(szPropName).cloneTo(&names[iProp]);
             Bstr(szPropValue).cloneTo(&values[iProp]);

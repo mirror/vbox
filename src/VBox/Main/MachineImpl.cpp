@@ -2803,12 +2803,6 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
 
-    /* For now there are no valid flags, so check this. */
-    if (aFlags != NULL)
-        for (size_t i = 0; aFlags[i] != '\0'; ++i)
-            if (aFlags[i] != ' ')
-                return E_INVALIDARG;
-
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
