@@ -618,6 +618,7 @@ ALIGNCODE(16)
     ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
+    LOADHOSTMSR MSR_K6_STAR
 %if 0  ; not supported on Intel CPUs
     LOADHOSTMSR MSR_K8_CSTAR
 %endif
@@ -647,6 +648,7 @@ ALIGNCODE(16)
     ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
     LOADHOSTMSR MSR_K8_SF_MASK
+    LOADHOSTMSR MSR_K6_STAR
 %if 0  ; not supported on Intel CPUs
     LOADHOSTMSR MSR_K8_CSTAR
 %endif
