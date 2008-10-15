@@ -871,10 +871,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         &&  pThis->enmType != PDMBLOCKTYPE_HARD_DISK)
         return VINF_SUCCESS;
     if (RT_FAILURE(rc))
-    {
-        AssertLogRelMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
-        return rc;
-    }
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Failed to attach driver below us! rc=%Rra\n"), rc);
+
     pThis->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
     if (!pThis->pDrvMedia)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
