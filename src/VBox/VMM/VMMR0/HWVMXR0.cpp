@@ -60,6 +60,7 @@ static void vmxR0SetupTLBVPID(PVM pVM);
 static void vmxR0SetupTLBDummy(PVM pVM);
 static void vmxR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys);
 static void vmxR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr);
+static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx);
 
 
 static void VMXR0CheckError(PVM pVM, int rc)
@@ -391,13 +392,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
      *
      * Note: only possible if the current state is actually ours (X86_CR0_TS flag)
      */
-    pVM->hwaccm.s.vmx.u32TrapMask = HWACCM_VMX_TRAP_MASK;
-#ifndef DEBUG
-    if (pVM->hwaccm.s.fNestedPaging)
-        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_PF);   /* no longer need to intercept #PF. */
-#endif
-    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
-    AssertRC(rc);
 
     /* Don't filter page faults; all of them should cause a switch. */
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_PAGEFAULT_ERROR_MASK, 0);
@@ -554,20 +548,66 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
 #ifdef HWACCM_VMX_EMULATE_REALMODE
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
+        RTGCPHYS GCPhysHandler;
+        uint16_t offset, ip;
+        RTSEL    sel;
+
         /* Injecting events doesn't work right with real mode emulation.
          * (#GP if we try to inject external hardware interrupts)
-         * Fake an 'int x' instruction. Note that we need to take special precautions when
-         * the inject is interrupted as the normal pending event method seems to be broken in this case.
+         * Inject the interrupt or trap directly instead.
          */
-        LogFlow(("Fake 'int %x' inject (real mode)\n", iGate));
-        /* Make sure the return address is set to the current IP. (ugly hack alert) */
-        pCtx->rip--;
-        cbInstr   = 1;
-        intInfo   = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo) | (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        Log(("Manual interrupt/trap '%x' inject (real mode)\n", iGate));
 
-        pVM->hwaccm.s.vmx.RealMode.Event.intInfo  = intInfo;
-        pVM->hwaccm.s.vmx.RealMode.Event.fPending = true;
-        pVM->hwaccm.s.vmx.RealMode.eip            = pCtx->eip;
+        /* Check if the interrupt handler is present. */
+        if (iGate * 4 + 3 > pCtx->idtr.cbIdt)
+        {
+            Log(("IDT cbIdt violation\n"));
+            if (iGate != X86_XCPT_DF)
+            {
+                RTGCUINTPTR intInfo;
+
+                intInfo  = (iGate == X86_XCPT_GP) ? X86_XCPT_DF : iGate;
+                intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+                intInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+                intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+                return VMXR0InjectEvent(pVM, pCtx, intInfo, 0, 0 /* no error code according to the Intel docs */);
+            }
+            Log(("Triple fault -> reset the VM!\n"));
+            return VINF_EM_RESET;
+        }
+        if (VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
+            ip = pCtx->ip + cbInstr;
+        else
+            ip = pCtx->ip;
+
+        /* Read the selector:offset pair of the interrupt handler. */
+        GCPhysHandler = (RTGCPHYS)pCtx->idtr.pIdt + iGate * 4;
+        PGMPhysRead(pVM, GCPhysHandler,     &offset, sizeof(offset));
+        PGMPhysRead(pVM, GCPhysHandler + 2, &sel,    sizeof(sel));
+
+        LogFlow(("IDT handler %04X:%04X\n", sel, offset));
+
+        /* Construct the stack frame. */
+        /** @todo should check stack limit. */
+        pCtx->sp -= 2;
+        LogFlow(("ss:sp %04X:%04X eflags=%x\n", pCtx->ss, pCtx->sp, pCtx->eflags.u));
+        PGMPhysWrite(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->eflags, sizeof(uint16_t));
+        pCtx->sp -= 2;
+        LogFlow(("ss:sp %04X:%04X cs=%x\n", pCtx->ss, pCtx->sp, pCtx->cs));
+        PGMPhysWrite(pVM, pCtx->ssHid.u64Base + pCtx->sp, &pCtx->cs, sizeof(uint16_t));
+        pCtx->sp -= 2;
+        LogFlow(("ss:sp %04X:%04X ip=%x\n", pCtx->ss, pCtx->sp, ip));
+        PGMPhysWrite(pVM, pCtx->ssHid.u64Base + pCtx->sp, &ip, sizeof(ip));
+
+        /* Update the CPU state for executing the handler. */
+        pCtx->rip           = offset;
+        pCtx->cs            = sel;
+        pCtx->csHid.u64Base = sel << 4;
+        pCtx->eflags.u     &= ~(X86_EFL_IF|X86_EFL_TF|X86_EFL_RF|X86_EFL_AC);
+
+        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_SEGMENT_REGS;
+        return VINF_SUCCESS;
     }
 #endif /* HWACCM_VMX_EMULATE_REALMODE */
 
@@ -842,6 +882,50 @@ static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
 }
 
 /**
+ * Update the exception bitmap according to the current CPU state
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   pCtx        Guest context
+ */ 
+static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx)
+{
+    uint32_t u32TrapMask;
+    Assert(pCtx);
+
+    u32TrapMask = HWACCM_VMX_TRAP_MASK;
+#ifndef DEBUG
+    if (pVM->hwaccm.s.fNestedPaging)
+        u32TrapMask &= ~RT_BIT(X86_XCPT_PF);   /* no longer need to intercept #PF. */
+#endif
+
+    /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
+    if (!pVM->hwaccm.s.fFPUOldStyleOverride)
+    {
+        u32TrapMask |= RT_BIT(X86_XCPT_MF);
+        pVM->hwaccm.s.fFPUOldStyleOverride = true;
+    }
+
+#ifdef DEBUG
+    /* Intercept X86_XCPT_DB if stepping is enabled */
+    if (DBGFIsStepping(pVM))
+        u32TrapMask |= RT_BIT(X86_XCPT_DB);
+#endif
+
+#ifdef VBOX_STRICT
+    Assert(u32TrapMask & RT_BIT(X86_XCPT_GP));
+#endif
+
+# ifdef HWACCM_VMX_EMULATE_REALMODE
+    /* Intercept all exceptions in real mode as none of them can be injected directly (#GP otherwise). */
+    if (CPUMIsGuestInRealModeEx(pCtx))
+        u32TrapMask |= HWACCM_VMX_TRAP_MASK_REALMODE;
+# endif /* HWACCM_VMX_EMULATE_REALMODE */
+
+    int rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, u32TrapMask);
+    AssertRC(rc);
+}
+
+/**
  * Loads the guest state
  *
  * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
@@ -1078,18 +1162,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         {
             /** @todo check if we support the old style mess correctly. */
             if (!(val & X86_CR0_NE))
-            {
                 Log(("Forcing X86_CR0_NE!!!\n"));
-
-                /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
-                if (!pVM->hwaccm.s.fFPUOldStyleOverride)
-                {
-                    pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_MF);
-                    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
-                    AssertRC(rc);
-                    pVM->hwaccm.s.fFPUOldStyleOverride = true;
-                }
-            }
 
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
@@ -1387,29 +1460,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         pVM->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM32;
     }
 
-#ifdef DEBUG
-    /* Intercept X86_XCPT_DB if stepping is enabled */
-    if (DBGFIsStepping(pVM))
-        pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_DB);
-    else
-        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_DB);
-
-    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
-#endif
-
-#ifdef VBOX_STRICT
-    Assert(pVM->hwaccm.s.vmx.u32TrapMask & RT_BIT(X86_XCPT_GP));
-#else
-# ifdef HWACCM_VMX_EMULATE_REALMODE
-    /* Intercept #GP faults in real mode to handle privileged instructions. */
-    if (CPUMIsGuestInRealModeEx(pCtx))
-        pVM->hwaccm.s.vmx.u32TrapMask |= RT_BIT(X86_XCPT_GP);
-    else
-        pVM->hwaccm.s.vmx.u32TrapMask &= ~RT_BIT(X86_XCPT_GP);
-# endif /* HWACCM_VMX_EMULATE_REALMODE */
-    rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, pVM->hwaccm.s.vmx.u32TrapMask);
-    AssertRC(rc);
-#endif
+    vmxR0UpdateExceptionBitmap(pVM, pCtx);
 
     /* Done. */
     pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
@@ -1959,45 +2010,25 @@ ResumeExecution:
     /* Check if an injected event was interrupted prematurely. */
     rc = VMXReadVMCS(VMX_VMCS_RO_IDT_INFO,            &val);
     AssertRC(rc);
-#ifdef HWACCM_VMX_EMULATE_REALMODE
-    /* For some reason injected software interrupts are ignored (not signalled as pending) when e.g. a shadow page fault occurs. */
-    if (    CPUMIsGuestInRealModeEx(pCtx)
-        &&  pVM->hwaccm.s.vmx.RealMode.eip == pCtx->eip
-        &&  pVM->hwaccm.s.vmx.RealMode.Event.fPending)
+    pVM->hwaccm.s.Event.intInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
+    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo)
+        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVM->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
     {
-        Assert(!pVM->hwaccm.s.Event.fPending);
-
-        Log(("Pending real-mode inject %VX64 at %VGv\n", pVM->hwaccm.s.vmx.RealMode.Event.intInfo, pCtx->rip));
-
-        /* We faked an 'int x' instruction and messed with IP, so correct it here. */
-        pCtx->rip++;
-        pVM->hwaccm.s.Event.intInfo  = pVM->hwaccm.s.vmx.RealMode.Event.intInfo;
         pVM->hwaccm.s.Event.fPending = true;
-    }
-    else
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
-    {
-        pVM->hwaccm.s.Event.intInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
-        if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo)
-            &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVM->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
+        /* Error code present? */
+        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVM->hwaccm.s.Event.intInfo))
         {
-            pVM->hwaccm.s.Event.fPending = true;
-            /* Error code present? */
-            if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVM->hwaccm.s.Event.intInfo))
-            {
-                rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
-                AssertRC(rc);
-                pVM->hwaccm.s.Event.errCode  = val;
-                Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification, val));
-            }
-            else
-            {
-                Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification));
-                pVM->hwaccm.s.Event.errCode  = 0;
-            }
+            rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
+            AssertRC(rc);
+            pVM->hwaccm.s.Event.errCode  = val;
+            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification, val));
+        }
+        else
+        {
+            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification));
+            pVM->hwaccm.s.Event.errCode  = 0;
         }
     }
-    pVM->hwaccm.s.vmx.RealMode.Event.fPending = false;
 
 #ifdef VBOX_STRICT
     if (exitReason == VMX_EXIT_ERR_INVALID_GUEST_STATE)
@@ -2185,7 +2216,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestDB);
 
                 /* Note that we don't support guest and host-initiated debugging at the same time. */
-                Assert(DBGFIsStepping(pVM));
+                Assert(DBGFIsStepping(pVM) || CPUMIsGuestInRealModeEx(pCtx));
 
                 uDR6  = X86_DR6_INIT_VAL;
                 uDR6 |= (exitQualification & (X86_DR6_B0|X86_DR6_B1|X86_DR6_B2|X86_DR6_B3|X86_DR6_BD|X86_DR6_BS));
@@ -2285,6 +2316,22 @@ ResumeExecution:
             }
 #endif
             default:
+#ifdef HWACCM_VMX_EMULATE_REALMODE
+                if (CPUMIsGuestInRealModeEx(pCtx))
+                {
+                    Log(("Real Mode Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
+                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    AssertRC(rc);
+
+                    /* Go back to ring 3 in case of a triple fault. */
+                    if (    vector == X86_XCPT_DF
+                        &&  rc == VINF_EM_RESET)
+                        break;
+
+                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    goto ResumeExecution;
+                }
+#endif
                 AssertMsgFailed(("Unexpected vm-exit caused by exception %x\n", vector));
                 rc = VERR_VMX_UNEXPECTED_EXCEPTION;
                 break;
