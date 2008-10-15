@@ -985,13 +985,13 @@ static int setGuestProperty(int argc, char *argv[])
     }
     else if (3 == argc)
     {
-        if (strcmp(argv[1], "-flags") != 0)
-            usageOK = false;
-        else
+        if (strcmp(argv[2], "-flags") == 0)
         {
             VBoxControlError("You may not specify flags without a value");
             return 1;
         }
+        else
+            usageOK = false;
     }
     else if (4 == argc)
     {
@@ -1076,7 +1076,7 @@ static int enumGuestProperty(int argc, char *argv[])
                                  &pszName, &pszValue, &u64Timestamp, &pszFlags);
         if (RT_SUCCESS(rc))
         {
-            while (RT_SUCCESS(rc) && !pszName)
+            while (RT_SUCCESS(rc) && pszName)
             {
                 RTPrintf("Name: %s, value: %s, timestamp: %lld, flags: %s\n",
                          pszName, pszValue, u64Timestamp, pszFlags);
