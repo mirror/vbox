@@ -27,8 +27,10 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 #include "config.h"
+#define CPU_NO_GLOBAL_REGS
 #include "exec.h"
 #include "disas.h"
+#include "tcg.h"
 
 #if !defined(CONFIG_SOFTMMU)
 #undef EAX
@@ -44,18 +46,26 @@
 #include <sys/ucontext.h>
 #endif
 
+#if defined(__sparc__) && !defined(HOST_SOLARIS)
+// Work around ugly bugs in glibc that mangle global register contents
+#undef env
+#define env cpu_single_env
+#endif
+
 int tb_invalidated_flag;
 
 //#define DEBUG_EXEC
 //#define DEBUG_SIGNAL
 
-#if defined(TARGET_ARM) || defined(TARGET_SPARC) || defined(TARGET_M68K)
-/* XXX: unify with i386 target */
+
 void cpu_loop_exit(void)
 {
+    /* NOTE: the register at this point must be saved by hand because
+       longjmp restore them */
+    regs_to_env();
     longjmp(env->jmp_env, 1);
 }
-#endif
+
 #if !(defined(TARGET_SPARC) || defined(TARGET_SH4) || defined(TARGET_M68K))
 #define reg_T2
 #endif
@@ -82,18 +92,40 @@ void cpu_resume_from_signal(CPUState *env1, void *puc)
     longjmp(env->jmp_env, 1);
 }
 
+/* Execute the code without caching the generated code. An interpreter
+   could be used if available. */
+static void cpu_exec_nocache(int max_cycles, TranslationBlock *orig_tb)
+{
+    unsigned long next_tb;
+    TranslationBlock *tb;
+
+    /* Should never happen.
+       We only end up here when an existing TB is too long.  */
+    if (max_cycles > CF_COUNT_MASK)
+        max_cycles = CF_COUNT_MASK;
+
+    tb = tb_gen_code(env, orig_tb->pc, orig_tb->cs_base, orig_tb->flags,
+                     max_cycles);
+    env->current_tb = tb;
+    /* execute the generated code */
+    next_tb = tcg_qemu_tb_exec(tb->tc_ptr);
+
+    if ((next_tb & 3) == 2) {
+        /* Restore PC.  This may happen if async event occurs before
+           the TB starts executing.  */
+        CPU_PC_FROM_TB(env, tb);
+    }
+    tb_phys_invalidate(tb, -1);
+    tb_free(tb);
+}
 
 static TranslationBlock *tb_find_slow(target_ulong pc,
                                       target_ulong cs_base,
-                                      unsigned int flags)
+                                      uint64_t flags)
 {
     TranslationBlock *tb, **ptb1;
-    int code_gen_size;
     unsigned int h;
     target_ulong phys_pc, phys_page1, phys_page2, virt_page2;
-    uint8_t *tc_ptr;
-
-    spin_lock(&tb_lock);
 
     tb_invalidated_flag = 0;
 
@@ -127,35 +159,12 @@ static TranslationBlock *tb_find_slow(target_ulong pc,
         ptb1 = &tb->phys_hash_next;
     }
  not_found:
-    /* if no translated code available, then translate it now */
-    tb = tb_alloc(pc);
-    if (!tb) {
-        /* flush must be done */
-        tb_flush(env);
-        /* cannot fail at this point */
-        tb = tb_alloc(pc);
-        /* don't forget to invalidate previous TB info */
-        tb_invalidated_flag = 1;
-    }
-    tc_ptr = code_gen_ptr;
-    tb->tc_ptr = tc_ptr;
-    tb->cs_base = cs_base;
-    tb->flags = flags;
-    cpu_gen_code(env, tb, CODE_GEN_MAX_SIZE, &code_gen_size);
-    code_gen_ptr = (void *)(((unsigned long)code_gen_ptr + code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
-
-    /* check next page if needed */
-    virt_page2 = (pc + tb->size - 1) & TARGET_PAGE_MASK;
-    phys_page2 = -1;
-    if ((pc & TARGET_PAGE_MASK) != virt_page2) {
-        phys_page2 = get_phys_addr_code(env, virt_page2);
-    }
-    tb_link_phys(tb, phys_pc, phys_page2);
+   /* if no translated code available, then translate it now */
+    tb = tb_gen_code(env, pc, cs_base, flags, 0);
 
  found:
     /* we add the TB in the virtual pc hash table */
     env->tb_jmp_cache[tb_jmp_cache_hash_func(pc)] = tb;
-    spin_unlock(&tb_lock);
     return tb;
 }
 
@@ -163,7 +172,7 @@ static inline TranslationBlock *tb_find_fast(void)
 {
     TranslationBlock *tb;
     target_ulong cs_base, pc;
-    unsigned int flags;
+    uint64_t flags;
 
     /* we record a subset of the CPU state. It will
        always be the same before a given translated block
@@ -180,56 +189,61 @@ static inline TranslationBlock *tb_find_fast(void)
         flags |= (1 << 6);
     if (env->vfp.xregs[ARM_VFP_FPEXC] & (1 << 30))
         flags |= (1 << 7);
+    flags |= (env->condexec_bits << 8);
     cs_base = 0;
     pc = env->regs[15];
 #elif defined(TARGET_SPARC)
 #ifdef TARGET_SPARC64
-    // Combined FPU enable bits . PRIV . DMMU enabled . IMMU enabled
-    flags = (((env->pstate & PS_PEF) >> 1) | ((env->fprs & FPRS_FEF) << 2))
+    // AM . Combined FPU enable bits . PRIV . DMMU enabled . IMMU enabled
+    flags = ((env->pstate & PS_AM) << 2)
+        | (((env->pstate & PS_PEF) >> 1) | ((env->fprs & FPRS_FEF) << 2))
         | (env->pstate & PS_PRIV) | ((env->lsu & (DMMU_E | IMMU_E)) >> 2);
 #else
-    // FPU enable . MMU enabled . MMU no-fault . Supervisor
-    flags = (env->psref << 3) | ((env->mmuregs[0] & (MMU_E | MMU_NF)) << 1)
-        | env->psrs;
+    // FPU enable . Supervisor
+    flags = (env->psref << 4) | env->psrs;
 #endif
     cs_base = env->npc;
     pc = env->pc;
 #elif defined(TARGET_PPC)
-    flags = (msr_pr << MSR_PR) | (msr_fp << MSR_FP) |
-        (msr_se << MSR_SE) | (msr_le << MSR_LE);
+    flags = env->hflags;
     cs_base = 0;
     pc = env->nip;
 #elif defined(TARGET_MIPS)
     flags = env->hflags & (MIPS_HFLAG_TMASK | MIPS_HFLAG_BMASK);
     cs_base = 0;
-    pc = env->PC;
+    pc = env->active_tc.PC;
 #elif defined(TARGET_M68K)
-    flags = env->fpcr & M68K_FPCR_PREC;
+    flags = (env->fpcr & M68K_FPCR_PREC)  /* Bit  6 */
+            | (env->sr & SR_S)            /* Bit  13 */
+            | ((env->macsr >> 4) & 0xf);  /* Bits 0-3 */
     cs_base = 0;
     pc = env->pc;
 #elif defined(TARGET_SH4)
-    flags = env->sr & (SR_MD | SR_RB);
-    cs_base = 0;         /* XXXXX */
+    flags = (env->flags & (DELAY_SLOT | DELAY_SLOT_CONDITIONAL
+                    | DELAY_SLOT_TRUE | DELAY_SLOT_CLEARME))   /* Bits  0- 3 */
+            | (env->fpscr & (FPSCR_FR | FPSCR_SZ | FPSCR_PR))  /* Bits 19-21 */
+            | (env->sr & (SR_MD | SR_RB));                     /* Bits 29-30 */
+    cs_base = 0;
+    pc = env->pc;
+#elif defined(TARGET_ALPHA)
+    flags = env->ps;
+    cs_base = 0;
+    pc = env->pc;
+#elif defined(TARGET_CRIS)
+    flags = env->pregs[PR_CCS] & (S_FLAG | P_FLAG | U_FLAG | X_FLAG);
+    flags |= env->dslot;
+    cs_base = 0;
     pc = env->pc;
 #else
 #error unsupported CPU
 #endif
     tb = env->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
-    if (__builtin_expect(!tb || tb->pc != pc || tb->cs_base != cs_base ||
-                         tb->flags != flags, 0)) {
+    if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
+                 tb->flags != flags)) {
         tb = tb_find_slow(pc, cs_base, flags);
-        /* Note: we do it here to avoid a gcc bug on Mac OS X when
-           doing it in tb_find_slow */
-        if (tb_invalidated_flag) {
-            /* as some TB could have been invalidated because
-               of memory exceptions while generating the code, we
-               must recompute the hash index here */
-            T0 = 0;
-        }
     }
     return tb;
 }
-
 
 /* main execution loop */
 
@@ -240,61 +254,12 @@ int cpu_exec(CPUState *env1)
 #define DECLARE_HOST_REGS 1
 #include "hostregs_helper.h"
     int ret, interrupt_request;
-    void (*gen_func)(void);
     TranslationBlock *tb;
     uint8_t *tc_ptr;
+    unsigned long next_tb;
 
-#if defined(TARGET_I386)
-    /* handle exit of HALTED state */
-    if (env1->hflags & HF_HALTED_MASK) {
-        /* disable halt condition */
-        if ((env1->interrupt_request & CPU_INTERRUPT_HARD) &&
-            (env1->eflags & IF_MASK)) {
-            env1->hflags &= ~HF_HALTED_MASK;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_PPC)
-    if (env1->halted) {
-        if (env1->msr[MSR_EE] &&
-            (env1->interrupt_request &
-             (CPU_INTERRUPT_HARD | CPU_INTERRUPT_TIMER))) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_SPARC)
-    if (env1->halted) {
-        if ((env1->interrupt_request & CPU_INTERRUPT_HARD) &&
-            (env1->psret != 0)) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_ARM)
-    if (env1->halted) {
-        /* An interrupt wakes the CPU even if the I and F CPSR bits are
-           set.  */
-        if (env1->interrupt_request
-            & (CPU_INTERRUPT_FIQ | CPU_INTERRUPT_HARD)) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_MIPS)
-    if (env1->halted) {
-        if (env1->interrupt_request &
-            (CPU_INTERRUPT_HARD | CPU_INTERRUPT_TIMER)) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#endif
+    if (cpu_halted(env1) == EXCP_HALTED)
+        return EXCP_HALTED;
 
     cpu_single_env = env1;
 
@@ -302,27 +267,25 @@ int cpu_exec(CPUState *env1)
 #define SAVE_HOST_REGS 1
 #include "hostregs_helper.h"
     env = env1;
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-    /* we also save i7 because longjmp may not restore it */
-    asm volatile ("mov %%i7, %0" : "=r" (saved_i7));
-#endif
-
-#if defined(TARGET_I386)
 
     env_to_regs();
+#if defined(TARGET_I386)
     /* put eflags in CPU temporary format */
     CC_SRC = env->eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
     DF = 1 - (2 * ((env->eflags >> 10) & 1));
     CC_OP = CC_OP_EFLAGS;
     env->eflags &= ~(DF_MASK | CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
-#elif defined(TARGET_ARM)
 #elif defined(TARGET_SPARC)
-#if defined(reg_REGWPTR)
-    saved_regwptr = REGWPTR;
-#endif
+#elif defined(TARGET_M68K)
+    env->cc_op = CC_OP_FLAGS;
+    env->cc_dest = env->sr & 0xf;
+    env->cc_x = (env->sr >> 4) & 1;
+#elif defined(TARGET_ALPHA)
+#elif defined(TARGET_ARM)
 #elif defined(TARGET_PPC)
 #elif defined(TARGET_MIPS)
 #elif defined(TARGET_SH4)
+#elif defined(TARGET_CRIS)
     /* XXXXX */
 #else
 #error unsupported target CPU
@@ -344,7 +307,7 @@ int cpu_exec(CPUState *env1)
              */
             if (env->interrupt_request & CPU_INTERRUPT_RC) {
                 env->exception_index = EXCP_RC;
-                ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_RC);
+                ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_RC);
                 ret = env->exception_index;
                 cpu_loop_exit();
             }
@@ -366,17 +329,21 @@ int cpu_exec(CPUState *env1)
                                  env->exception_is_int,
                                  env->error_code,
                                  env->exception_next_eip, 0);
+                    /* successfully delivered */
+                    env->old_exception = -1;
                     RAWEx_ProfileStop(env, STATS_IRQ_HANDLING);
                 }
                 env->exception_index = -1;
             }
 
-            T0 = 0; /* force lookup of first TB */
+            next_tb = 0; /* force lookup of first TB */
             for(;;)
             {
                 interrupt_request = env->interrupt_request;
                 if (__builtin_expect(interrupt_request, 0))
                 {
+                    /** @todo: reconscille with what QEMU really does */
+
                     /* Single instruction exec request, we execute it and return (one way or the other).
                        The caller will always reschedule after doing this operation! */
                     if (interrupt_request & CPU_INTERRUPT_SINGLE_INSTR)
@@ -384,7 +351,7 @@ int cpu_exec(CPUState *env1)
                         /* not in flight are we? (if we are, we trapped) */
                         if (!(env->interrupt_request & CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT))
                         {
-                            ASMAtomicOrS32(&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
+                            ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
                             env->exception_index = EXCP_SINGLE_INSTR;
                             if (emulate_single_instr(env) == -1)
                                 AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%VGv!!\n", env->eip));
@@ -404,7 +371,7 @@ int cpu_exec(CPUState *env1)
                             }
                         }
                         /* Clear CPU_INTERRUPT_SINGLE_INSTR and leave CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT set. */
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_SINGLE_INSTR);
+                        ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_SINGLE_INSTR);
                     }
 
                     RAWEx_ProfileStart(env, STATS_IRQ_HANDLING);
@@ -412,7 +379,7 @@ int cpu_exec(CPUState *env1)
                         !(env->hflags & HF_SMM_MASK)) {
                         env->interrupt_request &= ~CPU_INTERRUPT_SMI;
                         do_smm_enter();
-                        T0 = 0;
+                        next_tb = 0;
                     }
                     else if ((interrupt_request & CPU_INTERRUPT_HARD) &&
                              (env->eflags & IF_MASK) &&
@@ -420,7 +387,7 @@ int cpu_exec(CPUState *env1)
                     {
                         /* if hardware interrupt pending, we execute it */
                         int intno;
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_HARD);
+                        ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_HARD);
                         intno = cpu_get_pic_interrupt(env);
                         if (intno >= 0)
                         {
@@ -429,27 +396,27 @@ int cpu_exec(CPUState *env1)
                         }
                         /* ensure that no TB jump will be modified as
                            the program flow was changed */
-                        T0 = 0;
+                        next_tb = 0;
                     }
                     if (env->interrupt_request & CPU_INTERRUPT_EXITTB)
                     {
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_EXITTB);
+                        ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_EXITTB);
                         /* ensure that no TB jump will be modified as
                            the program flow was changed */
-                        T0 = 0;
+                        next_tb = 0;
                     }
                     RAWEx_ProfileStop(env, STATS_IRQ_HANDLING);
                     if (interrupt_request & CPU_INTERRUPT_EXIT)
                     {
                         env->exception_index = EXCP_INTERRUPT;
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_EXIT);
+                        ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_EXIT);
                         ret = env->exception_index;
                         cpu_loop_exit();
                     }
                     if (interrupt_request & CPU_INTERRUPT_RC)
                     {
                         env->exception_index = EXCP_RC;
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_RC);
+                        ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_RC);
                         ret = env->exception_index;
                         cpu_loop_exit();
                     }
@@ -471,103 +438,77 @@ int cpu_exec(CPUState *env1)
                 RAWEx_ProfileStop(env, STATS_RAW_CHECK);
 
                 RAWEx_ProfileStart(env, STATS_TLB_LOOKUP);
+                spin_lock(&tb_lock);
                 tb = tb_find_fast();
+                 /* Note: we do it here to avoid a gcc bug on Mac OS X when
+                   doing it in tb_find_slow */
+                if (tb_invalidated_flag) {
+                    /* as some TB could have been invalidated because
+                       of memory exceptions while generating the code, we
+                       must recompute the hash index here */
+                    next_tb = 0;
+                    tb_invalidated_flag = 0;
+                }
 
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
                    jump. */
-                if (T0 != 0
+                if (next_tb != 0
                     && !(tb->cflags & CF_RAW_MODE)
                     && tb->page_addr[1] == -1)
                 {
-                    spin_lock(&tb_lock);
-                    tb_add_jump((TranslationBlock *)(long)(T0 & ~3), T0 & 3, tb);
-                    spin_unlock(&tb_lock);
+                    tb_add_jump((TranslationBlock *)(long)(next_tb & ~3), next_tb & 3, tb);
                 }
-                tc_ptr = tb->tc_ptr;
-                env->current_tb = tb;
-                /* execute the generated code */
-                gen_func = (void *)tc_ptr;
+                spin_unlock(&tb_lock);
                 RAWEx_ProfileStop(env, STATS_TLB_LOOKUP);
 
-#if defined(DEBUG) && defined(VBOX) && !defined(DEBUG_dmik)
-#if !defined(DEBUG_bird)
-                if (((env->hflags >> HF_CPL_SHIFT) & 3) == 0 && (env->hflags & HF_PE_MASK) && (env->cr[0] & CR0_PG_MASK))
-                {
-                    if(!(env->state & CPU_EMULATE_SINGLE_STEP))
-                    {
-                        Log(("EMR0: %VGv ESP=%VGv IF=%d TF=%d CPL=%d\n", env->eip, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3));
-                    }
-                }
-                else
-                if (((env->hflags >> HF_CPL_SHIFT) & 3) == 3 && (env->hflags & HF_PE_MASK) && (env->cr[0] & CR0_PG_MASK))
-                {
-                    if(!(env->state & CPU_EMULATE_SINGLE_STEP))
-                    {
-                        if(env->eflags & VM_MASK)
-                        {
-                            Log(("EMV86: %04X:%VGv IF=%d TF=%d CPL=%d CR0=%RGr\n", env->segs[R_CS].selector, env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0]));
-                        }
-                        else
-                        {
-                            Log(("EMR3: %VGv ESP=%VGv IF=%d TF=%d CPL=%d IOPL=%d CR0=%RGr\n", env->eip, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, ((env->eflags >> IOPL_SHIFT) & 3), env->cr[0]));
-                        }
-                    }
-                }
-                else
-                {
-                    /* Seriously slows down realmode booting. */
-                    LogFlow(("EMRM: %04X:%VGv SS:ESP=%04X:%VGv IF=%d TF=%d CPL=%d PE=%d PG=%d\n", env->segs[R_CS].selector, env->eip, env->segs[R_SS].selector, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0] & X86_CR0_PE, env->cr[0] & X86_CR0_PG));
-                }
-#endif /* !DEBUG_bird */
-                if(env->state & CPU_EMULATE_SINGLE_STEP)
-                {
-#ifdef DEBUG_bird
-                    static int s_cTimes = 0;
-                    if (s_cTimes++ > 1000000)
-                    {
-                        RTLogPrintf("Enough stepping!\n");
-                        #if 0
-                        env->exception_index = EXCP_DEBUG;
-                        ret = env->exception_index;
-                        cpu_loop_exit();
-                        #else
-                        env->state &= ~CPU_EMULATE_SINGLE_STEP;
-                        #endif
-                    }
-#endif
-                    TMCpuTickPause(env->pVM);
-                    remR3DisasInstr(env, -1, NULL);
-                    TMCpuTickResume(env->pVM);
-                    if(emulate_single_instr(env) == -1)
-                    {
-                        Log(("emulate_single_instr failed for EIP=%VGv!!\n", env->eip));
-                    }
-                }
-                else
-                {
+                env->current_tb = tb;
+                while (env->current_tb) {
+                    tc_ptr = tb->tc_ptr;
+                    /* execute the generated code */
                     RAWEx_ProfileStart(env, STATS_QEMU_RUN_EMULATED_CODE);
-                    gen_func();
+                    next_tb = tcg_qemu_tb_exec(tc_ptr);
                     RAWEx_ProfileStop(env, STATS_QEMU_RUN_EMULATED_CODE);
+                    env->current_tb = NULL;
+                     if ((next_tb & 3) == 2) {
+                        /* Instruction counter expired.  */
+                        int insns_left;
+                        tb = (TranslationBlock *)(long)(next_tb & ~3);
+                        /* Restore PC.  */
+                        CPU_PC_FROM_TB(env, tb);
+                        insns_left = env->icount_decr.u32;
+                        if (env->icount_extra && insns_left >= 0) {
+                            /* Refill decrementer and continue execution.  */
+                            env->icount_extra += insns_left;
+                            if (env->icount_extra > 0xffff) {
+                                insns_left = 0xffff;
+                            } else {
+                                insns_left = env->icount_extra;
+                            }
+                            env->icount_extra -= insns_left;
+                            env->icount_decr.u16.low = insns_left;
+                        } else {
+                            if (insns_left > 0) {
+                                /* Execute remaining instructions.  */
+                                cpu_exec_nocache(insns_left, tb);
+                            }
+                            env->exception_index = EXCP_INTERRUPT;
+                            next_tb = 0;
+                            cpu_loop_exit();
+                        }
+                     }
                 }
-#else /* !DEBUG || !VBOX || DEBUG_dmik */
-
-                RAWEx_ProfileStart(env, STATS_QEMU_RUN_EMULATED_CODE);
-                gen_func();
-                RAWEx_ProfileStop(env, STATS_QEMU_RUN_EMULATED_CODE);
-
-#endif /* !DEBUG || !VBOX || DEBUG_dmik */
-                env->current_tb = NULL;
+                    
                 /* reset soft MMU for next block (it can currently
                    only be set by a memory fault) */
 #if defined(TARGET_I386) && !defined(CONFIG_SOFTMMU)
                 if (env->hflags & HF_SOFTMMU_MASK) {
                     env->hflags &= ~HF_SOFTMMU_MASK;
                     /* do not allow linking to another block */
-                    T0 = 0;
+                    next_tb = 0;
                 }
 #endif
-            }
+            } /* for(;;) */
         } else {
             env_to_regs();
         }
@@ -589,74 +530,18 @@ int cpu_exec(CPUState *env1)
     return ret;
 }
 
-
 #else /* !VBOX */
-
-
 int cpu_exec(CPUState *env1)
 {
 #define DECLARE_HOST_REGS 1
 #include "hostregs_helper.h"
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-    int saved_i7;
-    target_ulong tmp_T0;
-#endif
     int ret, interrupt_request;
-    void (*gen_func)(void);
     TranslationBlock *tb;
     uint8_t *tc_ptr;
+    unsigned long next_tb;
 
-#if defined(TARGET_I386)
-    /* handle exit of HALTED state */
-    if (env1->hflags & HF_HALTED_MASK) {
-        /* disable halt condition */
-        if ((env1->interrupt_request & CPU_INTERRUPT_HARD) &&
-            (env1->eflags & IF_MASK)) {
-            env1->hflags &= ~HF_HALTED_MASK;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_PPC)
-    if (env1->halted) {
-        if (env1->msr[MSR_EE] &&
-            (env1->interrupt_request &
-             (CPU_INTERRUPT_HARD | CPU_INTERRUPT_TIMER))) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_SPARC)
-    if (env1->halted) {
-        if ((env1->interrupt_request & CPU_INTERRUPT_HARD) &&
-            (env1->psret != 0)) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_ARM)
-    if (env1->halted) {
-        /* An interrupt wakes the CPU even if the I and F CPSR bits are
-           set.  */
-        if (env1->interrupt_request
-            & (CPU_INTERRUPT_FIQ | CPU_INTERRUPT_HARD)) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#elif defined(TARGET_MIPS)
-    if (env1->halted) {
-        if (env1->interrupt_request &
-            (CPU_INTERRUPT_HARD | CPU_INTERRUPT_TIMER)) {
-            env1->halted = 0;
-        } else {
-            return EXCP_HALTED;
-        }
-    }
-#endif
+    if (cpu_halted(env1) == EXCP_HALTED)
+        return EXCP_HALTED;
 
     cpu_single_env = env1;
 
@@ -664,57 +549,35 @@ int cpu_exec(CPUState *env1)
 #define SAVE_HOST_REGS 1
 #include "hostregs_helper.h"
     env = env1;
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-    /* we also save i7 because longjmp may not restore it */
-    asm volatile ("mov %%i7, %0" : "=r" (saved_i7));
-#endif
 
-#if defined(TARGET_I386)
     env_to_regs();
+#if defined(TARGET_I386)
     /* put eflags in CPU temporary format */
     CC_SRC = env->eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
     DF = 1 - (2 * ((env->eflags >> 10) & 1));
     CC_OP = CC_OP_EFLAGS;
     env->eflags &= ~(DF_MASK | CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
-#elif defined(TARGET_ARM)
 #elif defined(TARGET_SPARC)
-#if defined(reg_REGWPTR)
-    saved_regwptr = REGWPTR;
-#endif
-#elif defined(TARGET_PPC)
 #elif defined(TARGET_M68K)
     env->cc_op = CC_OP_FLAGS;
     env->cc_dest = env->sr & 0xf;
     env->cc_x = (env->sr >> 4) & 1;
+#elif defined(TARGET_ALPHA)
+#elif defined(TARGET_ARM)
+#elif defined(TARGET_PPC)
 #elif defined(TARGET_MIPS)
 #elif defined(TARGET_SH4)
+#elif defined(TARGET_CRIS)
     /* XXXXX */
 #else
 #error unsupported target CPU
 #endif
-#ifndef VBOX /* VBOX: We need to raise traps and suchlike from the outside. */
     env->exception_index = -1;
-#endif
 
     /* prepare setjmp context for exception handling */
     for(;;) {
         if (setjmp(env->jmp_env) == 0) {
             env->current_tb = NULL;
-#ifdef VBOX
-            VMMR3Unlock(env->pVM);
-            VMMR3Lock(env->pVM);
-
-            /* Check for high priority requests first (like fatal
-               errors). */
-            if (env->interrupt_request & CPU_INTERRUPT_RC) {
-                env->exception_index = EXCP_RC;
-                ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_RC);
-                ret = env->exception_index;
-                cpu_loop_exit();
-            }
-#endif /* VBOX */
-
-
             /* if an exception is pending, we execute it here */
             if (env->exception_index >= 0) {
                 if (env->exception_index >= EXCP_INTERRUPT) {
@@ -730,6 +593,8 @@ int cpu_exec(CPUState *env1)
                                       env->exception_is_int,
                                       env->error_code,
                                       env->exception_next_eip);
+                    /* successfully delivered */
+                    env->old_exception = -1;
 #endif
                     ret = env->exception_index;
                     break;
@@ -742,16 +607,24 @@ int cpu_exec(CPUState *env1)
                                  env->exception_is_int,
                                  env->error_code,
                                  env->exception_next_eip, 0);
+                    /* successfully delivered */
+                    env->old_exception = -1;
 #elif defined(TARGET_PPC)
                     do_interrupt(env);
 #elif defined(TARGET_MIPS)
                     do_interrupt(env);
 #elif defined(TARGET_SPARC)
-                    do_interrupt(env->exception_index);
+                    do_interrupt(env);
 #elif defined(TARGET_ARM)
                     do_interrupt(env);
 #elif defined(TARGET_SH4)
 		    do_interrupt(env);
+#elif defined(TARGET_ALPHA)
+                    do_interrupt(env);
+#elif defined(TARGET_CRIS)
+                    do_interrupt(env);
+#elif defined(TARGET_M68K)
+                    do_interrupt(0);
 #endif
                 }
                 env->exception_index = -1;
@@ -782,80 +655,71 @@ int cpu_exec(CPUState *env1)
             }
 #endif
 
-            T0 = 0; /* force lookup of first TB */
+            next_tb = 0; /* force lookup of first TB */
             for(;;) {
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                /* g1 can be modified by some libc? functions */
-                tmp_T0 = T0;
-#endif
                 interrupt_request = env->interrupt_request;
-                if (__builtin_expect(interrupt_request, 0)) {
-#ifdef VBOX
-                    /* Single instruction exec request, we execute it and return (one way or the other).
-                       The caller will always reschedule after doing this operation! */
-                    if (interrupt_request & CPU_INTERRUPT_SINGLE_INSTR)
-                    {
-                        /* not in flight are we? */
-                        if (!(env->interrupt_request & CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT))
-                        {
-                            ASMAtomicOrS32(&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
-                            env->exception_index = EXCP_SINGLE_INSTR;
-                            if (emulate_single_instr(env) == -1)
-                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%VGv!!\n", env->eip));
-
-                            /* When we receive an external interrupt during execution of this single
-                               instruction, then we should stay here. We will leave when we're ready
-                               for raw-mode or when interrupted by pending EMT requests.  */
-                            interrupt_request = env->interrupt_request; /* reload this! */
-                            if (   !(interrupt_request & CPU_INTERRUPT_HARD)
-                                || !(env->eflags & IF_MASK)
-                                ||  (env->hflags & HF_INHIBIT_IRQ_MASK)
-                               )
-                            {
-                                env->exception_index = ret = EXCP_SINGLE_INSTR;
-                                cpu_loop_exit();
-                            }
-                        }
-                        env->exception_index = EXCP_SINGLE_INSTR;
+                if (unlikely(interrupt_request) &&
+                    likely(!(env->singlestep_enabled & SSTEP_NOIRQ))) {
+                    if (interrupt_request & CPU_INTERRUPT_DEBUG) {
+                        env->interrupt_request &= ~CPU_INTERRUPT_DEBUG;
+                        env->exception_index = EXCP_DEBUG;
                         cpu_loop_exit();
                     }
-
-                    RAWEx_ProfileStart(env, STATS_IRQ_HANDLING);
-#endif /* VBOX */
+#if defined(TARGET_ARM) || defined(TARGET_SPARC) || defined(TARGET_MIPS) || \
+    defined(TARGET_PPC) || defined(TARGET_ALPHA) || defined(TARGET_CRIS)
+                    if (interrupt_request & CPU_INTERRUPT_HALT) {
+                        env->interrupt_request &= ~CPU_INTERRUPT_HALT;
+                        env->halted = 1;
+                        env->exception_index = EXCP_HLT;
+                        cpu_loop_exit();
+                    }
+#endif
 #if defined(TARGET_I386)
-                    if ((interrupt_request & CPU_INTERRUPT_SMI) &&
-                        !(env->hflags & HF_SMM_MASK)) {
-                        env->interrupt_request &= ~CPU_INTERRUPT_SMI;
-                        do_smm_enter();
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                        tmp_T0 = 0;
-#else
-                        T0 = 0;
+                    if (env->hflags2 & HF2_GIF_MASK) {
+                        if ((interrupt_request & CPU_INTERRUPT_SMI) &&
+                            !(env->hflags & HF_SMM_MASK)) {
+                            svm_check_intercept(SVM_EXIT_SMI);
+                            env->interrupt_request &= ~CPU_INTERRUPT_SMI;
+                            do_smm_enter();
+                            next_tb = 0;
+                        } else if ((interrupt_request & CPU_INTERRUPT_NMI) &&
+                                   !(env->hflags2 & HF2_NMI_MASK)) {
+                            env->interrupt_request &= ~CPU_INTERRUPT_NMI;
+                            env->hflags2 |= HF2_NMI_MASK;
+                            do_interrupt(EXCP02_NMI, 0, 0, 0, 1);
+                            next_tb = 0;
+                        } else if ((interrupt_request & CPU_INTERRUPT_HARD) &&
+                                   (((env->hflags2 & HF2_VINTR_MASK) && 
+                                     (env->hflags2 & HF2_HIF_MASK)) ||
+                                    (!(env->hflags2 & HF2_VINTR_MASK) && 
+                                     (env->eflags & IF_MASK && 
+                                      !(env->hflags & HF_INHIBIT_IRQ_MASK))))) {
+                            int intno;
+                            svm_check_intercept(SVM_EXIT_INTR);
+                            env->interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_VIRQ);
+                            intno = cpu_get_pic_interrupt(env);
+                            if (loglevel & CPU_LOG_TB_IN_ASM) {
+                                fprintf(logfile, "Servicing hardware INT=0x%02x\n", intno);
+                            }
+                            do_interrupt(intno, 0, 0, 0, 1);
+                            /* ensure that no TB jump will be modified as
+                               the program flow was changed */
+                            next_tb = 0;
+#if !defined(CONFIG_USER_ONLY)
+                        } else if ((interrupt_request & CPU_INTERRUPT_VIRQ) &&
+                                   (env->eflags & IF_MASK) && 
+                                   !(env->hflags & HF_INHIBIT_IRQ_MASK)) {
+                            int intno;
+                            /* FIXME: this should respect TPR */
+                            svm_check_intercept(SVM_EXIT_VINTR);
+                            env->interrupt_request &= ~CPU_INTERRUPT_VIRQ;
+                            intno = ldl_phys(env->vm_vmcb + offsetof(struct vmcb, control.int_vector));
+                            if (loglevel & CPU_LOG_TB_IN_ASM)
+                                fprintf(logfile, "Servicing virtual hardware INT=0x%02x\n", intno);
+                            do_interrupt(intno, 0, 0, 0, 1);
+                            next_tb = 0;
 #endif
-                    } else if ((interrupt_request & CPU_INTERRUPT_HARD) &&
-                        (env->eflags & IF_MASK) &&
-                        !(env->hflags & HF_INHIBIT_IRQ_MASK)) {
-                        int intno;
-#if defined(VBOX)
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_HARD);
-#else
-                        env->interrupt_request &= ~CPU_INTERRUPT_HARD;
-#endif
-                        intno = cpu_get_pic_interrupt(env);
-                        if (loglevel & CPU_LOG_TB_IN_ASM) {
-                            fprintf(logfile, "Servicing hardware INT=0x%02x\n", intno);
                         }
-#if defined(VBOX)
-                        if (intno >= 0)
-#endif
-                        do_interrupt(intno, 0, 0, 0, 1);
-                        /* ensure that no TB jump will be modified as
-                           the program flow was changed */
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                        tmp_T0 = 0;
-#else
-                        T0 = 0;
-#endif
                     }
 #elif defined(TARGET_PPC)
 #if 0
@@ -863,47 +727,24 @@ int cpu_exec(CPUState *env1)
                         cpu_ppc_reset(env);
                     }
 #endif
-                    if (msr_ee != 0) {
-                        if ((interrupt_request & CPU_INTERRUPT_HARD)) {
-			    /* Raise it */
-			    env->exception_index = EXCP_EXTERNAL;
-			    env->error_code = 0;
-                            do_interrupt(env);
+                    if (interrupt_request & CPU_INTERRUPT_HARD) {
+                        ppc_hw_interrupt(env);
+                        if (env->pending_interrupts == 0)
                             env->interrupt_request &= ~CPU_INTERRUPT_HARD;
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                            tmp_T0 = 0;
-#else
-                            T0 = 0;
-#endif
-                        } else if ((interrupt_request & CPU_INTERRUPT_TIMER)) {
-                            /* Raise it */
-                            env->exception_index = EXCP_DECR;
-                            env->error_code = 0;
-                            do_interrupt(env);
-                            env->interrupt_request &= ~CPU_INTERRUPT_TIMER;
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                            tmp_T0 = 0;
-#else
-                            T0 = 0;
-#endif
-                        }
+                        next_tb = 0;
                     }
 #elif defined(TARGET_MIPS)
                     if ((interrupt_request & CPU_INTERRUPT_HARD) &&
+                        (env->CP0_Status & env->CP0_Cause & CP0Ca_IP_mask) &&
                         (env->CP0_Status & (1 << CP0St_IE)) &&
-                        (env->CP0_Status & env->CP0_Cause & 0x0000FF00) &&
-                        !(env->hflags & MIPS_HFLAG_EXL) &&
-                        !(env->hflags & MIPS_HFLAG_ERL) &&
+                        !(env->CP0_Status & (1 << CP0St_EXL)) &&
+                        !(env->CP0_Status & (1 << CP0St_ERL)) &&
                         !(env->hflags & MIPS_HFLAG_DM)) {
                         /* Raise it */
                         env->exception_index = EXCP_EXT_INTERRUPT;
                         env->error_code = 0;
                         do_interrupt(env);
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                        tmp_T0 = 0;
-#else
-                        T0 = 0;
-#endif
+                        next_tb = 0;
                     }
 #elif defined(TARGET_SPARC)
                     if ((interrupt_request & CPU_INTERRUPT_HARD) &&
@@ -915,110 +756,103 @@ int cpu_exec(CPUState *env1)
 			     (pil == 15 || pil > env->psrpil)) ||
 			    type != TT_EXTINT) {
 			    env->interrupt_request &= ~CPU_INTERRUPT_HARD;
-			    do_interrupt(env->interrupt_index);
+                            env->exception_index = env->interrupt_index;
+                            do_interrupt(env);
 			    env->interrupt_index = 0;
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                            tmp_T0 = 0;
-#else
-                            T0 = 0;
+#if !defined(TARGET_SPARC64) && !defined(CONFIG_USER_ONLY)
+                            cpu_check_irqs(env);
 #endif
+                        next_tb = 0;
 			}
 		    } else if (interrupt_request & CPU_INTERRUPT_TIMER) {
 			//do_interrupt(0, 0, 0, 0, 0);
 			env->interrupt_request &= ~CPU_INTERRUPT_TIMER;
-		    } else if (interrupt_request & CPU_INTERRUPT_HALT) {
-			env->interrupt_request &= ~CPU_INTERRUPT_HALT;
-			env->halted = 1;
-			env->exception_index = EXCP_HLT;
-			cpu_loop_exit();
-                    }
+		    }
 #elif defined(TARGET_ARM)
                     if (interrupt_request & CPU_INTERRUPT_FIQ
                         && !(env->uncached_cpsr & CPSR_F)) {
                         env->exception_index = EXCP_FIQ;
                         do_interrupt(env);
+                        next_tb = 0;
                     }
+                    /* ARMv7-M interrupt return works by loading a magic value
+                       into the PC.  On real hardware the load causes the
+                       return to occur.  The qemu implementation performs the
+                       jump normally, then does the exception return when the
+                       CPU tries to execute code at the magic address.
+                       This will cause the magic PC value to be pushed to
+                       the stack if an interrupt occured at the wrong time.
+                       We avoid this by disabling interrupts when
+                       pc contains a magic address.  */
                     if (interrupt_request & CPU_INTERRUPT_HARD
-                        && !(env->uncached_cpsr & CPSR_I)) {
+                        && ((IS_M(env) && env->regs[15] < 0xfffffff0)
+                            || !(env->uncached_cpsr & CPSR_I))) {
                         env->exception_index = EXCP_IRQ;
                         do_interrupt(env);
+                        next_tb = 0;
                     }
 #elif defined(TARGET_SH4)
-		    /* XXXXX */
+                    if (interrupt_request & CPU_INTERRUPT_HARD) {
+                        do_interrupt(env);
+                        next_tb = 0;
+                    }
+#elif defined(TARGET_ALPHA)
+                    if (interrupt_request & CPU_INTERRUPT_HARD) {
+                        do_interrupt(env);
+                        next_tb = 0;
+                    }
+#elif defined(TARGET_CRIS)
+                    if (interrupt_request & CPU_INTERRUPT_HARD
+                        && (env->pregs[PR_CCS] & I_FLAG)) {
+                        env->exception_index = EXCP_IRQ;
+                        do_interrupt(env);
+                        next_tb = 0;
+                    }
+                    if (interrupt_request & CPU_INTERRUPT_NMI
+                        && (env->pregs[PR_CCS] & M_FLAG)) {
+                        env->exception_index = EXCP_NMI;
+                        do_interrupt(env);
+                        next_tb = 0;
+                    }
+#elif defined(TARGET_M68K)
+                    if (interrupt_request & CPU_INTERRUPT_HARD
+                        && ((env->sr & SR_I) >> SR_I_SHIFT)
+                            < env->pending_level) {
+                        /* Real hardware gets the interrupt vector via an
+                           IACK cycle at this point.  Current emulated
+                           hardware doesn't rely on this, so we
+                           provide/save the vector when the interrupt is
+                           first signalled.  */
+                        env->exception_index = env->pending_vector;
+                        do_interrupt(1);
+                        next_tb = 0;
+                    }
 #endif
                    /* Don't use the cached interupt_request value,
                       do_interrupt may have updated the EXITTB flag. */
                     if (env->interrupt_request & CPU_INTERRUPT_EXITTB) {
-#if defined(VBOX)
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_EXITTB);
-#else
                         env->interrupt_request &= ~CPU_INTERRUPT_EXITTB;
-#endif
                         /* ensure that no TB jump will be modified as
                            the program flow was changed */
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                        tmp_T0 = 0;
-#else
-                        T0 = 0;
-#endif
+                        next_tb = 0;
                     }
-#ifdef VBOX
-                    RAWEx_ProfileStop(env, STATS_IRQ_HANDLING);
-#endif
                     if (interrupt_request & CPU_INTERRUPT_EXIT) {
-#if defined(VBOX)
-                        env->exception_index = EXCP_INTERRUPT;
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_EXIT);
-#else
                         env->interrupt_request &= ~CPU_INTERRUPT_EXIT;
                         env->exception_index = EXCP_INTERRUPT;
-#endif
                         cpu_loop_exit();
                     }
-#if defined(VBOX)
-                    if (interrupt_request & CPU_INTERRUPT_RC) {
-                        env->exception_index = EXCP_RC;
-                        ASMAtomicAndS32(&env->interrupt_request, ~CPU_INTERRUPT_RC);
-                        cpu_loop_exit();
-                    }
-#endif
                 }
 #ifdef DEBUG_EXEC
                 if ((loglevel & CPU_LOG_TB_CPU)) {
-#if defined(TARGET_I386)
                     /* restore flags in standard format */
-#ifdef reg_EAX
-                    env->regs[R_EAX] = EAX;
-#endif
-#ifdef reg_EBX
-                    env->regs[R_EBX] = EBX;
-#endif
-#ifdef reg_ECX
-                    env->regs[R_ECX] = ECX;
-#endif
-#ifdef reg_EDX
-                    env->regs[R_EDX] = EDX;
-#endif
-#ifdef reg_ESI
-                    env->regs[R_ESI] = ESI;
-#endif
-#ifdef reg_EDI
-                    env->regs[R_EDI] = EDI;
-#endif
-#ifdef reg_EBP
-                    env->regs[R_EBP] = EBP;
-#endif
-#ifdef reg_ESP
-                    env->regs[R_ESP] = ESP;
-#endif
+                    regs_to_env();
+#if defined(TARGET_I386)
                     env->eflags = env->eflags | cc_table[CC_OP].compute_all() | (DF & DF_MASK);
                     cpu_dump_state(env, logfile, fprintf, X86_DUMP_CCOP);
                     env->eflags &= ~(DF_MASK | CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
 #elif defined(TARGET_ARM)
                     cpu_dump_state(env, logfile, fprintf, 0);
 #elif defined(TARGET_SPARC)
-		    REGWPTR = env->regbase + (env->cwp * 16);
-		    env->regwptr = REGWPTR;
                     cpu_dump_state(env, logfile, fprintf, 0);
 #elif defined(TARGET_PPC)
                     cpu_dump_state(env, logfile, fprintf, 0);
@@ -1032,28 +866,26 @@ int cpu_exec(CPUState *env1)
                     cpu_dump_state(env, logfile, fprintf, 0);
 #elif defined(TARGET_SH4)
 		    cpu_dump_state(env, logfile, fprintf, 0);
+#elif defined(TARGET_ALPHA)
+                    cpu_dump_state(env, logfile, fprintf, 0);
+#elif defined(TARGET_CRIS)
+                    cpu_dump_state(env, logfile, fprintf, 0);
 #else
 #error unsupported target CPU
 #endif
                 }
 #endif
-#ifdef VBOX
-                /*
-                 * Check if we the CPU state allows us to execute the code in raw-mode.
-                 */
-                RAWEx_ProfileStart(env, STATS_RAW_CHECK);
-                if (remR3CanExecuteRaw(env,
-                                       env->eip + env->segs[R_CS].base,
-                                       env->hflags | (env->eflags & (IOPL_MASK | TF_MASK | VM_MASK))
-                                       flags, &env->exception_index))
-                {
-                    RAWEx_ProfileStop(env, STATS_RAW_CHECK);
-                    ret = env->exception_index;
-                    cpu_loop_exit();
-                }
-                RAWEx_ProfileStop(env, STATS_RAW_CHECK);
-#endif /* VBOX */
+                spin_lock(&tb_lock);
                 tb = tb_find_fast();
+                /* Note: we do it here to avoid a gcc bug on Mac OS X when
+                   doing it in tb_find_slow */
+                if (tb_invalidated_flag) {
+                    /* as some TB could have been invalidated because
+                       of memory exceptions while generating the code, we
+                       must recompute the hash index here */
+                    next_tb = 0;
+                    tb_invalidated_flag = 0;
+                }
 #ifdef DEBUG_EXEC
                 if ((loglevel & CPU_LOG_EXEC)) {
                     fprintf(logfile, "Trace 0x%08lx [" TARGET_FMT_lx "] %s\n",
@@ -1061,215 +893,60 @@ int cpu_exec(CPUState *env1)
                             lookup_symbol(tb->pc));
                 }
 #endif
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-                T0 = tmp_T0;
-#endif
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
                    jump. */
                 {
-                    if (T0 != 0 &&
-#if USE_KQEMU
+                    if (next_tb != 0 &&
+#ifdef USE_KQEMU
                         (env->kqemu_enabled != 2) &&
 #endif
-#ifdef VBOX
-                        !(tb->cflags & CF_RAW_MODE) &&
-#endif
-                        tb->page_addr[1] == -1
-#if defined(TARGET_I386) && defined(USE_CODE_COPY)
-                    && (tb->cflags & CF_CODE_COPY) ==
-                    (((TranslationBlock *)(T0 & ~3))->cflags & CF_CODE_COPY)
-#endif
-                    ) {
-                    spin_lock(&tb_lock);
-                    tb_add_jump((TranslationBlock *)(long)(T0 & ~3), T0 & 3, tb);
-#if defined(USE_CODE_COPY)
-                    /* propagates the FP use info */
-                    ((TranslationBlock *)(T0 & ~3))->cflags |=
-                        (tb->cflags & CF_FP_USED);
-#endif
-                    spin_unlock(&tb_lock);
+                        tb->page_addr[1] == -1) {
+                    tb_add_jump((TranslationBlock *)(next_tb & ~3), next_tb & 3, tb);
                 }
                 }
-                tc_ptr = tb->tc_ptr;
+                spin_unlock(&tb_lock);
                 env->current_tb = tb;
+                while (env->current_tb) {
+                    tc_ptr = tb->tc_ptr;
                 /* execute the generated code */
-                gen_func = (void *)tc_ptr;
-#if defined(__sparc__)
-                __asm__ __volatile__("call	%0\n\t"
-                                     "mov	%%o7,%%i0"
-                                     : /* no outputs */
-                                     : "r" (gen_func)
-                                     : "i0", "i1", "i2", "i3", "i4", "i5",
-                                       "l0", "l1", "l2", "l3", "l4", "l5",
-                                       "l6", "l7");
-#elif defined(__arm__)
-                asm volatile ("mov pc, %0\n\t"
-                              ".global exec_loop\n\t"
-                              "exec_loop:\n\t"
-                              : /* no outputs */
-                              : "r" (gen_func)
-                              : "r1", "r2", "r3", "r8", "r9", "r10", "r12", "r14");
-#elif defined(TARGET_I386) && defined(USE_CODE_COPY)
-{
-    if (!(tb->cflags & CF_CODE_COPY)) {
-        if ((tb->cflags & CF_FP_USED) && env->native_fp_regs) {
-            save_native_fp_state(env);
-        }
-        gen_func();
-    } else {
-        if ((tb->cflags & CF_FP_USED) && !env->native_fp_regs) {
-            restore_native_fp_state(env);
-        }
-        /* we work with native eflags */
-        CC_SRC = cc_table[CC_OP].compute_all();
-        CC_OP = CC_OP_EFLAGS;
-        asm(".globl exec_loop\n"
-            "\n"
-            "debug1:\n"
-            "    pushl %%ebp\n"
-            "    fs movl %10, %9\n"
-            "    fs movl %11, %%eax\n"
-            "    andl $0x400, %%eax\n"
-            "    fs orl %8, %%eax\n"
-            "    pushl %%eax\n"
-            "    popf\n"
-            "    fs movl %%esp, %12\n"
-            "    fs movl %0, %%eax\n"
-            "    fs movl %1, %%ecx\n"
-            "    fs movl %2, %%edx\n"
-            "    fs movl %3, %%ebx\n"
-            "    fs movl %4, %%esp\n"
-            "    fs movl %5, %%ebp\n"
-            "    fs movl %6, %%esi\n"
-            "    fs movl %7, %%edi\n"
-            "    fs jmp *%9\n"
-            "exec_loop:\n"
-            "    fs movl %%esp, %4\n"
-            "    fs movl %12, %%esp\n"
-            "    fs movl %%eax, %0\n"
-            "    fs movl %%ecx, %1\n"
-            "    fs movl %%edx, %2\n"
-            "    fs movl %%ebx, %3\n"
-            "    fs movl %%ebp, %5\n"
-            "    fs movl %%esi, %6\n"
-            "    fs movl %%edi, %7\n"
-            "    pushf\n"
-            "    popl %%eax\n"
-            "    movl %%eax, %%ecx\n"
-            "    andl $0x400, %%ecx\n"
-            "    shrl $9, %%ecx\n"
-            "    andl $0x8d5, %%eax\n"
-            "    fs movl %%eax, %8\n"
-            "    movl $1, %%eax\n"
-            "    subl %%ecx, %%eax\n"
-            "    fs movl %%eax, %11\n"
-            "    fs movl %9, %%ebx\n" /* get T0 value */
-            "    popl %%ebp\n"
-            :
-            : "m" (*(uint8_t *)offsetof(CPUState, regs[0])),
-            "m" (*(uint8_t *)offsetof(CPUState, regs[1])),
-            "m" (*(uint8_t *)offsetof(CPUState, regs[2])),
-            "m" (*(uint8_t *)offsetof(CPUState, regs[3])),
-            "m" (*(uint8_t *)offsetof(CPUState, regs[4])),
-            "m" (*(uint8_t *)offsetof(CPUState, regs[5])),
-            "m" (*(uint8_t *)offsetof(CPUState, regs[6])),
-            "m" (*(uint8_t *)offsetof(CPUState, regs[7])),
-            "m" (*(uint8_t *)offsetof(CPUState, cc_src)),
-            "m" (*(uint8_t *)offsetof(CPUState, tmp0)),
-            "a" (gen_func),
-            "m" (*(uint8_t *)offsetof(CPUState, df)),
-            "m" (*(uint8_t *)offsetof(CPUState, saved_esp))
-            : "%ecx", "%edx"
-            );
-    }
-}
-#elif defined(__ia64)
-		struct fptr {
-			void *ip;
-			void *gp;
-		} fp;
-
-		fp.ip = tc_ptr;
-		fp.gp = code_gen_buffer + 2 * (1 << 20);
-		(*(void (*)(void)) &fp)();
-#else
-#if defined(DEBUG) && defined(VBOX) && !defined(DEBUG_dmik)
-#if !defined(DEBUG_bird)
-                if (((env->hflags >> HF_CPL_SHIFT) & 3) == 0 && (env->hflags & HF_PE_MASK) && (env->cr[0] & CR0_PG_MASK))
-                {
-                    if(!(env->state & CPU_EMULATE_SINGLE_STEP))
-                    {
-                        Log(("EMR0: %VGv IF=%d TF=%d CPL=%d\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3));
-                    }
-                }
-                else
-                if (((env->hflags >> HF_CPL_SHIFT) & 3) == 3 && (env->hflags & HF_PE_MASK) && (env->cr[0] & CR0_PG_MASK))
-                {
-                    if(!(env->state & CPU_EMULATE_SINGLE_STEP))
-                    {
-                        if(env->eflags & VM_MASK)
-                        {
-                            Log(("EMV86: %VGv IF=%d TF=%d CPL=%d flags=%08X CR0=%RGr\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, flags, env->cr[0]));
-                        }
-                        else
-                        {
-                            Log(("EMR3: %VGv IF=%d TF=%d CPL=%d IOPL=%d flags=%08X CR0=%RGr\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, ((env->eflags >> IOPL_SHIFT) & 3), flags, env->cr[0]));
+#if defined(__sparc__) && !defined(HOST_SOLARIS)
+#undef env
+                    env = cpu_single_env;
+#define env cpu_single_env
+#endif
+                    next_tb = tcg_qemu_tb_exec(tc_ptr);
+                    env->current_tb = NULL;
+                    if ((next_tb & 3) == 2) {
+                        /* Instruction counter expired.  */
+                        int insns_left;
+                        tb = (TranslationBlock *)(long)(next_tb & ~3);
+                        /* Restore PC.  */
+                        CPU_PC_FROM_TB(env, tb);
+                        insns_left = env->icount_decr.u32;
+                        if (env->icount_extra && insns_left >= 0) {
+                            /* Refill decrementer and continue execution.  */
+                            env->icount_extra += insns_left;
+                            if (env->icount_extra > 0xffff) {
+                                insns_left = 0xffff;
+                            } else {
+                                insns_left = env->icount_extra;
+                            }
+                            env->icount_extra -= insns_left;
+                            env->icount_decr.u16.low = insns_left;
+                        } else {
+                            if (insns_left > 0) {
+                                /* Execute remaining instructions.  */
+                                cpu_exec_nocache(insns_left, tb);
+                            }
+                            env->exception_index = EXCP_INTERRUPT;
+                            next_tb = 0;
+                            cpu_loop_exit();
                         }
                     }
                 }
-#endif /* !DEBUG_bird */
-                if(env->state & CPU_EMULATE_SINGLE_STEP)
-                {
-#ifdef DEBUG_bird
-                    static int s_cTimes = 0;
-                    if (s_cTimes++ > 1000000) /* 1 million */
-                    {
-                        RTLogPrintf("Enough stepping!\n");
-                        #if 0
-                        env->exception_index = EXCP_DEBUG;
-                        cpu_loop_exit();
-                        #else
-                        env->state &= ~CPU_EMULATE_SINGLE_STEP;
-                        #endif
-                    }
-#endif
-                    TMCpuTickPause(env->pVM);
-                    remR3DisasInstr(env, -1, NULL);
-                    TMCpuTickResume(env->pVM);
-                    if(emulate_single_instr(env) == -1)
-                    {
-                        printf("emulate_single_instr failed for EIP=%VGv!!\n", env->eip);
-                    }
-                }
-                else
-                {
-                    RAWEx_ProfileStart(env, STATS_QEMU_RUN_EMULATED_CODE);
-                    gen_func();
-                    RAWEx_ProfileStop(env, STATS_QEMU_RUN_EMULATED_CODE);
-                }
-#else /* !DEBUG || !VBOX || DEBUG_dmik */
-
-#ifdef VBOX
-                RAWEx_ProfileStart(env, STATS_QEMU_RUN_EMULATED_CODE);
-                gen_func();
-                RAWEx_ProfileStop(env, STATS_QEMU_RUN_EMULATED_CODE);
-#else /* !VBOX */
-                gen_func();
-#endif /* !VBOX */
-
-#endif /* !DEBUG || !VBOX || DEBUG_dmik */
-#endif
-                env->current_tb = NULL;
                 /* reset soft MMU for next block (it can currently
                    only be set by a memory fault) */
-#if defined(TARGET_I386) && !defined(CONFIG_SOFTMMU)
-                if (env->hflags & HF_SOFTMMU_MASK) {
-                    env->hflags &= ~HF_SOFTMMU_MASK;
-                    /* do not allow linking to another block */
-                    T0 = 0;
-                }
-#endif
 #if defined(USE_KQEMU)
 #define MIN_CYCLE_BEFORE_SWITCH (100 * 1000)
                 if (kqemu_is_ok(env) &&
@@ -1277,7 +954,7 @@ int cpu_exec(CPUState *env1)
                     cpu_loop_exit();
                 }
 #endif
-            }
+            } /* for(;;) */
         } else {
             env_to_regs();
         }
@@ -1285,19 +962,11 @@ int cpu_exec(CPUState *env1)
 
 
 #if defined(TARGET_I386)
-#if defined(USE_CODE_COPY)
-    if (env->native_fp_regs) {
-        save_native_fp_state(env);
-    }
-#endif
     /* restore flags in standard format */
     env->eflags = env->eflags | cc_table[CC_OP].compute_all() | (DF & DF_MASK);
 #elif defined(TARGET_ARM)
     /* XXX: Save/restore host fpu exception state?.  */
 #elif defined(TARGET_SPARC)
-#if defined(reg_REGWPTR)
-    REGWPTR = saved_regwptr;
-#endif
 #elif defined(TARGET_PPC)
 #elif defined(TARGET_M68K)
     cpu_m68k_flush_flags(env, env->cc_op);
@@ -1306,20 +975,20 @@ int cpu_exec(CPUState *env1)
               | env->cc_dest | (env->cc_x << 4);
 #elif defined(TARGET_MIPS)
 #elif defined(TARGET_SH4)
+#elif defined(TARGET_ALPHA)
+#elif defined(TARGET_CRIS)
     /* XXXXX */
 #else
 #error unsupported target CPU
 #endif
-#if defined(__sparc__) && !defined(HOST_SOLARIS)
-    asm volatile ("mov %0, %%i7" : : "r" (saved_i7));
-#endif
+
+    /* restore global registers */
 #include "hostregs_helper.h"
 
     /* fail safe : never use cpu_single_env outside cpu_exec() */
     cpu_single_env = NULL;
     return ret;
 }
-
 #endif /* !VBOX */
 
 /* must only be called from the generated code as an exception can be
@@ -1698,24 +1367,16 @@ static inline int handle_cpu_signal(unsigned long pc, unsigned long address,
 
 #if defined(__i386__)
 
-#if defined(USE_CODE_COPY)
-static void cpu_send_trap(unsigned long pc, int trap,
-                          struct ucontext *uc)
-{
-    TranslationBlock *tb;
+#if defined(__APPLE__)
+# include <sys/ucontext.h>
 
-    if (cpu_single_env)
-        env = cpu_single_env; /* XXX: find a correct solution for multithread */
-    /* now we have a real cpu fault */
-    tb = tb_find_pc(pc);
-    if (tb) {
-        /* the PC is inside the translated code. It means that we have
-           a virtual CPU fault */
-        cpu_restore_state(tb, env, pc, uc);
-    }
-    sigprocmask(SIG_SETMASK, &uc->uc_sigmask, NULL);
-    raise_exception_err(trap, env->error_code);
-}
+# define EIP_sig(context)  (*((unsigned long*)&(context)->uc_mcontext->ss.eip))
+# define TRAP_sig(context)    ((context)->uc_mcontext->es.trapno)
+# define ERROR_sig(context)   ((context)->uc_mcontext->es.err)
+#else
+# define EIP_sig(context)     ((context)->uc_mcontext.gregs[REG_EIP])
+# define TRAP_sig(context)    ((context)->uc_mcontext.gregs[REG_TRAPNO])
+# define ERROR_sig(context)   ((context)->uc_mcontext.gregs[REG_ERR])
 #endif
 
 int cpu_signal_handler(int host_signum, void *pinfo,
