@@ -120,13 +120,7 @@ static int handleSetGuestProperty(int argc, char *argv[],
         pszValue = argv[2];
     }
     else if (4 == argc)
-    {
-        if (strcmp(argv[2], "-flags") != 0)
-            usageOK = false;
-        else
-            return errorSyntax(USAGE_GUESTPROPERTY,
-                               "You may not specify flags without a value");
-    }
+        usageOK = false;
     else if (5 == argc)
     {
         pszValue = argv[2];
@@ -165,8 +159,6 @@ static int handleSetGuestProperty(int argc, char *argv[],
             CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), NULL));
         else if (NULL == pszFlags)
             CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName), Bstr(pszValue)));
-        else if (NULL == pszValue)
-            CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName), NULL, Bstr(pszFlags)));
         else
             CHECK_ERROR(machine, SetGuestProperty(Bstr(pszName), Bstr(pszValue), Bstr(pszFlags)));
 
