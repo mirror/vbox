@@ -282,7 +282,7 @@ __END_DECLS
  */
 #if (defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC)) \
  && (defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS))
-# define RTAssertDoPanic()      RTR0AssertPanicSystem
+# define RTAssertDoPanic()      RTR0AssertPanicSystem()
 #else
 # define RTAssertDoPanic()      RTAssertDebugBreak()
 #endif
