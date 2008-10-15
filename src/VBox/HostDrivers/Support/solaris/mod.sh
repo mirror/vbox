@@ -40,7 +40,7 @@ fi
 #
 $SUDO cp $DIR/vboxdrv $VBOXDRV_DIR/vboxdrv
 $SUDO cp $script_dir/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf $VBOXDRV_CONF_DIR/vboxdrv.conf
-old_id=`/usr/sbin/modinfo | /usr/xpg4/bin/grep vbox | cut -f 1 -d ' ' `
+old_id=`/usr/sbin/modinfo | /usr/xpg4/bin/grep vbox | cut -f 1 -d ' ' | sort -n -r `
 if test -n "$old_id"; then
     echo "* unloading $old_id..."
     sync
