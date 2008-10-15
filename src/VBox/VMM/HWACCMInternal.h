@@ -120,6 +120,8 @@ __BEGIN_DECLS
 #define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #define HWACCM_SVM_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #endif
+/* All exceptions have to be intercept in emulated real-mode (minues NM & PF as they are always intercepted. */
+#define HWACCM_VMX_TRAP_MASK_REALMODE       RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NMI) | RT_BIT(X86_XCPT_BP) | RT_BIT(X86_XCPT_OF) | RT_BIT(X86_XCPT_BR) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_DF) | RT_BIT(X86_XCPT_CO_SEG_OVERRUN) | RT_BIT(X86_XCPT_TS) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF) | RT_BIT(X86_XCPT_AC) | RT_BIT(X86_XCPT_MC) | RT_BIT(X86_XCPT_XF)
 /** @} */
 
 
@@ -327,9 +329,6 @@ typedef struct HWACCM
         /* Last instruction error */
         uint32_t                    ulLastInstrError;
 
-        /** Current trap mask. */
-        uint32_t                    u32TrapMask;
-
         /** The last known guest paging mode. */
         PGMMODE                     enmCurrGuestMode;
 
@@ -340,13 +339,6 @@ typedef struct HWACCM
         /** Real-mode emulation state. */
         struct
         {
-            struct
-            {
-                uint32_t                fPending;
-                uint32_t                padding4;
-                uint64_t                intInfo;
-            } Event;
-
             CPUMSELREGHID               dsHid;
             CPUMSELREGHID               esHid;
             CPUMSELREGHID               fsHid;
@@ -358,7 +350,6 @@ typedef struct HWACCM
             RTSEL                       gs;
             RTSEL                       ss;
             RTSEL                       padding5[1];
-            uint32_t                    eip;
             X86EFLAGS                   eflags;
             uint32_t                    fValid;
         } RealMode;
