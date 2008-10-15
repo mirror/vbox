@@ -656,9 +656,9 @@ VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
            || (('\0' == *pszValue) && ('\0' == *pszTimestamp) && ('\0' == *pszFlags))
           );
     *ppszName = *pszName != '\0' ? pszName : NULL;
-    *ppszValue = pszValue != '\0' ? pszValue : NULL;
+    *ppszValue = *pszValue != '\0' ? pszValue : NULL;
     *pu64Timestamp = u64Timestamp;
-    *ppszFlags = pszFlags != '\0' ? pszFlags : NULL;
+    *ppszFlags = *pszFlags != '\0' ? pszFlags : NULL;
     return VINF_SUCCESS;
 }
 
