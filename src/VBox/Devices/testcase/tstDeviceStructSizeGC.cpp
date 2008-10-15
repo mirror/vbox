@@ -137,10 +137,13 @@ int main()
     GEN_CHECK_SIZE(PCIBUS);
     GEN_CHECK_OFF(PCIBUS, iBus);
     GEN_CHECK_OFF(PCIBUS, iDevSearch);
+    GEN_CHECK_OFF(PCIBUS, cBridges);
     GEN_CHECK_OFF(PCIBUS, devices);
     GEN_CHECK_OFF(PCIBUS, devices[1]);
     GEN_CHECK_OFF(PCIBUS, pDevInsR3);
     GEN_CHECK_OFF(PCIBUS, pPciHlpR3);
+    GEN_CHECK_OFF(PCIBUS, apBridgesR3);
+    GEN_CHECK_OFF(PCIBUS, apBridgesR3[1]);
     GEN_CHECK_OFF(PCIBUS, pDevInsR0);
     GEN_CHECK_OFF(PCIBUS, pPciHlpR0);
     GEN_CHECK_OFF(PCIBUS, pDevInsRC);
