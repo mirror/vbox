@@ -1762,6 +1762,12 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
     AssertRC(rc);
     Log2(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS = %08x\n", val));
 
+    /* Must be set according to the MSR, but can be cleared in case of EPT. */
+    if (pVM->hwaccm.s.fNestedPaging)
+        val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
+
     /* allowed zero */
     if ((val & pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0)
         Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: zero\n"));
@@ -2263,7 +2269,7 @@ ResumeExecution:
 #ifdef VBOX_STRICT
                 if (!CPUMIsGuestInRealModeEx(pCtx))
                 {
-                    Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, pCtx->rip));
+                    Log(("Trap %x at %04X:%VGv errorCode=%x\n", vector, pCtx->cs, pCtx->rip, errCode));
                     rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
