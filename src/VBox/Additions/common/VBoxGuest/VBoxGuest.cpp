@@ -290,6 +290,7 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
  */
 
     rc2 = RTSpinlockDestroy(pDevExt->WaitSpinlock); AssertRC(rc2);
+    rc2 = RTSpinlockDestroy(pDevExt->SessionSpinlock); AssertRC(rc2);
 
     VBoxGuestDeleteWaitList(&pDevExt->WaitList);
 #ifdef VBOX_WITH_HGCM
