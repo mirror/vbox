@@ -1,5 +1,4 @@
 /** @file
- *
  * vboxadd -- VirtualBox Guest Additions for Linux
  */
 
@@ -84,15 +83,6 @@ MODULE_LICENSE("GPL");
 MODULE_VERSION(VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")");
 #endif
 
-/* This is called by our assert macros to find out whether we want
-   to insert a breakpoint after the assertion. In kernel modules we
-   do not of course. */
-RTDECL(bool)    RTAssertDoBreakpoint(void)
-{
-    return false;
-}
-EXPORT_SYMBOL(RTAssertDoBreakpoint);
-
 /** device extension structure (we only support one device instance) */
 static VBoxDevice *vboxDev = NULL;
 /** our file node major id (set dynamically) */
@@ -114,6 +104,13 @@ DECLVBGL (void) vboxadd_cmc_close (void *opaque)
 
 EXPORT_SYMBOL (vboxadd_cmc_open);
 EXPORT_SYMBOL (vboxadd_cmc_close);
+
+/** @todo check that this works for all the kernels. */
+EXPORT_SYMBOL (RTR0AssertPanicSystem);
+EXPORT_SYMBOL (RTAssertShouldPanic);
+EXPORT_SYMBOL (AssertMsg1);
+EXPORT_SYMBOL (AssertMsg2);
+
 
 #define MAX_HGCM_CONNECTIONS 1024
 
@@ -598,7 +595,7 @@ vboxadd_fasync(int fd, struct file *file, int mode)
 }
 
 /**
- * Dummy read function - we only supply this because we implement poll and 
+ * Dummy read function - we only supply this because we implement poll and
  * fasync.
  */
 static ssize_t
@@ -1166,7 +1163,7 @@ static const struct pci_device_id __devinitdata vmmdev_pci_id[] =
 };
 MODULE_DEVICE_TABLE(pci, vmmdev_pci_id);
 
-int __gxx_personality_v0 = 0xdeadbeef;
+
 
 /*
  * Local Variables:
@@ -1175,3 +1172,4 @@ int __gxx_personality_v0 = 0xdeadbeef;
  * c-plusplus: evil
  * End:
  */
+

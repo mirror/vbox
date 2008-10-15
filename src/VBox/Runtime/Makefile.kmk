@@ -979,6 +979,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
+	r0drv/linux/assert-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
 	r0drv/linux/memobj-r0drv-linux.c \
 	r0drv/linux/mp-r0drv-linux.c \

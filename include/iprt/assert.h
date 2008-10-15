@@ -125,10 +125,23 @@ bool            RTAssertShouldPanic(void);
 DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void);
 #endif
 
+/** @name Globals for crash analysis
+ * @remarks     This is the full potential set, it
+ * @{
+ */
 /** The last assert message, 1st part. */
-extern RTDATADECL(char) g_szRTAssertMsg1[1024];
+extern RTDATADECL(char)                     g_szRTAssertMsg1[1024];
 /** The last assert message, 2nd part. */
-extern RTDATADECL(char) g_szRTAssertMsg2[2048];
+extern RTDATADECL(char)                     g_szRTAssertMsg2[2048];
+/** The last assert message, expression. */
+extern RTDATADECL(const char * volatile)    g_pszRTAssertExpr;
+/** The last assert message, file name. */
+extern RTDATADECL(const char * volatile)    g_pszRTAssertFile;
+/** The last assert message, line number. */
+extern RTDATADECL(uint32_t volatile)        g_u32RTAssertLine;
+/** The last assert message, function name. */
+extern RTDATADECL(const char * volatile)    g_pszRTAssertFunction;
+/** @} */
 
 __END_DECLS
 

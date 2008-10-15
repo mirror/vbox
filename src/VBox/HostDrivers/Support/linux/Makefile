@@ -76,6 +76,7 @@ OBJS   = \
 	r0drv/initterm-r0drv.o \
 	r0drv/memobj-r0drv.o \
 	r0drv/mpnotification-r0drv.o \
+	r0drv/linux/assert-r0drv-linux.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
 	r0drv/linux/memobj-r0drv-linux.o \
@@ -90,19 +91,7 @@ OBJS   = \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/timer-r0drv-linux.o \
 	common/err/RTErrConvertFromErrno.o \
-	generic/RTAssertShouldPanic-generic.o
-ifeq ($(BUILD_TARGET_ARCH),x86)
-OBJS += math/gcc/divdi3.o \
-	math/gcc/moddi3.o \
-	math/gcc/qdivrem.o \
-	math/gcc/udivdi3.o
-endif
-ifeq ($(BUILD_TARGET_ARCH),amd64)
-OBJS += alloc/heapsimple.o
-endif
-
-ifeq ($(BUILD_TYPE),debug)
-OBJS += common/log/log.o \
+	common/log/log.o \
 	common/log/logellipsis.o \
 	common/log/logrel.o \
 	common/log/logrelellipsis.o \
@@ -114,6 +103,7 @@ OBJS += common/log/log.o \
 	common/string/strprintf.o \
 	common/string/strtonum.o \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
+	generic/RTAssertShouldPanic-generic.o \
 	generic/RTLogWriteStdErr-stub-generic.o \
 	generic/RTLogWriteStdOut-stub-generic.o \
 	generic/RTLogWriteUser-generic.o \
@@ -121,9 +111,15 @@ OBJS += common/log/log.o \
 	VBox/strformat-vbox.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
 OBJS += math/gcc/divdi3.o \
+	math/gcc/moddi3.o \
+	math/gcc/qdivrem.o \
+	math/gcc/udivdi3.o \
+        math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
-endif # debug
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+OBJS += alloc/heapsimple.o
+endif
 
 ifneq ($(MAKECMDGOALS),clean)
 
