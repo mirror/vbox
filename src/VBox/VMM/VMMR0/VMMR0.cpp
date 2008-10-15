@@ -1111,9 +1111,8 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
  * Jump back to ring-3 if we're the EMT and the longjmp is armed.
  *
  * @returns true if the breakpoint should be hit, false if it should be ignored.
- * @remark  The RTDECL() makes this a bit difficult to override on windows. Sorry.
  */
-DECLEXPORT(bool) RTCALL RTAssertDoBreakpoint(void)
+DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
 {
     PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)

@@ -88,6 +88,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/memobj.h=>include/internal/memobj.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/string.h=>include/internal/string.h \
     ${PATH_ROOT}/src/VBox/Runtime/include/internal/thread.h=>include/internal/thread.h \
+    ${PATH_ROOT}/src/VBox/Runtime/generic/RTAssertShouldPanic-generic.cpp=>generic/RTAssertShouldPanic-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdErr-stub-generic.cpp=>generic/RTLogWriteStdErr-stub-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteStdOut-stub-generic.cpp=>generic/RTLogWriteStdOut-stub-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteUser-generic.cpp=>generic/RTLogWriteUser-generic.c \

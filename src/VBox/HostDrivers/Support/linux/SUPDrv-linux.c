@@ -945,13 +945,6 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 
 
 /** @todo move to IPRT! */
-RTDECL(bool) RTAssertDoBreakpoint(void)
-{
-    return true;
-}
-
-
-/** @todo move to IPRT! */
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     printk("!!Assertion Failed!!\n"

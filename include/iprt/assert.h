@@ -97,15 +97,33 @@ RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszF
  */
 RTDECL(void)    AssertMsg2(const char *pszFormat, ...);
 
+#ifdef IN_RING0
 /**
- * Overridable function that decides whether assertions executes the breakpoint or not.
+ * Panics the system as the result of a fail assertion.
+ */
+RTR0DECL(void)  RTR0AssertPanicSystem(void);
+#endif /* IN_RING0 */
+
+/**
+ * Overridable function that decides whether assertions executes the panic
+ * (breakpoint) or not.
  *
  * The generic implementation will return true.
  *
  * @returns true if the breakpoint should be hit, false if it should be ignored.
- * @remark  The RTDECL() makes this a bit difficult to override on windows. Sorry.
+ *
+ * @remark  The RTDECL() makes this a bit difficult to override on Windows. So,
+ *          you'll have ot use RTASSERT_HAVE_SHOULD_PANIC or
+ *          RTASSERT_HAVE_SHOULD_PANIC_PRIVATE there to control the kind of
+ *          prototype.
  */
-RTDECL(bool)    RTAssertDoBreakpoint(void);
+#if !defined(RTASSERT_HAVE_SHOULD_PANIC) && !defined(RTASSERT_HAVE_SHOULD_PANIC_PRIVATE)
+RTDECL(bool)    RTAssertShouldPanic(void);
+#elif defined(RTASSERT_HAVE_SHOULD_PANIC_PRIVATE)
+bool            RTAssertShouldPanic(void);
+#else
+DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void);
+#endif
 
 /** The last assert message, 1st part. */
 extern RTDATADECL(char) g_szRTAssertMsg1[1024];
@@ -114,29 +132,35 @@ extern RTDATADECL(char) g_szRTAssertMsg2[2048];
 
 __END_DECLS
 
-
-/** @def AssertBreakpoint()
- * Assertion Breakpoint.
+/** @def RTAssertDebugBreak()
+ * Debugger breakpoint instruction.
  *
- * @remark  In the gnu world we add a nop instruction after the int3 to
+ * @remarks In the gnu world we add a nop instruction after the int3 to
  *          force gdb to remain at the int3 source line.
- * @remark  The L4 kernel will try make sense of the breakpoint, thus the jmp.
+ * @remarks The L4 kernel will try make sense of the breakpoint, thus the jmp.
+ * @remarks This macro does not depend on RT_STRICT.
  */
-#ifdef RT_STRICT
-# ifdef __GNUC__
-#  ifndef __L4ENV__
-#   define AssertBreakpoint()   do { if (RTAssertDoBreakpoint()) { __asm__ __volatile__ ("int3\n\tnop"); } } while (0)
-#  else
-#   define AssertBreakpoint()   do { if (RTAssertDoBreakpoint()) { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } } while (0)
-#  endif
-# elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
-#  define AssertBreakpoint()    do { if (RTAssertDoBreakpoint()) { __debugbreak(); } } while (0)
+#ifdef __GNUC__
+# ifndef __L4ENV__
+#  define RTAssertDebugBreak()  do { __asm__ __volatile__ ("int3\n\tnop"); } while (0)
 # else
-#  error "Unknown compiler"
+#  define RTAssertDebugBreak()  do { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
 # endif
+#elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
+# define RTAssertDebugBreak()   do { __debugbreak(); } while (0)
 #else
-# define AssertBreakpoint()     do { } while (0)
+# error "Unknown compiler"
 #endif
+
+
+
+/** @name Compile time assertions.
+ *
+ * These assertions are used to check structure sizes, memember/size alignments
+ * and similar compile time expressions.
+ *
+ * @{
+ */
 
 /**
  * RTASSERTTYPE is the type the AssertCompile() macro redefines.
@@ -240,6 +264,49 @@ __END_DECLS
     AssertCompile(RT_OFFSETOF(type, member) == (off))
 #endif
 
+/** @} */
+
+
+
+/** @name Assertions
+ *
+ * These assertions will only trigger when RT_STRICT is defined. When it is
+ * undefined they will all be noops and generate no code.
+ *
+ * @{
+ */
+
+/** @def RTAssertDoPanic
+ * Raises an assertion panic appropriate to the current context.
+ * @remarks This macro does not depend on RT_STRICT.
+ */
+#if (defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC)) \
+ && (defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS))
+# define RTAssertDoPanic()      RTR0AssertPanicSystem
+#else
+# define RTAssertDoPanic()      RTAssertDebugBreak()
+#endif
+
+/** @def AssertBreakpoint()
+ * Assertion Breakpoint.
+ * @deprecated Use RTAssertPanic or RTAssertDebugBreak instead.
+ */
+#ifdef RT_STRICT
+# define AssertBreakpoint()     RTAssertDebugBreak()
+#else
+# define AssertBreakpoint()     do { } while (0)
+#endif
+
+/** @def rtAssertPanic()
+ * If RT_STRICT is defined this macro will invoke RTAssertDoPanic if
+ * RTAssertShouldPanic returns true. If RT_STRICT isn't defined it won't do any
+ * thing.
+ */
+#ifdef RT_STRICT
+# define RTAssertPanic()        do { if (RTAssertShouldPanic()) RTAssertDoPanic(); } while (0)
+#else
+# define RTAssertPanic()        do { } while (0)
+#endif
 
 /** @def Assert
  * Assert that an expression is true. If it's not hit breakpoint.
@@ -251,7 +318,7 @@ __END_DECLS
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertBreakpoint(); \
+            RTAssertPanic(); \
         } \
     } while (0)
 #else
@@ -272,7 +339,7 @@ __END_DECLS
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertBreakpoint(); \
+            RTAssertPanic(); \
             return (rc); \
         } \
     } while (0)
@@ -296,7 +363,7 @@ __END_DECLS
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertBreakpoint(); \
+            RTAssertPanic(); \
             return; \
         } \
     } while (0)
@@ -320,7 +387,7 @@ __END_DECLS
     if (RT_UNLIKELY(!(expr))) \
     { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         break; \
     } else do {} while (0)
 #else
@@ -341,7 +408,7 @@ __END_DECLS
 # define AssertBreakStmt(expr, stmt) \
     if (RT_UNLIKELY(!(expr))) { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -366,7 +433,7 @@ __END_DECLS
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertMsg2 a; \
-            AssertBreakpoint(); \
+            RTAssertPanic(); \
         } \
     } while (0)
 #else
@@ -388,7 +455,7 @@ __END_DECLS
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertMsg2 a; \
-            AssertBreakpoint(); \
+            RTAssertPanic(); \
             return (rc); \
         } \
     } while (0)
@@ -414,7 +481,7 @@ __END_DECLS
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertMsg2 a; \
-            AssertBreakpoint(); \
+            RTAssertPanic(); \
             return; \
         } \
     } while (0)
@@ -440,7 +507,7 @@ __END_DECLS
     { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         break; \
     } else do {} while (0)
 #else
@@ -463,7 +530,7 @@ __END_DECLS
     if (RT_UNLIKELY(!(expr))) { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -482,7 +549,7 @@ __END_DECLS
 # define AssertFailed()  \
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
     } while (0)
 #else
 # define AssertFailed()         do { } while (0)
@@ -497,7 +564,7 @@ __END_DECLS
 # define AssertFailedReturn(rc)  \
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         return (rc); \
     } while (0)
 #else
@@ -514,7 +581,7 @@ __END_DECLS
 # define AssertFailedReturnVoid()  \
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         return; \
     } while (0)
 #else
@@ -532,7 +599,7 @@ __END_DECLS
 # define AssertFailedBreak()  \
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         break; \
     } else do {} while (0)
 #else
@@ -552,7 +619,7 @@ __END_DECLS
 # define AssertFailedBreakStmt(stmt) \
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -575,7 +642,7 @@ __END_DECLS
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
     } while (0)
 #else
 # define AssertMsgFailed(a)     do { } while (0)
@@ -592,7 +659,7 @@ __END_DECLS
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         return (rc); \
     } while (0)
 #else
@@ -612,7 +679,7 @@ __END_DECLS
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         return; \
     } while (0)
 #else
@@ -633,7 +700,7 @@ __END_DECLS
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         break; \
     } else do {} while (0)
 #else
@@ -655,7 +722,7 @@ __END_DECLS
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertBreakpoint(); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -667,53 +734,39 @@ __END_DECLS
     } else do {} while (0)
 #endif
 
+/** @} */
 
 
-/** @def AssertLogRelBreakpoint()
- * Assertion LogRel Breakpoint.
+
+/** @name Release Log Assertions
  *
- * NOP in non-strict (release) builds, hardware breakpoint in strict builds,
+ * These assertions will work like normal strict assertion when RT_STRICT is
+ * defined and LogRel statements when RT_STRICT is undefined. Typically used for
+ * things which shouldn't go wrong, but when it does you'd like to know one way
+ * or ther other.
  *
- * @remark  In the gnu world we add a nop instruction after the int3 to
- *          force gdb to remain at the int3 source line.
- * @remark  The L4 kernel will try make sense of the breakpoint, thus the jmp.
+ * @{
  */
-#ifdef RT_STRICT
-# ifdef __GNUC__
-#  ifndef __L4ENV__
-#   define AssertLogRelBreakpoint()     do { RTAssertDoBreakpoint(); __asm__ __volatile__ ("int3\n\tnop"); } while (0)
-#  else
-#   define AssertLogRelBreakpoint()     do { RTAssertDoBreakpoint(); __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
-#  endif
-# elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
-#  define AssertLogRelBreakpoint()      do { RTAssertDoBreakpoint(); __debugbreak(); } while (0)
-# else
-#  error "Unknown compiler"
-# endif
-#else   /* !RT_STRICT */
-# define AssertLogRelBreakpoint()       do { } while (0)
-#endif  /* !RT_STRICT */
 
-
-/** @def AssertLogRelMsg1
+/** @def RTAssertLogRelMsg1
  * AssertMsg1 (strict builds) / LogRel wrapper (non-strict).
  */
 #ifdef RT_STRICT
-# define AssertLogRelMsg1(pszExpr, iLine, pszFile, pszFunction) \
+# define RTAssertLogRelMsg1(pszExpr, iLine, pszFile, pszFunction) \
     AssertMsg1(pszExpr, iLine, pszFile, pszFunction)
 #else
-# define AssertLogRelMsg1(pszExpr, iLine, pszFile, pszFunction) \
+# define RTAssertLogRelMsg1(pszExpr, iLine, pszFile, pszFunction) \
     LogRel(("AssertLogRel %s(%d) %s: %s\n",\
             (pszFile), (iLine), (pszFunction), (pszExpr) ))
 #endif
 
-/** @def AssertLogRelMsg2
+/** @def RTAssertLogRelMsg2
  * AssertMsg2 (strict builds) / LogRel wrapper (non-strict).
  */
 #ifdef RT_STRICT
-# define AssertLogRelMsg2(a) AssertMsg2 a
+# define RTAssertLogRelMsg2(a)  AssertMsg2 a
 #else
-# define AssertLogRelMsg2(a) LogRel(a)
+# define RTAssertLogRelMsg2(a)  LogRel(a)
 #endif
 
 /** @def AssertLogRel
@@ -726,8 +779,8 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
         { \
-            AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertLogRelBreakpoint(); \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
         } \
     } while (0)
 
@@ -742,8 +795,8 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
         { \
-            AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertLogRelBreakpoint(); \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
             return (rc); \
         } \
     } while (0)
@@ -758,8 +811,8 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
         { \
-            AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertLogRelBreakpoint(); \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
             return; \
         } \
     } while (0)
@@ -773,8 +826,8 @@ __END_DECLS
 #define AssertLogRelBreak(expr) \
     if (RT_UNLIKELY(!(expr))) \
     { \
-        AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
         break; \
     } \
     else do {} while (0)
@@ -789,8 +842,8 @@ __END_DECLS
 #define AssertLogRelBreakStmt(expr, stmt) \
     if (RT_UNLIKELY(!(expr))) \
     { \
-        AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -806,9 +859,9 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
         { \
-            AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertLogRelMsg2(a); \
-            AssertLogRelBreakpoint(); \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertLogRelMsg2(a); \
+            RTAssertPanic(); \
         } \
     } while (0)
 
@@ -824,9 +877,9 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
         { \
-            AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertLogRelMsg2(a); \
-            AssertLogRelBreakpoint(); \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertLogRelMsg2(a); \
+            RTAssertPanic(); \
             return (rc); \
         } \
     } while (0)
@@ -842,9 +895,9 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
         { \
-            AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertLogRelMsg2(a); \
-            AssertLogRelBreakpoint(); \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertLogRelMsg2(a); \
+            RTAssertPanic(); \
             return; \
         } \
     } while (0)
@@ -859,9 +912,9 @@ __END_DECLS
 #define AssertLogRelMsgBreak(expr, a) \
     if (RT_UNLIKELY(!(expr))) \
     { \
-        AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelMsg2(a); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
         break; \
     } \
     else do {} while (0)
@@ -877,9 +930,9 @@ __END_DECLS
 #define AssertLogRelMsgBreakStmt(expr, a, stmt) \
     if (RT_UNLIKELY(!(expr))) \
     { \
-        AssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelMsg2(a); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -890,8 +943,8 @@ __END_DECLS
  */
 #define AssertLogRelFailed() \
     do { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
     } while (0)
 
 /** @def AssertLogRelFailedReturn
@@ -902,8 +955,8 @@ __END_DECLS
  */
 #define AssertLogRelFailedReturn(rc) \
     do { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
         return (rc); \
     } while (0)
 
@@ -913,8 +966,8 @@ __END_DECLS
  */
 #define AssertLogRelFailedReturnVoid() \
     do { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
         return; \
     } while (0)
 
@@ -925,8 +978,8 @@ __END_DECLS
 #define AssertLogRelFailedBreak() \
     if (1) \
     { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
         break; \
     } else do {} while (0)
 
@@ -939,8 +992,8 @@ __END_DECLS
 #define AssertLogRelFailedBreakStmt(stmt) \
     if (1) \
     { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -953,9 +1006,9 @@ __END_DECLS
  */
 #define AssertLogRelMsgFailed(a) \
     do { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelMsg2(a); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
     } while (0)
 
 /** @def AssertLogRelMsgFailedReturn
@@ -967,9 +1020,9 @@ __END_DECLS
  */
 #define AssertLogRelMsgFailedReturn(a, rc) \
     do { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelMsg2(a); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
         return (rc); \
     } while (0)
 
@@ -981,9 +1034,9 @@ __END_DECLS
  */
 #define AssertLogRelMsgFailedReturnVoid(a) \
     do { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelMsg2(a); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
         return; \
     } while (0)
 
@@ -996,9 +1049,9 @@ __END_DECLS
 #define AssertLogRelMsgFailedBreak(a) \
     if (1)\
     { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelMsg2(a); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
         break; \
     } else do {} while (0)
 
@@ -1012,33 +1065,31 @@ __END_DECLS
 #define AssertLogRelMsgFailedBreakStmt(a, stmt) \
     if (1) \
     { \
-        AssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertLogRelMsg2(a); \
-        AssertLogRelBreakpoint(); \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
         stmt; \
         break; \
     } else do {} while (0)
 
+/** @} */
 
 
-/** @def AssertReleaseBreakpoint()
- * Assertion Breakpoint.
+
+/** @name Release Asserions
  *
- * @remark  In the gnu world we add a nop instruction after the int3 to
- *          force gdb to remain at the int3 source line.
- * @remark  The L4 kernel will try make sense of the breakpoint, thus the jmp.
+ * These assertions are always enabled.
+ * @{
  */
-#ifdef __GNUC__
-# ifndef __L4ENV__
-#  define AssertReleaseBreakpoint()     do { RTAssertDoBreakpoint(); __asm__ __volatile__ ("int3\n\tnop"); } while (0)
-# else
-#  define AssertReleaseBreakpoint()     do { RTAssertDoBreakpoint(); __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
-# endif
-#elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
-# define AssertReleaseBreakpoint()      do { RTAssertDoBreakpoint(); __debugbreak(); } while (0)
-#else
-# error "Unknown compiler"
-#endif
+
+/** @def RTAssertReleasePanic()
+ * Invokes RTAssertShouldPanic and RTAssertDoPanic.
+ *
+ * It might seem odd that RTAssertShouldPanic is necessary when its result isn't
+ * checked, but it's done since RTAssertShouldPanic is overrideable and might be
+ * used to bail out before taking down the system (the VMMR0 case).
+ */
+#define RTAssertReleasePanic()   do { RTAssertShouldPanic(); RTAssertDoPanic(); } while (0)
 
 
 /** @def AssertRelease
@@ -1051,7 +1102,7 @@ __END_DECLS
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
         } \
     } while (0)
 
@@ -1066,7 +1117,7 @@ __END_DECLS
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
             return (rc); \
         } \
     } while (0)
@@ -1081,7 +1132,7 @@ __END_DECLS
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
             return; \
         } \
     } while (0)
@@ -1097,7 +1148,7 @@ __END_DECLS
         if (RT_UNLIKELY(!(expr))) \
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
             break; \
         } \
     } else do {} while (0)
@@ -1112,7 +1163,7 @@ __END_DECLS
     if (RT_UNLIKELY(!(expr))) \
     { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -1130,7 +1181,7 @@ __END_DECLS
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertMsg2 a; \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
         } \
     } while (0)
 
@@ -1147,7 +1198,7 @@ __END_DECLS
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertMsg2 a; \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
             return (rc); \
         } \
     } while (0)
@@ -1164,7 +1215,7 @@ __END_DECLS
         { \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertMsg2 a; \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
             return; \
         } \
     } while (0)
@@ -1181,7 +1232,7 @@ __END_DECLS
     { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         break; \
     } else do {} while (0)
 
@@ -1196,7 +1247,7 @@ __END_DECLS
     if (RT_UNLIKELY(!(expr))) { \
         AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -1208,7 +1259,7 @@ __END_DECLS
 #define AssertReleaseFailed()  \
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
     } while (0)
 
 /** @def AssertReleaseFailedReturn
@@ -1219,7 +1270,7 @@ __END_DECLS
 #define AssertReleaseFailedReturn(rc)  \
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         return (rc); \
     } while (0)
 
@@ -1229,7 +1280,7 @@ __END_DECLS
 #define AssertReleaseFailedReturnVoid()  \
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         return; \
     } while (0)
 
@@ -1240,7 +1291,7 @@ __END_DECLS
 #define AssertReleaseFailedBreak()  \
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         break; \
     } else do {} while (0)
 
@@ -1252,7 +1303,7 @@ __END_DECLS
 #define AssertReleaseFailedBreakStmt(stmt)  \
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         stmt; \
         break; \
     } else do {} while (0)
@@ -1267,7 +1318,7 @@ __END_DECLS
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
     } while (0)
 
 /** @def AssertReleaseMsgFailedReturn
@@ -1280,7 +1331,7 @@ __END_DECLS
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         return (rc); \
     } while (0)
 
@@ -1293,7 +1344,7 @@ __END_DECLS
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         return; \
     } while (0)
 
@@ -1307,7 +1358,7 @@ __END_DECLS
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         break; \
     } else do {} while (0)
 
@@ -1321,11 +1372,21 @@ __END_DECLS
     if (1) { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         AssertMsg2 a; \
-        AssertReleaseBreakpoint(); \
+        RTAssertReleasePanic(); \
         stmt; \
         break; \
     } else do {} while (0)
 
+/** @} */
+
+
+
+/** @name Fatal Assertions
+ * These are similar to release assertions except that you cannot ignore them in
+ * any way, they will loop for ever if RTAssertDoPanic returns.
+ *
+ * @{
+ */
 
 /** @def AssertFatal
  * Assert that an expression is true. If it's not hit a breakpoint (for ever).
@@ -1338,7 +1399,7 @@ __END_DECLS
             for (;;) \
             { \
                 AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-                AssertReleaseBreakpoint(); \
+                RTAssertReleasePanic(); \
             } \
     } while (0)
 
@@ -1355,7 +1416,7 @@ __END_DECLS
             { \
                 AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
                 AssertMsg2 a; \
-                AssertReleaseBreakpoint(); \
+                RTAssertReleasePanic(); \
             } \
     } while (0)
 
@@ -1367,7 +1428,7 @@ __END_DECLS
         for (;;) \
         { \
             AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
         } \
     } while (0)
 
@@ -1382,10 +1443,17 @@ __END_DECLS
         { \
             AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             AssertMsg2 a; \
-            AssertReleaseBreakpoint(); \
+            RTAssertReleasePanic(); \
         } \
     } while (0)
 
+/** @} */
+
+
+
+/** @name Convenience Assertions Macros
+ * @{
+ */
 
 /** @def AssertRC
  * Asserts a iprt status code successful.
@@ -1957,6 +2025,7 @@ __END_DECLS
  */
 #define AssertGCPhys32(GCPhys)          AssertMsg(VALID_PHYS32(GCPhys), ("%RGp\n", (RTGCPHYS)(GCPhys)))
 
+/** @} */
 
 /** @} */
 

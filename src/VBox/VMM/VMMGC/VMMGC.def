@@ -70,7 +70,7 @@ EXPORTS
     memcmp
     AssertMsg1
     AssertMsg2
-    RTAssertDoBreakpoint
+    RTAssertShouldPanic
     RTTimeNanoTSLegacySync
     RTTimeNanoTSLegacyAsync
     RTTimeNanoTSLFenceSync

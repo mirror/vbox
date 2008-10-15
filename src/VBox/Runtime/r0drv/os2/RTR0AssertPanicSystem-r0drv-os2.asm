@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - DevHelp_GetDOSVar, Ring-0 Driver, OS/2.
+; IPRT - RTR0AssertPanicSystem, Ring-0 Driver, OS/2.
 ;
 
 ;
@@ -54,7 +54,7 @@ extern NAME(g_fpfnDevHlp)
 
 BEGINCODE
 
-BEGINPROC_EXPORTED RTAssertDoBreakpoint
+BEGINPROC_EXPORTED RTR0AssertPanicSystem
     push    ebp
     mov     ebp, esp
     push    esi
@@ -70,13 +70,13 @@ BEGINPROC_EXPORTED RTAssertDoBreakpoint
     ; Raise an IPE.
     ;
     call    KernThunkStackTo16
-    ;jmp far dword NAME(RTAssertDoBreakpoint_16) wrt CODE16
+    ;jmp far dword NAME(RTR0AssertPanicSystem_16) wrt CODE16
     db      066h
     db      0eah
-    dw      NAME(RTAssertDoBreakpoint_16) wrt CODE16
+    dw      NAME(RTR0AssertPanicSystem_16) wrt CODE16
     dw      CODE16
 BEGINCODE16
-GLOBALNAME RTAssertDoBreakpoint_16
+GLOBALNAME RTR0AssertPanicSystem_16
     ; mov     ax, seg NAME(g_szRTAssertMsg) - makes wlink crash.
     mov     ax, DATA16
     mov     ds, ax
@@ -86,13 +86,13 @@ GLOBALNAME RTAssertDoBreakpoint_16
     call far [NAME(g_fpfnDevHlp)]
 
     ; Doesn't normally return, but in case it does...
-    ;jmp far dword NAME(RTAssertDoBreakpoint_32)
+    ;jmp far dword NAME(RTR0AssertPanicSystem_32)
     db      066h
     db      0eah
-    dd      NAME(RTAssertDoBreakpoint_32)
+    dd      NAME(RTR0AssertPanicSystem_32)
     dw      TEXT32 wrt FLAT
 BEGINCODE32:
-GLOBALNAME RTAssertDoBreakpoint_32
+GLOBALNAME RTR0AssertPanicSystem_32
     call KernThunkStackTo32
     mov     eax, 1
     pop     ds
@@ -100,5 +100,5 @@ GLOBALNAME RTAssertDoBreakpoint_32
     pop     esi
     leave
     ret
-ENDPROC RTAssertDoBreakpoint
+ENDPROC RTR0AssertPanicSystem
 

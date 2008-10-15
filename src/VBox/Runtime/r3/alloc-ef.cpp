@@ -84,7 +84,7 @@ static void rtmemComplain(const char *pszOp, const char *pszFormat, ...)
     va_start(args, pszFormat);
     vfprintf(stderr, pszFormat, args);
     va_end(args);
-    AssertReleaseBreakpoint();
+    RTAssertDoPanic();
 }
 
 /**
@@ -367,7 +367,7 @@ RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvC
      */
     for (unsigned i = 0; i < ELEMENTS(gapvRTMemFreeWatch); i++)
         if (gapvRTMemFreeWatch[i] == pv)
-            AssertReleaseBreakpoint();
+            RTAssertDoPanic();
 
 #ifdef RTALLOC_EFENCE_TRACE
     /*
