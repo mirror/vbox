@@ -904,13 +904,11 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx)
 
     /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
     if (    CPUMIsGuestFPUStateActive(pVM) == true
-        && !(pCtx->cr0 & X86_CR0_NE))
+        && !(pCtx->cr0 & X86_CR0_NE)
+        && !pVM->hwaccm.s.fFPUOldStyleOverride)
     {
-        if (!pVM->hwaccm.s.fFPUOldStyleOverride)
-        {
-            u32TrapMask |= RT_BIT(X86_XCPT_MF);
-            pVM->hwaccm.s.fFPUOldStyleOverride = true;
-        }
+        u32TrapMask |= RT_BIT(X86_XCPT_MF);
+        pVM->hwaccm.s.fFPUOldStyleOverride = true;
     }
 
 #ifdef DEBUG
