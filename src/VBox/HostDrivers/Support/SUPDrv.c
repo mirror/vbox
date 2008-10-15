@@ -4590,15 +4590,12 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
  */
 static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
-#ifdef RT_OS_SOLARIS
-    RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* brute force for S10. */
-#endif
+    RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     PSUPDRVDEVEXT   pDevExt   = (PSUPDRVDEVEXT)pvUser;
+
     supdrvGipUpdate(pDevExt->pGip, RTTimeSystemNanoTS());
 
-#ifdef RT_OS_SOLARIS
     ASMSetFlags(fOldFlags);
-#endif
 }
 
 
@@ -4609,9 +4606,7 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
  */
 static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
-#ifdef RT_OS_SOLARIS
-    RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* brute force for S10. */
-#endif
+    RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     PSUPDRVDEVEXT   pDevExt   = (PSUPDRVDEVEXT)pvUser;
     RTCPUID         idCpu     = RTMpCpuId();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
@@ -4622,9 +4617,7 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
     else
         supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, ASMGetApicId());
 
-#ifdef RT_OS_SOLARIS
     ASMSetFlags(fOldFlags);
-#endif
 }
 
 
