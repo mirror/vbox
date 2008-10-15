@@ -47,10 +47,10 @@ struct VBGLR3GUESTPROPENUM
     /** @todo add a magic and validate the handle. */
     /** The buffer containing the raw enumeration data */
     char *pchBuf;
-    /** The size of the buffer */
-    uint32_t cchBuf;
-    /** Index into the buffer pointing to the next entry to enumerate */
-    uint32_t iBuf;
+    /** The end of the buffer */
+    char *pchBufEnd;
+    /** Pointer to the next entry to enumerate inside the buffer */
+    char *pchNext;
 };
 
 using namespace guestProp;
@@ -580,8 +580,8 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     if (RT_SUCCESS(rc))
     {
         /* Transfer ownership of the buffer to the handle structure. */
-        Handle->pchBuf = Buf.release();
-        Handle->cchBuf = cchBuf;
+        Handle->pchNext = Handle->pchBuf = Buf.release();
+        Handle->pchBufEnd = Handle->pchBuf + cchBuf;
     }
     if (RT_SUCCESS(rc))
         rc = VbglR3GuestPropEnumNext(Handle.get(), ppszName, ppszValue,
@@ -621,26 +621,44 @@ VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
                                         uint64_t *pu64Timestamp,
                                         char const **ppszFlags)
 {
-    uint32_t iBuf = pHandle->iBuf;
-    char *pszName = pHandle->pchBuf + iBuf;
-    /** @todo replace these with safe memchr's and return an error if needed. A
-     *        PLEASE add a comment about the layout because this is rather
-     *        unreadable. */
-    iBuf += strlen(pszName) + 1;
-    char *pszValue = pHandle->pchBuf + iBuf;
-    iBuf += strlen(pszValue) + 1;
-    char *pszTimestamp = pHandle->pchBuf + iBuf;
-    iBuf += strlen(pszTimestamp) + 1;
+    /* The VBGLR3GUESTPROPENUM structure contains a buffer containing the raw
+     * properties data and a pointer into the buffer which tracks how far we
+     * have parsed so far.  The buffer contains packed strings in groups of
+     * four - name, value, timestamp (as a decimal string) and flags.  It is
+     * terminated by four empty strings.  We can rely on this layout unless
+     * the caller has been poking about in the structure internals, in which
+     * case they must take responsibility for the results. */
+
+    /* Get the pointer into the buffer to the next entry. */
+    char *pchNext = pHandle->pchNext;
+    /* And the pointer to the end of the buffer. */
+    char *pchLast = pHandle->pchBufEnd;
+    /* The index will initially point to the next name entry. */
+    char *pszName = pchNext;
+    /* The value for this property starts after the terminator for the name. */
+    char *pszValue = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
+    AssertPtr(pchNext);  /* 0x1 is also an invalid pointer :) */
+    /* The timestamp after the value... */
+    char *pszTimestamp = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
+    AssertPtr(pchNext);
+    /* ...and the flags after the timestamp. */
+    char *pszFlags = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
+    AssertPtr(pchNext);
     uint64_t u64Timestamp = RTStrToUInt64(pszTimestamp);
-    char *pszFlags = pHandle->pchBuf + iBuf;
-    iBuf += strlen(pszFlags) + 1;
-    /* Otherwise we just stay at the end of the list. */
-    if ((iBuf != pHandle->iBuf + 4) && (iBuf < pHandle->cchBuf) /* sanity */)
-        pHandle->iBuf = iBuf;
-    *ppszName = *pszName != 0 ? pszName : NULL;
-    *ppszValue = pszValue != 0 ? pszValue : NULL;
+    /* Only move the index pointer in the structure if we found a non-empty entry. */
+    if (*pszName != '\0')
+    {
+        pHandle->pchNext = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
+        AssertPtr(pchNext);
+    }
+    /* And make sure that the buffer terminator is correct. */
+    Assert(   (*pszName != '\0')
+           || (('\0' == *pszValue) && ('\0' == *pszTimestamp) && ('\0' == *pszFlags))
+          );
+    *ppszName = *pszName != '\0' ? pszName : NULL;
+    *ppszValue = pszValue != '\0' ? pszValue : NULL;
     *pu64Timestamp = u64Timestamp;
-    *ppszFlags = pszFlags != 0 ? pszFlags : NULL;
+    *ppszFlags = pszFlags != '\0' ? pszFlags : NULL;
     return VINF_SUCCESS;
 }
 
