@@ -31,6 +31,10 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+#define VHD_TEST
+#define VDI_TEST
+#define VMDK_TEST
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -66,7 +70,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
         RTPrintf("%s rc=%Vrc\n", str, rc); \
         if (VBOX_FAILURE(rc)) \
         { \
-            VDCloseAll(pVD); \
+            VDDestroy(pVD); \
             return rc; \
         } \
     } while (0)
@@ -102,6 +106,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
         }
     }
 
+    VDDestroy(pVD);
 #undef CHECK
     return 0;
 }
@@ -122,7 +127,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
         RTPrintf("%s rc=%Vrc\n", str, rc); \
         if (VBOX_FAILURE(rc)) \
         { \
-            VDCloseAll(pVD); \
+            VDDestroy(pVD); \
             return rc; \
         } \
     } while (0)
@@ -153,6 +158,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
         return VERR_INTERNAL_ERROR;
     }
 
+    VDDestroy(pVD);
 #undef CHECK
     return 0;
 }
@@ -504,10 +510,14 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
         RTPrintf("%s rc=%Vrc\n", str, rc); \
         if (VBOX_FAILURE(rc)) \
         { \
-            VDCloseAll(pVD); \
+            if (pvBuf) \
+                RTMemFree(pvBuf); \
+            VDDestroy(pVD); \
             return rc; \
         } \
     } while (0)
+
+    void *pvBuf = RTMemAlloc(_1M);
 
     /* Create error interface. */
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
@@ -557,8 +567,6 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     PSEGMENT paDiffSegments  = (PSEGMENT)RTMemAllocZ(sizeof(struct Segment) * (nSegments + 1));
     PSEGMENT paMergeSegments = (PSEGMENT)RTMemAllocZ(sizeof(struct Segment) * (nSegments + 1) * 3);
 
-    void *pvBuf = RTMemAlloc(_1M);
-
     RNDCTX ctx;
     initializeRandomGenerator(&ctx, u32Seed);
     generateRandomSegments(&ctx, paBaseSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 0u, 127u);
@@ -599,7 +607,9 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
 
     VDDumpImages(pVD);
 
-    VDCloseAll(pVD);
+    VDDestroy(pVD);
+    if (pvBuf)
+        RTMemFree(pvBuf);
 #undef CHECK
     return 0;
 }
@@ -624,7 +634,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
         RTPrintf("%s rc=%Vrc\n", str, rc); \
         if (VBOX_FAILURE(rc)) \
         { \
-            VDCloseAll(pVD); \
+            VDDestroy(pVD); \
             return rc; \
         } \
     } while (0)
@@ -680,7 +690,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
 
     RTMemFree(paSegments);
 
-    VDCloseAll(pVD);
+    VDDestroy(pVD);
 #undef CHECK
     return 0;
 }
@@ -699,7 +709,7 @@ static int tstVmdkRename(const char *src, const char *dst)
         RTPrintf("%s rc=%Vrc\n", str, rc); \
         if (VBOX_FAILURE(rc)) \
         { \
-            VDCloseAll(pVD); \
+            VDDestroy(pVD); \
             return rc; \
         } \
     } while (0)
@@ -721,7 +731,7 @@ static int tstVmdkRename(const char *src, const char *dst)
     rc = VDCopy(pVD, 0, pVD, "VMDK", dst, true, 0, NULL, NULL, NULL);
     CHECK("VDCopy()");
 
-    VDCloseAll(pVD);
+    VDDestroy(pVD);
 #undef CHECK
     return 0;
 }
@@ -883,6 +893,7 @@ int main(int argc, char *argv[])
         }
     }
 
+#ifdef VMDK_TEST
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
@@ -905,10 +916,10 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VMDK delete test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#if 1
+
     tstVmdk();
-#endif
-#if 1
+#endif /* VMDK_TEST */
+#ifdef VDI_TEST
     rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
@@ -925,7 +936,8 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: fixed VDI create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#endif
+#endif /* VDI_TEST */
+#ifdef VMDK_TEST
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
@@ -958,7 +970,8 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: fixed split VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#if 1
+#endif /* VMDK_TEST */
+#ifdef VHD_TEST
     rc = tstVDCreateDelete("VHD", "tmpVDCreate.vhd", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
@@ -975,7 +988,8 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: fixed VHD create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-
+#endif /* VHD_TEST */
+#ifdef VDI_TEST
     rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
     if (VBOX_FAILURE(rc))
     {
@@ -988,6 +1002,8 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VDI test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
+#endif /* VDI_TEST */
+#ifdef VMDK_TEST
     rc = tstVDOpenCreateWriteMerge("VMDK", "tmpVDBase.vmdk", "tmpVDDiff.vmdk", u32Seed);
     if (VBOX_FAILURE(rc))
     {
@@ -1000,7 +1016,8 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VMDK test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-
+#endif /* VMDK_TEST */
+#ifdef VHD_TEST
     rc = tstVDCreateWriteOpenRead("VHD", "tmpVDCreate.vhd", u32Seed);
     if (VBOX_FAILURE(rc))
     {
@@ -1014,7 +1031,7 @@ int main(int argc, char *argv[])
         RTPrintf("tstVD: VHD test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
-#endif
+#endif /* VHD_TEST */
 
     /*
      * Clean up any leftovers.

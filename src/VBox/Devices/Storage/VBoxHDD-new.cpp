@@ -1967,6 +1967,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 pTmp = pImg->pPrev;
             vdRemoveImageFromList(pDisk, pImg);
             pImg->Backend->pfnClose(pImg->pvBackendData, true);
+            RTMemFree(pImg->pszFilename);
+            RTMemFree(pImg);
             pImg = pTmp;
         }
     } while (0);
