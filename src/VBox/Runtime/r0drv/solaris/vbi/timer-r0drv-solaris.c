@@ -36,6 +36,7 @@
 
 #include <iprt/timer.h>
 #include <iprt/time.h>
+#include <iprt/mp.h>
 #include <iprt/spinlock.h>
 #include <iprt/err.h>
 #include <iprt/asm.h>
@@ -122,12 +123,19 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     {
         pTimer->fAllCpu = true;
         pTimer->fSpecificCpu = false;
+        pTimer->iCpu = 255;
     }
     else if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
     {
         pTimer->fAllCpu = false;
         pTimer->fSpecificCpu = true;
         pTimer->iCpu = fFlags & RTTIMER_FLAGS_CPU_MASK;
+    }
+    else
+    {
+        pTimer->fAllCpu = false;
+        pTimer->fSpecificCpu = false;
+        pTimer->iCpu = 255;
     }
     pTimer->interval = u64NanoInterval;
     pTimer->pfnTimer = pfnTimer;
@@ -183,20 +191,20 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     pTimer->fSuspended = false;
     if (pTimer->fAllCpu)
     {
-	pTimer->gtimer = vbi_gtimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval);
-	if (pTimer->gtimer == NULL)
-	    return VERR_INVALID_PARAMETER;
+        pTimer->gtimer = vbi_gtimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval);
+        if (pTimer->gtimer == NULL)
+            return VERR_INVALID_PARAMETER;
     }
     else
     {
         if (pTimer->fSpecificCpu)
             cpu = pTimer->iCpu;
-	pTimer->stimer = vbi_stimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval, cpu);
-	if (pTimer->stimer == NULL)
+        pTimer->stimer = vbi_stimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval, cpu);
+        if (pTimer->stimer == NULL)
         {
             if (cpu != VBI_ANY_CPU)
-	        return VERR_CPU_OFFLINE;
-	    return VERR_INVALID_PARAMETER;
+                return VERR_CPU_OFFLINE;
+            return VERR_INVALID_PARAMETER;
         }
     }
 
