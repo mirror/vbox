@@ -984,15 +984,7 @@ static int setGuestProperty(int argc, char *argv[])
         pszValue = argv[1];
     }
     else if (3 == argc)
-    {
-        if (strcmp(argv[2], "-flags") == 0)
-        {
-            VBoxControlError("You may not specify flags without a value");
-            return 1;
-        }
-        else
-            usageOK = false;
-    }
+        usageOK = false;
     else if (4 == argc)
     {
         pszValue = argv[1];
