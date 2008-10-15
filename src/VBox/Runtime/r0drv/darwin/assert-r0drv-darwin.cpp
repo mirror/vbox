@@ -38,6 +38,8 @@
 #include <iprt/log.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
+#include <iprt/asm.h>
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
