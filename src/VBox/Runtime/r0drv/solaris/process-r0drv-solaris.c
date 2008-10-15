@@ -38,6 +38,7 @@
 
 RTDECL(RTPROCESS) RTProcSelf(void)
 {
+    /* use ddi_get_pid()? */
     struct pid *pPidInfo = curproc->p_pidp;
     return pPidInfo->pid_id;
 }
