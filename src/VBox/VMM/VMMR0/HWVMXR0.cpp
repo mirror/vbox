@@ -529,9 +529,9 @@ vmx_end:
 static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t cbInstr, uint32_t errCode)
 {
     int         rc;
+    uint32_t    iGate = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
 
 #ifdef VBOX_STRICT
-    uint32_t    iGate = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
     if (iGate == 0xE)
         LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", iGate, pCtx->rip, errCode, pCtx->cr2, intInfo));
     else
