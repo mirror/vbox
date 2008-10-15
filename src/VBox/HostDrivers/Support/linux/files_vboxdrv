@@ -98,6 +98,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/mp-r0drv.h=>r0drv/mp-r0drv.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/mpnotification-r0drv.c=>r0drv/mpnotification-r0drv.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/RTLogWriteDebugger-r0drv-linux.c=>r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/assert-r0drv-linux.c=>r0drv/linux/assert-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/alloc-r0drv-linux.c=>r0drv/linux/alloc-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/initterm-r0drv-linux.c=>r0drv/linux/initterm-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/memobj-r0drv-linux.c=>r0drv/linux/memobj-r0drv-linux.c \

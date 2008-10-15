@@ -48,12 +48,14 @@
 RTDATADECL(char)                    g_szRTAssertMsg1[1024];
 /** The last assert message, 2nd part. */
 RTDATADECL(char)                    g_szRTAssertMsg2[2048];
+/** The last assert message, expression. */
+RTDATADECL(const char * volatile)   g_pszRTAssertExpr;
 /** The last assert message, file name. */
-RTDATADECL(const char *) volatile   g_pszRTAssertFile;
+RTDATADECL(const char * volatile)   g_pszRTAssertFile;
 /** The last assert message, line number. */
-RTDATADECL(uint32_t) volatile       g_u32RTAssertLine;
+RTDATADECL(uint32_t volatile)       g_u32RTAssertLine;
 /** The last assert message, function name. */
-RTDATADECL(const char *) volatile   g_pszRTAssertFunction;
+RTDATADECL(const char * volatile)   g_pszRTAssertFunction;
 
 
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
@@ -76,6 +78,7 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
                 "Expression: %s\n"
                 "Location  : %s(%d) %s\n",
                 pszExpr, pszFile, uLine, pszFunction);
+    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertExpr, (void *)pszExpr);
     ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFile, (void *)pszFile);
     ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFunction, (void *)pszFunction);
     ASMAtomicUoWriteU32(&g_u32RTAssertLine, uLine);

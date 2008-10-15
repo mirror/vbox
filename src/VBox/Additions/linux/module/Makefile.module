@@ -70,6 +70,7 @@ OBJS   = \
 	VMMDev.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
+	r0drv/linux/assert-r0drv-linux.o \
 	r0drv/linux/semevent-r0drv-linux.o \
 	r0drv/linux/semfastmutex-r0drv-linux.o \
 	RTErrConvertToErrno.o \
@@ -78,13 +79,13 @@ OBJS   = \
 	udivdi3.o \
 	umoddi3.o \
 	qdivrem.o \
-	assert.o \
 	logbackdoor.o \
 	logformat.o \
 	strformat.o \
 	strformatrt.o \
 	strformattype.o \
-	strformat-vbox.o
+	strformat-vbox.o \
+    RTAssertShouldPanic-generic.o
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 OBJS += \
 	alloc/heapsimple.o \
