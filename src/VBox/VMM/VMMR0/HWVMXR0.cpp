@@ -2196,7 +2196,7 @@ ResumeExecution:
                     rc = VINF_EM_RAW_EMULATE_INSTR;
                     break;
                 }
-                Log(("Trap %x at %VGv\n", vector, pCtx->rip));
+                Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, pCtx->rip));
                 rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
@@ -2263,7 +2263,7 @@ ResumeExecution:
 #ifdef VBOX_STRICT
                 if (!CPUMIsGuestInRealModeEx(pCtx))
                 {
-                    Log(("Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
+                    Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, pCtx->rip));
                     rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2311,7 +2311,7 @@ ResumeExecution:
                     break;
                 }
 
-                Log(("Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
+                Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, pCtx->rip));
                 rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
@@ -2323,7 +2323,7 @@ ResumeExecution:
 #ifdef HWACCM_VMX_EMULATE_REALMODE
                 if (CPUMIsGuestInRealModeEx(pCtx))
                 {
-                    Log(("Real Mode Trap %x at %VGv error code %x\n", vector, pCtx->rip, errCode));
+                    Log(("Real Mode Trap %x at %04x:%04X error code %x\n", vector, pCtx->cs, pCtx->eip, errCode));
                     rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
