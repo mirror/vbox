@@ -387,7 +387,7 @@ endif # freebsd
 #
 ifeq ($(KBUILD_TARGET),solaris)
 vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0
+vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
