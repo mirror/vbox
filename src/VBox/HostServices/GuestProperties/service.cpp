@@ -326,6 +326,7 @@ int Service::getPropValue(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     size_t cbValueActual;
 
     LogFlowThisFunc(("\n"));
+    AssertReturn(VALID_PTR(mpValueNode), VERR_WRONG_ORDER);  /* a.k.a. VERR_NOT_INITIALIZED */
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* name */
         || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* value */
@@ -372,11 +373,14 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     char *pszName, *pchBuf;
     uint32_t cchName, cchBuf;
     size_t cchValue, cchFlags, cchBufActual;
+    char szFlags[MAX_FLAGS_LEN + 1];
+    uint32_t fFlags;
 
     /*
      * Get and validate the parameters
      */
     LogFlowThisFunc(("\n"));
+    AssertReturn(VALID_PTR(mpValueNode), VERR_WRONG_ORDER);  /* a.k.a. VERR_NOT_INITIALIZED */
     if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)    /* name */
         || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)    /* buffer */
@@ -388,17 +392,21 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cchBuf);
     if (RT_SUCCESS(rc))
         rc = validateName(pszName, cchName);
-    /* Get the value size */
-    if (RT_SUCCESS(rc))
-        rc = CFGMR3QuerySize(mpValueNode, pszName, &cchValue);
 
     /*
      * Read and set the values we will return
      */
-    /* Get the flags size */
-    cchFlags = 1;  /* Empty string if no flags set. */
-    if (RT_SUCCESS(rc) && (mpFlagsNode != NULL))
-        CFGMR3QuerySize(mpFlagsNode, pszName, &cchFlags);  /* Ignore failure. */
+
+    /* Get the value size */
+    if (RT_SUCCESS(rc))
+        rc = CFGMR3QuerySize(mpValueNode, pszName, &cchValue);
+    /* Get the flags and their size */
+    if (RT_SUCCESS(rc))
+        CFGMR3QueryU32(mpFlagsNode, pszName, (uint32_t *)&fFlags);
+    if (RT_SUCCESS(rc))
+        rc = writeFlags(fFlags, szFlags);
+    if (RT_SUCCESS(rc))
+        cchFlags = strlen(szFlags);
     /* Check that the buffer is big enough */
     if (RT_SUCCESS(rc))
     {
@@ -410,15 +418,12 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     /* Write the value */
     if (RT_SUCCESS(rc))
         rc = CFGMR3QueryString(mpValueNode, pszName, pchBuf, cchBuf);
-    /* Write the flags if there are any */
+    /* Write the flags */
     if (RT_SUCCESS(rc))
-        pchBuf[cchValue] = '\0';  /* In case there aren't */
-    if (RT_SUCCESS(rc) && (mpFlagsNode != NULL) && (cchFlags != 1))
-        CFGMR3QueryString(mpFlagsNode, pszName, pchBuf + cchValue,
-                          cchBuf - cchValue);
+        strcpy(pchBuf + cchValue, szFlags);
     /* Timestamp */
     uint64_t u64Timestamp = 0;
-    if (RT_SUCCESS(rc) && (mpTimestampNode != NULL))
+    if (RT_SUCCESS(rc))
         CFGMR3QueryU64(mpTimestampNode, pszName, &u64Timestamp);
     VBoxHGCMParmUInt64Set(&paParms[2], u64Timestamp);
 
@@ -448,10 +453,12 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify)
 {
     int rc = VINF_SUCCESS;
-    char *pszName, *pszValue, *pszFlags;
-    uint32_t cchName, cchValue, cchFlags = 0;
+    char *pszName, *pszValue;
+    uint32_t cchName, cchValue;
+    uint32_t fFlags = NILFLAG;
 
     LogFlowThisFunc(("\n"));
+    AssertReturn(VALID_PTR(mpValueNode), VERR_WRONG_ORDER);  /* a.k.a. VERR_NOT_INITIALIZED */
     /*
      * First of all, make sure that we won't exceed the maximum number of properties.
      */
@@ -484,13 +491,25 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
         rc = validateName(pszName, cchName);
     if (RT_SUCCESS(rc))
         rc = validateValue(pszValue, cchValue);
-    /* For now, we do not support any flags */
-    if (RT_SUCCESS(rc) && (3 == cParms))
+    if (RT_SUCCESS(rc))
     {
-        rc = VBoxHGCMParmPtrGet(&paParms[2], (void **) &pszFlags, &cchFlags);
-        for (size_t i = 0; (i < cchFlags - 1) && RT_SUCCESS(rc); ++i)
-            if (pszFlags[i] != ' ')
-                rc = VERR_INVALID_PARAMETER;
+        /* We deal with flags as follows:
+         *  1) if flags are specified by the user, use them.
+         *  2) if no flags are specified, but the property exists, use the
+         *     existing flags.
+         *  3) if no flags are specified and the property does not exist,
+         *     start with empty flags (the default value of fFlags above). */
+        if (3 == cParms)
+        {
+            char *pszFlags;
+            uint32_t cchFlags;
+            rc = VBoxHGCMParmPtrGet(&paParms[2], (void **) &pszFlags, &cchFlags);
+            if (RT_SUCCESS(rc))
+                rc = validateFlags(pszFlags, &fFlags);
+        }
+        else
+            /* If this fails then fFlags will remain at zero, as per our spec. */
+            CFGMR3QueryU32(mpFlagsNode, pszName, &fFlags);
     }
     /*
      * Set the actual value
@@ -499,23 +518,21 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
     {
         RTTIMESPEC time;
         CFGMR3RemoveValue(mpValueNode, pszName);
-        if (mpTimestampNode != NULL)
-            CFGMR3RemoveValue(mpTimestampNode, pszName);
-        if ((3 == cParms) && (mpFlagsNode != NULL))
-            CFGMR3RemoveValue(mpFlagsNode, pszName);
+        CFGMR3RemoveValue(mpTimestampNode, pszName);
+        CFGMR3RemoveValue(mpFlagsNode, pszName);
         rc = CFGMR3InsertString(mpValueNode, pszName, pszValue);
         if (RT_SUCCESS(rc))
             rc = CFGMR3InsertInteger(mpTimestampNode, pszName,
                                      RTTimeSpecGetNano(RTTimeNow(&time)));
-        if (RT_SUCCESS(rc) && (3 == cParms))
-            rc = CFGMR3InsertString(mpFlagsNode, pszName, pszFlags);
-        /* If we are not setting flags, make sure that there are some */
-        if (RT_SUCCESS(rc) && (mpFlagsNode != NULL) && (cParms != 3))
+        if (RT_SUCCESS(rc))
+            rc = CFGMR3InsertInteger(mpFlagsNode, pszName, fFlags);
+        /* If anything goes wrong, make sure that we leave a clean state
+         * behind. */
+        if (!RT_SUCCESS(rc))
         {
-            CFGMVALUETYPE dummy;
-            if (   CFGMR3QueryType(mpFlagsNode, pszName, &dummy)
-                == VERR_CFGM_VALUE_NOT_FOUND)
-                rc = CFGMR3InsertString(mpFlagsNode, pszName, "");
+            CFGMR3RemoveValue(mpValueNode, pszName);
+            CFGMR3RemoveValue(mpTimestampNode, pszName);
+            CFGMR3RemoveValue(mpFlagsNode, pszName);
         }
     }
     /*
@@ -548,6 +565,7 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
     uint32_t cbName;
 
     LogFlowThisFunc(("\n"));
+    AssertReturn(VALID_PTR(mpValueNode), VERR_WRONG_ORDER);  /* a.k.a. VERR_NOT_INITIALIZED */
     if (   (cParms != 1)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* name */
        )
@@ -675,6 +693,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     char *paszPatterns = NULL, *pchBuf = NULL;
     uint32_t cchPatterns = 0, cchBuf = 0;
     LogFlowThisFunc(("\n"));
+    AssertReturn(VALID_PTR(mpValueNode), VERR_WRONG_ORDER);  /* a.k.a. VERR_NOT_INITIALIZED */
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* patterns */
         || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* return buffer */
@@ -721,15 +740,14 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
                 /* Get timestamp */
                 iTmpBuf += strlen(&TmpBuf[iTmpBuf]) + 1;
                 uint64_t u64Timestamp = 0;
-                if (mpTimestampNode != NULL)
-                    CFGMR3QueryU64(mpTimestampNode, pszName, &u64Timestamp);
+                CFGMR3QueryU64(mpTimestampNode, pszName, &u64Timestamp);
                 iTmpBuf += RTStrFormatNumber(&TmpBuf[iTmpBuf], u64Timestamp,
                                              10, 0, 0, 0) + 1;
                 /* Get flags */
-                TmpBuf[iTmpBuf] = '\0';  /* In case there are none. */
-                if (mpFlagsNode != NULL)
-                    CFGMR3QueryString(mpFlagsNode, pszName, &TmpBuf[iTmpBuf],
-                                      cchTmpBuf - iTmpBuf);  /* Ignore failure */
+                uint32_t fFlags = NILFLAG;
+                CFGMR3QueryU32(mpFlagsNode, pszName, &fFlags);
+                TmpBuf[iTmpBuf] = '\0';  /* Bad (== in)sanity, will be fixed. */
+                writeFlags(fFlags, &TmpBuf[iTmpBuf]);
                 iTmpBuf += strlen(&TmpBuf[iTmpBuf]) + 1;
             }
         }
@@ -766,9 +784,11 @@ void Service::notifyHost(const char *pszProperty)
 {
     char szValue[MAX_VALUE_LEN];
     uint64_t u64Timestamp = 0;
-    char szFlags[MAX_FLAGS_LEN];
+    uint32_t fFlags = NILFLAG;
+    char szFlags[MAX_FLAGS_LEN + 1];
     char *pszName = NULL, *pszValue = NULL, *pszFlags = NULL;
 
+    AssertPtr(mpValueNode);
     if (NULL == mpfnHostCallback)
         return;  /* Nothing to do. */
     int rc = CFGMR3QueryString(mpValueNode, pszProperty, szValue,
@@ -778,16 +798,17 @@ void Service::notifyHost(const char *pszProperty)
      */
     if (rc != VERR_CFGM_VALUE_NOT_FOUND)
     {
-        if (RT_SUCCESS(rc) && (mpTimestampNode != NULL))
+        if (RT_SUCCESS(rc))
             rc = CFGMR3QueryU64(mpTimestampNode, pszProperty, &u64Timestamp);
-        if (RT_SUCCESS(rc) && (mpFlagsNode != NULL))
-            rc = CFGMR3QueryString(mpFlagsNode, pszProperty, szFlags,
-                                   sizeof(szFlags));
+        if (RT_SUCCESS(rc))
+            rc = CFGMR3QueryU32(mpFlagsNode, pszProperty, &fFlags);
+        if (RT_SUCCESS(rc))
+            rc = writeFlags(fFlags, szFlags);
         if (RT_SUCCESS(rc))
             rc = RTStrDupEx(&pszName, pszProperty);
-        if (RT_SUCCESS(rc) && (mpTimestampNode != NULL))
+        if (RT_SUCCESS(rc))
             rc = RTStrDupEx(&pszValue, szValue);
-        if (RT_SUCCESS(rc) && (mpFlagsNode != NULL))
+        if (RT_SUCCESS(rc))
             rc = RTStrDupEx(&pszFlags, szFlags);
         if (RT_SUCCESS(rc))
             rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
@@ -933,34 +954,27 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         {
             LogFlowFunc(("SET_CFGM_NODE\n"));
 
-            if ((cParms < 1) || (cParms > 3))
-            {
+            if (   (cParms != 3)
+                || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* pValue */
+                || (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR)   /* pTimestamp */
+                || (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR)   /* pFlags */
+               )
                 rc = VERR_INVALID_PARAMETER;
-            }
-            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR   /* pValue */
-                     || ((cParms > 1) && (paParms[1].type != VBOX_HGCM_SVC_PARM_PTR))   /* pTimestamp */
-                     || ((cParms > 2) && (paParms[2].type != VBOX_HGCM_SVC_PARM_PTR))   /* pFlags */
-                    )
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
             else
             {
-                PCFGMNODE pNode = NULL;
+                PCFGMNODE pValue = NULL, pTimestamp = NULL, pFlags = NULL;
                 uint32_t cbDummy;
 
-                rc = VBoxHGCMParmPtrGet (&paParms[0], (void **) &pNode, &cbDummy);
+                rc = VBoxHGCMParmPtrGet (&paParms[0], (void **) &pValue, &cbDummy);
                 if (RT_SUCCESS(rc))
-                    mpValueNode = pNode;
-                if (RT_SUCCESS(rc) && (cParms > 1))
+                    rc = VBoxHGCMParmPtrGet (&paParms[1], (void **) &pTimestamp, &cbDummy);
+                if (RT_SUCCESS(rc))
+                    rc = VBoxHGCMParmPtrGet (&paParms[2], (void **) &pFlags, &cbDummy);
+                if (RT_SUCCESS(rc))
                 {
-                    rc = VBoxHGCMParmPtrGet (&paParms[1], (void **) &pNode, &cbDummy);
-                    mpTimestampNode = pNode;
-                }
-                if (RT_SUCCESS(rc) && (cParms > 2))
-                {
-                    rc = VBoxHGCMParmPtrGet (&paParms[2], (void **) &pNode, &cbDummy);
-                    mpFlagsNode = pNode;
+                    mpValueNode     = pValue;
+                    mpTimestampNode = pTimestamp;
+                    mpFlagsNode     = pFlags;
                 }
             }
         } break;

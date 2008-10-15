@@ -34,9 +34,145 @@
 #include <VBox/types.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/hgcmsvc.h>
+#include <VBox/log.h>
+#include <iprt/assert.h>
+
+#include <string.h>
+
+#ifdef RT_OS_WINDOWS
+# define strncasecmp strnicmp
+#endif
 
 /** Everything defined in this file lives in this namespace. */
 namespace guestProp {
+
+/******************************************************************************
+* Typedefs, constants and inlines                                             *
+******************************************************************************/
+
+/** Maximum length for property names */
+enum { MAX_NAME_LEN = 64 };
+/** Maximum length for property values */
+enum { MAX_VALUE_LEN = 128 };
+/** Maximum number of properties per guest */
+enum { MAX_PROPS = 256 };
+
+/**
+ * The guest property flag values which are currently accepted.
+ */
+enum ePropFlags
+{
+    NILFLAG    = 0,
+    TRANSIENT  = RT_BIT(1),
+    HOSTWRITE  = RT_BIT(2),
+    GUESTWRITE = RT_BIT(3),
+    READONLY   = RT_BIT(4)
+};
+
+/**
+ * A structure to map the guest property flag values to names. I know it is
+ * ugly to have constants inline, but it has to be accessible in different
+ * modules and it does not seem reasonable to put it into its own library.
+ */
+const struct
+{
+    /** The flag value */
+    uint32_t fFlag;
+    /** And the name of the flag */
+    const char *pcszName;
+} flagNames[] =
+{
+    { TRANSIENT,  "TRANSIENT" },
+    { HOSTWRITE,  "HOSTWRITE" },
+    { GUESTWRITE, "GUESTWRITE" },
+    { READONLY,   "READONLY" },
+    { NILFLAG,    NULL }
+};
+
+/** Maximum length for the property flags field */
+enum { MAX_FLAGS_LEN =   sizeof(flagNames[0]) + 2  /* + 2 for ", " */
+                       + sizeof(flagNames[1]) + 2
+                       + sizeof(flagNames[2]) + 2
+                       + sizeof(flagNames[3])
+     };
+
+/**
+ * Parse a guest properties flags string for the flags in flagNames.
+ * @returns  IPRT status code
+ * @returns  VERR_INVALID_PARAM if the flag string is not valid
+ * @param    pcszFlags  the flag string to parse
+ * @param    pfFlags    where to store the parse result.  May not be NULL.
+ * @note     This function is also inline because it must be accessible from
+ *           several modules and it does not seem reasonable to put it into
+ *           its own library.
+ */
+DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
+{
+    const char *pcszNext = pcszFlags;
+    int rc = VINF_SUCCESS;
+    uint32_t fFlags = 0;
+    AssertLogRelReturn(VALID_PTR(pfFlags), VERR_INVALID_POINTER);
+    AssertLogRelReturn(VALID_PTR(pcszFlags), VERR_INVALID_POINTER);
+    while (' ' == *pcszNext)
+        ++pcszNext;
+    while ((*pcszNext != '\0') && RT_SUCCESS(rc))
+    {
+        int i = 0;
+        for (; flagNames[i].fFlag != NILFLAG; ++i)
+            if (strncasecmp(pcszNext, flagNames[i].pcszName,
+                            strlen(flagNames[i].pcszName)) == 0)
+                break;
+        if (NILFLAG == flagNames[i].fFlag)
+            rc = VERR_INVALID_PARAMETER;
+        else
+        {
+            fFlags |= flagNames[i].fFlag;
+            pcszNext += strlen(flagNames[i].pcszName);
+        }
+        while (' ' == *pcszNext)
+            ++pcszNext;
+        if (',' == *pcszNext)
+            ++pcszNext;
+        while (' ' == *pcszNext)
+            ++pcszNext;
+    }
+    if (RT_SUCCESS(rc))
+        *pfFlags = fFlags;
+    return rc;
+}
+
+/**
+ * Write out flags to a string.
+ * @returns  IPRT status code
+ * @param    fFlags    the flags to write out
+ * @param    pszFlags  where to write the flags string.  This must point to
+ *                     a buffer of size (at least) MAX_FLAGS_LEN + 1.
+ */
+DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
+{
+    char *pszNext = pszFlags;
+    int rc = VINF_SUCCESS;
+    AssertLogRelReturn(VALID_PTR(pszFlags), VERR_INVALID_POINTER);
+    int i = 0;
+    for (; flagNames[i].fFlag != NILFLAG; ++i)
+    {
+        if (fFlags & flagNames[i].fFlag)
+        {
+            strcpy(pszNext, flagNames[i].pcszName);
+            pszNext += strlen(flagNames[i].pcszName);
+            fFlags &= ~flagNames[i].fFlag;
+            if ((flagNames[i + 1].fFlag != NILFLAG) && (fFlags != NILFLAG))
+            {
+                strcpy(pszNext, ", ");
+                pszNext += 2;
+            }
+        }
+    }
+    *pszNext = '\0';
+    if (fFlags != NILFLAG)
+        rc = VERR_INVALID_PARAMETER;  /* But pszFlags will still be set right. */
+    return rc;
+}
 
 /*
  * The service functions which are callable by host.
@@ -109,15 +245,6 @@ enum eGuestFn
     /** Enumerate guest properties */
     ENUM_PROPS = 5
 };
-
-/** Maximum length for property names */
-enum { MAX_NAME_LEN = 64 };
-/** Maximum length for property values */
-enum { MAX_VALUE_LEN = 128 };
-/** Maximum length for the property flags field */
-enum { MAX_FLAGS_LEN = 128 };
-/** Maximum number of properties per guest */
-enum { MAX_PROPS = 256 };
 
 /**
  * HGCM parameter structures.  Packing is explicitly defined as this is a wire format.
