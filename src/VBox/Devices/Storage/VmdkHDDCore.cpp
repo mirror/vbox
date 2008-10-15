@@ -889,6 +889,8 @@ static int vmdkReadGrainDirectory(PVMDKEXTENT pExtent)
         }
 
         /** @todo figure out what to do for unclean VMDKs. */
+        RTMemTmpFree(pTmpGT1);
+        RTMemTmpFree(pTmpGT2);
     }
 
 out:
@@ -2978,7 +2980,8 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
                           false);
         if (RT_FAILURE(rc))
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new sparse descriptor file '%s'"), pImage->pszFilename);
-        pImage->pszFilename = RTStrDup(pImage->pszFilename);
+        // @todo Is there any sense in the following line I've commented out?
+        //pImage->pszFilename = RTStrDup(pImage->pszFilename);
     }
     else
         pImage->pFile = NULL;
@@ -3397,6 +3400,16 @@ static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
     if (pImage->pFile != NULL)
         vmdkFileClose(pImage, &pImage->pFile, fDelete);
     vmdkFileCheckAllClose(pImage);
+    if (pImage->pGTCache)
+    {
+        RTMemFree(pImage->pGTCache);
+        pImage->pGTCache = NULL;
+    }
+    if (pImage->pDescData)
+    {
+        RTMemFree(pImage->pDescData);
+        pImage->pDescData = NULL;
+    }
 }
 
 /**
@@ -3765,6 +3778,7 @@ static int vmdkCheckIfValid(const char *pszFilename)
      * much as possible in vmdkOpenImage. */
     rc = vmdkOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
     vmdkFreeImage(pImage, false);
+    RTMemFree(pImage);
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -3906,6 +3920,11 @@ static int vmdkCreate(const char *pszFilename, VDIMAGETYPE enmType,
                 goto out;
         }
         *ppBackendData = pImage;
+    }
+    else
+    {
+        RTMemFree(pImage->pDescData);
+        RTMemFree(pImage);
     }
 
 out:
@@ -4131,13 +4150,20 @@ rollback:
             pImage->pExtents = &ExtentCopy;
         }
         else
+        {    
+            /* Shouldn't be null for separate descriptor.
+             * There will be no access to the actual content.
+             */
+            pImage->pDescData = pszOldDescName; 
             pImage->pFile = pFile;
+        }
         pImage->Descriptor = DescriptorCopy;
         vmdkWriteDescriptor(pImage);
         vmdkFileClose(pImage, &pFile, false);
         /* Get rid of the stuff we implanted. */
         pImage->pExtents = NULL;
         pImage->pFile = NULL;
+        pImage->pDescData = NULL;
         /* Re-open the image back. */
         pImage->pszFilename = pszOldImageName;
         rrc = vmdkOpenImage(pImage, pImage->uOpenFlags);
@@ -4193,7 +4219,10 @@ static int vmdkClose(void *pBackendData, bool fDelete)
     /* Freeing a never allocated image (e.g. because the open failed) is
      * not signalled as an error. After all nothing bad happens. */
     if (pImage)
+    {
         vmdkFreeImage(pImage, fDelete);
+        RTMemFree(pImage);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
