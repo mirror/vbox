@@ -54,6 +54,9 @@
 #include <VBox/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#ifdef IN_RING3
+# include <iprt/mem.h>
+#endif
 
 #include "../Builtins.h"
 
@@ -78,11 +81,15 @@ typedef struct PCIBus
     int32_t             iBus;
     /** Start device number. */
     int32_t             iDevSearch;
+    /** Number of bridges attached to the bus. */
+    uint32_t            cBridges;
 
-    uint32_t            Alignment0[2];
+    uint32_t            Alignment0;
 
     /** Array of PCI devices. */
     R3PTRTYPE(PPCIDEVICE) devices[256];
+    /** Array of bridges attached to the bus. */
+    R3PTRTYPE(PPCIDEVICE) apBridgesR3[256]; /* @todo: Waste of precious hypervisor space. */
 
     /** R3 pointer to the device instance. */
     PPDMDEVINSR3        pDevInsR3;
@@ -211,6 +218,10 @@ __BEGIN_DECLS
 
 PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
 PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
+
+#ifdef IN_RING3
+static PPCIDEVICE pciFindBridge(PPCIBUS pBus, uint8_t iBus);
+#endif
 
 __END_DECLS
 
@@ -481,34 +492,13 @@ static void pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, in
     config_addr = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
     if (iBus != 0)
     {
-        /** @todo r=bird: Guess you should cache the pci-bridges instead of searching
-         *        the full array, that way we don't need to make assumptions about
-         *        multi function devices. */
-        /*
-         * Search for a fitting bridge. Because we don't support multi function devices at the moment
-         * we only search all devices with function 0 to speed things up.
-         * If no bridge is found the write will be ignored.
-         */
-        for (uint32_t iDev = pGlobals->PciBus.iDevSearch; iDev < RT_ELEMENTS(pGlobals->PciBus.devices); iDev += 8)
+        PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
+
+        if (pBridgeDevice)
         {
-            /*
-             * Examine secondary and subordinate bus number.
-             * If the target bus is in the range we pass the request on to the bridge.
-             */
-            PPCIDEVICE pBridgeDevice = pGlobals->PciBus.devices[iDev];
-            if (!pBridgeDevice)
-                continue;
-            if (!pBridgeDevice->Int.s.fPciToPciBridge)
-                continue;
+            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
 
-            if (   iBus >= pBridgeDevice->config[VBOX_PCI_SECONDARY_BUS]
-                && iBus <= pBridgeDevice->config[VBOX_PCI_SUBORDINATE_BUS])
-            {
-                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-
-                /* Start the journey... */
-                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, val, len);
-            }
+            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, val, len);
         }
     }
     else
@@ -536,30 +526,13 @@ static uint32_t pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len)
     config_addr = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
     if (iBus != 0)
     {
-        /*
-         * Search for a fitting bridge. Because we don't support multi function devices at the moment
-         * we only search all devices with function 0 to speed things up.
-         * If no bridge is found the read will be ignored.
-         */
-        for (uint32_t iDev = pGlobals->PciBus.iDevSearch; iDev < RT_ELEMENTS(pGlobals->PciBus.devices); iDev += 8)
+        PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
+
+        if (pBridgeDevice)
         {
-            /*
-             * Examine secondary and subordinate bus number.
-             * If the target bus is in the range we pass the request on to the bridge.
-             */
-            PPCIDEVICE pBridgeDevice = pGlobals->PciBus.devices[iDev];
-            if (!pBridgeDevice)
-                continue;
-            if (!pBridgeDevice->Int.s.fPciToPciBridge)
-                continue;
+            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
 
-            if (   iBus >= pBridgeDevice->config[VBOX_PCI_SECONDARY_BUS]
-                && iBus <= pBridgeDevice->config[VBOX_PCI_SUBORDINATE_BUS])
-            {
-                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-
-                val = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, len);
-            }
+            val = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, len);
         }
     }
     else
@@ -753,6 +726,36 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
 }
 
 #ifdef IN_RING3
+
+/**
+ * Finds a bridge on the bus which contains the destination bus.
+ *
+ * @return Pointer to the device instance data of the bus or
+ *         NULL if no bridge was found.
+ * @param  pBus    Pointer to the bus to search on.
+ * @param  iBus    Destination bus number.
+ */
+static PPCIDEVICE pciFindBridge(PPCIBUS pBus, uint8_t iBus)
+{
+    /* Search for a fitting bridge. */
+    for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
+    {
+        /*
+            * Examine secondary and subordinate bus number.
+            * If the target bus is in the range we pass the request on to the bridge.
+            */
+        PPCIDEVICE pBridgeTemp = pBus->apBridgesR3[iBridge];
+        AssertMsg(pBridgeTemp && pBridgeTemp->Int.s.fPciToPciBridge,
+                  ("Device is not a PCI bridge but on the list of PCi bridges\n"));
+
+        if (   iBus >= pBridgeTemp->config[VBOX_PCI_SECONDARY_BUS]
+            && iBus <= pBridgeTemp->config[VBOX_PCI_SUBORDINATE_BUS])
+            return pBridgeTemp;
+    }
+
+    /* Nothing found. */
+    return NULL;
+}
 
 static void piix3_reset(PIIX3State *d)
 {
@@ -1002,7 +1005,7 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
             {
                 /* default memory mappings */
                 /*
-                 * PCI_NUM_REGIONS is 7 bcause of the rom region but there are only 6 base address register defined by the PCi spec.
+                 * PCI_NUM_REGIONS is 7 because of the rom region but there are only 6 base address register defined by the PCI spec.
                  * Leaving only PCI_NUM_REGIONS would cause reading another and enabling a memory region which does not exist.
                  */
                 for(i = 0; i < (PCI_NUM_REGIONS-1); i++)
@@ -1397,7 +1400,6 @@ static DECLCALLBACK(int) pciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 
 /* -=-=-=-=-=- real code -=-=-=-=-=- */
 
-
 /**
  * Registers the device with the specified PCI bus.
  *
@@ -1517,6 +1519,15 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
     pPciDev->Int.s.pfnConfigRead    = pci_default_read_config;
     pPciDev->Int.s.pfnConfigWrite   = pci_default_write_config;
     pBus->devices[iDev]             = pPciDev;
+    if (pPciDev->Int.s.fPciToPciBridge)
+    {
+        AssertMsg(pBus->cBridges < RT_ELEMENTS(pBus->apBridgesR3), ("Number of bridges exceeds the number of possible bridges on the bus\n"));
+        AssertMsg(pPciDev->Int.s.pfnBridgeConfigRead && pPciDev->Int.s.pfnBridgeConfigWrite,
+                  ("device is a bridge but does not implement read/write functions\n"));
+        pBus->apBridgesR3[pBus->cBridges] = pPciDev;
+        pBus->cBridges++;
+    }
+
     Log(("PCI: Registered device %d function %d (%#x) '%s'.\n",
          iDev >> 3, iDev & 7, 0x80000000 | (iDev << 8), pszName));
 
@@ -1929,30 +1940,13 @@ static void pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDe
     /* If the current bus is not the target bus search for the bus which contains the device. */
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
     {
-        /*
-         * Search for a fitting bridge. Because we don't support multi function devices at the moment
-         * we only search all devices with function 0 to speed things up.
-         * If no bridge is found the write will be ignored.
-         */
-        for (uint32_t iDev = pBus->iDevSearch; iDev < RT_ELEMENTS(pBus->devices); iDev += 8)
+        PPCIDEVICE pBridgeDevice = pciFindBridge(pBus, iBus);
+
+        if (pBridgeDevice)
         {
-            /*
-             * Examine secondary and subordinate bus number.
-             * If the target bus is in the range we pass the request on to the bridge.
-             */
-            PPCIDEVICE pBridgeDevice = pBus->devices[iDev];
-            if (!pBridgeDevice)
-                continue;
-            if (!pBridgeDevice->Int.s.fPciToPciBridge)
-                continue;
+            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
 
-            if (   iBus >= pBridgeDevice->config[VBOX_PCI_SECONDARY_BUS]
-                && iBus <= pBridgeDevice->config[VBOX_PCI_SUBORDINATE_BUS])
-            {
-                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-
-                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, u32Value, cb);
-            }
+            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, u32Value, cb);
         }
     }
     else
@@ -1977,30 +1971,13 @@ static uint32_t pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t 
     /* If the current bus is not the target bus search for the bus which contains the device. */
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
     {
-        /*
-         * Search for a fitting bridge. Because we don't support multi function devices at the moment
-         * we only search all devices with function 0 to speed things up.
-         * If no bridge is found the read will return 0xffffffff.
-         */
-        for (uint32_t iDev = pBus->iDevSearch; iDev < RT_ELEMENTS(pBus->devices); iDev += 8)
+        PPCIDEVICE pBridgeDevice = pciFindBridge(pBus, iBus);
+
+        if (pBridgeDevice)
         {
-            /*
-             * Examine secondary and subordinate bus number.
-             * If the target bus is in the range we pass the request on to the bridge.
-             */
-            PPCIDEVICE pBridgeDevice = pBus->devices[iDev];
-            if (!pBridgeDevice)
-                continue;
-            if (!pBridgeDevice->Int.s.fPciToPciBridge)
-                continue;
+            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
 
-            if (   iBus >= pBridgeDevice->config[VBOX_PCI_SECONDARY_BUS]
-                && iBus <= pBridgeDevice->config[VBOX_PCI_SUBORDINATE_BUS])
-            {
-                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-
-                u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, cb);
-            }
+            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, cb);
         }
     }
     else
