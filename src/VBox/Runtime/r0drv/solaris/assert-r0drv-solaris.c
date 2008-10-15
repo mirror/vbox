@@ -40,6 +40,21 @@
 #include <iprt/stdarg.h>
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** The last assert message, 1st part. */
+RTDATADECL(char)                    g_szRTAssertMsg1[1024];
+/** The last assert message, 2nd part. */
+RTDATADECL(char)                    g_szRTAssertMsg2[2048];
+/** The last assert message, file name. */
+RTDATADECL(const char *) volatile   g_pszRTAssertFile;
+/** The last assert message, line number. */
+RTDATADECL(uint32_t) volatile       g_u32RTAssertLine;
+/** The last assert message, function name. */
+RTDATADECL(const char *) volatile   g_pszRTAssertFunction;
+
+
 RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
 #ifdef IN_GUEST_R0
@@ -53,6 +68,15 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
             "Expression: %s\r\n"
             "Location  : %s(%d) %s\r\n",
             pszExpr, pszFile, uLine, pszFunction);
+
+    RTStrPrintf(g_szRTAssertMsg1, sizeof(g_szRTAssertMsg1),
+                "\n!!Assertion Failed!!\n"
+                "Expression: %s\n"
+                "Location  : %s(%d) %s\n",
+                pszExpr, pszFile, uLine, pszFunction);
+    ASMAtomicUoWritePtr(&g_pszRTAssertFile, pszFile);
+    ASMAtomicUoWriteU32(&g_u32RTAssertLine, uLine);
+    ASMAtomicUoWritePtr(&g_pszRTAssertFunction, pszFunction);
 }
 
 
@@ -72,5 +96,23 @@ RTDECL(void) AssertMsg2(const char *pszFormat, ...)
     szMsg[sizeof(szMsg) - 1] = '\0';
     va_end(va);
     uprintf("%s", szMsg);
+
+    va_start(va, pszFormat);
+    RTStrPrintfV(g_szRTAssertMsg2, sizeof(g_szRTAssertMsg2), pszFormat, va);
+    va_end(va);
+}
+
+
+RTR0DECL(void) RTR0AssertPanicSystem(void)
+{
+    const char *psz    = &g_szRTAssertMsg2[0];
+    const char *pszEnd = &g_szRTAssertMsg2[sizeof(g_szRTAssertMsg2)];
+    while (psz < pszEnd && (*psz == ' ' || *psz == '\t' || *psz == '\n' || *psz == '\r'))
+        psz++;
+
+    if (psz >= pszEnd || *psz)
+        assfail(psz, g_pszRTAssertFile, g_u32RTAssertLine);
+    else
+        assfail(g_szRTAssertMsg1, g_pszRTAssertFile, g_u32RTAssertLine);
 }
 

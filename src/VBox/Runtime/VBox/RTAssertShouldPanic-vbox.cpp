@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Assertions, generic RTAssertDoBreakpoint.
+ * IPRT - Assertions, generic RTAssertShouldPanic.
  */
 
 /*
@@ -55,7 +55,7 @@
 #endif
 
 
-RTDECL(bool)    RTAssertDoBreakpoint(void)
+RTDECL(bool) RTAssertShouldPanic(void)
 {
     /*
      * Check for the VBOX_ASSERT variable.
@@ -66,8 +66,8 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
     if (!psz)
         return true;
 
-    /* 'breakpoint' means default behaviour. */
-    if (!strcmp(psz, "breakpoint"))
+    /* 'breakpoint' or 'panic' means default behaviour. */
+    if (!strcmp(psz, "breakpoint") || !strcmp(psz, "panic"))
         return true;
 
 #ifdef VBOX_RTASSERT_WITH_GDB
@@ -81,7 +81,7 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
 
         /* Try find a suitable terminal program. */
         const char *pszTerm = RTEnvGet("VBOX_ASSERT_TERM");
-        if (    !pszTerm 
+        if (    !pszTerm
             ||  !RTPathExists(pszTerm))
         {
             pszTerm = "/usr/bin/gnome-terminal";
@@ -90,7 +90,7 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
                 pszTerm = "/usr/X11R6/bin/xterm";
                 if (!RTPathExists(pszTerm))
                 {
-                    pszTerm ="/usr/bin/xterm"; 
+                    pszTerm ="/usr/bin/xterm";
                     if (!RTPathExists(pszTerm))
                         return true;
                 }
@@ -99,7 +99,7 @@ RTDECL(bool)    RTAssertDoBreakpoint(void)
 
         /* And find gdb. */
         const char *pszGdb = RTEnvGet("VBOX_ASSERT_GDB");
-        if (    !pszGdb 
+        if (    !pszGdb
             ||  !RTPathExists(pszGdb))
         {
             pszGdb = "/usr/bin/gdb";

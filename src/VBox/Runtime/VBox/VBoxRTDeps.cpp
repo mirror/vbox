@@ -33,6 +33,7 @@
 *******************************************************************************/
 #include <VBox/sup.h>
 #include <iprt/system.h>
+#include <iprt/assert.h>
 
 
 /*******************************************************************************
@@ -41,5 +42,7 @@
 PFNRT g_VBoxRTDeps[] =
 {
     (PFNRT)SUPR3Init,
-    (PFNRT)SUPPageLock
+    (PFNRT)SUPPageLock,
+    (PFNRT)RTAssertShouldPanic
 };
+

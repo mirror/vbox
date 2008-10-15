@@ -281,7 +281,7 @@ endif
 # VBox specific stuff.
 RuntimeR3_SOURCES += \
 	VBox/strformat-vbox.cpp \
-	VBox/RTAssertDoBreakpoint-vbox.cpp \
+	VBox/RTAssertShouldPanic-vbox.cpp \
 	VBox/log-vbox.cpp
 ifneq ($(KBUILD_TARGET),win)
 RuntimeR3_SOURCES += \
@@ -649,7 +649,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/string/utf-8.cpp \
 	common/string/utf-16.cpp \
 	generic/pathhost-generic.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	r3/alloc.cpp \
 	r3/fileio.cpp \
 	r3/fs.cpp \
@@ -872,7 +872,7 @@ RuntimeR0_SOURCES       = \
 	common/table/avlroogcptr.cpp \
 	common/table/avlu32.cpp \
 	common/time/timesup.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	VBox/strformat-vbox.cpp
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
@@ -972,7 +972,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	common/alloc/heapsimple.cpp \
 	common/string/strpbrk.cpp \
 	common/err/RTErrConvertToErrno.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
@@ -1006,7 +1006,7 @@ RuntimeR0Drv_SOURCES.win = \
   	common/string/strlen.asm \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/mppresent-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
@@ -1041,7 +1041,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwin.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
 	generic/RTMpCpuIdFromSetIndex-generic.cpp \
 	generic/RTMpCpuIdToSetIndex-generic.cpp \
@@ -1119,7 +1119,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/os2/memobj-r0drv-os2.cpp \
 	r0drv/os2/os2imports.imp \
 	r0drv/os2/process-r0drv-os2.cpp \
-	r0drv/os2/RTAssertDoBreakpoint-r0drv-os2.asm \
+	r0drv/os2/RTR0AssertPanicSystem-r0drv-os2.asm \
 	r0drv/os2/RTR0Os2DHQueryDOSVar.asm \
 	r0drv/os2/RTR0Os2DHVMGlobalToProcess.asm \
 	r0drv/os2/semevent-r0drv-os2.cpp \
@@ -1141,7 +1141,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	common/string/strpbrk.cpp \
 	common/string/memcmp.asm \
 	common/string/strchr.asm \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
@@ -1180,7 +1180,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
@@ -1260,7 +1260,7 @@ RuntimeGuestR0_SOURCES.solaris = \
 	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
  	generic/RTMpCpuId-generic.cpp \
@@ -1343,7 +1343,7 @@ RuntimeGC_SOURCES       = \
 	common/time/timeprog.cpp \
 	common/time/timesup.cpp \
 	gc/initterm-gc.cpp \
-	generic/RTAssertDoBreakpoint-generic.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	VBox/strformat-vbox.cpp \
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
