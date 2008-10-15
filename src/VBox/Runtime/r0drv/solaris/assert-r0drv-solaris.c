@@ -76,9 +76,9 @@ RTDECL(void) AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile
                 "Expression: %s\n"
                 "Location  : %s(%d) %s\n",
                 pszExpr, pszFile, uLine, pszFunction);
-    ASMAtomicUoWritePtr(&g_pszRTAssertFile, pszFile);
+    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFile, (void *)pszFile);
+    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFunction, (void *)pszFunction);
     ASMAtomicUoWriteU32(&g_u32RTAssertLine, uLine);
-    ASMAtomicUoWritePtr(&g_pszRTAssertFunction, pszFunction);
 }
 
 
