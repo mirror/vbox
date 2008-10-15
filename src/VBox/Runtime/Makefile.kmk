@@ -1200,7 +1200,7 @@ ifdef VBOX_WITH_SOLARIS_VBI
  	r0drv/solaris/vbi/semevent-r0drv-solaris.c \
  	r0drv/solaris/vbi/semeventmulti-r0drv-solaris.c \
  	r0drv/solaris/vbi/semfastmutex-r0drv-solaris.c \
- 	r0drv/solaris/spinlock-r0drv-solaris.c \
+ 	r0drv/solaris/vbi/spinlock-r0drv-solaris.c \
  	r0drv/solaris/vbi/thread-r0drv-solaris.c \
  	r0drv/solaris/vbi/thread2-r0drv-solaris.c \
  	r0drv/solaris/vbi/time-r0drv-solaris.c \
