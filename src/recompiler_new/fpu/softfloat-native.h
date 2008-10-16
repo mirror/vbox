@@ -31,6 +31,8 @@
 #define isless(x, y)            ((!unordered(x, y)) && ((x) < (y)))
 #define islessequal(x, y)       ((!unordered(x, y)) && ((x) <= (y)))
 #define isunordered(x,y)        unordered(x, y)
+#define isinf(x)                ((fpclass(x) == FP_NINF) || (fpclass(x) == FP_PINF))
+
 #endif
 
 typedef float float32;
