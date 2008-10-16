@@ -5036,7 +5036,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 ULONG64 timestamp = (*it).value<ULONG64> ("timestamp");
                 /* property flags (optional, defaults to empty) */
                 Bstr flags = (*it).stringValue ("flags");
-    
+
                 HWData::GuestProperty property = { name, value, timestamp, flags };
                 mHWData->mGuestProperties.push_back(property);
             }
@@ -6188,7 +6188,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
 
     HRESULT rc = S_OK;
 
-    /* CPU (optional) */
+    /* CPU (optional, but always created atm) */
     {
         Key cpuNode = aNode.createKey ("CPU");
         Key hwVirtExNode = cpuNode.createKey ("HardwareVirtEx");
@@ -6208,16 +6208,25 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         hwVirtExNode.setStringValue ("enabled", value);
 
         /* Nested paging (optional, default is false) */
-        Key HWVirtExNestedPagingNode = cpuNode.createKey ("HardwareVirtExNestedPaging");
-        HWVirtExNestedPagingNode.setValue <bool> ("enabled", !!mHWData->mHWVirtExNestedPagingEnabled);
+        if (mHWData->mHWVirtExNestedPagingEnabled)
+        {
+            Key HWVirtExNestedPagingNode = cpuNode.createKey ("HardwareVirtExNestedPaging");
+            HWVirtExNestedPagingNode.setValue <bool> ("enabled", true);
+        }
 
         /* VPID (optional, default is false) */
-        Key HWVirtExVPIDNode = cpuNode.createKey ("HardwareVirtExVPID");
-        HWVirtExVPIDNode.setValue <bool> ("enabled", !!mHWData->mHWVirtExVPIDEnabled);
+        if (mHWData->mHWVirtExVPIDEnabled)
+        {
+            Key HWVirtExVPIDNode = cpuNode.createKey ("HardwareVirtExVPID");
+            HWVirtExVPIDNode.setValue <bool> ("enabled", true);
+        }
 
         /* PAE (optional, default is false) */
-        Key PAENode = cpuNode.createKey ("PAE");
-        PAENode.setValue <bool> ("enabled", !!mHWData->mPAEEnabled);
+        if (mHWData->mPAEEnabled)
+        {
+            Key PAENode = cpuNode.createKey ("PAE");
+            PAENode.setValue <bool> ("enabled", true);
+        }
     }
 
     /* memory (required) */
