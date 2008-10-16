@@ -972,7 +972,6 @@ RuntimeR0Drv_SOURCES.linux = \
 	common/alloc/heapsimple.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strlen.cpp \
-	common/string/strncmp.cpp \
 	common/err/RTErrConvertToErrno.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
