@@ -1913,15 +1913,202 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 }
 
 
+
+/**
+ * Interpret CLTS
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ *
+ */
+VMMDECL(int) EMInterpretCLTS(PVM pVM)
+{
+    uint64_t cr0 = CPUMGetGuestCR0(pVM);
+    if (!(cr0 & X86_CR0_TS))
+        return VINF_SUCCESS;
+    return CPUMSetGuestCR0(pVM, cr0 & ~X86_CR0_TS);
+}
+
+/**
+ * CLTS Emulation.
+ */
+static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretCLTS(pVM);
+}
+
+
+/**
+ * Update CRx
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ * @param   DestRegCRx  CRx register index (USE_REG_CR*)
+ * @param   val         New CRx value
+ *
+ */
+static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint64_t val)
+{
+    uint64_t oldval;
+    uint64_t msrEFER;
+    int      rc;
+
+    /** @todo Clean up this mess. */
+    LogFlow(("EMInterpretCRxWrite at %VGv CR%d <- %VX64\n", pRegFrame->rip, DestRegCrx, val));
+    switch (DestRegCrx)
+    {
+    case USE_REG_CR0:
+        oldval = CPUMGetGuestCR0(pVM);
+#ifdef IN_GC
+        /* CR0.WP and CR0.AM changes require a reschedule run in ring 3. */
+        if (    (val    & (X86_CR0_WP | X86_CR0_AM))
+            !=  (oldval & (X86_CR0_WP | X86_CR0_AM)))
+            return VERR_EM_INTERPRETER;
+#endif
+        CPUMSetGuestCR0(pVM, val);
+        val = CPUMGetGuestCR0(pVM);
+        if (    (oldval & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
+            !=  (val    & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
+        {
+            /* global flush */
+            rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
+            AssertRCReturn(rc, rc);
+        }
+
+        /* Deal with long mode enabling/disabling. */
+        msrEFER = CPUMGetGuestEFER(pVM);
+        if (msrEFER & MSR_K6_EFER_LME)
+        {
+            if (    !(oldval & X86_CR0_PG)
+                &&  (val & X86_CR0_PG))
+            {
+                /* Illegal to have an active 64 bits CS selector (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+                if (pRegFrame->csHid.Attr.n.u1Long)
+                {
+                    AssertMsgFailed(("Illegal enabling of paging with CS.u1Long = 1!!\n"));
+                    return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+                }
+
+                /* Illegal to switch to long mode before activating PAE first (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+                if (!(CPUMGetGuestCR4(pVM) & X86_CR4_PAE))
+                {
+                    AssertMsgFailed(("Illegal enabling of paging with PAE disabled!!\n"));
+                    return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+                }
+                msrEFER |= MSR_K6_EFER_LMA;
+            }
+            else
+            if (    (oldval & X86_CR0_PG)
+                &&  !(val & X86_CR0_PG))
+            {
+                msrEFER &= ~MSR_K6_EFER_LMA;
+                /* @todo Do we need to cut off rip here? High dword of rip is undefined, so it shouldn't really matter. */
+            }
+            CPUMSetGuestEFER(pVM, msrEFER);
+        }
+        return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+
+    case USE_REG_CR2:
+        rc = CPUMSetGuestCR2(pVM, val); AssertRC(rc);
+        return VINF_SUCCESS;
+
+    case USE_REG_CR3:
+        /* Reloading the current CR3 means the guest just wants to flush the TLBs */
+        rc = CPUMSetGuestCR3(pVM, val); AssertRC(rc);
+        if (CPUMGetGuestCR0(pVM) & X86_CR0_PG)
+        {
+            /* flush */
+            rc = PGMFlushTLB(pVM, val, !(CPUMGetGuestCR4(pVM) & X86_CR4_PGE));
+            AssertRCReturn(rc, rc);
+        }
+        return VINF_SUCCESS;
+
+    case USE_REG_CR4:
+        oldval = CPUMGetGuestCR4(pVM);
+        rc = CPUMSetGuestCR4(pVM, val); AssertRC(rc);
+        val   = CPUMGetGuestCR4(pVM);
+
+        msrEFER = CPUMGetGuestEFER(pVM);
+        /* Illegal to disable PAE when long mode is active. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
+        if (    (msrEFER & MSR_K6_EFER_LMA)
+            &&  (oldval & X86_CR4_PAE)
+            &&  !(val & X86_CR4_PAE))
+        {
+            return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+        }
+
+        if (    (oldval & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE))
+            !=  (val    & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE)))
+        {
+            /* global flush */
+            rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
+            AssertRCReturn(rc, rc);
+        }
+# ifdef IN_GC
+        /* Feeling extremely lazy. */
+        if (    (oldval & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME))
+            !=  (val    & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME)))
+        {
+            Log(("emInterpretMovCRx: CR4: %#RX64->%#RX64 => R3\n", oldval, val));
+            VM_FF_SET(pVM, VM_FF_TO_R3);
+        }
+# endif
+        return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
+
+    case USE_REG_CR8:
+        return PDMApicSetTPR(pVM, val);
+
+    default:
+        AssertFailed();
+    case USE_REG_CR1: /* illegal op */
+        break;
+    }
+    return VERR_EM_INTERPRETER;
+}
+
+/**
+ * Interpret CRx write
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
+ * @param   DestRegCRx  CRx register index (USE_REG_CR*)
+ * @param   SrcRegGen   General purpose register index (USE_REG_E**))
+ *
+ */
+VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
+{
+    uint64_t val;
+    int      rc;
+
+    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    {
+        rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
+    }
+    else
+    {
+        uint32_t val32;
+        rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
+        val = val32;
+    }
+
+    if (VBOX_SUCCESS(rc))
+        return EMUpdateCRx(pVM, pRegFrame, DestRegCrx, val);
+
+    return VERR_EM_INTERPRETER;
+}
+
 /**
  * Interpret LMSW
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   pRegFrame   The register frame.
  * @param   u16Data     LMSW source data.
  *
  */
-VMMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
+VMMDECL(int) EMInterpretLMSW(PVM pVM, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
 {
     uint64_t OldCr0 = CPUMGetGuestCR0(pVM);
 
@@ -1929,11 +2116,7 @@ VMMDECL(int) EMInterpretLMSW(PVM pVM, uint16_t u16Data)
     uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
                     | (u16Data &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
 
-    /* don't use this path to go into protected mode! */
-    if ((OldCr0 & X86_CR0_PE) != (NewCr0 & X86_CR0_PE))
-        return VERR_EM_INTERPRETER;
-
-    return CPUMSetGuestCR0(pVM, NewCr0);
+    return EMUpdateCRx(pVM, pRegFrame, USE_REG_CR0, NewCr0);
 }
 
 /**
@@ -1962,178 +2145,8 @@ static int emInterpretLmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     }
 
     LogFlow(("emInterpretLmsw %x\n", val));
-    return EMInterpretLMSW(pVM, val);
+    return EMInterpretLMSW(pVM, pRegFrame, val);
 }
-
-
-/**
- * Interpret CLTS
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- *
- */
-VMMDECL(int) EMInterpretCLTS(PVM pVM)
-{
-    uint64_t cr0 = CPUMGetGuestCR0(pVM);
-    if (!(cr0 & X86_CR0_TS))
-        return VINF_SUCCESS;
-    return CPUMSetGuestCR0(pVM, cr0 & ~X86_CR0_TS);
-}
-
-/**
- * CLTS Emulation.
- */
-static int emInterpretClts(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    return EMInterpretCLTS(pVM);
-}
-
-
-/**
- * Interpret CRx write
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pRegFrame   The register frame.
- * @param   DestRegCRx  CRx register index (USE_REG_CR*)
- * @param   SrcRegGen   General purpose register index (USE_REG_E**))
- *
- */
-VMMDECL(int) EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
-{
-    uint64_t val;
-    uint64_t oldval;
-    uint64_t msrEFER;
-    int      rc;
-
-    /** @todo Clean up this mess. */
-    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
-    {
-        rc = DISFetchReg64(pRegFrame, SrcRegGen, &val);
-    }
-    else
-    {
-        uint32_t val32;
-        rc = DISFetchReg32(pRegFrame, SrcRegGen, &val32);
-        val = val32;
-    }
-
-    if (VBOX_SUCCESS(rc))
-    {
-        LogFlow(("EMInterpretCRxWrite at %VGv CR%d <- %VX64\n", pRegFrame->rip, DestRegCrx, val));
-        switch (DestRegCrx)
-        {
-        case USE_REG_CR0:
-            oldval = CPUMGetGuestCR0(pVM);
-#ifdef IN_GC
-            /* CR0.WP and CR0.AM changes require a reschedule run in ring 3. */
-            if (    (val    & (X86_CR0_WP | X86_CR0_AM))
-                !=  (oldval & (X86_CR0_WP | X86_CR0_AM)))
-                return VERR_EM_INTERPRETER;
-#endif
-            CPUMSetGuestCR0(pVM, val);
-            val = CPUMGetGuestCR0(pVM);
-            if (    (oldval & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE))
-                !=  (val    & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)))
-            {
-                /* global flush */
-                rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
-                AssertRCReturn(rc, rc);
-            }
-
-            /* Deal with long mode enabling/disabling. */
-            msrEFER = CPUMGetGuestEFER(pVM);
-            if (msrEFER & MSR_K6_EFER_LME)
-            {
-                if (    !(oldval & X86_CR0_PG)
-                    &&  (val & X86_CR0_PG))
-                {
-                    /* Illegal to have an active 64 bits CS selector (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-                    if (pRegFrame->csHid.Attr.n.u1Long)
-                    {
-                        AssertMsgFailed(("Illegal enabling of paging with CS.u1Long = 1!!\n"));
-                        return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
-                    }
-
-                    /* Illegal to switch to long mode before activating PAE first (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-                    if (!(CPUMGetGuestCR4(pVM) & X86_CR4_PAE))
-                    {
-                        AssertMsgFailed(("Illegal enabling of paging with PAE disabled!!\n"));
-                        return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
-                    }
-                    msrEFER |= MSR_K6_EFER_LMA;
-                }
-                else
-                if (    (oldval & X86_CR0_PG)
-                    &&  !(val & X86_CR0_PG))
-                {
-                    msrEFER &= ~MSR_K6_EFER_LMA;
-                    /* @todo Do we need to cut off rip here? High dword of rip is undefined, so it shouldn't really matter. */
-                }
-                CPUMSetGuestEFER(pVM, msrEFER);
-            }
-            return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
-
-        case USE_REG_CR2:
-            rc = CPUMSetGuestCR2(pVM, val); AssertRC(rc);
-            return VINF_SUCCESS;
-
-        case USE_REG_CR3:
-            /* Reloading the current CR3 means the guest just wants to flush the TLBs */
-            rc = CPUMSetGuestCR3(pVM, val); AssertRC(rc);
-            if (CPUMGetGuestCR0(pVM) & X86_CR0_PG)
-            {
-                /* flush */
-                rc = PGMFlushTLB(pVM, val, !(CPUMGetGuestCR4(pVM) & X86_CR4_PGE));
-                AssertRCReturn(rc, rc);
-            }
-            return VINF_SUCCESS;
-
-        case USE_REG_CR4:
-            oldval = CPUMGetGuestCR4(pVM);
-            rc = CPUMSetGuestCR4(pVM, val); AssertRC(rc);
-            val   = CPUMGetGuestCR4(pVM);
-
-            msrEFER = CPUMGetGuestEFER(pVM);
-            /* Illegal to disable PAE when long mode is active. (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
-            if (    (msrEFER & MSR_K6_EFER_LMA)
-                &&  (oldval & X86_CR4_PAE)
-                &&  !(val & X86_CR4_PAE))
-            {
-                return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
-            }
-
-            if (    (oldval & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE))
-                !=  (val    & (X86_CR4_PGE|X86_CR4_PAE|X86_CR4_PSE)))
-            {
-                /* global flush */
-                rc = PGMFlushTLB(pVM, CPUMGetGuestCR3(pVM), true /* global */);
-                AssertRCReturn(rc, rc);
-            }
-# ifdef IN_GC
-            /* Feeling extremely lazy. */
-            if (    (oldval & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME))
-                !=  (val    & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME)))
-            {
-                Log(("emInterpretMovCRx: CR4: %#RX64->%#RX64 => R3\n", oldval, val));
-                VM_FF_SET(pVM, VM_FF_TO_R3);
-            }
-# endif
-            return PGMChangeMode(pVM, CPUMGetGuestCR0(pVM), CPUMGetGuestCR4(pVM), CPUMGetGuestEFER(pVM));
-
-        case USE_REG_CR8:
-            return PDMApicSetTPR(pVM, val);
-
-        default:
-            AssertFailed();
-        case USE_REG_CR1: /* illegal op */
-            break;
-        }
-    }
-    return VERR_EM_INTERPRETER;
-}
-
 
 /**
  * MOV CRx

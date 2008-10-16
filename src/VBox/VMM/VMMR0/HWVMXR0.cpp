@@ -2533,7 +2533,7 @@ ResumeExecution:
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:
             Log2(("VMX: lmsw %x\n", VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification)));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitLMSW);
-            rc = EMInterpretLMSW(pVM, VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification));
+            rc = EMInterpretLMSW(pVM, CPUMCTX2CORE(pCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification));
             pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
         }
