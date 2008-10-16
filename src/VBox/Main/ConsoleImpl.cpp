@@ -3687,7 +3687,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
                                      4, &parm[0]);
     /* The returned string should never be able to be greater than our buffer */
     AssertLogRel (vrc != VERR_BUFFER_OVERFLOW);
-    AssertLogRel (!RT_SUCCESS(vrc) || VBOX_HGCM_SVC_PARM_64BIT == parm[2].type);
+    AssertLogRel (RT_FAILURE(vrc) || VBOX_HGCM_SVC_PARM_64BIT == parm[2].type);
     if (RT_SUCCESS (vrc) || (VERR_NOT_FOUND == vrc))
     {
         rc = S_OK;
@@ -4476,7 +4476,19 @@ HRESULT Console::powerDown()
     PCFGMLEAF pValue;
     for (pValue = CFGMR3GetFirstValue (pValues); pValue != NULL;
          pValue = CFGMR3GetNextValue (pValue))
-        ++cValues;
+    {
+        char szPropName[guestProp::MAX_NAME_LEN + 1];
+        vrc = CFGMR3GetValueName (pValue, szPropName, sizeof(szPropName));
+        if (RT_SUCCESS(vrc))
+        {
+            /* Do not send transient properties unless we are saving state */
+            uint32_t fFlags = guestProp::NILFLAG;
+            CFGMR3QueryU32 (pFlags, szPropName, &fFlags);
+            if (!(fFlags & guestProp::TRANSIENT) ||
+                (mMachineState == MachineState_Saving))
+                ++cValues;
+        }
+    }
     /* And pack them into safe arrays */
     com::SafeArray <BSTR> names(cValues);
     com::SafeArray <BSTR> values(cValues);
@@ -4498,18 +4510,23 @@ HRESULT Console::powerDown()
             vrc = CFGMR3QueryString (pValues, szPropName, szPropValue, sizeof(szPropValue));
         if (RT_SUCCESS(vrc))
         {
-            uint32_t fFlags;
+            uint32_t fFlags = NILFLAG;
             CFGMR3QueryU32 (pFlags, szPropName, &fFlags);
-            writeFlags(fFlags, szPropFlags);
-            CFGMR3QueryU64 (pTimestamps, szPropName, &u64Timestamp);
-            Bstr(szPropName).cloneTo(&names[iProp]);
-            Bstr(szPropValue).cloneTo(&values[iProp]);
-            timestamps[iProp] = u64Timestamp;
-            Bstr(szPropFlags).cloneTo(&flags[iProp]);
+            /* Skip transient properties unless we are saving state */
+            if (!(fFlags & TRANSIENT) ||
+                (mMachineState == MachineState_Saving))
+            {
+                writeFlags(fFlags, szPropFlags);
+                CFGMR3QueryU64 (pTimestamps, szPropName, &u64Timestamp);
+                Bstr(szPropName).cloneTo(&names[iProp]);
+                Bstr(szPropValue).cloneTo(&values[iProp]);
+                timestamps[iProp] = u64Timestamp;
+                Bstr(szPropFlags).cloneTo(&flags[iProp]);
+                ++iProp;
+                if (iProp >= cValues)
+                    vrc = VERR_TOO_MUCH_DATA;
+            }
             pValue = CFGMR3GetNextValue (pValue);
-            ++iProp;
-            if (iProp >= cValues)
-                vrc = VERR_TOO_MUCH_DATA;
         }
     }
     if (RT_SUCCESS(vrc) || (VERR_TOO_MUCH_DATA == vrc))
