@@ -229,7 +229,7 @@ static struct fmodsw g_VBoxNetFltSolarisModOps =
 {
     DEVICE_NAME,
     &g_VBoxNetFltSolarisStreamTab,
-    D_NEW | D_MP | D_MTPERMOD
+    D_NEW | D_MP | D_MTQPAIR
 };
 
 /**
@@ -2880,19 +2880,9 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                  */
                 LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST\n"));
 
-                mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
-                if (RT_LIKELY(pMsg))
-                {
-                    pMsg->b_rptr += sizeof(RTNETETHERHDR);
-                    queue_t *pIpReadQueue = pIpStream->pReadQueue;
-                    putnext(pIpReadQueue, pMsg);
-                }
-                else
-                {
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData failed!\n"));
-                    freemsg(pMsg);
-                    rc = VERR_NO_MEMORY;
-                }
+                pMsg->b_rptr += sizeof(RTNETETHERHDR);
+                queue_t *pIpReadQueue = pIpStream->pReadQueue;
+                putnext(pIpReadQueue, pMsg);
             }
         }
         else
