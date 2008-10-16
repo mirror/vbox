@@ -143,8 +143,8 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
  * @param   max_keycode the highest value in use as a keycode on this server
  */
 static int
-X11DRV_KEYBOARD_DetectLayout (Display *display, KeyCode min_keycode,
-                              KeyCode max_keycode)
+X11DRV_KEYBOARD_DetectLayout (Display *display, unsigned min_keycode,
+                              unsigned max_keycode)
 {
   /** Counter variable for iterating through the keyboard layout tables. */
   unsigned current;
@@ -158,7 +158,7 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, KeyCode min_keycode,
   /** Table for the current keycode to keysym mapping. */
   char ckey[256][2];
   /** Counter variable representing a keycode */
-  KeyCode keyc;
+  unsigned keyc;
 
   /* Fill in our keycode to keysym mapping table. */
   memset( ckey, 0, sizeof(ckey) );
