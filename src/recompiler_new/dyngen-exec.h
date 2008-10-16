@@ -89,8 +89,13 @@ typedef void * host_reg_t;
 #define UINT32_MAX		(4294967295U)
 #define UINT64_MAX		((uint64_t)(18446744073709551615))
 
+#ifdef _BSD
+typedef struct __sFILE FILE;
+#else
 typedef struct FILE FILE;
+#endif
 extern int fprintf(FILE *, const char *, ...);
+extern int fputs(const char *, FILE *);
 extern int printf(const char *, ...);
 #undef NULL
 #define NULL 0
@@ -233,7 +238,7 @@ typedef void * host_reg_t;
 #define stringify(s)	tostring(s)
 #define tostring(s)	#s
 
-#ifdef __alpha__
+#if defined(__alpha__) || defined(__s390__)
 /* the symbols are considered non exported so a br immediate is generated */
 #define __hidden __attribute__((visibility("hidden")))
 #else
@@ -307,4 +312,16 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #define EXIT_TB() asm volatile ("rts")
 #endif
 
+
+/* The return address may point to the start of the next instruction.
+   Subtracting one gets us the call instruction itself.  */
+#if defined(__s390__)
+# define GETPC() ((void*)(((unsigned long)__builtin_return_address(0) & 0x7fffffffUL) - 1))
+#elif defined(__arm__)
+/* Thumb return addresses have the low bit set, so we need to subtract two.
+   This is still safe in ARM mode because instructions are 4 bytes.  */
+# define GETPC() ((void *)((unsigned long)__builtin_return_address(0) - 2))
+#else
+# define GETPC() ((void *)((unsigned long)__builtin_return_address(0) - 1))
+#endif
 #endif /* !defined(__DYNGEN_EXEC_H__) */

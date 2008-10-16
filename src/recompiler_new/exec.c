@@ -211,7 +211,9 @@ static const char *logfilename = "/tmp/qemu.log";
 #endif /* !VBOX */
 FILE *logfile;
 int loglevel;
+#ifndef VBOX
 static int log_append = 0;
+#endif
 
 /* statistics */
 static int tlb_flush_count;
@@ -1828,7 +1830,6 @@ static inline void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
 void tlb_flush_page(CPUState *env, target_ulong addr)
 {
     int i;
-    TranslationBlock *tb;
 
 #if defined(DEBUG_TLB)
     printf("tlb_flush_page: " TARGET_FMT_lx "\n", addr);
@@ -1953,6 +1954,7 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
     }
 }
 
+#ifndef VBOX
 int cpu_physical_memory_set_dirty_tracking(int enable)
 {
     in_migration = enable;
@@ -1963,7 +1965,7 @@ int cpu_physical_memory_get_dirty_tracking(void)
 {
     return in_migration;
 }
-
+#endif
 
 static inline void tlb_update_dirty(CPUTLBEntry *tlb_entry)
 {
@@ -2035,15 +2037,18 @@ static inline void tlb_set_dirty(CPUState *env,
    conflicting with the host address space). */
 int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
                       target_phys_addr_t paddr, int prot,
-                      int is_user, int is_softmmu)
+                      int mmu_idx, int is_softmmu)
 {
     PhysPageDesc *p;
     unsigned long pd;
     unsigned int index;
     target_ulong address;
+    target_ulong code_address;
     target_phys_addr_t addend;
     int ret;
     CPUTLBEntry *te;
+    int i;
+    target_phys_addr_t iotlb;
 
     p = phys_page_find(paddr >> TARGET_PAGE_BITS);
     if (!p) {
@@ -2052,106 +2057,84 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
         pd = p->phys_offset;
     }
 #if defined(DEBUG_TLB)
-    printf("tlb_set_page: vaddr=" TARGET_FMT_lx " paddr=0x%08x prot=%x u=%d smmu=%d pd=0x%08lx\n",
-           vaddr, (int)paddr, prot, is_user, is_softmmu, pd);
+    printf("tlb_set_page: vaddr=" TARGET_FMT_lx " paddr=0x%08x prot=%x idx=%d smmu=%d pd=0x%08lx\n",
+           vaddr, (int)paddr, prot, mmu_idx, is_softmmu, pd);
 #endif
 
     ret = 0;
-#if !defined(CONFIG_SOFTMMU)
-    if (is_softmmu)
-#endif
-    {
-        if ((pd & ~TARGET_PAGE_MASK) > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {
-            /* IO memory case */
-            address = vaddr | pd;
-            addend = paddr;
-        } else {
-            /* standard memory */
-            address = vaddr;
+    address = vaddr;
+    if ((pd & ~TARGET_PAGE_MASK) > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {
+        /* IO memory case (romd handled later) */
+        address |= TLB_MMIO;
+    }
 #if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
-            addend = pd & TARGET_PAGE_MASK;
+    addend = pd & TARGET_PAGE_MASK;
 #elif !defined(VBOX)
-            addend = (unsigned long)phys_ram_base + (pd & TARGET_PAGE_MASK);
+    addend = (unsigned long)phys_ram_base + (pd & TARGET_PAGE_MASK);
 #else
-            addend = (unsigned long)remR3GCPhys2HCVirt(env, pd & TARGET_PAGE_MASK);
+    addend = (unsigned long)remR3GCPhys2HCVirt(env, pd & TARGET_PAGE_MASK);
 #endif
-        }
+    if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM) {
+        /* Normal RAM.  */
+        iotlb = pd & TARGET_PAGE_MASK;
+        if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_RAM)
+            iotlb |= IO_MEM_NOTDIRTY;
+        else
+            iotlb |= IO_MEM_ROM;
+    } else {
+        /* IO handlers are currently passed a phsical address.
+           It would be nice to pass an offset from the base address
+           of that region.  This would avoid having to special case RAM,
+           and avoid full address decoding in every device.
+           We can't use the high bits of pd for this because
+           IO_MEM_ROMD uses these as a ram address.  */
+        iotlb = (pd & ~TARGET_PAGE_MASK) + paddr;
+    }
 
-        index = (vaddr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-        addend -= vaddr;
-        te = &env->tlb_table[is_user][index];
-        te->addend = addend;
-        if (prot & PAGE_READ) {
-            te->addr_read = address;
-        } else {
-            te->addr_read = -1;
+    code_address = address;
+    /* Make accesses to pages with watchpoints go via the
+       watchpoint trap routines.  */
+    for (i = 0; i < env->nb_watchpoints; i++) {
+        if (vaddr == (env->watchpoint[i].vaddr & TARGET_PAGE_MASK)) {
+            iotlb = io_mem_watch + paddr;
+            /* TODO: The memory case can be optimized by not trapping
+               reads of pages with a write breakpoint.  */
+            address |= TLB_MMIO;
         }
-        if (prot & PAGE_EXEC) {
-            te->addr_code = address;
+    }
+
+    index = (vaddr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+    env->iotlb[mmu_idx][index] = iotlb - vaddr;
+    te = &env->tlb_table[mmu_idx][index];
+    te->addend = addend - vaddr;
+    if (prot & PAGE_READ) {
+        te->addr_read = address;
+    } else {
+        te->addr_read = -1;
+    }
+
+    if (prot & PAGE_EXEC) {
+        te->addr_code = code_address;
+    } else {
+        te->addr_code = -1;
+    }
+    if (prot & PAGE_WRITE) {
+        if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_ROM ||
+            (pd & IO_MEM_ROMD)) {
+            /* Write access calls the I/O callback.  */
+            te->addr_write = address | TLB_MMIO;
+        } else if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_RAM &&
+                   !cpu_physical_memory_is_dirty(pd)) {
+            te->addr_write = address | TLB_NOTDIRTY;
         } else {
-            te->addr_code = -1;
+            te->addr_write = address;
         }
-        if (prot & PAGE_WRITE) {
-            if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_ROM ||
-                (pd & IO_MEM_ROMD)) {
-                /* write access calls the I/O callback */
-                te->addr_write = vaddr |
-                    (pd & ~(TARGET_PAGE_MASK | IO_MEM_ROMD));
-            } else if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_RAM &&
-                       !cpu_physical_memory_is_dirty(pd)) {
-                te->addr_write = vaddr | IO_MEM_NOTDIRTY;
-            } else {
-                te->addr_write = address;
-            }
-        } else {
-            te->addr_write = -1;
-        }
+    } else {
+        te->addr_write = -1;
+    }
 #ifdef VBOX
-        /* inform raw mode about TLB page change */
-        remR3FlushPage(env, vaddr);
-#endif
-    }
-#if !defined(CONFIG_SOFTMMU)
-    else {
-        if ((pd & ~TARGET_PAGE_MASK) > IO_MEM_ROM) {
-            /* IO access: no mapping is done as it will be handled by the
-               soft MMU */
-            if (!(env->hflags & HF_SOFTMMU_MASK))
-                ret = 2;
-        } else {
-            void *map_addr;
-
-            if (vaddr >= MMAP_AREA_END) {
-                ret = 2;
-            } else {
-                if (prot & PROT_WRITE) {
-                    if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_ROM ||
-#if defined(TARGET_HAS_SMC) || 1
-                        first_tb ||
-#endif
-                        ((pd & ~TARGET_PAGE_MASK) == IO_MEM_RAM &&
-                         !cpu_physical_memory_is_dirty(pd))) {
-                        /* ROM: we do as if code was inside */
-                        /* if code is present, we only map as read only and save the
-                           original mapping */
-                        VirtPageDesc *vp;
-
-                        vp = virt_page_find_alloc(vaddr >> TARGET_PAGE_BITS, 1);
-                        vp->phys_addr = pd;
-                        vp->prot = prot;
-                        vp->valid_tag = virt_valid_tag;
-                        prot &= ~PAGE_WRITE;
-                    }
-                }
-                map_addr = mmap((void *)vaddr, TARGET_PAGE_SIZE, prot,
-                                MAP_SHARED | MAP_FIXED, phys_ram_fd, (pd & TARGET_PAGE_MASK));
-                if (map_addr == MAP_FAILED) {
-                    cpu_abort(env, "mmap failed when mapped physical address 0x%08x to virtual address 0x%08x\n",
-                              paddr, vaddr);
-                }
-            }
-        }
-    }
+    /* inform raw mode about TLB page change */
+    remR3FlushPage(env, vaddr);
 #endif
     return ret;
 }
@@ -2483,7 +2466,7 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t 
     /* we remove the notdirty callback only if the code has been
        flushed */
     if (dirty_flags == 0xff)
-        tlb_set_dirty(cpu_single_env, addr, cpu_single_env->mem_write_vaddr);
+        tlb_set_dirty(cpu_single_env, addr, cpu_single_env->mem_io_vaddr);
 }
 
 static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t val)
@@ -2528,7 +2511,7 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t 
     /* we remove the notdirty callback only if the code has been
        flushed */
     if (dirty_flags == 0xff)
-        tlb_set_dirty(cpu_single_env, addr, cpu_single_env->mem_write_vaddr);
+        tlb_set_dirty(cpu_single_env, addr, cpu_single_env->mem_io_vaddr);
 }
 
 static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t val)
@@ -2573,7 +2556,7 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
     /* we remove the notdirty callback only if the code has been
        flushed */
     if (dirty_flags == 0xff)
-        tlb_set_dirty(cpu_single_env, addr, cpu_single_env->mem_write_vaddr);
+        tlb_set_dirty(cpu_single_env, addr, cpu_single_env->mem_io_vaddr);
 }
 
 static CPUReadMemoryFunc *error_mem_read[3] = {

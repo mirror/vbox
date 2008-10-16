@@ -1,7 +1,8 @@
 /*
- *  MMX/SSE/SSE2/PNI support
- * 
+ *  MMX/3DNow!/SSE/SSE2/SSE3/SSSE3/SSE4/PNI support
+ *
  *  Copyright (c) 2005 Fabrice Bellard
+ *  Copyright (c) 2008 Intel Corporation  <andrew.zaborowski@intel.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +18,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 /*
  * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
  * other than GPL or LGPL is available it will apply instead, Sun elects to use only
@@ -26,6 +26,7 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #if SHIFT == 0
 #define Reg MMXReg
 #define XMM_ONLY(x...)
@@ -44,13 +45,9 @@
 #define SUFFIX _xmm
 #endif
 
-void OPPROTO glue(op_psrlw, SUFFIX)(void)
+void glue(helper_psrlw, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 15) {
         d->Q(0) = 0;
@@ -73,13 +70,9 @@ void OPPROTO glue(op_psrlw, SUFFIX)(void)
     FORCE_RET();
 }
 
-void OPPROTO glue(op_psraw, SUFFIX)(void)
+void glue(helper_psraw, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 15) {
         shift = 15;
@@ -98,13 +91,9 @@ void OPPROTO glue(op_psraw, SUFFIX)(void)
 #endif
 }
 
-void OPPROTO glue(op_psllw, SUFFIX)(void)
+void glue(helper_psllw, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 15) {
         d->Q(0) = 0;
@@ -127,13 +116,9 @@ void OPPROTO glue(op_psllw, SUFFIX)(void)
     FORCE_RET();
 }
 
-void OPPROTO glue(op_psrld, SUFFIX)(void)
+void glue(helper_psrld, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 31) {
         d->Q(0) = 0;
@@ -152,13 +137,9 @@ void OPPROTO glue(op_psrld, SUFFIX)(void)
     FORCE_RET();
 }
 
-void OPPROTO glue(op_psrad, SUFFIX)(void)
+void glue(helper_psrad, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 31) {
         shift = 31;
@@ -173,13 +154,9 @@ void OPPROTO glue(op_psrad, SUFFIX)(void)
 #endif
 }
 
-void OPPROTO glue(op_pslld, SUFFIX)(void)
+void glue(helper_pslld, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 31) {
         d->Q(0) = 0;
@@ -198,13 +175,9 @@ void OPPROTO glue(op_pslld, SUFFIX)(void)
     FORCE_RET();
 }
 
-void OPPROTO glue(op_psrlq, SUFFIX)(void)
+void glue(helper_psrlq, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 63) {
         d->Q(0) = 0;
@@ -221,13 +194,9 @@ void OPPROTO glue(op_psrlq, SUFFIX)(void)
     FORCE_RET();
 }
 
-void OPPROTO glue(op_psllq, SUFFIX)(void)
+void glue(helper_psllq, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift;
-
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     if (s->Q(0) > 63) {
         d->Q(0) = 0;
@@ -245,13 +214,10 @@ void OPPROTO glue(op_psllq, SUFFIX)(void)
 }
 
 #if SHIFT == 1
-void OPPROTO glue(op_psrldq, SUFFIX)(void)
+void glue(helper_psrldq, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift, i;
 
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
     shift = s->L(0);
     if (shift > 16)
         shift = 16;
@@ -262,13 +228,10 @@ void OPPROTO glue(op_psrldq, SUFFIX)(void)
     FORCE_RET();
 }
 
-void OPPROTO glue(op_pslldq, SUFFIX)(void)
+void glue(helper_pslldq, SUFFIX)(Reg *d, Reg *s)
 {
-    Reg *d, *s;
     int shift, i;
 
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
     shift = s->L(0);
     if (shift > 16)
         shift = 16;
@@ -280,12 +243,9 @@ void OPPROTO glue(op_pslldq, SUFFIX)(void)
 }
 #endif
 
-#define SSE_OP_B(name, F)\
-void OPPROTO glue(name, SUFFIX) (void)\
+#define SSE_HELPER_B(name, F)\
+void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->B(0) = F(d->B(0), s->B(0));\
     d->B(1) = F(d->B(1), s->B(1));\
     d->B(2) = F(d->B(2), s->B(2));\
@@ -306,12 +266,9 @@ void OPPROTO glue(name, SUFFIX) (void)\
     )\
 }
 
-#define SSE_OP_W(name, F)\
-void OPPROTO glue(name, SUFFIX) (void)\
+#define SSE_HELPER_W(name, F)\
+void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->W(0) = F(d->W(0), s->W(0));\
     d->W(1) = F(d->W(1), s->W(1));\
     d->W(2) = F(d->W(2), s->W(2));\
@@ -324,12 +281,9 @@ void OPPROTO glue(name, SUFFIX) (void)\
     )\
 }
 
-#define SSE_OP_L(name, F)\
-void OPPROTO glue(name, SUFFIX) (void)\
+#define SSE_HELPER_L(name, F)\
+void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->L(0) = F(d->L(0), s->L(0));\
     d->L(1) = F(d->L(1), s->L(1));\
     XMM_ONLY(\
@@ -338,12 +292,9 @@ void OPPROTO glue(name, SUFFIX) (void)\
     )\
 }
 
-#define SSE_OP_Q(name, F)\
-void OPPROTO glue(name, SUFFIX) (void)\
+#define SSE_HELPER_Q(name, F)\
+void glue(name, SUFFIX) (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->Q(0) = F(d->Q(0), s->Q(0));\
     XMM_ONLY(\
     d->Q(1) = F(d->Q(1), s->Q(1));\
@@ -418,76 +369,73 @@ static inline int satsw(int x)
 #define FCMPEQ(a, b) (a) == (b) ? -1 : 0
 
 #define FMULLW(a, b) (a) * (b)
+#define FMULHRW(a, b) ((int16_t)(a) * (int16_t)(b) + 0x8000) >> 16
 #define FMULHUW(a, b) (a) * (b) >> 16
 #define FMULHW(a, b) (int16_t)(a) * (int16_t)(b) >> 16
 
 #define FAVG(a, b) ((a) + (b) + 1) >> 1
 #endif
 
-SSE_OP_B(op_paddb, FADD)
-SSE_OP_W(op_paddw, FADD)
-SSE_OP_L(op_paddl, FADD)
-SSE_OP_Q(op_paddq, FADD)
+SSE_HELPER_B(helper_paddb, FADD)
+SSE_HELPER_W(helper_paddw, FADD)
+SSE_HELPER_L(helper_paddl, FADD)
+SSE_HELPER_Q(helper_paddq, FADD)
 
-SSE_OP_B(op_psubb, FSUB)
-SSE_OP_W(op_psubw, FSUB)
-SSE_OP_L(op_psubl, FSUB)
-SSE_OP_Q(op_psubq, FSUB)
+SSE_HELPER_B(helper_psubb, FSUB)
+SSE_HELPER_W(helper_psubw, FSUB)
+SSE_HELPER_L(helper_psubl, FSUB)
+SSE_HELPER_Q(helper_psubq, FSUB)
 
-SSE_OP_B(op_paddusb, FADDUB)
-SSE_OP_B(op_paddsb, FADDSB)
-SSE_OP_B(op_psubusb, FSUBUB)
-SSE_OP_B(op_psubsb, FSUBSB)
+SSE_HELPER_B(helper_paddusb, FADDUB)
+SSE_HELPER_B(helper_paddsb, FADDSB)
+SSE_HELPER_B(helper_psubusb, FSUBUB)
+SSE_HELPER_B(helper_psubsb, FSUBSB)
 
-SSE_OP_W(op_paddusw, FADDUW)
-SSE_OP_W(op_paddsw, FADDSW)
-SSE_OP_W(op_psubusw, FSUBUW)
-SSE_OP_W(op_psubsw, FSUBSW)
+SSE_HELPER_W(helper_paddusw, FADDUW)
+SSE_HELPER_W(helper_paddsw, FADDSW)
+SSE_HELPER_W(helper_psubusw, FSUBUW)
+SSE_HELPER_W(helper_psubsw, FSUBSW)
 
-SSE_OP_B(op_pminub, FMINUB)
-SSE_OP_B(op_pmaxub, FMAXUB)
+SSE_HELPER_B(helper_pminub, FMINUB)
+SSE_HELPER_B(helper_pmaxub, FMAXUB)
 
-SSE_OP_W(op_pminsw, FMINSW)
-SSE_OP_W(op_pmaxsw, FMAXSW)
+SSE_HELPER_W(helper_pminsw, FMINSW)
+SSE_HELPER_W(helper_pmaxsw, FMAXSW)
 
-SSE_OP_Q(op_pand, FAND)
-SSE_OP_Q(op_pandn, FANDN)
-SSE_OP_Q(op_por, FOR)
-SSE_OP_Q(op_pxor, FXOR)
+SSE_HELPER_Q(helper_pand, FAND)
+SSE_HELPER_Q(helper_pandn, FANDN)
+SSE_HELPER_Q(helper_por, FOR)
+SSE_HELPER_Q(helper_pxor, FXOR)
 
-SSE_OP_B(op_pcmpgtb, FCMPGTB)
-SSE_OP_W(op_pcmpgtw, FCMPGTW)
-SSE_OP_L(op_pcmpgtl, FCMPGTL)
+SSE_HELPER_B(helper_pcmpgtb, FCMPGTB)
+SSE_HELPER_W(helper_pcmpgtw, FCMPGTW)
+SSE_HELPER_L(helper_pcmpgtl, FCMPGTL)
 
-SSE_OP_B(op_pcmpeqb, FCMPEQ)
-SSE_OP_W(op_pcmpeqw, FCMPEQ)
-SSE_OP_L(op_pcmpeql, FCMPEQ)
+SSE_HELPER_B(helper_pcmpeqb, FCMPEQ)
+SSE_HELPER_W(helper_pcmpeqw, FCMPEQ)
+SSE_HELPER_L(helper_pcmpeql, FCMPEQ)
 
-SSE_OP_W(op_pmullw, FMULLW)
-SSE_OP_W(op_pmulhuw, FMULHUW)
-SSE_OP_W(op_pmulhw, FMULHW)
+SSE_HELPER_W(helper_pmullw, FMULLW)
+#if SHIFT == 0
+SSE_HELPER_W(helper_pmulhrw, FMULHRW)
+#endif
+SSE_HELPER_W(helper_pmulhuw, FMULHUW)
+SSE_HELPER_W(helper_pmulhw, FMULHW)
 
-SSE_OP_B(op_pavgb, FAVG)
-SSE_OP_W(op_pavgw, FAVG)
+SSE_HELPER_B(helper_pavgb, FAVG)
+SSE_HELPER_W(helper_pavgw, FAVG)
 
-void OPPROTO glue(op_pmuludq, SUFFIX) (void)
+void glue(helper_pmuludq, SUFFIX) (Reg *d, Reg *s)
 {
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
-
     d->Q(0) = (uint64_t)s->L(0) * (uint64_t)d->L(0);
 #if SHIFT == 1
     d->Q(1) = (uint64_t)s->L(2) * (uint64_t)d->L(2);
 #endif
 }
 
-void OPPROTO glue(op_pmaddwd, SUFFIX) (void)
+void glue(helper_pmaddwd, SUFFIX) (Reg *d, Reg *s)
 {
     int i;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     for(i = 0; i < (2 << SHIFT); i++) {
         d->L(i) = (int16_t)s->W(2*i) * (int16_t)d->W(2*i) +
@@ -505,12 +453,9 @@ static inline int abs1(int a)
         return a;
 }
 #endif
-void OPPROTO glue(op_psadbw, SUFFIX) (void)
+void glue(helper_psadbw, SUFFIX) (Reg *d, Reg *s)
 {
     unsigned int val;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     val = 0;
     val += abs1(d->B(0) - s->B(0));
@@ -536,94 +481,49 @@ void OPPROTO glue(op_psadbw, SUFFIX) (void)
 #endif
 }
 
-void OPPROTO glue(op_maskmov, SUFFIX) (void)
+void glue(helper_maskmov, SUFFIX) (Reg *d, Reg *s, target_ulong a0)
 {
     int i;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
     for(i = 0; i < (8 << SHIFT); i++) {
         if (s->B(i) & 0x80)
-            stb(A0 + i, d->B(i));
+            stb(a0 + i, d->B(i));
     }
     FORCE_RET();
 }
 
-void OPPROTO glue(op_movl_mm_T0, SUFFIX) (void)
+void glue(helper_movl_mm_T0, SUFFIX) (Reg *d, uint32_t val)
 {
-    Reg *d;
-    d = (Reg *)((char *)env + PARAM1);
-    d->L(0) = T0;
+    d->L(0) = val;
     d->L(1) = 0;
 #if SHIFT == 1
     d->Q(1) = 0;
 #endif
 }
 
-void OPPROTO glue(op_movl_T0_mm, SUFFIX) (void)
-{
-    Reg *s;
-    s = (Reg *)((char *)env + PARAM1);
-    T0 = s->L(0);
-}
-
 #ifdef TARGET_X86_64
-void OPPROTO glue(op_movq_mm_T0, SUFFIX) (void)
+void glue(helper_movq_mm_T0, SUFFIX) (Reg *d, uint64_t val)
 {
-    Reg *d;
-    d = (Reg *)((char *)env + PARAM1);
-    d->Q(0) = T0;
+    d->Q(0) = val;
 #if SHIFT == 1
     d->Q(1) = 0;
 #endif
 }
-
-void OPPROTO glue(op_movq_T0_mm, SUFFIX) (void)
-{
-    Reg *s;
-    s = (Reg *)((char *)env + PARAM1);
-    T0 = s->Q(0);
-}
 #endif
 
 #if SHIFT == 0
-void OPPROTO glue(op_pshufw, SUFFIX) (void)
+void glue(helper_pshufw, SUFFIX) (Reg *d, Reg *s, int order)
 {
-#if __GCC__ == 3 || defined(RT_ARCH_AMD64) /* VBOX hack in #else */
-    Reg r, *d, *s;
-    int order;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
-    order = PARAM3;
+    Reg r;
     r.W(0) = s->W(order & 3);
     r.W(1) = s->W((order >> 2) & 3);
     r.W(2) = s->W((order >> 4) & 3);
     r.W(3) = s->W((order >> 6) & 3);
     *d = r;
-#else
-    Reg *s;
-    int order;
-    uint32_t l0, l1;
-    s = (Reg *)((char *)env + PARAM2);
-    order = PARAM3;
-    l0 = s->W(order & 3);
-    l0 |= (uint32_t)s->W((order >> 2) & 3) << 16;
-    l1 = s->W((order >> 4) & 3);
-    l1 |= (uint32_t)s->W((order >> 6) & 3) << 16;
-
-    s = (Reg *)((char *)env + PARAM1);
-    s->_l[0] = l0;
-    s->_l[1] = l1;
-#endif 
 }
 #else
-void OPPROTO op_shufps(void)
+void helper_shufps(Reg *d, Reg *s, int order)
 {
-    Reg r, *d, *s;
-    int order;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
-    order = PARAM3;
+    Reg r;
     r.L(0) = d->L(order & 3);
     r.L(1) = d->L((order >> 2) & 3);
     r.L(2) = s->L((order >> 4) & 3);
@@ -631,25 +531,17 @@ void OPPROTO op_shufps(void)
     *d = r;
 }
 
-void OPPROTO op_shufpd(void)
+void helper_shufpd(Reg *d, Reg *s, int order)
 {
-    Reg r, *d, *s;
-    int order;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
-    order = PARAM3;
+    Reg r;
     r.Q(0) = d->Q(order & 1);
     r.Q(1) = s->Q((order >> 1) & 1);
     *d = r;
 }
 
-void OPPROTO glue(op_pshufd, SUFFIX) (void)
+void glue(helper_pshufd, SUFFIX) (Reg *d, Reg *s, int order)
 {
-    Reg r, *d, *s;
-    int order;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
-    order = PARAM3;
+    Reg r;
     r.L(0) = s->L(order & 3);
     r.L(1) = s->L((order >> 2) & 3);
     r.L(2) = s->L((order >> 4) & 3);
@@ -657,13 +549,9 @@ void OPPROTO glue(op_pshufd, SUFFIX) (void)
     *d = r;
 }
 
-void OPPROTO glue(op_pshuflw, SUFFIX) (void)
+void glue(helper_pshuflw, SUFFIX) (Reg *d, Reg *s, int order)
 {
-    Reg r, *d, *s;
-    int order;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
-    order = PARAM3;
+    Reg r;
     r.W(0) = s->W(order & 3);
     r.W(1) = s->W((order >> 2) & 3);
     r.W(2) = s->W((order >> 4) & 3);
@@ -672,13 +560,9 @@ void OPPROTO glue(op_pshuflw, SUFFIX) (void)
     *d = r;
 }
 
-void OPPROTO glue(op_pshufhw, SUFFIX) (void)
+void glue(helper_pshufhw, SUFFIX) (Reg *d, Reg *s, int order)
 {
-    Reg r, *d, *s;
-    int order;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
-    order = PARAM3;
+    Reg r;
     r.Q(0) = s->Q(0);
     r.W(4) = s->W(4 + (order & 3));
     r.W(5) = s->W(4 + ((order >> 2) & 3));
@@ -692,39 +576,27 @@ void OPPROTO glue(op_pshufhw, SUFFIX) (void)
 /* FPU ops */
 /* XXX: not accurate */
 
-#define SSE_OP_S(name, F)\
-void OPPROTO op_ ## name ## ps (void)\
+#define SSE_HELPER_S(name, F)\
+void helper_ ## name ## ps (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_S(0) = F(32, d->XMM_S(0), s->XMM_S(0));\
     d->XMM_S(1) = F(32, d->XMM_S(1), s->XMM_S(1));\
     d->XMM_S(2) = F(32, d->XMM_S(2), s->XMM_S(2));\
     d->XMM_S(3) = F(32, d->XMM_S(3), s->XMM_S(3));\
 }\
 \
-void OPPROTO op_ ## name ## ss (void)\
+void helper_ ## name ## ss (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_S(0) = F(32, d->XMM_S(0), s->XMM_S(0));\
 }\
-void OPPROTO op_ ## name ## pd (void)\
+void helper_ ## name ## pd (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_D(0) = F(64, d->XMM_D(0), s->XMM_D(0));\
     d->XMM_D(1) = F(64, d->XMM_D(1), s->XMM_D(1));\
 }\
 \
-void OPPROTO op_ ## name ## sd (void)\
+void helper_ ## name ## sd (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_D(0) = F(64, d->XMM_D(0), s->XMM_D(0));\
 }
 
@@ -736,69 +608,53 @@ void OPPROTO op_ ## name ## sd (void)\
 #define FPU_MAX(size, a, b) (a) > (b) ? (a) : (b)
 #define FPU_SQRT(size, a, b) float ## size ## _sqrt(b, &env->sse_status)
 
-SSE_OP_S(add, FPU_ADD)
-SSE_OP_S(sub, FPU_SUB)
-SSE_OP_S(mul, FPU_MUL)
-SSE_OP_S(div, FPU_DIV)
-SSE_OP_S(min, FPU_MIN)
-SSE_OP_S(max, FPU_MAX)
-SSE_OP_S(sqrt, FPU_SQRT)
+SSE_HELPER_S(add, FPU_ADD)
+SSE_HELPER_S(sub, FPU_SUB)
+SSE_HELPER_S(mul, FPU_MUL)
+SSE_HELPER_S(div, FPU_DIV)
+SSE_HELPER_S(min, FPU_MIN)
+SSE_HELPER_S(max, FPU_MAX)
+SSE_HELPER_S(sqrt, FPU_SQRT)
 
 
 /* float to float conversions */
-void OPPROTO op_cvtps2pd(void)
+void helper_cvtps2pd(Reg *d, Reg *s)
 {
     float32 s0, s1;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
     s0 = s->XMM_S(0);
     s1 = s->XMM_S(1);
     d->XMM_D(0) = float32_to_float64(s0, &env->sse_status);
     d->XMM_D(1) = float32_to_float64(s1, &env->sse_status);
 }
 
-void OPPROTO op_cvtpd2ps(void)
+void helper_cvtpd2ps(Reg *d, Reg *s)
 {
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
     d->XMM_S(0) = float64_to_float32(s->XMM_D(0), &env->sse_status);
     d->XMM_S(1) = float64_to_float32(s->XMM_D(1), &env->sse_status);
     d->Q(1) = 0;
 }
 
-void OPPROTO op_cvtss2sd(void)
+void helper_cvtss2sd(Reg *d, Reg *s)
 {
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
     d->XMM_D(0) = float32_to_float64(s->XMM_S(0), &env->sse_status);
 }
 
-void OPPROTO op_cvtsd2ss(void)
+void helper_cvtsd2ss(Reg *d, Reg *s)
 {
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
     d->XMM_S(0) = float64_to_float32(s->XMM_D(0), &env->sse_status);
 }
 
 /* integer to float */
-void OPPROTO op_cvtdq2ps(void)
+void helper_cvtdq2ps(Reg *d, Reg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_S(0) = int32_to_float32(s->XMM_L(0), &env->sse_status);
     d->XMM_S(1) = int32_to_float32(s->XMM_L(1), &env->sse_status);
     d->XMM_S(2) = int32_to_float32(s->XMM_L(2), &env->sse_status);
     d->XMM_S(3) = int32_to_float32(s->XMM_L(3), &env->sse_status);
 }
 
-void OPPROTO op_cvtdq2pd(void)
+void helper_cvtdq2pd(Reg *d, Reg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     int32_t l0, l1;
     l0 = (int32_t)s->XMM_L(0);
     l1 = (int32_t)s->XMM_L(1);
@@ -806,210 +662,168 @@ void OPPROTO op_cvtdq2pd(void)
     d->XMM_D(1) = int32_to_float64(l1, &env->sse_status);
 }
 
-void OPPROTO op_cvtpi2ps(void)
+void helper_cvtpi2ps(XMMReg *d, MMXReg *s)
 {
-    XMMReg *d = (Reg *)((char *)env + PARAM1);
-    MMXReg *s = (MMXReg *)((char *)env + PARAM2);
     d->XMM_S(0) = int32_to_float32(s->MMX_L(0), &env->sse_status);
     d->XMM_S(1) = int32_to_float32(s->MMX_L(1), &env->sse_status);
 }
 
-void OPPROTO op_cvtpi2pd(void)
+void helper_cvtpi2pd(XMMReg *d, MMXReg *s)
 {
-    XMMReg *d = (Reg *)((char *)env + PARAM1);
-    MMXReg *s = (MMXReg *)((char *)env + PARAM2);
     d->XMM_D(0) = int32_to_float64(s->MMX_L(0), &env->sse_status);
     d->XMM_D(1) = int32_to_float64(s->MMX_L(1), &env->sse_status);
 }
 
-void OPPROTO op_cvtsi2ss(void)
+void helper_cvtsi2ss(XMMReg *d, uint32_t val)
 {
-    XMMReg *d = (Reg *)((char *)env + PARAM1);
-    d->XMM_S(0) = int32_to_float32(T0, &env->sse_status);
+    d->XMM_S(0) = int32_to_float32(val, &env->sse_status);
 }
 
-void OPPROTO op_cvtsi2sd(void)
+void helper_cvtsi2sd(XMMReg *d, uint32_t val)
 {
-    XMMReg *d = (Reg *)((char *)env + PARAM1);
-    d->XMM_D(0) = int32_to_float64(T0, &env->sse_status);
+    d->XMM_D(0) = int32_to_float64(val, &env->sse_status);
 }
 
 #ifdef TARGET_X86_64
-void OPPROTO op_cvtsq2ss(void)
+void helper_cvtsq2ss(XMMReg *d, uint64_t val)
 {
-    XMMReg *d = (Reg *)((char *)env + PARAM1);
-    d->XMM_S(0) = int64_to_float32(T0, &env->sse_status);
+    d->XMM_S(0) = int64_to_float32(val, &env->sse_status);
 }
 
-void OPPROTO op_cvtsq2sd(void)
+void helper_cvtsq2sd(XMMReg *d, uint64_t val)
 {
-    XMMReg *d = (Reg *)((char *)env + PARAM1);
-    d->XMM_D(0) = int64_to_float64(T0, &env->sse_status);
+    d->XMM_D(0) = int64_to_float64(val, &env->sse_status);
 }
 #endif
 
 /* float to integer */
-void OPPROTO op_cvtps2dq(void)
+void helper_cvtps2dq(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_L(0) = float32_to_int32(s->XMM_S(0), &env->sse_status);
     d->XMM_L(1) = float32_to_int32(s->XMM_S(1), &env->sse_status);
     d->XMM_L(2) = float32_to_int32(s->XMM_S(2), &env->sse_status);
     d->XMM_L(3) = float32_to_int32(s->XMM_S(3), &env->sse_status);
 }
 
-void OPPROTO op_cvtpd2dq(void)
+void helper_cvtpd2dq(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_L(0) = float64_to_int32(s->XMM_D(0), &env->sse_status);
     d->XMM_L(1) = float64_to_int32(s->XMM_D(1), &env->sse_status);
     d->XMM_Q(1) = 0;
 }
 
-void OPPROTO op_cvtps2pi(void)
+void helper_cvtps2pi(MMXReg *d, XMMReg *s)
 {
-    MMXReg *d = (MMXReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->MMX_L(0) = float32_to_int32(s->XMM_S(0), &env->sse_status);
     d->MMX_L(1) = float32_to_int32(s->XMM_S(1), &env->sse_status);
 }
 
-void OPPROTO op_cvtpd2pi(void)
+void helper_cvtpd2pi(MMXReg *d, XMMReg *s)
 {
-    MMXReg *d = (MMXReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->MMX_L(0) = float64_to_int32(s->XMM_D(0), &env->sse_status);
     d->MMX_L(1) = float64_to_int32(s->XMM_D(1), &env->sse_status);
 }
 
-void OPPROTO op_cvtss2si(void)
+int32_t helper_cvtss2si(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float32_to_int32(s->XMM_S(0), &env->sse_status);
+    return float32_to_int32(s->XMM_S(0), &env->sse_status);
 }
 
-void OPPROTO op_cvtsd2si(void)
+int32_t helper_cvtsd2si(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float64_to_int32(s->XMM_D(0), &env->sse_status);
+    return float64_to_int32(s->XMM_D(0), &env->sse_status);
 }
 
 #ifdef TARGET_X86_64
-void OPPROTO op_cvtss2sq(void)
+int64_t helper_cvtss2sq(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float32_to_int64(s->XMM_S(0), &env->sse_status);
+    return float32_to_int64(s->XMM_S(0), &env->sse_status);
 }
 
-void OPPROTO op_cvtsd2sq(void)
+int64_t helper_cvtsd2sq(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float64_to_int64(s->XMM_D(0), &env->sse_status);
+    return float64_to_int64(s->XMM_D(0), &env->sse_status);
 }
 #endif
 
 /* float to integer truncated */
-void OPPROTO op_cvttps2dq(void)
+void helper_cvttps2dq(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_L(0) = float32_to_int32_round_to_zero(s->XMM_S(0), &env->sse_status);
     d->XMM_L(1) = float32_to_int32_round_to_zero(s->XMM_S(1), &env->sse_status);
     d->XMM_L(2) = float32_to_int32_round_to_zero(s->XMM_S(2), &env->sse_status);
     d->XMM_L(3) = float32_to_int32_round_to_zero(s->XMM_S(3), &env->sse_status);
 }
 
-void OPPROTO op_cvttpd2dq(void)
+void helper_cvttpd2dq(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_L(0) = float64_to_int32_round_to_zero(s->XMM_D(0), &env->sse_status);
     d->XMM_L(1) = float64_to_int32_round_to_zero(s->XMM_D(1), &env->sse_status);
     d->XMM_Q(1) = 0;
 }
 
-void OPPROTO op_cvttps2pi(void)
+void helper_cvttps2pi(MMXReg *d, XMMReg *s)
 {
-    MMXReg *d = (MMXReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->MMX_L(0) = float32_to_int32_round_to_zero(s->XMM_S(0), &env->sse_status);
     d->MMX_L(1) = float32_to_int32_round_to_zero(s->XMM_S(1), &env->sse_status);
 }
 
-void OPPROTO op_cvttpd2pi(void)
+void helper_cvttpd2pi(MMXReg *d, XMMReg *s)
 {
-    MMXReg *d = (MMXReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->MMX_L(0) = float64_to_int32_round_to_zero(s->XMM_D(0), &env->sse_status);
     d->MMX_L(1) = float64_to_int32_round_to_zero(s->XMM_D(1), &env->sse_status);
 }
 
-void OPPROTO op_cvttss2si(void)
+int32_t helper_cvttss2si(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float32_to_int32_round_to_zero(s->XMM_S(0), &env->sse_status);
+    return float32_to_int32_round_to_zero(s->XMM_S(0), &env->sse_status);
 }
 
-void OPPROTO op_cvttsd2si(void)
+int32_t helper_cvttsd2si(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float64_to_int32_round_to_zero(s->XMM_D(0), &env->sse_status);
+    return float64_to_int32_round_to_zero(s->XMM_D(0), &env->sse_status);
 }
 
 #ifdef TARGET_X86_64
-void OPPROTO op_cvttss2sq(void)
+int64_t helper_cvttss2sq(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float32_to_int64_round_to_zero(s->XMM_S(0), &env->sse_status);
+    return float32_to_int64_round_to_zero(s->XMM_S(0), &env->sse_status);
 }
 
-void OPPROTO op_cvttsd2sq(void)
+int64_t helper_cvttsd2sq(XMMReg *s)
 {
-    XMMReg *s = (XMMReg *)((char *)env + PARAM1);
-    T0 = float64_to_int64_round_to_zero(s->XMM_D(0), &env->sse_status);
+    return float64_to_int64_round_to_zero(s->XMM_D(0), &env->sse_status);
 }
 #endif
 
-void OPPROTO op_rsqrtps(void)
+void helper_rsqrtps(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_S(0) = approx_rsqrt(s->XMM_S(0));
     d->XMM_S(1) = approx_rsqrt(s->XMM_S(1));
     d->XMM_S(2) = approx_rsqrt(s->XMM_S(2));
     d->XMM_S(3) = approx_rsqrt(s->XMM_S(3));
 }
 
-void OPPROTO op_rsqrtss(void)
+void helper_rsqrtss(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_S(0) = approx_rsqrt(s->XMM_S(0));
 }
 
-void OPPROTO op_rcpps(void)
+void helper_rcpps(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_S(0) = approx_rcp(s->XMM_S(0));
     d->XMM_S(1) = approx_rcp(s->XMM_S(1));
     d->XMM_S(2) = approx_rcp(s->XMM_S(2));
     d->XMM_S(3) = approx_rcp(s->XMM_S(3));
 }
 
-void OPPROTO op_rcpss(void)
+void helper_rcpss(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_S(0) = approx_rcp(s->XMM_S(0));
 }
 
-void OPPROTO op_haddps(void)
+void helper_haddps(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     XMMReg r;
     r.XMM_S(0) = d->XMM_S(0) + d->XMM_S(1);
     r.XMM_S(1) = d->XMM_S(2) + d->XMM_S(3);
@@ -1018,20 +832,16 @@ void OPPROTO op_haddps(void)
     *d = r;
 }
 
-void OPPROTO op_haddpd(void)
+void helper_haddpd(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     XMMReg r;
     r.XMM_D(0) = d->XMM_D(0) + d->XMM_D(1);
     r.XMM_D(1) = s->XMM_D(0) + s->XMM_D(1);
     *d = r;
 }
 
-void OPPROTO op_hsubps(void)
+void helper_hsubps(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     XMMReg r;
     r.XMM_S(0) = d->XMM_S(0) - d->XMM_S(1);
     r.XMM_S(1) = d->XMM_S(2) - d->XMM_S(3);
@@ -1040,68 +850,50 @@ void OPPROTO op_hsubps(void)
     *d = r;
 }
 
-void OPPROTO op_hsubpd(void)
+void helper_hsubpd(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     XMMReg r;
     r.XMM_D(0) = d->XMM_D(0) - d->XMM_D(1);
     r.XMM_D(1) = s->XMM_D(0) - s->XMM_D(1);
     *d = r;
 }
 
-void OPPROTO op_addsubps(void)
+void helper_addsubps(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_S(0) = d->XMM_S(0) - s->XMM_S(0);
     d->XMM_S(1) = d->XMM_S(1) + s->XMM_S(1);
     d->XMM_S(2) = d->XMM_S(2) - s->XMM_S(2);
     d->XMM_S(3) = d->XMM_S(3) + s->XMM_S(3);
 }
 
-void OPPROTO op_addsubpd(void)
+void helper_addsubpd(XMMReg *d, XMMReg *s)
 {
-    XMMReg *d = (XMMReg *)((char *)env + PARAM1);
-    XMMReg *s = (XMMReg *)((char *)env + PARAM2);
     d->XMM_D(0) = d->XMM_D(0) - s->XMM_D(0);
     d->XMM_D(1) = d->XMM_D(1) + s->XMM_D(1);
 }
 
 /* XXX: unordered */
-#define SSE_OP_CMP(name, F)\
-void OPPROTO op_ ## name ## ps (void)\
+#define SSE_HELPER_CMP(name, F)\
+void helper_ ## name ## ps (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_L(0) = F(32, d->XMM_S(0), s->XMM_S(0));\
     d->XMM_L(1) = F(32, d->XMM_S(1), s->XMM_S(1));\
     d->XMM_L(2) = F(32, d->XMM_S(2), s->XMM_S(2));\
     d->XMM_L(3) = F(32, d->XMM_S(3), s->XMM_S(3));\
 }\
 \
-void OPPROTO op_ ## name ## ss (void)\
+void helper_ ## name ## ss (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_L(0) = F(32, d->XMM_S(0), s->XMM_S(0));\
 }\
-void OPPROTO op_ ## name ## pd (void)\
+void helper_ ## name ## pd (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_Q(0) = F(64, d->XMM_D(0), s->XMM_D(0));\
     d->XMM_Q(1) = F(64, d->XMM_D(1), s->XMM_D(1));\
 }\
 \
-void OPPROTO op_ ## name ## sd (void)\
+void helper_ ## name ## sd (Reg *d, Reg *s)\
 {\
-    Reg *d, *s;\
-    d = (Reg *)((char *)env + PARAM1);\
-    s = (Reg *)((char *)env + PARAM2);\
     d->XMM_Q(0) = F(64, d->XMM_D(0), s->XMM_D(0));\
 }
 
@@ -1114,24 +906,21 @@ void OPPROTO op_ ## name ## sd (void)\
 #define FPU_CMPNLE(size, a, b) float ## size ## _le(a, b, &env->sse_status) ? 0 : -1
 #define FPU_CMPORD(size, a, b) float ## size ## _unordered(a, b, &env->sse_status) ? 0 : -1
 
-SSE_OP_CMP(cmpeq, FPU_CMPEQ)
-SSE_OP_CMP(cmplt, FPU_CMPLT)
-SSE_OP_CMP(cmple, FPU_CMPLE)
-SSE_OP_CMP(cmpunord, FPU_CMPUNORD)
-SSE_OP_CMP(cmpneq, FPU_CMPNEQ)
-SSE_OP_CMP(cmpnlt, FPU_CMPNLT)
-SSE_OP_CMP(cmpnle, FPU_CMPNLE)
-SSE_OP_CMP(cmpord, FPU_CMPORD)
+SSE_HELPER_CMP(cmpeq, FPU_CMPEQ)
+SSE_HELPER_CMP(cmplt, FPU_CMPLT)
+SSE_HELPER_CMP(cmple, FPU_CMPLE)
+SSE_HELPER_CMP(cmpunord, FPU_CMPUNORD)
+SSE_HELPER_CMP(cmpneq, FPU_CMPNEQ)
+SSE_HELPER_CMP(cmpnlt, FPU_CMPNLT)
+SSE_HELPER_CMP(cmpnle, FPU_CMPNLE)
+SSE_HELPER_CMP(cmpord, FPU_CMPORD)
 
 const int comis_eflags[4] = {CC_C, CC_Z, 0, CC_Z | CC_P | CC_C};
 
-void OPPROTO op_ucomiss(void)
+void helper_ucomiss(Reg *d, Reg *s)
 {
     int ret;
     float32 s0, s1;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     s0 = d->XMM_S(0);
     s1 = s->XMM_S(0);
@@ -1140,13 +929,10 @@ void OPPROTO op_ucomiss(void)
     FORCE_RET();
 }
 
-void OPPROTO op_comiss(void)
+void helper_comiss(Reg *d, Reg *s)
 {
     int ret;
     float32 s0, s1;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     s0 = d->XMM_S(0);
     s1 = s->XMM_S(0);
@@ -1155,13 +941,10 @@ void OPPROTO op_comiss(void)
     FORCE_RET();
 }
 
-void OPPROTO op_ucomisd(void)
+void helper_ucomisd(Reg *d, Reg *s)
 {
     int ret;
     float64 d0, d1;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     d0 = d->XMM_D(0);
     d1 = s->XMM_D(0);
@@ -1170,13 +953,10 @@ void OPPROTO op_ucomisd(void)
     FORCE_RET();
 }
 
-void OPPROTO op_comisd(void)
+void helper_comisd(Reg *d, Reg *s)
 {
     int ret;
     float64 d0, d1;
-    Reg *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
 
     d0 = d->XMM_D(0);
     d1 = s->XMM_D(0);
@@ -1185,76 +965,54 @@ void OPPROTO op_comisd(void)
     FORCE_RET();
 }
 
-void OPPROTO op_movmskps(void)
+uint32_t helper_movmskps(Reg *s)
 {
     int b0, b1, b2, b3;
-    Reg *s;
-    s = (Reg *)((char *)env + PARAM1);
     b0 = s->XMM_L(0) >> 31;
     b1 = s->XMM_L(1) >> 31;
     b2 = s->XMM_L(2) >> 31;
     b3 = s->XMM_L(3) >> 31;
-    T0 = b0 | (b1 << 1) | (b2 << 2) | (b3 << 3);
+    return b0 | (b1 << 1) | (b2 << 2) | (b3 << 3);
 }
 
-void OPPROTO op_movmskpd(void)
+uint32_t helper_movmskpd(Reg *s)
 {
     int b0, b1;
-    Reg *s;
-    s = (Reg *)((char *)env + PARAM1);
     b0 = s->XMM_L(1) >> 31;
     b1 = s->XMM_L(3) >> 31;
-    T0 = b0 | (b1 << 1);
+    return b0 | (b1 << 1);
 }
 
 #endif
 
-void OPPROTO glue(op_pmovmskb, SUFFIX)(void)
+uint32_t glue(helper_pmovmskb, SUFFIX)(Reg *s)
 {
-    Reg *s;
-    s = (Reg *)((char *)env + PARAM1);
-    T0 = 0;
-    T0 |= (s->XMM_B(0) >> 7);
-    T0 |= (s->XMM_B(1) >> 6) & 0x02;
-    T0 |= (s->XMM_B(2) >> 5) & 0x04;
-    T0 |= (s->XMM_B(3) >> 4) & 0x08;
-    T0 |= (s->XMM_B(4) >> 3) & 0x10;
-    T0 |= (s->XMM_B(5) >> 2) & 0x20;
-    T0 |= (s->XMM_B(6) >> 1) & 0x40;
-    T0 |= (s->XMM_B(7)) & 0x80;
+    uint32_t val;
+    val = 0;
+    val |= (s->XMM_B(0) >> 7);
+    val |= (s->XMM_B(1) >> 6) & 0x02;
+    val |= (s->XMM_B(2) >> 5) & 0x04;
+    val |= (s->XMM_B(3) >> 4) & 0x08;
+    val |= (s->XMM_B(4) >> 3) & 0x10;
+    val |= (s->XMM_B(5) >> 2) & 0x20;
+    val |= (s->XMM_B(6) >> 1) & 0x40;
+    val |= (s->XMM_B(7)) & 0x80;
 #if SHIFT == 1
-    T0 |= (s->XMM_B(8) << 1) & 0x0100;
-    T0 |= (s->XMM_B(9) << 2) & 0x0200;
-    T0 |= (s->XMM_B(10) << 3) & 0x0400;
-    T0 |= (s->XMM_B(11) << 4) & 0x0800;
-    T0 |= (s->XMM_B(12) << 5) & 0x1000;
-    T0 |= (s->XMM_B(13) << 6) & 0x2000;
-    T0 |= (s->XMM_B(14) << 7) & 0x4000;
-    T0 |= (s->XMM_B(15) << 8) & 0x8000;
+    val |= (s->XMM_B(8) << 1) & 0x0100;
+    val |= (s->XMM_B(9) << 2) & 0x0200;
+    val |= (s->XMM_B(10) << 3) & 0x0400;
+    val |= (s->XMM_B(11) << 4) & 0x0800;
+    val |= (s->XMM_B(12) << 5) & 0x1000;
+    val |= (s->XMM_B(13) << 6) & 0x2000;
+    val |= (s->XMM_B(14) << 7) & 0x4000;
+    val |= (s->XMM_B(15) << 8) & 0x8000;
 #endif
+    return val;
 }
 
-void OPPROTO glue(op_pinsrw, SUFFIX) (void)
+void glue(helper_packsswb, SUFFIX) (Reg *d, Reg *s)
 {
-    Reg *d = (Reg *)((char *)env + PARAM1);
-    int pos = PARAM2;
-    
-    d->W(pos) = T0;
-}
-
-void OPPROTO glue(op_pextrw, SUFFIX) (void)
-{
-    Reg *s = (Reg *)((char *)env + PARAM1);
-    int pos = PARAM2;
-    
-    T0 = s->W(pos);
-}
-
-void OPPROTO glue(op_packsswb, SUFFIX) (void)
-{
-    Reg r, *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
+    Reg r;
 
     r.B(0) = satsb((int16_t)d->W(0));
     r.B(1) = satsb((int16_t)d->W(1));
@@ -1279,11 +1037,9 @@ void OPPROTO glue(op_packsswb, SUFFIX) (void)
     *d = r;
 }
 
-void OPPROTO glue(op_packuswb, SUFFIX) (void)
+void glue(helper_packuswb, SUFFIX) (Reg *d, Reg *s)
 {
-    Reg r, *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
+    Reg r;
 
     r.B(0) = satub((int16_t)d->W(0));
     r.B(1) = satub((int16_t)d->W(1));
@@ -1308,11 +1064,9 @@ void OPPROTO glue(op_packuswb, SUFFIX) (void)
     *d = r;
 }
 
-void OPPROTO glue(op_packssdw, SUFFIX) (void)
+void glue(helper_packssdw, SUFFIX) (Reg *d, Reg *s)
 {
-    Reg r, *d, *s;
-    d = (Reg *)((char *)env + PARAM1);
-    s = (Reg *)((char *)env + PARAM2);
+    Reg r;
 
     r.W(0) = satsw(d->L(0));
     r.W(1) = satsw(d->L(1));
@@ -1331,11 +1085,9 @@ void OPPROTO glue(op_packssdw, SUFFIX) (void)
 
 #define UNPCK_OP(base_name, base)                               \
                                                                 \
-void OPPROTO glue(op_punpck ## base_name ## bw, SUFFIX) (void)   \
+void glue(helper_punpck ## base_name ## bw, SUFFIX) (Reg *d, Reg *s)   \
 {                                                               \
-    Reg r, *d, *s;                                              \
-    d = (Reg *)((char *)env + PARAM1);                          \
-    s = (Reg *)((char *)env + PARAM2);                          \
+    Reg r;                                              \
                                                                 \
     r.B(0) = d->B((base << (SHIFT + 2)) + 0);                   \
     r.B(1) = s->B((base << (SHIFT + 2)) + 0);                   \
@@ -1358,11 +1110,9 @@ XMM_ONLY(                                                       \
     *d = r;                                                     \
 }                                                               \
                                                                 \
-void OPPROTO glue(op_punpck ## base_name ## wd, SUFFIX) (void)   \
+void glue(helper_punpck ## base_name ## wd, SUFFIX) (Reg *d, Reg *s)   \
 {                                                               \
-    Reg r, *d, *s;                                              \
-    d = (Reg *)((char *)env + PARAM1);                          \
-    s = (Reg *)((char *)env + PARAM2);                          \
+    Reg r;                                              \
                                                                 \
     r.W(0) = d->W((base << (SHIFT + 1)) + 0);                   \
     r.W(1) = s->W((base << (SHIFT + 1)) + 0);                   \
@@ -1377,11 +1127,9 @@ XMM_ONLY(                                                       \
     *d = r;                                                     \
 }                                                               \
                                                                 \
-void OPPROTO glue(op_punpck ## base_name ## dq, SUFFIX) (void)   \
+void glue(helper_punpck ## base_name ## dq, SUFFIX) (Reg *d, Reg *s)   \
 {                                                               \
-    Reg r, *d, *s;                                              \
-    d = (Reg *)((char *)env + PARAM1);                          \
-    s = (Reg *)((char *)env + PARAM2);                          \
+    Reg r;                                              \
                                                                 \
     r.L(0) = d->L((base << SHIFT) + 0);                         \
     r.L(1) = s->L((base << SHIFT) + 0);                         \
@@ -1393,11 +1141,9 @@ XMM_ONLY(                                                       \
 }                                                               \
                                                                 \
 XMM_ONLY(                                                       \
-void OPPROTO glue(op_punpck ## base_name ## qdq, SUFFIX) (void)  \
+void glue(helper_punpck ## base_name ## qdq, SUFFIX) (Reg *d, Reg *s)  \
 {                                                               \
-    Reg r, *d, *s;                                              \
-    d = (Reg *)((char *)env + PARAM1);                          \
-    s = (Reg *)((char *)env + PARAM2);                          \
+    Reg r;                                              \
                                                                 \
     r.Q(0) = d->Q(base);                                        \
     r.Q(1) = s->Q(base);                                        \
@@ -1407,6 +1153,897 @@ void OPPROTO glue(op_punpck ## base_name ## qdq, SUFFIX) (void)  \
 
 UNPCK_OP(l, 0)
 UNPCK_OP(h, 1)
+
+/* 3DNow! float ops */
+#if SHIFT == 0
+void helper_pi2fd(MMXReg *d, MMXReg *s)
+{
+    d->MMX_S(0) = int32_to_float32(s->MMX_L(0), &env->mmx_status);
+    d->MMX_S(1) = int32_to_float32(s->MMX_L(1), &env->mmx_status);
+}
+
+void helper_pi2fw(MMXReg *d, MMXReg *s)
+{
+    d->MMX_S(0) = int32_to_float32((int16_t)s->MMX_W(0), &env->mmx_status);
+    d->MMX_S(1) = int32_to_float32((int16_t)s->MMX_W(2), &env->mmx_status);
+}
+
+void helper_pf2id(MMXReg *d, MMXReg *s)
+{
+    d->MMX_L(0) = float32_to_int32_round_to_zero(s->MMX_S(0), &env->mmx_status);
+    d->MMX_L(1) = float32_to_int32_round_to_zero(s->MMX_S(1), &env->mmx_status);
+}
+
+void helper_pf2iw(MMXReg *d, MMXReg *s)
+{
+    d->MMX_L(0) = satsw(float32_to_int32_round_to_zero(s->MMX_S(0), &env->mmx_status));
+    d->MMX_L(1) = satsw(float32_to_int32_round_to_zero(s->MMX_S(1), &env->mmx_status));
+}
+
+void helper_pfacc(MMXReg *d, MMXReg *s)
+{
+    MMXReg r;
+    r.MMX_S(0) = float32_add(d->MMX_S(0), d->MMX_S(1), &env->mmx_status);
+    r.MMX_S(1) = float32_add(s->MMX_S(0), s->MMX_S(1), &env->mmx_status);
+    *d = r;
+}
+
+void helper_pfadd(MMXReg *d, MMXReg *s)
+{
+    d->MMX_S(0) = float32_add(d->MMX_S(0), s->MMX_S(0), &env->mmx_status);
+    d->MMX_S(1) = float32_add(d->MMX_S(1), s->MMX_S(1), &env->mmx_status);
+}
+
+void helper_pfcmpeq(MMXReg *d, MMXReg *s)
+{
+    d->MMX_L(0) = float32_eq(d->MMX_S(0), s->MMX_S(0), &env->mmx_status) ? -1 : 0;
+    d->MMX_L(1) = float32_eq(d->MMX_S(1), s->MMX_S(1), &env->mmx_status) ? -1 : 0;
+}
+
+void helper_pfcmpge(MMXReg *d, MMXReg *s)
+{
+    d->MMX_L(0) = float32_le(s->MMX_S(0), d->MMX_S(0), &env->mmx_status) ? -1 : 0;
+    d->MMX_L(1) = float32_le(s->MMX_S(1), d->MMX_S(1), &env->mmx_status) ? -1 : 0;
+}
+
+void helper_pfcmpgt(MMXReg *d, MMXReg *s)
+{
+    d->MMX_L(0) = float32_lt(s->MMX_S(0), d->MMX_S(0), &env->mmx_status) ? -1 : 0;
+    d->MMX_L(1) = float32_lt(s->MMX_S(1), d->MMX_S(1), &env->mmx_status) ? -1 : 0;
+}
+
+void helper_pfmax(MMXReg *d, MMXReg *s)
+{
+    if (float32_lt(d->MMX_S(0), s->MMX_S(0), &env->mmx_status))
+        d->MMX_S(0) = s->MMX_S(0);
+    if (float32_lt(d->MMX_S(1), s->MMX_S(1), &env->mmx_status))
+        d->MMX_S(1) = s->MMX_S(1);
+}
+
+void helper_pfmin(MMXReg *d, MMXReg *s)
+{
+    if (float32_lt(s->MMX_S(0), d->MMX_S(0), &env->mmx_status))
+        d->MMX_S(0) = s->MMX_S(0);
+    if (float32_lt(s->MMX_S(1), d->MMX_S(1), &env->mmx_status))
+        d->MMX_S(1) = s->MMX_S(1);
+}
+
+void helper_pfmul(MMXReg *d, MMXReg *s)
+{
+    d->MMX_S(0) = float32_mul(d->MMX_S(0), s->MMX_S(0), &env->mmx_status);
+    d->MMX_S(1) = float32_mul(d->MMX_S(1), s->MMX_S(1), &env->mmx_status);
+}
+
+void helper_pfnacc(MMXReg *d, MMXReg *s)
+{
+    MMXReg r;
+    r.MMX_S(0) = float32_sub(d->MMX_S(0), d->MMX_S(1), &env->mmx_status);
+    r.MMX_S(1) = float32_sub(s->MMX_S(0), s->MMX_S(1), &env->mmx_status);
+    *d = r;
+}
+
+void helper_pfpnacc(MMXReg *d, MMXReg *s)
+{
+    MMXReg r;
+    r.MMX_S(0) = float32_sub(d->MMX_S(0), d->MMX_S(1), &env->mmx_status);
+    r.MMX_S(1) = float32_add(s->MMX_S(0), s->MMX_S(1), &env->mmx_status);
+    *d = r;
+}
+
+void helper_pfrcp(MMXReg *d, MMXReg *s)
+{
+    d->MMX_S(0) = approx_rcp(s->MMX_S(0));
+    d->MMX_S(1) = d->MMX_S(0);
+}
+
+void helper_pfrsqrt(MMXReg *d, MMXReg *s)
+{
+    d->MMX_L(1) = s->MMX_L(0) & 0x7fffffff;
+    d->MMX_S(1) = approx_rsqrt(d->MMX_S(1));
+    d->MMX_L(1) |= s->MMX_L(0) & 0x80000000;
+    d->MMX_L(0) = d->MMX_L(1);
+}
+
+void helper_pfsub(MMXReg *d, MMXReg *s)
+{
+    d->MMX_S(0) = float32_sub(d->MMX_S(0), s->MMX_S(0), &env->mmx_status);
+    d->MMX_S(1) = float32_sub(d->MMX_S(1), s->MMX_S(1), &env->mmx_status);
+}
+
+void helper_pfsubr(MMXReg *d, MMXReg *s)
+{
+    d->MMX_S(0) = float32_sub(s->MMX_S(0), d->MMX_S(0), &env->mmx_status);
+    d->MMX_S(1) = float32_sub(s->MMX_S(1), d->MMX_S(1), &env->mmx_status);
+}
+
+void helper_pswapd(MMXReg *d, MMXReg *s)
+{
+    MMXReg r;
+    r.MMX_L(0) = s->MMX_L(1);
+    r.MMX_L(1) = s->MMX_L(0);
+    *d = r;
+}
+#endif
+
+/* SSSE3 op helpers */
+void glue(helper_pshufb, SUFFIX) (Reg *d, Reg *s)
+{
+    int i;
+    Reg r;
+
+    for (i = 0; i < (8 << SHIFT); i++)
+        r.B(i) = (s->B(i) & 0x80) ? 0 : (d->B(s->B(i) & ((8 << SHIFT) - 1)));
+
+    *d = r;
+}
+
+void glue(helper_phaddw, SUFFIX) (Reg *d, Reg *s)
+{
+    d->W(0) = (int16_t)d->W(0) + (int16_t)d->W(1);
+    d->W(1) = (int16_t)d->W(2) + (int16_t)d->W(3);
+    XMM_ONLY(d->W(2) = (int16_t)d->W(4) + (int16_t)d->W(5));
+    XMM_ONLY(d->W(3) = (int16_t)d->W(6) + (int16_t)d->W(7));
+    d->W((2 << SHIFT) + 0) = (int16_t)s->W(0) + (int16_t)s->W(1);
+    d->W((2 << SHIFT) + 1) = (int16_t)s->W(2) + (int16_t)s->W(3);
+    XMM_ONLY(d->W(6) = (int16_t)s->W(4) + (int16_t)s->W(5));
+    XMM_ONLY(d->W(7) = (int16_t)s->W(6) + (int16_t)s->W(7));
+}
+
+void glue(helper_phaddd, SUFFIX) (Reg *d, Reg *s)
+{
+    d->L(0) = (int32_t)d->L(0) + (int32_t)d->L(1);
+    XMM_ONLY(d->L(1) = (int32_t)d->L(2) + (int32_t)d->L(3));
+    d->L((1 << SHIFT) + 0) = (int32_t)s->L(0) + (int32_t)s->L(1);
+    XMM_ONLY(d->L(3) = (int32_t)s->L(2) + (int32_t)s->L(3));
+}
+
+void glue(helper_phaddsw, SUFFIX) (Reg *d, Reg *s)
+{
+    d->W(0) = satsw((int16_t)d->W(0) + (int16_t)d->W(1));
+    d->W(1) = satsw((int16_t)d->W(2) + (int16_t)d->W(3));
+    XMM_ONLY(d->W(2) = satsw((int16_t)d->W(4) + (int16_t)d->W(5)));
+    XMM_ONLY(d->W(3) = satsw((int16_t)d->W(6) + (int16_t)d->W(7)));
+    d->W((2 << SHIFT) + 0) = satsw((int16_t)s->W(0) + (int16_t)s->W(1));
+    d->W((2 << SHIFT) + 1) = satsw((int16_t)s->W(2) + (int16_t)s->W(3));
+    XMM_ONLY(d->W(6) = satsw((int16_t)s->W(4) + (int16_t)s->W(5)));
+    XMM_ONLY(d->W(7) = satsw((int16_t)s->W(6) + (int16_t)s->W(7)));
+}
+
+void glue(helper_pmaddubsw, SUFFIX) (Reg *d, Reg *s)
+{
+    d->W(0) = satsw((int8_t)s->B( 0) * (uint8_t)d->B( 0) +
+                    (int8_t)s->B( 1) * (uint8_t)d->B( 1));
+    d->W(1) = satsw((int8_t)s->B( 2) * (uint8_t)d->B( 2) +
+                    (int8_t)s->B( 3) * (uint8_t)d->B( 3));
+    d->W(2) = satsw((int8_t)s->B( 4) * (uint8_t)d->B( 4) +
+                    (int8_t)s->B( 5) * (uint8_t)d->B( 5));
+    d->W(3) = satsw((int8_t)s->B( 6) * (uint8_t)d->B( 6) +
+                    (int8_t)s->B( 7) * (uint8_t)d->B( 7));
+#if SHIFT == 1
+    d->W(4) = satsw((int8_t)s->B( 8) * (uint8_t)d->B( 8) +
+                    (int8_t)s->B( 9) * (uint8_t)d->B( 9));
+    d->W(5) = satsw((int8_t)s->B(10) * (uint8_t)d->B(10) +
+                    (int8_t)s->B(11) * (uint8_t)d->B(11));
+    d->W(6) = satsw((int8_t)s->B(12) * (uint8_t)d->B(12) +
+                    (int8_t)s->B(13) * (uint8_t)d->B(13));
+    d->W(7) = satsw((int8_t)s->B(14) * (uint8_t)d->B(14) +
+                    (int8_t)s->B(15) * (uint8_t)d->B(15));
+#endif
+}
+
+void glue(helper_phsubw, SUFFIX) (Reg *d, Reg *s)
+{
+    d->W(0) = (int16_t)d->W(0) - (int16_t)d->W(1);
+    d->W(1) = (int16_t)d->W(2) - (int16_t)d->W(3);
+    XMM_ONLY(d->W(2) = (int16_t)d->W(4) - (int16_t)d->W(5));
+    XMM_ONLY(d->W(3) = (int16_t)d->W(6) - (int16_t)d->W(7));
+    d->W((2 << SHIFT) + 0) = (int16_t)s->W(0) - (int16_t)s->W(1);
+    d->W((2 << SHIFT) + 1) = (int16_t)s->W(2) - (int16_t)s->W(3);
+    XMM_ONLY(d->W(6) = (int16_t)s->W(4) - (int16_t)s->W(5));
+    XMM_ONLY(d->W(7) = (int16_t)s->W(6) - (int16_t)s->W(7));
+}
+
+void glue(helper_phsubd, SUFFIX) (Reg *d, Reg *s)
+{
+    d->L(0) = (int32_t)d->L(0) - (int32_t)d->L(1);
+    XMM_ONLY(d->L(1) = (int32_t)d->L(2) - (int32_t)d->L(3));
+    d->L((1 << SHIFT) + 0) = (int32_t)s->L(0) - (int32_t)s->L(1);
+    XMM_ONLY(d->L(3) = (int32_t)s->L(2) - (int32_t)s->L(3));
+}
+
+void glue(helper_phsubsw, SUFFIX) (Reg *d, Reg *s)
+{
+    d->W(0) = satsw((int16_t)d->W(0) - (int16_t)d->W(1));
+    d->W(1) = satsw((int16_t)d->W(2) - (int16_t)d->W(3));
+    XMM_ONLY(d->W(2) = satsw((int16_t)d->W(4) - (int16_t)d->W(5)));
+    XMM_ONLY(d->W(3) = satsw((int16_t)d->W(6) - (int16_t)d->W(7)));
+    d->W((2 << SHIFT) + 0) = satsw((int16_t)s->W(0) - (int16_t)s->W(1));
+    d->W((2 << SHIFT) + 1) = satsw((int16_t)s->W(2) - (int16_t)s->W(3));
+    XMM_ONLY(d->W(6) = satsw((int16_t)s->W(4) - (int16_t)s->W(5)));
+    XMM_ONLY(d->W(7) = satsw((int16_t)s->W(6) - (int16_t)s->W(7)));
+}
+
+#define FABSB(_, x) x > INT8_MAX  ? -(int8_t ) x : x
+#define FABSW(_, x) x > INT16_MAX ? -(int16_t) x : x
+#define FABSL(_, x) x > INT32_MAX ? -(int32_t) x : x
+SSE_HELPER_B(helper_pabsb, FABSB)
+SSE_HELPER_W(helper_pabsw, FABSW)
+SSE_HELPER_L(helper_pabsd, FABSL)
+
+#define FMULHRSW(d, s) ((int16_t) d * (int16_t) s + 0x4000) >> 15
+SSE_HELPER_W(helper_pmulhrsw, FMULHRSW)
+
+#define FSIGNB(d, s) s <= INT8_MAX  ? s ? d : 0 : -(int8_t ) d
+#define FSIGNW(d, s) s <= INT16_MAX ? s ? d : 0 : -(int16_t) d
+#define FSIGNL(d, s) s <= INT32_MAX ? s ? d : 0 : -(int32_t) d
+SSE_HELPER_B(helper_psignb, FSIGNB)
+SSE_HELPER_W(helper_psignw, FSIGNW)
+SSE_HELPER_L(helper_psignd, FSIGNL)
+
+void glue(helper_palignr, SUFFIX) (Reg *d, Reg *s, int32_t shift)
+{
+    Reg r;
+
+    /* XXX could be checked during translation */
+    if (shift >= (16 << SHIFT)) {
+        r.Q(0) = 0;
+        XMM_ONLY(r.Q(1) = 0);
+    } else {
+        shift <<= 3;
+#define SHR(v, i) (i < 64 && i > -64 ? i > 0 ? v >> (i) : (v << -(i)) : 0)
+#if SHIFT == 0
+        r.Q(0) = SHR(s->Q(0), shift -   0) |
+                 SHR(d->Q(0), shift -  64);
+#else
+        r.Q(0) = SHR(s->Q(0), shift -   0) |
+                 SHR(s->Q(1), shift -  64) |
+                 SHR(d->Q(0), shift - 128) |
+                 SHR(d->Q(1), shift - 192);
+        r.Q(1) = SHR(s->Q(0), shift +  64) |
+                 SHR(s->Q(1), shift -   0) |
+                 SHR(d->Q(0), shift -  64) |
+                 SHR(d->Q(1), shift - 128);
+#endif
+#undef SHR
+    }
+
+    *d = r;
+}
+
+#define XMM0 env->xmm_regs[0]
+
+#if SHIFT == 1
+#define SSE_HELPER_V(name, elem, num, F)\
+void glue(name, SUFFIX) (Reg *d, Reg *s)\
+{\
+    d->elem(0) = F(d->elem(0), s->elem(0), XMM0.elem(0));\
+    d->elem(1) = F(d->elem(1), s->elem(1), XMM0.elem(1));\
+    if (num > 2) {\
+        d->elem(2) = F(d->elem(2), s->elem(2), XMM0.elem(2));\
+        d->elem(3) = F(d->elem(3), s->elem(3), XMM0.elem(3));\
+        if (num > 4) {\
+            d->elem(4) = F(d->elem(4), s->elem(4), XMM0.elem(4));\
+            d->elem(5) = F(d->elem(5), s->elem(5), XMM0.elem(5));\
+            d->elem(6) = F(d->elem(6), s->elem(6), XMM0.elem(6));\
+            d->elem(7) = F(d->elem(7), s->elem(7), XMM0.elem(7));\
+            if (num > 8) {\
+                d->elem(8) = F(d->elem(8), s->elem(8), XMM0.elem(8));\
+                d->elem(9) = F(d->elem(9), s->elem(9), XMM0.elem(9));\
+                d->elem(10) = F(d->elem(10), s->elem(10), XMM0.elem(10));\
+                d->elem(11) = F(d->elem(11), s->elem(11), XMM0.elem(11));\
+                d->elem(12) = F(d->elem(12), s->elem(12), XMM0.elem(12));\
+                d->elem(13) = F(d->elem(13), s->elem(13), XMM0.elem(13));\
+                d->elem(14) = F(d->elem(14), s->elem(14), XMM0.elem(14));\
+                d->elem(15) = F(d->elem(15), s->elem(15), XMM0.elem(15));\
+            }\
+        }\
+    }\
+}
+
+#define SSE_HELPER_I(name, elem, num, F)\
+void glue(name, SUFFIX) (Reg *d, Reg *s, uint32_t imm)\
+{\
+    d->elem(0) = F(d->elem(0), s->elem(0), ((imm >> 0) & 1));\
+    d->elem(1) = F(d->elem(1), s->elem(1), ((imm >> 1) & 1));\
+    if (num > 2) {\
+        d->elem(2) = F(d->elem(2), s->elem(2), ((imm >> 2) & 1));\
+        d->elem(3) = F(d->elem(3), s->elem(3), ((imm >> 3) & 1));\
+        if (num > 4) {\
+            d->elem(4) = F(d->elem(4), s->elem(4), ((imm >> 4) & 1));\
+            d->elem(5) = F(d->elem(5), s->elem(5), ((imm >> 5) & 1));\
+            d->elem(6) = F(d->elem(6), s->elem(6), ((imm >> 6) & 1));\
+            d->elem(7) = F(d->elem(7), s->elem(7), ((imm >> 7) & 1));\
+            if (num > 8) {\
+                d->elem(8) = F(d->elem(8), s->elem(8), ((imm >> 8) & 1));\
+                d->elem(9) = F(d->elem(9), s->elem(9), ((imm >> 9) & 1));\
+                d->elem(10) = F(d->elem(10), s->elem(10), ((imm >> 10) & 1));\
+                d->elem(11) = F(d->elem(11), s->elem(11), ((imm >> 11) & 1));\
+                d->elem(12) = F(d->elem(12), s->elem(12), ((imm >> 12) & 1));\
+                d->elem(13) = F(d->elem(13), s->elem(13), ((imm >> 13) & 1));\
+                d->elem(14) = F(d->elem(14), s->elem(14), ((imm >> 14) & 1));\
+                d->elem(15) = F(d->elem(15), s->elem(15), ((imm >> 15) & 1));\
+            }\
+        }\
+    }\
+}
+
+/* SSE4.1 op helpers */
+#define FBLENDVB(d, s, m) (m & 0x80) ? s : d
+#define FBLENDVPS(d, s, m) (m & 0x80000000) ? s : d
+#define FBLENDVPD(d, s, m) (m & 0x8000000000000000LL) ? s : d
+SSE_HELPER_V(helper_pblendvb, B, 16, FBLENDVB)
+SSE_HELPER_V(helper_blendvps, L, 4, FBLENDVPS)
+SSE_HELPER_V(helper_blendvpd, Q, 2, FBLENDVPD)
+
+void glue(helper_ptest, SUFFIX) (Reg *d, Reg *s)
+{
+    uint64_t zf = (s->Q(0) &  d->Q(0)) | (s->Q(1) &  d->Q(1));
+    uint64_t cf = (s->Q(0) & ~d->Q(0)) | (s->Q(1) & ~d->Q(1));
+
+    CC_SRC = (zf ? 0 : CC_Z) | (cf ? 0 : CC_C);
+}
+
+#define SSE_HELPER_F(name, elem, num, F)\
+void glue(name, SUFFIX) (Reg *d, Reg *s)\
+{\
+    d->elem(0) = F(0);\
+    d->elem(1) = F(1);\
+    d->elem(2) = F(2);\
+    d->elem(3) = F(3);\
+    if (num > 3) {\
+        d->elem(4) = F(4);\
+        d->elem(5) = F(5);\
+        if (num > 5) {\
+            d->elem(6) = F(6);\
+            d->elem(7) = F(7);\
+        }\
+    }\
+}
+
+SSE_HELPER_F(helper_pmovsxbw, W, 8, (int8_t) s->B)
+SSE_HELPER_F(helper_pmovsxbd, L, 4, (int8_t) s->B)
+SSE_HELPER_F(helper_pmovsxbq, Q, 2, (int8_t) s->B)
+SSE_HELPER_F(helper_pmovsxwd, L, 4, (int16_t) s->W)
+SSE_HELPER_F(helper_pmovsxwq, Q, 2, (int16_t) s->W)
+SSE_HELPER_F(helper_pmovsxdq, Q, 2, (int32_t) s->L)
+SSE_HELPER_F(helper_pmovzxbw, W, 8, s->B)
+SSE_HELPER_F(helper_pmovzxbd, L, 4, s->B)
+SSE_HELPER_F(helper_pmovzxbq, Q, 2, s->B)
+SSE_HELPER_F(helper_pmovzxwd, L, 4, s->W)
+SSE_HELPER_F(helper_pmovzxwq, Q, 2, s->W)
+SSE_HELPER_F(helper_pmovzxdq, Q, 2, s->L)
+
+void glue(helper_pmuldq, SUFFIX) (Reg *d, Reg *s)
+{
+    d->Q(0) = (int64_t) (int32_t) d->L(0) * (int32_t) s->L(0);
+    d->Q(1) = (int64_t) (int32_t) d->L(2) * (int32_t) s->L(2);
+}
+
+#define FCMPEQQ(d, s) d == s ? -1 : 0
+SSE_HELPER_Q(helper_pcmpeqq, FCMPEQQ)
+
+void glue(helper_packusdw, SUFFIX) (Reg *d, Reg *s)
+{
+    d->W(0) = satuw((int32_t) d->L(0));
+    d->W(1) = satuw((int32_t) d->L(1));
+    d->W(2) = satuw((int32_t) d->L(2));
+    d->W(3) = satuw((int32_t) d->L(3));
+    d->W(4) = satuw((int32_t) s->L(0));
+    d->W(5) = satuw((int32_t) s->L(1));
+    d->W(6) = satuw((int32_t) s->L(2));
+    d->W(7) = satuw((int32_t) s->L(3));
+}
+
+#define FMINSB(d, s) MIN((int8_t) d, (int8_t) s)
+#define FMINSD(d, s) MIN((int32_t) d, (int32_t) s)
+#define FMAXSB(d, s) MAX((int8_t) d, (int8_t) s)
+#define FMAXSD(d, s) MAX((int32_t) d, (int32_t) s)
+SSE_HELPER_B(helper_pminsb, FMINSB)
+SSE_HELPER_L(helper_pminsd, FMINSD)
+SSE_HELPER_W(helper_pminuw, MIN)
+SSE_HELPER_L(helper_pminud, MIN)
+SSE_HELPER_B(helper_pmaxsb, FMAXSB)
+SSE_HELPER_L(helper_pmaxsd, FMAXSD)
+SSE_HELPER_W(helper_pmaxuw, MAX)
+SSE_HELPER_L(helper_pmaxud, MAX)
+
+#define FMULLD(d, s) (int32_t) d * (int32_t) s
+SSE_HELPER_L(helper_pmulld, FMULLD)
+
+void glue(helper_phminposuw, SUFFIX) (Reg *d, Reg *s)
+{
+    int idx = 0;
+
+    if (s->W(1) < s->W(idx))
+        idx = 1;
+    if (s->W(2) < s->W(idx))
+        idx = 2;
+    if (s->W(3) < s->W(idx))
+        idx = 3;
+    if (s->W(4) < s->W(idx))
+        idx = 4;
+    if (s->W(5) < s->W(idx))
+        idx = 5;
+    if (s->W(6) < s->W(idx))
+        idx = 6;
+    if (s->W(7) < s->W(idx))
+        idx = 7;
+
+    d->Q(1) = 0;
+    d->L(1) = 0;
+    d->W(1) = idx;
+    d->W(0) = s->W(idx);
+}
+
+void glue(helper_roundps, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+{
+    signed char prev_rounding_mode;
+
+    prev_rounding_mode = env->sse_status.float_rounding_mode;
+    if (!(mode & (1 << 2)))
+        switch (mode & 3) {
+        case 0:
+            set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
+            break;
+        case 1:
+            set_float_rounding_mode(float_round_down, &env->sse_status);
+            break;
+        case 2:
+            set_float_rounding_mode(float_round_up, &env->sse_status);
+            break;
+        case 3:
+            set_float_rounding_mode(float_round_to_zero, &env->sse_status);
+            break;
+        }
+
+    d->L(0) = float64_round_to_int(s->L(0), &env->sse_status);
+    d->L(1) = float64_round_to_int(s->L(1), &env->sse_status);
+    d->L(2) = float64_round_to_int(s->L(2), &env->sse_status);
+    d->L(3) = float64_round_to_int(s->L(3), &env->sse_status);
+
+#if 0 /* TODO */
+    if (mode & (1 << 3))
+        set_float_exception_flags(
+                        get_float_exception_flags(&env->sse_status) &
+                        ~float_flag_inexact,
+                        &env->sse_status);
+#endif
+    env->sse_status.float_rounding_mode = prev_rounding_mode;
+}
+
+void glue(helper_roundpd, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+{
+    signed char prev_rounding_mode;
+
+    prev_rounding_mode = env->sse_status.float_rounding_mode;
+    if (!(mode & (1 << 2)))
+        switch (mode & 3) {
+        case 0:
+            set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
+            break;
+        case 1:
+            set_float_rounding_mode(float_round_down, &env->sse_status);
+            break;
+        case 2:
+            set_float_rounding_mode(float_round_up, &env->sse_status);
+            break;
+        case 3:
+            set_float_rounding_mode(float_round_to_zero, &env->sse_status);
+            break;
+        }
+
+    d->Q(0) = float64_round_to_int(s->Q(0), &env->sse_status);
+    d->Q(1) = float64_round_to_int(s->Q(1), &env->sse_status);
+
+#if 0 /* TODO */
+    if (mode & (1 << 3))
+        set_float_exception_flags(
+                        get_float_exception_flags(&env->sse_status) &
+                        ~float_flag_inexact,
+                        &env->sse_status);
+#endif
+    env->sse_status.float_rounding_mode = prev_rounding_mode;
+}
+
+void glue(helper_roundss, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+{
+    signed char prev_rounding_mode;
+
+    prev_rounding_mode = env->sse_status.float_rounding_mode;
+    if (!(mode & (1 << 2)))
+        switch (mode & 3) {
+        case 0:
+            set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
+            break;
+        case 1:
+            set_float_rounding_mode(float_round_down, &env->sse_status);
+            break;
+        case 2:
+            set_float_rounding_mode(float_round_up, &env->sse_status);
+            break;
+        case 3:
+            set_float_rounding_mode(float_round_to_zero, &env->sse_status);
+            break;
+        }
+
+    d->L(0) = float64_round_to_int(s->L(0), &env->sse_status);
+
+#if 0 /* TODO */
+    if (mode & (1 << 3))
+        set_float_exception_flags(
+                        get_float_exception_flags(&env->sse_status) &
+                        ~float_flag_inexact,
+                        &env->sse_status);
+#endif
+    env->sse_status.float_rounding_mode = prev_rounding_mode;
+}
+
+void glue(helper_roundsd, SUFFIX) (Reg *d, Reg *s, uint32_t mode)
+{
+    signed char prev_rounding_mode;
+
+    prev_rounding_mode = env->sse_status.float_rounding_mode;
+    if (!(mode & (1 << 2)))
+        switch (mode & 3) {
+        case 0:
+            set_float_rounding_mode(float_round_nearest_even, &env->sse_status);
+            break;
+        case 1:
+            set_float_rounding_mode(float_round_down, &env->sse_status);
+            break;
+        case 2:
+            set_float_rounding_mode(float_round_up, &env->sse_status);
+            break;
+        case 3:
+            set_float_rounding_mode(float_round_to_zero, &env->sse_status);
+            break;
+        }
+
+    d->Q(0) = float64_round_to_int(s->Q(0), &env->sse_status);
+
+#if 0 /* TODO */
+    if (mode & (1 << 3))
+        set_float_exception_flags(
+                        get_float_exception_flags(&env->sse_status) &
+                        ~float_flag_inexact,
+                        &env->sse_status);
+#endif
+    env->sse_status.float_rounding_mode = prev_rounding_mode;
+}
+
+#define FBLENDP(d, s, m) m ? s : d
+SSE_HELPER_I(helper_blendps, L, 4, FBLENDP)
+SSE_HELPER_I(helper_blendpd, Q, 2, FBLENDP)
+SSE_HELPER_I(helper_pblendw, W, 8, FBLENDP)
+
+void glue(helper_dpps, SUFFIX) (Reg *d, Reg *s, uint32_t mask)
+{
+    float32 iresult = 0 /*float32_zero*/;
+
+    if (mask & (1 << 4))
+        iresult = float32_add(iresult,
+                        float32_mul(d->L(0), s->L(0), &env->sse_status),
+                        &env->sse_status);
+    if (mask & (1 << 5))
+        iresult = float32_add(iresult,
+                        float32_mul(d->L(1), s->L(1), &env->sse_status),
+                        &env->sse_status);
+    if (mask & (1 << 6))
+        iresult = float32_add(iresult,
+                        float32_mul(d->L(2), s->L(2), &env->sse_status),
+                        &env->sse_status);
+    if (mask & (1 << 7))
+        iresult = float32_add(iresult,
+                        float32_mul(d->L(3), s->L(3), &env->sse_status),
+                        &env->sse_status);
+    d->L(0) = (mask & (1 << 0)) ? iresult : 0 /*float32_zero*/;
+    d->L(1) = (mask & (1 << 1)) ? iresult : 0 /*float32_zero*/;
+    d->L(2) = (mask & (1 << 2)) ? iresult : 0 /*float32_zero*/;
+    d->L(3) = (mask & (1 << 3)) ? iresult : 0 /*float32_zero*/;
+}
+
+void glue(helper_dppd, SUFFIX) (Reg *d, Reg *s, uint32_t mask)
+{
+    float64 iresult = 0 /*float64_zero*/;
+
+    if (mask & (1 << 4))
+        iresult = float64_add(iresult,
+                        float64_mul(d->Q(0), s->Q(0), &env->sse_status),
+                        &env->sse_status);
+    if (mask & (1 << 5))
+        iresult = float64_add(iresult,
+                        float64_mul(d->Q(1), s->Q(1), &env->sse_status),
+                        &env->sse_status);
+    d->Q(0) = (mask & (1 << 0)) ? iresult : 0 /*float64_zero*/;
+    d->Q(1) = (mask & (1 << 1)) ? iresult : 0 /*float64_zero*/;
+}
+
+void glue(helper_mpsadbw, SUFFIX) (Reg *d, Reg *s, uint32_t offset)
+{
+    int s0 = (offset & 3) << 2;
+    int d0 = (offset & 4) << 0;
+    int i;
+    Reg r;
+
+    for (i = 0; i < 8; i++, d0++) {
+        r.W(i) = 0;
+        r.W(i) += abs1(d->B(d0 + 0) - s->B(s0 + 0));
+        r.W(i) += abs1(d->B(d0 + 1) - s->B(s0 + 1));
+        r.W(i) += abs1(d->B(d0 + 2) - s->B(s0 + 2));
+        r.W(i) += abs1(d->B(d0 + 3) - s->B(s0 + 3));
+    }
+
+    *d = r;
+}
+
+/* SSE4.2 op helpers */
+/* it's unclear whether signed or unsigned */
+#define FCMPGTQ(d, s) d > s ? -1 : 0
+SSE_HELPER_Q(helper_pcmpgtq, FCMPGTQ)
+
+static inline int pcmp_elen(int reg, uint32_t ctrl)
+{
+    int val;
+
+    /* Presence of REX.W is indicated by a bit higher than 7 set */
+    if (ctrl >> 8)
+        val = abs1((int64_t) env->regs[reg]);
+    else
+        val = abs1((int32_t) env->regs[reg]);
+
+    if (ctrl & 1) {
+        if (val > 8)
+            return 8;
+    } else
+        if (val > 16)
+            return 16;
+
+    return val;
+}
+
+static inline int pcmp_ilen(Reg *r, uint8_t ctrl)
+{
+    int val = 0;
+
+    if (ctrl & 1) {
+        while (val < 8 && r->W(val))
+            val++;
+    } else
+        while (val < 16 && r->B(val))
+            val++;
+
+    return val;
+}
+
+static inline int pcmp_val(Reg *r, uint8_t ctrl, int i)
+{
+    switch ((ctrl >> 0) & 3) {
+    case 0:
+        return r->B(i);
+    case 1:
+        return r->W(i);
+    case 2:
+        return (int8_t) r->B(i);
+    case 3:
+    default:
+        return (int16_t) r->W(i);
+    }
+}
+
+static inline unsigned pcmpxstrx(Reg *d, Reg *s,
+                int8_t ctrl, int valids, int validd)
+{
+    unsigned int res = 0;
+    int v;
+    int j, i;
+    int upper = (ctrl & 1) ? 7 : 15;
+
+    valids--;
+    validd--;
+
+    CC_SRC = (valids < upper ? CC_Z : 0) | (validd < upper ? CC_S : 0);
+
+    switch ((ctrl >> 2) & 3) {
+    case 0:
+        for (j = valids; j >= 0; j--) {
+            res <<= 1;
+            v = pcmp_val(s, ctrl, j);
+            for (i = validd; i >= 0; i--)
+                res |= (v == pcmp_val(d, ctrl, i));
+        }
+        break;
+    case 1:
+        for (j = valids; j >= 0; j--) {
+            res <<= 1;
+            v = pcmp_val(s, ctrl, j);
+            for (i = ((validd - 1) | 1); i >= 0; i -= 2)
+                res |= (pcmp_val(d, ctrl, i - 0) <= v &&
+                        pcmp_val(d, ctrl, i - 1) >= v);
+        }
+        break;
+    case 2:
+        res = (2 << (upper - MAX(valids, validd))) - 1;
+        res <<= MAX(valids, validd) - MIN(valids, validd);
+        for (i = MIN(valids, validd); i >= 0; i--) {
+            res <<= 1;
+            v = pcmp_val(s, ctrl, i);
+            res |= (v == pcmp_val(d, ctrl, i));
+        }
+        break;
+    case 3:
+        for (j = valids - validd; j >= 0; j--) {
+            res <<= 1;
+            res |= 1;
+            for (i = MIN(upper - j, validd); i >= 0; i--)
+                res &= (pcmp_val(s, ctrl, i + j) == pcmp_val(d, ctrl, i));
+        }
+        break;
+    }
+
+    switch ((ctrl >> 4) & 3) {
+    case 1:
+        res ^= (2 << upper) - 1;
+        break;
+    case 3:
+        res ^= (2 << valids) - 1;
+        break;
+    }
+
+    if (res)
+       CC_SRC |= CC_C;
+    if (res & 1)
+       CC_SRC |= CC_O;
+
+    return res;
+}
+
+static inline int rffs1(unsigned int val)
+{
+    int ret = 1, hi;
+
+    for (hi = sizeof(val) * 4; hi; hi /= 2)
+        if (val >> hi) {
+            val >>= hi;
+            ret += hi;
+        }
+
+    return ret;
+}
+
+static inline int ffs1(unsigned int val)
+{
+    int ret = 1, hi;
+
+    for (hi = sizeof(val) * 4; hi; hi /= 2)
+        if (val << hi) {
+            val <<= hi;
+            ret += hi;
+        }
+
+    return ret;
+}
+
+void glue(helper_pcmpestri, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+{
+    unsigned int res = pcmpxstrx(d, s, ctrl,
+                    pcmp_elen(R_EDX, ctrl),
+                    pcmp_elen(R_EAX, ctrl));
+
+    if (res)
+        env->regs[R_ECX] = ((ctrl & (1 << 6)) ? rffs1 : ffs1)(res) - 1;
+    else
+        env->regs[R_ECX] = 16 >> (ctrl & (1 << 0));
+}
+
+void glue(helper_pcmpestrm, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+{
+    int i;
+    unsigned int res = pcmpxstrx(d, s, ctrl,
+                    pcmp_elen(R_EDX, ctrl),
+                    pcmp_elen(R_EAX, ctrl));
+
+    if ((ctrl >> 6) & 1) {
+        if (ctrl & 1)
+            for (i = 0; i <= 8; i--, res >>= 1)
+                d->W(i) = (res & 1) ? ~0 : 0;
+        else
+            for (i = 0; i <= 16; i--, res >>= 1)
+                d->B(i) = (res & 1) ? ~0 : 0;
+    } else {
+        d->Q(1) = 0;
+        d->Q(0) = res;
+    }
+}
+
+void glue(helper_pcmpistri, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+{
+    unsigned int res = pcmpxstrx(d, s, ctrl,
+                    pcmp_ilen(s, ctrl),
+                    pcmp_ilen(d, ctrl));
+
+    if (res)
+        env->regs[R_ECX] = ((ctrl & (1 << 6)) ? rffs1 : ffs1)(res) - 1;
+    else
+        env->regs[R_ECX] = 16 >> (ctrl & (1 << 0));
+}
+
+void glue(helper_pcmpistrm, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
+{
+    int i;
+    unsigned int res = pcmpxstrx(d, s, ctrl,
+                    pcmp_ilen(s, ctrl),
+                    pcmp_ilen(d, ctrl));
+
+    if ((ctrl >> 6) & 1) {
+        if (ctrl & 1)
+            for (i = 0; i <= 8; i--, res >>= 1)
+                d->W(i) = (res & 1) ? ~0 : 0;
+        else
+            for (i = 0; i <= 16; i--, res >>= 1)
+                d->B(i) = (res & 1) ? ~0 : 0;
+    } else {
+        d->Q(1) = 0;
+        d->Q(0) = res;
+    }
+}
+
+#define CRCPOLY        0x1edc6f41
+#define CRCPOLY_BITREV 0x82f63b78
+target_ulong helper_crc32(uint32_t crc1, target_ulong msg, uint32_t len)
+{
+    target_ulong crc = (msg & ((target_ulong) -1 >>
+                            (TARGET_LONG_BITS - len))) ^ crc1;
+
+    while (len--)
+        crc = (crc >> 1) ^ ((crc & 1) ? CRCPOLY_BITREV : 0);
+
+    return crc;
+}
+
+#define POPMASK(i)     ((target_ulong) -1 / ((1LL << (1 << i)) + 1))
+#define POPCOUNT(n, i) (n & POPMASK(i)) + ((n >> (1 << i)) & POPMASK(i))
+target_ulong helper_popcnt(target_ulong n, uint32_t type)
+{
+    CC_SRC = n ? 0 : CC_Z;
+
+    n = POPCOUNT(n, 0);
+    n = POPCOUNT(n, 1);
+    n = POPCOUNT(n, 2);
+    n = POPCOUNT(n, 3);
+    if (type == 1)
+        return n & 0xff;
+
+    n = POPCOUNT(n, 4);
+#ifndef TARGET_X86_64
+    return n;
+#else
+    if (type == 2)
+        return n & 0xff;
+
+    return POPCOUNT(n, 5);
+#endif
+}
+#endif
 
 #undef SHIFT
 #undef XMM_ONLY

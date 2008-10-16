@@ -40,25 +40,14 @@
 #include "disas.h"
 #include "tcg.h"
 
-#ifndef VBOX
 /* code generation context */
 TCGContext tcg_ctx;
-#else
-TCGContext g_tcg_ctx;
-static TCGContext* getCompilerCtx(CPUState *env)
-{
-    /** @todo nike: should be field in CPU env */
-    //return env->tcg_context;
-    return &g_tcg_ctx;
-}
-#endif
 
 uint16_t gen_opc_buf[OPC_BUF_SIZE];
-uint32_t gen_opparam_buf[OPPARAM_BUF_SIZE];
-long gen_labels[OPC_BUF_SIZE];
-int nb_gen_labels;
+TCGArg gen_opparam_buf[OPPARAM_BUF_SIZE];
 
 target_ulong gen_opc_pc[OPC_BUF_SIZE];
+uint16_t gen_opc_icount[OPC_BUF_SIZE];
 uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
 #if defined(TARGET_I386)
 uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
@@ -85,22 +74,12 @@ unsigned long code_gen_max_block_size(void)
     return max;
 }
 
-#ifndef VBOX
 void cpu_gen_init()
 {
     tcg_context_init(&tcg_ctx);
     tcg_set_frame(&tcg_ctx, TCG_AREG0, offsetof(CPUState, temp_buf),
                   CPU_TEMP_BUF_NLONGS * sizeof(long));
 }
-#else
-void cpu_gen_init(CPUState *env)
-{
-    TCGContext* tcg_ctx = getCompilerCtx(env);
-    tcg_context_init(tcg_ctx);
-    tcg_set_frame(tcg_ctx, TCG_AREG0, offsetof(CPUState, temp_buf),
-                  CPU_TEMP_BUF_NLONGS * sizeof(long));
-}
-#endif
 
 /* return non zero if the very first instruction is invalid so that
    the virtual CPU can trigger an exception. 
@@ -109,13 +88,9 @@ void cpu_gen_init(CPUState *env)
    code).
 */
 int cpu_gen_code(CPUState *env, TranslationBlock *tb,
-                 int max_code_size, int *gen_code_size_ptr)
+                 int *gen_code_size_ptr)
 {
-#ifdef VBOX
-    TCGContext *s = getCompilerCtx(env);
-#else
     TCGContext *s = &tcg_ctx;
-#endif
     uint8_t *gen_code_buf;
     int gen_code_size;
 #ifdef CONFIG_PROFILER
@@ -132,16 +107,11 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb,
     RAWEx_ProfileStart(env, STATS_QEMU_COMPILATION);
     tcg_func_start(s);
 
-    if (gen_intermediate_code(env, tb) < 0)
-    {
-        RAWEx_ProfileStop(env, STATS_QEMU_COMPILATION);
-        return -1;
-    }
+    gen_intermediate_code(env, tb);
 #else /* !VBOX */
     tcg_func_start(s);
 
-    if (gen_intermediate_code(env, tb) < 0)
-        return -1;
+    gen_intermediate_code(env, tb);
 #endif /* !VBOX */
 
     /* generate machine code */
@@ -195,11 +165,7 @@ int cpu_restore_state(TranslationBlock *tb,
                       CPUState *env, unsigned long searched_pc,
                       void *puc)
 {
-#ifndef VBOX
     TCGContext *s = &tcg_ctx;
-#else
-    TCGContext *s = getCompilerCtx(env);
-#endif
     int j;
     unsigned long tc_ptr;
 #ifdef CONFIG_PROFILER
@@ -212,9 +178,7 @@ int cpu_restore_state(TranslationBlock *tb,
     tcg_func_start(s);
 
 #ifdef VBOX
-    /** @todo: what's right here? */
-    if (gen_intermediate_code_pc(env, tb) < 0)
-        return -1;
+    gen_intermediate_code_pc(env, tb);
 #else
     gen_intermediate_code_pc(env, tb);
 #endif

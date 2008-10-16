@@ -29,7 +29,21 @@
 #ifdef VBOX
 # include <VBox/err.h>
 #endif
-#include "exec.h"
+
+#ifndef VBOX
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <inttypes.h>
+#include <signal.h>
+#include <assert.h>
+#endif
+
+#include "cpu.h"
+#include "exec-all.h"
+#include "svm.h"
+#include "qemu-common.h"
 
 //#define DEBUG_PCALL
 

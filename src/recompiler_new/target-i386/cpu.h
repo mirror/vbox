@@ -266,6 +266,8 @@
 #define MSR_MCG_STATUS                  0x17a
 #define MSR_MCG_CTL                     0x17b
 
+#define MSR_IA32_PERF_STATUS            0x198
+
 #define MSR_PAT                         0x277
 
 #define MSR_EFER                        0xc0000080
@@ -493,6 +495,7 @@ typedef union {
     uint8_t _b[8];
     uint16_t _w[2];
     uint32_t _l[1];
+    float32 _s[2];
     uint64_t q;
 } MMXReg;
 
@@ -507,6 +510,7 @@ typedef union {
 #define MMX_B(n) _b[7 - (n)]
 #define MMX_W(n) _w[3 - (n)]
 #define MMX_L(n) _l[1 - (n)]
+#define MMX_S(n) _s[1 - (n)]
 #else
 #define XMM_B(n) _b[n]
 #define XMM_W(n) _w[n]
@@ -518,6 +522,7 @@ typedef union {
 #define MMX_B(n) _b[n]
 #define MMX_W(n) _w[n]
 #define MMX_L(n) _l[n]
+#define MMX_S(n) _s[n]
 #endif
 #define MMX_Q(n) q
 
@@ -554,7 +559,7 @@ typedef struct CPUX86State {
     SegmentCache idt; /* only base and limit are used */
 
     target_ulong cr[5]; /* NOTE: cr1 is unused */
-    uint32_t a20_mask;
+    uint64_t a20_mask;
 
     /* FPU state */
     unsigned int fpstt; /* top of stack index */
@@ -656,6 +661,7 @@ typedef struct CPUX86State {
 #endif /* !VBOX */
     uint32_t cpuid_ext2_features;
     uint32_t cpuid_ext3_features;
+    uint32_t cpuid_apic_id;
 
 #ifndef VBOX
 #ifdef USE_KQEMU
