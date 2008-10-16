@@ -271,14 +271,16 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
                                     char **ppszFlags,
                                     uint32_t *pcbBufActual)
 {
+    /*
+     * Create the GET_PROP message and call the host.
+     */
     GetProperty Msg;
 
     Msg.hdr.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GET_PROP;
     Msg.hdr.cParms = 4;
-    VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName),
-                       strlen(pszName) + 1);
+    VbglHGCMParmPtrSet(&Msg.name, const_cast<char *>(pszName), strlen(pszName) + 1);
     VbglHGCMParmPtrSet(&Msg.buffer, pvBuf, cbBuf);
     VbglHGCMParmUInt64Set(&Msg.timestamp, 0);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
@@ -286,25 +288,52 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
         rc = Msg.hdr.result;
-    if ((VERR_BUFFER_OVERFLOW == rc) && (pcbBufActual != NULL))
+
+    /*
+     * The cbBufActual parameter is also returned on overflow so the call can
+     * adjust his/her buffer.
+     */
+    if (    rc == VERR_BUFFER_OVERFLOW
+        ||  pcbBufActual != NULL)
     {
         int rc2 = VbglHGCMParmUInt32Get(&Msg.size, pcbBufActual);
-        if (!RT_SUCCESS(rc2))
-            rc = rc2;
+        AssertRCReturn(rc2, RT_FAILURE(rc) ? rc : rc2);
     }
-    if (RT_SUCCESS(rc) && (pu64Timestamp != NULL))
-        rc = VbglHGCMParmUInt64Get(&Msg.timestamp, pu64Timestamp);
-    if (RT_SUCCESS(rc) && (ppszValue != NULL))
-        *ppszValue = reinterpret_cast<char *>(pvBuf);
-    if (RT_SUCCESS(rc) && (ppszFlags != NULL))
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Buffer layout: Value\0Flags\0.
+     *
+     * If the caller cares about any of these strings, make sure things are
+     * propertly terminated (paranoia).
+     */
+    if (    RT_SUCCESS(rc)
+        &&  (ppszValue != NULL || ppszFlags != NULL))
     {
-        char *pszEos = reinterpret_cast<char *>(memchr(pvBuf, '\0', cbBuf));
-        if (pszEos)
-            *ppszFlags = pszEos + 1;
-        else
-            rc = VERR_TOO_MUCH_DATA;
+        /* Validate / skip 'Name'. */
+        char *pszFlags = (char *)memchr(pvBuf, '\0', cbBuf) + 1;
+        AssertPtrReturn(pszFlags, VERR_TOO_MUCH_DATA);
+        if (ppszValue)
+            *ppszValue = (char *)pvBuf;
+
+        if (ppszFlags)
+        {
+            /* Validate 'Flags'. */
+            void *pvEos = memchr(pszFlags, '\0', cbBuf - (pszFlags - (char *)pvBuf));
+            AssertPtrReturn(pvEos, VERR_TOO_MUCH_DATA);
+            *ppszFlags = pszFlags;
+        }
     }
-    return rc;
+
+    /* And the timestamp, if requested. */
+    if (pu64Timestamp != NULL)
+    {
+        rc = VbglHGCMParmUInt64Get(&Msg.timestamp, pu64Timestamp);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -516,12 +545,13 @@ VBGLR3DECL(int) VbglR3GuestPropEnumRaw(uint32_t u32ClientId,
  *                          on success.  This must be freed with
  *                          VbglR3GuestPropEnumFree when it is no longer needed.
  * @param   ppszName        Where to store the first property name on success.
- *                          Should not be freed.
+ *                          Should not be freed. Optional.
  * @param   ppszValue       Where to store the first property value on success.
- *                          Should not be freed.
+ *                          Should not be freed. Optional.
  * @param   ppszValue       Where to store the first timestamp value on success.
+ *                          Optional.
  * @param   ppszFlags       Where to store the first flags value on success.
- *                          Should not be freed.
+ *                          Should not be freed. Optional.
  */
 VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     char const * const *papszPatterns,
@@ -532,11 +562,11 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
                                     uint64_t *pu64Timestamp,
                                     char const **ppszFlags)
 {
-    int rc = VINF_SUCCESS;
+    /* Create the handle. */
     RTMemAutoPtr<VBGLR3GUESTPROPENUM, VbglR3GuestPropEnumFree> Handle;
     Handle = (PVBGLR3GUESTPROPENUM)RTMemAllocZ(sizeof(VBGLR3GUESTPROPENUM));
     if (!Handle)
-        rc = VERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
 
     /* Get the length of the pattern string, including the final terminator. */
     uint32_t cchPatterns = 1;
@@ -559,61 +589,71 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
      * information. */
     uint32_t cchBuf = 4096;
     RTMemAutoPtr<char> Buf;
+
     /* In reading the guest property data we are racing against the host
      * adding more of it, so loop a few times and retry on overflow. */
-    bool finish = false;
-    if (RT_SUCCESS(rc))
-        for (int i = 0; (i < 10) && !finish; ++i)
-        {
-            if (!Buf.realloc(cchBuf))
-                rc = VERR_NO_MEMORY;
-            if (RT_SUCCESS(rc) || (VERR_BUFFER_OVERFLOW == rc))
-                rc = VbglR3GuestPropEnumRaw(u32ClientId, Patterns.get(),
-                                            Buf.get(), cchBuf, &cchBuf);
-            if (rc != VERR_BUFFER_OVERFLOW)
-                finish = true;
-            else
-                cchBuf += 4096;  /* Just to increase our chances */
-        }
-    if (VERR_BUFFER_OVERFLOW == rc)
-        rc = VERR_TOO_MUCH_DATA;
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+    for (int i = 0; i < 10; ++i)
     {
-        /* Transfer ownership of the buffer to the handle structure. */
-        Handle->pchNext = Handle->pchBuf = Buf.release();
-        Handle->pchBufEnd = Handle->pchBuf + cchBuf;
+        if (!Buf.realloc(cchBuf))
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        rc = VbglR3GuestPropEnumRaw(u32ClientId, Patterns.get(),
+                                    Buf.get(), cchBuf, &cchBuf);
+        if (rc != VERR_BUFFER_OVERFLOW)
+            break;
+        cchBuf += 4096;  /* Just to increase our chances */
     }
     if (RT_SUCCESS(rc))
+    {
+        /*
+         * Transfer ownership of the buffer to the handle structure and
+         * call VbglR3GuestPropEnumNext to retriev the first entry.
+         */
+        Handle->pchNext = Handle->pchBuf = Buf.release();
+        Handle->pchBufEnd = Handle->pchBuf + cchBuf;
+
+        const char *pszNameTmp;
+        if (!ppszName)
+            ppszName = &pszNameTmp;
         rc = VbglR3GuestPropEnumNext(Handle.get(), ppszName, ppszValue,
                                      pu64Timestamp, ppszFlags);
-    if (RT_SUCCESS(rc) && (NULL == ppszName))
-        /* No matching properties found */
-        rc = VERR_NOT_FOUND;
-    /* And transfer ownership of the handle to the caller. */
-    if (RT_SUCCESS(rc))
-        *ppHandle = Handle.release();
+        if (RT_SUCCESS(rc) && *ppszName != NULL)
+            *ppHandle = Handle.release();
+        else if (RT_SUCCESS(rc))
+            rc = VERR_NOT_FOUND; /* No matching properties found. */
+    }
+    else if (rc == VERR_BUFFER_OVERFLOW)
+        rc = VERR_TOO_MUCH_DATA;
     return rc;
 }
 
 
 /**
- * Get the next guest property.  See @a VbglR3GuestPropEnum.
+ * Get the next guest property.
+ *
+ * See @a VbglR3GuestPropEnum.
  *
  * @returns VBox status code.
  *
  * @param  pHandle       Handle obtained from @a VbglR3GuestPropEnum.
  * @param  ppszName      Where to store the next property name.  This will be
  *                       set to NULL if there are no more properties to
- *                       enumerate.  This pointer should not be freed.
+ *                       enumerate.  This pointer should not be freed. Optional.
  * @param  ppszValue     Where to store the next property value.  This will be
  *                       set to NULL if there are no more properties to
- *                       enumerate.  This pointer should not be freed.
+ *                       enumerate.  This pointer should not be freed. Optional.
  * @param  pu64Timestamp Where to store the next property timestamp.  This
  *                       will be set to zero if there are no more properties
- *                       to enumerate.
+ *                       to enumerate. Optional.
  * @param  ppszFlags     Where to store the next property flags.  This will be
  *                       set to NULL if there are no more properties to
- *                       enumerate.  This pointer should not be freed.
+ *                       enumerate.  This pointer should not be freed. Optional.
+ *
+ * @remarks While all output parameters are optional, you need at least one to
+ *          figure out when to stop.
  */
 VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
                                         char const **ppszName,
@@ -621,44 +661,67 @@ VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
                                         uint64_t *pu64Timestamp,
                                         char const **ppszFlags)
 {
-    /* The VBGLR3GUESTPROPENUM structure contains a buffer containing the raw
+    /*
+     * The VBGLR3GUESTPROPENUM structure contains a buffer containing the raw
      * properties data and a pointer into the buffer which tracks how far we
      * have parsed so far.  The buffer contains packed strings in groups of
      * four - name, value, timestamp (as a decimal string) and flags.  It is
      * terminated by four empty strings.  We can rely on this layout unless
      * the caller has been poking about in the structure internals, in which
-     * case they must take responsibility for the results. */
+     * case they must take responsibility for the results.
+     *
+     * Layout:
+     *   Name\0Value\0Timestamp\0Flags\0
+     */
+    char *pchNext = pHandle->pchNext;       /* The cursor. */
+    char *pchEnd  = pHandle->pchBufEnd;     /* End of buffer, for size calculations. */
 
-    /* Get the pointer into the buffer to the next entry. */
-    char *pchNext = pHandle->pchNext;
-    /* And the pointer to the end of the buffer. */
-    char *pchLast = pHandle->pchBufEnd;
-    /* The index will initially point to the next name entry. */
-    char *pszName = pchNext;
-    /* The value for this property starts after the terminator for the name. */
-    char *pszValue = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
-    AssertPtr(pchNext);  /* 0x1 is also an invalid pointer :) */
-    /* The timestamp after the value... */
-    char *pszTimestamp = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
-    AssertPtr(pchNext);
-    /* ...and the flags after the timestamp. */
-    char *pszFlags = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
-    AssertPtr(pchNext);
-    uint64_t u64Timestamp = RTStrToUInt64(pszTimestamp);
-    /* Only move the index pointer in the structure if we found a non-empty entry. */
+    char *pszName      = pchNext;
+    char *pszValue     = pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+    AssertPtrReturn(pchNext, VERR_PARSE_ERROR);  /* 0x1 is also an invalid pointer :) */
+
+    char *pszTimestamp = pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+    AssertPtrReturn(pchNext, VERR_PARSE_ERROR);
+
+    char *pszFlags     = pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+    AssertPtrReturn(pchNext, VERR_PARSE_ERROR);
+
+    /*
+     * Don't move the index pointer if we found the terminating "\0\0\0\0" entry.
+     * Don't try convert the timestamp either.
+     */
+    uint64_t u64Timestamp;
     if (*pszName != '\0')
     {
-        pHandle->pchNext = pchNext = (char *)memchr(pchNext, '\0', pchLast - pchNext) + 1;
+        pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+        AssertPtrReturn(pchNext, VERR_PARSE_ERROR);
+
+        /* Convert the timestamp string into a number. */
+        int rc = RTStrToUInt64Full(pszTimestamp, 0, &u64Timestamp);
+        AssertRCSuccessReturn(rc, VERR_PARSE_ERROR);
+
+        pHandle->pchNext = pchNext;
         AssertPtr(pchNext);
     }
-    /* And make sure that the buffer terminator is correct. */
-    Assert(   (*pszName != '\0')
-           || (('\0' == *pszValue) && ('\0' == *pszTimestamp) && ('\0' == *pszFlags))
-          );
-    *ppszName = *pszName != '\0' ? pszName : NULL;
-    *ppszValue = *pszValue != '\0' ? pszValue : NULL;
-    *pu64Timestamp = u64Timestamp;
-    *ppszFlags = *pszFlags != '\0' ? pszFlags : NULL;
+    else
+    {
+        u64Timestamp = 0;
+        AssertMsgReturn(!*pszValue && !*pszTimestamp && !*pszFlags,
+                        ("'%s' '%s' '%s'\n", pszValue, pszTimestamp, pszFlags),
+                        VERR_PARSE_ERROR);
+    }
+
+    /*
+     * Everything is fine, set the return values.
+     */
+    if (ppszName)
+        *ppszName  = *pszName  != '\0' ? pszName  : NULL;
+    if (ppszValue)
+        *ppszValue = *pszValue != '\0' ? pszValue : NULL;
+    if (pu64Timestamp)
+        *pu64Timestamp = u64Timestamp;
+    if (ppszFlags)
+        *ppszFlags = *pszFlags != '\0' ? pszFlags : NULL;
     return VINF_SUCCESS;
 }
 
