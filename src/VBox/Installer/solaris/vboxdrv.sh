@@ -119,9 +119,9 @@ start_module()
         info "VirtualBox Host kernel module already loaded."
     else
         if test -n "_HARDENED_"; then
-            /usr/sbin/add_drv -m'* 0600 root sys' $MODNAME
+            /usr/sbin/add_drv -m'* 0600 root sys' $MODNAME || abort "Failed to load VirtualBox Host Kernel module."
         else
-            /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME
+            /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME || abort "Failed to load VirtualBox Host Kernel module."
         fi
         if test ! module_loaded; then
             abort "Failed to load VirtualBox Host kernel module."
@@ -154,7 +154,7 @@ start_vboxflt()
     if vboxflt_module_loaded; then
         info "VirtualBox NetFilter kernel module already loaded."
     else
-        /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME || abort "Failed to load VirtualBox Host Kernel module."
+        /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME || abort "Failed to load VirtualBox NetFilter Kernel module."
         /usr/sbin/modload -p drv/$FLTMODNAME
         if test ! vboxflt_module_loaded; then
             abort "Failed to load VirtualBox NetFilter kernel module."
@@ -167,7 +167,7 @@ start_vboxflt()
 stop_vboxflt()
 {
     if vboxflt_module_loaded; then
-        /usr/sbin/rem_drv $FLTMODNAME || abort "Failed to unload VirtualBox NetFilter module. Old one still active!"
+        /usr/sbin/rem_drv $FLTMODNAME || abort "Failed to unload VirtualBox NetFilter kernel module. Old one still active!"
         info "VirtualBox NetFilter kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox NetFilter kernel module not loaded."
