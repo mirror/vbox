@@ -634,10 +634,14 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
         RTPrintf("%s rc=%Vrc\n", str, rc); \
         if (VBOX_FAILURE(rc)) \
         { \
+            if (pvBuf) \
+                RTMemFree(pvBuf); \
             VDDestroy(pVD); \
             return rc; \
         } \
     } while (0)
+
+    void *pvBuf = RTMemAlloc(_1M);
 
     /* Create error interface. */
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
@@ -671,8 +675,6 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     /* Allocate one extra element for a sentinel. */
     PSEGMENT paSegments  = (PSEGMENT)RTMemAllocZ(sizeof(struct Segment) * (nSegments + 1));
 
-    void *pvBuf = RTMemAlloc(_1M);
-
     RNDCTX ctx;
     initializeRandomGenerator(&ctx, u32Seed);
     generateRandomSegments(&ctx, paSegments, nSegments, _1M, u64DiskSize, u32SectorSize, 0u, 127u);
@@ -691,6 +693,8 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     RTMemFree(paSegments);
 
     VDDestroy(pVD);
+    if (pvBuf)
+        RTMemFree(pvBuf);
 #undef CHECK
     return 0;
 }
