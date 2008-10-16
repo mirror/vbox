@@ -62,6 +62,7 @@ uint32_t gen_opc_hflags[OPC_BUF_SIZE];
 unsigned long code_gen_max_block_size(void)
 {
 #ifdef VBOX
+    /* Just to suppress a lot of dummy warnings */
     static long max;
 #else
     static unsigned long max;
