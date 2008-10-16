@@ -43,23 +43,6 @@
 # include <VBox/vm.h>
 #endif /* VBOX */
 
-#ifndef glue
-#define xglue(x, y) x ## y
-#define glue(x, y) xglue(x, y)
-#define stringify(s)	tostring(s)
-#define tostring(s)	#s
-#endif
-
-#if __GNUC__ < 3
-#define __builtin_expect(x, n) (x)
-#endif
-
-#ifdef __i386__
-#define REGPARM(n) __attribute((regparm(n)))
-#else
-#define REGPARM(n)
-#endif
-
 /* is_jmp field values */
 #define DISAS_NEXT    0 /* next instruction can be analyzed */
 #define DISAS_JUMP    1 /* only pc was modified dynamically */
@@ -96,10 +79,7 @@ typedef void (GenOpFunc1)(long);
 typedef void (GenOpFunc2)(long, long);
 typedef void (GenOpFunc3)(long, long, long);
 
-#ifndef VBOX
-extern FILE *logfile;
-extern int loglevel;
-#endif
+#include "qemu-log.h"
 
 void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb);
 void gen_intermediate_code_pc(CPUState *env, struct TranslationBlock *tb);
@@ -170,7 +150,7 @@ static inline int tlb_set_page(CPUState *env1, target_ulong vaddr,
 struct TranslationBlock {
     target_ulong pc;   /* simulated PC corresponding to this block (EIP + CS base) */
     target_ulong cs_base; /* CS base for this block */
-    unsigned int flags; /* flags defining in which context the code was generated */
+    uint64_t flags; /* flags defining in which context the code was generated */
     uint16_t size;      /* size of target code for this block (1 <=
                            size <= TARGET_PAGE_SIZE) */
     uint16_t cflags;    /* compile flags */
@@ -198,7 +178,7 @@ struct TranslationBlock {
 # if defined(VBOX) && defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
 #  error "First 4GB aren't reachable. jmp dword [tb_next] wont work."
 # endif
-    uint32_t tb_next[2]; /* address of jump generated code */
+    unsigned long tb_next[2]; /* address of jump generated code */
 #endif
     /* list of TBs jumping to this one. This is a circular list using
        the two least significant bits of the pointers to tell what is
@@ -330,163 +310,7 @@ extern CPUWriteMemoryFunc *io_mem_write[IO_MEM_NB_ENTRIES][4];
 extern CPUReadMemoryFunc *io_mem_read[IO_MEM_NB_ENTRIES][4];
 extern void *io_mem_opaque[IO_MEM_NB_ENTRIES];
 
-#ifdef __powerpc__
-static inline int testandset (int *p)
-{
-    int ret;
-    __asm__ __volatile__ (
-                          "0:    lwarx %0,0,%1\n"
-                          "      xor. %0,%3,%0\n"
-                          "      bne 1f\n"
-                          "      stwcx. %2,0,%1\n"
-                          "      bne- 0b\n"
-                          "1:    "
-                          : "=&r" (ret)
-                          : "r" (p), "r" (1), "r" (0)
-                          : "cr0", "memory");
-    return ret;
-}
-#endif
-
-#ifdef __i386__
-static inline int testandset (int *p)
-{
-    long int readval = 0;
-
-    __asm__ __volatile__ ("lock; cmpxchgl %2, %0"
-                          : "+m" (*p), "+a" (readval)
-                          : "r" (1)
-                          : "cc");
-    return readval;
-}
-#endif
-
-#ifdef __x86_64__
-static inline int testandset (int *p)
-{
-    long int readval = 0;
-
-    __asm__ __volatile__ ("lock; cmpxchgl %2, %0"
-                          : "+m" (*p), "+a" (readval)
-                          : "r" (1)
-                          : "cc");
-    return readval;
-}
-#endif
-
-#ifdef __s390__
-static inline int testandset (int *p)
-{
-    int ret;
-
-    __asm__ __volatile__ ("0: cs    %0,%1,0(%2)\n"
-			  "   jl    0b"
-			  : "=&d" (ret)
-			  : "r" (1), "a" (p), "0" (*p)
-			  : "cc", "memory" );
-    return ret;
-}
-#endif
-
-#ifdef __alpha__
-static inline int testandset (int *p)
-{
-    int ret;
-    unsigned long one;
-
-    __asm__ __volatile__ ("0:	mov 1,%2\n"
-			  "	ldl_l %0,%1\n"
-			  "	stl_c %2,%1\n"
-			  "	beq %2,1f\n"
-			  ".subsection 2\n"
-			  "1:	br 0b\n"
-			  ".previous"
-			  : "=r" (ret), "=m" (*p), "=r" (one)
-			  : "m" (*p));
-    return ret;
-}
-#endif
-
-#ifdef __sparc__
-static inline int testandset (int *p)
-{
-	int ret;
-
-	__asm__ __volatile__("ldstub	[%1], %0"
-			     : "=r" (ret)
-			     : "r" (p)
-			     : "memory");
-
-	return (ret ? 1 : 0);
-}
-#endif
-
-#ifdef __arm__
-static inline int testandset (int *spinlock)
-{
-    register unsigned int ret;
-    __asm__ __volatile__("swp %0, %1, [%2]"
-                         : "=r"(ret)
-                         : "0"(1), "r"(spinlock));
-
-    return ret;
-}
-#endif
-
-#ifdef __mc68000
-static inline int testandset (int *p)
-{
-    char ret;
-    __asm__ __volatile__("tas %1; sne %0"
-                         : "=r" (ret)
-                         : "m" (p)
-                         : "cc","memory");
-    return ret;
-}
-#endif
-
-#ifdef __ia64
-#include <ia64intrin.h>
-
-static inline int testandset (int *p)
-{
-    return __sync_lock_test_and_set (p, 1);
-}
-#endif
-
-typedef int spinlock_t;
-
-#define SPIN_LOCK_UNLOCKED 0
-
-#if defined(CONFIG_USER_ONLY)
-static inline void spin_lock(spinlock_t *lock)
-{
-    while (testandset(lock));
-}
-
-static inline void spin_unlock(spinlock_t *lock)
-{
-    *lock = 0;
-}
-
-static inline int spin_trylock(spinlock_t *lock)
-{
-    return !testandset(lock);
-}
-#else
-static inline void spin_lock(spinlock_t *lock)
-{
-}
-
-static inline void spin_unlock(spinlock_t *lock)
-{
-}
-
-static inline int spin_trylock(spinlock_t *lock)
-{
-    return 1;
-}
-#endif
+#include "qemu-lock.h"
 
 extern spinlock_t tb_lock;
 
@@ -496,6 +320,8 @@ extern int tb_invalidated_flag;
 
 void tlb_fill(target_ulong addr, int is_write, int is_user,
               void *retaddr);
+
+#include "softmmu_defs.h"
 
 #define ACCESS_TYPE (NB_MMU_MODES + 1)
 #define MEMSUFFIX _code

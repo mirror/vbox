@@ -91,11 +91,12 @@ $(REM_MOD)_SOURCES          = 	\
 	cpu-exec.c 		\
 	exec.c 			\
 	translate-all.c 	\
-	translate-op.c   	\
-	tcg/tcg.c        	\
-        tcg/tcg-dyngen.c 	\
-	tcg/tcg-runtime.c 	\
-	fpu/softfloat-native.c 	\
+	host-utils.c            \
+	tcg/tcg.c               \
+        tcg/tcg-dyngen.c        \
+	tcg/tcg-runtime.c       \
+	fpu/softfloat-native.c  \
+	target-i386/op_helper.c \
 	target-i386/helper.c 	\
 	target-i386/helper2.c 	\
 	target-i386/translate.c
