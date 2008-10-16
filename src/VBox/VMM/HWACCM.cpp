@@ -903,7 +903,9 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     else
     {
         PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
-        /* Correct weird requirements for switching to protected mode. */
+        /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
+         * from real to protected mode. (all sorts of RPL & DPL assumptions)
+         */
         if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
             &&  enmGuestMode >= PGMMODE_PROTECTED)
         {
