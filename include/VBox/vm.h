@@ -684,20 +684,21 @@ typedef struct VM
 #endif
 
 #ifdef VBOX_WITH_NEW_RECOMPILER
-/* Must be multiple of 32 and coherent with REM_ENV_SIZE from REMInternal.h */
+/** @def VM_REM_SIZE
+ * Must be multiple of 32 and coherent with REM_ENV_SIZE from REMInternal.h. */
 #if GC_ARCH_BITS == 32
-#define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
+# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
 #else
-#define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
+# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
 #endif
-#else
+#else  /* !VBOX_WITH_NEW_RECOMILER */
 #if GC_ARCH_BITS == 32
-#define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0x6f00 : 0xbf00)
+# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0x6f00 : 0xbf00)
 #else
-#define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0x9f00 : 0xdf00)
+# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0x9f00 : 0xdf00)
 #endif
-#endif // VBOX_WITH_NEW_RECOMILER
-        char        padding[ VM_REM_SIZE];    /* multiple of 32 */
+#endif /* !VBOX_WITH_NEW_RECOMILER */
+        char        padding[VM_REM_SIZE];   /* multiple of 32 */
     } rem;
 
     /** Padding for aligning the cpu array on a 64 byte boundrary. */
