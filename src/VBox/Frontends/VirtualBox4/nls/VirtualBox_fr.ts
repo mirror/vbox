@@ -2825,25 +2825,25 @@ Version %1</source>
         <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation>Nom</translation>
+        <translation>Nom </translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation>Système</translation>
+        <translation>Système </translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation>Mémoire de base</translation>
+        <translation>Mémoire de base </translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation>Disque dur d&apos;amorçage</translation>
+        <translation>Disque dur d&apos;amorçage </translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
@@ -5373,12 +5373,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="252"/>
         <source> Machine Folders</source>
-        <translation>Répertoire partagé de la machine virtuelle</translation>
+        <translation>Répertoires permanents</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="259"/>
         <source> Transient Folders</source>
-        <translation>Répertoire temporaire</translation>
+        <translation>Répertoires temporaires</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="359"/>
