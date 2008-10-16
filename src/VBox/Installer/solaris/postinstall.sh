@@ -30,17 +30,26 @@ fi
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    echo "Configuring VirtualBox Host kernel module(s)..."
+    echo "Configuring VirtualBox kernel module(s)..."
     /opt/VirtualBox/vboxdrv.sh stopall silentunload
-    /opt/VirtualBox/vboxdrv.sh start
     rc=$?
-    if test "$rc" -ne 0; then
-        echo "## Kernel module configuration failed! Aborting installation..."
-        exit 2
+    if test "$rc" -eq 0; then
+        /opt/VirtualBox/vboxdrv.sh start
+        rc=$?
+        if test "$rc" -eq 0; then
+            if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
+                /opt/VirtualBox/vboxdrv.sh fltstart
+                rc=$?            
+            fi
+        fi
     fi
 
-    if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
-        /opt/VirtualBox/vboxdrv.sh fltstart
+    # Fail on any errors while unloading previous modules because it makes it very hard to
+    # track problems when older vboxdrv is hanging about in memory and add_drv of the new
+    # one suceeds and it appears as though the new one is being used.
+    if test "$rc" -ne 0; then
+        echo "## Configuration failed. Aborting installation."
+        exit 2
     fi
 fi
 
