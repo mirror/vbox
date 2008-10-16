@@ -3703,7 +3703,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
     }
     else
         rc = setError (E_UNEXPECTED,
-            tr ("Failed to call the VBoxGuestPropSvc service (%Rrc)"), vrc);
+            tr ("The service call failed with the error %Rrc"), vrc);
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
@@ -3776,7 +3776,7 @@ HRESULT Console::setGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BS
         rc = S_OK;
     else
         rc = setError (E_UNEXPECTED,
-            tr ("Failed to call the VBoxGuestPropSvc service (%Rrc)"), vrc);
+            tr ("The service call failed with the error %Rrc"), vrc);
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
