@@ -129,7 +129,7 @@ VMMDECL(int)        EMInterpretDRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
 VMMDECL(int)        EMInterpretDRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx);
 VMMDECL(int)        EMInterpretCRxWrite(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen);
 VMMDECL(int)        EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx);
-VMMDECL(int)        EMInterpretLMSW(PVM pVM, uint16_t u16Data);
+VMMDECL(int)        EMInterpretLMSW(PVM pVM, PCPUMCTXCORE pRegFrame, uint16_t u16Data);
 VMMDECL(int)        EMInterpretCLTS(PVM pVM);
 VMMDECL(int)        EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp);
 VMMDECL(int)        EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame);
