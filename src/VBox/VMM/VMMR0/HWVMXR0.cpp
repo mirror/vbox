@@ -953,16 +953,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
         PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
         if (pVM->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
         {
-# define VTX_CORRECT_PROT_SEL(reg) \
-            {                                                                                               \
-                if (    pCtx->reg##Hid.u64Base == (pVM->hwaccm.s.vmx.RealMode.reg##Hid.u64Base & 0xfffff)   \
-                    &&  pCtx->reg == ((pVM->hwaccm.s.vmx.RealMode.reg##Hid.u64Base >> 4) & ~X86_SEL_RPL))   \
-                {                                                                                           \
-                    pCtx->reg##Hid = pVM->hwaccm.s.vmx.RealMode.reg##Hid;                                   \
-                    pCtx->reg      = pVM->hwaccm.s.vmx.RealMode.reg;                                        \
-                }                                                                                           \
-            }
-
             /* Correct weird requirements for switching to protected mode. */
             if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
                 &&  enmGuestMode >= PGMMODE_PROTECTED)
@@ -976,50 +966,12 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
                 pCtx->fsHid.Attr.n.u2Dpl  = 0;
                 pCtx->gsHid.Attr.n.u2Dpl  = 0;
                 pCtx->ssHid.Attr.n.u2Dpl  = 0;
-
-                /* RPL of all selectors must match the current CPL (0). */
-                pCtx->cs &= ~X86_SEL_RPL;
-                pCtx->ds &= ~X86_SEL_RPL;
-                pCtx->es &= ~X86_SEL_RPL;
-                pCtx->fs &= ~X86_SEL_RPL;
-                pCtx->gs &= ~X86_SEL_RPL;
-                pCtx->ss &= ~X86_SEL_RPL;
-
-                if (pVM->hwaccm.s.vmx.RealMode.fValid)
-                {
-                    VTX_CORRECT_PROT_SEL(ds);
-                    VTX_CORRECT_PROT_SEL(es);
-                    VTX_CORRECT_PROT_SEL(fs);
-                    VTX_CORRECT_PROT_SEL(gs);
-                    pVM->hwaccm.s.vmx.RealMode.fValid = false;
-                }
             }
             else
             /* Switching from protected mode to real mode. */
             if (    pVM->hwaccm.s.vmx.enmCurrGuestMode >= PGMMODE_PROTECTED
                 &&  enmGuestMode == PGMMODE_REAL)
             {
-                /* Save the original hidden selectors in case we need to restore them later on. */
-                pVM->hwaccm.s.vmx.RealMode.ds     = pCtx->ds;
-                pVM->hwaccm.s.vmx.RealMode.dsHid  = pCtx->dsHid;
-                pVM->hwaccm.s.vmx.RealMode.es     = pCtx->es;
-                pVM->hwaccm.s.vmx.RealMode.esHid  = pCtx->esHid;
-                pVM->hwaccm.s.vmx.RealMode.fs     = pCtx->fs;
-                pVM->hwaccm.s.vmx.RealMode.fsHid  = pCtx->fsHid;
-                pVM->hwaccm.s.vmx.RealMode.gs     = pCtx->gs;
-                pVM->hwaccm.s.vmx.RealMode.gsHid  = pCtx->gsHid;
-                pVM->hwaccm.s.vmx.RealMode.ss     = pCtx->ss;
-                pVM->hwaccm.s.vmx.RealMode.ssHid  = pCtx->ssHid;
-                pVM->hwaccm.s.vmx.RealMode.fValid = true;
-
-                /* The selector value & base must be adjusted or else... */
-                pCtx->cs = pCtx->csHid.u64Base >> 4;
-                pCtx->ds = pCtx->dsHid.u64Base >> 4;
-                pCtx->es = pCtx->esHid.u64Base >> 4;
-                pCtx->fs = pCtx->fsHid.u64Base >> 4;
-                pCtx->gs = pCtx->gsHid.u64Base >> 4;
-                pCtx->ss = pCtx->ssHid.u64Base >> 4;
-
                 /* The limit must also be adjusted. */
                 pCtx->csHid.u32Limit &= 0xffff;
                 pCtx->dsHid.u32Limit &= 0xffff;

@@ -782,11 +782,28 @@ VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
  * This is called by PGM.
  *
  * @param   pVM            The VM to operate on.
- * @param   enmShadowMode  New paging mode.
+ * @param   enmShadowMode  New shadow paging mode.
+ * @param   enmGuestMode   New guest paging mode.
  */
-VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode)
+VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
     pVM->hwaccm.s.enmShadowMode = enmShadowMode;
+    if (   pVM->hwaccm.s.vmx.fEnabled
+        && pVM->fHWACCMEnabled)
+    {
+        if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+            &&  enmGuestMode >= PGMMODE_PROTECTED)
+        {
+            PCPUMCTX pCtx;
+
+            CPUMQueryGuestCtxPtr(pVM, &pCtx);
+
+            /* After a real mode switch to protected mode we must force
+             * CPL to 0. Our real mode emulation had to set it to 3.
+             */
+            pCtx->ssHid.Attr.n.u2Dpl  = 0;
+        }
+    }
 }
 
 /**
@@ -873,6 +890,31 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             ||  pCtx->fsHid.u64Base > 0xfffff
             ||  pCtx->gsHid.u64Base > 0xfffff)
             return false;
+
+        if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
+                && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
+            || pCtx->ds != (pCtx->dsHid.u64Base >> 4)
+            || pCtx->es != (pCtx->esHid.u64Base >> 4)
+            || pCtx->fs != (pCtx->fsHid.u64Base >> 4)
+            || pCtx->gs != (pCtx->gsHid.u64Base >> 4)
+            || pCtx->ss != (pCtx->ssHid.u64Base >> 4))
+            return false;
+    }
+    else
+    {
+        PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
+        /* Correct weird requirements for switching to protected mode. */
+        if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+            &&  enmGuestMode >= PGMMODE_PROTECTED)
+        {
+            if (   (pCtx->cs & X86_SEL_RPL)
+                || (pCtx->ds & X86_SEL_RPL)
+                || (pCtx->es & X86_SEL_RPL)
+                || (pCtx->fs & X86_SEL_RPL)
+                || (pCtx->gs & X86_SEL_RPL)
+                || (pCtx->ss & X86_SEL_RPL))
+                return false;
+        }
     }
 #else
     if (!CPUMIsGuestInLongModeEx(pCtx))
