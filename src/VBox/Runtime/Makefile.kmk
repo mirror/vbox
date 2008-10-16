@@ -970,7 +970,6 @@ RuntimeR0Drv_SOURCES    = \
 
 RuntimeR0Drv_SOURCES.linux = \
 	common/alloc/heapsimple.cpp \
-	common/string/memchr.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strlen.cpp \
 	common/string/strncmp.cpp \
