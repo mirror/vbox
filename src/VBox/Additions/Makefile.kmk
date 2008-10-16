@@ -71,6 +71,13 @@ ifeq ($(KBUILD_TARGET),win)
  include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
 endif
 
+# @todo move crOpenGL parts into correct places in source tree
+if1of ($(KBUILD_TARGET),win linux solaris)
+ ifdef VBOX_WITH_CROGL
+  include $(PATH_SUB_CURRENT)/WINNT/Graphics/crOpenGL/Makefile.kmk
+ endif
+endif
+
 # The packing target rule, but only if we're on the local build box.
 # (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
 ifndef VBOX_WITHOUT_ADDITIONS_ISO
