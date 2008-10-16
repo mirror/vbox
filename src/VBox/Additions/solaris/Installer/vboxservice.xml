@@ -52,8 +52,7 @@
         type='method'
         name='start'
         exec='/usr/bin/VBoxService'
-        timeout_seconds='30' >
-    </exec_method>
+        timeout_seconds='30' />
 
     <exec_method
         type='method'
