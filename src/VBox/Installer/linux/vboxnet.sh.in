@@ -135,6 +135,12 @@ running()
 start_network()
 {
     begin_msg "Starting VirtualBox host networking"
+    # Set /dev/net/tun to belong to the group vboxusers if it exists and does
+    # yet belong to a group.
+    if ls -g "$TAPDEV" 2>/dev/null | grep root > /dev/null; then
+      chgrp vboxusers "$TAPDEV"
+      chmod 0660 "$TAPDEV"
+    fi
     # If the service is already running, return successfully.
     if [ -f "$VARFILE" ]; then
       succ_msg
@@ -232,12 +238,6 @@ start_network()
         fi
       fi
     done < "$CONFIG"
-    # Set /dev/net/tun to belong to the group vboxusers if it exists and does
-    # yet belong to a group.
-    if ls -g "$TAPDEV" 2>/dev/null | grep root > /dev/null; then
-      chgrp vboxusers "$TAPDEV"
-      chmod 0660 "$TAPDEV"
-    fi
     return 0
 }
 
