@@ -203,7 +203,6 @@ endif # VBOX_WITH_QT4_SUN
 # The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has
 # been added to kBuild.
 #
-## @todo need kmk_builtin_touch!
 ifdef VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER
 INSTALLS += buildserver-additions
 buildserver-additions_INST = $(INST_ADDITIONS)
@@ -211,7 +210,7 @@ buildserver-additions_MODE = 0644
 buildserver-additions_SOURCES = $(PATH_TARGET)/VBoxGuestAdditions.iso
 buildserver-additions_CLEANS = $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
 
-$(PATH_TARGET)/VBoxGuestAdditions.iso: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $(call DIRDEP, $(PATH_TARGET))
+$(PATH_TARGET)/VBoxGuestAdditions.iso: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
 	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
 #	$(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
 	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-additions-affinity-hack
@@ -229,8 +228,8 @@ endif
 # The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has
 # been added to kBuild.
 #
-## @todo need kmk_builtin_touch!
 ifdef VBOX_WITH_DOCS_FROM_BUILD_SERVER
+## @todo r=bird: Too much mess now for $(PATH_TARGET); move to doc/manual/.
 INSTALLS += buildserver-docs
 buildserver-docs_INST = $(INST_BIN)
 buildserver-docs_MODE = 0644
@@ -244,15 +243,16 @@ buildserver-docs_CLEANS = \
 		VirtualBox.chm UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
 
-## @todo including this directly is a hack, but using the tool variables
-# is simply too tempting. Could all go away once we have plain unzip targets.
+## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
 include $(KBUILD_PATH)/tools/ZIP.kmk
 
-$(PATH_TARGET)/VirtualBox.chm + $(PATH_TARGET)/UserManual.pdf $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),+ $(PATH_TARGET)/VirtualBox_$(f).chm + $(PATH_TARGET)/UserManual_$(f).pdf) : $(PATH_TARGET)/VBoxDocumentation.zip
+$(PATH_TARGET)/VirtualBox.chm + $(PATH_TARGET)/UserManual.pdf \
+$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), + $(PATH_TARGET)/VirtualBox_$(f).chm + $(PATH_TARGET)/UserManual_$(f).pdf): \
+		$(PATH_TARGET)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
 
-$(PATH_TARGET)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $(call DIRDEP, $(PATH_TARGET))
+$(PATH_TARGET)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
 	$(RM) -f $(PATH_TARGET)/VBoxDocumentation.zip $(PATH_TARGET)/VBoxDocumentation.zip.tmp
 #	$(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(PATH_TARGET)/VBoxDocumentation.zip.tmp
 	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-documentation-affinity-hack
@@ -261,7 +261,7 @@ $(PATH_TARGET)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/d
 
 buildserver-documentation-affinity-hack:
 	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(PATH_TARGET)/VBoxDocumentation.zip.tmp
-endif
+endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
 
 #
