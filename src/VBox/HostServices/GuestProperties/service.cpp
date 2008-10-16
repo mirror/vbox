@@ -147,7 +147,7 @@ public:
         int rc = RTReqCreateQueue(&mReqQueue);
         rc = RTThreadCreate(&mReqThread, reqThreadFn, this, 0, RTTHREADTYPE_MSG_PUMP,
                                 RTTHREADFLAGS_WAITABLE, "GuestPropReq");
-        if (!RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
             throw rc;
     }
 
@@ -213,8 +213,8 @@ private:
     int validateValue(char *pszValue, uint32_t cbValue);
     int getPropValue(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify);
-    int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify);
+    int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
+    int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void notifyHost(const char *pszProperty);
     static DECLCALLBACK(int) reqNotify(PFNVBOXHGCMCALLBACK pfnCallback,
@@ -450,7 +450,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * @param   paParms the array of HGCM parameters
  * @thread  HGCM
  */
-int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify)
+int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest)
 {
     int rc = VINF_SUCCESS;
     char *pszName, *pszValue;
@@ -481,7 +481,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
        )
         rc = VERR_INVALID_PARAMETER;
     /*
-     * And check the values passed in the parameters for correctness.
+     * Check the values passed in the parameters for correctness.
      */
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cchName);
@@ -491,25 +491,31 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
         rc = validateName(pszName, cchName);
     if (RT_SUCCESS(rc))
         rc = validateValue(pszValue, cchValue);
+
+    /*
+     * If the property already exists, check its flags to see if we are allowed
+     * to change it.
+     */
     if (RT_SUCCESS(rc))
     {
-        /* We deal with flags as follows:
-         *  1) if flags are specified by the user, use them.
-         *  2) if no flags are specified, but the property exists, use the
-         *     existing flags.
-         *  3) if no flags are specified and the property does not exist,
-         *     start with empty flags (the default value of fFlags above). */
-        if (3 == cParms)
-        {
-            char *pszFlags;
-            uint32_t cchFlags;
-            rc = VBoxHGCMParmPtrGet(&paParms[2], (void **) &pszFlags, &cchFlags);
-            if (RT_SUCCESS(rc))
-                rc = validateFlags(pszFlags, &fFlags);
-        }
-        else
-            /* If this fails then fFlags will remain at zero, as per our spec. */
-            CFGMR3QueryU32(mpFlagsNode, pszName, &fFlags);
+        CFGMR3QueryU32(mpFlagsNode, pszName, &fFlags);  /* Failure is no problem here. */
+        if (   (fFlags & READONLY)
+            || (isGuest && (fFlags & HOSTWRITE))
+            || (!isGuest && (fFlags & GUESTWRITE))
+           )
+            rc = VERR_PERMISSION_DENIED;
+    }
+
+    /*
+     * Check whether the user supplied flags (if any) are valid.
+     */
+    if (RT_SUCCESS(rc) && (3 == cParms))
+    {
+        char *pszFlags;
+        uint32_t cchFlags;
+        rc = VBoxHGCMParmPtrGet(&paParms[2], (void **) &pszFlags, &cchFlags);
+        if (RT_SUCCESS(rc))
+            rc = validateFlags(pszFlags, &fFlags);
     }
     /*
      * Set the actual value
@@ -528,7 +534,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
             rc = CFGMR3InsertInteger(mpFlagsNode, pszName, fFlags);
         /* If anything goes wrong, make sure that we leave a clean state
          * behind. */
-        if (!RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
         {
             CFGMR3RemoveValue(mpValueNode, pszName);
             CFGMR3RemoveValue(mpTimestampNode, pszName);
@@ -540,7 +546,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
      */
     if (RT_SUCCESS(rc))
     {
-        if (notify)
+        if (isGuest)
             notifyHost(pszName);
         Log2(("Set string %s, rc=%Rrc, value=%s\n", pszName, rc, pszValue));
     }
@@ -558,7 +564,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
  * @param   paParms the array of HGCM parameters
  * @thread  HGCM
  */
-int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify)
+int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest)
 {
     int rc = VINF_SUCCESS;
     char *pszName;
@@ -566,6 +572,10 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
 
     LogFlowThisFunc(("\n"));
     AssertReturn(VALID_PTR(mpValueNode), VERR_WRONG_ORDER);  /* a.k.a. VERR_NOT_INITIALIZED */
+
+    /*
+     * Check the user-supplied parameters.
+     */
     if (   (cParms != 1)  /* Hardcoded value as the next lines depend on it. */
         || (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)   /* name */
        )
@@ -574,10 +584,29 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool notify
         rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &pszName, &cbName);
     if (RT_SUCCESS(rc))
         rc = validateName(pszName, cbName);
+
+    /*
+     * If the property already exists, check its flags to see if we are allowed
+     * to change it.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t fFlags = NILFLAG;
+        CFGMR3QueryU32(mpFlagsNode, pszName, &fFlags);  /* Failure is no problem here. */
+        if (   (fFlags & READONLY)
+            || (isGuest && (fFlags & HOSTWRITE))
+            || (!isGuest && (fFlags & GUESTWRITE))
+           )
+            rc = VERR_PERMISSION_DENIED;
+    }
+
+    /*
+     * And delete the property if all is well.
+     */
     if (RT_SUCCESS(rc))
     {
         CFGMR3RemoveValue(mpValueNode, pszName);
-        if (notify)
+        if (isGuest)
             notifyHost(pszName);
     }
     LogFlowThisFunc(("rc = %Rrc\n", rc));
@@ -816,7 +845,7 @@ void Service::notifyHost(const char *pszProperty)
                              mpvHostData, pszName, pszValue,
                              (uint32_t) RT_HIDWORD(u64Timestamp),
                              (uint32_t) RT_LODWORD(u64Timestamp), pszFlags);
-        if (!RT_SUCCESS(rc)) /* clean up */
+        if (RT_FAILURE(rc)) /* clean up */
         {
             RTStrFree(pszName);
             RTStrFree(pszValue);
@@ -835,7 +864,7 @@ void Service::notifyHost(const char *pszProperty)
                              (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
                              mpvHostData, pszName, NULL, 0, 0, NULL);
     }
-    if (!RT_SUCCESS(rc)) /* clean up if we failed somewhere */
+    if (RT_FAILURE(rc)) /* clean up if we failed somewhere */
     {
         RTStrFree(pszName);
         RTStrFree(pszValue);
