@@ -143,8 +143,8 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
  * @param   max_keycode the highest value in use as a keycode on this server
  */
 static int
-X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
-                              int max_keycode)
+X11DRV_KEYBOARD_DetectLayout (Display *display, KeyCode min_keycode,
+                              KeyCode max_keycode)
 {
   /** Counter variable for iterating through the keyboard layout tables. */
   unsigned current;
@@ -158,7 +158,7 @@ X11DRV_KEYBOARD_DetectLayout (Display *display, int min_keycode,
   /** Table for the current keycode to keysym mapping. */
   char ckey[256][2];
   /** Counter variable representing a keycode */
-  unsigned keyc;
+  KeyCode keyc;
 
   /* Fill in our keycode to keysym mapping table. */
   memset( ckey, 0, sizeof(ckey) );
@@ -307,6 +307,13 @@ X11DRV_InitKeyboardByLayout(Display *display)
         log_kb_2 = 1;
     }
     XDisplayKeycodes(display, &min_keycode, &max_keycode);
+
+    /* according to the space this function is guaranteed to never return
+     * values for min_keycode < 8 and values for max_keycode > 255 */
+    if (min_keycode < 0)
+        min_keycode = 0;
+    if (max_keycode > 255)
+        max_keycode = 255;
 
     /* Detect the keyboard layout */
     kbd_layout = X11DRV_KEYBOARD_DetectLayout(display, min_keycode,
