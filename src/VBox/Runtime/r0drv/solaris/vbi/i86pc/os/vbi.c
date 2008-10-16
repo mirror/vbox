@@ -78,7 +78,7 @@ static void (*p_xc_call)() = (void (*)())xc_call;
 #pragma weak cpuset_only
 
 static struct modlmisc vbi_modlmisc = {
-	&mod_miscops, "Vbox Interfaces Ver 3"
+	&mod_miscops, "VirtualBox Interfaces V3"
 };
 
 static struct modlinkage vbi_modlinkage = {
@@ -909,6 +909,7 @@ vbi_stimer_begin(
 	ASSERT(when < INT64_MAX);
 	ASSERT(interval < INT64_MAX);
 	ASSERT(interval + when < INT64_MAX);
+	ASSERT(on_cpu == VBI_ANY_CPU || on_cpu < ncpus);
 
 	t->s_handler.cyh_func = vbi_stimer_func;
 	t->s_handler.cyh_arg = t;
@@ -918,7 +919,7 @@ vbi_stimer_begin(
 	t->s_arg = arg;
 
 	mutex_enter(&cpu_lock);
-	if (on_cpu != VBI_ANY_CPU && !vbi_cpu_online(on_cpu)) {
+	if (on_cpu != VBI_ANY_CPU && !cpu_is_online(cpu[on_cpu])) {
 		t = NULL;
 		goto done;
 	}
@@ -1041,7 +1042,7 @@ vbi_gtimer_end(vbi_gtimer_t *t)
 /*
  * This is revision 3 of the interface. As more functions are added,
  * they should go after this point in the file and the revision level
- * increased.
+ * increased. Also change vbi_modlmisc at the top of the file.
  */
 uint_t vbi_revision_level = 3;
 
