@@ -239,7 +239,7 @@ public:
             /** Property timestamp */
             ULONG64 mTimestamp;
             /** Property flags */
-            Bstr mFlags;
+            ULONG mFlags;
         };
 
         HWData();

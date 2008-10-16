@@ -2723,12 +2723,12 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
     return directControl->OnShowWindow (FALSE /* aCheck */, &dummy, aWinId);
 }
 
-STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags)
+STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
-    if (!VALID_PTR (aKey))
+    if (!VALID_PTR (aName))
         return E_INVALIDARG;
     if (!VALID_PTR (aValue))
         return E_POINTER;
@@ -2751,11 +2751,13 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *
         for (HWData::GuestPropertyList::const_iterator it = mHWData->mGuestProperties.begin();
              (it != mHWData->mGuestProperties.end()) && !found; ++it)
         {
-            if (it->mName == aKey)
+            if (it->mName == aName)
             {
+                char szFlags[MAX_FLAGS_LEN + 1];
                 it->mValue.cloneTo(aValue);
                 *aTimestamp = it->mTimestamp;
-                it->mFlags.cloneTo(aFlags);
+                writeFlags(it->mFlags, szFlags);
+                Bstr(szFlags).cloneTo(aFlags);
                 found = true;
             }
         }
@@ -2769,7 +2771,7 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *
         /* just be on the safe side when calling another process */
         alock.unlock();
 
-        rc = directControl->AccessGuestProperty (aKey, NULL, NULL,
+        rc = directControl->AccessGuestProperty (aName, NULL, NULL,
                                                  false /* isSetter */,
                                                  aValue, aTimestamp, aFlags);
     }
@@ -2777,18 +2779,18 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
-STDMETHODIMP Machine::GetGuestPropertyValue (INPTR BSTR aKey, BSTR *aValue)
+STDMETHODIMP Machine::GetGuestPropertyValue (INPTR BSTR aName, BSTR *aValue)
 {
     ULONG64 dummyTimestamp;
     BSTR dummyFlags;
-    return GetGuestProperty(aKey, aValue, &dummyTimestamp, &dummyFlags);
+    return GetGuestProperty(aName, aValue, &dummyTimestamp, &dummyFlags);
 }
 
-STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aKey, ULONG64 *aTimestamp)
+STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aName, ULONG64 *aTimestamp)
 {
     BSTR dummyValue;
     BSTR dummyFlags;
-    return GetGuestProperty(aKey, &dummyValue, aTimestamp, &dummyFlags);
+    return GetGuestProperty(aName, &dummyValue, aTimestamp, &dummyFlags);
 }
 
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
@@ -2796,12 +2798,18 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
 #if !defined (VBOX_WITH_GUEST_PROPS)
     return E_NOTIMPL;
 #else
+    using namespace guestProp;
+
     if (!VALID_PTR (aName))
         return E_INVALIDARG;
     if ((aValue != NULL) && !VALID_PTR (aValue))
         return E_INVALIDARG;
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
+    uint32_t fFlags = NILFLAG;
+    if (RT_FAILURE (validateFlags (Utf8Str(aFlags).raw(), &fFlags)))
+        return setError (E_INVALIDARG, tr ("Invalid flag values: '%ls'"),
+                aFlags);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2811,50 +2819,59 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
     HRESULT rc = checkStateDependency (MutableStateDep);
     CheckComRCReturnRC (rc);
 
-    using namespace guestProp;
-    rc = E_FAIL;
+    rc = S_OK;
 
     if (!mHWData->mPropertyServiceActive)
     {
         bool found = false;
         HWData::GuestProperty property;
-        for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
-             (it != mHWData->mGuestProperties.end()) && !found; ++it)
-            if (it->mName == aName)
-            {
-                property = *it;
-                mHWData.backup();
-                /* The backup() operation invalidates our iterator, so get a
-                 * new one. */
-                for (it = mHWData->mGuestProperties.begin();
-                     it->mName != aName; ++it)
-                    ;
-                mHWData->mGuestProperties.erase(it);
-                found = true;
-            }
-        if (found)
+        property.mFlags = NILFLAG;
+        if (fFlags & TRANSIENT)
+            rc = setError (E_INVALIDARG, tr ("Cannot set a transient property when the machine is not running"));
+        if (SUCCEEDED (rc))
         {
-            if (NULL != aValue)
+            for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
+                (it != mHWData->mGuestProperties.end()) && !found; ++it)
+                if (it->mName == aName)
+                {
+                    property = *it;
+                    if (it->mFlags & (GUESTWRITE | READONLY))
+                        rc = setError (E_ACCESSDENIED, tr ("The property '%ls' cannot be changed by the host"), aName);
+                    else
+                    {
+                        mHWData.backup();
+                        /* The backup() operation invalidates our iterator, so get a
+                        * new one. */
+                        for (it = mHWData->mGuestProperties.begin();
+                            it->mName != aName; ++it)
+                            ;
+                        mHWData->mGuestProperties.erase(it);
+                    }
+                    found = true;
+                }
+        }
+        if (found && SUCCEEDED (rc))
+        {
+            if (aValue != NULL)
             {
                 RTTIMESPEC time;
                 property.mValue = aValue;
                 property.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
                 if (aFlags != NULL)
-                    property.mFlags = aFlags;
+                    property.mFlags = fFlags;
                 mHWData->mGuestProperties.push_back(property);
             }
         }
-        else if (aValue != NULL)
+        else if (SUCCEEDED (rc) && (aValue != NULL))
         {
             RTTIMESPEC time;
             mHWData.backup();
             property.mName = aName;
             property.mValue = aValue;
             property.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
-            property.mFlags = (aFlags != NULL ? Bstr(aFlags) : Bstr(""));
+            property.mFlags = fFlags;
             mHWData->mGuestProperties.push_back(property);
         }
-        rc = S_OK;
     }
     else
     {
@@ -3033,10 +3050,12 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
         for (HWData::GuestPropertyList::iterator it = propList.begin();
              it != propList.end(); ++it)
         {
+             char szFlags[MAX_FLAGS_LEN + 1];
              it->mName.cloneTo(&names[iProp]);
              it->mValue.cloneTo(&values[iProp]);
              timestamps[iProp] = it->mTimestamp;
-             it->mFlags.cloneTo(&flags[iProp]);
+             writeFlags(it->mFlags, szFlags);
+             Bstr(szFlags).cloneTo(&flags[iProp]);
              ++iProp;
         }
         names.detachTo(ComSafeArrayOutArg (aNames));
@@ -5019,8 +5038,11 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             guestNode.value <ULONG> ("statisticsUpdateInterval");
     }
 
+#ifdef VBOX_WITH_GUEST_PROPS
     /* Guest properties (optional) */
     {
+        using namespace guestProp;
+
         Key guestPropertiesNode = aNode.findKey ("GuestProperties");
         if (!guestPropertiesNode.isNull())
         {
@@ -5028,6 +5050,8 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             for (Key::List::const_iterator it = properties.begin();
                  it != properties.end(); ++ it)
             {
+                uint32_t fFlags = NILFLAG;
+
                 /* property name (required) */
                 Bstr name = (*it).stringValue ("name");
                 /* property value (required) */
@@ -5036,13 +5060,14 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 ULONG64 timestamp = (*it).value<ULONG64> ("timestamp");
                 /* property flags (optional, defaults to empty) */
                 Bstr flags = (*it).stringValue ("flags");
-
-                HWData::GuestProperty property = { name, value, timestamp, flags };
+                validateFlags (Utf8Str (flags).raw(), &fFlags);
+                HWData::GuestProperty property = { name, value, timestamp, fFlags };
                 mHWData->mGuestProperties.push_back(property);
             }
         }
         mHWData->mPropertyServiceActive = false;
     }
+#endif /* VBOX_WITH_GUEST_PROPS defined */
 
     AssertComRC (rc);
     return rc;
@@ -6404,8 +6429,11 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
                                     mHWData->mStatisticsUpdateInterval);
     }
 
+#ifdef VBOX_WITH_GUEST_PROPS
     /* Guest properties */
     {
+        using namespace guestProp;
+
         Key guestPropertiesNode = aNode.createKey ("GuestProperties");
 
         for (HWData::GuestPropertyList::const_iterator it = mHWData->mGuestProperties.begin();
@@ -6415,13 +6443,16 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             HWData::GuestProperty property = *it;
 
             Key propertyNode = guestPropertiesNode.appendKey ("GuestProperty");
+            char szFlags[MAX_FLAGS_LEN + 1];
 
             propertyNode.setValue <Bstr> ("name", property.mName);
             propertyNode.setValue <Bstr> ("value", property.mValue);
             propertyNode.setValue <ULONG64> ("timestamp", property.mTimestamp);
-            propertyNode.setValue <Bstr> ("flags", property.mFlags);
+            writeFlags(property.mFlags, szFlags);
+            propertyNode.setValue <Bstr> ("flags", Bstr(szFlags));
         }
     }
+#endif /* VBOX_WITH_GUEST_PROPS defined */
 
     AssertComRC (rc);
     return rc;
@@ -8975,6 +9006,8 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
     LogFlowThisFunc (("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
+    using namespace guestProp;
+
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -8994,10 +9027,12 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
     for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
          it != mHWData->mGuestProperties.end(); ++it)
     {
+        char szFlags[MAX_FLAGS_LEN + 1];
         it->mName.cloneTo(&names[i]);
         it->mValue.cloneTo(&values[i]);
         timestamps[i] = it->mTimestamp;
-        it->mFlags.cloneTo(&flags[i]);
+        writeFlags(it->mFlags, szFlags);
+        Bstr(szFlags).cloneTo(&flags[i]);
         ++i;
     }
     names.detachTo(ComSafeArrayOutArg (aNames));
@@ -9007,7 +9042,7 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
     mHWData->mPropertyServiceActive = true;
     return S_OK;
 #else
-    return VERR_NOT_IMPLEMENTED;
+    return E_NOTIMPL;
 #endif
 }
 
@@ -9019,6 +9054,8 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
     LogFlowThisFunc (("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
+    using namespace guestProp;
+
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
@@ -9051,7 +9088,9 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
                                     mHWData->mGuestProperties.end());
     for (unsigned i = 0; i < names.size(); ++i)
     {
-        HWData::GuestProperty property = { names[i], values[i], timestamps[i], flags[i] };
+        uint32_t fFlags = NILFLAG;
+        validateFlags (Utf8Str(flags[i]).raw(), &fFlags);
+        HWData::GuestProperty property = { names[i], values[i], timestamps[i], fFlags };
         mHWData->mGuestProperties.push_back(property);
     }
     mHWData->mPropertyServiceActive = false;
@@ -9061,7 +9100,7 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
     mData->mRegistered = TRUE;
     return S_OK;
 #else
-    return VERR_NOT_IMPLEMENTED;
+    return E_NOTIMPL;
 #endif
 }
 
@@ -9071,10 +9110,16 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
     LogFlowThisFunc (("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
+    using namespace guestProp;
+
     if (!VALID_PTR(aName))
-        return E_INVALIDARG;
+        return E_POINTER;
     if ((aValue != NULL) && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
-        return E_INVALIDARG;  /* aValue can be NULL to indicate deletion */
+        return E_POINTER;  /* aValue can be NULL to indicate deletion */
+
+    uint32_t fFlags = NILFLAG;
+    if (RT_FAILURE (validateFlags (Utf8Str(aFlags).raw(), &fFlags)))
+        return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -9094,7 +9139,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
         }
     if (aValue != NULL)
     {
-        HWData::GuestProperty property = { aName, aValue, aTimestamp, aFlags };
+        HWData::GuestProperty property = { aName, aValue, aTimestamp, fFlags };
         mHWData->mGuestProperties.push_back(property);
     }
 
@@ -9104,7 +9149,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
 
     return S_OK;
 #else
-    return VERR_NOT_IMPLEMENTED;
+    return E_NOTIMPL;
 #endif
 }
 
