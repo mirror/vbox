@@ -200,7 +200,7 @@ static int vboxClipboardReadDataFromClient (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t
     /* Only one of the guest and the host should be waiting at any one time */
     if (RT_FAILURE(ASMAtomicCmpXchgU32(&pCtx->waiter, 1, 0)))
     {
-        LogRel(("vboxClipboardReadDataFromClient: deadlock situation - the host and the guest are both waiting for data from the other."));
+        LogRel(("vboxClipboardReadDataFromClient: deadlock situation - the host and the guest are both waiting for data from the other.\n"));
         return VERR_DEADLOCK;
     }
     /* Request data from the guest */
@@ -208,7 +208,7 @@ static int vboxClipboardReadDataFromClient (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t
     /* Which will signal us when it is ready. */
     if (RTSemEventWait(pCtx->waitForData, CLIPBOARDTIMEOUT) != VINF_SUCCESS)
     {
-        LogRel (("vboxClipboardReadDataFromClient: vboxSvcClipboardReportMsg failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
+        LogRel(("vboxClipboardReadDataFromClient: vboxSvcClipboardReportMsg failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
         pCtx->guestFormats = 0;
         pCtx->waiter = 0;
         return VERR_TIMEOUT;
@@ -694,7 +694,7 @@ static void vboxClipboardAddFormat(const char *pszName, g_eClipboardFormats eFor
  */
 static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
 {
-    LogRel (("Shared clipboard: starting host clipboard thread\n"));
+    LogRel(("Shared clipboard: starting host clipboard thread\n"));
 
     /* Set up a timer to poll the host clipboard */
     XtAppAddTimeOut(g_ctx.appContext, 200 /* ms */, vboxClipboardTimerProc, 0);
@@ -703,13 +703,12 @@ static int vboxClipboardThread(RTTHREAD self, void * /* pvUser */)
     g_ctx.formatList.clear();
     RTSemEventDestroy(g_ctx.waitForData);
     RTSemMutexDestroy(g_ctx.asyncMutex);
-    LogRel (("Shared clipboard: host clipboard thread terminated successfully\n"));
+    LogRel(("Shared clipboard: host clipboard thread terminated successfully\n"));
     return VINF_SUCCESS;
 }
 
 int vboxClipboardInitX11 (void)
 {
-
     /* Create a window and make it a clipboard viewer. */
     int cArgc = 0;
     char *pcArgv = 0;
@@ -811,10 +810,10 @@ int vboxClipboardInit (void)
     {
         rc = RTThreadCreate(&g_ctx.thread, vboxClipboardThread, 0, 0,
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
-        if (!RT_SUCCESS(rc))
-            LogRel(("Failed to start the host shared clipboard thread."));
+        if (RT_FAILURE(rc))
+            LogRel(("Failed to start the host shared clipboard thread.\n"));
     }
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
     {
         RTSemEventDestroy(g_ctx.waitForData);
         RTSemMutexDestroy(g_ctx.asyncMutex);
@@ -1046,7 +1045,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     pu16DestText = reinterpret_cast<PRTUTF16>(XtMalloc(cwDestLen * 2));
     if (pu16DestText == 0)
     {
-        LogRel (("vboxClipboardConvertUtf16: failed to allocate %d bytes\n", cwDestLen * 2));
+        LogRel(("vboxClipboardConvertUtf16: failed to allocate %d bytes\n", cwDestLen * 2));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
@@ -1117,7 +1116,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     pu16DestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwDestLen * 2));
     if (pu16DestText == 0)
     {
-        LogRel (("vboxClipboardConvertUtf8: failed to allocate %d bytes\n", cwDestLen * 2));
+        LogRel(("vboxClipboardConvertUtf8: failed to allocate %d bytes\n", cwDestLen * 2));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
@@ -1135,7 +1134,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     pu8DestText = XtMalloc(cwDestLen * 4);
     if (pu8DestText == 0)
     {
-        LogRel (("vboxClipboardConvertUtf8: failed to allocate %d bytes\n", cwDestLen * 4));
+        LogRel(("vboxClipboardConvertUtf8: failed to allocate %d bytes\n", cwDestLen * 4));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
         vboxClipboardEmptyGuestBuffer();
         return false;
@@ -1210,7 +1209,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     pu16DestText = reinterpret_cast<PRTUTF16>(RTMemAlloc(cwDestLen * 2));
     if (pu16DestText == 0)
     {
-        LogRel (("vboxClipboardConvertCText: failed to allocate %d bytes\n", cwDestLen * 2));
+        LogRel(("vboxClipboardConvertCText: failed to allocate %d bytes\n", cwDestLen * 2));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }
@@ -1457,7 +1456,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
            callback will signal the event semaphore when it has processed the data for us. */
         if (RTSemEventWait(g_ctx.waitForData, CLIPBOARDTIMEOUT) != VINF_SUCCESS)
         {
-            LogRel (("vboxClipboardReadDataFromClient: XtGetSelectionValue failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
+            LogRel(("vboxClipboardReadDataFromClient: XtGetSelectionValue failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
             g_ctx.hostTextFormat = INVALID;
             g_ctx.hostBitmapFormat = INVALID;
             g_ctx.waiter = 0;
