@@ -67,11 +67,11 @@ void *get_mmap_addr(unsigned long size);
 
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x)   __builtin_expect(!!(x), 0)
-#else // VBOX
+#else /* VBOX */
 #define likely(cond)        RT_LIKELY(cond)
 #define unlikely(cond)      RT_UNLIKELY(cond)
 #endif
-#endif // !likely
+#endif /* !likely */
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *) 0)->MEMBER)
@@ -136,6 +136,6 @@ int qemu_gettimeofday(qemu_timeval *tp);
 typedef struct timeval qemu_timeval;
 #define qemu_gettimeofday(tp) gettimeofday(tp, NULL);
 #endif /* !_WIN32 */
-#endif // !VBOX
+#endif /* !VBOX */
 
 #endif

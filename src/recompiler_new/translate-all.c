@@ -61,11 +61,15 @@ uint32_t gen_opc_hflags[OPC_BUF_SIZE];
 /* XXX: suppress that */
 unsigned long code_gen_max_block_size(void)
 {
+#ifdef VBOX
+    static long max;
+#else
     static unsigned long max;
+#endif
 
     if (max == 0) {
         max = TCG_MAX_OP_SIZE;
-#define DEF(s, n, copy_size) max = copy_size > max? copy_size : max;
+#define DEF(s, n, copy_size) max = (copy_size > max) ? copy_size : max;
 #include "tcg-opc.h"
 #undef DEF
         max *= OPC_MAX_SIZE;
