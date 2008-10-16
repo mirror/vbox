@@ -84,6 +84,7 @@ OBJS   = \
 	strformat.o \
 	strformatrt.o \
 	strformattype.o \
+	strprintf.o \
 	strformat-vbox.o \
     RTAssertShouldPanic-generic.o
 ifeq ($(BUILD_TARGET_ARCH),amd64)
