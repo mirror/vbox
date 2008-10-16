@@ -3449,7 +3449,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
     SELMR3PagingModeChanged(pVM);
 
     /* Notify HWACCM as well. */
-    HWACCMR3PagingModeChanged(pVM, pVM->pgm.s.enmShadowMode);
+    HWACCMR3PagingModeChanged(pVM, pVM->pgm.s.enmShadowMode, pVM->pgm.s.enmGuestMode);
     return rc;
 }
 

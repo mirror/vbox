@@ -339,17 +339,6 @@ typedef struct HWACCM
         /** Real-mode emulation state. */
         struct
         {
-            CPUMSELREGHID               dsHid;
-            CPUMSELREGHID               esHid;
-            CPUMSELREGHID               fsHid;
-            CPUMSELREGHID               gsHid;
-            CPUMSELREGHID               ssHid;
-            RTSEL                       ds;
-            RTSEL                       es;
-            RTSEL                       fs;
-            RTSEL                       gs;
-            RTSEL                       ss;
-            RTSEL                       padding5[1];
             X86EFLAGS                   eflags;
             uint32_t                    fValid;
         } RealMode;
