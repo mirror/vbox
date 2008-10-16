@@ -165,8 +165,8 @@ endif
 ifdef VBOX_WITH_DOCS_PACKING
  SOLARIS_NO_STRIP += \
  	VirtualBox.chm \
- 	UserManual.pdf \
-	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),UserManual_$(f).pdf)
+	UserManual.pdf \
+	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf)
 endif
 
 ifdef VBOX_WITH_VRDP
@@ -378,7 +378,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_DOCS_PACKING),$(INSTALL) -m 0644 \
 		$(PATH_BIN)/VirtualBox.chm \
 		$(PATH_BIN)/UserManual.pdf \
-		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf)                       $(SOLARIS_INST_DIR)/)
+		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm $(PATH_BIN)/UserManual_$(f).pdf) $(SOLARIS_INST_DIR)/)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
 	$(QUIET)$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(VBOX_LICENSE_BINS)     $(SOLARIS_INST_DIR)/)
