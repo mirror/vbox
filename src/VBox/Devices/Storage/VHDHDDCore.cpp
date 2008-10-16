@@ -801,6 +801,26 @@ static int vhdRename(void *pBackendData, const char *pszFilename)
     return VERR_NOT_IMPLEMENTED;
 }
 
+static void vhdFreeImageMemory(PVHDIMAGE pImage)
+{
+    if (pImage->pszParentFilename)
+    {
+        RTStrFree(pImage->pszParentFilename);
+        pImage->pszParentFilename = NULL;
+    }
+    if (pImage->pBlockAllocationTable)
+    {
+        RTMemFree(pImage->pBlockAllocationTable);
+        pImage->pBlockAllocationTable = NULL;
+    }
+    if (pImage->pu8Bitmap)
+    {
+        RTMemFree(pImage->pu8Bitmap);
+        pImage->pu8Bitmap = NULL;
+    }
+    RTMemFree(pImage);
+}
+
 static int vhdFreeImage(PVHDIMAGE pImage)
 {
     int rc = VINF_SUCCESS;
@@ -810,7 +830,7 @@ static int vhdFreeImage(PVHDIMAGE pImage)
     if (pImage) {
         vhdFlush(pImage);
         RTFileClose(pImage->File);
-        RTMemFree(pImage);
+        vhdFreeImageMemory(pImage);
     }
 
     LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
@@ -825,21 +845,15 @@ static int vhdClose(void *pBackendData, bool fDelete)
     /* Freeing a never allocated image (e.g. because the open failed) is
      * not signalled as an error. After all nothing bad happens. */
     if (pImage) {
-        if (pImage->pu8Bitmap)
-        {
-            RTMemFree(pImage->pu8Bitmap);
-            pImage->pu8Bitmap = NULL;
-        }
         if (fDelete)
         {
             /* No point in updating the file that is deleted anyway. */
             RTFileClose(pImage->File);
             RTFileDelete(pImage->pszFilename);
+            vhdFreeImageMemory(pImage);
         }
         else
             rc = vhdFreeImage(pImage);
-        if (pImage->pszParentFilename)
-            RTStrFree(pImage->pszParentFilename);
     }
 
     LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
@@ -897,6 +911,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         {
             uint32_t cSectors = 0;
             uint32_t iBitmap = cBATEntryIndex / 8; /* Byte in the block bitmap. */
+            Assert(iBitmap < pImage->cbDataBlockBitmap);
 
             /*
              * The index of the bit in the byte of the data block bitmap.
@@ -1108,6 +1123,7 @@ static int vhdFlush(void *pBackendData)
         RTFileWriteAt(pImage->File, pImage->uCurrentEndOfFile, &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
         if (pImage->fDynHdrNeedsUpdate)
             vhdDynamicHeaderUpdate(pImage);
+        RTMemFree(pBlockAllocationTableToWrite);
     }
 
     int rc = RTFileFlush(pImage->File);
