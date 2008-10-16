@@ -46,7 +46,7 @@
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
-// Linux/Sparc64 defines uint64_t
+/* Linux/Sparc64 defines uint64_t */
 #if !(defined (__sparc_v9__) && defined(__linux__))
 /* XXX may be done for all 64 bits targets ? */
 #if defined (__x86_64__) || defined(__ia64)
