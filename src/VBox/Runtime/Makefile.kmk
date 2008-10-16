@@ -968,6 +968,15 @@ RuntimeR0Drv_SOURCES    = \
 	VBox/log-vbox.cpp \
 	VBox/strformat-vbox.cpp
 
+## @todo: Linking against RuntimeR0Drv on Linux will result in unresolved external
+## references to several string functions (e.g. strlen). We could include the
+## missing functions here but our own implementations conflict with declarations
+## of some Linux kernels (inline versus not inline, size_t versus unsigned int).
+##
+## The prototypes for the unresolved externals are declared in <linux/string.h>.
+## This file is not included with extern "C" { ... } and therefore the function
+## prototypes are mangled during C++ compilation. That's why we have to provide
+## implementations with mangled function names.
 RuntimeR0Drv_SOURCES.linux = \
 	common/alloc/heapsimple.cpp \
 	common/string/strpbrk.cpp \
