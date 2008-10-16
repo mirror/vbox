@@ -157,67 +157,6 @@ typedef struct icount_decr_u16 {
 
 
 #define CPU_TEMP_BUF_NLONGS 128
-#ifdef VBOX
-struct TCGContext;
-
-#define CPU_COMMON                                                      \
-    struct TranslationBlock *current_tb; /* currently executing TB  */  \
-    /* soft mmu support */                                              \
-    /* in order to avoid passing too many arguments to the MMIO         \
-       helpers, we store some rarely used information in the CPU        \
-       context) */                                                      \
-    unsigned long mem_io_pc; /* host pc at which the memory was         \
-                                accessed */                             \
-    target_ulong mem_io_vaddr; /* target virtual addr at which the      \
-                                     memory was accessed */             \
-    uint32_t halted; /* Nonzero if the CPU is in suspend state */       \
-    uint32_t interrupt_request;                                         \
-    /* The meaning of the MMU modes is defined in the target code. */   \
-    CPUTLBEntry tlb_table[NB_MMU_MODES][CPU_TLB_SIZE];                  \
-    target_phys_addr_t iotlb[NB_MMU_MODES][CPU_TLB_SIZE];               \
-    struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];           \
-    /* buffer for temporaries in the code generator */                  \
-    long temp_buf[CPU_TEMP_BUF_NLONGS];                                 \
-                                                                        \
-    int64_t icount_extra; /* Instructions until next timer event.  */   \
-    /* Number of cycles left, with interrupt flag in high bit.          \
-       This allows a single read-compare-cbranch-write sequence to test \
-       for both decrementer underflow and exceptions.  */               \
-    union {                                                             \
-        uint32_t u32;                                                   \
-        icount_decr_u16 u16;                                            \
-    } icount_decr;                                                      \
-    uint32_t can_do_io; /* nonzero if memory mapped IO is safe.  */     \
-                                                                        \
-    /* from this point: preserved by CPU reset */                       \
-    /* ice debug support */                                             \
-    target_ulong breakpoints[MAX_BREAKPOINTS];                          \
-    int nb_breakpoints;                                                 \
-    int singlestep_enabled;                                             \
-                                                                        \
-    struct {                                                            \
-        target_ulong vaddr;                                             \
-        int type; /* PAGE_READ/PAGE_WRITE */                            \
-    } watchpoint[MAX_WATCHPOINTS];                                      \
-    int nb_watchpoints;                                                 \
-    int watchpoint_hit;                                                 \
-                                                                        \
-    /* Core interrupt code */                                           \
-    jmp_buf jmp_env;                                                    \
-    int exception_index;                                                \
-                                                                        \
-    int user_mode_only;                                                 \
-                                                                        \
-    void *next_cpu; /* next CPU sharing TB cache */                     \
-    int cpu_index; /* CPU index (informative) */                        \
-    int running; /* Nonzero if cpu is currently running(usermode).  */  \
-    /* user data */                                                     \
-    void *opaque;                                                       \
-                                                                        \
-    const char *cpu_model_str;                                          \
-    /* Codegenerator context */                                         \
-    struct TCGContext *tcg_context;
-#else
 
 #define CPU_COMMON                                                      \
     struct TranslationBlock *current_tb; /* currently executing TB  */  \
@@ -274,6 +213,5 @@ struct TCGContext;
     void *opaque;                                                       \
                                                                         \
     const char *cpu_model_str;                                          
-#endif
 
 #endif
