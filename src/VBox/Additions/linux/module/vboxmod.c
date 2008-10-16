@@ -105,12 +105,6 @@ DECLVBGL (void) vboxadd_cmc_close (void *opaque)
 EXPORT_SYMBOL (vboxadd_cmc_open);
 EXPORT_SYMBOL (vboxadd_cmc_close);
 
-/** @todo check that this works for all the kernels. */
-EXPORT_SYMBOL (RTR0AssertPanicSystem);
-EXPORT_SYMBOL (RTAssertShouldPanic);
-EXPORT_SYMBOL (AssertMsg1);
-EXPORT_SYMBOL (AssertMsg2);
-
 
 #define MAX_HGCM_CONNECTIONS 1024
 
