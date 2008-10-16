@@ -347,6 +347,7 @@ typedef struct HWACCM
         {
             uint64_t                u64VMCSPhys;
             uint32_t                ulVMCSRevision;
+            uint32_t                padding;
         } lasterror;
     } vmx;
 
