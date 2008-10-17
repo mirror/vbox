@@ -8,7 +8,11 @@
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 
+#ifndef _MSC_VER
 #define qemu_snprintf(pszBuf, cbBuf, ...) RTStrPrintf((pszBuf), (cbBuf), __VA_ARGS__)
+#else
+#define qemu_snprintf RTStrPrintf
+#endif
 #define qemu_vsnprintf(pszBuf, cbBuf, pszFormat, args) \
                             RTStrPrintfV((pszBuf), (cbBuf), (pszFormat), (args))
 #define qemu_vprintf(pszFormat, args) \

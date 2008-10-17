@@ -32,7 +32,11 @@ these four paragraphs for those parts of this code that are retained.
 #ifndef SOFTFLOAT_H
 #define SOFTFLOAT_H
 
+#ifdef VBOX
+#ifndef _MSC_VER
 #include <inttypes.h>
+#endif
+#endif
 #include "config.h"
 
 /*----------------------------------------------------------------------------
@@ -69,7 +73,11 @@ typedef uint64_t bits64;
 typedef int64_t sbits64;
 
 #define LIT64( a ) a##LL
+#ifdef _MSC_VER
+#define INLINE 
+#else
 #define INLINE static inline
+#endif
 
 /*----------------------------------------------------------------------------
 | The macro `FLOATX80' must be defined to enable the extended double-precision
