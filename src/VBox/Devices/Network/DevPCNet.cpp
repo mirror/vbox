@@ -4508,7 +4508,8 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
         Assert(!PDMCritSectIsOwner(&pThis->CritSect));
-        pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
+        if (pThis->pDrv)
+            pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
     }
     return VINF_SUCCESS;
 }
