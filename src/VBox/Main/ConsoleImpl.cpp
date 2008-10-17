@@ -4243,8 +4243,8 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     AutoWriteLock alock (this);
 
     if (mMachineState >= MachineState_Running)
-        return setError(E_FAIL, tr ("Cannot power up the machine as it is "
-                                    "already running (machine state: %d)"),
+        return setError(E_FAIL, tr ("Virtual machine is already running "
+                                    "(machine state: %d)"),
                         mMachineState);
 
     /*
