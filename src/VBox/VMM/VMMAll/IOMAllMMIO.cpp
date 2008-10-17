@@ -1264,14 +1264,12 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
          * Perform the read and deal with the result.
          */
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfRead), a);
+        STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfRead), a);
 #endif
         int rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pu32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
-        if (pStats && rc != VINF_IOM_HC_MMIO_READ)
+        STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
+        if (rc != VINF_IOM_HC_MMIO_READ)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
 #endif
         switch (rc)
@@ -1318,8 +1316,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
      * Lookup the ring-3 range.
      */
 #ifdef VBOX_WITH_STATISTICS
-    if (pStats)
-        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
+    STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
 #endif
     /* Unassigned memory; this is actually not supposed to happen. */
     switch (cbValue)
@@ -1371,14 +1368,12 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
     if (pRange->CTX_SUFF(pfnWriteCallback))
     {
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
+        STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
 #endif
         int rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, &u32Value, cbValue);
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
-        if (pStats && rc != VINF_IOM_HC_MMIO_WRITE)
+        STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
+        if (rc != VINF_IOM_HC_MMIO_WRITE)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
 #endif
         Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue, rc));
@@ -1396,8 +1391,7 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
      * No write handler, nothing to do.
      */
 #ifdef VBOX_WITH_STATISTICS
-    if (pStats)
-        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
+    STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
 #endif
     Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue, VINF_SUCCESS));
     return VINF_SUCCESS;
