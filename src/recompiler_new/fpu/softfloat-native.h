@@ -4,6 +4,9 @@
 #if (defined(_BSD) && !defined(__APPLE__)) || defined(HOST_SOLARIS)
 #include <ieeefp.h>
 #define fabsf(f) ((float)fabs(f))
+#elif defined(_MSC_VER)
+#include <fpieee.h>
+#define fabsf(f) ((float)fabs(f))
 #else
 #include <fenv.h>
 #endif
@@ -33,6 +36,12 @@
 #define isunordered(x,y)        unordered(x, y)
 #define isinf(x)                ((fpclass(x) == FP_NINF) || (fpclass(x) == FP_PINF))
 
+#elif defined(_MSC_VER)
+#include <float.h>
+#define unordered(x1, x2)       ((_fpclass(x1) <= 2) || (_fpclass(x2) <= 2))
+#define isless(x, y)            ((!unordered(x, y)) && ((x) < (y)))
+#define islessequal(x, y)       ((!unordered(x, y)) && ((x) <= (y)))
+#define isunordered(x,y)        unordered(x, y)
 #endif
 
 typedef float float32;
@@ -75,6 +84,13 @@ enum {
     float_round_down         = 1,
     float_round_up           = 2,
     float_round_to_zero      = 3
+};
+#elif defined(_MSC_VER)
+enum {
+    float_round_nearest_even = _FpRoundNearest,
+    float_round_down         = _FpRoundMinusInfinity,
+    float_round_up           = _FpRoundPlusInfinity,
+    float_round_to_zero      = _FpRoundChopped
 };
 #else
 enum {

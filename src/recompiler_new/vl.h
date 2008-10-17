@@ -29,8 +29,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <inttypes.h>
 #ifndef VBOX
+#include <inttypes.h>
 #include <limits.h>
 #include <time.h>
 #include <ctype.h>

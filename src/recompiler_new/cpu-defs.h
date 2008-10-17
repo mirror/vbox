@@ -31,7 +31,9 @@
 
 #include "config.h"
 #include <setjmp.h>
+#ifndef VBOX
 #include <inttypes.h>
+#endif
 #include "osdep.h"
 
 #ifndef TARGET_LONG_BITS
