@@ -1398,6 +1398,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOTYPE enm
         pRange->Core.KeyLast        = GCPhysStart + (cbRange - 1);
         pRange->GCPhys              = GCPhysStart;
         pRange->cb                  = cbRange;
+        pRange->enmType             = enmMMIOType;
         pRange->pszDesc             = pszDesc;
 
         pRange->pvUserR3            = pvUser;
@@ -1421,10 +1422,22 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOTYPE enm
         /*
          * Try register it with PGM and then insert it into the tree.
          */
-        rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
-                                   IOMR3MMIOHandler, pRange,
-                                   pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
-                                   pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
+        if (pRange->enmType == IOMMMIOTYPE_MMIO)
+        {
+            rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
+                                       IOMR3MMIOHandler, pRange,
+                                       pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
+                                       pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
+        }
+        else
+        {
+            /** @todo Currently assumes it's for existing memory *only*! */
+            rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_ALL, GCPhysStart, GCPhysStart + (cbRange - 1),
+                                              IOMR3MMIOHandler, pRange,
+                                              pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
+                                              pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
+        }
+
         if (RT_SUCCESS(rc))
         {
             if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRange->Core))
@@ -1604,13 +1617,16 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
+        int           rc;
         PIOMMMIORANGE pRange = (PIOMMMIORANGE)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesR3->MMIOTree, GCPhys);
         Assert(pRange);
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
 
         /* remove it from PGM */
-        int rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
-        AssertRC(rc);
+        if (pRange->enmType == IOMMMIOTYPE_MMIO)
+            rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
+        else
+            rc = PGMHandlerPhysicalDeregister(pVM, GCPhys);
 
         /* advance and free. */
         GCPhys = pRange->Core.KeyLast + 1;

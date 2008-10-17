@@ -2767,7 +2767,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnUnregisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
 
     /**
-     * Register a Memory Mapped I/O (MMIO) region with backing memory.
+     * Register a Memory Mapped I/O (MMIO) region with backing memory (or use existing memory if part of guest ram)
      *
      * These callbacks are of course for the host context (HC).
      * Register HC handlers before guest context (GC) handlers! There must be a
