@@ -97,6 +97,7 @@ DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, const char *pszPrefix, int rc
 static int emR3HighPriorityPostForcedActions(PVM pVM, int rc);
 static int emR3ForcedActions(PVM pVM, int rc);
 static int emR3RawGuestTrap(PVM pVM);
+static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret);
 
 
 /**
@@ -1429,7 +1430,9 @@ static int emR3RawGuestTrap(PVM pVM)
         return rc;
     }
 
-    /* Traps can be directly forwarded in hardware accelerated mode. */
+    /*
+     * Traps can be directly forwarded in hardware accelerated mode.
+     */
     if (HWACCMR3IsActive(pVM))
     {
 #ifdef LOGGING_ENABLED
@@ -1439,7 +1442,58 @@ static int emR3RawGuestTrap(PVM pVM)
         return VINF_EM_RESCHEDULE_HWACC;
     }
 
-    /** Scan kernel code that traps; we might not get another chance. */
+#if 1 /* Experimental: Review, disable if it causes trouble. */
+    /*
+     * Handle traps in patch code first.
+     *
+     * We catch a few of these cases in RC before returning to R3 (#PF, #GP, #BP)
+     * but several traps isn't handled specially by TRPM in RC and we end up here
+     * instead. One example is #DE.
+     */
+    uint32_t uCpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
+    if (    uCpl == 0
+        &&  PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip))
+    {
+        LogFlow(("emR3RawGuestTrap: trap %#x in patch code; eip=%08x\n", u8TrapNo, pCtx->eip));
+        return emR3PatchTrap(pVM, pCtx, rc);
+    }
+#endif
+
+    /*
+     * If the guest gate is marked unpatched, then we will check again if we can patch it.
+     * (This assumes that we've already tried and failed to dispatch the trap in
+     * RC for the gates that already has been patched. Which is true for most high
+     * volume traps, because these are handled specially, but not for odd ones like #DE.)
+     */
+    if (TRPMR3GetGuestTrapHandler(pVM, u8TrapNo) == TRPM_INVALID_HANDLER)
+    {
+        CSAMR3CheckGates(pVM, u8TrapNo, 1);
+        Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8TrapNo, TRPMR3GetGuestTrapHandler(pVM, u8TrapNo) != TRPM_INVALID_HANDLER));
+
+        /* If it was successful, then we could go back to raw mode. */
+        if (TRPMR3GetGuestTrapHandler(pVM, u8TrapNo) != TRPM_INVALID_HANDLER)
+        {
+            /* Must check pending forced actions as our IDT or GDT might be out of sync. */
+            rc = EMR3CheckRawForcedActions(pVM);
+            AssertRCReturn(rc, rc);
+
+            TRPMERRORCODE enmError = uErrorCode != ~0U
+                                   ? TRPM_TRAP_HAS_ERRORCODE
+                                   : TRPM_TRAP_NO_ERRORCODE;
+            rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8TrapNo, uErrorCode, enmError, TRPM_TRAP, -1);
+            if (rc == VINF_SUCCESS /* Don't use VBOX_SUCCESS */)
+            {
+                TRPMResetTrap(pVM);
+                return VINF_EM_RESCHEDULE_RAW;
+            }
+            AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP, ("%Rrc\n", rc));
+        }
+    }
+
+    /*
+     * Scan kernel code that traps; we might not get another chance.
+     */
+    /** @todo move this up before the dispatching? */
     if (    (pCtx->ss & X86_SEL_RPL) <= 1
         &&  !pCtx->eflags.Bits.u1VM)
     {
@@ -1447,25 +1501,28 @@ static int emR3RawGuestTrap(PVM pVM)
         CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
     }
 
+    /*
+     * Trap specific handling.
+     */
     if (u8TrapNo == 6) /* (#UD) Invalid opcode. */
     {
+        /*
+         * If MONITOR & MWAIT are supported, then interpret them here.
+         */
         DISCPUSTATE cpu;
-
-        /* If MONITOR & MWAIT are supported, then interpret them here. */
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap (#UD): ");
         if (    VBOX_SUCCESS(rc)
             && (cpu.pCurInstr->opcode == OP_MONITOR || cpu.pCurInstr->opcode == OP_MWAIT))
         {
-            uint32_t u32Dummy, u32Features, u32ExtFeatures, size;
-
+            uint32_t u32Dummy, u32Features, u32ExtFeatures;
             CPUMGetGuestCpuId(pVM, 1, &u32Dummy, &u32Dummy, &u32ExtFeatures, &u32Features);
-
             if (u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR)
             {
                 rc = TRPMResetTrap(pVM);
                 AssertRC(rc);
 
-                rc = EMInterpretInstructionCPU(pVM, &cpu, CPUMCTX2CORE(pCtx), 0, &size);
+                uint32_t opsize;
+                rc = EMInterpretInstructionCPU(pVM, &cpu, CPUMCTX2CORE(pCtx), 0, &opsize);
                 if (VBOX_SUCCESS(rc))
                 {
                     pCtx->rip += cpu.opsize;
@@ -1477,10 +1534,15 @@ static int emR3RawGuestTrap(PVM pVM)
     }
     else if (u8TrapNo == 13) /* (#GP) Privileged exception */
     {
+        /*
+         * Handle I/O bitmap?
+         */
+        /** @todo We're not supposed to be here with a false guest trap concerning
+         *        I/O access. We can easily handle those in RC.  */
         DISCPUSTATE cpu;
-
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap: ");
-        if (VBOX_SUCCESS(rc) && (cpu.pCurInstr->optype & OPTYPE_PORTIO))
+        if (    VBOX_SUCCESS(rc)
+            &&  (cpu.pCurInstr->optype & OPTYPE_PORTIO))
         {
             /*
              * We should really check the TSS for the IO bitmap, but it's not like this
@@ -1575,6 +1637,7 @@ int emR3RawRingSwitch(PVM pVM)
     return emR3RawExecuteInstruction(pVM, "RSWITCH: ");
 }
 
+
 /**
  * Handle a trap (\#PF or \#GP) in patch code
  *
@@ -1583,7 +1646,7 @@ int emR3RawRingSwitch(PVM pVM)
  * @param   pCtx    CPU context
  * @param   gcret   GC return code
  */
-int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
+static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
 {
     uint8_t         u8TrapNo;
     int             rc;
@@ -2093,43 +2156,6 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
                 rc = VERR_EM_RAW_PATCH_CONFLICT;
                 break;
             }
-
-            Assert(TRPMHasTrap(pVM));
-            Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
-
-            if (TRPMHasTrap(pVM))
-            {
-                uint8_t         u8Interrupt;
-                RTGCUINT        uErrorCode;
-                TRPMERRORCODE   enmError = TRPM_TRAP_NO_ERRORCODE;
-
-                rc = TRPMQueryTrapAll(pVM, &u8Interrupt, NULL, &uErrorCode, NULL);
-                AssertRC(rc);
-
-                if (uErrorCode != ~0U)
-                    enmError = TRPM_TRAP_HAS_ERRORCODE;
-
-                /* If the guest gate is marked unpatched, then we will check again if we can patch it. */
-                if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER)
-                {
-                    CSAMR3CheckGates(pVM, u8Interrupt, 1);
-                    Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
-
-                    /** If it was successful, then we could go back to raw mode. */
-                    if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER)
-                    {
-                        /* Must check pending forced actions as our IDT or GDT might be out of sync */
-                        EMR3CheckRawForcedActions(pVM);
-
-                        rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, uErrorCode, enmError, TRPM_TRAP, -1);
-                        if (rc == VINF_SUCCESS /* Don't use VBOX_SUCCESS */)
-                        {
-                            TRPMResetTrap(pVM);
-                            return VINF_EM_RESCHEDULE_RAW;
-                        }
-                    }
-                }
-            }
             rc = emR3RawGuestTrap(pVM);
             break;
 
@@ -2218,17 +2244,13 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_EM_RAW_INTERRUPT_PENDING:
         case VINF_EM_RAW_RING_SWITCH_INT:
-        {
-            uint8_t u8Interrupt;
-
             Assert(TRPMHasTrap(pVM));
             Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
 
             if (TRPMHasTrap(pVM))
             {
-                u8Interrupt = TRPMGetTrapNo(pVM);
-
                 /* If the guest gate is marked unpatched, then we will check again if we can patch it. */
+                uint8_t u8Interrupt = TRPMGetTrapNo(pVM);
                 if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER)
                 {
                     CSAMR3CheckGates(pVM, u8Interrupt, 1);
@@ -2238,7 +2260,6 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
             }
             rc = VINF_EM_RESCHEDULE_REM;
             break;
-        }
 
         /*
          * Other ring switch types.
