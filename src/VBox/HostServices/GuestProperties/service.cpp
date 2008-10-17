@@ -91,22 +91,6 @@ static void VBoxHGCMParmUInt64Set (VBOXHGCMSVCPARM *pParm, uint64_t u64)
     pParm->u.uint64 = u64;
 }
 
-/** Extract a callback pointer value from an HGCM parameter structure */
-static int VBoxHGCMParmPtrGet (VBOXHGCMSVCPARM *pParm,
-                               PFNVBOXHGCMCALLBACK *ppfnCallback,
-                               void **ppvData)
-{
-    if (pParm->type == VBOX_HGCM_SVC_PARM_CALLBACK)
-    {
-        *ppfnCallback = pParm->u.callback.pFunction;
-        *ppvData      = pParm->u.callback.pvData;
-        return VINF_SUCCESS;
-    }
-
-    return VERR_INVALID_PARAMETER;
-}
-
-
 namespace guestProp {
 
 /**
@@ -134,7 +118,7 @@ private:
     bool mfExitThread;
     /** Callback function supplied by the host for notification of updates
      * to properties */
-    PFNVBOXHGCMCALLBACK mpfnHostCallback;
+    PFNHGCMSVCEXT mpfnHostCallback;
     /** User data pointer to be supplied to the host callback function */
     void *mpvHostData;
 
@@ -207,6 +191,21 @@ public:
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         return pSelf->hostCall(u32Function, cParms, paParms);
     }
+
+    /**
+     * @copydoc VBOXHGCMSVCHELPERS::pfnRegisterExtension
+     * Installs a host callback for notifications of property changes.
+     */
+    static DECLCALLBACK(int) svcRegisterExtension (void *pvService,
+                                                   PFNHGCMSVCEXT pfnExtension,
+                                                   void *pvExtension)
+    {
+        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        // pSelf->mpfnHostCallback = pfnExtension;
+        pSelf->mpvHostData = pvExtension;
+        return VINF_SUCCESS;
+    }
 private:
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
     int validateName(const char *pszName, uint32_t cbName);
@@ -217,7 +216,7 @@ private:
     int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void notifyHost(const char *pszProperty);
-    static DECLCALLBACK(int) reqNotify(PFNVBOXHGCMCALLBACK pfnCallback,
+    static DECLCALLBACK(int) reqNotify(PFNHGCMSVCEXT pfnCallback,
                                        void *pvData, char *pszName,
                                        char *pszValue, uint32_t u32TimeHigh,
                                        uint32_t u32TimeLow, char *pszFlags);
@@ -881,19 +880,18 @@ void Service::notifyHost(const char *pszProperty)
  *
  * @thread  request thread
  */
-int Service::reqNotify(PFNVBOXHGCMCALLBACK pfnCallback, void *pvData,
+int Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
                        char *pszName, char *pszValue, uint32_t u32TimeHigh,
                        uint32_t u32TimeLow, char *pszFlags)
 {
     HOSTCALLBACKDATA HostCallbackData;
-    HostCallbackData.hdr.u32Magic = VBOXHGCMCALLBACKMAGIC;
-    HostCallbackData.hdr.cbStruct = sizeof(HostCallbackData);
-    HostCallbackData.hdr.pvData   = pvData;
+    HostCallbackData.u32Magic     = HOSTCALLBACKMAGIC;
     HostCallbackData.pcszName     = pszName;
     HostCallbackData.pcszValue    = pszValue;
     HostCallbackData.u64Timestamp = RT_MAKE_U64(u32TimeLow, u32TimeHigh);
     HostCallbackData.pcszFlags    = pszFlags;
-    pfnCallback(&HostCallbackData.hdr);
+    AssertRC(pfnCallback(pvData, 0, reinterpret_cast<void *>(&HostCallbackData),
+                         sizeof(HostCallbackData)));
     RTStrFree(pszName);
     RTStrFree(pszValue);
     RTStrFree(pszFlags);
@@ -1037,18 +1035,6 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
             LogFlowFunc(("ENUM_PROPS\n"));
             rc = enumProps(cParms, paParms);
             break;
-        case REGISTER_CALLBACK:
-            if ((1 != cParms) || (paParms[0].type != VBOX_HGCM_SVC_PARM_CALLBACK))
-                rc = VERR_INVALID_PARAMETER;
-            else
-            {
-                PFNVBOXHGCMCALLBACK pfnCallback = NULL;
-                void *pvData = NULL;
-                rc = VBoxHGCMParmPtrGet (&paParms[0], &pfnCallback, &pvData);
-                mpfnHostCallback = pfnCallback;
-                mpvHostData = pvData;
-            }
-            break;
         default:
             rc = VERR_NOT_SUPPORTED;
             break;
@@ -1120,14 +1106,14 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
                 /* We do not maintain connections, so no client data is needed. */
                 ptable->cbClient = 0;
 
-                ptable->pfnUnload     = Service::svcUnload;
-                ptable->pfnConnect    = Service::svcConnectDisconnect;
-                ptable->pfnDisconnect = Service::svcConnectDisconnect;
-                ptable->pfnCall       = Service::svcCall;
-                ptable->pfnHostCall   = Service::svcHostCall;
-                ptable->pfnSaveState  = NULL;  /* The service is stateless by definition, so the */
-                ptable->pfnLoadState  = NULL;  /* normal construction done before restoring suffices */
-                ptable->pfnRegisterExtension  = NULL;
+                ptable->pfnUnload             = Service::svcUnload;
+                ptable->pfnConnect            = Service::svcConnectDisconnect;
+                ptable->pfnDisconnect         = Service::svcConnectDisconnect;
+                ptable->pfnCall               = Service::svcCall;
+                ptable->pfnHostCall           = Service::svcHostCall;
+                ptable->pfnSaveState          = NULL;  /* The service is stateless by definition, so the */
+                ptable->pfnLoadState          = NULL;  /* normal construction done before restoring suffices */
+                ptable->pfnRegisterExtension  = Service::svcRegisterExtension;
 
                 /* Service specific initialization. */
                 ptable->pvService = apService.release();

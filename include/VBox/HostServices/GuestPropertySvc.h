@@ -205,28 +205,8 @@ enum eHostFn
      * Enumerate guest properties.
      * The parameter format matches that of ENUM_PROPS.
      */
-    ENUM_PROPS_HOST = 6,
-    /**
-     * Register a callback with the service which will be called when a
-     * property is modified.  The callback is a function returning void and
-     * taking a pointer to a HOSTCALLBACKDATA structure.
-     */
-    REGISTER_CALLBACK = 7
+    ENUM_PROPS_HOST = 6
 };
-
-typedef struct _HOSTCALLBACKDATA
-{
-    /** Callback structure header */
-    VBOXHGCMCALLBACKHDR hdr;
-    /** The name of the property that was changed */
-    const char *pcszName;
-    /** The new property value, or NULL if the property was deleted */
-    const char *pcszValue;
-    /** The timestamp of the modification */
-    uint64_t u64Timestamp;
-    /** The flags field of the modified property */
-    const char *pcszFlags;
-} HOSTCALLBACKDATA, *PHOSTCALLBACKDATA;
 
 /**
  * The service functions which are called by guest.  The numbers may not change,
@@ -244,6 +224,30 @@ enum eGuestFn
     DEL_PROP = 4,
     /** Enumerate guest properties */
     ENUM_PROPS = 5
+};
+
+/**
+ * Data structure to pass to the service extension callback.  We use this to
+ * notify the host of changes to properties.
+ */
+typedef struct _HOSTCALLBACKDATA
+{
+    /** Magic number to identify the structure */
+    uint32_t u32Magic;
+    /** The name of the property that was changed */
+    const char *pcszName;
+    /** The new property value, or NULL if the property was deleted */
+    const char *pcszValue;
+    /** The timestamp of the modification */
+    uint64_t u64Timestamp;
+    /** The flags field of the modified property */
+    const char *pcszFlags;
+} HOSTCALLBACKDATA, *PHOSTCALLBACKDATA;
+
+enum
+{
+    /** Magic number for sanity checking the HOSTCALLBACKDATA structure */
+    HOSTCALLBACKMAGIC = 0x69c87a78
 };
 
 /**
