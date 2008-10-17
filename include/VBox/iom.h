@@ -85,19 +85,6 @@ __BEGIN_DECLS
                             )
 
 /**
- * MMIO type
- */
-typedef enum IOMMMIOTYPE
-{
-    /** 'Normal' MMIO. Reads and writes always fault. */
-    IOMMMIOTYPE_MMIO = 1,
-    /** MMIO region backed by memory; protection can be turned off temporarily. */
-    IOMMMIOTYPE_MMIO_WITH_RAM_BACKING,
-    /** The usual 32-bit type size hack. */
-    IOMMMIOTYPE_32BIT_HACK = 0x7fffffff
-} IOMMMIOTYPE;
-
-/**
  * Port I/O Handler for IN operations.
  *
  * @returns VINF_SUCCESS or VINF_EM_*.
@@ -261,7 +248,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                                       const char *pszDesc);
 VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts);
 
-VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                     R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback, const char *pszDesc);

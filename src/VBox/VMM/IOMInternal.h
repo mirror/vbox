@@ -49,8 +49,7 @@ typedef struct IOMMMIORANGE
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
     uint32_t                    cb;
-    /** MMIO type. */
-    IOMMMIOTYPE                 enmType;
+    uint32_t                    uAlignmnet;
 
     /** Pointer to user argument - R3. */
     RTR3PTR                     pvUserR3;

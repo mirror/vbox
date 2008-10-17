@@ -1350,7 +1350,6 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  *
  * @param   pVM                 VM handle.
  * @param   pDevIns             PDM device instance owning the MMIO range.
- * @param   enmMMIOType         MMIO Type
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
  * @param   pvUser              User argument for the callbacks.
@@ -1359,7 +1358,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
@@ -1398,7 +1397,6 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOTYPE enm
         pRange->Core.KeyLast        = GCPhysStart + (cbRange - 1);
         pRange->GCPhys              = GCPhysStart;
         pRange->cb                  = cbRange;
-        pRange->enmType             = enmMMIOType;
         pRange->pszDesc             = pszDesc;
 
         pRange->pvUserR3            = pvUser;
@@ -1422,21 +1420,10 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOTYPE enm
         /*
          * Try register it with PGM and then insert it into the tree.
          */
-        if (pRange->enmType == IOMMMIOTYPE_MMIO)
-        {
-            rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
-                                       IOMR3MMIOHandler, pRange,
-                                       pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
-                                       pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
-        }
-        else
-        {
-            /** @todo Currently assumes it's for existing memory *only*! */
-            rc = PGMHandlerPhysicalRegisterEx(pVM, PGMPHYSHANDLERTYPE_PHYSICAL_ALL, GCPhysStart, GCPhysStart + (cbRange - 1),
-                                              IOMR3MMIOHandler, pRange,
-                                              pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
-                                              pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
-        }
+        rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
+                                    IOMR3MMIOHandler, pRange,
+                                    pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
+                                    pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
 
         if (RT_SUCCESS(rc))
         {
@@ -1623,10 +1610,7 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
 
         /* remove it from PGM */
-        if (pRange->enmType == IOMMMIOTYPE_MMIO)
-            rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
-        else
-            rc = PGMHandlerPhysicalDeregister(pVM, GCPhys);
+        rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
 
         /* advance and free. */
         GCPhys = pRange->Core.KeyLast + 1;
