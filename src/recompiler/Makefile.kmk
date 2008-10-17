@@ -134,7 +134,7 @@ ifeq ($(filter-out win os2,$(KBUILD_TARGET)),)
 else # The remaining targets can be using gcc-4 and needs checking.
  $(REM_MOD)_SOURCES        += $(PATH_$(REM_MOD))/op.S
  FILE_OP_OBJ                = $(PATH_$(REM_MOD))/gen/op.o
- $(REM_MOD)_CLEAN           = $(FILE_OP_OBJ) $(PATH_$(REM_MOD))/op.S.dep
+ $(REM_MOD)_CLEAN           = $(FILE_OP_OBJ) $(PATH_$(REM_MOD))/op.S.dep $(PATH_$(REM_MOD))/op.S
 endif
 $(REM_MOD)_SOURCES.win.x86  = $(REM_MOD).def
 ifneq ($(REM_MOD),VBoxREM2)
