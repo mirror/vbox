@@ -48,6 +48,8 @@
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/defs.h>
 # include <VBox/com/array.h>
+# include <hgcm/HGCM.h> /** @todo it should be possible to register a service
+                          * extension using a VMMDev callback. */
 #endif /* VBOX_WITH_GUEST_PROPS */
 #include <VBox/intnet.h>
 
@@ -1838,11 +1840,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_CFGM_NODE, 3, &parms[0]);
 
             /* Register the host notification callback */
-            parms[0].type = VBOX_HGCM_SVC_PARM_CALLBACK;
-            parms[0].u.callback.pFunction = Console::doGuestPropNotification;
-            parms[0].u.callback.pvData = pvConsole;
-
-            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::REGISTER_CALLBACK, 1, &parms[0]);
+            HGCMSVCEXTHANDLE hDummy;
+            HGCMHostRegisterServiceExtension (&hDummy, "VBoxGuestPropSvc",
+                                              Console::doGuestPropNotification,
+                                              pvConsole);
 
             Log(("Set VBoxGuestPropSvc property store\n"));
         }
