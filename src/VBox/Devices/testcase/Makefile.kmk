@@ -97,7 +97,7 @@ tstDeviceStructSize_INCS     = \
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp
 tstDeviceStructSize_CLEAN    = \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h \
-	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.run
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
 tstDeviceStructSize.cpp_DEPS = $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h
 
 #
