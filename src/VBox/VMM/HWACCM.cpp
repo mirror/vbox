@@ -882,15 +882,9 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 #ifdef HWACCM_VMX_EMULATE_REALMODE
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
-        /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case. */
-        if (   (   pCtx->csHid.u64Base > 0xfffff
-                && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
-            ||  pCtx->dsHid.u64Base > 0xfffff
-            ||  pCtx->esHid.u64Base > 0xfffff
-            ||  pCtx->fsHid.u64Base > 0xfffff
-            ||  pCtx->gsHid.u64Base > 0xfffff)
-            return false;
-
+        /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case. 
+         * The base must also be equal to (sel << 4).
+         */
         if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
                 && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
             || pCtx->ds != (pCtx->dsHid.u64Base >> 4)
