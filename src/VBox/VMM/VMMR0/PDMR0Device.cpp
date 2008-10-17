@@ -61,11 +61,12 @@ static DECLCALLBACK(void) pdmR0DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 static DECLCALLBACK(void) pdmR0DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
 static DECLCALLBACK(void) pdmR0DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
 static DECLCALLBACK(bool) pdmR0DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR0DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
-static DECLCALLBACK(int) pdmR0DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
-static DECLCALLBACK(int) pdmR0DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
-static DECLCALLBACK(int) pdmR0DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
-static DECLCALLBACK(int) pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData);
+static DECLCALLBACK(int)  pdmR0DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
+static DECLCALLBACK(int)  pdmR0DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
+static DECLCALLBACK(int)  pdmR0DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, ...);
+static DECLCALLBACK(int)  pdmR0DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list va);
+static DECLCALLBACK(int)  pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData);
+static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns);
 /** @} */
 
 
@@ -74,7 +75,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RT
  */
 static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int) pdmR0PicHlp_Lock(PPDMDEVINS pDevIns, int rc);
+static DECLCALLBACK(int)  pdmR0PicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns);
 /** @} */
 
@@ -85,7 +86,7 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
 static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCPUID idCpu);
 static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion);
-static DECLCALLBACK(int) pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
+static DECLCALLBACK(int)  pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
 static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns);
 static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
 /** @} */
@@ -132,6 +133,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_VMSetRuntimeError,
     pdmR0DevHlp_VMSetRuntimeErrorV,
     pdmR0DevHlp_PATMSetMMIOPatchInfo,
+    pdmR0DevHlp_GetVM,
     PDM_DEVHLPR0_VERSION
 };
 
@@ -337,6 +339,13 @@ static DECLCALLBACK(int) pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RT
     return VINF_SUCCESS;
 }
 
+/** @copydoc PDMDEVHLPR0::pfnGetVM */
+static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
+    return pDevIns->Internal.s.pVMR0;
+}
 
 
 
