@@ -2775,6 +2775,7 @@ typedef struct PDMDEVHLPR3
      *
      * @returns VBox status.
      * @param   pDevIns             The device instance to register the MMIO with.
+     * @param   enmMMIOType         MMIO Type
      * @param   GCPhysStart         First physical address in the range.
      * @param   cbRange             The size of the range (in bytes).
      * @param   pvUser              User argument.
@@ -2783,7 +2784,7 @@ typedef struct PDMDEVHLPR3
      * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterEx,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterEx,(PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                                  PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                                  const char *pszDesc));
 
@@ -3266,11 +3267,11 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIORegisterEx
  */
-DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                         PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                         const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnMMIORegisterEx(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
+    return pDevIns->pDevHlpR3->pfnMMIORegisterEx(pDevIns, enmMMIOType, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 }
 
 /**

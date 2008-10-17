@@ -1350,6 +1350,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  *
  * @param   pVM                 VM handle.
  * @param   pDevIns             PDM device instance owning the MMIO range.
+ * @param   enmMMIOType         MMIO Type
  * @param   GCPhysStart         First physical address in the range.
  * @param   cbRange             The size of the range (in bytes).
  * @param   pvUser              User argument for the callbacks.
@@ -1358,7 +1359,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
