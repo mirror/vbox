@@ -4286,7 +4286,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="3acbd337-925f-497d-a624-465c8a99ae5a"
+     uuid="e3c6d4a1-a935-47ca-b16d-f9e9c496e53e"
      wsmap="managed"
      >
     <desc>
@@ -4423,15 +4423,15 @@
         been saved.
 
         <note>
-            Unless you are trying to write a new VirtualBox front-end that
-            performs direct machine execution (like the VirtualBox or VBoxSDL
-            front-ends), don't call <link to="IConsole::powerUp"/> in a direct
-            session opened by <link to="IVirtualBox::openSession"/> and use this
-            session only to change virtual machine settings. If you simply want to
-            start virtual machine execution using one of the existing front-ends
-            (for example the VirtualBox GUI or headless server), simply use
-            <link to="IVirtualBox::openRemoteSession"/>; these front-ends
-            will power up the machine automatically for you.
+          Unless you are trying to write a new VirtualBox front-end that
+          performs direct machine execution (like the VirtualBox or VBoxSDL
+          front-ends), don't call <link to="IConsole::powerUp"/> in a direct
+          session opened by <link to="IVirtualBox::openSession"/> and use this
+          session only to change virtual machine settings. If you simply want to
+          start virtual machine execution using one of the existing front-ends
+          (for example the VirtualBox GUI or headless server), simply use
+          <link to="IVirtualBox::openRemoteSession"/>; these front-ends will
+          power up the machine automatically for you.
         </note>
 
         <see>#saveState</see>
@@ -4443,9 +4443,9 @@
 
     <method name="powerUpPaused">
       <desc>
-        Identical to powerUp save that the VM will enter the
-	<link to="MachineState::Paused"/> state, instead of
-	<link to="MachineState::Running"/>.
+        Identical to powerUp except that the VM will enter the
+        <link to="MachineState::Paused"/> state, instead of
+        <link to="MachineState::Running"/>.
 
         <see>#powerUp</see>
       </desc>
@@ -4459,7 +4459,30 @@
         Stops the virtual machine execution.
         After this operation completes, the machine will go to the
         PoweredOff state.
+
+        @deprecated This method will be removed in VirtualBox 2.1 where the
+        powerDownAsync() method will take its name. Do not use this method in
+        the code.
       </desc>
+    </method>
+
+    <method name="powerDownAsync">
+      <desc>
+        Initiates the power down procedure to stop the virtual machine
+        execution.
+
+        The completion of the power down procedure is tracked using the returned
+        IProgress object. After the operation is complete, the machine will go
+        to the PoweredOff state.
+
+        @warning This method will be renamed to "powerDown" in VirtualBox 2.1
+        where the original powerDown() method will be removed. You will need to
+        rename "powerDownAsync" to "powerDown" in your sources to make them
+        build with version 2.1.
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
     </method>
 
     <method name="reset">

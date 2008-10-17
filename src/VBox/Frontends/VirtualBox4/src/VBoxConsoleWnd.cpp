@@ -1336,21 +1336,27 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
                 else
                 if (dlg.mRbPowerOff->isChecked())
                 {
-                    cconsole.PowerDown();
-                    if (!cconsole.isOk())
+                    CProgress progress = cconsole.PowerDownAsync();
+
+                    if (cconsole.isOk())
                     {
-                        /// @todo (dmik) add an option to close the GUI anyway
-                        //  and handle it
-                        vboxProblem().cannotStopMachine (cconsole);
+                        /* show the power down progress dialog */
+                        vboxProblem()
+                            .showModalProgressDialog (progress, cmachine.GetName(),
+                                                      this, 0);
+                        if (progress.GetResultCode() != 0)
+                            vboxProblem().cannotStopMachine (progress);
+                        else
+                            success = true;
                     }
                     else
+                        vboxProblem().cannotStopMachine (cconsole);
+
+                    if (success)
                     {
-                        /*
-                         *  set success to true even if we fail to discard the
-                         *  current state later -- the console window will be
-                         *  closed anyway
-                         */
-                        success = true;
+                        /* Note: leave success = true even if we fail to
+                         * discard the current state later -- the console window
+                         * will closed anyway */
 
                         /* discard the current state if requested */
                         if (dlg.mCbDiscardCurState->isChecked() &&

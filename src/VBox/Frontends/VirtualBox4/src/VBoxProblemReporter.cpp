@@ -886,6 +886,18 @@ void VBoxProblemReporter::cannotStopMachine (const CConsole &console)
         formatErrorInfo (res));
 }
 
+void VBoxProblemReporter::cannotStopMachine (const CProgress &progress)
+{
+    AssertWrapperOk (progress);
+    CConsole console = CProgress (progress).GetInitiator();
+    AssertWrapperOk (console);
+
+    message (mainWindowShown(), Error,
+        tr ("Failed to stop the virtual machine <b>%1</b>.")
+            .arg (console.GetMachine().GetName()),
+        formatErrorInfo (progress.GetErrorInfo()));
+}
+
 void VBoxProblemReporter::cannotDeleteMachine (const CVirtualBox &vbox,
                                                const CMachine &machine)
 {
