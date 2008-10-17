@@ -2766,6 +2766,27 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnUnregisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
 
+    /**
+     * Register a Memory Mapped I/O (MMIO) region with backing memory.
+     *
+     * These callbacks are of course for the host context (HC).
+     * Register HC handlers before guest context (GC) handlers! There must be a
+     * HC handler for every GC handler!
+     *
+     * @returns VBox status.
+     * @param   pDevIns             The device instance to register the MMIO with.
+     * @param   GCPhysStart         First physical address in the range.
+     * @param   cbRange             The size of the range (in bytes).
+     * @param   pvUser              User argument.
+     * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
+     * @param   pfnRead             Pointer to function which is gonna handle Read operations.
+     * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
+     * @param   pszDesc             Pointer to description string. This must not be freed.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterEx,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+                                                 PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                                 const char *pszDesc));
+
     /** @} */
 
     /** Just a safety precaution. (PDM_DEVHLP_VERSION) */
@@ -2897,6 +2918,14 @@ typedef struct PDMDEVHLPRC
      */
     DECLRCCALLBACKMEMBER(int, pfnPATMSetMMIOPatchInfo,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData));
 
+    /**
+     * Gets the VM handle. Restricted API.
+     *
+     * @returns VM Handle.
+     * @param   pDevIns         Device instance.
+     */
+    DECLRCCALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDEVHLPRC;
@@ -3024,6 +3053,14 @@ typedef struct PDMDEVHLPR0
      * @param   pCachedData     GC pointer to cached data
      */
     DECLR0CALLBACKMEMBER(int, pfnPATMSetMMIOPatchInfo,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData));
+
+    /**
+     * Gets the VM handle. Restricted API.
+     *
+     * @returns VM Handle.
+     * @param   pDevIns         Device instance.
+     */
+    DECLR0CALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
@@ -3224,6 +3261,16 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
                                       const char *pszDesc)
 {
     return pDevIns->pDevHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIORegisterEx
+ */
+DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+                                        PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                        const char *pszDesc)
+{
+    return pDevIns->pDevHlpR3->pfnMMIORegisterEx(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 }
 
 /**
@@ -3447,14 +3494,6 @@ DECLINLINE(PRTTIMESPEC) PDMDevHlpUTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnGetVM
- */
-DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
-{
-    return pDevIns->pDevHlpR3->pfnGetVM(pDevIns);
-}
-
-/**
  * @copydoc PDMDEVHLPR3::pfnPhysReadGCVirt
  */
 DECLINLINE(int) PDMDevHlpPhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)
@@ -3608,6 +3647,14 @@ DECLINLINE(int) PDMDevHlpPDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThrea
 }
 #endif /* IN_RING3 */
 
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGetVM
+ */
+DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pDevHlp)->pfnGetVM(pDevIns);
+}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPCISetIrq

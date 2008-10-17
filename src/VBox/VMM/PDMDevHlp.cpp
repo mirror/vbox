@@ -2603,6 +2603,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RT
     return rc;
 }
 
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIORegisterEx
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+                                                    PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                                    const char *pszDesc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+
+    /** @todo */
+    return VERR_NOT_SUPPORTED;
+}
+
 
 /**
  * The device helper structure for trusted devices.
@@ -2696,6 +2710,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MMHyperMapMMIO2,
     pdmR3DevHlp_RegisterVMMDevHeap,
     pdmR3DevHlp_UnregisterVMMDevHeap,
+    pdmR3DevHlp_MMIORegisterEx,
     PDM_DEVHLP_VERSION /* the end */
 };
 
@@ -3166,6 +3181,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_MMHyperMapMMIO2,
     pdmR3DevHlp_Untrusted_RegisterVMMDevHeap,
     pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap,
+    pdmR3DevHlp_MMIORegisterEx,
     PDM_DEVHLP_VERSION /* the end */
 };
 
