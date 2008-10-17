@@ -47,7 +47,8 @@ __BEGIN_DECLS
  * registering external debugger commands.
  */
 #ifndef VBOX_WITH_DEBUGGER
-# ifdef DEBUG
+/** @todo Is this still necessary? */
+# if defined(DEBUG) && !defined(VBOX_OSE)
 #  define VBOX_WITH_DEBUGGER
 # endif
 #endif
