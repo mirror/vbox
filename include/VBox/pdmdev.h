@@ -2766,28 +2766,6 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnUnregisterVMMDevHeap,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys));
 
-    /**
-     * Register a Memory Mapped I/O (MMIO) region with backing memory (or use existing memory if part of guest ram)
-     *
-     * These callbacks are of course for the host context (HC).
-     * Register HC handlers before guest context (GC) handlers! There must be a
-     * HC handler for every GC handler!
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   enmMMIOType         MMIO Type
-     * @param   GCPhysStart         First physical address in the range.
-     * @param   cbRange             The size of the range (in bytes).
-     * @param   pvUser              User argument.
-     * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
-     * @param   pfnRead             Pointer to function which is gonna handle Read operations.
-     * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
-     * @param   pszDesc             Pointer to description string. This must not be freed.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterEx,(PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                                 PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                                 const char *pszDesc));
-
     /** @} */
 
     /** Just a safety precaution. (PDM_DEVHLP_VERSION) */
@@ -3262,16 +3240,6 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
                                       const char *pszDesc)
 {
     return pDevIns->pDevHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIORegisterEx
- */
-DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                        PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                        const char *pszDesc)
-{
-    return pDevIns->pDevHlpR3->pfnMMIORegisterEx(pDevIns, enmMMIOType, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 }
 
 /**
