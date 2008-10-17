@@ -2807,7 +2807,7 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
     uint32_t fFlags = NILFLAG;
-    if (RT_FAILURE (validateFlags (Utf8Str(aFlags).raw(), &fFlags)))
+    if ((aFlags != NULL) && RT_FAILURE (validateFlags (Utf8Str(aFlags).raw(), &fFlags)))
         return setError (E_INVALIDARG, tr ("Invalid flag values: '%ls'"),
                 aFlags);
 
