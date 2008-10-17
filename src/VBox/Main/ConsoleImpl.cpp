@@ -97,24 +97,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Task structure for asynchronous VM operations.
+ * Task structure for asynchronous VM operations.
  *
- *  Once created, the task structure adds itself as a Console caller.
- *  This means:
+ * Once created, the task structure adds itself as a Console caller. This means:
  *
- *  1. The user must check for #rc() before using the created structure
- *     (e.g. passing it as a thread function argument). If #rc() returns a
- *     failure, the Console object may not be used by the task (see
-       Console::addCaller() for more details).
- *  2. On successful initialization, the structure keeps the Console caller
- *     until destruction (to ensure Console remains in the Ready state and won't
- *     be accidentially uninitialized). Forgetting to delete the created task
- *     will lead to Console::uninit() stuck waiting for releasing all added
- *     callers.
+ * 1. The user must check for #rc() before using the created structure
+ *    (e.g. passing it as a thread function argument). If #rc() returns a
+ *    failure, the Console object may not be used by the task (see
+      Console::addCaller() for more details).
+ * 2. On successful initialization, the structure keeps the Console caller
+ *    until destruction (to ensure Console remains in the Ready state and won't
+ *    be accidentially uninitialized). Forgetting to delete the created task
+ *    will lead to Console::uninit() stuck waiting for releasing all added
+ *    callers.
  *
- *  If \a aUsesVMPtr parameter is true, the task structure will also add itself
- *  as a Console::mpVM caller with the same meaning as above. See
- *  Console::addVMCaller() for more info.
+ * If \a aUsesVMPtr parameter is true, the task structure will also add itself
+ * as a Console::mpVM caller with the same meaning as above. See
+ * Console::addVMCaller() for more info.
  */
 struct VMTask
 {
@@ -207,7 +206,6 @@ struct VMSaveTask : public VMProgressTask
     ComPtr <IProgress> mServerProgress;
 };
 
-
 // constructor / desctructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -218,6 +216,7 @@ Console::Console()
     , mVMCallers (0)
     , mVMZeroCallersSem (NIL_RTSEMEVENT)
     , mVMDestroying (false)
+    , mVMPoweredOff (false)
     , meDVDState (DriveState_NotMounted)
     , meFloppyState (DriveState_NotMounted)
     , mVMMDev (NULL)
@@ -1212,256 +1211,12 @@ Console::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 
 STDMETHODIMP Console::PowerUp (IProgress **aProgress)
 {
-    return powerUpCommon (aProgress, false /* aPaused */);
+    return powerUp (aProgress, false /* aPaused */);
 }
 
 STDMETHODIMP Console::PowerUpPaused (IProgress **aProgress)
 {
-    return powerUpCommon (aProgress, true /* aPaused */);
-}
-
-/**
- * Common worker for PowerUp and PowerUpPaused.
- *
- * @returns COM status code.
- *
- * @param   aProgress       Where to return the progress object.
- * @param   aPaused         true if PowerUpPaused called.
- *
- * @todo move down to powerDown();
- */
-HRESULT Console::powerUpCommon (IProgress **aProgress, bool aPaused)
-{
-    LogFlowThisFuncEnter();
-    LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoWriteLock alock (this);
-
-    if (mMachineState >= MachineState_Running)
-        return setError(E_FAIL, tr ("Cannot power up the machine as it is "
-                                    "already running (machine state: %d)"),
-                        mMachineState);
-
-    /*
-     * First check whether all disks are accessible. This is not a 100%
-     * bulletproof approach (race condition, it might become inaccessible
-     * right after the check) but it's convenient as it will cover 99.9%
-     * of the cases and here, we're able to provide meaningful error
-     * information.
-     */
-    ComPtr<IHardDiskAttachmentCollection> coll;
-    mMachine->COMGETTER(HardDiskAttachments)(coll.asOutParam());
-    ComPtr<IHardDiskAttachmentEnumerator> enumerator;
-    coll->Enumerate(enumerator.asOutParam());
-    BOOL fHasMore;
-    while (SUCCEEDED(enumerator->HasMore(&fHasMore)) && fHasMore)
-    {
-        ComPtr<IHardDiskAttachment> attach;
-        enumerator->GetNext(attach.asOutParam());
-        ComPtr<IHardDisk> hdd;
-        attach->COMGETTER(HardDisk)(hdd.asOutParam());
-        Assert(hdd);
-        BOOL fAccessible;
-        HRESULT rc = hdd->COMGETTER(AllAccessible)(&fAccessible);
-        CheckComRCReturnRC (rc);
-        if (!fAccessible)
-        {
-            Bstr loc;
-            hdd->COMGETTER(Location) (loc.asOutParam());
-            Bstr errMsg;
-            hdd->COMGETTER(LastAccessError) (errMsg.asOutParam());
-            return setError (E_FAIL,
-                tr ("VM cannot start because the hard disk '%ls' is not accessible "
-                    "(%ls)"),
-                loc.raw(), errMsg.raw());
-        }
-    }
-
-    /* now perform the same check if a ISO is mounted */
-    ComPtr<IDVDDrive> dvdDrive;
-    mMachine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
-    ComPtr<IDVDImage> dvdImage;
-    dvdDrive->GetImage(dvdImage.asOutParam());
-    if (dvdImage)
-    {
-        BOOL fAccessible;
-        HRESULT rc = dvdImage->COMGETTER(Accessible)(&fAccessible);
-        CheckComRCReturnRC (rc);
-        if (!fAccessible)
-        {
-            Bstr filePath;
-            dvdImage->COMGETTER(FilePath)(filePath.asOutParam());
-            /// @todo (r=dmik) grab the last access error once
-            //  IDVDImage::lastAccessError is there
-            return setError (E_FAIL,
-                tr ("The virtual machine could not be started because the DVD image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
-                filePath.raw());
-        }
-    }
-
-    /* now perform the same check if a floppy is mounted */
-    ComPtr<IFloppyDrive> floppyDrive;
-    mMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-    ComPtr<IFloppyImage> floppyImage;
-    floppyDrive->GetImage(floppyImage.asOutParam());
-    if (floppyImage)
-    {
-        BOOL fAccessible;
-        HRESULT rc = floppyImage->COMGETTER(Accessible)(&fAccessible);
-        CheckComRCReturnRC (rc);
-        if (!fAccessible)
-        {
-            Bstr filePath;
-            floppyImage->COMGETTER(FilePath)(filePath.asOutParam());
-            /// @todo (r=dmik) grab the last access error once
-            //  IDVDImage::lastAccessError is there
-            return setError (E_FAIL,
-                tr ("The virtual machine could not be started because the floppy image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
-                filePath.raw());
-        }
-    }
-
-    /* now the network cards will undergo a quick consistency check */
-    for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; slot ++)
-    {
-        ComPtr<INetworkAdapter> adapter;
-        mMachine->GetNetworkAdapter (slot, adapter.asOutParam());
-        BOOL enabled = FALSE;
-        adapter->COMGETTER(Enabled) (&enabled);
-        if (!enabled)
-            continue;
-
-        NetworkAttachmentType_T netattach;
-        adapter->COMGETTER(AttachmentType)(&netattach);
-        switch (netattach)
-        {
-            case NetworkAttachmentType_HostInterface:
-            {
-#ifdef RT_OS_WINDOWS
-                /* a valid host interface must have been set */
-                Bstr hostif;
-                adapter->COMGETTER(HostInterface)(hostif.asOutParam());
-                if (!hostif)
-                {
-                    return setError (E_FAIL,
-                        tr ("VM cannot start because host interface networking "
-                            "requires a host interface name to be set"));
-                }
-                ComPtr<IVirtualBox> virtualBox;
-                mMachine->COMGETTER(Parent)(virtualBox.asOutParam());
-                ComPtr<IHost> host;
-                virtualBox->COMGETTER(Host)(host.asOutParam());
-                ComPtr<IHostNetworkInterfaceCollection> coll;
-                host->COMGETTER(NetworkInterfaces)(coll.asOutParam());
-                ComPtr<IHostNetworkInterface> hostInterface;
-                if (!SUCCEEDED(coll->FindByName(hostif, hostInterface.asOutParam())))
-                {
-                    return setError (E_FAIL,
-                        tr ("VM cannot start because the host interface '%ls' "
-                            "does not exist"),
-                        hostif.raw());
-                }
-#endif /* RT_OS_WINDOWS */
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    /* Read console data stored in the saved state file (if not yet done) */
-    {
-        HRESULT rc = loadDataFromSavedState();
-        CheckComRCReturnRC (rc);
-    }
-
-    /* Check all types of shared folders and compose a single list */
-    SharedFolderDataMap sharedFolders;
-    {
-        /* first, insert global folders */
-        for (SharedFolderDataMap::const_iterator it = mGlobalSharedFolders.begin();
-             it != mGlobalSharedFolders.end(); ++ it)
-            sharedFolders [it->first] = it->second;
-
-        /* second, insert machine folders */
-        for (SharedFolderDataMap::const_iterator it = mMachineSharedFolders.begin();
-             it != mMachineSharedFolders.end(); ++ it)
-            sharedFolders [it->first] = it->second;
-
-        /* third, insert console folders */
-        for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
-             it != mSharedFolders.end(); ++ it)
-            sharedFolders [it->first] = SharedFolderData(it->second->hostPath(), it->second->writable());
-    }
-
-    Bstr savedStateFile;
-
-    /*
-     * Saved VMs will have to prove that their saved states are kosher.
-     */
-    if (mMachineState == MachineState_Saved)
-    {
-        HRESULT rc = mMachine->COMGETTER(StateFilePath) (savedStateFile.asOutParam());
-        CheckComRCReturnRC (rc);
-        ComAssertRet (!!savedStateFile, E_FAIL);
-        int vrc = SSMR3ValidateFile (Utf8Str (savedStateFile));
-        if (VBOX_FAILURE (vrc))
-            return setError (E_FAIL,
-                tr ("VM cannot start because the saved state file '%ls' is invalid (%Vrc). "
-                    "Discard the saved state prior to starting the VM"),
-                    savedStateFile.raw(), vrc);
-    }
-
-    /* create an IProgress object to track progress of this operation */
-    ComObjPtr <Progress> progress;
-    progress.createObject();
-    Bstr progressDesc;
-    if (mMachineState == MachineState_Saved)
-        progressDesc = tr ("Restoring the virtual machine");
-    else
-        progressDesc = tr ("Starting the virtual machine");
-    progress->init (static_cast <IConsole *> (this),
-                    progressDesc, FALSE /* aCancelable */);
-
-    /* pass reference to caller if requested */
-    if (aProgress)
-        progress.queryInterfaceTo (aProgress);
-
-    /* setup task object and thread to carry out the operation asynchronously */
-    std::auto_ptr <VMPowerUpTask> task (new VMPowerUpTask (this, progress));
-    ComAssertComRCRetRC (task->rc());
-
-    task->mSetVMErrorCallback = setVMErrorCallback;
-    task->mConfigConstructor = configConstructor;
-    task->mSharedFolders = sharedFolders;
-    task->mStartPaused = aPaused;
-    if (mMachineState == MachineState_Saved)
-        task->mSavedStateFile = savedStateFile;
-
-    HRESULT hrc = consoleInitReleaseLog (mMachine);
-    if (FAILED (hrc))
-        return hrc;
-
-    int vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
-                              0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
-
-    ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Vrc)\n", vrc),
-                       E_FAIL);
-
-    /* task is now owned by powerUpThread(), so release it */
-    task.release();
-
-    if (mMachineState == MachineState_Saved)
-        setMachineState (MachineState_Restoring);
-    else
-        setMachineState (MachineState_Starting);
-
-    LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
-    LogFlowThisFuncLeave();
-    return S_OK;
+    return powerUp (aProgress, true /* aPaused */);
 }
 
 STDMETHODIMP Console::PowerDown()
@@ -1480,11 +1235,16 @@ STDMETHODIMP Console::PowerDown()
     {
         /* extra nice error message for a common case */
         if (mMachineState == MachineState_Saved)
-            return setError(E_FAIL, tr ("Cannot power off a saved machine"));
+            return setError (E_FAIL,
+                tr ("Cannot power down a saved virtual machine"));
+        else if (mMachineState == MachineState_Stopping)
+            return setError (E_FAIL,
+                tr ("Virtual machine is being powered down"));
         else
-            return setError(E_FAIL, tr ("Cannot power off the machine as it is "
-                                        "not running or paused (machine state: %d)"),
-                            mMachineState);
+            return setError(E_FAIL,
+                tr ("Invalid machine state: %d (must be Running, Paused "
+                    "or Stuck)"),
+                mMachineState);
     }
 
     LogFlowThisFunc (("Sending SHUTDOWN request...\n"));
@@ -1494,6 +1254,72 @@ STDMETHODIMP Console::PowerDown()
     LogFlowThisFunc (("mMachineState=%d, rc=%08X\n", mMachineState, rc));
     LogFlowThisFuncLeave();
     return rc;
+}
+
+STDMETHODIMP Console::PowerDownAsync (IProgress **aProgress)
+{
+    if (aProgress == NULL)
+        return E_POINTER;
+
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    if (mMachineState != MachineState_Running &&
+        mMachineState != MachineState_Paused &&
+        mMachineState != MachineState_Stuck)
+    {
+        /* extra nice error message for a common case */
+        if (mMachineState == MachineState_Saved)
+            return setError (E_FAIL,
+                tr ("Cannot power down a saved virtual machine"));
+        else if (mMachineState == MachineState_Stopping)
+            return setError (E_FAIL,
+                tr ("Virtual machine is being powered down."));
+        else
+            return setError(E_FAIL,
+                tr ("Invalid machine state: %d (must be Running, Paused "
+                    "or Stuck)"),
+                mMachineState);
+    }
+
+    LogFlowThisFunc (("Initiating SHUTDOWN request...\n"));
+
+    /* create an IProgress object to track progress of this operation */
+    ComObjPtr <Progress> progress;
+    progress.createObject();
+    progress->init (static_cast <IConsole *> (this),
+                    Bstr (tr ("Stopping virtual machine")),
+                    FALSE /* aCancelable */);
+
+    /* setup task object and thread to carry out the operation asynchronously */
+    std::auto_ptr <VMProgressTask> task (
+        new VMProgressTask (this, progress, true /* aUsesVMPtr */));
+    AssertReturn (task->isOk(), E_FAIL);
+
+    int vrc = RTThreadCreate (NULL, Console::powerDownThread,
+                              (void *) task.get(), 0,
+                              RTTHREADTYPE_MAIN_WORKER, 0,
+                              "VMPowerDown");
+    ComAssertMsgRCRet (vrc,
+         ("Could not create VMPowerDown thread (%Vrc)\n", vrc), E_FAIL);
+
+    /* task is now owned by powerDownThread(), so release it */
+    task.release();
+
+    /* go to Stopping state to forbid state-dependant operations */
+    setMachineState (MachineState_Stopping);
+
+    /* pass the progress to the caller */
+    progress.queryInterfaceTo (aProgress);
+
+    LogFlowThisFuncLeave();
+
+    return S_OK;
 }
 
 STDMETHODIMP Console::Reset()
@@ -4390,35 +4216,282 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
     return hrc;
 }
 
+/**
+ * Common worker for PowerUp and PowerUpPaused.
+ *
+ * @returns COM status code.
+ *
+ * @param   aProgress       Where to return the progress object.
+ * @param   aPaused         true if PowerUpPaused called.
+ *
+ * @todo move down to powerDown();
+ */
+HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
+{
+    if (aProgress == NULL)
+        return E_POINTER;
+
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    if (mMachineState >= MachineState_Running)
+        return setError(E_FAIL, tr ("Cannot power up the machine as it is "
+                                    "already running (machine state: %d)"),
+                        mMachineState);
+
+    /*
+     * First check whether all disks are accessible. This is not a 100%
+     * bulletproof approach (race condition, it might become inaccessible
+     * right after the check) but it's convenient as it will cover 99.9%
+     * of the cases and here, we're able to provide meaningful error
+     * information.
+     */
+    ComPtr<IHardDiskAttachmentCollection> coll;
+    mMachine->COMGETTER(HardDiskAttachments)(coll.asOutParam());
+    ComPtr<IHardDiskAttachmentEnumerator> enumerator;
+    coll->Enumerate(enumerator.asOutParam());
+    BOOL fHasMore;
+    while (SUCCEEDED(enumerator->HasMore(&fHasMore)) && fHasMore)
+    {
+        ComPtr<IHardDiskAttachment> attach;
+        enumerator->GetNext(attach.asOutParam());
+        ComPtr<IHardDisk> hdd;
+        attach->COMGETTER(HardDisk)(hdd.asOutParam());
+        Assert(hdd);
+        BOOL fAccessible;
+        HRESULT rc = hdd->COMGETTER(AllAccessible)(&fAccessible);
+        CheckComRCReturnRC (rc);
+        if (!fAccessible)
+        {
+            Bstr loc;
+            hdd->COMGETTER(Location) (loc.asOutParam());
+            Bstr errMsg;
+            hdd->COMGETTER(LastAccessError) (errMsg.asOutParam());
+            return setError (E_FAIL,
+                tr ("VM cannot start because the hard disk '%ls' is not accessible "
+                    "(%ls)"),
+                loc.raw(), errMsg.raw());
+        }
+    }
+
+    /* now perform the same check if a ISO is mounted */
+    ComPtr<IDVDDrive> dvdDrive;
+    mMachine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
+    ComPtr<IDVDImage> dvdImage;
+    dvdDrive->GetImage(dvdImage.asOutParam());
+    if (dvdImage)
+    {
+        BOOL fAccessible;
+        HRESULT rc = dvdImage->COMGETTER(Accessible)(&fAccessible);
+        CheckComRCReturnRC (rc);
+        if (!fAccessible)
+        {
+            Bstr filePath;
+            dvdImage->COMGETTER(FilePath)(filePath.asOutParam());
+            /// @todo (r=dmik) grab the last access error once
+            //  IDVDImage::lastAccessError is there
+            return setError (E_FAIL,
+                tr ("The virtual machine could not be started because the DVD image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
+                filePath.raw());
+        }
+    }
+
+    /* now perform the same check if a floppy is mounted */
+    ComPtr<IFloppyDrive> floppyDrive;
+    mMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
+    ComPtr<IFloppyImage> floppyImage;
+    floppyDrive->GetImage(floppyImage.asOutParam());
+    if (floppyImage)
+    {
+        BOOL fAccessible;
+        HRESULT rc = floppyImage->COMGETTER(Accessible)(&fAccessible);
+        CheckComRCReturnRC (rc);
+        if (!fAccessible)
+        {
+            Bstr filePath;
+            floppyImage->COMGETTER(FilePath)(filePath.asOutParam());
+            /// @todo (r=dmik) grab the last access error once
+            //  IDVDImage::lastAccessError is there
+            return setError (E_FAIL,
+                tr ("The virtual machine could not be started because the floppy image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
+                filePath.raw());
+        }
+    }
+
+    /* now the network cards will undergo a quick consistency check */
+    for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; slot ++)
+    {
+        ComPtr<INetworkAdapter> adapter;
+        mMachine->GetNetworkAdapter (slot, adapter.asOutParam());
+        BOOL enabled = FALSE;
+        adapter->COMGETTER(Enabled) (&enabled);
+        if (!enabled)
+            continue;
+
+        NetworkAttachmentType_T netattach;
+        adapter->COMGETTER(AttachmentType)(&netattach);
+        switch (netattach)
+        {
+            case NetworkAttachmentType_HostInterface:
+            {
+#ifdef RT_OS_WINDOWS
+                /* a valid host interface must have been set */
+                Bstr hostif;
+                adapter->COMGETTER(HostInterface)(hostif.asOutParam());
+                if (!hostif)
+                {
+                    return setError (E_FAIL,
+                        tr ("VM cannot start because host interface networking "
+                            "requires a host interface name to be set"));
+                }
+                ComPtr<IVirtualBox> virtualBox;
+                mMachine->COMGETTER(Parent)(virtualBox.asOutParam());
+                ComPtr<IHost> host;
+                virtualBox->COMGETTER(Host)(host.asOutParam());
+                ComPtr<IHostNetworkInterfaceCollection> coll;
+                host->COMGETTER(NetworkInterfaces)(coll.asOutParam());
+                ComPtr<IHostNetworkInterface> hostInterface;
+                if (!SUCCEEDED(coll->FindByName(hostif, hostInterface.asOutParam())))
+                {
+                    return setError (E_FAIL,
+                        tr ("VM cannot start because the host interface '%ls' "
+                            "does not exist"),
+                        hostif.raw());
+                }
+#endif /* RT_OS_WINDOWS */
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    /* Read console data stored in the saved state file (if not yet done) */
+    {
+        HRESULT rc = loadDataFromSavedState();
+        CheckComRCReturnRC (rc);
+    }
+
+    /* Check all types of shared folders and compose a single list */
+    SharedFolderDataMap sharedFolders;
+    {
+        /* first, insert global folders */
+        for (SharedFolderDataMap::const_iterator it = mGlobalSharedFolders.begin();
+             it != mGlobalSharedFolders.end(); ++ it)
+            sharedFolders [it->first] = it->second;
+
+        /* second, insert machine folders */
+        for (SharedFolderDataMap::const_iterator it = mMachineSharedFolders.begin();
+             it != mMachineSharedFolders.end(); ++ it)
+            sharedFolders [it->first] = it->second;
+
+        /* third, insert console folders */
+        for (SharedFolderMap::const_iterator it = mSharedFolders.begin();
+             it != mSharedFolders.end(); ++ it)
+            sharedFolders [it->first] = SharedFolderData(it->second->hostPath(), it->second->writable());
+    }
+
+    Bstr savedStateFile;
+
+    /*
+     * Saved VMs will have to prove that their saved states are kosher.
+     */
+    if (mMachineState == MachineState_Saved)
+    {
+        HRESULT rc = mMachine->COMGETTER(StateFilePath) (savedStateFile.asOutParam());
+        CheckComRCReturnRC (rc);
+        ComAssertRet (!!savedStateFile, E_FAIL);
+        int vrc = SSMR3ValidateFile (Utf8Str (savedStateFile));
+        if (VBOX_FAILURE (vrc))
+            return setError (E_FAIL,
+                tr ("VM cannot start because the saved state file '%ls' is invalid (%Vrc). "
+                    "Discard the saved state prior to starting the VM"),
+                    savedStateFile.raw(), vrc);
+    }
+
+    /* create an IProgress object to track progress of this operation */
+    ComObjPtr <Progress> progress;
+    progress.createObject();
+    Bstr progressDesc;
+    if (mMachineState == MachineState_Saved)
+        progressDesc = tr ("Restoring virtual machine");
+    else
+        progressDesc = tr ("Starting virtual machine");
+    progress->init (static_cast <IConsole *> (this),
+                    progressDesc, FALSE /* aCancelable */);
+
+    /* pass reference to caller if requested */
+    if (aProgress)
+        progress.queryInterfaceTo (aProgress);
+
+    /* setup task object and thread to carry out the operation asynchronously */
+    std::auto_ptr <VMPowerUpTask> task (new VMPowerUpTask (this, progress));
+    ComAssertComRCRetRC (task->rc());
+
+    task->mSetVMErrorCallback = setVMErrorCallback;
+    task->mConfigConstructor = configConstructor;
+    task->mSharedFolders = sharedFolders;
+    task->mStartPaused = aPaused;
+    if (mMachineState == MachineState_Saved)
+        task->mSavedStateFile = savedStateFile;
+
+    HRESULT hrc = consoleInitReleaseLog (mMachine);
+    if (FAILED (hrc))
+        return hrc;
+
+    int vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
+                              0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
+
+    ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Vrc)\n", vrc),
+                       E_FAIL);
+
+    /* task is now owned by powerUpThread(), so release it */
+    task.release();
+
+    if (mMachineState == MachineState_Saved)
+        setMachineState (MachineState_Restoring);
+    else
+        setMachineState (MachineState_Starting);
+
+    LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
 
 /**
- *  Internal power off worker routine.
+ * Internal power off worker routine.
  *
- *  This method may be called only at certain places with the folliwing meaning
- *  as shown below:
+ * This method may be called only at certain places with the folliwing meaning
+ * as shown below:
  *
- *  - if the machine state is either Running or Paused, a normal
- *    Console-initiated powerdown takes place (e.g. PowerDown());
- *  - if the machine state is Saving, saveStateThread() has successfully
- *    done its job;
- *  - if the machine state is Starting or Restoring, powerUpThread() has
- *    failed to start/load the VM;
- *  - if the machine state is Stopping, the VM has powered itself off
- *    (i.e. not as a result of the powerDown() call).
+ * - if the machine state is either Running or Paused, a normal
+ *   Console-initiated powerdown takes place (e.g. PowerDown());
+ * - if the machine state is Saving, saveStateThread() has successfully done its
+ *   job;
+ * - if the machine state is Starting or Restoring, powerUpThread() has failed
+ *   to start/load the VM;
+ * - if the machine state is Stopping, the VM has powered itself off (i.e. not
+ *   as a result of the powerDown() call).
  *
- *  Calling it in situations other than the above will cause unexpected
- *  behavior.
+ * Calling it in situations other than the above will cause unexpected behavior.
  *
- *  Note that this method should be the only one that destroys mpVM and sets
- *  it to NULL.
+ * Note that this method should be the only one that destroys mpVM and sets it
+ * to NULL.
  *
- *  @note Locks this object for writing.
+ * @param aProgress Progress object to run (may be NULL).
  *
- *  @note Never call this method from a thread that called addVMCaller() or
- *        instantiated an AutoVMCaller object; first call releaseVMCaller() or
- *        release(). Otherwise it will deadlock.
+ * @note Locks this object for writing.
+ *
+ * @note Never call this method from a thread that called addVMCaller() or
+ *       instantiated an AutoVMCaller object; first call releaseVMCaller() or
+ *       release(). Otherwise it will deadlock.
  */
-HRESULT Console::powerDown()
+HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 {
     LogFlowThisFuncEnter();
 
@@ -4426,23 +4499,66 @@ HRESULT Console::powerDown()
     AssertComRCReturnRC (autoCaller.rc());
 
     AutoWriteLock alock (this);
+
+    /* Total # of steps for the progress object. Must correspond to the
+     * number of "advance percent count" comments in this method! */
+    enum { StepCount = 7 };
+    /* current step */
+    size_t step = 0;
+
+    HRESULT rc = S_OK;
     int vrc = VINF_SUCCESS;
 
     /* sanity */
-    AssertReturn (mVMDestroying == false, E_FAIL);
+    Assert (mVMDestroying == false);
 
-    LogRel (("Console::powerDown(): a request to power off the VM has been issued "
-             "(mMachineState=%d, InUninit=%d)\n",
+    Assert (mpVM != NULL);
+
+    AssertMsg (mMachineState == MachineState_Running ||
+               mMachineState == MachineState_Paused ||
+               mMachineState == MachineState_Stuck ||
+               mMachineState == MachineState_Saving ||
+               mMachineState == MachineState_Starting ||
+               mMachineState == MachineState_Restoring ||
+               mMachineState == MachineState_Stopping,
+               ("Invalid machine state: %d\n", mMachineState));
+
+    LogRel (("Console::powerDown(): A request to power off the VM has been "
+             "issued (mMachineState=%d, InUninit=%d)\n",
              mMachineState, autoCaller.state() == InUninit));
 
-    /*
-     *  Stop the VRDP server to prevent new clients connection while VM is being powered off.
-     */
+    /* Check if we need to power off the VM. In case of mVMPoweredOff=true, the
+     * VM has already powered itself off in vmstateChangeCallback() and is just
+     * notifying Console about that. In case of Starting or Restoring,
+     * powerUpThread() is calling us on failure, so the VM is already off at
+     * that point. */
+    if (!mVMPoweredOff &&
+        (mMachineState == MachineState_Starting ||
+         mMachineState == MachineState_Restoring))
+        mVMPoweredOff = true;
+
+    /* go to Stopping state if not already there. Note that we don't go from
+     * Saving to Stopping because vmstateChangeCallback() needs it to set the
+     * state to Saved on VMSTATE_TERMINATED. In terms of protecting from
+     * inappropriate operations while leaving the lock below, Saving should be
+     * fine too */
+    if (mMachineState != MachineState_Saving &&
+        mMachineState != MachineState_Stopping)
+        setMachineState (MachineState_Stopping);
+
+    /* ----------------------------------------------------------------------
+     * DONE with necessary state changes, perform the power down actions (it's
+     * safe to leave the object lock now if needed)
+     * ---------------------------------------------------------------------- */
+
+    /* Stop the VRDP server to prevent new clients connection while VM is being
+     * powered off. */
     if (mConsoleVRDPServer)
     {
         LogFlowThisFunc (("Stopping VRDP server...\n"));
 
-        /* Leave the lock since EMT will call us back as addVMCaller in updateDisplayData(). */
+        /* Leave the lock since EMT will call us back as addVMCaller()
+         * in updateDisplayData(). */
         alock.leave();
 
         mConsoleVRDPServer->Stop();
@@ -4450,27 +4566,37 @@ HRESULT Console::powerDown()
         alock.enter();
     }
 
+    /* advance percent count */
+    if (aProgress)
+        aProgress->notifyProgress (99 * (++ step) / StepCount );
 
 #ifdef VBOX_WITH_HGCM
-    /*
-     *  Shutdown HGCM services before stopping the guest, because they might need a cleanup.
-     */
+
+    /* Shutdown HGCM services before stopping the guest, because they might
+     * need a cleanup. */
     if (mVMMDev)
     {
         LogFlowThisFunc (("Shutdown HGCM...\n"));
 
-        /* Leave the lock. */
+        /* Leave the lock since EMT will call us back as addVMCaller() */
         alock.leave();
 
         mVMMDev->hgcmShutdown ();
 
         alock.enter();
     }
+
+    /* advance percent count */
+    if (aProgress)
+        aProgress->notifyProgress (99 * (++ step) / StepCount );
+
 # ifdef VBOX_WITH_GUEST_PROPS
+
     /* Save all guest property store entries to the machine XML file */
     PCFGMNODE pValues = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Values/");
     PCFGMNODE pTimestamps = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Timestamps/");
     PCFGMNODE pFlags = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Flags/");
+
     /* Count the number of entries we have */
     unsigned cValues = 0;
     PCFGMLEAF pValue;
@@ -4489,25 +4615,28 @@ HRESULT Console::powerDown()
                 ++cValues;
         }
     }
+
     /* And pack them into safe arrays */
     com::SafeArray <BSTR> names(cValues);
     com::SafeArray <BSTR> values(cValues);
     com::SafeArray <ULONG64> timestamps(cValues);
     com::SafeArray <BSTR> flags(cValues);
     pValue = CFGMR3GetFirstValue (pValues);
+
     vrc = VINF_SUCCESS;
     unsigned iProp = 0;
-    while (pValue != NULL && RT_SUCCESS(vrc))
+    while (pValue != NULL && RT_SUCCESS (vrc))
     {
         using namespace guestProp;
 
-        char szPropName[MAX_NAME_LEN + 1];
-        char szPropValue[MAX_VALUE_LEN + 1];
-        char szPropFlags[MAX_FLAGS_LEN + 1];
+        char szPropName [MAX_NAME_LEN + 1];
+        char szPropValue [MAX_VALUE_LEN + 1];
+        char szPropFlags [MAX_FLAGS_LEN + 1];
         ULONG64 u64Timestamp = 0;  /* default */
-        vrc = CFGMR3GetValueName (pValue, szPropName, sizeof(szPropName));
+        vrc = CFGMR3GetValueName (pValue, szPropName, sizeof (szPropName));
         if (RT_SUCCESS(vrc))
-            vrc = CFGMR3QueryString (pValues, szPropName, szPropValue, sizeof(szPropValue));
+            vrc = CFGMR3QueryString (pValues, szPropName, szPropValue,
+                                     sizeof (szPropValue));
         if (RT_SUCCESS(vrc))
         {
             uint32_t fFlags = NILFLAG;
@@ -4529,20 +4658,32 @@ HRESULT Console::powerDown()
             pValue = CFGMR3GetNextValue (pValue);
         }
     }
+
     if (RT_SUCCESS(vrc) || (VERR_TOO_MUCH_DATA == vrc))
     {
         /* PushGuestProperties() calls DiscardSettings(), which calls us back */
         alock.leave();
-        mControl->PushGuestProperties(ComSafeArrayAsInParam (names),
-                                      ComSafeArrayAsInParam (values),
-                                      ComSafeArrayAsInParam (timestamps),
-                                      ComSafeArrayAsInParam (flags));
+        mControl->PushGuestProperties (ComSafeArrayAsInParam (names),
+                                       ComSafeArrayAsInParam (values),
+                                       ComSafeArrayAsInParam (timestamps),
+                                       ComSafeArrayAsInParam (flags));
         alock.enter();
     }
+
+    /* advance percent count */
+    if (aProgress)
+        aProgress->notifyProgress (99 * (++ step) / StepCount );
+
 # endif /* VBOX_WITH_GUEST_PROPS defined */
+
 #endif /* VBOX_WITH_HGCM */
 
-    /* First, wait for all mpVM callers to finish their work if necessary */
+    /* ----------------------------------------------------------------------
+     * Now, wait for all mpVM callers to finish their work if there are still
+     * some on other threads. NO methods that need mpVM (or initiate other calls
+     * that need it) may be called after this point
+     * ---------------------------------------------------------------------- */
+
     if (mVMCallers > 0)
     {
         /* go to the destroying state to prevent from adding new callers */
@@ -4562,58 +4703,43 @@ HRESULT Console::powerDown()
         alock.enter();
     }
 
-    AssertReturn (mpVM, E_FAIL);
+    /* advance percent count */
+    if (aProgress)
+        aProgress->notifyProgress (99 * (++ step) / StepCount );
 
-    AssertMsg (mMachineState == MachineState_Running ||
-               mMachineState == MachineState_Paused ||
-               mMachineState == MachineState_Stuck ||
-               mMachineState == MachineState_Saving ||
-               mMachineState == MachineState_Starting ||
-               mMachineState == MachineState_Restoring ||
-               mMachineState == MachineState_Stopping,
-               ("Invalid machine state: %d\n", mMachineState));
-
-    HRESULT rc = S_OK;
     vrc = VINF_SUCCESS;
 
-    /*
-     *  Power off the VM if not already done that. In case of Stopping, the VM
-     *  has powered itself off and notified Console in vmstateChangeCallback().
-     *  In case of Starting or Restoring, powerUpThread() is calling us on
-     *  failure, so the VM is already off at that point.
-     */
-    if (mMachineState != MachineState_Stopping &&
-        mMachineState != MachineState_Starting &&
-        mMachineState != MachineState_Restoring)
+    /* Power off the VM if not already done that */
+    if (!mVMPoweredOff)
     {
-        /*
-         *  don't go from Saving to Stopping, vmstateChangeCallback needs it
-         *  to set the state to Saved on VMSTATE_TERMINATED.
-         */
-        if (mMachineState != MachineState_Saving)
-            setMachineState (MachineState_Stopping);
-
         LogFlowThisFunc (("Powering off the VM...\n"));
 
         /* Leave the lock since EMT will call us back on VMR3PowerOff() */
         alock.leave();
 
         vrc = VMR3PowerOff (mpVM);
-        /*
-         *  Note that VMR3PowerOff() may fail here (invalid VMSTATE) if the
-         *  VM-(guest-)initiated power off happened in parallel a ms before
-         *  this call. So far, we let this error pop up on the user's side.
-         */
+
+        /* Note that VMR3PowerOff() may fail here (invalid VMSTATE) if the
+         * VM-(guest-)initiated power off happened in parallel a ms before this
+         * call. So far, we let this error pop up on the user's side. */
 
         alock.enter();
+
+    }
+    else
+    {
+        /* reset the flag for further re-use */
+        mVMPoweredOff = false;
     }
 
-    LogFlowThisFunc (("Ready for VM destruction\n"));
+    /* advance percent count */
+    if (aProgress)
+        aProgress->notifyProgress (99 * (++ step) / StepCount );
 
-    /*
-     *  If we are called from Console::uninit(), then try to destroy the VM
-     *  even on failure (this will most likely fail too, but what to do?..)
-     */
+    LogFlowThisFunc (("Ready for VM destruction.\n"));
+
+    /* If we are called from Console::uninit(), then try to destroy the VM even
+     * on failure (this will most likely fail too, but what to do?..) */
     if (VBOX_SUCCESS (vrc) || autoCaller.state() == InUninit)
     {
         /* If the machine has an USB comtroller, release all USB devices
@@ -4629,19 +4755,15 @@ HRESULT Console::powerDown()
             }
         }
 
-        /*
-         *  Now we've got to destroy the VM as well. (mpVM is not valid
-         *  beyond this point). We leave the lock before calling VMR3Destroy()
-         *  because it will result into calling destructors of drivers
-         *  associated with Console children which may in turn try to lock
-         *  Console (e.g. by instantiating SafeVMPtr to access mpVM). It's safe
-         *  here because mVMDestroying is set which should prevent any activity.
-         */
+        /* Now we've got to destroy the VM as well. (mpVM is not valid beyond
+         * this point). We leave the lock before calling VMR3Destroy() because
+         * it will result into calling destructors of drivers associated with
+         * Console children which may in turn try to lock Console (e.g. by
+         * instantiating SafeVMPtr to access mpVM). It's safe here because
+         * mVMDestroying is set which should prevent any activity. */
 
-        /*
-         *  Set mpVM to NULL early just in case if some old code is not using
-         *  addVMCaller()/releaseVMCaller().
-         */
+        /* Set mpVM to NULL early just in case if some old code is not using
+         * addVMCaller()/releaseVMCaller(). */
         PVM pVM = mpVM;
         mpVM = NULL;
 
@@ -4654,19 +4776,21 @@ HRESULT Console::powerDown()
         /* take the lock again */
         alock.enter();
 
+        /* advance percent count */
+        if (aProgress)
+            aProgress->notifyProgress (99 * (++ step) / StepCount );
+
         if (VBOX_SUCCESS (vrc))
         {
             LogFlowThisFunc (("Machine has been destroyed (mMachineState=%d)\n",
                               mMachineState));
-            /*
-             *  Note: the Console-level machine state change happens on the
-             *  VMSTATE_TERMINATE state change in vmstateChangeCallback(). If
-             *  powerDown() is called from EMT (i.e. from vmstateChangeCallback()
-             *  on receiving VM-initiated VMSTATE_OFF), VMSTATE_TERMINATE hasn't
-             *  occured yet. This is okay, because mMachineState is already
-             *  Stopping in this case, so any other attempt to call PowerDown()
-             *  will be rejected.
-             */
+            /* Note: the Console-level machine state change happens on the
+             * VMSTATE_TERMINATE state change in vmstateChangeCallback(). If
+             * powerDown() is called from EMT (i.e. from vmstateChangeCallback()
+             * on receiving VM-initiated VMSTATE_OFF), VMSTATE_TERMINATE hasn't
+             * occured yet. This is okay, because mMachineState is already
+             * Stopping in this case, so any other attempt to call PowerDown()
+             * will be rejected. */
         }
         else
         {
@@ -4676,11 +4800,13 @@ HRESULT Console::powerDown()
                 tr ("Could not destroy the machine.  (Error: %Vrc)"), vrc);
         }
 
-        /*
-         *  Complete the detaching of the USB devices.
-         */
+        /* Complete the detaching of the USB devices. */
         if (fHasUSBController)
             detachAllUSBDevices (true /* aDone */);
+
+        /* advance percent count */
+        if (aProgress)
+            aProgress->notifyProgress (99 * (++ step) / StepCount );
     }
     else
     {
@@ -4688,12 +4814,10 @@ HRESULT Console::powerDown()
             tr ("Could not power off the machine.  (Error: %Vrc)"), vrc);
     }
 
-    /*
-     *  Finished with destruction. Note that if something impossible happened
-     *  and we've failed to destroy the VM, mVMDestroying will remain false and
-     *  mMachineState will be something like Stopping, so most Console methods
-     *  will return an error to the caller.
-     */
+    /* Finished with destruction. Note that if something impossible happened and
+     * we've failed to destroy the VM, mVMDestroying will remain true and
+     * mMachineState will be something like Stopping, so most Console methods
+     * will return an error to the caller. */
     if (mpVM == NULL)
         mVMDestroying = false;
 
@@ -4707,6 +4831,10 @@ HRESULT Console::powerDown()
         }
         memset (&mCallbackData, 0, sizeof (mCallbackData));
     }
+
+    /* complete the progress */
+    if (aProgress)
+        aProgress->notifyComplete (rc);
 
     LogFlowThisFuncLeave();
     return rc;
@@ -5096,19 +5224,18 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
     AssertReturnVoid (that);
 
     AutoCaller autoCaller (that);
-    /*
-     *  Note that we must let this method proceed even if Console::uninit() has
-     *  been already called. In such case this VMSTATE change is a result of:
-     *  1) powerDown() called from uninit() itself, or
-     *  2) VM-(guest-)initiated power off.
-     */
+
+    /* Note that we must let this method proceed even if Console::uninit() has
+     * been already called. In such case this VMSTATE change is a result of:
+     * 1) powerDown() called from uninit() itself, or
+     * 2) VM-(guest-)initiated power off. */
     AssertReturnVoid (autoCaller.isOk() ||
                       autoCaller.state() == InUninit);
 
     switch (aState)
     {
         /*
-         *  The VM has terminated
+         * The VM has terminated
          */
         case VMSTATE_OFF:
         {
@@ -5117,9 +5244,8 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
             if (that->mVMStateChangeCallbackDisabled)
                 break;
 
-            /*
-             *  Do we still think that it is running? It may happen if this is
-             *  a VM-(guest-)initiated shutdown/poweroff.
+            /* Do we still think that it is running? It may happen if this is a
+             * VM-(guest-)initiated shutdown/poweroff.
              */
             if (that->mMachineState != MachineState_Stopping &&
                 that->mMachineState != MachineState_Saving &&
@@ -5129,21 +5255,26 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                               "thinks it is running. Notifying.\n"));
 
                 /* prevent powerDown() from calling VMR3PowerOff() again */
+                Assert (that->mVMPoweredOff == false);
+                that->mVMPoweredOff = true;
+
+                /* we are stopping now */
                 that->setMachineState (MachineState_Stopping);
 
-                /*
-                 *  Setup task object and thread to carry out the operation
-                 *  asynchronously (if we call powerDown() right here but there
-                 *  is one or more mpVM callers (added with addVMCaller()) we'll
-                 *  deadlock.
+                /* Setup task object and thread to carry out the operation
+                 * asynchronously (if we call powerDown() right here but there
+                 * is one or more mpVM callers (added with addVMCaller()) we'll
+                 * deadlock).
                  */
-                std::auto_ptr <VMTask> task (new VMTask (that, true /* aUsesVMPtr */));
-                 /*
-                  *  If creating a task is falied, this can currently mean one
-                  *  of two: either Console::uninit() has been called just a ms
-                  *  before (so a powerDown() call is already on the way), or
-                  *  powerDown() itself is being already executed. Just do
-                  *  nothing .
+                std::auto_ptr <VMProgressTask> task (
+                    new VMProgressTask (that, NULL /* aProgress */,
+                                        true /* aUsesVMPtr */));
+
+                 /* If creating a task is falied, this can currently mean one of
+                  * two: either Console::uninit() has been called just a ms
+                  * before (so a powerDown() call is already on the way), or
+                  * powerDown() itself is being already executed. Just do
+                  * nothing.
                   */
                 if (!task->isOk())
                 {
@@ -5154,11 +5285,10 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                 int vrc = RTThreadCreate (NULL, Console::powerDownThread,
                                           (void *) task.get(), 0,
                                           RTTHREADTYPE_MAIN_WORKER, 0,
-                                          "VMPowerDowm");
+                                          "VMPowerDown");
 
-                AssertMsgRC (vrc, ("Could not create VMPowerUp thread (%Vrc)\n", vrc));
-                if (VBOX_FAILURE (vrc))
-                    break;
+                AssertMsgRCBreak (vrc,
+                    ("Could not create VMPowerDown thread (%Vrc)\n", vrc));
 
                 /* task is now owned by powerDownThread(), so release it */
                 task.release();
@@ -5166,13 +5296,12 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
             break;
         }
 
-        /*
-         *  The VM has been completely destroyed.
+        /* The VM has been completely destroyed.
          *
-         *  Note: This state change can happen at two points:
-         *        1) At the end of VMR3Destroy() if it was not called from EMT.
-         *        2) At the end of vmR3EmulationThread if VMR3Destroy() was
-         *           called by EMT.
+         * Note: This state change can happen at two points:
+         *       1) At the end of VMR3Destroy() if it was not called from EMT.
+         *       2) At the end of vmR3EmulationThread if VMR3Destroy() was
+         *          called by EMT.
          */
         case VMSTATE_TERMINATED:
         {
@@ -5181,18 +5310,16 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
             if (that->mVMStateChangeCallbackDisabled)
                 break;
 
-            /*
-             *  Terminate host interface networking. If aVM is NULL, we've been
-             *  manually called from powerUpThread() either before calling
-             *  VMR3Create() or after VMR3Create() failed, so no need to touch
-             *  networking.
+            /* Terminate host interface networking. If aVM is NULL, we've been
+             * manually called from powerUpThread() either before calling
+             * VMR3Create() or after VMR3Create() failed, so no need to touch
+             * networking.
              */
             if (aVM)
                 that->powerDownHostInterfaces();
 
-            /*
-             *  From now on the machine is officially powered down or
-             *  remains in the Saved state.
+            /* From now on the machine is officially powered down or remains in
+             * the Saved state.
              */
             switch (that->mMachineState)
             {
@@ -5204,26 +5331,20 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                     that->setMachineState (MachineState_PoweredOff);
                     break;
                 case MachineState_Saving:
-                    /*
-                     *  successfully saved (note that the machine is already
-                     *  in the Saved state on the server due to EndSavingState()
-                     *  called from saveStateThread(), so only change the local
-                     *  state)
-                     */
+                    /* successfully saved (note that the machine is already in
+                     * the Saved state on the server due to EndSavingState()
+                     * called from saveStateThread(), so only change the local
+                     * state) */
                     that->setMachineStateLocally (MachineState_Saved);
                     break;
                 case MachineState_Starting:
-                    /*
-                     *  failed to start, but be patient: set back to PoweredOff
-                     *  (for similarity with the below)
-                     */
+                    /* failed to start, but be patient: set back to PoweredOff
+                     * (for similarity with the below) */
                     that->setMachineState (MachineState_PoweredOff);
                     break;
                 case MachineState_Restoring:
-                    /*
-                     *  failed to load the saved state file, but be patient:
-                     *  set back to Saved (to preserve the saved state file)
-                     */
+                    /* failed to load the saved state file, but be patient: set
+                     * back to Saved (to preserve the saved state file) */
                     that->setMachineState (MachineState_Saved);
                     break;
             }
@@ -5258,10 +5379,8 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                 if (that->mVMStateChangeCallbackDisabled)
                     break;
 
-                /*
-                 *  Change the machine state from Starting, Restoring or Paused
-                 *  to Running
-                 */
+                /* Change the machine state from Starting, Restoring or Paused
+                 * to Running */
                 Assert (   (   (   that->mMachineState == MachineState_Starting
                                 || that->mMachineState == MachineState_Paused)
                             && aOldState == VMSTATE_CREATED)
@@ -6291,8 +6410,6 @@ void Console::processRemoteUSBDevices (uint32_t u32ClientId, VRDPUSBDEVICEDESC *
     LogFlowThisFuncLeave();
 }
 
-
-
 /**
  *  Thread function which starts the VM (also from saved state) and
  *  track progress.
@@ -7013,23 +7130,23 @@ DECLCALLBACK (int) Console::powerDownThread (RTTHREAD Thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
-    std::auto_ptr <VMTask> task (static_cast <VMTask *> (pvUser));
+    std::auto_ptr <VMProgressTask> task (static_cast <VMProgressTask *> (pvUser));
     AssertReturn (task.get(), VERR_INVALID_PARAMETER);
 
     AssertReturn (task->isOk(), VERR_GENERAL_FAILURE);
 
     const ComObjPtr <Console> &that = task->mConsole;
 
-    /*
-     *  Note: no need to use addCaller() to protect Console
-     *  because VMTask does that
-     */
+    /* Note: no need to use addCaller() to protect Console because VMTask does
+     * that */
 
-    /* release VM caller to let powerDown() proceed */
+    /* wait until the method tat started us returns */
+    AutoWriteLock thatLock (that);
+
+    /* release VM caller to avoid the powerDown() deadlock */
     task->releaseVMCaller();
 
-    HRESULT rc = that->powerDown();
-    AssertComRC (rc);
+    that->powerDown (task->mProgress);
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;

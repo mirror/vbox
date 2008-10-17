@@ -169,6 +169,7 @@ public:
     void cannotTakeSnapshot (const CConsole &console);
     void cannotTakeSnapshot (const CProgress &progress);
     void cannotStopMachine (const CConsole &console);
+    void cannotStopMachine (const CProgress &progress);
     void cannotDeleteMachine (const CVirtualBox &vbox, const CMachine &machine);
     void cannotDiscardSavedState (const CConsole &console);
 
