@@ -210,7 +210,25 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS G
     LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: GCPhysStart=%VGp cbRange=%#x pvUser=%p pfnWrite=%p pfnRead=%p pfnFill=%p pszDesc=%p:{%s}\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc, pszDesc));
 
-    int rc = IOMR3MMIORegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
+    int rc = IOMR3MMIORegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, IOMMMIOTYPE_MMIO, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
+
+    LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIORegisterEx
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterEx(PPDMDEVINS pDevIns, IOMMMIOTYPE enmMMIOType, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+                                                    PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                                    const char *pszDesc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: GCPhysStart=%VGp cbRange=%#x pvUser=%p pfnWrite=%p pfnRead=%p pfnFill=%p pszDesc=%p:{%s}\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc, pszDesc));
+
+    int rc = IOMR3MMIORegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, enmMMIOType, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 
     LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
@@ -2601,20 +2619,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RT
 
     int rc = PDMR3UnregisterVMMDevHeap(pDevIns->Internal.s.pVMR3, GCPhys);
     return rc;
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIORegisterEx
- */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                                    PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                                    const char *pszDesc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-
-    /** @todo */
-    return VERR_NOT_SUPPORTED;
 }
 
 
