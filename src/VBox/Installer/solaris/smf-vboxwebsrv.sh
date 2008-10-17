@@ -45,12 +45,18 @@ case $VW_OPT in
         [ $? != 0 ] && VW_HOST=
         VW_PORT=`/usr/bin/svcprop -p config/port $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_PORT=
+        VW_TIMEOUT=`/usr/bin/svcprop -p config/timeout $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_TIMEOUT=
+        VW_CHECK_INTERVAL=`/usr/bin/svcprop -p config/checkinterval $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_CHECK_INTERVAL=
 
         # Provide sensible defaults
         [ -z "$VW_USER" ] && VW_USER=root
         [ -z "$VW_HOST" ] && VW_HOST=localhost
         [ -z "$VW_PORT" -o "$VW_PORT" -eq 0 ] && VW_PORT=18083
-        su "$VW_USER" -c "LOGNAME=\"$VW_USER\" USER=\"$VW_USER\" /opt/VirtualBox/vboxwebsrv --background --host \"$VW_HOST\" --port \"$VW_PORT\""
+        [ -z "$VW_TIMEOUT" ] && VW_TIMEOUT=20
+        [ -z "$VW_CHECK_INTERVAL" ] && VW_CHECK_INTERVAL=5
+        su "$VW_USER" -c "LOGNAME=\"$VW_USER\" USER=\"$VW_USER\" /opt/VirtualBox/vboxwebsrv --background --host \"$VW_HOST\" --port \"$VW_PORT\" --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\""
 
         VW_EXIT=$?
         if [ $VW_EXIT != 0 ]; then
