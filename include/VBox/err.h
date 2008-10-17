@@ -153,8 +153,10 @@
 /** Indicating that a rescheduling now is required. Typically caused by
  * interrupts having changed the EIP. */
 #define VINF_EM_RESCHEDULE                  1117
+/** PARAV call */
+#define VINF_EM_RESCHEDULE_PARAV            1118
 /** Last scheduling related status code. (inclusive) */
-#define VINF_EM_LAST                        1117
+#define VINF_EM_LAST                        1118
 
 /** Reason for leaving GC: Guest trap which couldn't be handled in GC.
  * The trap is generally forwared to the REM and executed there. */
@@ -1271,6 +1273,15 @@
 #define VERR_WEB_INVALID_OBJECT_ID                  (-4303)
 /** Unsupported interface for managed object reference */
 #define VERR_WEB_UNSUPPORTED_INTERFACE              (-4304)
+/** @} */
+
+
+/** @name VBox PARAV Status Codes
+ * @{
+ */
+/** Switch back to host */
+#define VINF_PARAV_SWITCH_TO_HOST                     4400
+
 /** @} */
 
 /* SED-END */

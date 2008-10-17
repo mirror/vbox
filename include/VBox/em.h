@@ -55,6 +55,8 @@ typedef enum EMSTATE
     EMSTATE_RAW,
     /** Hardware accelerated raw-mode execution. */
     EMSTATE_HWACC,
+    /** PARAV function. */
+    EMSTATE_PARAV,
     /** Recompiled mode execution. */
     EMSTATE_REM,
     /** Execution is halted. (waiting for interrupt) */

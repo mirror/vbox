@@ -89,6 +89,9 @@ typedef unsigned long ram_addr_t;
 #define EXCP_EXECUTE_HWACC  0x11025 /* execute hardware accelerated raw mode. */
 #define EXCP_SINGLE_INSTR   0x11026 /* executed single instruction. */
 #define EXCP_RC             0x11027 /* a EM rc was raised (VMR3Reset/Suspend/PowerOff). */
+#ifdef VBOX
+#define EXCP_PARAV_CALL     0x11028 /* VMI BIOS call */
+#endif
 #endif /* VBOX */
 #define MAX_BREAKPOINTS 32
 

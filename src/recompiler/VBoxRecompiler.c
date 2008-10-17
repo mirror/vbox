@@ -1070,6 +1070,16 @@ REMR3DECL(int) REMR3Run(PVM pVM)
             rc = VINF_EM_RESCHEDULE_HWACC;
             break;
 
+#ifdef VBOX_WITH_VMI
+        /*
+         *
+         */
+        case EXCP_PARAV_CALL:
+            Log2(("REMR3Run: cpu_exec -> EXCP_PARAV_CALL\n"));
+            rc = VINF_EM_RESCHEDULE_PARAV;
+            break;
+#endif
+
         /*
          * An EM RC was raised (VMR3Reset/Suspend/PowerOff/some-fatal-error).
          */

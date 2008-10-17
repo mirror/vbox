@@ -137,6 +137,16 @@ VMMR3_SOURCES.amd64 = \
 VMMR3_SOURCES.darwin.x86 += \
 	VMMSwitcher/AMD64ToPAE.asm
 
+ifdef VBOX_WITH_VMI
+VMMR3_DEFS += \
+	VBOX_WITH_VMI
+VMMR3_INCS += \
+	PARAV
+VMMR3_SOURCES += \
+	PARAV/PARAV.cpp \
+	PARAV/PARAVAll.cpp
+endif
+
 ifdef VBOX_WITH_USB
 VMMR3_DEFS += VBOX_WITH_USB
 VMMR3_SOURCES += PDMUsb.cpp
@@ -335,6 +345,14 @@ VMMGC_SOURCES += VMMGC/VMMGC.def
 endif
 ifeq ($(VBOX_LDR_FMT32),lx)
 VMMGC_SOURCES += $(PATH_VMMGCImp)/VMMGC.def
+endif
+
+ifdef VBOX_WITH_VMI
+VMMGC_DEFS += \
+	VBOX_WITH_VMI
+VMMGC_SOURCES += \
+	PARAV/PARAV.cpp \
+	PARAV/PARAVAll.cpp
 endif
 
 # the very last one.

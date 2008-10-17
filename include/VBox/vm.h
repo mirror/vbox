@@ -486,6 +486,9 @@ typedef struct VM
     /** Hardware VM support is available and enabled.
      * This is placed here for performance reasons. */
     bool                fHWACCMEnabled;
+
+    /** PARAV enabled flag. */
+    bool                fPARAVEnabled;
     /** @} */
 
 
@@ -630,6 +633,15 @@ typedef struct VM
 #endif
         char        padding[3328];    /* multiple of 32 */
     } csam;
+
+    /** PARAV part. */
+    union
+    {
+#ifdef ___PARAVInternal_h
+        struct PARAV s;
+#endif
+        char        padding[128];
+    } parav;
 
     /** EM part. */
     union
