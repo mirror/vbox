@@ -1002,20 +1002,23 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
 
 #ifdef VBOX_WITH_GUEST_PROPS
 // static
-DECLCALLBACK(void)
-Console::doGuestPropNotification (PVBOXHGCMCALLBACKHDR pHeader)
+DECLCALLBACK(int)
+Console::doGuestPropNotification (void *pvExtension, uint32_t,
+                                  void *pvParms, uint32_t cbParms)
 {
+    using namespace guestProp;
+
     /* No locking, as this is purely a notification which does not make any
      * changes to the object state. */
-    guestProp::PHOSTCALLBACKDATA pCBData
-        = reinterpret_cast<guestProp::PHOSTCALLBACKDATA>(pHeader);
-    AssertReturnVoid(VBOXHGCMCALLBACKMAGIC == pCBData->hdr.u32Magic);
-    AssertReturnVoid(sizeof(guestProp::HOSTCALLBACKDATA) == pCBData->hdr.cbStruct);
-    ComObjPtr <Console> pConsole = reinterpret_cast <Console *> (pCBData->hdr.pvData);
+    PHOSTCALLBACKDATA pCBData = reinterpret_cast<PHOSTCALLBACKDATA>(pvParms);
+    AssertReturn(sizeof(HOSTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
+    AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
+    ComObjPtr <Console> pConsole = reinterpret_cast <Console *> (pvExtension);
     pConsole->mControl->PushGuestProperty(Bstr(pCBData->pcszName),
                                           Bstr(pCBData->pcszValue),
                                           pCBData->u64Timestamp,
                                           Bstr(pCBData->pcszFlags));
+    return VINF_SUCCESS;
 }
 #endif
 

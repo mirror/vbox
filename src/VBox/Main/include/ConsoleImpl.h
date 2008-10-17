@@ -489,7 +489,8 @@ private:
     static DECLCALLBACK(int)    loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version);
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    static DECLCALLBACK(void)   doGuestPropNotification (PVBOXHGCMCALLBACKHDR pHeader);
+    static DECLCALLBACK(int)    doGuestPropNotification (void *pvExtension, uint32_t,
+                                                         void *pvParms, uint32_t cbParms);
 #endif
 
     bool mSavedStateDataLoaded : 1;
