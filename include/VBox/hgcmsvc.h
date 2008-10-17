@@ -57,10 +57,9 @@
  * 3.1->3.2 Because pfnRegisterExtension was added
  * 3.2->3.3 Because pfnDisconnectClient helper was added
  * 3.3->4.1 Because the pvService entry and parameter was added
- * 4.1->4.2 Because the VBOX_HGCM_SVC_PARM_CALLBACK paramteter type was added
  */
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0004)
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0002)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -82,40 +81,11 @@ typedef struct _VBOXHGCMSVCHELPERS
 
 typedef VBOXHGCMSVCHELPERS *PVBOXHGCMSVCHELPERS;
 
-/**
- * Callback type for HGCM services which can send notification messages.
- * Intended for use on the host side.
- */
-typedef struct _VBOXHGCMCALLBACKHDR *PVBOXHGCMCALLBACKHDR;
-typedef DECLCALLBACK(void) FNVBOXHGCMCALLBACK(PVBOXHGCMCALLBACKHDR pvParm);
-typedef FNVBOXHGCMCALLBACK *PFNVBOXHGCMCALLBACK;
 
-/**
- * Callback parameter structure header for FNVBOXHGCMCALLBACK callback
- * functions.  The structure passed as a callback parameter should start
- * with this header.
- */
-typedef struct _VBOXHGCMCALLBACKHDR
-{
-    /** Magic number for runtime sanity check */
-    uint32_t  u32Magic;
-    /** Size of the embedding structure */
-    uint32_t  cbStruct;
-    /** Callback user data */
-    void     *pvData;
-} VBOXHGCMCALLBACKHDR;
-
-enum
-{
-    /** Magic number for sanity checking the VBOXHGCMCALLBACKHDR structure */
-    VBOXHGCMCALLBACKMAGIC = 0x69c87a78
-};
-
-#define VBOX_HGCM_SVC_PARM_INVALID  (0U)
-#define VBOX_HGCM_SVC_PARM_32BIT    (1U)
-#define VBOX_HGCM_SVC_PARM_64BIT    (2U)
-#define VBOX_HGCM_SVC_PARM_PTR      (3U)
-#define VBOX_HGCM_SVC_PARM_CALLBACK (4U)
+#define VBOX_HGCM_SVC_PARM_INVALID (0U)
+#define VBOX_HGCM_SVC_PARM_32BIT (1U)
+#define VBOX_HGCM_SVC_PARM_64BIT (2U)
+#define VBOX_HGCM_SVC_PARM_PTR   (3U)
 
 typedef struct VBOXHGCMSVCPARM
 {
@@ -131,11 +101,6 @@ typedef struct VBOXHGCMSVCPARM
             uint32_t size;
             void *addr;
         } pointer;
-        struct
-        {
-            PFNVBOXHGCMCALLBACK pFunction;
-            void *pvData;
-        } callback;
     } u;
 } VBOXHGCMSVCPARM;
 
@@ -207,7 +172,7 @@ typedef struct _VBOXHGCMSVCFNTABLE
     /** Inform the service about a VM load operation. */
     DECLR3CALLBACKMEMBER(int, pfnLoadState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
 
-    /** Manage the service extension. */
+    /** Register a service extension callback. */
     DECLR3CALLBACKMEMBER(int, pfnRegisterExtension, (void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension));
 
     /** User/instance data pointer for the service. */
