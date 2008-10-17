@@ -752,6 +752,8 @@ const char *mmR3GetTagName(MMTAG enmTag)
         TAG2STR(MM_LOOKUP_VIRT);
         TAG2STR(MM_PAGE);
 
+        TAG2STR(PARAV);
+
         TAG2STR(PATM);
         TAG2STR(PATM_PATCH);
 

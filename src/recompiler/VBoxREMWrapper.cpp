@@ -623,6 +623,14 @@ static const REMPARMDESC g_aArgsPATMR3QueryPatchMem[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
 };
+#ifdef VBOX_WITH_VMI
+static const REMPARMDESC g_aArgsPARAVIsBiosCall[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+};
+#endif
 static const REMPARMDESC g_aArgsPDMApicGetBase[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
@@ -1074,6 +1082,9 @@ static REMFNDESC g_aVMMImports[] =
     { "PATMR3QueryOpcode",                      (void *)(uintptr_t)&PATMR3QueryOpcode,              &g_aArgsPATMR3QueryOpcode[0],               RT_ELEMENTS(g_aArgsPATMR3QueryOpcode),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PATMR3QueryPatchMemGC",                  (void *)(uintptr_t)&PATMR3QueryPatchMemGC,          &g_aArgsPATMR3QueryPatchMem[0],             RT_ELEMENTS(g_aArgsPATMR3QueryPatchMem),               REMFNDESC_FLAGS_RET_INT,    sizeof(RTGCPTR),    NULL },
     { "PATMR3QueryPatchMemHC",                  (void *)(uintptr_t)&PATMR3QueryPatchMemHC,          &g_aArgsPATMR3QueryPatchMem[0],             RT_ELEMENTS(g_aArgsPATMR3QueryPatchMem),               REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+#ifdef VBOX_WITH_VMI
+    { "PARAVIsBiosCall",                        (void *)(uintptr_t)&PARAVIsBiosCall,                &g_aArgsPARAVIsBiosCall[0],                 RT_ELEMENTS(g_aArgsPARAVIsBiosCall),                   REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
+#endif
     { "PDMApicGetBase",                         (void *)(uintptr_t)&PDMApicGetBase,                 &g_aArgsPDMApicGetBase[0],                  RT_ELEMENTS(g_aArgsPDMApicGetBase),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMApicGetTPR",                          (void *)(uintptr_t)&PDMApicGetTPR,                  &g_aArgsPDMApicGetTPR[0],                   RT_ELEMENTS(g_aArgsPDMApicGetTPR),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMApicSetBase",                         (void *)(uintptr_t)&PDMApicSetBase,                 &g_aArgsPDMApicSetBase[0],                  RT_ELEMENTS(g_aArgsPDMApicSetBase),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },

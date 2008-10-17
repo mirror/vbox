@@ -28,6 +28,7 @@
  */
 #ifdef VBOX
 # include <VBox/err.h>
+# include <VBox/parav.h>
 #endif
 #include "exec.h"
 
@@ -624,6 +625,14 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
     uint32_t old_eip, sp_mask;
 
 #ifdef VBOX
+# ifdef VBOX_WITH_VMI
+    if (   intno == 6
+        && PARAVIsBiosCall(env->pVM, (RTRCPTR)next_eip, env->regs[R_EAX]))
+    {
+        env->exception_index = EXCP_PARAV_CALL;
+        cpu_loop_exit();
+    }
+# endif
     if (remR3NotifyTrap(env, intno, error_code, next_eip) != VINF_SUCCESS)
         cpu_loop_exit();
 #endif

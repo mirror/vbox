@@ -162,6 +162,8 @@ typedef enum MMTAG
     MM_TAG_MM_LOOKUP_VIRT,
     MM_TAG_MM_PAGE,
 
+    MM_TAG_PARAV,
+
     MM_TAG_PATM,
     MM_TAG_PATM_PATCH,
 
