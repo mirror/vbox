@@ -110,7 +110,12 @@ void *get_mmap_addr(unsigned long size);
 #endif
 
 #ifdef __i386__
+#ifdef _MSC_VER
+/** @todo: maybe wrong, or slow */
+#define REGPARM 
+#else
 #define REGPARM __attribute((regparm(3)))
+#endif
 #else
 #define REGPARM
 #endif
@@ -122,11 +127,11 @@ void *get_mmap_addr(unsigned long size);
 # define QEMU_GNUC_PREREQ(maj, min) 0
 #endif
 
+#ifndef VBOX
 void *qemu_memalign(size_t alignment, size_t size);
 void *qemu_vmalloc(size_t size);
 void qemu_vfree(void *ptr);
 
-#ifndef VBOX
 int qemu_create_pidfile(const char *filename);
 
 #ifdef _WIN32
@@ -142,5 +147,25 @@ typedef struct timeval qemu_timeval;
 #define qemu_gettimeofday(tp) gettimeofday(tp, NULL);
 #endif /* !_WIN32 */
 #endif /* !VBOX */
+
+#ifdef VBOX
+#ifdef _MSC_VER
+#define ALIGNED_MEMBER(type, name, bytes) type name
+#define ALIGNED_MEMBER_DEF(type, name) type name  
+#define PACKED_STRUCT(name) struct name
+#define REGISTER_BOUND_GLOBAL(type, var, reg) type var
+#define SAVE_GLOBAL_REGISTER(reg, var)
+#define RESTORE_GLOBAL_REGISTER(reg, var)
+#define DECLALWAYSINLINE(type) DECLINLINE(type)
+#else /* ! _MSC_VER */
+#define ALIGNED_MEMBER(type, name, bytes) type name __attribute__((aligned(bytes)))
+#define ALIGNED_MEMBER_DEF(type, name) type name __attribute__((aligned()))
+#define PACKED_STRUCT(name) struct __attribute__ ((__packed__)) name
+#define REGISTER_BOUND_GLOBAL(type, var, reg) register type var asm(reg)
+#define SAVE_GLOBAL_REGISTER(reg, var)     __asm__ __volatile__ ("" : "=r" (var))
+#define RESTORE_GLOBAL_REGISTER(reg, var) __asm__ __volatile__ ("" : : "r" (var))
+#define DECLALWAYSINLINE(type) static always_inline type
+#endif /* !_MSC_VER */
+#endif /* VBOX */
 
 #endif

@@ -244,6 +244,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 {
     uint32_t u32Dummy;
     unsigned i;
+    int rc;
 
     /*
      * Assert sanity.
@@ -275,7 +276,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 #endif
 
     /* ctx. */
-    int rc = CPUMQueryGuestCtxPtr(pVM, &pVM->rem.s.pCtx);
+    rc = CPUMQueryGuestCtxPtr(pVM, &pVM->rem.s.pCtx);
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to obtain guest ctx pointer. rc=%Vrc\n", rc));
@@ -450,13 +451,12 @@ REMR3DECL(void) REMR3Reset(PVM pVM)
  */
 static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    LogFlow(("remR3Save:\n"));
-
     /*
      * Save the required CPU Env bits.
      * (Not much because we're never in REM when doing the save.)
      */
     PREM pRem = &pVM->rem.s;
+    LogFlow(("remR3Save:\n"));
     Assert(!pRem->fInREM);
     SSMR3PutU32(pSSM,   pRem->Env.hflags);
     SSMR3PutU32(pSSM,   ~0);            /* separator */
@@ -481,6 +481,9 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 {
     uint32_t u32Dummy;
     uint32_t fRawRing0 = false;
+    uint32_t u32Sep;
+    int rc;
+    PREM pRem;
     LogFlow(("remR3Load:\n"));
 
     /*
@@ -508,7 +511,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      * Load the required CPU Env bits.
      * (Not much because we're never in REM when doing the save.)
      */
-    PREM pRem = &pVM->rem.s;
+    pRem = &pVM->rem.s;
     Assert(!pRem->fInREM);
     SSMR3GetU32(pSSM,   &pRem->Env.hflags);
     if (u32Version == REM_SAVED_STATE_VERSION_VER1_6)
@@ -518,8 +521,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         SSMR3GetMem(pSSM,   &temp, RT_OFFSETOF(CPUX86State_Ver16, jmp_env));
     }
 
-    uint32_t u32Sep;
-    int rc = SSMR3GetU32(pSSM, &u32Sep);            /* separator */
+    rc = SSMR3GetU32(pSSM, &u32Sep);            /* separator */
     if (VBOX_FAILURE(rc))
         return rc;
     if (u32Sep != ~0U)
@@ -535,6 +537,8 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
     if (u32Version == REM_SAVED_STATE_VERSION_VER1_6)
     {
+        unsigned i;
+    
         /*
          * Load the REM stuff.
          */
@@ -546,7 +550,6 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
             AssertMsgFailed(("cInvalidatedPages=%#x\n", pRem->cInvalidatedPages));
             return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
         }
-        unsigned i;
         for (i = 0; i < pRem->cInvalidatedPages; i++)
             SSMR3GetGCPtr(pSSM, &pRem->aGCPtrInvalidatedPages[i]);
     }
@@ -607,12 +610,16 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
  */
 REMR3DECL(int) REMR3Step(PVM pVM)
 {
+    int         rc, interrupt_request;
+    RTGCPTR     GCPtrPC;
+    bool        fBp;
+ 
     /*
      * Lock the REM - we don't wanna have anyone interrupting us
      * while stepping - and enabled single stepping. We also ignore
      * pending interrupts and suchlike.
      */
-    int interrupt_request = pVM->rem.s.Env.interrupt_request;
+    interrupt_request = pVM->rem.s.Env.interrupt_request;
     Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER  | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
     pVM->rem.s.Env.interrupt_request = 0;
     cpu_single_step(&pVM->rem.s.Env, 1);
@@ -620,15 +627,15 @@ REMR3DECL(int) REMR3Step(PVM pVM)
     /*
      * If we're standing at a breakpoint, that have to be disabled before we start stepping.
      */
-    RTGCPTR     GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-    bool        fBp = !cpu_breakpoint_remove(&pVM->rem.s.Env, GCPtrPC);
+    GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
+    fBp = !cpu_breakpoint_remove(&pVM->rem.s.Env, GCPtrPC);
 
     /*
      * Execute and handle the return code.
      * We execute without enabling the cpu tick, so on success we'll
      * just flip it on and off to make sure it moves
      */
-    int rc = cpu_exec(&pVM->rem.s.Env);
+    rc = cpu_exec(&pVM->rem.s.Env);
     if (rc == EXCP_DEBUG)
     {
         TMCpuTickResume(pVM);
@@ -727,6 +734,7 @@ REMR3DECL(int) REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address)
  */
 REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
 {
+    int rc, rc2;
     Log2(("REMR3EmulateInstruction: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
 
     /* Make sure this flag is set; we might never execute remR3CanExecuteRaw in the AMD-V case.
@@ -738,7 +746,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
     /*
      * Sync the state and enable single instruction / single stepping.
      */
-    int rc = REMR3State(pVM, false /* no need to flush the TBs; we always compile. */);
+    rc = REMR3State(pVM, false /* no need to flush the TBs; we always compile. */);
     if (VBOX_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
@@ -950,7 +958,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         cpu_single_step(&pVM->rem.s.Env, 0);
 #endif
         pVM->rem.s.Env.interrupt_request = interrupt_request;
-        int rc2 = REMR3StateBack(pVM);
+        rc2 = REMR3StateBack(pVM);
         AssertRC(rc2);
     }
 
@@ -974,11 +982,12 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
  */
 REMR3DECL(int) REMR3Run(PVM pVM)
 {
+    int rc;
     Log2(("REMR3Run: (cs:eip=%04x:%VGv)\n", pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     Assert(pVM->rem.s.fInREM);
 
     TMNotifyStartOfExecution(pVM);
-    int rc = cpu_exec(&pVM->rem.s.Env);
+    rc = cpu_exec(&pVM->rem.s.Env);
     TMNotifyEndOfExecution(pVM);
     switch (rc)
     {
@@ -1103,18 +1112,20 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
+    uint32_t u32CR0;
 
     /* Update counter. */
     env->pVM->rem.s.cCanExecuteRaw++;
 
     if (HWACCMIsEnabled(env->pVM))
     {
+        CPUMCTX Ctx;
+
         env->state |= CPU_RAW_HWACC;
 
         /*
          * Create partial context for HWACCMR3CanExecuteGuest
          */
-        CPUMCTX Ctx;
         Ctx.cr0            = env->cr[0];
         Ctx.cr3            = env->cr[3];
         Ctx.cr4            = env->cr[4];
@@ -1214,7 +1225,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         return false;
     }
 
-    uint32_t u32CR0 = env->cr[0];
+    u32CR0 = env->cr[0];
     if ((u32CR0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
     {
         STAM_COUNTER_INC(&gStatRefusePaging);
@@ -1343,6 +1354,8 @@ bool remR3GetOpcode(CPUState *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte)
 void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 {
     PVM pVM = env->pVM;
+    PCPUMCTX pCtx;
+    int rc;
 
     /*
      * When we're replaying invlpg instructions or restoring a saved
@@ -1358,7 +1371,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     /*
      * Update the control registers before calling PGMFlushPage.
      */
-    PCPUMCTX pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
+    pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     pCtx->cr4 = env->cr[4];
@@ -1366,7 +1379,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     /*
      * Let PGM do the rest.
      */
-    int rc = PGMInvalidatePage(pVM, GCPtr);
+    rc = PGMInvalidatePage(pVM, GCPtr);
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("remR3FlushPage %VGv failed with %d!!\n", GCPtr, rc));
@@ -1425,6 +1438,7 @@ void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
 void remR3FlushTLB(CPUState *env, bool fGlobal)
 {
     PVM pVM = env->pVM;
+    PCPUMCTX pCtx;
 
     /*
      * When we're replaying invlpg instructions or restoring a saved
@@ -1444,7 +1458,7 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
     /*
      * Update the control registers before calling PGMR3FlushTLB.
      */
-    PCPUMCTX pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
+    pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     pCtx->cr4 = env->cr[4];
@@ -1465,6 +1479,7 @@ void remR3ChangeCpuMode(CPUState *env)
 {
     int rc;
     PVM pVM = env->pVM;
+    PCPUMCTX pCtx;
 
     /*
      * When we're replaying loads or restoring a saved
@@ -1478,7 +1493,7 @@ void remR3ChangeCpuMode(CPUState *env)
      * Update the control registers before calling PGMChangeMode()
      * as it may need to map whatever cr3 is pointing to.
      */
-    PCPUMCTX pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
+    pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
     pCtx->cr4 = env->cr[4];
@@ -1627,12 +1642,19 @@ void remR3RecordCall(CPUState *env)
  */
 REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
 {
+    register const CPUMCTX *pCtx;
+    register unsigned       fFlags;
+    bool                    fHiddenSelRegsValid;
+    unsigned                i;
+    TRPMEVENT               enmType;
+    uint8_t                 u8TrapNo;
+    int                     rc; 
+
     Log2(("REMR3State:\n"));
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
-    register const CPUMCTX *pCtx = pVM->rem.s.pCtx;
-    register unsigned       fFlags;
-    bool                    fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVM);
-    unsigned                i;
+         
+    pCtx = pVM->rem.s.pCtx;
+    fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVM);
 
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
@@ -1715,8 +1737,9 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
      */
     if (pVM->rem.s.cInvalidatedPages)
     {
-        pVM->rem.s.fIgnoreInvlPg = true;
         RTUINT i;
+        
+        pVM->rem.s.fIgnoreInvlPg = true;
         for (i = 0; i < pVM->rem.s.cInvalidatedPages; i++)
         {
             Log2(("REMR3State: invlpg %VGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
@@ -1975,9 +1998,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
      * Check for traps.
      */
     pVM->rem.s.Env.exception_index = -1; /** @todo this won't work :/ */
-    TRPMEVENT   enmType;
-    uint8_t     u8TrapNo;
-    int rc = TRPMQueryTrap(pVM, &u8TrapNo, &enmType);
+    rc = TRPMQueryTrap(pVM, &u8TrapNo, &enmType);
     if (VBOX_SUCCESS(rc))
     {
 #ifdef DEBUG
@@ -2075,13 +2096,13 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
  */
 REMR3DECL(int) REMR3StateBack(PVM pVM)
 {
-    Log2(("REMR3StateBack:\n"));
-    Assert(pVM->rem.s.fInREM);
-    STAM_PROFILE_START(&pVM->rem.s.StatsStateBack, a);
     register PCPUMCTX pCtx = pVM->rem.s.pCtx;
     unsigned          i;
 
-    /*
+    Log2(("REMR3StateBack:\n"));
+    Assert(pVM->rem.s.fInREM);
+    STAM_PROFILE_START(&pVM->rem.s.StatsStateBack, a);
+        /*
      * Copy back the registers.
      * This is done in the order they are declared in the CPUMCTX structure.
      */
@@ -2268,8 +2289,10 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     if (    pVM->rem.s.Env.exception_index >= 0
         &&  pVM->rem.s.Env.exception_index < 256)
     {
+        int rc;
+
         Log(("REMR3StateBack: Pending trap %x %d\n", pVM->rem.s.Env.exception_index, pVM->rem.s.Env.exception_is_int));
-        int rc = TRPMAssertTrap(pVM, pVM->rem.s.Env.exception_index, (pVM->rem.s.Env.exception_is_int) ? TRPM_SOFTWARE_INT : TRPM_HARDWARE_INT);
+        rc = TRPMAssertTrap(pVM, pVM->rem.s.Env.exception_index, (pVM->rem.s.Env.exception_is_int) ? TRPM_SOFTWARE_INT : TRPM_HARDWARE_INT);
         AssertRC(rc);
         switch (pVM->rem.s.Env.exception_index)
         {
@@ -2300,10 +2323,11 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
  */
 static void remR3StateUpdate(PVM pVM)
 {
-    Assert(pVM->rem.s.fInREM);
     register PCPUMCTX pCtx = pVM->rem.s.pCtx;
     unsigned          i;
 
+    Assert(pVM->rem.s.fInREM);
+    
     /*
      * Copy back the registers.
      * This is done in the order they are declared in the CPUMCTX structure.
@@ -2491,10 +2515,12 @@ REMR3DECL(void) REMR3StateUpdate(PVM pVM)
  */
 REMR3DECL(void) REMR3A20Set(PVM pVM, bool fEnable)
 {
+    bool fSaved;
+
     LogFlow(("REMR3A20Set: fEnable=%d\n", fEnable));
     VM_ASSERT_EMT(pVM);
 
-    bool fSaved = pVM->rem.s.fIgnoreAll; /* just in case. */
+    fSaved = pVM->rem.s.fIgnoreAll; /* just in case. */
     pVM->rem.s.fIgnoreAll = fSaved || !pVM->rem.s.fInREM;
 
     cpu_x86_set_a20(&pVM->rem.s.Env, fEnable);
@@ -2511,6 +2537,8 @@ REMR3DECL(void) REMR3A20Set(PVM pVM, bool fEnable)
  */
 REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM)
 {
+    RTUINT i;
+    
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2525,7 +2553,6 @@ REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM)
      * Replay the flushes.
      */
     pVM->rem.s.fIgnoreInvlPg = true;
-    RTUINT i;
     for (i = 0; i < pVM->rem.s.cInvalidatedPages; i++)
     {
         Log2(("REMR3ReplayInvalidatedPages: invlpg %VGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
@@ -2544,14 +2571,15 @@ REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM)
  */
 REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 {
-    LogFlow(("REMR3ReplayInvalidatedPages:\n"));
-    VM_ASSERT_EMT(pVM);
-
     /*
      * Replay the flushes.
      */
     RTUINT i;
     const RTUINT c = pVM->rem.s.cHandlerNotifications;
+    
+    LogFlow(("REMR3ReplayInvalidatedPages:\n"));
+    VM_ASSERT_EMT(pVM);
+
     pVM->rem.s.cHandlerNotifications = 0;
     for (i = 0; i < c; i++)
     {
@@ -2744,9 +2772,9 @@ void remR3GrowDynRange(unsigned long physaddr)
 {
     int rc;
     PVM pVM = cpu_single_env->pVM;
+    const RTGCPHYS GCPhys = physaddr;
 
     LogFlow(("remR3GrowDynRange %VGp\n", physaddr));
-    const RTGCPHYS GCPhys = physaddr;
     rc = PGM3PhysGrowRange(pVM, &GCPhys);
     if (VBOX_SUCCESS(rc))
         return;
@@ -3273,24 +3301,27 @@ static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys)
 /** Write to MMIO memory. */
 static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
+    int rc;
     Log2(("remR3MMIOWriteU8: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
-    int rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 1);
+    rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 1);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
 }
 
 /** Write to MMIO memory. */
 static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
+    int rc;
     Log2(("remR3MMIOWriteU16: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
-    int rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 2);
+    rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 2);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
 }
 
 /** Write to MMIO memory. */
 static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
+    int rc;
     Log2(("remR3MMIOWriteU32: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
-    int rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 4);
+    rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 4);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
 }
 
@@ -3302,24 +3333,24 @@ static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_
 
 static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys)
 {
-    Log2(("remR3HandlerReadU8: GCPhys=%VGp\n", GCPhys));
     uint8_t u8;
+    Log2(("remR3HandlerReadU8: GCPhys=%VGp\n", GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u8, sizeof(u8));
     return u8;
 }
 
 static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys)
 {
-    Log2(("remR3HandlerReadU16: GCPhys=%VGp\n", GCPhys));
     uint16_t u16;
+    Log2(("remR3HandlerReadU16: GCPhys=%VGp\n", GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u16, sizeof(u16));
     return u16;
 }
 
 static uint32_t remR3HandlerReadU32(void *pvVM, target_phys_addr_t GCPhys)
 {
-    Log2(("remR3HandlerReadU32: GCPhys=%VGp\n", GCPhys));
     uint32_t u32;
+    Log2(("remR3HandlerReadU32: GCPhys=%VGp\n", GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u32, sizeof(u32));
     return u32;
 }
@@ -3433,7 +3464,11 @@ static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP
  */
 bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *pszPrefix)
 {
-    int i;
+    int           i, rc;
+    RTGCPTR       GCPtrPC;
+    uint8_t       *pvPC;
+    RTINTPTR      off;
+    DISCPUSTATE   Cpu;
 
     /*
      * Determin 16/32 bit mode.
@@ -3445,18 +3480,17 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
      * Convert cs:eip to host context address.
      * We don't care to much about cross page correctness presently.
      */
-    RTGCPTR    GCPtrPC = env->segs[R_CS].base + env->eip;
-    void      *pvPC;
+    GCPtrPC = env->segs[R_CS].base + env->eip;
     if (f32BitCode && (env->cr[0] & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG))
     {
         Assert(PGMGetGuestMode(env->pVM) < PGMMODE_AMD64);
 
         /* convert eip to physical address. */
-        int rc = PGMPhysGCPtr2HCPtrByGstCR3(env->pVM,
-                                            GCPtrPC,
-                                            env->cr[3],
-                                            env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE), /** @todo add longmode flag */
-                                            &pvPC);
+        rc = PGMPhysGCPtr2HCPtrByGstCR3(env->pVM,
+                                        GCPtrPC,
+                                        env->cr[3],
+                                        env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE), /** @todo add longmode flag */
+                                        &pvPC);
         if (VBOX_FAILURE(rc))
         {
             if (!PATMIsPatchGCAddr(env->pVM, GCPtrPC))
@@ -3468,7 +3502,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     else
     {
         /* physical address */
-        int rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16, &pvPC);
+        rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16, &pvPC);
         if (VBOX_FAILURE(rc))
             return false;
     }
@@ -3476,8 +3510,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     /*
      * Disassemble.
      */
-    RTINTPTR        off = env->eip - (RTGCUINTPTR)pvPC;
-    DISCPUSTATE     Cpu;
+    off = env->eip - (RTGCUINTPTR)pvPC;
     Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
     Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
     //Cpu.dwUserData[0] = (uintptr_t)pVM;
@@ -3517,7 +3550,14 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
 bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
 {
 #ifdef USE_OLD_DUMP_AND_DISASSEMBLY
-    PVM pVM = env->pVM;
+    PVM         pVM =   env->pVM;
+    RTGCPTR     GCPtrPC;
+    uint8_t     *pvPC;
+    char        szOutput[256];
+    uint32_t    cbOp;
+    RTINTPTR    off;
+    DISCPUSTATE Cpu;
+                         
 
     /* Doesn't work in long mode. */
     if (env->hflags & HF_LMA_MASK)
@@ -3542,8 +3582,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
      * Convert cs:eip to host context address.
      * We don't care to much about cross page correctness presently.
      */
-    RTGCPTR    GCPtrPC = env->segs[R_CS].base + env->eip;
-    void      *pvPC;
+    GCPtrPC = env->segs[R_CS].base + env->eip;
     if ((env->cr[0] & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG))
     {
         /* convert eip to physical address. */
@@ -3572,15 +3611,12 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     /*
      * Disassemble.
      */
-    RTINTPTR        off = env->eip - (RTGCUINTPTR)pvPC;
-    DISCPUSTATE     Cpu;
+    off = env->eip - (RTGCUINTPTR)pvPC;
     Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
     Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
     //Cpu.dwUserData[0] = (uintptr_t)pVM;
     //Cpu.dwUserData[1] = (uintptr_t)pvPC;
     //Cpu.dwUserData[2] = GCPtrPC;
-    char szOutput[256];
-    uint32_t    cbOp;
     if (RT_FAILURE(DISInstr(&Cpu, (uintptr_t)pvPC, off, &cbOp, &szOutput[0])))
         return false;
 
@@ -3690,6 +3726,8 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
     if (LogIs2Enabled())
     {
         PVM pVM = cpu_single_env->pVM;
+        RTSEL cs;
+        RTGCUINTPTR eip;
 
         /*
          * Update the state so DBGF reads the correct register values (flags).
@@ -3700,8 +3738,8 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
          * Do the disassembling.
          */
         RTLogPrintf("Guest Code: PC=%VGp #VGp (%VGp) bytes fFlags=%d\n", uCode, cb, cb, fFlags);
-        RTSEL cs = cpu_single_env->segs[R_CS].selector;
-        RTGCUINTPTR eip = uCode - cpu_single_env->segs[R_CS].base;
+        cs = cpu_single_env->segs[R_CS].selector;
+        eip = uCode - cpu_single_env->segs[R_CS].base;
         for (;;)
         {
             char        szBuf[256];
@@ -4119,10 +4157,12 @@ void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value)
 
 void cpu_outb(CPUState *env, int addr, int val)
 {
+    int rc;
+
     if (addr != 0x80 && addr != 0x70 && addr != 0x61)
         Log2(("cpu_outb: addr=%#06x val=%#x\n", addr, val));
 
-    int rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 1);
+    rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 1);
     if (RT_LIKELY(rc == VINF_SUCCESS))
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
@@ -4151,8 +4191,9 @@ void cpu_outw(CPUState *env, int addr, int val)
 
 void cpu_outl(CPUState *env, int addr, int val)
 {
+    int rc;
     Log2(("cpu_outl: addr=%#06x val=%#x\n", addr, val));
-    int rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 4);
+    rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 4);
     if (RT_LIKELY(rc == VINF_SUCCESS))
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
@@ -4285,11 +4326,16 @@ void hw_error(const char *pszFormat, ...)
  */
 void cpu_abort(CPUState *env, const char *pszFormat, ...)
 {
+    va_list args;
+    PVM pVM;
+    
     /*
      * Bitch about it.
      */
+#ifndef _MSC_VER
+    /** @todo: MSVC is right - it's not valid C */
     RTLogFlags(NULL, "nodisabled nobuffered");
-    va_list args;
+#endif
     va_start(args, pszFormat);
     RTLogPrintf("fatal error in recompiler cpu: %N\n", pszFormat, &args);
     va_end(args);
@@ -4301,7 +4347,7 @@ void cpu_abort(CPUState *env, const char *pszFormat, ...)
      * If we're in REM context we'll sync back the state before 'jumping' to
      * the EMs failure handling.
      */
-    PVM pVM = cpu_single_env->pVM;
+    pVM = cpu_single_env->pVM;
     if (pVM->rem.s.fInREM)
         REMR3StateBack(pVM);
     EMR3FatalError(pVM, VERR_REM_VIRTUAL_CPU_ERROR);
@@ -4317,6 +4363,8 @@ void cpu_abort(CPUState *env, const char *pszFormat, ...)
  */
 static void remAbort(int rc, const char *pszTip)
 {
+    PVM pVM;
+
     /*
      * Bitch about it.
      */
@@ -4326,7 +4374,7 @@ static void remAbort(int rc, const char *pszTip)
     /*
      * Jump back to where we entered the recompiler.
      */
-    PVM pVM = cpu_single_env->pVM;
+    pVM = cpu_single_env->pVM;
     if (pVM->rem.s.fInREM)
         REMR3StateBack(pVM);
     EMR3FatalError(pVM, rc);

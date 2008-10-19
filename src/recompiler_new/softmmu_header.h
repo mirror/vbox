@@ -85,7 +85,7 @@
 #ifdef VBOX
 /* generic store macro */
 
-static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
+DELCINLINE(void) glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
 {
     int index;
     target_ulong addr;
@@ -161,7 +161,11 @@ static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE 
 
 /* generic load/store macros */
 
+#ifndef VBOX
 static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
+#else
+DECLINLINE(RES_TYPE) glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
+#endif
 {
     int index;
     RES_TYPE res;
@@ -172,8 +176,13 @@ static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
     addr = ptr;
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     is_user = CPU_MMU_INDEX;
+#ifndef VBOX
     if (__builtin_expect(env->tlb_table[is_user][index].ADDR_READ != 
                          (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))), 0)) {
+#else
+    if  (RT_UNLIKELY(env->tlb_table[is_user][index].ADDR_READ != 
+                         (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
+#endif
         res = glue(glue(__ld, SUFFIX), MMUSUFFIX)(addr, is_user);
     } else {
         physaddr = addr + env->tlb_table[is_user][index].addend;
@@ -183,7 +192,11 @@ static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
 }
 
 #if DATA_SIZE <= 2
+#ifndef VBOX
 static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
+#else
+DECLINLINE(int) glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
+#endif
 {
     int res, index;
     target_ulong addr;
@@ -193,8 +206,13 @@ static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
     addr = ptr;
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     is_user = CPU_MMU_INDEX;
+#ifndef VBOX
     if (__builtin_expect(env->tlb_table[is_user][index].ADDR_READ != 
                          (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))), 0)) {
+#else
+    if (RT_UNLIKELY(env->tlb_table[is_user][index].ADDR_READ != 
+                         (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
+#endif
         res = (DATA_STYPE)glue(glue(__ld, SUFFIX), MMUSUFFIX)(addr, is_user);
     } else {
         physaddr = addr + env->tlb_table[is_user][index].addend;
@@ -207,8 +225,11 @@ static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
 #if ACCESS_TYPE != (NB_MMU_MODES + 1)
 
 /* generic store macro */
-
+#ifndef VBOX
 static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
+#else
+DECLINLINE(void) glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE v)
+#endif
 {
     int index;
     target_ulong addr;
@@ -218,8 +239,13 @@ static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE 
     addr = ptr;
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     is_user = CPU_MMU_INDEX;
+#ifndef VBOX
     if (__builtin_expect(env->tlb_table[is_user][index].addr_write != 
                          (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))), 0)) {
+#else
+    if (RT_UNLIKELY(env->tlb_table[is_user][index].addr_write != 
+                         (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
+#endif
         glue(glue(__st, SUFFIX), MMUSUFFIX)(addr, v, is_user);
     } else {
         physaddr = addr + env->tlb_table[is_user][index].addend;
@@ -234,7 +260,11 @@ static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE 
 #if ACCESS_TYPE != (NB_MMU_MODES + 1)
 
 #if DATA_SIZE == 8
+#ifndef VBOX
 static inline float64 glue(ldfq, MEMSUFFIX)(target_ulong ptr)
+#else
+DECLINLINE(float64) glue(ldfq, MEMSUFFIX)(target_ulong ptr)
+#endif
 {
     union {
         float64 d;
@@ -244,7 +274,11 @@ static inline float64 glue(ldfq, MEMSUFFIX)(target_ulong ptr)
     return u.d;
 }
 
+#ifndef VBOX
 static inline void glue(stfq, MEMSUFFIX)(target_ulong ptr, float64 v)
+#else
+DECLINLINE(void) glue(stfq, MEMSUFFIX)(target_ulong ptr, float64 v)
+#endif
 {
     union {
         float64 d;
@@ -256,7 +290,11 @@ static inline void glue(stfq, MEMSUFFIX)(target_ulong ptr, float64 v)
 #endif /* DATA_SIZE == 8 */
 
 #if DATA_SIZE == 4
+#ifndef VBOX
 static inline float32 glue(ldfl, MEMSUFFIX)(target_ulong ptr)
+#else
+DECLINLINE(float32) glue(ldfl, MEMSUFFIX)(target_ulong ptr)
+#endif
 {
     union {
         float32 f;
@@ -266,7 +304,11 @@ static inline float32 glue(ldfl, MEMSUFFIX)(target_ulong ptr)
     return u.f;
 }
 
+#ifndef VBOX
 static inline void glue(stfl, MEMSUFFIX)(target_ulong ptr, float32 v)
+#else
+DECLINLINE(void) glue(stfl, MEMSUFFIX)(target_ulong ptr, float32 v)
+#endif
 {
     union {
         float32 f;

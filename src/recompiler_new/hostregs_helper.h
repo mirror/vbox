@@ -36,21 +36,39 @@
 
 #if defined(DECLARE_HOST_REGS)
 
+#ifndef VBOX
 #define DO_REG(REG)					\
     register host_reg_t reg_AREG##REG asm(AREG##REG);	\
     volatile host_reg_t saved_AREG##REG;
+#else
+#define DO_REG(REG)			               	           \
+    REGISTER_BOUND_GLOBAL(host_reg_t, reg_AREG##REG, AREG##REG);   \
+    volatile host_reg_t saved_AREG##REG;
+#endif
 
 #elif defined(SAVE_HOST_REGS)
 
+#ifndef VBOX
 #define DO_REG(REG)					\
     __asm__ __volatile__ ("" : "=r" (reg_AREG##REG));	\
     saved_AREG##REG = reg_AREG##REG;
+#else /* VBOX */
+#define DO_REG(REG)					\
+    SAVE_GLOBAL_REGISTER(REG, reg_AREG##REG);	        \
+    saved_AREG##REG = reg_AREG##REG;
+#endif /* VBOX */
 
 #else
 
+#ifndef VBOX
 #define DO_REG(REG)                                     \
     reg_AREG##REG = saved_AREG##REG;		        \
     __asm__ __volatile__ ("" : : "r" (reg_AREG##REG));
+#else /* VBOX */
+#define DO_REG(REG)                                     \
+    reg_AREG##REG = saved_AREG##REG;		        \
+    RESTORE_GLOBAL_REGISTER(REG, reg_AREG##REG);
+#endif
 
 #endif
 
