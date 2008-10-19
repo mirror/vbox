@@ -25,7 +25,6 @@ include $(KBUILD_PATH)/subheader.kmk
 
 REM_MOD              += VBoxREM
 DLLS                 += VBoxREM
-IMPORT_LIBS          += VBoxREMImp
 
 DEFS                 += VBOX_WITH_NEW_RECOMPILER
 $(REM_MOD)_TEMPLATE  = VBOXR3NP

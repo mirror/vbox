@@ -87,12 +87,20 @@ floatx80 int64_to_floatx80( int64_t v STATUS_PARAM)
 
 /* XXX: this code implements the x86 behaviour, not the IEEE one.  */
 #if HOST_LONG_BITS == 32
+#ifndef VBOX
 static inline int long_to_int32(long a)
+#else /* VBOX */
+DECLINLINE(int) long_to_int32(long a)
+#endif /* VBOX */
 {
     return a;
 }
 #else
+#ifndef VBOX
 static inline int long_to_int32(long a)
+#else /* VBOX */
+DECLINLINE(int) long_to_int32(long a)
+#endif /* VBOX */
 {
     if (a != (int32_t)a) 
         a = 0x80000000;

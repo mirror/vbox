@@ -157,6 +157,7 @@ typedef struct timeval qemu_timeval;
 #define SAVE_GLOBAL_REGISTER(reg, var)
 #define RESTORE_GLOBAL_REGISTER(reg, var)
 #define DECLALWAYSINLINE(type) DECLINLINE(type)
+#define FORCE_RET() ;
 #else /* ! _MSC_VER */
 #define ALIGNED_MEMBER(type, name, bytes) type name __attribute__((aligned(bytes)))
 #define ALIGNED_MEMBER_DEF(type, name) type name __attribute__((aligned()))
@@ -165,6 +166,7 @@ typedef struct timeval qemu_timeval;
 #define SAVE_GLOBAL_REGISTER(reg, var)     __asm__ __volatile__ ("" : "=r" (var))
 #define RESTORE_GLOBAL_REGISTER(reg, var) __asm__ __volatile__ ("" : : "r" (var))
 #define DECLALWAYSINLINE(type) static always_inline type
+#define FORCE_RET() __asm__ __volatile__("" : : : "memory");
 #endif /* !_MSC_VER */
 #endif /* VBOX */
 
