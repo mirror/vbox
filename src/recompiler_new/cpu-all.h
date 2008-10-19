@@ -31,9 +31,9 @@
 
 #ifdef VBOX
 # ifndef LOG_GROUP
-#  include <VBox/log.h>
 #  define LOG_GROUP LOG_GROUP_REM
 # endif
+# include <VBox/log.h>
 # include <VBox/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
 #endif
 
@@ -94,30 +94,54 @@ static inline void tswap64s(uint64_t *s)
 
 #else
 
+#ifndef VBOX
 static inline uint16_t tswap16(uint16_t s)
+#else
+DECLINLINE(uint16_t) tswap16(uint16_t s)
+#endif
 {
     return s;
 }
 
+#ifndef VBOX
 static inline uint32_t tswap32(uint32_t s)
+#else
+DECLINLINE(uint32_t) tswap32(uint32_t s)
+#endif
 {
     return s;
 }
 
+#ifndef VBOX
 static inline uint64_t tswap64(uint64_t s)
+#else
+DECLINLINE(uint64_t) tswap64(uint64_t s)
+#endif
 {
     return s;
 }
 
+#ifndef VBOX
 static inline void tswap16s(uint16_t *s)
+#else
+DECLINLINE(void) tswap16s(uint16_t *s)
+#endif
 {
 }
 
+#ifndef VBOX
 static inline void tswap32s(uint32_t *s)
+#else
+DECLINLINE(void) tswap32s(uint32_t *s)
+#endif
 {
 }
 
+#ifndef VBOX
 static inline void tswap64s(uint64_t *s)
+#else
+DECLINLINE(void) tswap64s(uint64_t *s)
+#endif
 {
 }
 
@@ -248,61 +272,61 @@ void     remR3GrowDynRange(unsigned long physaddr);
 # define VBOX_CHECK_ADDR(ptr) do { } while (0)
 #endif
 
-static inline int ldub_p(void *ptr)
+DECLINLINE(int) ldub_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadU8((uintptr_t)ptr);
 }
 
-static inline int ldsb_p(void *ptr)
+DECLINLINE(int) ldsb_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadS8((uintptr_t)ptr);
 }
 
-static inline void stb_p(void *ptr, int v)
+DECLINLINE(void) stb_p(void *ptr, int v)
 {
     VBOX_CHECK_ADDR(ptr);
     remR3PhysWriteU8((uintptr_t)ptr, v);
 }
 
-static inline int lduw_le_p(void *ptr)
+DECLINLINE(int) lduw_le_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadU16((uintptr_t)ptr);
 }
 
-static inline int ldsw_le_p(void *ptr)
+DECLINLINE(int) ldsw_le_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadS16((uintptr_t)ptr);
 }
 
-static inline void stw_le_p(void *ptr, int v)
+DECLINLINE(void) stw_le_p(void *ptr, int v)
 {
     VBOX_CHECK_ADDR(ptr);
     remR3PhysWriteU16((uintptr_t)ptr, v);
 }
 
-static inline int ldl_le_p(void *ptr)
+DECLINLINE(int) ldl_le_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadU32((uintptr_t)ptr);
 }
 
-static inline void stl_le_p(void *ptr, int v)
+DECLINLINE(void) stl_le_p(void *ptr, int v)
 {
     VBOX_CHECK_ADDR(ptr);
     remR3PhysWriteU32((uintptr_t)ptr, v);
 }
 
-static inline void stq_le_p(void *ptr, uint64_t v)
+DECLINLINE(void) stq_le_p(void *ptr, uint64_t v)
 {
     VBOX_CHECK_ADDR(ptr);
     remR3PhysWriteU64((uintptr_t)ptr, v);
 }
 
-static inline uint64_t ldq_le_p(void *ptr)
+DECLINLINE(uint64_t) ldq_le_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadU64((uintptr_t)ptr);
@@ -312,7 +336,7 @@ static inline uint64_t ldq_le_p(void *ptr)
 
 /* float access */
 
-static inline float32 ldfl_le_p(void *ptr)
+DECLINLINE(float32) ldfl_le_p(void *ptr)
 {
     union {
         float32 f;
@@ -322,7 +346,7 @@ static inline float32 ldfl_le_p(void *ptr)
     return u.f;
 }
 
-static inline void stfl_le_p(void *ptr, float32 v)
+DECLINLINE(void) stfl_le_p(void *ptr, float32 v)
 {
     union {
         float32 f;
@@ -332,20 +356,20 @@ static inline void stfl_le_p(void *ptr, float32 v)
     stl_le_p(ptr, u.i);
 }
 
-static inline float64 ldfq_le_p(void *ptr)
+DECLINLINE(float64) ldfq_le_p(void *ptr)
 {
     CPU_DoubleU u;
     u.l.lower = ldl_le_p(ptr);
-    u.l.upper = ldl_le_p(ptr + 4);
+    u.l.upper = ldl_le_p((uint8_t*)ptr + 4);
     return u.d;
 }
 
-static inline void stfq_le_p(void *ptr, float64 v)
+DECLINLINE(void) stfq_le_p(void *ptr, float64 v)
 {
     CPU_DoubleU u;
     u.d = v;
     stl_le_p(ptr, u.l.lower);
-    stl_le_p(ptr + 4, u.l.upper);
+    stl_le_p((uint8_t*)ptr + 4, u.l.upper);
 }
 
 #else  /* !VBOX */
@@ -548,6 +572,7 @@ static inline void stfq_le_p(void *ptr, float64 v)
 
 #if !defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
 
+#ifndef VBOX
 static inline int lduw_be_p(void *ptr)
 {
 #if defined(__i386__)
@@ -562,7 +587,24 @@ static inline int lduw_be_p(void *ptr)
     return ((b[0] << 8) | b[1]);
 #endif
 }
+#else /* VBOX */
+DECLINLINE(int) lduw_be_p(void *ptr)
+{
+#if defined(__i386__) && !defined(_MSC_VER)
+    int val;
+    asm volatile ("movzwl %1, %0\n"
+                  "xchgb %b0, %h0\n"
+                  : "=q" (val)
+                  : "m" (*(uint16_t *)ptr));
+    return val;
+#else
+    uint8_t *b = (uint8_t *) ptr;
+    return ((b[0] << 8) | b[1]);
+#endif
+}
+#endif
 
+#ifndef VBOX
 static inline int ldsw_be_p(void *ptr)
 {
 #if defined(__i386__)
@@ -577,7 +619,24 @@ static inline int ldsw_be_p(void *ptr)
     return (int16_t)((b[0] << 8) | b[1]);
 #endif
 }
+#else
+DECLINLINE(int) ldsw_be_p(void *ptr)
+{
+#if defined(__i386__) && !defined(_MSC_VER)
+    int val;
+    asm volatile ("movzwl %1, %0\n"
+                  "xchgb %b0, %h0\n"
+                  : "=q" (val)
+                  : "m" (*(uint16_t *)ptr));
+    return (int16_t)val;
+#else
+    uint8_t *b = (uint8_t *) ptr;
+    return (int16_t)((b[0] << 8) | b[1]);
+#endif
+}
+#endif
 
+#ifndef VBOX
 static inline int ldl_be_p(void *ptr)
 {
 #if defined(__i386__) || defined(__x86_64__)
@@ -592,15 +651,36 @@ static inline int ldl_be_p(void *ptr)
     return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
 #endif
 }
+#else
+DECLINLINE(int) ldl_be_p(void *ptr)
+{
+#if (defined(__i386__) || defined(__x86_64__)) && !defined(_MSC_VER)
+    int val;
+    asm volatile ("movl %1, %0\n"
+                  "bswap %0\n"
+                  : "=r" (val)
+                  : "m" (*(uint32_t *)ptr));
+    return val;
+#else
+    uint8_t *b = (uint8_t *) ptr;
+    return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
+#endif
+}
+#endif
 
+#ifndef VBOX
 static inline uint64_t ldq_be_p(void *ptr)
+#else
+DECLINLINE(uint64_t) ldq_be_p(void *ptr)
+#endif
 {
     uint32_t a,b;
     a = ldl_be_p(ptr);
-    b = ldl_be_p(ptr+4);
+    b = ldl_be_p((uint8_t*)ptr+4);
     return (((uint64_t)a<<32)|b);
 }
 
+#ifndef VBOX
 static inline void stw_be_p(void *ptr, int v)
 {
 #if defined(__i386__)
@@ -614,7 +694,24 @@ static inline void stw_be_p(void *ptr, int v)
     d[1] = v;
 #endif
 }
+#else
+DECLINLINE(void) stw_be_p(void *ptr, int v)
+{
+#if defined(__i386__) && !defined(_MSC_VER)
+    asm volatile ("xchgb %b0, %h0\n"
+                  "movw %w0, %1\n"
+                  : "=q" (v)
+                  : "m" (*(uint16_t *)ptr), "0" (v));
+#else
+    uint8_t *d = (uint8_t *) ptr;
+    d[0] = v >> 8;
+    d[1] = v;
+#endif
+}
 
+#endif /* VBOX */
+
+#ifndef VBOX
 static inline void stl_be_p(void *ptr, int v)
 {
 #if defined(__i386__) || defined(__x86_64__)
@@ -630,16 +727,40 @@ static inline void stl_be_p(void *ptr, int v)
     d[3] = v;
 #endif
 }
+#else
+DECLINLINE(void) stl_be_p(void *ptr, int v)
+{
+#if !defined(_MSC_VER) && (defined(__i386__) || defined(__x86_64__))
+    asm volatile ("bswap %0\n"
+                  "movl %0, %1\n"
+                  : "=r" (v)
+                  : "m" (*(uint32_t *)ptr), "0" (v));
+#else
+    uint8_t *d = (uint8_t *) ptr;
+    d[0] = v >> 24;
+    d[1] = v >> 16;
+    d[2] = v >> 8;
+    d[3] = v;
+#endif
+}
+#endif /* VBOX */
 
+#ifndef VBOX
 static inline void stq_be_p(void *ptr, uint64_t v)
+#else
+DECLINLINE(void) stq_be_p(void *ptr, uint64_t v)
+#endif
 {
     stl_be_p(ptr, v >> 32);
-    stl_be_p(ptr + 4, v);
+    stl_be_p((uint8_t*)ptr + 4, v);
 }
 
 /* float access */
-
+#ifndef VBOX
 static inline float32 ldfl_be_p(void *ptr)
+#else
+DECLINLINE(float32) ldfl_be_p(void *ptr)
+#endif
 {
     union {
         float32 f;
@@ -649,7 +770,11 @@ static inline float32 ldfl_be_p(void *ptr)
     return u.f;
 }
 
+#ifndef VBOX
 static inline void stfl_be_p(void *ptr, float32 v)
+#else
+DECLINLINE(void) stfl_be_p(void *ptr, float32 v)
+#endif
 {
     union {
         float32 f;
@@ -659,20 +784,28 @@ static inline void stfl_be_p(void *ptr, float32 v)
     stl_be_p(ptr, u.i);
 }
 
+#ifndef VBOX
 static inline float64 ldfq_be_p(void *ptr)
+#else
+DECLINLINE(float64) ldfq_be_p(void *ptr)
+#endif
 {
     CPU_DoubleU u;
     u.l.upper = ldl_be_p(ptr);
-    u.l.lower = ldl_be_p(ptr + 4);
+    u.l.lower = ldl_be_p((uint8_t*)ptr + 4);
     return u.d;
 }
 
+#ifndef VBOX
 static inline void stfq_be_p(void *ptr, float64 v)
+#else
+DECLINLINE(void) stfq_be_p(void *ptr, float64 v)
+#endif
 {
     CPU_DoubleU u;
     u.d = v;
     stl_be_p(ptr, u.l.upper);
-    stl_be_p(ptr + 4, u.l.lower);
+    stl_be_p((uint8_t*)ptr + 4, u.l.lower);
 }
 
 #else
@@ -1102,13 +1235,23 @@ CPUReadMemoryFunc **cpu_get_io_memory_read(int io_index);
 
 void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                             int len, int is_write);
+#ifndef VBOX
 static inline void cpu_physical_memory_read(target_phys_addr_t addr,
                                             uint8_t *buf, int len)
+#else
+DECLINLINE(void) cpu_physical_memory_read(target_phys_addr_t addr,
+                                          uint8_t *buf, int len)
+#endif
 {
     cpu_physical_memory_rw(addr, buf, len, 0);
 }
+#ifndef VBOX
 static inline void cpu_physical_memory_write(target_phys_addr_t addr,
                                              const uint8_t *buf, int len)
+#else
+DECLINLINE(void) cpu_physical_memory_write(target_phys_addr_t addr,
+                                           const uint8_t *buf, int len)
+#endif
 {
     cpu_physical_memory_rw(addr, (uint8_t *)buf, len, 1);
 }
@@ -1134,45 +1277,61 @@ int cpu_memory_rw_debug(CPUState *env, target_ulong addr,
 #define MIGRATION_DIRTY_FLAG 0x08
 
 /* read dirty bit (return 0 or 1) */
+#ifndef VBOX
 static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
 {
-#ifdef VBOX
+    return phys_ram_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
+}
+#else
+DECLINLINE(int) cpu_physical_memory_is_dirty(ram_addr_t addr)
+{
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
         Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
         /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
         return 0;
     }
-#endif
     return phys_ram_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
 }
+#endif
 
+#ifndef VBOX
 static inline int cpu_physical_memory_get_dirty(ram_addr_t addr,
                                                 int dirty_flags)
 {
-#ifdef VBOX
+    return phys_ram_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
+}
+#else
+DECLINLINE(int) cpu_physical_memory_get_dirty(ram_addr_t addr,
+                                              int dirty_flags)
+{
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
         Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
         /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
         return 0xff & dirty_flags; /** @todo I don't think this is the right thing to return, fix! */
     }
-#endif
     return phys_ram_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
 }
+#endif
 
+#ifndef VBOX
 static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
 {
-#ifdef VBOX
+    phys_ram_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
+}
+#else
+DECLINLINE(void) cpu_physical_memory_set_dirty(ram_addr_t addr)
+{
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
         Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
         /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
         return;
     }
-#endif
     phys_ram_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
 }
+#endif
 
 void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
                                      int dirty_flags);
@@ -1188,7 +1347,14 @@ void dump_exec_info(FILE *f,
 /*******************************************/
 /* host CPU ticks (if available) */
 
-#if defined(__powerpc__)
+#ifdef VBOX
+
+DECLINLINE(int64_t) cpu_get_real_ticks(void)
+{
+    return  ASMReadTSC();
+}
+
+#elif defined(__powerpc__)
 
 static inline uint32_t get_tbl(void)
 {

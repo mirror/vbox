@@ -168,7 +168,11 @@ static TranslationBlock *tb_find_slow(target_ulong pc,
     return tb;
 }
 
+#ifndef VBOX
 static inline TranslationBlock *tb_find_fast(void)
+#else
+DECLINLINE(TranslationBlock *) tb_find_fast(void)
+#endif
 {
     TranslationBlock *tb;
     target_ulong cs_base, pc;
