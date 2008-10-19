@@ -33,9 +33,7 @@ these four paragraphs for those parts of this code that are retained.
 #define SOFTFLOAT_H
 
 #ifdef VBOX
-#ifndef _MSC_VER
-#include <inttypes.h>
-#endif
+#include <VBox/types.h>
 #endif
 #include "config.h"
 

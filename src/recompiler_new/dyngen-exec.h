@@ -226,8 +226,10 @@ typedef void * host_reg_t;
 #define AREG3 "r6"
 #endif
 
+#ifndef VBOX
 /* force GCC to generate only one epilog at the end of the function */
 #define FORCE_RET() __asm__ __volatile__("" : : : "memory");
+#endif
 
 #ifndef OPPROTO
 #define OPPROTO
@@ -313,9 +315,11 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #endif
 
 
+#ifdef VBOX
+#define GETPC() ASMReturnAddress() 
+#elif defined(__s390__)
 /* The return address may point to the start of the next instruction.
    Subtracting one gets us the call instruction itself.  */
-#if defined(__s390__)
 # define GETPC() ((void*)(((unsigned long)__builtin_return_address(0) & 0x7fffffffUL) - 1))
 #elif defined(__arm__)
 /* Thumb return addresses have the low bit set, so we need to subtract two.
