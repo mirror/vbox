@@ -3490,19 +3490,20 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
                                         GCPtrPC,
                                         env->cr[3],
                                         env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE), /** @todo add longmode flag */
-                                        &pvPC);
+                                        (void**)&pvPC);
         if (VBOX_FAILURE(rc))
         {
             if (!PATMIsPatchGCAddr(env->pVM, GCPtrPC))
                 return false;
-            pvPC = (char *)PATMR3QueryPatchMemHC(env->pVM, NULL)
+            pvPC = (uint8_t *)PATMR3QueryPatchMemHC(env->pVM, NULL)
                 + (GCPtrPC - PATMR3QueryPatchMemGC(env->pVM, NULL));
         }
     }
     else
     {
         /* physical address */
-        rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16, &pvPC);
+        rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16, 
+                                 (void**)&pvPC);
         if (VBOX_FAILURE(rc))
             return false;
     }
@@ -3590,12 +3591,12 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
                                             GCPtrPC,
                                             env->cr[3],
                                             env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE),
-                                            &pvPC);
+                                            (void**)&pvPC);
         if (VBOX_FAILURE(rc))
         {
             if (!PATMIsPatchGCAddr(pVM, GCPtrPC))
                 return false;
-            pvPC = (char *)PATMR3QueryPatchMemHC(pVM, NULL)
+            pvPC = (uint8_t *)PATMR3QueryPatchMemHC(pVM, NULL)
                 + (GCPtrPC - PATMR3QueryPatchMemGC(pVM, NULL));
         }
     }
@@ -3603,7 +3604,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     {
 
         /* physical address */
-        int rc = PGMPhysGCPhys2HCPtr(pVM, (RTGCPHYS)GCPtrPC, 16, &pvPC);
+        int rc = PGMPhysGCPhys2HCPtr(pVM, (RTGCPHYS)GCPtrPC, 16, (void**)&pvPC);
         if (VBOX_FAILURE(rc))
             return false;
     }

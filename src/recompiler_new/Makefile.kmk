@@ -30,7 +30,6 @@ IMPORT_LIBS          += VBoxREMImp
 DEFS                 += VBOX_WITH_NEW_RECOMPILER
 $(REM_MOD)_TEMPLATE  = VBOXR3NP
 
-
 OTHER_CLEAN          += 
 
 #
@@ -49,7 +48,6 @@ ifdef VBOX_SOLARIS_10
 else
  $(REM_MOD)_DEFS.solaris = HOST_SOLARIS=11
 endif
-$(REM_MOD)_DEFS.solaris += 
 
 $(REM_MOD)_INCS             = 	  \
 	Sun 			  \
@@ -92,7 +90,7 @@ endif
 
 # gcc targets
 if1of ($(KBUILD_TARGET), linux darwin solaris)
-$(REM_MOD)_CFLAGS.debug    = -O0
+$(REM_MOD)_CFLAGS.debug     = -O0
 $(REM_MOD)_CFLAGS.release  += -fomit-frame-pointer -fno-gcse
 endif
 $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
@@ -114,6 +112,7 @@ $(REM_MOD)_LIBS           = 	\
 
 
 if1of ($(KBUILD_TARGET), linux darwin solaris)
+$(REM_MOD)_DEFS.solaris += 
 # Extra flags for these source modules.
 target-i386/op-helper.c_CFLAGS.x86 = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
 cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
@@ -132,43 +131,6 @@ testmath_DEFS           = MATHTEST_STANDALONE
 testmath_SOURCES        = Sun/testmath.c
 #testmath_SOURCES        += $(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
 
-
-#
-# The VBoxREM import library.
-#
-VBoxREMImp_TEMPLATE         = VBOXR3
-ifeq ($(KBUILD_TARGET),darwin)
-VBoxREMImp_INST             = $(INST_LIB)
-endif
-VBoxREMImp_SOURCES.win      = VBoxREM.def
-VBoxREMImp_SOURCES.os2      = $(PATH_VBoxREMImp)/VBoxREMOS2.def
-ifeq ($(filter win os2,$(KBUILD_TARGET)),)
-VBoxREMImp_SOURCES          = $(PATH_VBoxREMImp)/VBoxREMImp.c
-VBoxREMImp_CLEAN            = $(PATH_VBoxREMImp)/VBoxREMImp.c
-endif
-ifneq ($(filter-out darwin os2 win,$(KBUILD_TARGET)),)
-VBoxREMImp_SONAME           = VBoxREM$(SUFF_DLL)
-endif
-VBoxREMImp_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
-VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
-
-$$(PATH_VBoxREMImp)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,,$@)
-	$(QUIET)$(APPEND) -t $@ '#ifdef VBOX_HAVE_VISIBILITY_HIDDEN'
-	$(QUIET)$(APPEND)    $@ '# define EXPORT __attribute__((visibility("default")))'
-	$(QUIET)$(APPEND)    $@ '#else'
-	$(QUIET)$(APPEND)    $@ '# define EXPORT'
-	$(QUIET)$(APPEND)    $@ '#endif'
-	$(QUIET)$(APPEND)    $@ ''
-	$(QUIET)$(SED) -f $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed --append $@ $<
-
-$$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(SED) \
-		-e 's/^[ \t][ \t]*REMR3/    _REMR3/' \
-		-e 's/\.[Dd][Ll][Ll]//' \
-		-e 's/^LIBRARY .*/LIBRARY VBoxREM INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
-		--output $@ \
-		$<
 
 include $(KBUILD_PATH)/subfooter.kmk
 
