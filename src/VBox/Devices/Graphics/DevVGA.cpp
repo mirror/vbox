@@ -348,7 +348,7 @@ DECLINLINE(void) vga_set_dirty(VGAState *pThis, RTGCPHYS offVRAM)
 {
     AssertMsg(offVRAM < pThis->vram_size, ("offVRAM = %p, pThis->vram_size = %p\n", offVRAM, pThis->vram_size));
     ASMBitSet(&pThis->au32DirtyBitmap[0], offVRAM >> PAGE_SHIFT);
-    pThis->fHasDirtyBits = true;
+    pThis->fHaveDirtyBits = true;
 }
 
 /**
@@ -683,19 +683,6 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         Log(("vga: write SR%x = 0x%02x\n", s->sr_index, val));
 #endif
         s->sr[s->sr_index] = val & sr_mask[s->sr_index];
-
-#ifndef IN_GC
-        /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
-        if (    s->sr_index == 4 /* mode */
-            ||  s->sr_index == 2 /* plane mask */)
-        {
-            if (s->fRemappedVGA)
-            {
-                IOMMMIOResetRegion(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), 0x000a0000);
-                s->fRemappedVGA = false;
-            }
-        }
-#endif
         break;
     case 0x3c7:
         s->dac_read_index = val;
@@ -723,20 +710,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         Log(("vga: write GR%x = 0x%02x\n", s->gr_index, val));
 #endif
         s->gr[s->gr_index] = val & gr_mask[s->gr_index];
-
-#ifndef IN_GC
-        /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
-        if (s->gr_index == 6 /* memory map mode */)
-        {
-            if (s->fRemappedVGA)
-            {
-                IOMMMIOResetRegion(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), 0x000a0000);
-                s->fRemappedVGA = false;
-            }
-        }
-#endif
         break;
-
     case 0x3b4:
     case 0x3d4:
         s->cr_index = val;
@@ -905,17 +879,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             val &= s->vbe_bank_mask;
             s->vbe_regs[s->vbe_index] = val;
             s->bank_offset = (val << 16);
-
-#ifndef IN_GC
-            /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
-            if (s->fRemappedVGA)
-            {
-                IOMMMIOResetRegion(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), 0x000a0000);
-                s->fRemappedVGA = false;
-            }
-#endif
             break;
-
         case VBE_DISPI_INDEX_ENABLE:
 #ifndef IN_RING3
             return VINF_IOM_HC_IOPORT_WRITE;
@@ -1036,13 +1000,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
              * is used by the display to disable VBVA.
              */
             s->pDrv->pfnLFBModeChange(s->pDrv, (val & VBE_DISPI_ENABLED) != 0);
-
-            /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
-            if (s->fRemappedVGA)
-            {
-                IOMMMIOResetRegion(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), 0x000a0000);
-                s->fRemappedVGA = false;
-            }
             break;
 #endif /* IN_RING3 */
         case VBE_DISPI_INDEX_VIRT_WIDTH:
@@ -1123,9 +1080,6 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
 #endif
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
-#ifdef VBOX
-    RTGCPHYS GCPhys = addr; /* save original address */
-#endif
     addr &= 0x1ffff;
     switch(memory_map_mode) {
     case 0:
@@ -1159,14 +1113,6 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         ret = s->vram_ptr[addr];
 #else /* VBOX */
         ret = s->CTX_SUFF(vram_ptr)[addr];
-# ifdef IN_RING0
-        /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
-        if ((s->sr[2] & 3) == 3)
-        {
-            IOMMMIOModifyPage(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
-            s->fRemappedVGA = true;
-        }
-# endif /* IN_RING0 */
 #endif /* VBOX */
     } else if (!(s->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
         /* odd/even mode (aka text mode mapping) */
@@ -1250,9 +1196,6 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #endif
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
-#ifdef VBOX
-    RTGCPHYS GCPhys = addr; /* save original address */
-#endif
     addr &= 0x1ffff;
     switch(memory_map_mode) {
     case 0:
@@ -1283,28 +1226,18 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
-# ifdef IN_GC
+#ifdef IN_GC
             if (addr >= VGA_MAPPING_SIZE)
                 return VINF_IOM_HC_MMIO_WRITE;
-# else
+#else
             if (addr >= s->vram_size)
             {
                 AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
                                  addr, s->bank_offset, memory_map_mode));
                 return VINF_SUCCESS;
             }
-# endif
+#endif
             s->CTX_SUFF(vram_ptr)[addr] = val;
-
-# ifdef IN_RING0
-            /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
-            if ((s->sr[2] & 3) == 3)
-            {
-                IOMMMIOModifyPage(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
-                s->fRemappedVGA = true;
-            }
-# endif /* IN_RING0 */
-
 #endif /* VBOX */
 #ifdef DEBUG_VGA_MEM
             Log(("vga: chain4: [0x%x]\n", addr));
@@ -4392,7 +4325,6 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
-    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
 #ifdef DEBUG_sunlover
     LogFlow(("vgaPortUpdateDisplay\n"));
@@ -4404,17 +4336,11 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     if (rc != VINF_SUCCESS)
         return rc;
 
-    if (    pThis->fHasDirtyBits 
-        &&  pThis->GCPhysVRAM 
-        &&  pThis->GCPhysVRAM != NIL_RTGCPHYS32)
+    if (pThis->fHaveDirtyBits && pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS32)
     {
+        PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
         PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
-        pThis->fHasDirtyBits = false;
-    }
-    if (pThis->fRemappedVGA)
-    {
-        IOMMMIOResetRegion(PDMDevHlpGetVM(pDevIns), 0x000a0000);
-        pThis->fRemappedVGA = false;
+        pThis->fHaveDirtyBits = false;
     }
 
     return VINF_SUCCESS;
@@ -4431,7 +4357,6 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
-    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
     /* This is called both in VBVA mode and normal modes. */
 
@@ -4444,15 +4369,10 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
     int rc = vga_update_display(pThis);
 
     /* The dirty bits array has been just cleared, reset handlers as well. */
-    if (    pThis->GCPhysVRAM 
-        &&  pThis->GCPhysVRAM != NIL_RTGCPHYS32)
+    if (pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS32)
     {
+        PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
         PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
-    }
-    if (pThis->fRemappedVGA)
-    {
-        IOMMMIOResetRegion(PDMDevHlpGetVM(pDevIns), 0x000a0000);
-        pThis->fRemappedVGA = false;
     }
 
     return rc;
@@ -5064,11 +4984,6 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     {
         int rc = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
         AssertRC(rc);
-    }
-    if (pThis->fRemappedVGA)
-    {
-        IOMMMIOResetRegion(PDMDevHlpGetVM(pDevIns), 0x000a0000);
-        pThis->fRemappedVGA = false;
     }
 
     /*
