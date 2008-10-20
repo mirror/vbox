@@ -946,6 +946,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             /* Do the actual remapping here. This page now serves as an alias for the backing memory specified. */
             pPage->HCPhys = pPageRemap->HCPhys;
 
+            LogFlow(("PGMHandlerPhysicalPageAlias %VGp -> %VGp - %VHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
 #ifndef IN_GC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
