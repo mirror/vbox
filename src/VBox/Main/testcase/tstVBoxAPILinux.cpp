@@ -467,9 +467,10 @@ int main(int argc, char *argv[])
      */
     if (sizeof(PRUnichar) != sizeof(wchar_t))
     {
-        printf("Error: sizeof(PRUnichar) {%d} != sizeof(wchar_t) {%d}!\n"
+        printf("Error: sizeof(PRUnichar) {%lu} != sizeof(wchar_t) {%lu}!\n"
                "Probably, you forgot the -fshort-wchar compiler option.\n",
-               sizeof(PRUnichar), sizeof(wchar_t));
+               (unsigned long) sizeof(PRUnichar),
+               (unsigned long) sizeof(wchar_t));
         return -1;
     }
 
