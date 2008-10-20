@@ -518,7 +518,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine .
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -1725,18 +1725,19 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
     return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, cb);
 }
 
+
 #ifndef IN_GC
 /**
  * Modify an existing MMIO region page; map to another guest physical region and change the access flags
  *
- * @returns VBox status code. 
+ * @returns VBox status code.
  *
  * @param   pVM             The virtual machine.
  * @param   GCPhys          Physical address that's part of the MMIO region to be changed.
  * @param   GCPhysRemapped  Remapped address.
  * @param   fPageFlags      Page flags to set (typically X86_PTE_RW).
  */
-VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
+VMMDECL(int) IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
 {
     Assert(fPageFlags == (X86_PTE_RW|X86_PTE_P));
 
@@ -1775,17 +1776,18 @@ VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemappe
     return VINF_SUCCESS;
 }
 
+
 /**
  * Reset a previously modified MMIO region; restore the access flags.
  *
- * @returns VBox status code. 
+ * @returns VBox status code.
  *
  * @param   pVM             The virtual machine.
  * @param   GCPhys          Physical address that's part of the MMIO region to be reset.
  */
 VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
 {
-    unsigned cb;
+    uint32_t cb;
 
     Log(("IOMMMIOResetRegion %VGp\n", GCPhys));
 
@@ -1806,7 +1808,7 @@ VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     cb     = pRange->cb;
     GCPhys = pRange->GCPhys;
 
-    while(cb)
+    while (cb)
     {
         int rc = PGMHandlerPhysicalPageReset(pVM, pRange->GCPhys, GCPhys);
         AssertRC(rc);

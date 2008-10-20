@@ -47,7 +47,7 @@
 #include "HWACCMInternal.h"
 #include "PATMInternal.h"
 #ifdef VBOX_WITH_VMI
-#include "PARAVInternal.h"
+# include "PARAVInternal.h"
 #endif
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
