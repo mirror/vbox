@@ -2137,6 +2137,9 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     {
         progress.queryInterfaceTo (aProgress);
 
+        /* signal the client watcher thread */
+        updateClientWatcher();
+
         /* fire an event */
         onSessionStateChange (aMachineId, SessionState_Spawning);
     }
@@ -2931,6 +2934,45 @@ void VirtualBox::getOpenedMachines (SessionMachineVector &aVector)
     }
 
     aVector = SessionMachineVector (list.begin(), list.end());
+    return;
+}
+
+/**
+ *  Returns the list of opened machines (i.e. machines having direct sessions
+ *  opened by client processes).
+ *
+ *  @note the returned list contains smart pointers. So, clear it as soon as
+ *  it becomes no more necessary to release instances.
+ *  @note it can be possible that a session machine from the list has been
+ *  already uninitialized, so a) lock the instance and b) chheck for
+ *  instance->isReady() return value before manipulating the object directly
+ *  (i.e. not through COM methods).
+ *
+ *  @note Locks objects for reading.
+ */
+void VirtualBox::getSpawnedMachines (MachineVector &aVector)
+{
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), (void) 0);
+
+    std::list <ComObjPtr <Machine> > list;
+
+    {
+        AutoReadLock alock (this);
+
+        for (MachineList::iterator it = mData.mMachines.begin();
+             it != mData.mMachines.end();
+             ++ it)
+        {
+            ComObjPtr <Machine> m = (*it);
+            SessionState_T state;
+            m->COMGETTER(SessionState(&state));
+            if (state == SessionState_Spawning)
+                list.push_back (m);
+        }
+    }
+
+    aVector = MachineVector (list.begin(), list.end());
     return;
 }
 
@@ -4636,7 +4678,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
     Assert (that);
 
     SessionMachineVector machines;
+    MachineVector spawnedMachines;
     size_t cnt = 0;
+    size_t cntSpawned = 0;
 
 #if defined(RT_OS_WINDOWS)
 
@@ -4704,6 +4748,14 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                 handles [0] = that->mWatcherData.mUpdateReq;
                 for (size_t i = 0; i < cnt; ++ i)
                     handles [i + 1] = (machines [i])->ipcSem();
+
+#if 0 /* untested */
+                /* check for spawn errors */
+                that->getSpawnedMachines (spawnedMachines);
+                cntSpawned = spawnedMachines.size();
+                for (size_t i = 0; i < cntSpawned; ++ i)
+                    (spawnedMachines [i])->checkForSpawnFailure();
+#endif
             }
         }
         while (true);
@@ -4904,6 +4956,12 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             need_update = false;
             for (size_t i = 0; i < cnt; ++ i)
                 need_update |= (machines [i])->checkForDeath();
+
+            that->getSpawnedMachines (spawnedMachines);
+            cntSpawned = spawnedMachines.size();
+
+            for (size_t i = 0; i < cntSpawned; ++ i)
+                (spawnedMachines [i])->checkForSpawnFailure();
 
             /* reap child processes */
             {
