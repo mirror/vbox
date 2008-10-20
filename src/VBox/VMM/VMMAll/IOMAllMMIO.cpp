@@ -1738,7 +1738,7 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
  */
 VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
 {
-    Assert(fPageFlags == X86_PTE_RW);
+    Assert(fPageFlags == (X86_PTE_RW|X86_PTE_P));
 
     Log(("IOMMMIOModifyPage %VGp -> %VGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
 
@@ -1762,7 +1762,7 @@ VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemappe
     AssertRCReturn(rc, rc);
 
     /* Mark it as writable and present so reads and writes no longer fault. */
-    rc = PGMShwSetPage(pVM, (RTGCPTR)GCPhys, PAGE_SIZE, X86_PTE_RW | X86_PTE_P);
+    rc = PGMShwSetPage(pVM, (RTGCPTR)GCPhys, PAGE_SIZE, fPageFlags);
     AssertRC(rc);
 
     return VINF_SUCCESS;
