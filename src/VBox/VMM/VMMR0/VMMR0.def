@@ -29,6 +29,8 @@ EXPORTS
     PDMQueueInsert
     PGMHandlerPhysicalPageTempOff
     PGMShwModifyPage
+    IOMMMIOResetRegion
+    IOMMMIOModifyPage
     RTLogDefaultInstance
     RTLogRelDefaultInstance
     RTLogLogger
