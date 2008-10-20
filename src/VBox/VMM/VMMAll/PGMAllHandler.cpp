@@ -898,6 +898,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
 
+
 /**
  * Temporarily turns off the access monitoring of a page within an MMIO
  * access handler region and remaps it to another guest physical region.
@@ -931,6 +932,11 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             Assert((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
 
             AssertReturn(pCur->enmType == PGMPHYSHANDLERTYPE_MMIO, VERR_ACCESS_DENIED);
+            /** @todo r=bird: This totally breaks the new PGMPAGE management. Will probably
+             *        have to require that the current page is the zero page... Require
+             *        GCPhysPageRemap to be a MMIO2 page might help matters because those
+             *        pages aren't managed dynamically (at least not yet).
+             *        VBOX_WITH_NEW_PHYS_CODE TODO!  */
 
             PPGMPAGE pPageRemap;
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPageRemap, &pPageRemap);
