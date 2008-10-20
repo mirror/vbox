@@ -3113,6 +3113,72 @@ ComObjPtr <SessionMachine> Machine::sessionMachine()
 }
 
 /**
+ *  Called from the client watcher thread to check for unexpected client
+ *  process death during Session_Spawning state.
+ *
+ *  @note On Win32 and on OS/2, this method is called only when we've got the
+ *  mutex (i.e. the client has either died or terminated normally). This
+ *  method always returns true.
+ *
+ *  @note On Linux, the method returns true if the client process has
+ *  terminated abnormally (and/or the session has been uninitialized) and
+ *  false if it is still alive.
+ *
+ *  @note Locks this object for writing.
+ */
+bool Machine::checkForSpawnFailure()
+{
+    AutoCaller autoCaller (this);
+    if (!autoCaller.isOk())
+    {
+        /* nothing to do */
+        LogFlowThisFunc (("Already uninitialized!"));
+        return true;
+    }
+
+    /* VirtualBox::addProcessToReap() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
+
+    if (mData->mSession.mState != SessionState_Spawning)
+    {
+        /* nothing to do */
+        LogFlowThisFunc (("Not spawning any more!"));
+        return true;
+    }
+
+    HRESULT rc = S_OK;
+
+    RTPROCSTATUS status;
+    int vrc = ::RTProcWait (mData->mSession.mPid, RTPROCWAIT_FLAGS_NOBLOCK,
+                            &status);
+
+    if (vrc != VERR_PROCESS_RUNNING)
+        rc = setError (E_FAIL,
+                       tr ("The virtual machine '%ls' terminated unexpectedly during startup"),
+                       name().raw());
+
+    if (FAILED (rc))
+    {
+        /* Remove the remote control from the list on failure
+         * and reset session state to Closed. */
+        mData->mSession.mRemoteControls.clear();
+        mData->mSession.mState = SessionState_Closed;
+
+        /* finalize the progress after setting the state, for consistency */
+        mData->mSession.mProgress->notifyComplete (rc);
+        mData->mSession.mProgress.setNull();
+
+        mParent->addProcessToReap (mData->mSession.mPid);
+        mData->mSession.mPid = NIL_RTPROCESS;
+
+        mParent->onSessionStateChange (mData->mUuid, SessionState_Closed);
+        return true;
+    }
+
+    return false;
+}
+
+/**
  *  Saves the registry entry of this machine to the given configuration node.
  *
  *  @param aEntryNode Node to save the registry entry to.

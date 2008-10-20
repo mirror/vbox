@@ -229,7 +229,9 @@ public:
     ComObjPtr <GuestOSType> getUnknownOSType();
 
     typedef std::vector <ComObjPtr <SessionMachine> > SessionMachineVector;
+    typedef std::vector <ComObjPtr <Machine> > MachineVector;
     void getOpenedMachines (SessionMachineVector &aVector);
+    void getSpawnedMachines (MachineVector &aVector);
 
     bool isMachineIdValid (const Guid &aId)
     {
