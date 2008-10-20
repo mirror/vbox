@@ -371,7 +371,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
             rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
             if (VBOX_SUCCESS(rc))
             {
-                if (PGM_PAGE_HAS_ANY_HANDLERS(pPage))
+                if (   PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage)
+                    || PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage))
                 {
                     if (PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage))
                     {
