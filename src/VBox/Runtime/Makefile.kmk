@@ -977,6 +977,8 @@ RuntimeR0Drv_SOURCES    = \
 ## This file is not included with extern "C" { ... } and therefore the function
 ## prototypes are mangled during C++ compilation. That's why we have to provide
 ## implementations with mangled function names.
+##
+## bird: Why don't we just extern "C" {} that file then?
 RuntimeR0Drv_SOURCES.linux = \
 	common/alloc/heapsimple.cpp \
 	common/string/strpbrk.cpp \
