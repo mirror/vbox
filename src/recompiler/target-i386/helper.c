@@ -28,7 +28,9 @@
  */
 #ifdef VBOX
 # include <VBox/err.h>
-# include <VBox/parav.h>
+# ifdef VBOX_WITH_VMI
+#  include <VBox/parav.h>
+# endif
 #endif
 #include "exec.h"
 
