@@ -1761,6 +1761,13 @@ VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemappe
     int rc = PGMHandlerPhysicalPageAlias(pVM, pRange->GCPhys, GCPhys, GCPhysRemapped);
     AssertRCReturn(rc, rc);
 
+#ifdef VBOX_STRICT
+    uint64_t fFlags;
+    RTHCPHYS HCPhys;
+    rc = PGMShwGetPage(pVM, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
+    Assert(rc == VERR_PAGE_NOT_PRESENT);
+#endif
+
     /* Mark it as writable and present so reads and writes no longer fault. */
     rc = PGMShwModifyPage(pVM, (RTGCPTR)GCPhys, 1, fPageFlags, ~fPageFlags);
     AssertRC(rc);
