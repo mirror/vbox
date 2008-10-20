@@ -1750,8 +1750,8 @@ VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemappe
                     ("Handlers and page tables are out of sync or something! GCPhys=%VGp\n", GCPhys),
                     VERR_INTERNAL_ERROR);
 
-    GCPhys         &= ~0xfff;
-    GCPhysRemapped &= ~0xfff;
+    GCPhys         &= ~(RTGCPHYS)0xfff;
+    GCPhysRemapped &= ~(RTGCPHYS)0xfff;
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
     if (    CPUMIsGuestInPagedProtectedMode(pVM)
