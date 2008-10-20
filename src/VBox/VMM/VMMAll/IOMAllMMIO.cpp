@@ -1761,12 +1761,6 @@ VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemappe
     int rc = PGMHandlerPhysicalPageAlias(pVM, pRange->GCPhys, GCPhys, GCPhysRemapped);
     AssertRCReturn(rc, rc);
 
-    /* Prefetch it as it's now marked as not present and our trap handler will
-     * still call the access handler.
-     */
-    rc = PGMPrefetchPage(pVM, (RTGCPTR)GCPhys);
-    AssertRC(rc);
-
     /* Mark it as writable and present so reads and writes no longer fault. */
     rc = PGMShwModifyPage(pVM, (RTGCPTR)GCPhys, 1, fPageFlags, ~fPageFlags);
     AssertRC(rc);
