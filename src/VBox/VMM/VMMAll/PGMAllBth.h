@@ -2778,7 +2778,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
     return rc;
 
 #else
-    AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_GST_TYPE, PGM_SHW_TYPE));
+    AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
     return VERR_INTERNAL_ERROR;
 #endif
