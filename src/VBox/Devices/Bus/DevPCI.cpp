@@ -54,11 +54,9 @@
 #include <VBox/pdmdev.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#ifdef IN_RING3
-# include <iprt/mem.h>
-#endif
 
 #include "../Builtins.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -89,7 +87,7 @@ typedef struct PCIBus
     /** Array of PCI devices. */
     R3PTRTYPE(PPCIDEVICE) devices[256];
     /** Array of bridges attached to the bus. */
-    R3PTRTYPE(PPCIDEVICE) apBridgesR3[256]; /* @todo: Waste of precious hypervisor space. */
+    R3PTRTYPE(PPCIDEVICE *) papBridgesR3;
 
     /** R3 pointer to the device instance. */
     PPDMDEVINSR3        pDevInsR3;
@@ -176,6 +174,7 @@ typedef struct PCIGLOBALS
 /** Pointer to per VM data. */
 typedef PCIGLOBALS *PPCIGLOBALS;
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -210,6 +209,7 @@ typedef PCIGLOBALS *PPCIGLOBALS;
  */
 #define VBOX_PCI_SAVED_STATE_VERSION 3
 
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -220,7 +220,7 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
 PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
 
 #ifdef IN_RING3
-static PPCIDEVICE pciFindBridge(PPCIBUS pBus, uint8_t iBus);
+DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus);
 #endif
 
 __END_DECLS
@@ -493,11 +493,9 @@ static void pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, in
     if (iBus != 0)
     {
         PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
-
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-
             pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, val, len);
         }
     }
@@ -527,11 +525,9 @@ static uint32_t pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len)
     if (iBus != 0)
     {
         PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
-
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-
             val = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, len);
         }
     }
@@ -735,18 +731,18 @@ PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, 
  * @param  pBus    Pointer to the bus to search on.
  * @param  iBus    Destination bus number.
  */
-static PPCIDEVICE pciFindBridge(PPCIBUS pBus, uint8_t iBus)
+DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus)
 {
     /* Search for a fitting bridge. */
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
     {
         /*
-            * Examine secondary and subordinate bus number.
-            * If the target bus is in the range we pass the request on to the bridge.
-            */
-        PPCIDEVICE pBridgeTemp = pBus->apBridgesR3[iBridge];
+         * Examine secondary and subordinate bus number.
+         * If the target bus is in the range we pass the request on to the bridge.
+         */
+        PPCIDEVICE pBridgeTemp = pBus->papBridgesR3[iBridge];
         AssertMsg(pBridgeTemp && pBridgeTemp->Int.s.fPciToPciBridge,
-                  ("Device is not a PCI bridge but on the list of PCi bridges\n"));
+                  ("Device is not a PCI bridge but on the list of PCI bridges\n"));
 
         if (   iBus >= pBridgeTemp->config[VBOX_PCI_SECONDARY_BUS]
             && iBus <= pBridgeTemp->config[VBOX_PCI_SUBORDINATE_BUS])
@@ -1521,10 +1517,10 @@ static int pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const
     pBus->devices[iDev]             = pPciDev;
     if (pPciDev->Int.s.fPciToPciBridge)
     {
-        AssertMsg(pBus->cBridges < RT_ELEMENTS(pBus->apBridgesR3), ("Number of bridges exceeds the number of possible bridges on the bus\n"));
+        AssertMsg(pBus->cBridges < RT_ELEMENTS(pBus->devices), ("Number of bridges exceeds the number of possible devices on the bus\n"));
         AssertMsg(pPciDev->Int.s.pfnBridgeConfigRead && pPciDev->Int.s.pfnBridgeConfigWrite,
                   ("device is a bridge but does not implement read/write functions\n"));
-        pBus->apBridgesR3[pBus->cBridges] = pPciDev;
+        pBus->papBridgesR3[pBus->cBridges] = pPciDev;
         pBus->cBridges++;
     }
 
@@ -1766,6 +1762,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pGlobals->PciBus.pDevInsR3 = pDevIns;
     pGlobals->PciBus.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->PciBus.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pGlobals->PciBus.papBridgesR3 = (PPCIDEVICE *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPCIDEVICE) * RT_ELEMENTS(pGlobals->PciBus.devices));
 
     PDMPCIBUSREG PciBusReg;
     PPCIBUS      pBus = &pGlobals->PciBus;
@@ -1941,11 +1938,9 @@ static void pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDe
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
     {
         PPCIDEVICE pBridgeDevice = pciFindBridge(pBus, iBus);
-
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-
             pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, u32Value, cb);
         }
     }
@@ -1972,11 +1967,9 @@ static uint32_t pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t 
     if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
     {
         PPCIDEVICE pBridgeDevice = pciFindBridge(pBus, iBus);
-
         if (pBridgeDevice)
         {
-            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-
+            AssertPtr( pBridgeDevice->Int.s.pfnBridgeConfigRead);
             u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, cb);
         }
     }
@@ -2226,6 +2219,7 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
     pBus->pDevInsR3 = pDevIns;
     pBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pBus->papBridgesR3 = (PPCIDEVICE *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPCIDEVICE) * RT_ELEMENTS(pBus->devices));
 
     PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
