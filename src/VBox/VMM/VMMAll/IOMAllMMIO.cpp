@@ -34,6 +34,7 @@
 #include <VBox/trpm.h>
 #include "IOMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/hwaccm.h>
 
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
@@ -166,7 +167,7 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  * @param   pRange      Pointer MMIO range.
@@ -225,7 +226,7 @@ static int iomInterpretMOVxXRead(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE p
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  * @param   pRange      Pointer MMIO range.
@@ -284,7 +285,7 @@ DECLINLINE(int) iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
@@ -517,7 +518,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine .
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -643,7 +644,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -691,7 +692,7 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -744,7 +745,7 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -833,7 +834,7 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -885,7 +886,7 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -935,7 +936,7 @@ static int iomInterpretBT(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault,
  *
  * @returns VBox status code.
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pCpu        Disassembler CPU state.
@@ -1415,7 +1416,7 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM             The virtual machine (GC pointer ofcourse).
+ * @param   pVM             The virtual machine.
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
  * @param   uPort           IO Port
  * @param   uPrefix         IO instruction prefix
@@ -1532,7 +1533,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  */
@@ -1576,7 +1577,7 @@ VMMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM             The virtual machine (GC pointer ofcourse).
+ * @param   pVM             The virtual machine.
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
  * @param   uPort           IO Port
  * @param   uPrefix         IO instruction prefix
@@ -1695,7 +1696,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine.
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  */
@@ -1724,3 +1725,91 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
     return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, cb);
 }
 
+#ifdef IN_RING0
+/**
+ * Modify an existing MMIO region page; map to another guest physical region and change the access flags
+ *
+ * @returns VBox status code. 
+ *
+ * @param   pVM             The virtual machine.
+ * @param   GCPhys          Physical address that's part of the MMIO region to be changed.
+ * @param   GCPhysRemapped  Remapped address.
+ * @param   fPageFlags      Page flags to set (typically X86_PTE_RW).
+ */
+VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
+{
+    Assert(fPageFlags == X86_PTE_RW);
+
+    Log(("IOMMMIOModifyPage %VGp -> %VGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
+
+    /*
+     * Lookup the current context range node and statistics.
+     */
+    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+    AssertMsgReturn(pRange,
+                    ("Handlers and page tables are out of sync or something! GCPhys=%VGp\n", GCPhys),
+                    VERR_INTERNAL_ERROR);
+
+    GCPhys         &= 0xfff;
+    GCPhysRemapped &= 0xfff;
+
+    /* This currently only works in real mode, protected mode without paging or with nested paging. */
+    if (    CPUMIsGuestInPagedProtectedMode(pVM)
+        && !HWACCMIsNestedPagingActive(pVM))
+        return VINF_SUCCESS;    /* ignore */
+
+    int rc = PGMHandlerPhysicalPageAlias(pVM, pRange->GCPhys, GCPhys, GCPhysRemapped);
+    AssertRCReturn(rc, rc);
+
+    /* Mark it as writable and present so reads and writes no longer fault. */
+    rc = PGMShwSetPage(pVM, (RTGCPTR)GCPhys, PAGE_SIZE, X86_PTE_RW | X86_PTE_P);
+    AssertRC(rc);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Reset a previously modified MMIO region; restore the access flags.
+ *
+ * @returns VBox status code. 
+ *
+ * @param   pVM             The virtual machine.
+ * @param   GCPhys          Physical address that's part of the MMIO region to be reset.
+ */
+VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
+{
+    unsigned cb;
+
+    Log(("IOMMMIOResetRegion %VGp\n", GCPhys));
+    /*
+     * Lookup the current context range node and statistics.
+     */
+    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+    AssertMsgReturn(pRange,
+                    ("Handlers and page tables are out of sync or something! GCPhys=%VGp\n", GCPhys),
+                    VERR_INTERNAL_ERROR);
+
+    /* This currently only works in real mode, protected mode without paging or with nested paging. */
+    if (    CPUMIsGuestInPagedProtectedMode(pVM)
+        && !HWACCMIsNestedPagingActive(pVM))
+        return VINF_SUCCESS;    /* ignore */
+
+
+    cb     = pRange->cb;
+    GCPhys = pRange->GCPhys;
+
+    while(cb)
+    {
+        int rc = PGMHandlerPhysicalPageReset(pVM, pRange->GCPhys, GCPhys);
+        AssertRC(rc);
+
+        /* Mark it as not present again to intercept all read and write access. */
+        rc = PGMShwSetPage(pVM, (RTGCPTR)GCPhys, PAGE_SIZE, 0);
+        AssertRC(rc);
+
+        cb     -= PAGE_SIZE;
+        GCPhys += PAGE_SIZE;
+    }
+    return VINF_SUCCESS;
+}
+#endif

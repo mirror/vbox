@@ -883,7 +883,71 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
             AssertRCReturn(rc, rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
-#ifdef IN_RING0
+#ifndef IN_GC
+            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
+#endif
+            return VINF_SUCCESS;
+        }
+
+        AssertMsgFailed(("The page %#x is outside the range %#x-%#x\n",
+                         GCPhysPage, pCur->Core.Key, pCur->Core.KeyLast));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    AssertMsgFailed(("Specified physical handler start address %#x is invalid.\n", GCPhys));
+    return VERR_PGM_HANDLER_NOT_FOUND;
+}
+
+/**
+ * Temporarily turns off the access monitoring of a page within an MMIO
+ * access handler region and remaps it to another guest physical region.
+ *
+ * Use this when no further \#PFs are required for that page. Be aware that
+ * a page directory sync might reset the flags, and turn on access monitoring
+ * for the page.
+ *
+ * The caller must do required page table modifications.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM Handle
+ * @param   GCPhys              Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
+ *                              This must be a fully page aligned range or we risk messing up other
+ *                              handlers installed for the start and end pages.
+ * @param   GCPhysPage          Physical address of the page to turn off access monitoring for.
+ * @param   GCPhysPageRemap     Physical address of the page that serves as backing memory.
+ */
+VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTGCPHYS GCPhysPageRemap)
+{
+    /*
+     * Validate the range.
+     */
+    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+    if (RT_LIKELY(pCur))
+    {
+        if (RT_LIKELY(    GCPhysPage >= pCur->Core.Key
+                      &&  GCPhysPage <= pCur->Core.KeyLast))
+        {
+            Assert(!(pCur->Core.Key & PAGE_OFFSET_MASK));
+            Assert((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
+
+            AssertReturn(pCur->enmType == PGMPHYSHANDLERTYPE_MMIO, VERR_ACCESS_DENIED);
+
+            PPGMPAGE pPageRemap;
+            int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPageRemap, &pPageRemap);
+            AssertRCReturn(rc, rc);
+
+            /*
+             * Change the page status.
+             */
+            PPGMPAGE pPage;
+            rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
+            AssertRCReturn(rc, rc);
+
+            /* Do the actual remapping here. This page now serves as an alias for the backing memory specified. */
+            pPage->HCPhys = pPageRemap->HCPhys;
+
+            PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
+#ifndef IN_GC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
 #endif
             return VINF_SUCCESS;
@@ -927,7 +991,8 @@ VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             Assert((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
 
             AssertReturn(   pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
-                         || pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_ALL,
+                         || pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_ALL
+                         || pCur->enmType == PGMPHYSHANDLERTYPE_MMIO,
                          VERR_ACCESS_DENIED);
 
             /*
@@ -937,6 +1002,9 @@ VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
             AssertRCReturn(rc, rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, pgmHandlerPhysicalCalcState(pCur));
+#ifndef IN_GC
+            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
+#endif
             return VINF_SUCCESS;
         }
 
