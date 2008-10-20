@@ -336,6 +336,7 @@ static DECLCALLBACK(int) pdmGCDevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RT
     return PATMSetMMIOPatchInfo(pDevIns->Internal.s.pVMRC, GCPhys, (RTRCPTR)pCachedData);
 }
 
+
 /** @copydoc PDMDEVHLPRC::pfnGetVM */
 static DECLCALLBACK(PVM)  pdmGCDevHlp_GetVM(PPDMDEVINS pDevIns)
 {
@@ -343,6 +344,7 @@ static DECLCALLBACK(PVM)  pdmGCDevHlp_GetVM(PPDMDEVINS pDevIns)
     LogFlow(("pdmGCDevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
     return pDevIns->Internal.s.pVMRC;
 }
+
 
 
 
