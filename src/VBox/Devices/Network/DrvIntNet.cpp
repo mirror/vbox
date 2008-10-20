@@ -44,6 +44,7 @@
 # include "win/DrvIntNet-win.h"
 #endif
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -729,6 +730,7 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 {
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
+    bool f;
 
     /*
      * Init the static parts.
@@ -757,6 +759,14 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
                               "SendBufferSize\0"
                               "RestrictAccess\0"
                               "SharedMacOnWire\0"
+                              "IgnoreAllPromisc\0"
+                              "QuietlyIgnoreAllPromisc\0"
+                              "IgnoreClientPromisc\0"
+                              "QuietlyIgnoreClientPromisc\0"
+                              "IgnoreTrunkWirePromisc\0"
+                              "QuietlyIgnoreTrunkWirePromisc\0"
+                              "IgnoreTrunkHostPromisc\0"
+                              "QuietlyIgnoreTrunkHostPromisc\0"
                               "IsService\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
@@ -833,6 +843,94 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
     OpenReq.fFlags = fRestrictAccess ? 0 : INTNET_OPEN_FLAGS_PUBLIC;
+
+    /** @cfgm{IgnoreAllPromisc, boolean, false}
+     * When set all request for operating any interface or trunk in promiscuous
+     * mode will be ignored. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreAllPromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"IgnoreAllPromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_IGNORE_PROMISC;
+
+    /** @cfgm{QuietlyIgnoreAllPromisc, boolean, false}
+     * When set all request for operating any interface or trunk in promiscuous
+     * mode will be ignored.  This differs from IgnoreAllPromisc in that clients
+     * won't get VERR_INTNET_INCOMPATIBLE_FLAGS. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreAllPromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"QuietlyIgnoreAllPromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC;
+
+    /** @cfgm{IgnoreClientPromisc, boolean, false}
+     * When set all request for operating any non-trunk interface in promiscuous
+     * mode will be ignored. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreClientPromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"IgnoreClientPromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_IGNORE_PROMISC; /** @todo add special flag for this. */
+
+    /** @cfgm{QuietlyIgnoreClientPromisc, boolean, false}
+     * When set all request for operating any non-trunk interface promiscuous mode
+     * will be ignored.  This differs from IgnoreClientPromisc in that clients won't
+     * get VERR_INTNET_INCOMPATIBLE_FLAGS. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreClientPromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"QuietlyIgnoreClientPromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC;  /** @todo add special flag for this. */
+
+    /** @cfgm{IgnoreTrunkWirePromisc, boolean, false}
+     * When set all request for operating the trunk-wire connection in promiscuous
+     * mode will be ignored. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreTrunkWirePromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"IgnoreTrunkWirePromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_WIRE;
+
+    /** @cfgm{QuietlyIgnoreTrunkWirePromisc, boolean, false}
+     * When set all request for operating any trunk-wire connection promiscuous mode
+     * will be ignored.  This differs from IgnoreTrunkWirePromisc in that clients
+     * won't get VERR_INTNET_INCOMPATIBLE_FLAGS. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreTrunkWirePromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"QuietlyIgnoreTrunkWirePromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_WIRE;
+
+    /** @cfgm{IgnoreTrunkHostPromisc, boolean, false}
+     * When set all request for operating the trunk-host connection in promiscuous
+     * mode will be ignored. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreTrunkHostPromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"IgnoreTrunkHostPromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_HOST;
+
+    /** @cfgm{QuietlyIgnoreTrunkHostPromisc, boolean, false}
+     * When set all request for operating any trunk-host connection promiscuous mode
+     * will be ignored.  This differs from IgnoreTrunkHostPromisc in that clients
+     * won't get VERR_INTNET_INCOMPATIBLE_FLAGS. */
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreTrunkHostPromisc", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"QuietlyIgnoreTrunkHostPromisc\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_HOST;
+
+    /** @todo flags for not sending to the host and for setting the trunk-wire
+     *        connection in promiscuous mode. */
+
 
     /** @cfgm{SharedMacOnWire, boolean, false}
      * Whether to shared the MAC address of the host interface when using the wire. When
