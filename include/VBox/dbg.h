@@ -43,15 +43,9 @@
 __BEGIN_DECLS
 
 /** @def VBOX_WITH_DEBUGGER
- * The build is with debugger module. Test if this is defined before
- * registering external debugger commands.
+ * The build is with debugger module. Test if this is defined before registering
+ * external debugger commands. This is normally defined in Config.kmk.
  */
-#ifndef VBOX_WITH_DEBUGGER
-/** @todo Is this still necessary? */
-# if defined(DEBUG) && !defined(VBOX_OSE)
-#  define VBOX_WITH_DEBUGGER
-# endif
-#endif
 #ifdef DOXYGEN_RUNNING
 # define VBOX_WITH_DEBUGGER
 #endif
