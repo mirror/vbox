@@ -32,7 +32,7 @@ class Console;
 class ATL_NO_VTABLE Guest :
     public VirtualBoxSupportErrorInfoImpl <Guest, IGuest>,
     public VirtualBoxSupportTranslation <Guest>,
-    public VirtualBoxBase,
+    public VirtualBoxBaseNEXT,
     public IGuest
 {
 public:
