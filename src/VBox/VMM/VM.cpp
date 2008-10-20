@@ -41,7 +41,7 @@
 #include <VBox/stam.h>
 #include <VBox/patm.h>
 #ifdef VBOX_WITH_VMI
-#include <VBox/parav.h>
+# include <VBox/parav.h>
 #endif
 #include <VBox/csam.h>
 #include <VBox/iom.h>

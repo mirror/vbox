@@ -42,7 +42,7 @@
 #include <VBox/em.h>
 #include <VBox/vmm.h>
 #ifdef VBOX_WITH_VMI
-#include <VBox/parav.h>
+# include <VBox/parav.h>
 #endif
 #include <VBox/patm.h>
 #include <VBox/csam.h>
@@ -534,9 +534,7 @@ VMMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
         case EMSTATE_RAW:               return "EMSTATE_RAW";
         case EMSTATE_HWACC:             return "EMSTATE_HWACC";
         case EMSTATE_REM:               return "EMSTATE_REM";
-#ifdef VBOX_WITH_VMI
         case EMSTATE_PARAV:             return "EMSTATE_PARAV";
-#endif
         case EMSTATE_HALTED:            return "EMSTATE_HALTED";
         case EMSTATE_SUSPENDED:         return "EMSTATE_SUSPENDED";
         case EMSTATE_TERMINATING:       return "EMSTATE_TERMINATING";

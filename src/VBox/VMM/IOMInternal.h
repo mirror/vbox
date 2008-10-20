@@ -49,7 +49,7 @@ typedef struct IOMMMIORANGE
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
     uint32_t                    cb;
-    uint32_t                    uAlignmnet;
+    uint32_t                    u32Alignment; /**< Alignment padding. */
 
     /** Pointer to user argument - R3. */
     RTR3PTR                     pvUserR3;
