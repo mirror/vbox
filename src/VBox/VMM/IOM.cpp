@@ -1421,10 +1421,9 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
          * Try register it with PGM and then insert it into the tree.
          */
         rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
-                                    IOMR3MMIOHandler, pRange,
-                                    pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
-                                    pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
-
+                                   IOMR3MMIOHandler, pRange,
+                                   pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
+                                   pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
         {
             if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRange->Core))
@@ -1604,13 +1603,13 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
-        int           rc;
         PIOMMMIORANGE pRange = (PIOMMMIORANGE)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesR3->MMIOTree, GCPhys);
         Assert(pRange);
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
 
         /* remove it from PGM */
-        rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
+        int rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
+        AssertRC(rc);
 
         /* advance and free. */
         GCPhys = pRange->Core.KeyLast + 1;
