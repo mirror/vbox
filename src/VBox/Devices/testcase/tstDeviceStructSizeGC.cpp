@@ -246,7 +246,7 @@ int main()
     GEN_CHECK_OFF(VGASTATE, fGCEnabled);
     GEN_CHECK_OFF(VGASTATE, fR0Enabled);
     GEN_CHECK_OFF(VGASTATE, RCPtrLFBHandler);
-    GEN_CHECK_OFF(VGASTATE, fHaveDirtyBits);
+    GEN_CHECK_OFF(VGASTATE, fHasDirtyBits);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[1]);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[(VGA_VRAM_MAX / PAGE_SIZE / 32) - 1]);
