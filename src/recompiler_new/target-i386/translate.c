@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
 #ifndef VBOX
+#include <inttypes.h>
 #include <signal.h>
 #include <assert.h>
 #endif /* !VBOX */
@@ -50,7 +50,11 @@
 
 #ifdef TARGET_X86_64
 #define X86_64_ONLY(x) x
+#ifndef VBOX
 #define X86_64_DEF(x...) x
+#else
+#define X86_64_DEF(x...) x
+#endif
 #define CODE64(s) ((s)->code64)
 #define REX_X(s) ((s)->rex_x)
 #define REX_B(s) ((s)->rex_b)
@@ -60,7 +64,11 @@
 #endif
 #else
 #define X86_64_ONLY(x) NULL
+#ifndef VBOX
 #define X86_64_DEF(x...)
+#else
+#define X86_64_DEF(x)
+#endif
 #define CODE64(s) 0
 #define REX_X(s) 0
 #define REX_B(s) 0
@@ -221,69 +229,121 @@ enum {
     OR_A0, /* temporary register used when doing address evaluation */
 };
 
+#ifndef VBOX
 static inline void gen_op_movl_T0_0(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T0_0(void)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_T[0], 0);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_T0_im(int32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T0_im(int32_t val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_T[0], val);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_T0_imu(uint32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T0_imu(uint32_t val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_T[0], val);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_T1_im(int32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T1_im(int32_t val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_T[1], val);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_T1_imu(uint32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T1_imu(uint32_t val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_T[1], val);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_A0_im(uint32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_A0_im(uint32_t val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_A0, val);
 }
 
 #ifdef TARGET_X86_64
+#ifndef VBOX
 static inline void gen_op_movq_A0_im(int64_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movq_A0_im(int64_t val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_A0, val);
 }
 #endif
 
+#ifndef VBOX
 static inline void gen_movtl_T0_im(target_ulong val)
+#else /* VBOX */
+DECLINLINE(void) gen_movtl_T0_im(target_ulong val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_T[0], val);
 }
 
+#ifndef VBOX
 static inline void gen_movtl_T1_im(target_ulong val)
+#else /* VBOX */
+DECLINLINE(void) gen_movtl_T1_im(target_ulong val)
+#endif /* VBOX */
 {
     tcg_gen_movi_tl(cpu_T[1], val);
 }
 
+#ifndef VBOX
 static inline void gen_op_andl_T0_ffff(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_andl_T0_ffff(void)
+#endif /* VBOX */
 {
     tcg_gen_andi_tl(cpu_T[0], cpu_T[0], 0xffff);
 }
 
+#ifndef VBOX
 static inline void gen_op_andl_T0_im(uint32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_andl_T0_im(uint32_t val)
+#endif /* VBOX */
 {
     tcg_gen_andi_tl(cpu_T[0], cpu_T[0], val);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_T0_T1(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T0_T1(void)
+#endif /* VBOX */
 {
     tcg_gen_mov_tl(cpu_T[0], cpu_T[1]);
 }
 
+#ifndef VBOX
 static inline void gen_op_andl_A0_ffff(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_andl_A0_ffff(void)
+#endif /* VBOX */
 {
     tcg_gen_andi_tl(cpu_A0, cpu_A0, 0xffff);
 }
@@ -312,7 +372,11 @@ static inline void gen_op_andl_A0_ffff(void)
 #define REG_LH_OFFSET 4
 #endif
 
+#ifndef VBOX
 static inline void gen_op_mov_reg_v(int ot, int reg, TCGv t0)
+#else /* VBOX */
+DECLINLINE(void) gen_op_mov_reg_v(int ot, int reg, TCGv t0)
+#endif /* VBOX */
 {
     switch(ot) {
     case OT_BYTE:
@@ -345,17 +409,29 @@ static inline void gen_op_mov_reg_v(int ot, int reg, TCGv t0)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_mov_reg_T0(int ot, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_mov_reg_T0(int ot, int reg)
+#endif /* VBOX */
 {
     gen_op_mov_reg_v(ot, reg, cpu_T[0]);
 }
 
+#ifndef VBOX
 static inline void gen_op_mov_reg_T1(int ot, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_mov_reg_T1(int ot, int reg)
+#endif /* VBOX */
 {
     gen_op_mov_reg_v(ot, reg, cpu_T[1]);
 }
 
+#ifndef VBOX
 static inline void gen_op_mov_reg_A0(int size, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_mov_reg_A0(int size, int reg)
+#endif /* VBOX */
 {
     switch(size) {
     case 0:
@@ -381,7 +457,11 @@ static inline void gen_op_mov_reg_A0(int size, int reg)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_mov_v_reg(int ot, TCGv t0, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_mov_v_reg(int ot, TCGv t0, int reg)
+#endif /* VBOX */
 {
     switch(ot) {
     case OT_BYTE:
@@ -398,17 +478,29 @@ static inline void gen_op_mov_v_reg(int ot, TCGv t0, int reg)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_mov_TN_reg(int ot, int t_index, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_mov_TN_reg(int ot, int t_index, int reg)
+#endif /* VBOX */
 {
     gen_op_mov_v_reg(ot, cpu_T[t_index], reg);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_A0_reg(int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_A0_reg(int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld32u_tl(cpu_A0, cpu_env, offsetof(CPUState, regs[reg]) + REG_L_OFFSET);
 }
 
+#ifndef VBOX
 static inline void gen_op_addl_A0_im(int32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_addl_A0_im(int32_t val)
+#endif /* VBOX */
 {
     tcg_gen_addi_tl(cpu_A0, cpu_A0, val);
 #ifdef TARGET_X86_64
@@ -417,7 +509,11 @@ static inline void gen_op_addl_A0_im(int32_t val)
 }
 
 #ifdef TARGET_X86_64
+#ifndef VBOX
 static inline void gen_op_addq_A0_im(int64_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_addq_A0_im(int64_t val)
+#endif /* VBOX */
 {
     tcg_gen_addi_tl(cpu_A0, cpu_A0, val);
 }
@@ -433,17 +529,29 @@ static void gen_add_A0_im(DisasContext *s, int val)
         gen_op_addl_A0_im(val);
 }
 
+#ifndef VBOX
 static inline void gen_op_addl_T0_T1(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_addl_T0_T1(void)
+#endif /* VBOX */
 {
     tcg_gen_add_tl(cpu_T[0], cpu_T[0], cpu_T[1]);
 }
 
+#ifndef VBOX
 static inline void gen_op_jmp_T0(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_jmp_T0(void)
+#endif /* VBOX */
 {
     tcg_gen_st_tl(cpu_T[0], cpu_env, offsetof(CPUState, eip));
 }
 
+#ifndef VBOX
 static inline void gen_op_add_reg_im(int size, int reg, int32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_add_reg_im(int size, int reg, int32_t val)
+#endif /* VBOX */
 {
     switch(size) {
     case 0:
@@ -469,7 +577,11 @@ static inline void gen_op_add_reg_im(int size, int reg, int32_t val)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_add_reg_T0(int size, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_add_reg_T0(int size, int reg)
+#endif /* VBOX */
 {
     switch(size) {
     case 0:
@@ -495,12 +607,20 @@ static inline void gen_op_add_reg_T0(int size, int reg)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_set_cc_op(int32_t val)
+#else /* VBOX */
+DECLINLINE(void) gen_op_set_cc_op(int32_t val)
+#endif /* VBOX */
 {
     tcg_gen_movi_i32(cpu_cc_op, val);
 }
 
+#ifndef VBOX
 static inline void gen_op_addl_A0_reg_sN(int shift, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_addl_A0_reg_sN(int shift, int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, regs[reg]));
     if (shift != 0) 
@@ -511,12 +631,20 @@ static inline void gen_op_addl_A0_reg_sN(int shift, int reg)
 #endif
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_A0_seg(int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_A0_seg(int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld32u_tl(cpu_A0, cpu_env, offsetof(CPUState, segs[reg].base) + REG_L_OFFSET);
 }
 
+#ifndef VBOX
 static inline void gen_op_addl_A0_seg(int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_addl_A0_seg(int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, segs[reg].base));
     tcg_gen_add_tl(cpu_A0, cpu_A0, cpu_tmp0);
@@ -526,23 +654,39 @@ static inline void gen_op_addl_A0_seg(int reg)
 }
 
 #ifdef TARGET_X86_64
+#ifndef VBOX
 static inline void gen_op_movq_A0_seg(int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movq_A0_seg(int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_A0, cpu_env, offsetof(CPUState, segs[reg].base));
 }
 
+#ifndef VBOX
 static inline void gen_op_addq_A0_seg(int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_addq_A0_seg(int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, segs[reg].base));
     tcg_gen_add_tl(cpu_A0, cpu_A0, cpu_tmp0);
 }
 
+#ifndef VBOX
 static inline void gen_op_movq_A0_reg(int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movq_A0_reg(int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_A0, cpu_env, offsetof(CPUState, regs[reg]));
 }
 
+#ifndef VBOX
 static inline void gen_op_addq_A0_reg_sN(int shift, int reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_addq_A0_reg_sN(int shift, int reg)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, regs[reg]));
     if (shift != 0) 
@@ -551,7 +695,11 @@ static inline void gen_op_addq_A0_reg_sN(int shift, int reg)
 }
 #endif
 
+#ifndef VBOX
 static inline void gen_op_lds_T0_A0(int idx)
+#else /* VBOX */
+DECLINLINE(void) gen_op_lds_T0_A0(int idx)
+#endif /* VBOX */
 {
     int mem_index = (idx >> 2) - 1;
     switch(idx & 3) {
@@ -568,7 +716,11 @@ static inline void gen_op_lds_T0_A0(int idx)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_ld_v(int idx, TCGv t0, TCGv a0)
+#else /* VBOX */
+DECLINLINE(void) gen_op_ld_v(int idx, TCGv t0, TCGv a0)
+#endif /* VBOX */
 {
     int mem_index = (idx >> 2) - 1;
     switch(idx & 3) {
@@ -589,22 +741,38 @@ static inline void gen_op_ld_v(int idx, TCGv t0, TCGv a0)
 }
 
 /* XXX: always use ldu or lds */
+#ifndef VBOX
 static inline void gen_op_ld_T0_A0(int idx)
+#else /* VBOX */
+DECLINLINE(void) gen_op_ld_T0_A0(int idx)
+#endif /* VBOX */
 {
     gen_op_ld_v(idx, cpu_T[0], cpu_A0);
 }
 
+#ifndef VBOX
 static inline void gen_op_ldu_T0_A0(int idx)
+#else /* VBOX */
+DECLINLINE(void) gen_op_ldu_T0_A0(int idx)
+#endif /* VBOX */
 {
     gen_op_ld_v(idx, cpu_T[0], cpu_A0);
 }
 
+#ifndef VBOX
 static inline void gen_op_ld_T1_A0(int idx)
+#else /* VBOX */
+DECLINLINE(void) gen_op_ld_T1_A0(int idx)
+#endif /* VBOX */
 {
     gen_op_ld_v(idx, cpu_T[1], cpu_A0);
 }
 
+#ifndef VBOX
 static inline void gen_op_st_v(int idx, TCGv t0, TCGv a0)
+#else /* VBOX */
+DECLINLINE(void) gen_op_st_v(int idx, TCGv t0, TCGv a0)
+#endif /* VBOX */
 {
     int mem_index = (idx >> 2) - 1;
     switch(idx & 3) {
@@ -624,17 +792,29 @@ static inline void gen_op_st_v(int idx, TCGv t0, TCGv a0)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_st_T0_A0(int idx)
+#else /* VBOX */
+DECLINLINE(void) gen_op_st_T0_A0(int idx)
+#endif /* VBOX */
 {
     gen_op_st_v(idx, cpu_T[0], cpu_A0);
 }
 
+#ifndef VBOX
 static inline void gen_op_st_T1_A0(int idx)
+#else /* VBOX */
+DECLINLINE(void) gen_op_st_T1_A0(int idx)
+#endif /* VBOX */
 {
     gen_op_st_v(idx, cpu_T[1], cpu_A0);
 }
 
+#ifndef VBOX
 static inline void gen_jmp_im(target_ulong pc)
+#else /* VBOX */
+DECLINLINE(void) gen_jmp_im(target_ulong pc)
+#endif /* VBOX */
 {
 #ifdef VBOX
     gen_check_external_event();
@@ -651,14 +831,22 @@ static void gen_check_external_event()
     tcg_gen_helper_0_0(helper_check_external_event);
 }
 
+#ifndef VBOX
 static inline void gen_update_eip(target_ulong pc)
+#else /* VBOX */
+DECLINLINE(void) gen_update_eip(target_ulong pc)
+#endif /* VBOX */
 {
     gen_jmp_im(pc);
 
 }
 #endif
 
+#ifndef VBOX
 static inline void gen_string_movl_A0_ESI(DisasContext *s)
+#else /* VBOX */
+DECLINLINE(void) gen_string_movl_A0_ESI(DisasContext *s)
+#endif /* VBOX */
 {
     int override;
 
@@ -693,7 +881,11 @@ static inline void gen_string_movl_A0_ESI(DisasContext *s)
     }
 }
 
+#ifndef VBOX
 static inline void gen_string_movl_A0_EDI(DisasContext *s)
+#else /* VBOX */
+DECLINLINE(void) gen_string_movl_A0_EDI(DisasContext *s)
+#endif /* VBOX */
 {
 #ifdef TARGET_X86_64
     if (s->aflag == 2) {
@@ -714,7 +906,11 @@ static inline void gen_string_movl_A0_EDI(DisasContext *s)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_T0_Dshift(int ot) 
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T0_Dshift(int ot) 
+#endif /* VBOX */
 {
     tcg_gen_ld32s_tl(cpu_T[0], cpu_env, offsetof(CPUState, df));
     tcg_gen_shli_tl(cpu_T[0], cpu_T[0], ot);
@@ -754,14 +950,22 @@ static void gen_exts(int ot, TCGv reg)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_jnz_ecx(int size, int label1)
+#else /* VBOX */
+DECLINLINE(void) gen_op_jnz_ecx(int size, int label1)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, regs[R_ECX]));
     gen_extu(size + 1, cpu_tmp0);
     tcg_gen_brcondi_tl(TCG_COND_NE, cpu_tmp0, 0, label1);
 }
 
+#ifndef VBOX
 static inline void gen_op_jz_ecx(int size, int label1)
+#else /* VBOX */
+DECLINLINE(void) gen_op_jz_ecx(int size, int label1)
+#endif /* VBOX */
 {
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, regs[R_ECX]));
     gen_extu(size + 1, cpu_tmp0);
@@ -819,7 +1023,11 @@ static void gen_check_io(DisasContext *s, int ot, target_ulong cur_eip,
     }
 }
 
+#ifndef VBOX
 static inline void gen_movs(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(void) gen_movs(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     gen_string_movl_A0_ESI(s);
     gen_op_ld_T0_A0(ot + s->mem_index);
@@ -830,7 +1038,11 @@ static inline void gen_movs(DisasContext *s, int ot)
     gen_op_add_reg_T0(s->aflag, R_EDI);
 }
 
+#ifndef VBOX
 static inline void gen_update_cc_op(DisasContext *s)
+#else /* VBOX */
+DECLINLINE(void) gen_update_cc_op(DisasContext *s)
+#endif /* VBOX */
 {
     if (s->cc_op != CC_OP_DYNAMIC) {
         gen_op_set_cc_op(s->cc_op);
@@ -850,13 +1062,21 @@ static void gen_op_update2_cc(void)
     tcg_gen_mov_tl(cpu_cc_dst, cpu_T[0]);
 }
 
+#ifndef VBOX
 static inline void gen_op_cmpl_T0_T1_cc(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_cmpl_T0_T1_cc(void)
+#endif /* VBOX */
 {
     tcg_gen_mov_tl(cpu_cc_src, cpu_T[1]);
     tcg_gen_sub_tl(cpu_cc_dst, cpu_T[0], cpu_T[1]);
 }
 
+#ifndef VBOX
 static inline void gen_op_testl_T0_T1_cc(void)
+#else /* VBOX */
+DECLINLINE(void) gen_op_testl_T0_T1_cc(void)
+#endif /* VBOX */
 {
     tcg_gen_discard_tl(cpu_cc_src);
     tcg_gen_and_tl(cpu_cc_dst, cpu_T[0], cpu_T[1]);
@@ -912,7 +1132,11 @@ static void gen_compute_eflags(TCGv reg)
     tcg_gen_extu_i32_tl(reg, cpu_tmp2_i32);
 }
 
+#ifndef VBOX
 static inline void gen_setcc_slow_T0(DisasContext *s, int jcc_op)
+#else /* VBOX */
+DECLINLINE(void) gen_setcc_slow_T0(DisasContext *s, int jcc_op)
+#endif /* VBOX */
 {
     if (s->cc_op != CC_OP_DYNAMIC)
         gen_op_set_cc_op(s->cc_op);
@@ -1019,7 +1243,11 @@ static int is_fast_jcc_case(DisasContext *s, int b)
 
 /* generate a conditional jump to label 'l1' according to jump opcode
    value 'b'. In the fast case, T0 is guaranted not to be used. */
+#ifndef VBOX
 static inline void gen_jcc1(DisasContext *s, int cc_op, int b, int l1)
+#else /* VBOX */
+DECLINLINE(void) gen_jcc1(DisasContext *s, int cc_op, int b, int l1)
+#endif /* VBOX */
 {
     int inv, jcc_op, size, cond;
     TCGv t0;
@@ -1230,7 +1458,11 @@ static int gen_jz_ecx_string(DisasContext *s, target_ulong next_eip)
     return l2;
 }
 
+#ifndef VBOX
 static inline void gen_stos(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(void) gen_stos(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     gen_op_mov_TN_reg(OT_LONG, 0, R_EAX);
     gen_string_movl_A0_EDI(s);
@@ -1239,7 +1471,11 @@ static inline void gen_stos(DisasContext *s, int ot)
     gen_op_add_reg_T0(s->aflag, R_EDI);
 }
 
+#ifndef VBOX
 static inline void gen_lods(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(void) gen_lods(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     gen_string_movl_A0_ESI(s);
     gen_op_ld_T0_A0(ot + s->mem_index);
@@ -1248,7 +1484,11 @@ static inline void gen_lods(DisasContext *s, int ot)
     gen_op_add_reg_T0(s->aflag, R_ESI);
 }
 
+#ifndef VBOX
 static inline void gen_scas(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(void) gen_scas(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     gen_op_mov_TN_reg(OT_LONG, 0, R_EAX);
     gen_string_movl_A0_EDI(s);
@@ -1258,7 +1498,11 @@ static inline void gen_scas(DisasContext *s, int ot)
     gen_op_add_reg_T0(s->aflag, R_EDI);
 }
 
+#ifndef VBOX
 static inline void gen_cmps(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(void) gen_cmps(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     gen_string_movl_A0_ESI(s);
     gen_op_ld_T0_A0(ot + s->mem_index);
@@ -1270,7 +1514,11 @@ static inline void gen_cmps(DisasContext *s, int ot)
     gen_op_add_reg_T0(s->aflag, R_EDI);
 }
 
+#ifndef VBOX
 static inline void gen_ins(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(void) gen_ins(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     if (use_icount)
         gen_io_start();
@@ -1290,7 +1538,11 @@ static inline void gen_ins(DisasContext *s, int ot)
         gen_io_end();
 }
 
+#ifndef VBOX
 static inline void gen_outs(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(void) gen_outs(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     if (use_icount)
         gen_io_start();
@@ -1311,11 +1563,12 @@ static inline void gen_outs(DisasContext *s, int ot)
 
 /* same method as Valgrind : we generate jumps to current or next
    instruction */
+#ifndef VBOX
 #define GEN_REPZ(op)                                                          \
 static inline void gen_repz_ ## op(DisasContext *s, int ot,                   \
                                  target_ulong cur_eip, target_ulong next_eip) \
 {                                                                             \
-    int l2;\
+    int l2;                                                                   \
     gen_update_cc_op(s);                                                      \
     l2 = gen_jz_ecx_string(s, next_eip);                                      \
     gen_ ## op(s, ot);                                                        \
@@ -1326,9 +1579,45 @@ static inline void gen_repz_ ## op(DisasContext *s, int ot,                   \
         gen_op_jz_ecx(s->aflag, l2);                                          \
     gen_jmp(s, cur_eip);                                                      \
 }
+#else /* VBOX */
+#define GEN_REPZ(op)                                                          \
+DECLINLINE(void) gen_repz_ ## op(DisasContext *s, int ot,                     \
+                                 target_ulong cur_eip, target_ulong next_eip) \
+{                                                                             \
+    int l2;                                                                   \
+    gen_update_cc_op(s);                                                      \
+    l2 = gen_jz_ecx_string(s, next_eip);                                      \
+    gen_ ## op(s, ot);                                                        \
+    gen_op_add_reg_im(s->aflag, R_ECX, -1);                                   \
+    /* a loop would cause two single step exceptions if ECX = 1               \
+       before rep string_insn */                                              \
+    if (!s->jmp_opt)                                                          \
+        gen_op_jz_ecx(s->aflag, l2);                                          \
+    gen_jmp(s, cur_eip);                                                      \
+}
+#endif /* VBOX */
 
+#ifndef VBOX
 #define GEN_REPZ2(op)                                                         \
 static inline void gen_repz_ ## op(DisasContext *s, int ot,                   \
+                                   target_ulong cur_eip,                      \
+                                   target_ulong next_eip,                     \
+                                   int nz)                                    \
+{                                                                             \
+    int l2;                                                                   \
+    gen_update_cc_op(s);                                                      \
+    l2 = gen_jz_ecx_string(s, next_eip);                                      \
+    gen_ ## op(s, ot);                                                        \
+    gen_op_add_reg_im(s->aflag, R_ECX, -1);                                   \
+    gen_op_set_cc_op(CC_OP_SUBB + ot);                                        \
+    gen_jcc1(s, CC_OP_SUBB + ot, (JCC_Z << 1) | (nz ^ 1), l2);                \
+    if (!s->jmp_opt)                                                          \
+        gen_op_jz_ecx(s->aflag, l2);                                          \
+    gen_jmp(s, cur_eip);                                                      \
+}
+#else /* VBOX */
+#define GEN_REPZ2(op)                                                         \
+DECLINLINE(void) gen_repz_ ## op(DisasContext *s, int ot,                     \
                                    target_ulong cur_eip,                      \
                                    target_ulong next_eip,                     \
                                    int nz)                                    \
@@ -1344,6 +1633,7 @@ static inline void gen_repz_ ## op(DisasContext *s, int ot,                   \
         gen_op_jz_ecx(s->aflag, l2);                                          \
     gen_jmp(s, cur_eip);                                                      \
 }
+#endif /* VBOX */
 
 GEN_REPZ(movs)
 GEN_REPZ(stos)
@@ -1618,7 +1908,11 @@ static void gen_shift_rm_im(DisasContext *s, int ot, int op1, int op2,
     }
 }
 
+#ifndef VBOX
 static inline void tcg_gen_lshift(TCGv ret, TCGv arg1, target_long arg2)
+#else /* VBOX */
+DECLINLINE(void) tcg_gen_lshift(TCGv ret, TCGv arg1, target_long arg2)
+#endif /* VBOX */
 {
     if (arg2 >= 0)
         tcg_gen_shli_tl(ret, arg1, arg2);
@@ -2239,7 +2533,11 @@ static void gen_ldst_modrm(DisasContext *s, int modrm, int ot, int reg, int is_s
     }
 }
 
+#ifndef VBOX
 static inline uint32_t insn_get(DisasContext *s, int ot)
+#else /* VBOX */
+DECLINLINE(uint32_t) insn_get(DisasContext *s, int ot)
+#endif /* VBOX */
 {
     uint32_t ret;
 
@@ -2261,7 +2559,11 @@ static inline uint32_t insn_get(DisasContext *s, int ot)
     return ret;
 }
 
+#ifndef VBOX
 static inline int insn_const_size(unsigned int ot)
+#else /* VBOX */
+DECLINLINE(int) insn_const_size(unsigned int ot)
+#endif /* VBOX */
 {
     if (ot <= OT_LONG)
         return 1 << ot;
@@ -2269,7 +2571,11 @@ static inline int insn_const_size(unsigned int ot)
         return 4;
 }
 
+#ifndef VBOX
 static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
+#else /* VBOX */
+DECLINLINE(void) gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
+#endif /* VBOX */
 {
     TranslationBlock *tb;
     target_ulong pc;
@@ -2290,7 +2596,11 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
     }
 }
 
+#ifndef VBOX
 static inline void gen_jcc(DisasContext *s, int b,
+#else /* VBOX */
+DECLINLINE(void) gen_jcc(DisasContext *s, int b,
+#endif /* VBOX */
                            target_ulong val, target_ulong next_eip)
 {
     int l1, l2, cc_op;
@@ -2357,13 +2667,21 @@ static void gen_setcc(DisasContext *s, int b)
     }
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_T0_seg(int seg_reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_T0_seg(int seg_reg)
+#endif /* VBOX */
 {
     tcg_gen_ld32u_tl(cpu_T[0], cpu_env, 
                      offsetof(CPUX86State,segs[seg_reg].selector));
 }
 
+#ifndef VBOX
 static inline void gen_op_movl_seg_T0_vm(int seg_reg)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl_seg_T0_vm(int seg_reg)
+#endif /* VBOX */
 {
     tcg_gen_andi_tl(cpu_T[0], cpu_T[0], 0xffff);
     tcg_gen_st32_tl(cpu_T[0], cpu_env, 
@@ -2397,12 +2715,20 @@ static void gen_movl_seg_T0(DisasContext *s, int seg_reg, target_ulong cur_eip)
     }
 }
 
+#ifndef VBOX
 static inline int svm_is_rep(int prefixes)
+#else /* VBOX */
+DECLINLINE(int) svm_is_rep(int prefixes)
+#endif /* VBOX */
 {
     return ((prefixes & (PREFIX_REPZ | PREFIX_REPNZ)) ? 8 : 0);
 }
 
+#ifndef VBOX
 static inline void
+#else /* VBOX */
+DECLINLINE(void)
+#endif /* VBOX */
 gen_svm_check_intercept_param(DisasContext *s, target_ulong pc_start,
                               uint32_t type, uint64_t param)
 {
@@ -2416,13 +2742,21 @@ gen_svm_check_intercept_param(DisasContext *s, target_ulong pc_start,
                        tcg_const_i32(type), tcg_const_i64(param));
 }
 
+#ifndef VBOX
 static inline void
+#else /* VBOX */
+DECLINLINE(void)
+#endif
 gen_svm_check_intercept(DisasContext *s, target_ulong pc_start, uint64_t type)
 {
     gen_svm_check_intercept_param(s, pc_start, type, 0);
 }
 
+#ifndef VBOX
 static inline void gen_stack_update(DisasContext *s, int addend)
+#else /* VBOX */
+DECLINLINE(void) gen_stack_update(DisasContext *s, int addend)
+#endif /* VBOX */
 {
 #ifdef TARGET_X86_64
     if (CODE64(s)) {
@@ -2733,21 +3067,33 @@ static void gen_jmp(DisasContext *s, target_ulong eip)
     gen_jmp_tb(s, eip, 0);
 }
 
+#ifndef VBOX
 static inline void gen_ldq_env_A0(int idx, int offset)
+#else /* VBOX */
+DECLINLINE(void) gen_ldq_env_A0(int idx, int offset)
+#endif /* VBOX */
 {
     int mem_index = (idx >> 2) - 1;
     tcg_gen_qemu_ld64(cpu_tmp1_i64, cpu_A0, mem_index);
     tcg_gen_st_i64(cpu_tmp1_i64, cpu_env, offset);
 }
 
+#ifndef VBOX
 static inline void gen_stq_env_A0(int idx, int offset)
+#else /* VBOX */
+DECLINLINE(void) gen_stq_env_A0(int idx, int offset)
+#endif /* VBOX */
 {
     int mem_index = (idx >> 2) - 1;
     tcg_gen_ld_i64(cpu_tmp1_i64, cpu_env, offset);
     tcg_gen_qemu_st64(cpu_tmp1_i64, cpu_A0, mem_index);
 }
 
+#ifndef VBOX
 static inline void gen_ldo_env_A0(int idx, int offset)
+#else /* VBOX */
+DECLINLINE(void) gen_ldo_env_A0(int idx, int offset)
+#endif /* VBOX */
 {
     int mem_index = (idx >> 2) - 1;
     tcg_gen_qemu_ld64(cpu_tmp1_i64, cpu_A0, mem_index);
@@ -2757,7 +3103,11 @@ static inline void gen_ldo_env_A0(int idx, int offset)
     tcg_gen_st_i64(cpu_tmp1_i64, cpu_env, offset + offsetof(XMMReg, XMM_Q(1)));
 }
 
+#ifndef VBOX
 static inline void gen_sto_env_A0(int idx, int offset)
+#else /* VBOX */
+DECLINLINE(void) gen_sto_env_A0(int idx, int offset)
+#endif /* VBOX */
 {
     int mem_index = (idx >> 2) - 1;
     tcg_gen_ld_i64(cpu_tmp1_i64, cpu_env, offset + offsetof(XMMReg, XMM_Q(0)));
@@ -2767,7 +3117,11 @@ static inline void gen_sto_env_A0(int idx, int offset)
     tcg_gen_qemu_st64(cpu_tmp1_i64, cpu_tmp0, mem_index);
 }
 
+#ifndef VBOX
 static inline void gen_op_movo(int d_offset, int s_offset)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movo(int d_offset, int s_offset)
+#endif /* VBOX */
 {
     tcg_gen_ld_i64(cpu_tmp1_i64, cpu_env, s_offset);
     tcg_gen_st_i64(cpu_tmp1_i64, cpu_env, d_offset);
@@ -2775,19 +3129,31 @@ static inline void gen_op_movo(int d_offset, int s_offset)
     tcg_gen_st_i64(cpu_tmp1_i64, cpu_env, d_offset + 8);
 }
 
+#ifndef VBOX
 static inline void gen_op_movq(int d_offset, int s_offset)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movq(int d_offset, int s_offset)
+#endif /* VBOX */
 {
     tcg_gen_ld_i64(cpu_tmp1_i64, cpu_env, s_offset);
     tcg_gen_st_i64(cpu_tmp1_i64, cpu_env, d_offset);
 }
 
+#ifndef VBOX
 static inline void gen_op_movl(int d_offset, int s_offset)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movl(int d_offset, int s_offset)
+#endif /* VBOX */
 {
     tcg_gen_ld_i32(cpu_tmp2_i32, cpu_env, s_offset);
     tcg_gen_st_i32(cpu_tmp2_i32, cpu_env, d_offset);
 }
 
+#ifndef VBOX
 static inline void gen_op_movq_env_0(int d_offset)
+#else /* VBOX */
+DECLINLINE(void) gen_op_movq_env_0(int d_offset)
+#endif /* VBOX */
 {
     tcg_gen_movi_i64(cpu_tmp1_i64, 0);
     tcg_gen_st_i64(cpu_tmp1_i64, cpu_env, d_offset);
@@ -7826,7 +8192,11 @@ void optimize_flags_init(void)
 /* generate intermediate code in gen_opc_buf and gen_opparam_buf for
    basic block 'tb'. If search_pc is TRUE, also generate PC
    information for each intermediate instruction. */
+#ifndef VBOX
 static inline void gen_intermediate_code_internal(CPUState *env,
+#else /* VBOX */
+DECLINLINE(void) gen_intermediate_code_internal(CPUState *env,
+#endif /* VBOX */
                                                   TranslationBlock *tb,
                                                   int search_pc)
 {

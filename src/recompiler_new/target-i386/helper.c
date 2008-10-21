@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
 #ifndef VBOX
+#include <inttypes.h>
 #include <signal.h>
 #include <assert.h>
 #endif
@@ -146,6 +146,7 @@ typedef struct x86_def_t {
     char model_id[48];
 } x86_def_t;
 
+#ifndef VBOX
 #define I486_FEATURES (CPUID_FP87 | CPUID_VME | CPUID_PSE)
 #define PENTIUM_FEATURES (I486_FEATURES | CPUID_DE | CPUID_TSC | \
           CPUID_MSR | CPUID_MCE | CPUID_CX8 | CPUID_MMX)
@@ -412,6 +413,7 @@ void x86_cpu_list (FILE *f, int (*cpu_fprintf)(FILE *f, const char *fmt, ...))
     for (i = 0; i < sizeof(x86_defs) / sizeof(x86_def_t); i++)
         (*cpu_fprintf)(f, "x86 %16s\n", x86_defs[i].name);
 }
+#endif /* !VBOX */
 
 static int cpu_x86_register (CPUX86State *env, const char *cpu_model)
 {

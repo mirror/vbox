@@ -235,6 +235,7 @@ DECLINLINE(void) stfl(target_ulong ptr, float v)
 #undef ceil
 #undef ldexp
 #endif /* !VBOX */
+#if !defined(VBOX) || !defined(_MSC_VER)
 #define sin sinl
 #define cos cosl
 #define sqrt sqrtl
@@ -245,6 +246,7 @@ DECLINLINE(void) stfl(target_ulong ptr, float v)
 #define floor floorl
 #define ceil ceill
 #define ldexp ldexpl
+#endif
 #else
 #define floatx_to_int32 float64_to_int32
 #define floatx_to_int64 float64_to_int64

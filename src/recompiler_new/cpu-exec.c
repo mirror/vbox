@@ -344,7 +344,11 @@ int cpu_exec(CPUState *env1)
             for(;;)
             {
                 interrupt_request = env->interrupt_request;
+#ifndef VBOX
                 if (__builtin_expect(interrupt_request, 0))
+#else
+                if (RT_UNLIKELY(interrupt_request != 0))
+#endif
                 {
                     /** @todo: reconscille with what QEMU really does */
 
