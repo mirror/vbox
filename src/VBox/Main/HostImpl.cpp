@@ -53,13 +53,12 @@
 # include <stdio.h>
 # ifdef VBOX_SOLARIS_NSL_RESOLVED
 #  include <libdevinfo.h>
-# else
-#  include <net/if.h>
-#  include <sys/socket.h>
-#  include <sys/sockio.h>
-#  include <net/if_arp.h>
-#  include <net/if.h>
-# endif /* VBOX_SOLARIS_USE_DEVINFO */
+# endif
+# include <net/if.h>
+# include <sys/socket.h>
+# include <sys/sockio.h>
+# include <net/if_arp.h>
+# include <net/if.h>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sys/cdio.h>
@@ -616,10 +615,19 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, 
 static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostNetworkInterfaceList)
 {
     /*
-     * Clip off the instance number from the interface name.
+     * Clip off the zone instance number from the interface name (if any).
+     */
+    char szIfaceName[128];
+    strcpy(szIfaceName, pszIface);
+    char *pszColon = (char *)memchr(szIfaceName, ':', sizeof(szIfaceName));
+    if (pszColon)
+        *pszColon = '\0';
+
+    /*
+     * Get the instance number from the interface name, then clip it off.
      */
     int cbInstance = 0;
-    int cbIface = strlen(pszIface);
+    int cbIface = strlen(szIfaceName);
     const char *pszEnd = pszIface + cbIface - 1;
     for (int i = 0; i < cbIface - 1; i++)
     {
@@ -629,19 +637,41 @@ static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostN
         pszEnd--;
     }
 
+    int Instance = atoi(pszEnd + 1);
+    strncpy(szIfaceName, pszIface, cbIface - cbInstance);
+    szIfaceName[cbIface - cbInstance] = '\0';
+
     /*
      * Add the interface.
      */
-    char szIfaceName[128];
-    strncpy(szIfaceName, pszIface, cbIface - cbInstance);
-    szIfaceName[cbIface - cbInstance] = '\0';
-    int Instance = atoi(pszEnd + 1);
     vboxSolarisAddHostIface(szIfaceName, Instance, NULL, pvHostNetworkInterfaceList);
 
     /*
      * Continue walking...
      */
     return _B_FALSE;
+}
+
+static bool vboxSolarisSortNICList(const ComObjPtr <HostNetworkInterface> Iface1, const ComObjPtr <HostNetworkInterface> Iface2)
+{
+    Bstr Iface1Str;
+    (*Iface1).COMGETTER(Name) (Iface1Str.asOutParam());
+
+    Bstr Iface2Str;
+    (*Iface2).COMGETTER(Name) (Iface2Str.asOutParam());
+
+    return Iface1Str < Iface2Str;    
+}
+
+static bool vboxSolarisSameNIC(const ComObjPtr <HostNetworkInterface> Iface1, const ComObjPtr <HostNetworkInterface> Iface2)
+{
+    Bstr Iface1Str;
+    (*Iface1).COMGETTER(Name) (Iface1Str.asOutParam());
+
+    Bstr Iface2Str;
+    (*Iface2).COMGETTER(Name) (Iface2Str.asOutParam());
+
+    return (Iface1Str == Iface2Str);
 }
 
 # ifdef VBOX_SOLARIS_NSL_RESOLVED
@@ -662,19 +692,7 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
     vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), NULL, pvHostNetworkInterfaceList);
 	return DI_WALK_CONTINUE;
 }
-
-static bool vboxSolarisSameNIC(ComObjPtr <HostNetworkInterface> Iface1, ComObjPtr <HostNetworkInterface> Iface2)
-{
-    Bstr Iface1Str;
-    (*Iface1).COMGETTER(Name) (Iface1Str.asOutParam());
-
-    Bstr Iface2Str;
-    (*Iface2).COMGETTER(Name) (Iface2Str.asOutParam());
-
-    return (Iface1Str == Iface2Str);
-}
-
-# endif /* VBOX_SOLARIS_USE_DEVINFO */
+# endif /* VBOX_SOLARIS_NSL_RESOLVED */
 
 #endif
 
@@ -1066,7 +1084,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
 # elif defined(RT_OS_SOLARIS)
 
-#ifdef VBOX_SOLARIS_NSL_RESOLVED
+#  ifdef VBOX_SOLARIS_NSL_RESOLVED
 
     /*
      * Use libdevinfo for determining all physical interfaces.
@@ -1085,14 +1103,13 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
     if (VBoxSolarisLibDlpiFound())
         g_pfnLibDlpiWalk(vboxSolarisAddLinkHostIface, &list, 0);
 
-    /*
-     * Weed out duplicates caused by dlpi_walk inconsistencies across Nevadas.
-     */
-    list.unique(vboxSolarisSameNIC);
+#  endif    /* VBOX_SOLARIS_NSL_RESOLVED */
 
-#else
     /*
      * This gets only the list of all plumbed logical interfaces.
+     * This is needed for zones which cannot access the device tree
+     * and in this case we just let them use the list of plumbed interfaces
+     * on the zone.
      */
     int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (Sock > 0)
@@ -1112,9 +1129,6 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
             rc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
             if (!rc)
             {
-                /*
-                 * Ok now we go the interfaces, get the info we need (i.e MAC address).
-                 */
                 for (int i = 0; i < IfNum.lifn_count; i++)
                 {
                     /*
@@ -1123,6 +1137,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                     if (!strncmp(Ifaces[i].lifr_name, "lo", 2))
                         continue;
 
+#if 0
                     rc = ioctl(Sock, SIOCGLIFADDR, &(Ifaces[i]));
                     if (!rc)
                     {
@@ -1148,12 +1163,21 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
                         vboxSolarisAddLinkHostIface(pszIface, &list);
                     }
+#endif
+
+                    char *pszIface = Ifaces[i].lifr_name;
+                    vboxSolarisAddLinkHostIface(pszIface, &list);
                 }
             }
         }
         close(Sock);
     }
-#endif
+
+    /*
+     * Weed out duplicates caused by dlpi_walk inconsistencies across Nevadas.
+     */
+    list.sort(vboxSolarisSortNICList);
+    list.unique(vboxSolarisSameNIC);
 
 # elif defined RT_OS_WINDOWS
 #  ifndef VBOX_WITH_NETFLT
