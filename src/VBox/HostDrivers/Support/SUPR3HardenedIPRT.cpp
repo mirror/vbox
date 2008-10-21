@@ -98,6 +98,23 @@ DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
 }
 
 
+DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
+{
+    va_list vaCopy;
+    va_copy(vaCopy, va);
+    AssertFatalMsgFailed(("%s (rc=%Rrc): %N", pszWhere, rc, pszMsgFmt, &vaCopy));
+    va_end(vaCopy);
+}
+
+
+DECLHIDDEN(void)   supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pszMsgFmt);
+    supR3HardenedFatalMsgV(pszWhere, enmWhat, rc, pszMsgFmt, va);
+    va_end(va);
+}
+
 
 DECLHIDDEN(void) supR3HardenedFatalV(const char *pszFormat, va_list va)
 {

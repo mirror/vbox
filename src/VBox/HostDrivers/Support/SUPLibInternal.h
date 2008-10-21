@@ -82,6 +82,8 @@
 # define supR3HardenedPathFilename         supR3HardenedStaticPathFilename
 # define supR3HardenedFatalV               supR3HardenedStaticFatalV
 # define supR3HardenedFatal                supR3HardenedStaticFatal
+# define supR3HardenedFatalMsgV            supR3HardenedStaticFatalMsgV
+# define supR3HardenedFatalMsg             supR3HardenedStaticFatalMsg
 # define supR3HardenedErrorV               supR3HardenedStaticErrorV
 # define supR3HardenedError                supR3HardenedStaticError
 # define supR3HardenedVerifyAll            supR3HardenedStaticVerifyAll
@@ -278,6 +280,16 @@ DECLHIDDEN(int)    supR3HardenedPathAppDocs(char *pszPath, size_t cchPath);
 DECLHIDDEN(int)    supR3HardenedPathProgram(char *pszPath, size_t cchPath);
 /** @copydoc RTPathFilename */
 DECLHIDDEN(char *) supR3HardenedPathFilename(const char *pszPath);
+
+/**
+ * Display a fatal error and try call TrustedError or quit.
+ */
+DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va);
+
+/**
+ * Display a fatal error and try call TrustedError or quit.
+ */
+DECLHIDDEN(void)   supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, ...);
 
 /**
  * Display a fatal error and quit.
