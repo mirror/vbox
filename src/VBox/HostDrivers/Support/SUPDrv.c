@@ -151,7 +151,7 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
 static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser);
 
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
 DECLASM(int)    supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
 DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned uOperation);
 DECLASM(void)   supdrvNtWrapObjDestructor(PFNRT pfnDestruction, void *pvObj, void *pvUser1, void *pvUser2);
@@ -266,7 +266,7 @@ DECLASM(void)  UNWIND_WRAP(RTLogLoggerExV)(PRTLOGGER pLogger, unsigned fFlags, u
 DECLASM(void)  UNWIND_WRAP(RTLogPrintfV)(const char *pszFormat, va_list args);
 DECLASM(void)  UNWIND_WRAP(AssertMsg1)(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
 /* AssertMsg2             - can't wrap this buster. */
-#endif /* SUPDRV_WITH_UNWIND_HACK */
+#endif /* RT_WITH_W64_UNWIND_HACK */
 
 
 /*******************************************************************************
@@ -706,7 +706,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                 Log(("supdrvCleanupSession: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
                      pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
                 if (pObj->pfnDestructor)
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
                     supdrvNtWrapObjDestructor((PFNRT)pObj->pfnDestructor, pObj, pObj->pvUser1, pObj->pvUser2);
 #else
                     pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
@@ -870,21 +870,21 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSES
         switch (uIOCtl)
         {
             case SUP_IOCTL_FAST_DO_RAW_RUN:
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
                 supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
 #else
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
 #endif
                 break;
             case SUP_IOCTL_FAST_DO_HWACC_RUN:
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
                 supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
 #else
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
 #endif
                 break;
             case SUP_IOCTL_FAST_DO_NOP:
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
                 supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_NOP);
 #else
                 pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_NOP);
@@ -1273,7 +1273,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
                 /* execute */
                 if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
                     pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
 #else
                     pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, NULL, pReq->u.In.u64Arg, pSession);
@@ -1291,7 +1291,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
                 /* execute */
                 if (RT_LIKELY(pDevExt->pfnVMMR0EntryEx))
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
                     pReq->Hdr.rc = supdrvNtWrapVMMR0EntryEx((PFNRT)pDevExt->pfnVMMR0EntryEx, pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
 #else
                     pReq->Hdr.rc = pDevExt->pfnVMMR0EntryEx(pReq->u.In.pVMR0, pReq->u.In.uOperation, pVMMReq, pReq->u.In.u64Arg, pSession);
@@ -1862,7 +1862,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
         Log(("SUPR0ObjRelease: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
              pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
         if (pObj->pfnDestructor)
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
             supdrvNtWrapObjDestructor((PFNRT)pObj->pfnDestructor, pObj, pObj->pvUser1, pObj->pvUser2);
 #else
             pObj->pfnDestructor(pObj, pObj->pvUser1, pObj->pvUser2);
@@ -2839,7 +2839,7 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
             if (    pCur->cchName == cchName
                 &&  !memcmp(pCur->pFactory->szName, pszName, cchName))
             {
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
                 void *pvFactory = supdrvNtWrapQueryFactoryInterface((PFNRT)pCur->pFactory->pfnQueryFactoryInterface, pCur->pFactory, pSession, pszInterfaceUuid);
 #else
                 void *pvFactory = pCur->pFactory->pfnQueryFactoryInterface(pCur->pFactory, pSession, pszInterfaceUuid);
@@ -3858,7 +3858,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (RT_SUCCESS(rc) && pImage->pfnModuleInit)
     {
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
         rc = supdrvNtWrapModuleInit((PFNRT)pImage->pfnModuleInit);
 #else
         rc = pImage->pfnModuleInit();
@@ -4332,7 +4332,7 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         &&  pImage->uState == SUP_IOCTL_LDR_LOAD)
     {
         LogFlow(("supdrvIOCtl_LdrLoad: calling pfnModuleTerm=%p\n", pImage->pfnModuleTerm));
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
         supdrvNtWrapModuleTerm(pImage->pfnModuleTerm);
 #else
         pImage->pfnModuleTerm();
