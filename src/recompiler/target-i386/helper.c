@@ -175,8 +175,18 @@ static inline void load_seg_cache_raw_dt(SegmentCache *sc, uint32_t e1, uint32_t
 static inline void load_seg_vm(int seg, int selector)
 {
     selector &= 0xffff;
+#ifdef VBOX
+    unsigned flags = DESC_P_MASK | DESC_S_MASK | DESC_W_MASK;
+
+    if (seg == R_CS)
+        flags |= DESC_CS_MASK;
+
+    cpu_x86_load_seg_cache(env, seg, selector,
+                           (selector << 4), 0xffff, flags);
+#else
     cpu_x86_load_seg_cache(env, seg, selector,
                            (selector << 4), 0xffff, 0);
+#endif
 }
 
 static inline void get_ss_esp_from_tss(uint32_t *ss_ptr,
