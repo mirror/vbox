@@ -4929,7 +4929,8 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
-    bool need_update = false;
+    bool update = false;
+    bool updateSpawned = false;
 
     do
     {
@@ -4952,7 +4953,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             if (!autoCaller.isOk())
                 break;
 
-            if (VBOX_SUCCESS (rc) || need_update)
+            if (VBOX_SUCCESS (rc) || update)
             {
                 /* VBOX_SUCCESS (rc) means an update event is signaled */
 
@@ -4962,15 +4963,23 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                 LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
             }
 
-            need_update = false;
+            if (VBOX_SUCCESS (rc) || updateSpawned)
+            {
+                /* VBOX_SUCCESS (rc) means an update event is signaled */
+
+                /* obtain a new set of spawned machines */
+                that->getSpawnedMachines (spawnedMachines);
+                cntSpawned = spawnedMachines.size();
+                LogFlowFunc (("UPDATE: spawned session count = %d\n", cntSpawned));
+            }
+
+            update = false;
             for (size_t i = 0; i < cnt; ++ i)
-                need_update |= (machines [i])->checkForDeath();
+                update |= (machines [i])->checkForDeath();
 
-            that->getSpawnedMachines (spawnedMachines);
-            cntSpawned = spawnedMachines.size();
-
+            updateSpawned = false;
             for (size_t i = 0; i < cntSpawned; ++ i)
-                (spawnedMachines [i])->checkForSpawnFailure();
+                updateSpawned |= (spawnedMachines [i])->checkForSpawnFailure();
 
             /* reap child processes */
             {

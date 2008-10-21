@@ -551,18 +551,14 @@ public:
 
     // public methods only for internal purposes
 
-    //
-    //  Called from the client watcher thread to check for unexpected client
-    //  process death during Session_Spawning state.
-    //
-    bool checkForSpawnFailure();
-
     /// @todo (dmik) add lock and make non-inlined after revising classes
     //  that use it. Note: they should enter Machine lock to keep the returned
     //  information valid!
     bool isRegistered() { return !!mData->mRegistered; }
 
     ComObjPtr <SessionMachine> sessionMachine();
+
+    bool checkForSpawnFailure();
 
     /**
      *  Returns the VirtualBox object this machine belongs to.
