@@ -700,10 +700,10 @@
 </xsd:complexType>
 
 <xsd:complexType name="TGuestProperties">
-  <xsd:attribute name="notificationPatterns" type="xsd:string" default=""/>
   <xsd:sequence>
     <xsd:element name="GuestProperty" type="TGuestProperty" minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
+  <xsd:attribute name="notificationPatterns" type="xsd:string" default=""/>
 </xsd:complexType>
 
 <xsd:complexType name="THardware">

@@ -5211,7 +5211,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 HWData::GuestProperty property = { name, value, timestamp, fFlags };
                 mHWData->mGuestProperties.push_back(property);
             }
-            notificationPatterns = guestPropertiesNode.stringValue ("NotificationPatterns");
+            notificationPatterns = guestPropertiesNode.stringValue ("notificationPatterns");
         }
         mHWData->mPropertyServiceActive = false;
         mHWData->mGuestPropertyNotificationPatterns = notificationPatterns;
@@ -6600,8 +6600,9 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             writeFlags(property.mFlags, szFlags);
             propertyNode.setValue <Bstr> ("flags", Bstr(szFlags));
         }
-        guestPropertiesNode.setValue <Bstr> ("NotificationPatterns",
-                                             mHWData->mGuestPropertyNotificationPatterns);
+        guestPropertiesNode.setValueOr <Bstr> ("notificationPatterns",
+                                               mHWData->mGuestPropertyNotificationPatterns,
+                                               Bstr (""));
     }
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
