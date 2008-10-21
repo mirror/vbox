@@ -1008,17 +1008,27 @@ Console::doGuestPropNotification (void *pvExtension, uint32_t,
 {
     using namespace guestProp;
 
+    int rc = VINF_SUCCESS;
     /* No locking, as this is purely a notification which does not make any
      * changes to the object state. */
     PHOSTCALLBACKDATA pCBData = reinterpret_cast<PHOSTCALLBACKDATA>(pvParms);
     AssertReturn(sizeof(HOSTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
     AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
     ComObjPtr <Console> pConsole = reinterpret_cast <Console *> (pvExtension);
-    pConsole->mControl->PushGuestProperty(Bstr(pCBData->pcszName),
-                                          Bstr(pCBData->pcszValue),
-                                          pCBData->u64Timestamp,
-                                          Bstr(pCBData->pcszFlags));
-    return VINF_SUCCESS;
+    Bstr name(pCBData->pcszName);
+    Bstr value(pCBData->pcszValue);
+    Bstr flags(pCBData->pcszFlags);
+    if (   name.isNull()
+        || (value.isNull() && (pCBData->pcszValue != NULL))
+        || (flags.isNull() && (pCBData->pcszFlags != NULL))
+       )
+        rc = VERR_NO_MEMORY;
+    else
+        if (FAILED(pConsole->mControl->PushGuestProperty(name, value,
+                                                         pCBData->u64Timestamp,
+                                                         flags)))
+            rc = VERR_UNRESOLVED_ERROR;  /** @todo translate error code */
+    return rc;
 }
 #endif
 
@@ -3652,29 +3662,35 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
      * Set up the pattern parameter, translating the comma-separated list to a
      * double-terminated zero-separated one.
      */
-    Utf8Str Utf8PatternsIn = aPatterns;
-    if ((aPatterns != NULL) && Utf8PatternsIn.isNull())
+    Utf8Str utf8In(aPatterns);
+    Utf8Str utf8Out(utf8In.length() + 2);  /* Double terminator */
+    if (   ((aPatterns != NULL) && (utf8In.isNull()))
+        || utf8Out.isNull())
         return E_OUTOFMEMORY;
-    size_t cchPatterns = Utf8PatternsIn.length();
-    Utf8Str Utf8Patterns(cchPatterns + 2);  /* Double terminator */
-    if (Utf8Patterns.isNull())
-        return E_OUTOFMEMORY;
-    char *pszPatterns = Utf8Patterns.mutableRaw();
-    unsigned iPatterns = 0;
-    for (unsigned i = 0; i < cchPatterns; ++i)
-    {
-        char cIn = Utf8PatternsIn.raw()[i];
-        if ((cIn != ',') && (cIn != ' '))
-            pszPatterns[iPatterns] = cIn;
-        else if (cIn != ' ')
-            pszPatterns[iPatterns] = '\0';
-        if (cIn != ' ')
-            ++iPatterns;
-    }
-    pszPatterns[iPatterns] = '\0';
+    const char *pcszIn = utf8In.raw();
+    char *pszzOut = utf8Out.mutableRaw();
+    size_t iIn = 0, iOut = 0;
+    if (aPatterns != NULL)
+        while (pcszIn[iIn] != '\0')
+        {
+            if (pcszIn[iIn] != ',')
+            {
+                pszzOut[iOut] = pcszIn[iIn];
+                ++iIn;
+            }
+            else
+            {
+                pszzOut[iOut] = '\0';
+                while ((',' == pcszIn[iIn]) || (' ' == pcszIn[iIn]))
+                    ++iIn;
+            }
+            ++iOut;
+        }
+    pszzOut[iOut] = '\0';
+
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[0].u.pointer.addr = pszPatterns;
-    parm[0].u.pointer.size = iPatterns + 1;
+    parm[0].u.pointer.addr = pszzOut;
+    parm[0].u.pointer.size = iOut + 1;
 
     /*
      * Now things get slightly complicated.  Due to a race with the guest adding
