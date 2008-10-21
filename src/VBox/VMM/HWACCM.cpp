@@ -909,7 +909,13 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 || (pCtx->fs & X86_SEL_RPL)
                 || (pCtx->gs & X86_SEL_RPL)
                 || (pCtx->ss & X86_SEL_RPL))
+            {
+                /* Flush the translation blocks as code pages may have been
+                 * changed (Fedora4 boot image, reset, boot iso)
+                 */
+                EMFlushREMTBs(pVM);
                 return false;
+            }
         }
     }
 #else
