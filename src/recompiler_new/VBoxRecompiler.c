@@ -211,12 +211,6 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 
 
-/* Instantiate the structure signatures. */
-#define REM_STRUCT_OP 0
-#include "Sun/structs.h"
-
-
-
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -255,17 +249,6 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 #if defined(DEBUG) && !defined(RT_OS_SOLARIS) /// @todo fix the solaris math stuff.
     Assert(!testmath());
 #endif
-    ASSERT_STRUCT_TABLE(Misc);
-    ASSERT_STRUCT_TABLE(TLB);
-    ASSERT_STRUCT_TABLE(SegmentCache);
-    ASSERT_STRUCT_TABLE(XMMReg);
-    ASSERT_STRUCT_TABLE(MMXReg);
-    ASSERT_STRUCT_TABLE(float_status);
-    ASSERT_STRUCT_TABLE(float32u);
-    ASSERT_STRUCT_TABLE(float64u);
-    ASSERT_STRUCT_TABLE(floatx80u);
-    ASSERT_STRUCT_TABLE(CPUState);
-
     /*
      * Init some internal data members.
      */
@@ -286,6 +269,8 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 
     /* ignore all notifications */
     pVM->rem.s.fIgnoreAll = true;
+
+    cpu_exec_init_all(0);
 
     /*
      * Init the recompiler.
