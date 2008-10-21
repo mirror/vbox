@@ -3152,104 +3152,6 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Returns the session machine object associated with the this machine.
- * The returned session machine is null if no direct session is currently open.
- *
- * @note locks this object for reading.
- */
-ComObjPtr <SessionMachine> Machine::sessionMachine()
-{
-    ComObjPtr <SessionMachine> sm;
-
-    AutoLimitedCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), sm);
-
-    /* return null for inaccessible machines */
-    if (autoCaller.state() != Ready)
-        return sm;
-
-    AutoReadLock alock (this);
-
-    sm = mData->mSession.mMachine;
-    Assert (!sm.isNull() ||
-            mData->mSession.mState != SessionState_Open);
-
-    return  sm;
-}
-
-/**
- * Called from the client watcher thread to check for unexpected client process
- * death during Session_Spawning state (e.g. before it successfully opened a
- * direct session).
- *
- * This method returns @c true if the client process is terminated and @c false
- * if it's still alive.
- *
- * @note Locks this object for writing.
- */
-bool Machine::checkForSpawnFailure()
-{
-    AutoCaller autoCaller (this);
-    if (!autoCaller.isOk())
-    {
-        /* nothing to do */
-        LogFlowThisFunc (("Already uninitialized!"));
-        return true;
-    }
-
-    /* VirtualBox::addProcessToReap() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
-
-    if (mData->mSession.mState != SessionState_Spawning)
-    {
-        /* nothing to do */
-        LogFlowThisFunc (("Not spawning any more!"));
-        return true;
-    }
-
-    HRESULT rc = S_OK;
-
-    RTPROCSTATUS status;
-    int vrc = ::RTProcWait (mData->mSession.mPid, RTPROCWAIT_FLAGS_NOBLOCK,
-                            &status);
-
-    if (vrc != VERR_PROCESS_RUNNING)
-        rc = setError (E_FAIL,
-                       tr ("Virtual machine '%ls' has terminated unexpectedly "
-                           "during startup"),
-                       name().raw());
-
-    if (FAILED (rc))
-    {
-        /* Close the remote session, remove the remote control from the list
-         * and reset session state to Closed (@note keep the code in sync with
-         * the relevant part in checkForSpawnFailure()). */
-
-        Assert (mData->mSession.mRemoteControls.size() == 1);
-        if (mData->mSession.mRemoteControls.size() == 1)
-        {
-            ErrorInfoKeeper eik;
-            mData->mSession.mRemoteControls.front()->Uninitialize();
-        }
-
-        mData->mSession.mRemoteControls.clear();
-        mData->mSession.mState = SessionState_Closed;
-
-        /* finalize the progress after setting the state, for consistency */
-        mData->mSession.mProgress->notifyComplete (rc);
-        mData->mSession.mProgress.setNull();
-
-        mParent->addProcessToReap (mData->mSession.mPid);
-        mData->mSession.mPid = NIL_RTPROCESS;
-
-        mParent->onSessionStateChange (mData->mUuid, SessionState_Closed);
-        return true;
-    }
-
-    return false;
-}
-
-/**
  *  Saves the registry entry of this machine to the given configuration node.
  *
  *  @param aEntryNode Node to save the registry entry to.
@@ -4054,6 +3956,182 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
 
     LogFlowThisFuncLeave();
     return S_OK;
+}
+
+/**
+ * Returns @c true if the given machine has an open direct session and returns
+ * the session machine instance and additional session data (on some platforms)
+ * if so.
+ *
+ * Note that when the method returns @c false, the arguments remain unchanged.
+ *
+ * @param aMachine  Session machine object.
+ * @param aIPCSem   Mutex IPC semaphore handle for this machine.
+ *
+ * @note locks this object for reading.
+ */
+#if defined (RT_OS_WINDOWS)
+bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                             HANDLE *aIPCSem /*= NULL*/)
+#elif defined (RT_OS_OS2)
+bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                             HMTX *aIPCSem /*= NULL*/);
+#else
+bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine)
+#endif
+{
+    AutoLimitedCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
+    /* just return false for inaccessible machines */
+    if (autoCaller.state() != Ready)
+        return false;
+
+    AutoReadLock alock (this);
+
+    if (mData->mSession.mState == SessionState_Open)
+    {
+        AssertReturn (!mData->mSession.mMachine.isNull(), false);
+
+        aMachine = mData->mSession.mMachine;
+
+#if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
+        /* Additional session data */
+        if (aIPCSem != NULL)
+            *aIPCSem = aMachine->mIPCSem;
+#endif
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Returns @c true if the given machine has an spawning direct session and
+ * returns and additional session data (on some platforms) if so.
+ *
+ * Note that when the method returns @c false, the arguments remain unchanged.
+ *
+ * @param aPID  PID of the spawned direct session process.
+ *
+ * @note locks this object for reading.
+ */
+#if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
+bool Machine::isSessionSpawning (RTPROCESS *aPID /*= NULL*/)
+#else
+bool Machine::isSessionSpawning()
+#endif
+{
+    AutoLimitedCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), false);
+
+    /* just return false for inaccessible machines */
+    if (autoCaller.state() != Ready)
+        return false;
+
+    AutoReadLock alock (this);
+
+    if (mData->mSession.mState == SessionState_Spawning)
+    {
+#if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
+        /* Additional session data */
+        if (aPID != NULL)
+        {
+            AssertReturn (mData->mSession.mPid != NIL_RTPROCESS, false);
+            *aPID = mData->mSession.mPid;
+        }
+#endif
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Called from the client watcher thread to check for unexpected client process
+ * death during Session_Spawning state (e.g. before it successfully opened a
+ * direct session).
+ *
+ * On Win32 and on OS/2, this method is called only when we've got the
+ * direct client's process termination notification, so it always returns @c
+ * true.
+ *
+ * On other platforms, this method returns @c true if the client process is
+ * terminated and @c false if it's still alive.
+ *
+ * @note Locks this object for writing.
+ */
+bool Machine::checkForSpawnFailure()
+{
+    AutoCaller autoCaller (this);
+    if (!autoCaller.isOk())
+    {
+        /* nothing to do */
+        LogFlowThisFunc (("Already uninitialized!"));
+        return true;
+    }
+
+    /* VirtualBox::addProcessToReap() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
+
+    if (mData->mSession.mState != SessionState_Spawning)
+    {
+        /* nothing to do */
+        LogFlowThisFunc (("Not spawning any more!"));
+        return true;
+    }
+
+    HRESULT rc = S_OK;
+
+#if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
+
+    /* the process was already unexpectedly terminated, we just need to set an
+     * error and finalize session spawning */
+    rc = setError (E_FAIL,
+                   tr ("Virtual machine '%ls' has terminated unexpectedly "
+                       "during startup"),
+                   name().raw());
+#else
+
+    RTPROCSTATUS status;
+    int vrc = ::RTProcWait (mData->mSession.mPid, RTPROCWAIT_FLAGS_NOBLOCK,
+                            &status);
+
+    if (vrc != VERR_PROCESS_RUNNING)
+        rc = setError (E_FAIL,
+                       tr ("Virtual machine '%ls' has terminated unexpectedly "
+                           "during startup"),
+                       name().raw());
+#endif
+
+    if (FAILED (rc))
+    {
+        /* Close the remote session, remove the remote control from the list
+         * and reset session state to Closed (@note keep the code in sync with
+         * the relevant part in checkForSpawnFailure()). */
+
+        Assert (mData->mSession.mRemoteControls.size() == 1);
+        if (mData->mSession.mRemoteControls.size() == 1)
+        {
+            ErrorInfoKeeper eik;
+            mData->mSession.mRemoteControls.front()->Uninitialize();
+        }
+
+        mData->mSession.mRemoteControls.clear();
+        mData->mSession.mState = SessionState_Closed;
+
+        /* finalize the progress after setting the state, for consistency */
+        mData->mSession.mProgress->notifyComplete (rc);
+        mData->mSession.mProgress.setNull();
+
+        mParent->addProcessToReap (mData->mSession.mPid);
+        mData->mSession.mPid = NIL_RTPROCESS;
+
+        mParent->onSessionStateChange (mData->mUuid, SessionState_Closed);
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -9315,12 +9393,12 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
  * Called from the client watcher thread to check for expected or unexpected
  * death of the client process that has a direct session to this machine.
  *
- * @note On Win32 and on OS/2, this method is called only when we've got the
+ * On Win32 and on OS/2, this method is called only when we've got the
  * mutex (i.e. the client has either died or terminated normally) so it always
  * returns @c true (the client is terminated, the session machine is
  * uninitialized).
  *
- * @note On Linux, the method returns @c true if the client process has
+ * On other platforms, the method returns @c true if the client process has
  * terminated normally or abnormally and the session machine was uninitialized,
  * and @c false if the client process is still alive.
  *
