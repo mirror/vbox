@@ -5211,8 +5211,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 HWData::GuestProperty property = { name, value, timestamp, fFlags };
                 mHWData->mGuestProperties.push_back(property);
             }
-            if (!guestPropertiesNode.findKey ("NotificationPatterns").isNull())
-                notificationPatterns = guestPropertiesNode.stringValue ("NotificationPatterns");
+            notificationPatterns = guestPropertiesNode.stringValue ("NotificationPatterns");
         }
         mHWData->mPropertyServiceActive = false;
         mHWData->mGuestPropertyNotificationPatterns = notificationPatterns;
