@@ -2861,11 +2861,9 @@ static bool matchesSinglePatternEx(const char *pszPat, size_t cchPat, const char
                 for (;;)
                 {
                     char ch = *pszName++;
-                    if (    ch == chPat
-                        &&  (   !chPat
-                             || matchesSinglePatternEx(pszPat + 1,
-                                                       cchPat - 1, pszName)
-                            )
+                    if (   cchPat == 0
+                        || (cchPat == 1 && ch == chPat)
+                        || matchesSinglePatternEx(pszPat, cchPat, pszName)
                        )
                         return true;
                     if (!ch)
