@@ -260,7 +260,7 @@ typedef struct VGAState {
     /** Indicates if the R0 extensions are enabled or not. */
     bool                        fR0Enabled;
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
-    bool                        fHaveDirtyBits;
+    bool                        fHasDirtyBits;
     /** Flag indicating that the VGA memory in the 0xa0000-0xbffff region has been remapped to allow direct access. */
     bool                        fRemappedVGA;
     /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
