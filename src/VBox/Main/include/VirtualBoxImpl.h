@@ -225,6 +225,8 @@ public:
     void onSnapshotTaken (const Guid &aMachineId, const Guid &aSnapshotId);
     void onSnapshotDiscarded (const Guid &aMachineId, const Guid &aSnapshotId);
     void onSnapshotChange (const Guid &aMachineId, const Guid &aSnapshotId);
+    void onGuestPropertyChange (const Guid &aMachineId, INPTR BSTR aName, INPTR BSTR aValue,
+                                INPTR BSTR aFlags);
 
     ComObjPtr <GuestOSType> getUnknownOSType();
 

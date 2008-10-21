@@ -265,6 +265,7 @@ public:
         typedef std::list <GuestProperty> GuestPropertyList;
         GuestPropertyList mGuestProperties;
         BOOL           mPropertyServiceActive;
+        Bstr           mGuestPropertyNotificationPatterns;
     };
 
     /**
@@ -518,6 +519,8 @@ public:
     STDMETHOD(COMGETTER(SharedFolders)) (ISharedFolderCollection **aSharedFolders);
     STDMETHOD(COMGETTER(ClipboardMode)) (ClipboardMode_T *aClipboardMode);
     STDMETHOD(COMSETTER(ClipboardMode)) (ClipboardMode_T aClipboardMode);
+    STDMETHOD(COMGETTER(GuestPropertyNotificationPatterns)) (BSTR *aPattern);
+    STDMETHOD(COMSETTER(GuestPropertyNotificationPatterns)) (INPTR BSTR aPattern);
 
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);

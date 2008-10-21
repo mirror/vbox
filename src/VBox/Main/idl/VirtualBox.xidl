@@ -2661,7 +2661,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="9797b8f2-0631-4db8-813d-4c63356b223b"
+     uuid="0338ea27-4717-49e4-a227-791c1cef8da1"
      wsmap="managed"
      >
     <desc>
@@ -3179,6 +3179,14 @@
       <desc>
         Synchronization mode between the host OS clipboard
         and the guest OS clipboard.
+      </desc>
+    </attribute>
+
+    <attribute name="guestPropertyNotificationPatterns" type="wstring">
+      <desc>
+        A comma-separated list of simple glob patterns.  Changes to guest
+        properties whose name matches one of the patterns will generate an
+        <link to="IVirtualBoxCallback::onGuestPropertyChange"/> signal.
       </desc>
     </attribute>
 
@@ -3796,7 +3804,7 @@
         </desc>
       </param>
     </method>
-  </interface>
+</interface>
 
   <!--
   // IConsole

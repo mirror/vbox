@@ -2880,6 +2880,35 @@ void VirtualBox::onSnapshotChange (const Guid &aMachineId, const Guid &aSnapshot
     postEvent (new SnapshotEvent (this, aMachineId, aSnapshotId, SnapshotEvent::Changed));
 }
 
+/** Event for onGuestPropertyChange() */
+struct GuestPropertyEvent : public VirtualBox::CallbackEvent
+{
+    GuestPropertyEvent (VirtualBox *aVBox, const Guid &aMachineId,
+                        INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
+        : CallbackEvent (aVBox), machineId (aMachineId)
+        , name (aName), value (aValue), flags(aFlags)
+        {}
+
+    void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
+    {
+        LogFlow (("OnGuestPropertyChange: machineId={%Vuuid}, name='%ls', value='%ls', flags='%ls'\n",
+                  machineId.ptr(), name.raw(), value.raw(), flags.raw()));
+        aCallback->OnGuestPropertyChange (machineId, name, value, flags);
+    }
+
+    Guid machineId;
+    Bstr name, value, flags;
+};
+
+/**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::onGuestPropertyChange (const Guid &aMachineId, INPTR BSTR aName,
+                                        INPTR BSTR aValue, INPTR BSTR aFlags)
+{
+    postEvent (new GuestPropertyEvent (this, aMachineId, aName, aValue, aFlags));
+}
+
 /**
  *  @note Locks this object for reading.
  */
