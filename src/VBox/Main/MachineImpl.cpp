@@ -2839,11 +2839,10 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aName, ULONG64 *aTim
  */
 static bool matchesSinglePatternEx(const char *pszPat, size_t cchPat, const char *pszName)
 {
-    size_t iPat = 0;
     /* ASSUMES ASCII */
     for (;;)
     {
-        char chPat = pszPat[iPat];
+        char chPat = *pszPat;
         switch (chPat)
         {
             default:
@@ -2853,8 +2852,8 @@ static bool matchesSinglePatternEx(const char *pszPat, size_t cchPat, const char
 
             case '*':
             {
-                while (   ((chPat = pszPat[++iPat]) == '*' || chPat == '?')
-                       && (iPat < cchPat)
+                while (   (--cchPat > 0)
+                       && ((chPat = *++pszPat) == '*' || chPat == '?')
                       )
                     /* nothing */;
 
@@ -2863,8 +2862,8 @@ static bool matchesSinglePatternEx(const char *pszPat, size_t cchPat, const char
                     char ch = *pszName++;
                     if (    ch == chPat
                         &&  (   !chPat
-                             || matchesSinglePatternEx(pszPat + iPat + 1,
-                                                       cchPat - iPat - 1, pszName)
+                             || matchesSinglePatternEx(pszPat + 1,
+                                                       cchPat - 1, pszName)
                             )
                        )
                         return true;
@@ -2885,8 +2884,9 @@ static bool matchesSinglePatternEx(const char *pszPat, size_t cchPat, const char
         }
         pszName++;
         pszPat++;
-        if (iPat == cchPat)
+        if (--cchPat == 0)
             return !*pszName;
+        Assert(cchPat > 0);
     }
     return true;
 }
@@ -2904,7 +2904,7 @@ static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
 {
     size_t iOffs = 0;
     /* If the first pattern in the list is empty, treat it as "match all". */
-    bool matched = (cchPatterns > 0) && (0 == *paszPatterns) ? true : false;
+    bool matched = (cchPatterns > 0) && (0 == *paszPatterns);
     while ((iOffs < cchPatterns) && !matched)
     {
         size_t cchCurrent;
@@ -2930,7 +2930,7 @@ static bool matchesPatternComma(const char *pcszPatterns, const char *pcszString
     AssertPtr(pcszPatterns);
     const char *pcszCur = pcszPatterns;
     /* If list is empty, treat it as "match all". */
-    bool matched = (0 == *pcszPatterns) ? true : false;
+    bool matched = (0 == *pcszPatterns);
     bool done = false;
     while (!done && !matched)
     {
