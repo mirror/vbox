@@ -3087,10 +3087,10 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Returns the session machine object associated with the this machine.
- *  The returned session machine is null if no direct session is currently open.
+ * Returns the session machine object associated with the this machine.
+ * The returned session machine is null if no direct session is currently open.
  *
- *  @note locks this object for reading.
+ * @note locks this object for reading.
  */
 ComObjPtr <SessionMachine> Machine::sessionMachine()
 {
@@ -3113,18 +3113,14 @@ ComObjPtr <SessionMachine> Machine::sessionMachine()
 }
 
 /**
- *  Called from the client watcher thread to check for unexpected client
- *  process death during Session_Spawning state.
+ * Called from the client watcher thread to check for unexpected client process
+ * death during Session_Spawning state (e.g. before it successfully opened a
+ * direct session).
  *
- *  @note On Win32 and on OS/2, this method is called only when we've got the
- *  mutex (i.e. the client has either died or terminated normally). This
- *  method always returns true.
+ * This method returns @c true if the client process is terminated and @c false
+ * if it's still alive.
  *
- *  @note On Linux, the method returns true if the client process has
- *  terminated abnormally (and/or the session has been uninitialized) and
- *  false if it is still alive.
- *
- *  @note Locks this object for writing.
+ * @note Locks this object for writing.
  */
 bool Machine::checkForSpawnFailure()
 {
@@ -3154,13 +3150,23 @@ bool Machine::checkForSpawnFailure()
 
     if (vrc != VERR_PROCESS_RUNNING)
         rc = setError (E_FAIL,
-                       tr ("The virtual machine '%ls' terminated unexpectedly during startup"),
+                       tr ("Virtual machine '%ls' has terminated unexpectedly "
+                           "during startup"),
                        name().raw());
 
     if (FAILED (rc))
     {
-        /* Remove the remote control from the list on failure
-         * and reset session state to Closed. */
+        /* Close the remote session, remove the remote control from the list
+         * and reset session state to Closed (@note keep the code in sync with
+         * the relevant part in checkForSpawnFailure()). */
+
+        Assert (mData->mSession.mRemoteControls.size() == 1);
+        if (mData->mSession.mRemoteControls.size() == 1)
+        {
+            ErrorInfoKeeper eik;
+            mData->mSession.mRemoteControls.front()->Uninitialize();
+        }
+
         mData->mSession.mRemoteControls.clear();
         mData->mSession.mState = SessionState_Closed;
 
@@ -3598,8 +3604,17 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
 
         if (FAILED (rc))
         {
-            /* Remove the remote control from the list on failure
-             * and reset session state to Closed. */
+            /* Close the remote session, remove the remote control from the list
+             * and reset session state to Closed (@note keep the code in sync
+             * with the relevant part in openSession()). */
+
+            Assert (mData->mSession.mRemoteControls.size() == 1);
+            if (mData->mSession.mRemoteControls.size() == 1)
+            {
+                ErrorInfoKeeper eik;
+                mData->mSession.mRemoteControls.front()->Uninitialize();
+            }
+
             mData->mSession.mRemoteControls.clear();
             mData->mSession.mState = SessionState_Closed;
         }
@@ -9223,52 +9238,46 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Called from the client watcher thread to check for unexpected client
- *  process death.
+ * Called from the client watcher thread to check for expected or unexpected
+ * death of the client process that has a direct session to this machine.
  *
- *  @note On Win32 and on OS/2, this method is called only when we've got the
- *  mutex (i.e. the client has either died or terminated normally). This
- *  method always returns true.
+ * @note On Win32 and on OS/2, this method is called only when we've got the
+ * mutex (i.e. the client has either died or terminated normally) so it always
+ * returns @c true (the client is terminated, the session machine is
+ * uninitialized).
  *
- *  @note On Linux, the method returns true if the client process has
- *  terminated abnormally (and/or the session has been uninitialized) and
- *  false if it is still alive.
+ * @note On Linux, the method returns @c true if the client process has
+ * terminated normally or abnormally and the session machine was uninitialized,
+ * and @c false if the client process is still alive.
  *
- *  @note Locks this object for writing.
+ * @note Locks this object for writing.
  */
 bool SessionMachine::checkForDeath()
 {
     Uninit::Reason reason;
-    bool doUninit = false;
-    bool ret = false;
+    bool terminated = false;
 
-    /*
-     *  Enclose autoCaller with a block because calling uninit()
-     *  from under it will deadlock.
-     */
+    /* Enclose autoCaller with a block because calling uninit() from under it
+     * will deadlock. */
     {
         AutoCaller autoCaller (this);
         if (!autoCaller.isOk())
         {
-            /*
-             *  return true if not ready, to cause the client watcher to exclude
-             *  the corresponding session from watching
-             */
+            /* return true if not ready, to cause the client watcher to exclude
+             * the corresponding session from watching */
             LogFlowThisFunc (("Already uninitialized!"));
             return true;
         }
 
         AutoWriteLock alock (this);
 
-        /*
-         *  Determine the reason of death: if the session state is Closing here,
-         *  everything is fine. Otherwise it means that the client did not call
-         *  OnSessionEnd() before it released the IPC semaphore.
-         *  This may happen either because the client process has abnormally
-         *  terminated, or because it simply forgot to call ISession::Close()
-         *  before exiting. We threat the latter also as an abnormal termination
-         *  (see Session::uninit() for details).
-         */
+        /* Determine the reason of death: if the session state is Closing here,
+         * everything is fine. Otherwise it means that the client did not call
+         * OnSessionEnd() before it released the IPC semaphore. This may happen
+         * either because the client process has abnormally terminated, or
+         * because it simply forgot to call ISession::Close() before exiting. We
+         * threat the latter also as an abnormal termination (see
+         * Session::uninit() for details). */
         reason = mData->mSession.mState == SessionState_Closing ?
                  Uninit::Normal :
                  Uninit::Abnormal;
@@ -9280,9 +9289,7 @@ bool SessionMachine::checkForDeath()
         /* release the IPC mutex */
         ::ReleaseMutex (mIPCSem);
 
-        doUninit = true;
-
-        ret = true;
+        terminated = true;
 
 #elif defined(RT_OS_OS2)
 
@@ -9291,9 +9298,7 @@ bool SessionMachine::checkForDeath()
         /* release the IPC mutex */
         ::DosReleaseMutexSem (mIPCSem);
 
-        doUninit = true;
-
-        ret = true;
+        terminated = true;
 
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
@@ -9303,10 +9308,8 @@ bool SessionMachine::checkForDeath()
         if (val > 0)
         {
             /* the semaphore is signaled, meaning the session is terminated */
-            doUninit = true;
+            terminated = true;
         }
-
-        ret = val > 0;
 
 #else
 # error "Port me!"
@@ -9314,10 +9317,10 @@ bool SessionMachine::checkForDeath()
 
     } /* AutoCaller block */
 
-    if (doUninit)
+    if (terminated)
         uninit (reason);
 
-    return ret;
+    return terminated;
 }
 
 /**

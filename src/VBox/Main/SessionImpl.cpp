@@ -478,7 +478,8 @@ STDMETHODIMP Session::Uninitialize()
             return S_OK;
         }
 
-        AssertReturn (mState == SessionState_Open, E_FAIL);
+        AssertReturn (mState == SessionState_Open ||
+                      mState == SessionState_Spawning, E_FAIL);
 
         /* close ourselves */
         rc = close (false /* aFinalRelease */, true /* aFromServer */);
@@ -768,13 +769,15 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
     {
         Assert (mState == SessionState_Spawning);
 
-        /* The session object is going to be uninitialized by the client before
-         * it has been assigned a direct console of the machine the client
-         * requested to open a remote session to using IVirtualBox::
-         * openRemoteSession(). Theoretically it should not happen because
-         * openRemoteSession() doesn't return control to the client until the
-         * procedure is fully complete, so assert here. */
-        AssertFailed();
+        /* The session object is going to be uninitialized before it has been
+         * assigned a direct console of the machine the client requested to open
+         * a remote session to using IVirtualBox:: openRemoteSession(). It is OK
+         * only if this close reqiest comes from the server (for example, it
+         * detected that the VM process it started terminated before opening a
+         * direct session). Otherwise, it means that the client is too fast and
+         * trying to close the session before waiting for the progress object it
+         * got from IVirtualBox:: openRemoteSession() to complete, so assert. */
+        Assert (aFromServer);
 
         mState = SessionState_Closed;
         mType = SessionType_Null;
