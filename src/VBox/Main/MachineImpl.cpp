@@ -1684,6 +1684,41 @@ Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
     return S_OK;
 }
 
+STDMETHODIMP
+Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
+{
+    if (!aPatterns)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    mHWData->mGuestPropertyNotificationPatterns.cloneTo (aPatterns);
+
+    return RT_LIKELY(aPatterns != NULL) ? S_OK : E_OUTOFMEMORY;
+}
+
+STDMETHODIMP
+Machine::COMSETTER(GuestPropertyNotificationPatterns) (INPTR BSTR aPatterns)
+{
+    AssertLogRelReturn (VALID_PTR(aPatterns), E_POINTER);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    mHWData.backup();
+    mHWData->mGuestPropertyNotificationPatterns = aPatterns;
+
+    return RT_LIKELY(!mHWData->mGuestPropertyNotificationPatterns.isNull())
+               ? S_OK : E_OUTOFMEMORY;
+}
+
 // IMachine methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2793,6 +2828,129 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aName, ULONG64 *aTim
     return GetGuestProperty(aName, &dummyValue, aTimestamp, &dummyFlags);
 }
 
+/**
+ * Matches a sample name against a pattern.
+ *
+ * @returns True if matches, false if not.
+ * @param   pszPat      Pattern.
+ * @param   cchPat      Number of characters in pszPat
+ * @param   pszName     Name to match against the pattern.
+ * @todo move this into IPRT
+ */
+static bool matchesSinglePatternEx(const char *pszPat, size_t cchPat, const char *pszName)
+{
+    size_t iPat = 0;
+    /* ASSUMES ASCII */
+    for (;;)
+    {
+        char chPat = pszPat[iPat];
+        switch (chPat)
+        {
+            default:
+                if (*pszName != chPat)
+                    return false;
+                break;
+
+            case '*':
+            {
+                while (   ((chPat = pszPat[++iPat]) == '*' || chPat == '?')
+                       && (iPat < cchPat)
+                      )
+                    /* nothing */;
+
+                for (;;)
+                {
+                    char ch = *pszName++;
+                    if (    ch == chPat
+                        &&  (   !chPat
+                             || matchesSinglePatternEx(pszPat + iPat + 1,
+                                                       cchPat - iPat - 1, pszName)
+                            )
+                       )
+                        return true;
+                    if (!ch)
+                        return false;
+                }
+                /* won't ever get here */
+                break;
+            }
+
+            case '?':
+                if (!*pszName)
+                    return false;
+                break;
+
+            case '\0':
+                return !*pszName;
+        }
+        pszName++;
+        pszPat++;
+        if (iPat == cchPat)
+            return !*pszName;
+    }
+    return true;
+}
+
+/* Checks to see if a pattern matches a name. */
+static bool matchesSinglePattern(const char *pszPat, const char *pszName)
+{
+    return matchesSinglePatternEx(pszPat, strlen(pszPat), pszName);
+}
+
+/* Checks to see if the given string matches against one of the patterns in
+ * the list. */
+static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
+                           const char *pszString)
+{
+    size_t iOffs = 0;
+    /* If the first pattern in the list is empty, treat it as "match all". */
+    bool matched = (cchPatterns > 0) && (0 == *paszPatterns) ? true : false;
+    while ((iOffs < cchPatterns) && !matched)
+    {
+        size_t cchCurrent;
+        if (   RT_SUCCESS(RTStrNLenEx(paszPatterns + iOffs,
+                                      cchPatterns - iOffs, &cchCurrent))
+            && (cchCurrent > 0)
+           )
+        {
+            matched = matchesSinglePattern(paszPatterns + iOffs, pszString);
+            iOffs += cchCurrent + 1;
+        }
+        else
+            iOffs = cchPatterns;
+    }
+    return matched;
+}
+
+/* Checks to see if the given string matches against one of the patterns in
+ * the comma-separated list.  Note that spaces at the beginning of patterns
+ * are ignored - '?' should be used here if that is really needed. */
+static bool matchesPatternComma(const char *pcszPatterns, const char *pcszString)
+{
+    AssertPtr(pcszPatterns);
+    const char *pcszCur = pcszPatterns;
+    /* If list is empty, treat it as "match all". */
+    bool matched = (0 == *pcszPatterns) ? true : false;
+    bool done = false;
+    while (!done && !matched)
+    {
+        const char *pcszNext = strchr(pcszCur, ',');
+        if (pcszNext != NULL)
+        {
+            matched = matchesSinglePatternEx(pcszCur, pcszNext - pcszCur, pcszString);
+            pcszCur = pcszNext;
+            while ((',' == *pcszCur) || (' ' == *pcszCur))
+                ++pcszCur;
+        }
+        else
+        {
+            matched = matchesSinglePattern(pcszCur, pcszString);
+            done = true;
+        }
+    }
+    return matched;
+}
+
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
@@ -2806,8 +2964,19 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
         return E_INVALIDARG;
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
+
+    Utf8Str utf8Name(aName);
+    Utf8Str utf8Flags(aFlags);
+    Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
+    if (   utf8Name.isNull()
+        || ((aFlags != NULL) && utf8Flags.isNull())
+        || utf8Patterns.isNull()
+       )
+        return E_OUTOFMEMORY;
+
     uint32_t fFlags = NILFLAG;
-    if ((aFlags != NULL) && RT_FAILURE (validateFlags (Utf8Str(aFlags).raw(), &fFlags)))
+    if ((aFlags != NULL) && RT_FAILURE (validateFlags (utf8Flags.raw(), &fFlags))
+       )
         return setError (E_INVALIDARG, tr ("Invalid flag values: '%ls'"),
                 aFlags);
 
@@ -2887,6 +3056,8 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
                                                  true /* isSetter */,
                                                  &dummy, &dummy64, &dummy);
     }
+    if (SUCCEEDED (rc) && matchesPatternComma (utf8Patterns.raw(), utf8Name.raw()))
+        mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
@@ -2894,85 +3065,6 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
 STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aName, INPTR BSTR aValue)
 {
     return SetGuestProperty(aName, aValue, NULL);
-}
-
-/**
- * Matches a sample name against a pattern.
- *
- * @returns True if matches, false if not.
- * @param   pszPat      Pattern.
- * @param   pszName     Name to match against the pattern.
- * @todo move this into IPRT
- */
-static bool matchesSinglePattern(const char *pszPat, const char *pszName)
-{
-    /* ASSUMES ASCII */
-    for (;;)
-    {
-        char chPat = *pszPat;
-        switch (chPat)
-        {
-            default:
-                if (*pszName != chPat)
-                    return false;
-                break;
-
-            case '*':
-            {
-                while ((chPat = *++pszPat) == '*' || chPat == '?')
-                    /* nothing */;
-
-                for (;;)
-                {
-                    char ch = *pszName++;
-                    if (    ch == chPat
-                        &&  (   !chPat
-                             || matchesSinglePattern(pszPat + 1, pszName)))
-                        return true;
-                    if (!ch)
-                        return false;
-                }
-                /* won't ever get here */
-                break;
-            }
-
-            case '?':
-                if (!*pszName)
-                    return false;
-                break;
-
-            case '\0':
-                return !*pszName;
-        }
-        pszName++;
-        pszPat++;
-    }
-    return true;
-}
-
-/* Checks to see if the given string matches against one of the patterns in
- * the list. */
-static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
-                           const char *pszString)
-{
-    size_t iOffs = 0;
-    /* If the first pattern in the list is empty, treat it as "match all". */
-    bool matched = (cchPatterns > 0) && (0 == *paszPatterns) ? true : false;
-    while ((iOffs < cchPatterns) && !matched)
-    {
-        size_t cchCurrent;
-        if (   RT_SUCCESS(RTStrNLenEx(paszPatterns + iOffs,
-                                      cchPatterns - iOffs, &cchCurrent))
-            && (cchCurrent > 0)
-           )
-        {
-            matched = matchesSinglePattern(paszPatterns + iOffs, pszString);
-            iOffs += cchCurrent + 1;
-        }
-        else
-            iOffs = cchPatterns;
-    }
-    return matched;
 }
 
 STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
@@ -3003,39 +3095,12 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
     {
 
 /*
- * Set up the pattern parameter, translating the comma-separated list to a
- * double-terminated zero-separated one.
- */
-/** @todo skip this conversion. */
-        Utf8Str Utf8PatternsIn = aPatterns;
-        if ((aPatterns != NULL) && Utf8PatternsIn.isNull())
-            return E_OUTOFMEMORY;
-        size_t cchPatterns = Utf8PatternsIn.length();
-        Utf8Str Utf8Patterns(cchPatterns + 2);  /* Double terminator */
-        if (Utf8Patterns.isNull())
-            return E_OUTOFMEMORY;
-        char *pszPatterns = Utf8Patterns.mutableRaw();
-        unsigned iPatterns = 0;
-        for (unsigned i = 0; i < cchPatterns; ++i)
-        {
-            char cIn = Utf8PatternsIn.raw()[i];
-            if ((cIn != ',') && (cIn != ' '))
-                pszPatterns[iPatterns] = cIn;
-            else if (cIn != ' ')
-                pszPatterns[iPatterns] = '\0';
-            if (cIn != ' ')
-                ++iPatterns;
-        }
-        pszPatterns[iPatterns] = '\0';
-        ++iPatterns;
-
-/*
  * Look for matching patterns and build up a list.
  */
         HWData::GuestPropertyList propList;
         for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
              it != mHWData->mGuestProperties.end(); ++it)
-            if (matchesPattern(pszPatterns, iPatterns, Utf8Str(it->mName).raw()))
+            if (matchesPatternComma(Utf8Str(aPatterns).raw(), Utf8Str(it->mName).raw()))
                 propList.push_back(*it);
 
 /*
@@ -5125,6 +5190,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
         using namespace guestProp;
 
         Key guestPropertiesNode = aNode.findKey ("GuestProperties");
+        Bstr notificationPatterns ("");
         if (!guestPropertiesNode.isNull())
         {
             Key::List properties = guestPropertiesNode.keys ("GuestProperty");
@@ -5145,8 +5211,10 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 HWData::GuestProperty property = { name, value, timestamp, fFlags };
                 mHWData->mGuestProperties.push_back(property);
             }
+            notificationPatterns = guestPropertiesNode.stringValue ("NotificationPatterns");
         }
         mHWData->mPropertyServiceActive = false;
+        mHWData->mGuestPropertyNotificationPatterns = notificationPatterns;
     }
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
@@ -6532,6 +6600,8 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             writeFlags(property.mFlags, szFlags);
             propertyNode.setValue <Bstr> ("flags", Bstr(szFlags));
         }
+        guestPropertiesNode.setValue <Bstr> ("NotificationPatterns",
+                                             mHWData->mGuestPropertyNotificationPatterns);
     }
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
@@ -9226,7 +9296,9 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
 
     /* send a callback notification if appropriate */
     alock.leave();
-    // doGuestPropertyCallback(aName, aValue, aFlags);
+    if (matchesPatternComma (Utf8Str(mHWData->mGuestPropertyNotificationPatterns).raw(),
+                             Utf8Str(aName).raw()))
+        mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
 
     return S_OK;
 #else

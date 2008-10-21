@@ -703,6 +703,7 @@
   <xsd:sequence>
     <xsd:element name="GuestProperty" type="TGuestProperty" minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
+  <xsd:attribute name="NotificationPatterns" type="xsd:string" default=""/>
 </xsd:complexType>
 
 <xsd:complexType name="THardware">
