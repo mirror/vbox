@@ -20,6 +20,7 @@
 STOPPING=""
 SILENTUNLOAD=""
 MODNAME="vboxdrv"
+VBIMODNAME="vbi"
 FLTMODNAME="vboxflt"
 MODDIR32="/platform/i86pc/kernel/drv"
 MODDIR64=$MODDIR32/amd64
@@ -72,11 +73,8 @@ check_if_installed()
 
 module_loaded()
 {
-    if test -f "/etc/name_to_major"; then
-        loadentry=`cat /etc/name_to_major | grep $MODNAME`
-    else
-        loadentry=`/usr/sbin/modinfo | grep $MODNAME`
-    fi
+    # modinfo should now work properly since we prevent module autounloading
+    loadentry=`/usr/sbin/modinfo | grep $MODNAME`
     if test -z "$loadentry"; then
         return 1
     fi
@@ -85,11 +83,8 @@ module_loaded()
 
 vboxflt_module_loaded()
 {
-    if test -f "/etc/name_to_major"; then
-        loadentry=`cat /etc/name_to_major | grep $FLTMODNAME`
-    else
-        loadentry=`/usr/sbin/modinfo | grep $FLTMODNAME`
-    fi
+    # modinfo should now work properly since we prevent module autounloading
+    loadentry=`/usr/sbin/modinfo | grep $FLTMODNAME`
     if test -z "$loadentry"; then
         return 1
     fi
@@ -136,16 +131,25 @@ start_module()
 stop_module()
 {
     if module_loaded; then
-        /usr/sbin/rem_drv $MODNAME || abort "Failed to unload VirtualBox Host kernel module. Old one still active!"
-        info "VirtualBox Host kernel module unloaded."
+        vboxdrv_mod_id=`/usr/sbin/modinfo | grep $MODNAME | cut -f 1 -d ' ' `
+        if test -n "$vboxdrv_mod_id"; then
+            /usr/sbin/modunload -i $vboxdrv_mod_id
+            rc=$?
+            if test "$rc" -eq 0; then
+                /usr/sbin/rem_drv $MODNAME || abort "Unloaded VirtualBox Host kernel module, but failed to remove it."
+                info "VirtualBox Host kernel module unloaded."
+            else
+                abort "Failed to unload VirtualBox Host kernel module. Old one still active!!"
+            fi
+        fi
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox Host kernel module not loaded."
     fi
 
     # check for vbi and force unload it
-    vbi_mod_id=`/usr/sbin/modinfo | grep vbi | cut -f 1 -d ' ' `
+    vbi_mod_id=`/usr/sbin/modinfo | grep $VBIMODNAME | cut -f 1 -d ' ' `
     if test -n "$vbi_mod_id"; then
-        /usr/sbin/modunload -i $vbi_mod_id > /dev/null 2>&1 || abort "Failed to unload VirtualBox kernel interfaces module. Old one still active!"
+        /usr/sbin/modunload -i $vbi_mod_id
     fi
 }
 
@@ -154,7 +158,7 @@ start_vboxflt()
     if vboxflt_module_loaded; then
         info "VirtualBox NetFilter kernel module already loaded."
     else
-        /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME || abort "Failed to load VirtualBox NetFilter Kernel module."
+        /usr/sbin/add_drv -m'* 0600 root sys' $FLTMODNAME || abort "Failed to add VirtualBox NetFilter Kernel module."
         /usr/sbin/modload -p drv/$FLTMODNAME
         if test ! vboxflt_module_loaded; then
             abort "Failed to load VirtualBox NetFilter kernel module."

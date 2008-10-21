@@ -22,9 +22,12 @@ echo "This script will unload the VirtualBox kernel module..."
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    # stop and unregister webservice SMF
-    /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
-    /usr/sbin/svccfg delete svc:/application/virtualbox/webservice:default
+    # stop and unregister webservice SMF (if present)
+    webservicefound=`svcs -a | grep "virtualbox/webservice"`
+    if test ! -z "$webservicefound"; then
+        /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
+        /usr/sbin/svccfg delete svc:/application/virtualbox/webservice:default
+    fi
 
     # stop and unregister zoneaccess SMF (if present)
     zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess"`
