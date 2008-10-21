@@ -51,6 +51,13 @@
 #include <X11/Xproto.h>
 #include <X11/StringDefs.h>
 
+/** Do we want to test Utf16 by disabling other text formats? */
+static bool g_testUtf16 = false;
+/** Do we want to test Utf8 by disabling other text formats? */
+static bool g_testUtf8 = false;
+/** Do we want to test compount text by disabling other text formats? */
+static bool g_testCText = false;
+
 /** The different clipboard formats which we support. */
 enum g_eClipboardFormats
 {
@@ -236,46 +243,32 @@ static void vboxClipboardGetUtf16(XtPointer pValue, unsigned cwSrcLen, void *pv,
     size_t cwDestLen;
     PRTUTF16 pu16SrcText = reinterpret_cast<PRTUTF16>(pValue);
     PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
-    int rc;
 
     LogFlowFunc (("converting Utf-16 to Utf-16LE.  cwSrcLen=%d, cb=%d, pu16SrcText+1=%.*ls\n",
                    cwSrcLen, cb, cwSrcLen - 1, pu16SrcText + 1));
+    *pcbActual = 0;  /* Only set this to the right value on success. */
     /* How long will the converted text be? */
-    rc = vboxClipboardUtf16GetWinSize(pu16SrcText, cwSrcLen, &cwDestLen);
-    if (RT_FAILURE(rc))
+    int rc = vboxClipboardUtf16GetWinSize(pu16SrcText, cwSrcLen, &cwDestLen);
+    if (RT_SUCCESS(rc) && (cb < cwDestLen * 2))
     {
-        XtFree(reinterpret_cast<char *>(pValue));
-        LogRel(("vboxClipboardGetUtf16: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Vrc.  Abandoning.\n", rc));
+        /* Not enough buffer space provided - report the amount needed. */
         LogFlowFunc (("guest buffer too small: size %d bytes, needed %d.  Returning.\n",
                        cb, cwDestLen * 2));
         *pcbActual = cwDestLen * 2;
-        RTSemEventSignal(g_ctx.waitForData);
-        AssertReturnVoid(RT_SUCCESS(rc));
-    }
-    if (cb < cwDestLen * 2)
-    {
-        XtFree(reinterpret_cast<char *>(pValue));
-        /* Report the amount of buffer space needed for the transfer */
-        LogFlowFunc (("guest buffer too small: size %d bytes, needed %d.  Returning.\n",
-                       cb, cwDestLen * 2));
-        *pcbActual = cwDestLen * 2;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
+        rc = VERR_BUFFER_OVERFLOW;
     }
     /* Convert the text. */
-    rc = vboxClipboardUtf16LinToWin(pu16SrcText, cwSrcLen, pu16DestText, cb / 2);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        rc = vboxClipboardUtf16LinToWin(pu16SrcText, cwSrcLen, pu16DestText, cb / 2);
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("vboxClipboardGetUtf16: clipboard conversion failed.  vboxClipboardUtf16LinToWin returned %Vrc.  Abandoning.\n", rc));
-        XtFree(reinterpret_cast<char *>(pValue));
-        *pcbActual = 0;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
+        LogFlowFunc (("converted string is %.*ls\n", cwDestLen, pu16DestText));
+        *pcbActual = cwDestLen * 2;
     }
-    LogFlowFunc (("converted string is %.*ls. Returning.\n", cwDestLen, pu16DestText));
-    *pcbActual = cwDestLen * 2;
+    /* We need to do this whether we succeed or fail. */
     XtFree(reinterpret_cast<char *>(pValue));
     RTSemEventSignal(g_ctx.waitForData);
+    LogFlowFunc(("Returning.  Status is %Rrc\n", rc));
 }
 
 /**
@@ -294,57 +287,37 @@ static void vboxClipboardGetUtf8(XtPointer pValue, unsigned cbSrcLen, void *pv, 
 {
     size_t cwSrcLen, cwDestLen;
     char *pu8SrcText = reinterpret_cast<char *>(pValue);
-    PRTUTF16 pu16SrcText;
+    PRTUTF16 pu16SrcText = NULL;
     PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
-    int rc;
 
     LogFlowFunc (("converting Utf-8 to Utf-16LE.  cbSrcLen=%d, cb=%d, pu8SrcText=%.*s\n",
                    cbSrcLen, cb, cbSrcLen, pu8SrcText));
+    *pcbActual = 0;  /* Only set this to the right value on success. */
     /* First convert the UTF8 to UTF16 */
-    rc = RTStrToUtf16Ex(pu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
-    XtFree(reinterpret_cast<char *>(pValue));
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("vboxClipboardGetUtf8: clipboard conversion failed.  RTStrToUtf16Ex returned %Vrc.  Abandoning.\n", rc));
-        *pcbActual = 0;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
-    }
+    int rc = RTStrToUtf16Ex(pu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
     /* Check how much longer will the converted text will be. */
-    rc = vboxClipboardUtf16GetWinSize(pu16SrcText, cwSrcLen, &cwDestLen);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        rc = vboxClipboardUtf16GetWinSize(pu16SrcText, cwSrcLen, &cwDestLen);
+    if (RT_SUCCESS(rc) && (cb < cwDestLen * 2))
     {
-        LogRel(("vboxClipboardGetUtf8: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Vrc.  Abandoning.\n", rc));
-        LogFlowFunc (("guest buffer too small: size %d bytes, needed %d.  Returning.\n",
-                       cb, cwDestLen * 2));
-        RTUtf16Free(pu16SrcText);
-        *pcbActual = cwDestLen * 2;
-        RTSemEventSignal(g_ctx.waitForData);
-        AssertReturnVoid(RT_SUCCESS(rc));
-    }
-    if (cb < cwDestLen * 2)
-    {
-        RTUtf16Free(pu16SrcText);
-        /* Report the amount of buffer space needed for the transfer */
+        /* Not enough buffer space provided - report the amount needed. */
         LogFlowFunc (("guest buffer too small: size %d bytes, needed %d.  Returning.\n",
                        cb, cwDestLen * 2));
         *pcbActual = cwDestLen * 2;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
+        rc = VERR_BUFFER_OVERFLOW;
     }
     /* Convert the text. */
-    rc = vboxClipboardUtf16LinToWin(pu16SrcText, cwSrcLen, pu16DestText, cb / 2);
-    RTUtf16Free(pu16SrcText);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        rc = vboxClipboardUtf16LinToWin(pu16SrcText, cwSrcLen, pu16DestText, cb / 2);
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("vboxClipboardGetUtf8: clipboard conversion failed.  vboxClipboardUtf16LinToWin returned %Vrc.  Abandoning.\n", rc));
-        *pcbActual = 0;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
+        LogFlowFunc (("converted string is %.*ls.\n", cwDestLen, pu16DestText));
+        *pcbActual = cwDestLen * 2;
     }
-    LogFlowFunc (("converted string is %.*ls. Returning.\n", cwDestLen, pu16DestText));
-    *pcbActual = cwDestLen * 2;
+    XtFree(reinterpret_cast<char *>(pValue));
+    RTUtf16Free(pu16SrcText);
     RTSemEventSignal(g_ctx.waitForData);
+    LogFlowFunc(("Returning.  Status is %Rrc", rc));
 }
 
 /**
@@ -362,93 +335,65 @@ static void vboxClipboardGetCText(XtPointer pValue, unsigned cbSrcLen, void *pv,
                                   uint32_t *pcbActual)
 {
     size_t cwSrcLen, cwDestLen;
-    char **ppu8SrcText;
-    PRTUTF16 pu16SrcText;
+    char **ppu8SrcText = NULL;
+    PRTUTF16 pu16SrcText = NULL;
     PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
     XTextProperty property;
     int rc, cProps;
 
     LogFlowFunc (("converting COMPOUND TEXT to Utf-16LE.  cbSrcLen=%d, cb=%d, pu8SrcText=%.*s\n",
                    cbSrcLen, cb, cbSrcLen, reinterpret_cast<char *>(pValue)));
+    *pcbActual = 0;  /* Only set this to the right value on success. */
     /* First convert the compound text to Utf8 */
     property.value = reinterpret_cast<unsigned char *>(pValue);
     property.encoding = g_ctx.atomCText;
     property.format = 8;
     property.nitems = cbSrcLen;
 #ifdef RT_OS_SOLARIS
-    rc = XmbTextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SrcText, &cProps);
+    int xrc = XmbTextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SrcText, &cProps);
 #else
-    rc = Xutf8TextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SrcText, &cProps);
+    int xrc = Xutf8TextPropertyToTextList(XtDisplay(g_ctx.widget), &property, &ppu8SrcText, &cProps);
 #endif
     XtFree(reinterpret_cast<char *>(pValue));
-    if (rc < 0)
-    {
-        const char *pcReason;
-        switch(rc)
+    if (xrc < 0)
+        switch(xrc)
         {
         case XNoMemory:
-            pcReason = "out of memory";
+            rc = VERR_NO_MEMORY;
             break;
         case XLocaleNotSupported:
-            pcReason = "locale (Utf8) not supported";
-            break;
         case XConverterNotFound:
-            pcReason = "converter not found";
+            rc = VERR_NOT_SUPPORTED;
             break;
         default:
-            pcReason = "unknown error";
+            rc = VERR_UNRESOLVED_ERROR;
         }
-        XFreeStringList(ppu8SrcText);
-        LogRel(("vboxClipboardGetCText: Xutf8TextPropertyToTextList failed.  Reason: %s\n",
-                pcReason));
-        *pcbActual = 0;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
-    }
     /* Now convert the UTF8 to UTF16 */
-    rc = RTStrToUtf16Ex(*ppu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
-    XFreeStringList(ppu8SrcText);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("vboxClipboardGetCText: clipboard conversion failed.  RTStrToUtf16Ex returned %Vrc.  Abandoning.\n", rc));
-        *pcbActual = 0;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
-    }
+    if (RT_SUCCESS(rc))
+        rc = RTStrToUtf16Ex(*ppu8SrcText, cbSrcLen, &pu16SrcText, 0, &cwSrcLen);
     /* Check how much longer will the converted text will be. */
-    rc = vboxClipboardUtf16GetWinSize(pu16SrcText, cwSrcLen, &cwDestLen);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        rc = vboxClipboardUtf16GetWinSize(pu16SrcText, cwSrcLen, &cwDestLen);
+    if (RT_SUCCESS(rc) && (cb < cwDestLen * 2))
     {
-        LogRel(("vboxClipboardGetCText: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Vrc.  Abandoning.\n", rc));
-        LogFlowFunc (("guest buffer too small: size %d bytes, needed %d.  Returning.\n",
-                       cb, cwDestLen * 2));
-        RTUtf16Free(pu16SrcText);
-        *pcbActual = cwDestLen * 2;
-        RTSemEventSignal(g_ctx.waitForData);
-        AssertReturnVoid(RT_SUCCESS(rc));
-    }
-    if (cb < cwDestLen * 2)
-    {
-        RTUtf16Free(pu16SrcText);
-        /* Report the amount of buffer space needed for the transfer */
+        /* Not enough buffer space provided - report the amount needed. */
         LogFlowFunc (("guest buffer too small: size %d bytes, needed %d.  Returning.\n",
                        cb, cwDestLen * 2));
         *pcbActual = cwDestLen * 2;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
+        rc = VERR_BUFFER_OVERFLOW;
     }
     /* Convert the text. */
-    rc = vboxClipboardUtf16LinToWin(pu16SrcText, cwSrcLen, pu16DestText, cb / 2);
-    RTUtf16Free(pu16SrcText);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        rc = vboxClipboardUtf16LinToWin(pu16SrcText, cwSrcLen, pu16DestText, cb / 2);
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("vboxClipboardGetCText: clipboard conversion failed.  vboxClipboardUtf16LinToWin returned %Vrc.  Abandoning.\n", rc));
-        *pcbActual = 0;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
+        LogFlowFunc (("converted string is %.*ls\n", cwDestLen, pu16DestText));
+        *pcbActual = cwDestLen * 2;
     }
-    LogFlowFunc (("converted string is %.*ls. Returning.\n", cwDestLen, pu16DestText));
-    *pcbActual = cwDestLen * 2;
+    if (ppu8SrcText != NULL)
+        XFreeStringList(ppu8SrcText);
+    RTUtf16Free(pu16SrcText);
+    LogFlowFunc(("Returning.  Status is %Rrc\n", rc));
     RTSemEventSignal(g_ctx.waitForData);
 }
 
@@ -470,35 +415,39 @@ static void vboxClipboardGetLatin1(XtPointer pValue, unsigned cbSourceLen, void 
     unsigned cwDestLen = cbSourceLen + 1;
     char *pu8SourceText = reinterpret_cast<char *>(pValue);
     PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
+    int rc = VINF_SUCCESS;
 
     LogFlow (("vboxClipboardGetLatin1: converting Latin1 to Utf-16LE.  Original is %.*s\n",
               cbSourceLen, pu8SourceText));
+    *pcbActual = 0;  /* Only set this to the right value on success. */
     for (unsigned i = 0; i < cbSourceLen; i++)
         if (pu8SourceText[i] == LINEFEED)
             ++cwDestLen;
     if (cb < cwDestLen * 2)
     {
-        XtFree(reinterpret_cast<char *>(pValue));
-        /* Report the amount of buffer space needed for the transfer */
-        Log2 (("vboxClipboardGetLatin1: guest buffer too small: size %d bytes\n", cb));
+        /* Not enough buffer space provided - report the amount needed. */
+        LogFlowFunc (("guest buffer too small: size %d bytes\n", cb));
         *pcbActual = cwDestLen * 2;
-        RTSemEventSignal(g_ctx.waitForData);
-        return;
+        rc = VERR_BUFFER_OVERFLOW;
     }
-    for (unsigned i = 0, j = 0; i < cbSourceLen; ++i, ++j)
-        if (pu8SourceText[i] != LINEFEED)
-            pu16DestText[j] = pu8SourceText[i];  /* latin1 < utf-16LE */
-        else
-        {
-            pu16DestText[j] = CARRIAGERETURN;
-            ++j;
-            pu16DestText[j] = LINEFEED;
-        }
-    pu16DestText[cwDestLen - 1] = 0;
-    *pcbActual = cwDestLen * 2;
-    Log2 (("vboxClipboardGetLatin1: converted text is %.*ls\n", cwDestLen, pu16DestText));
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned i = 0, j = 0; i < cbSourceLen; ++i, ++j)
+            if (pu8SourceText[i] != LINEFEED)
+                pu16DestText[j] = pu8SourceText[i];  /* latin1 < utf-16LE */
+            else
+            {
+                pu16DestText[j] = CARRIAGERETURN;
+                ++j;
+                pu16DestText[j] = LINEFEED;
+            }
+        pu16DestText[cwDestLen - 1] = 0;
+        *pcbActual = cwDestLen * 2;
+        LogFlowFunc (("converted text is %.*ls\n", cwDestLen, pu16DestText));
+    }
     XtFree(reinterpret_cast<char *>(pValue));
     RTSemEventSignal(g_ctx.waitForData);
+    LogFlowFunc(("Returning.  Status is %Rrc\n", rc));
 }
 
 /** Convert the clipboard text from the current format to Utf-16 with Windows line breaks.
@@ -757,28 +706,27 @@ int vboxClipboardInitX11 (void)
         /* And build up the vector of supported formats */
         g_ctx.atomCText     = XInternAtom(XtDisplay(g_ctx.widget), "COMPOUND_TEXT", false);
         /* And build up the vector of supported formats */
-#ifdef USE_UTF16
-        vboxClipboardAddFormat("text/plain;charset=ISO-10646-UCS-2", UTF16,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-#endif
-#ifdef USE_UTF8
-        vboxClipboardAddFormat("UTF8_STRING", UTF8,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-        vboxClipboardAddFormat("text/plain;charset=UTF-8", UTF8,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-        vboxClipboardAddFormat("text/plain;charset=utf-8", UTF8,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-        vboxClipboardAddFormat("STRING", UTF8,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-        vboxClipboardAddFormat("TEXT", UTF8,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-        vboxClipboardAddFormat("text/plain", UTF8,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-#endif
-#ifdef USE_CTEXT
-        vboxClipboardAddFormat("COMPOUND_TEXT", CTEXT,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-#endif
+        if (!g_testUtf8 && !g_testCText)
+            vboxClipboardAddFormat("text/plain;charset=ISO-10646-UCS-2", UTF16,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        if (!g_testUtf16 && !g_testCText)
+        {
+            vboxClipboardAddFormat("UTF8_STRING", UTF8,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+            vboxClipboardAddFormat("text/plain;charset=UTF-8", UTF8,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+            vboxClipboardAddFormat("text/plain;charset=utf-8", UTF8,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+            vboxClipboardAddFormat("STRING", UTF8,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+            vboxClipboardAddFormat("TEXT", UTF8,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+            vboxClipboardAddFormat("text/plain", UTF8,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+}
+        if (!g_testUtf16 && !g_testUtf8)
+            vboxClipboardAddFormat("COMPOUND_TEXT", CTEXT,
+                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     }
     return rc;
 }
@@ -798,6 +746,22 @@ int vboxClipboardInit (void)
         LogRelFunc(("no X11 detected -- host clipboard disabled\n"));
         g_fHaveX11 = false;
         return VINF_SUCCESS;
+    }
+
+    if (RTEnvGet("VBOX_CBTEST_UTF16"))
+    {
+        g_testUtf16 = true;
+        LogRel(("Host clipboard: testing Utf16\n"));
+    }
+    else if (RTEnvGet("VBOX_CBTEST_UTF8"))
+    {
+        g_testUtf8 = true;
+        LogRel(("Host clipboard: testing Utf8\n"));
+    }
+    else if (RTEnvGet("VBOX_CBTEST_CTEXT"))
+    {
+        g_testCText = true;
+        LogRel(("Host clipboard: testing compound text\n"));
     }
 
     g_fHaveX11 = true;
