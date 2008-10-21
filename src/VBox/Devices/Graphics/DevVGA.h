@@ -267,10 +267,10 @@ typedef struct VGAState {
     bool                        fRenderVRAM;
     bool                        padding9[2];
 
-    /** Pointer to vgaGCLFBAccessHandler(). */
-    RTRCPTR                     RCPtrLFBHandler;
     /** Bitmap tracking dirty pages. */
     uint32_t                    au32DirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 32];
+    /** Pointer to vgaGCLFBAccessHandler(). */
+    RTRCPTR                     RCPtrLFBHandler;
     /** Pointer to the device instance - RC Ptr. */
     PPDMDEVINSRC                pDevInsRC;
     /** Pointer to the device instance - R3 Ptr. */
