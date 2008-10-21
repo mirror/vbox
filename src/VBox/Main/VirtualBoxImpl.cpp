@@ -4706,7 +4706,12 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             /* release the caller to let uninit() ever proceed */
             autoCaller.release();
 
+#undef VBOX_CHECK_SPAWN_FAILURES
+#ifdef VBOX_CHECK_SPAWN_FAILURES
+            DWORD rc = ::WaitForMultipleObjects (cnt + 1, handles, FALSE, 500);
+#else
             DWORD rc = ::WaitForMultipleObjects (cnt + 1, handles, FALSE, INFINITE);
+#endif
 
             /*
              *  Restore the caller before using VirtualBox. If it fails, this
@@ -4717,7 +4722,11 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                 break;
 
             bool update = false;
+#ifdef VBOX_CHECK_SPAWN_FAILURES
+            if (rc == WAIT_OBJECT_0 || rc == WAIT_TIMEOUT)
+#else
             if (rc == WAIT_OBJECT_0)
+#endif
             {
                 /* update event is signaled */
                 update = true;
@@ -4749,7 +4758,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                 for (size_t i = 0; i < cnt; ++ i)
                     handles [i + 1] = (machines [i])->ipcSem();
 
-#if 0 /* untested */
+#ifdef VBOX_CHECK_SPAWN_FAILURES
                 /* check for spawn errors */
                 that->getSpawnedMachines (spawnedMachines);
                 cntSpawned = spawnedMachines.size();
