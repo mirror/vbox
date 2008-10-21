@@ -4505,7 +4505,7 @@ static DECLCALLBACK(int) vgaPortSnapshot(PPDMIDISPLAYPORT pInterface, void *pvDa
     PPDMIDISPLAYCONNECTOR   pConnector;
     PDMIDISPLAYCONNECTOR    Connector;
     int32_t                 graphic_mode;
-    uint32_t                fRenderVRAM;
+    bool                    fRenderVRAM;
     size_t                  cbRequired;
     PVGASTATE               pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));

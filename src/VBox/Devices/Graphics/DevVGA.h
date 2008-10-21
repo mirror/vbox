@@ -263,7 +263,9 @@ typedef struct VGAState {
     bool                        fHaveDirtyBits;
     /** Flag indicating that the VGA memory in the 0xa0000-0xbffff region has been remapped to allow direct access. */
     bool                        fRemappedVGA;
-    bool                        padding9[3];
+    /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
+    bool                        fRenderVRAM;
+    bool                        padding9[2];
 
     /** Pointer to vgaGCLFBAccessHandler(). */
     RTRCPTR                     RCPtrLFBHandler;
@@ -288,9 +290,6 @@ typedef struct VGAState {
     PTMTIMERR3                  RefreshTimer;
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
-
-    /** Whether to render the guest VRAM to the framebuffer memory. False only for some LFB modes. */
-    uint32_t                    fRenderVRAM;
 
     /** The PCI device. */
     PCIDEVICE                   Dev;
