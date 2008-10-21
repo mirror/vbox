@@ -6678,7 +6678,9 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             writeFlags(property.mFlags, szFlags);
             propertyNode.setValue <Bstr> ("flags", Bstr(szFlags));
         }
-        AssertRelease(!mHWData->mGuestPropertyNotificationPatterns.isNull());
+        /* Temporary testbox hack */
+        if (mHWData->mGuestPropertyNotificationPatterns.isNull())
+            mHWData->mGuestPropertyNotificationPatterns = "";
         guestPropertiesNode.setValueOr <Bstr> ("notificationPatterns",
                                                mHWData->mGuestPropertyNotificationPatterns,
                                                Bstr (""));
