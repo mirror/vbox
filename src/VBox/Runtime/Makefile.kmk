@@ -741,6 +741,29 @@ endif
 VBoxRT_LIBS.l4                 = \
 	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
 
+#
+# HACK ALLERT! Make testcase run during build on SELinux boxes.
+#              Create a dummy DLL that ensure that VBoxRT is installed
+#              during the DLL pass and cleaned up later.
+#
+ifeq ($(KBUILD_TARGET),linux)
+ if1of (VBoxRT, $(DLLS))
+  ifneq ($(wildcard /usr/bin/chcon),)
+VBoxRT_NOINST = true
+
+DLLS += VBoxRTDummy
+VBoxRTDummy_TEMPLATE = VBOXR3
+VBoxRTDummy_NOINST = true
+VBoxRTDummy_LIBS = $(PATH_BIN)/VBoxRT.so
+VBoxRTDummy_CLEAN= $(PATH_BIN)/VBoxRT.so 
+
+$(PATH_BIN)/VBoxRT.so: $$(TARGET_VBoxRT) | $$(dir $$@)
+	$(INSTALL) $< $@
+	chcon -t texrel_shlib_t $@ || true
+
+  endif # chcon present.
+ endif # building VBoxRT
+endif # linux
 
 #
 # RuntimeR3NoCRTGCC - CRT replacement lib for VBoxREM.
@@ -1423,15 +1446,6 @@ win/errmsgwin.cpp_INCS = $(IPRT_OUT_DIR)
 # Generate the rules (we're the to sub-makefile).
 #
 include $(KBUILD_PATH)/subfooter.kmk
-
-
-ifneq ($(wildcard /usr/bin/chcon),)
-# this is needed for testcases executed at build time
-## @todo Make a special installer tool that does this.
-$(PATH_BIN)/VBoxRT.so:
-	$(INSTALL) $(TARGET_VBoxRT) $@
-	chcon -t texrel_shlib_t $@ || true
-endif
 
 
 #
