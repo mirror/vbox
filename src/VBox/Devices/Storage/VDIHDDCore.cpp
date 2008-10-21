@@ -800,6 +800,7 @@ static int vdiCheckIfValid(const char *pszFilename)
 
     rc = vdiOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
     vdiFreeImage(pImage, false);
+    RTMemFree(pImage);
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -925,6 +926,8 @@ static int vdiCreate(const char *pszFilename, VDIMAGETYPE enmType,
         }
         *ppBackendData = pImage;
     }
+    else
+        RTMemFree(pImage);
 
 out:
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
@@ -986,7 +989,10 @@ static int vdiClose(void *pBackendData, bool fDelete)
     /* Freeing a never allocated image (e.g. because the open failed) is
      * not signalled as an error. After all nothing bad happens. */
     if (pImage)
+    {
         vdiFreeImage(pImage, fDelete);
+        RTMemFree(pImage);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
