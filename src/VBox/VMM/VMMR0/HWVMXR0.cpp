@@ -1871,6 +1871,9 @@ ResumeExecution:
         }
         if (pCpu->fFlushTLB)
             Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
+        else
+        if (pVM->hwaccm.s.fForceTLBFlush)
+            LogFlow(("Manual TLB flush\n"));
     }
 #endif
 
@@ -3068,6 +3071,8 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
     bool fFlushPending = pVM->hwaccm.s.fForceTLBFlush;
 
+    LogFlow(("VMXR0InvalidatePage %VGv\n", GCVirt));
+
     /* Only relevant if we want to use VPID. 
      * In the nested paging case we still see such calls, but
      * can safely ignore them. (e.g. after cr3 updates)
@@ -3096,6 +3101,8 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
     bool fFlushPending = pVM->hwaccm.s.fForceTLBFlush;
 
     Assert(pVM->hwaccm.s.fNestedPaging);
+
+    LogFlow(("VMXR0InvalidatePhysPage %VGp\n", GCPhys));
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
