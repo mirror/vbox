@@ -31,7 +31,7 @@
 ;*******************************************************************************
 ;* Header Files                                                                *
 ;*******************************************************************************
-%include "iprt/asmdefs.mac"
+%include "iprt/ntwrap.mac"
 
 BEGINCODE
 %ifdef RT_ARCH_AMD64
@@ -51,414 +51,115 @@ ENDPROC SUPR0Printf
 %ifdef SUPDRV_WITH_UNWIND_HACK
  %ifdef RT_ARCH_AMD64
 
-;;
-; Common prolog, take the proc name as argument.
-; This creates a 0x80 byte stack frame.
-;
-%macro NtWrapProlog 1
-[proc_frame %1]
-        push    rbp
-        [pushreg rbp]
-        mov     rbp, rsp
-        [setframe rbp, 0]
-        sub     rsp, 0x80
-        [allocstack 0x80]
-
-        ; save rdi and load rbp into it
-        mov     [rbp - 8h], rdi
-        [savereg rdi, 0x78]
-        mov     rdi, rbp
-[endprolog]
-%endmacro
-
-;;
-; Common epilog, take the proc name as argument.
-%macro NtWrapEpilog 1
-        ; restore rbp and rdi then return.
-        mov     rbp, rdi
-        mov     rdi, [rdi - 8h]
-        leave
-        ret
-[endproc_frame %1]
-%endmacro
-
-;;
-; Create a stack marker with the rbp. The marker is 32 byte big.
-; This is 32-byte aligned and 32 byte in size.
-;
-; Trashes r10
-%macro NtWrapCreateMarker 0
-        lea     r10, [rbp - 30h]
-        and     r10, ~1fh               ; 32-byte align it.
-        mov     dword [r10      ], 0x20080901
-        mov     dword [r10 + 04h], 0x20080902
-        mov     qword [r10 + 08h], rbp
-        mov     dword [r10 + 10h], 0x20080903
-        mov     dword [r10 + 14h], 0x20080904
-        mov     qword [r10 + 18h], rbp
-%endmacro
-
-;;
-; Destroys the stack marker.
-;
-; Trashes r10
-%macro NtWrapDestroyMarker 0
-        lea     r10, [rbp - 30h]
-        and     r10, ~1fh               ; 32-byte align it.
-        mov     [r10      ], rbp
-        mov     [r10 + 08h], rbp
-        mov     [r10 + 10h], rbp
-        mov     [r10 + 18h], rbp
-%endmacro
-
-;;
-; Find the stack marker with the rbp of the entry frame.
-;
-; Search the current stack page inline, call a helper function
-; which does a safe search of any further stack pages.
-;
-; Trashes       rax, r10 and r11.
-; Modifies      rbp
-;
-%macro NtWrapLocateMarker 0
-        mov     rax, rbp
-        and     rax, ~1fh               ; 32-byte align it.
-
-        ;
-        ; Calc remainig space in the current page. If we're on a
-        ; page boundrary, we'll search the entire previous page.
-        ;
-        mov     r10, rax
-        neg     r10
-        and     r10, 0fffh
-        inc     r10
-        shr     r10, 5                  ; /= 32 bytes
-        jz      %%not_found             ; If zero, take the slow path
-
-        ;
-        ; The search loop.
-        ;
-%%again:
-        dec     r10
-        lea     rax, [rax + 20h]
-        jz      %%not_found
-        cmp     dword [rax      ], 0x20080901
-        je      %%candidate
-        jmp     %%again
-
-%%not_found:
-        call    NAME(NtWrapLocateMarkerHelper)
-        jmp     %%done
-
-%%candidate:
-        cmp     dword [rax + 04h], 0x20080902
-        jne     %%again
-        cmp     dword [rax + 10h], 0x20080903
-        jne     %%again
-        cmp     dword [rax + 14h], 0x20080904
-        jne     %%again
-        mov     r11,  [rax + 08h]
-        cmp     r11,  [rax + 18h]
-        jne     %%again
-
-        ; found it, change rbp.
-        mov     rbp, r11
-%%done:
-%endmacro
-
-;;
-; Wraps a function with 4 or less argument that will go into registers.
-%macro NtWrapFunctionWithAllRegParams 1
-extern NAME(%1)
-BEGINPROC supdrvNtWrap%1
-        NtWrapProlog supdrvNtWrap%1
-        NtWrapLocateMarker
-
-        call    NAME(%1)
-
-        NtWrapEpilog supdrvNtWrap%1
-ENDPROC   supdrvNtWrap%1
-%endmacro
-
-;;
-; Wraps a function with 5 argument, where the first 4 goes into registers.
-%macro NtWrapFunctionWith5Params 1
-extern NAME(%1)
-BEGINPROC supdrvNtWrap%1
-        NtWrapProlog supdrvNtWrap%1
-        NtWrapLocateMarker
-
-        mov     r11, [rdi + 30h]
-        mov     [rsp + 20h], r11
-        call    NAME(%1)
-
-        NtWrapEpilog supdrvNtWrap%1
-ENDPROC   supdrvNtWrap%1
-%endmacro
-
-;;
-; Wraps a function with 6 argument, where the first 4 goes into registers.
-%macro NtWrapFunctionWith6Params 1
-extern NAME(%1)
-BEGINPROC supdrvNtWrap%1
-        NtWrapProlog supdrvNtWrap%1
-        NtWrapLocateMarker
-
-        mov     r11, [rdi + 30h]
-        mov     [rsp + 20h], r11
-        mov     r10, [rdi + 38h]
-        mov     [rsp + 28h], r10
-        call    NAME(%1)
-
-        NtWrapEpilog supdrvNtWrap%1
-ENDPROC   supdrvNtWrap%1
-%endmacro
-
-;;
-; Wraps a function with 7 argument, where the first 4 goes into registers.
-%macro NtWrapFunctionWith7Params 1
-extern NAME(%1)
-BEGINPROC supdrvNtWrap%1
-        NtWrapProlog supdrvNtWrap%1
-        NtWrapLocateMarker
-
-        mov     r11, [rdi + 30h]
-        mov     [rsp + 20h], r11
-        mov     r10, [rdi + 38h]
-        mov     [rsp + 28h], r10
-        mov     rax, [rdi + 40h]
-        mov     [rsp + 30h], rax
-        call    NAME(%1)
-
-        NtWrapEpilog supdrvNtWrap%1
-ENDPROC   supdrvNtWrap%1
-%endmacro
-
-extern IoGetStackLimits
-
-;;
-; Helper that cautiously continues the stack marker search
-; NtWrapLocateMarker started.
-;
-; The stack layout at the time is something like this.
-;       rbp+08h         callers return address.
-;       rbp-00h         saved rbp
-;       rbp-08h         saved rdi
-;       rbp-09h
-;         thru          unused.
-;       rbp-80h
-;       rbp-88h         our return address.
-;       rbp-89h
-;         thru          callee register dump zone.
-;       rbp-a0h
-;
-; @param    rax         Current stack location.
-; @param    rdi         Parent stack frame pointer. (This should equal rbp on entry.)
-;
-; Trashes:  rax, r10, r11.
-;           Will use the callers stack frame for register saving ASSUMING that
-;           rbp-80h thru rbp-09h is unused.
-;
-; Modifies: rbp
-;
-BEGINPROC NtWrapLocateMarkerHelper
-        ;
-        ; Prolog. Save volatile regs and reserve callee space.
-        ;
-        sub     rsp, 20h                ; For IoGetStackLimits().
-        mov     [rdi - 80h], rax
-        mov     [rdi - 78h], rcx
-        mov     [rdi - 70h], rdx
-        mov     [rdi - 68h], r8
-        mov     [rdi - 60h], r9
-
-        ;
-        ; Call VOID IoGetStackLimits(OUT PULONG_PTR LowLimit, OUT PULONG_PTR HighLimit);
-        ;
-        ; Use rdi-40h for the high limit and rdi-50h for the low one, we're only
-        ; interested in the high one.
-        ;
-        lea     rcx, [rdi - 40h]        ; arg #1 LowLimit
-        lea     rdx, [rdi - 50h]        ; arg #2 HighLimit
-        mov     [rdx], eax              ; paranoia - init to end of current search.
-        call    IoGetStackLimits
-
-        ;
-        ; Move the top address into r10, restore rax and continue
-        ; the search. Check that r10 is less than 3 pages from rax.
-        ;
-        mov     rax, [rdi - 80h]        ; Restore eax (see prolog)
-        mov     r10, [rdi - 50h]        ; HighLimit
-        and     r10, ~1fh               ; 32-byte align it (downwards)
-        sub     r10, rax
-        jz      .not_found              ; If already at the top of the stack.
-        cmp     r10, 3000h
-        jae     .out_of_bounds          ; If too far away, something is busted.
-        shr     r10, 5                  ; /= 32.
-
-        ; The loop body.
-.search_loop:
-        cmp     dword [rax      ], 0x20080901
-        je      .candidate
-.continue_searching:
-        dec     r10
-        jz      .not_found
-        lea     rax, [rax + 20h]
-        jmp     .search_loop
-
-        ; Found the first marker, check for the rest.
-.candidate:
-        cmp     dword [rax + 04h], 0x20080902
-        jne     .continue_searching
-        cmp     dword [rax + 10h], 0x20080903
-        jne     .continue_searching
-        cmp     dword [rax + 14h], 0x20080904
-        jne     .continue_searching
-        mov     r11,  [rax + 08h]
-        cmp     r11,  [rax + 18h]
-        jne     .continue_searching
-
-        ; found it, change rbp.
-        mov     rbp, r11
-
-        ;
-        ; Restore registers and pop the stack frame.
-        ;
-.epilog:
-        mov     r9,  [rdi - 60h]
-        mov     r8,  [rdi - 68h]
-        mov     rdx, [rdi - 70h]
-        mov     rcx, [rdi - 78h]
-        ; mov     rax, [rdi - 80h]
-        add     rsp, 20h
-        ret
-
-        ;
-        ; Needless to say, this isn't supposed to happen. Thus the int3.
-        ; Note down r10 and rax.
-        ;
-.out_of_bounds:
-%ifdef DEBUG
-        int3
-%endif
-.not_found:
-%ifdef DEBUG
-        int3
-%endif
-        jmp     .epilog
-ENDPROC   NtWrapLocateMarkerHelper
-
-
-
 ;
 ; This has the same order as the list in SUPDrv.c
 ;
-NtWrapFunctionWithAllRegParams  SUPR0ComponentRegisterFactory
-NtWrapFunctionWithAllRegParams  SUPR0ComponentDeregisterFactory
-NtWrapFunctionWithAllRegParams  SUPR0ComponentQueryFactory
-NtWrapFunctionWith5Params       SUPR0ObjRegister
-NtWrapFunctionWithAllRegParams  SUPR0ObjAddRef
-NtWrapFunctionWithAllRegParams  SUPR0ObjRelease
-NtWrapFunctionWithAllRegParams  SUPR0ObjVerifyAccess
-NtWrapFunctionWithAllRegParams  SUPR0LockMem
-NtWrapFunctionWithAllRegParams  SUPR0UnlockMem
-NtWrapFunctionWith5Params       SUPR0ContAlloc
-NtWrapFunctionWithAllRegParams  SUPR0ContFree
-NtWrapFunctionWith5Params       SUPR0LowAlloc
-NtWrapFunctionWithAllRegParams  SUPR0LowFree
-NtWrapFunctionWithAllRegParams  SUPR0MemAlloc
-NtWrapFunctionWithAllRegParams  SUPR0MemGetPhys
-NtWrapFunctionWithAllRegParams  SUPR0MemFree
-NtWrapFunctionWithAllRegParams  SUPR0PageAlloc
-NtWrapFunctionWithAllRegParams  SUPR0PageFree
-;NtWrapFunctionWithAllRegParams  SUPR0Printf            - cannot wrap this buster.
-NtWrapFunctionWithAllRegParams  RTMemAlloc
-NtWrapFunctionWithAllRegParams  RTMemAllocZ
-NtWrapFunctionWithAllRegParams  RTMemFree
-NtWrapFunctionWithAllRegParams  RTMemDup
-NtWrapFunctionWithAllRegParams  RTMemDupEx
-NtWrapFunctionWithAllRegParams  RTMemRealloc
-NtWrapFunctionWithAllRegParams  RTR0MemObjAllocLow
-NtWrapFunctionWithAllRegParams  RTR0MemObjAllocPage
-NtWrapFunctionWithAllRegParams  RTR0MemObjAllocPhys
-NtWrapFunctionWithAllRegParams  RTR0MemObjAllocPhysNC
-NtWrapFunctionWithAllRegParams  RTR0MemObjAllocCont
-NtWrapFunctionWithAllRegParams  RTR0MemObjLockUser
-NtWrapFunctionWith5Params       RTR0MemObjMapKernel
-NtWrapFunctionWith6Params       RTR0MemObjMapUser
-;NtWrapFunctionWithAllRegParams  RTR0MemObjAddress      - not necessary
-;NtWrapFunctionWithAllRegParams  RTR0MemObjAddressR3    - not necessary
-;NtWrapFunctionWithAllRegParams  RTR0MemObjSize         - not necessary
-;NtWrapFunctionWithAllRegParams  RTR0MemObjIsMapping    - not necessary
-;NtWrapFunctionWithAllRegParams  RTR0MemObjGetPagePhysAddr - not necessary
-NtWrapFunctionWithAllRegParams  RTR0MemObjFree
-;NtWrapFunctionWithAllRegParams  RTProcSelf             - not necessary
-;NtWrapFunctionWithAllRegParams  RTR0ProcHandleSelf     - not necessary
-NtWrapFunctionWithAllRegParams  RTSemFastMutexCreate
-NtWrapFunctionWithAllRegParams  RTSemFastMutexDestroy
-NtWrapFunctionWithAllRegParams  RTSemFastMutexRequest
-NtWrapFunctionWithAllRegParams  RTSemFastMutexRelease
-NtWrapFunctionWithAllRegParams  RTSemEventCreate
-NtWrapFunctionWithAllRegParams  RTSemEventSignal
-NtWrapFunctionWithAllRegParams  RTSemEventWait
-NtWrapFunctionWithAllRegParams  RTSemEventWaitNoResume
-NtWrapFunctionWithAllRegParams  RTSemEventDestroy
-NtWrapFunctionWithAllRegParams  RTSemEventMultiCreate
-NtWrapFunctionWithAllRegParams  RTSemEventMultiSignal
-NtWrapFunctionWithAllRegParams  RTSemEventMultiReset
-NtWrapFunctionWithAllRegParams  RTSemEventMultiWait
-NtWrapFunctionWithAllRegParams  RTSemEventMultiWaitNoResume
-NtWrapFunctionWithAllRegParams  RTSemEventMultiDestroy
-NtWrapFunctionWithAllRegParams  RTSpinlockCreate
-NtWrapFunctionWithAllRegParams  RTSpinlockDestroy
-NtWrapFunctionWithAllRegParams  RTSpinlockAcquire
-NtWrapFunctionWithAllRegParams  RTSpinlockRelease
-NtWrapFunctionWithAllRegParams  RTSpinlockAcquireNoInts
-NtWrapFunctionWithAllRegParams  RTSpinlockReleaseNoInts
-;NtWrapFunctionWithAllRegParams  RTTimeNanoTS           - not necessary
-;NtWrapFunctionWithAllRegParams  RTTimeMilliTS          - not necessary
-;NtWrapFunctionWithAllRegParams  RTTimeSystemNanoTS     - not necessary
-;NtWrapFunctionWithAllRegParams  RTTimeSystemMilliTS    - not necessary
-;NtWrapFunctionWithAllRegParams  RTThreadNativeSelf     - not necessary
-NtWrapFunctionWithAllRegParams  RTThreadSleep
-NtWrapFunctionWithAllRegParams  RTThreadYield
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ComponentRegisterFactory
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ComponentDeregisterFactory
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ComponentQueryFactory
+NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, SUPR0ObjRegister
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ObjAddRef
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ObjRelease
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ObjVerifyAccess
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0LockMem
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0UnlockMem
+NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, SUPR0ContAlloc
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ContFree
+NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, SUPR0LowAlloc
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0LowFree
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0MemAlloc
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0MemGetPhys
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0MemFree
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0PageAlloc
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0PageFree
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0Printf            - cannot wrap this buster.
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemAlloc
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemAllocZ
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemFree
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemDup
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemDupEx
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemRealloc
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocLow
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocPage
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocPhys
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocPhysNC
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocCont
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjLockUser
+NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, RTR0MemObjMapKernel
+NtWrapDyn2DrvFunctionWith6Params       supdrvNtWrap, RTR0MemObjMapUser
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAddress      - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAddressR3    - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjSize         - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjIsMapping    - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjGetPagePhysAddr - not necessary
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjFree
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTProcSelf             - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0ProcHandleSelf     - not necessary
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemFastMutexCreate
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemFastMutexDestroy
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemFastMutexRequest
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemFastMutexRelease
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventCreate
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventSignal
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventWait
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventWaitNoResume
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventDestroy
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventMultiCreate
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventMultiSignal
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventMultiReset
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventMultiWait
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventMultiWaitNoResume
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSemEventMultiDestroy
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSpinlockCreate
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSpinlockDestroy
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSpinlockAcquire
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSpinlockRelease
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSpinlockAcquireNoInts
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTSpinlockReleaseNoInts
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTTimeNanoTS           - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTTimeMilliTS          - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTTimeSystemNanoTS     - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTTimeSystemMilliTS    - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadNativeSelf     - not necessary
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadSleep
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadYield
 %if 0 ; Thread APIs, Part 2
-;NtWrapFunctionWithAllRegParams  RTThreadSelf
-NtWrapFunctionWith7Params       RTThreadCreate
-NtWrapFunctionWithAllRegParams  RTThreadGetNative
-NtWrapFunctionWithAllRegParams  RTThreadWait
-NtWrapFunctionWithAllRegParams  RTThreadWaitNoResume
-NtWrapFunctionWithAllRegParams  RTThreadGetName
-NtWrapFunctionWithAllRegParams  RTThreadSelfName
-NtWrapFunctionWithAllRegParams  RTThreadGetType
-NtWrapFunctionWithAllRegParams  RTThreadUserSignal
-NtWrapFunctionWithAllRegParams  RTThreadUserReset
-NtWrapFunctionWithAllRegParams  RTThreadUserWait
-NtWrapFunctionWithAllRegParams  RTThreadUserWaitNoResume
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadSelf
+NtWrapDyn2DrvFunctionWith7Params       supdrvNtWrap, RTThreadCreate
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadGetNative
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadWait
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadWaitNoResume
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadGetName
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadSelfName
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadGetType
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserSignal
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserReset
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserWait
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTThreadUserWaitNoResume
 %endif
-;NtWrapFunctionWithAllRegParams  RTLogDefaultInstance   - a bit of a gamble, but we do not want the overhead!
-;NtWrapFunctionWithAllRegParams  RTMpCpuId              - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpCpuIdFromSetIndex  - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpCpuIdToSetIndex    - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpIsCpuPossible      - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpGetCount           - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpGetMaxCpuId        - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpGetOnlineCount     - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpGetOnlineSet       - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpGetSet             - not necessary
-;NtWrapFunctionWithAllRegParams  RTMpIsCpuOnline        - not necessary
-NtWrapFunctionWithAllRegParams  RTMpOnAll
-NtWrapFunctionWithAllRegParams  RTMpOnOthers
-NtWrapFunctionWithAllRegParams  RTMpOnSpecific
-;NtWrapFunctionWithAllRegParams  RTLogRelDefaultInstance - not necessary.
-NtWrapFunctionWithAllRegParams  RTLogSetDefaultInstanceThread
-;NtWrapFunctionWithAllRegParams  RTLogLogger            - can't wrap this buster.
-;NtWrapFunctionWithAllRegParams  RTLogLoggerEx          - can't wrap this buster.
-NtWrapFunctionWith5Params       RTLogLoggerExV
-;NtWrapFunctionWithAllRegParams  RTLogPrintf            - can't wrap this buster. ;; @todo provide va_list log wrappers in RuntimeR0.
-NtWrapFunctionWithAllRegParams  RTLogPrintfV
-NtWrapFunctionWithAllRegParams  AssertMsg1
-;NtWrapFunctionWithAllRegParams  AssertMsg2             - can't wrap this buster.
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogDefaultInstance   - a bit of a gamble, but we do not want the overhead!
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpCpuId              - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpCpuIdFromSetIndex  - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpCpuIdToSetIndex    - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpIsCpuPossible      - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpGetCount           - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpGetMaxCpuId        - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpGetOnlineCount     - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpGetOnlineSet       - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpGetSet             - not necessary
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpIsCpuOnline        - not necessary
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpOnAll
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpOnOthers
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMpOnSpecific
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogRelDefaultInstance - not necessary.
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogSetDefaultInstanceThread
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogLogger            - can't wrap this buster.
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogLoggerEx          - can't wrap this buster.
+NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, RTLogLoggerExV
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogPrintf            - can't wrap this buster. ;; @todo provide va_list log wrappers in RuntimeR0.
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogPrintfV
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, AssertMsg1
+;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, AssertMsg2             - can't wrap this buster.
 
 
 ;;

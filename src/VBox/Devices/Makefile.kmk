@@ -764,12 +764,11 @@ Drivers_SOURCES.win   = \
 	Audio/dsoundaudio.c \
 	Serial/DrvHostSerial.cpp
 
-if defined(VBOX_WITH_NETFLT) && "$(KBUILD_TARGET)" == "win"
+if defined(VBOX_WITH_NETFLT)
  if defined(VBOX_NETFLT_ONDEMAND_BIND)
-  Drivers_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
- else
-  Drivers_SOURCES.win += Network/win/DrvIntNet-win.cpp
+  Drivers_DEFS.win     += VBOX_NETFLT_ONDEMAND_BIND
  endif
+ Drivers_SOURCES.win   += Network/win/DrvIntNet-win.cpp
 endif
 
 # -- features --
@@ -876,6 +875,12 @@ ServicesR0_TEMPLATE  = VBOXR0
 ServicesR0_DEFS      = IN_INTNET_R0 IN_RT_R0
 ServicesR0_SOURCES   = \
 	Network/SrvIntNetR0.cpp
+
+if defined(VBOX_WITH_NETFLT)
+ ServicesR0_SOURCES.win.amd64 += Network/win/SrvIntNetR0A-win.asm
+ ServicesR0_DEFS.win.amd64    += SUPDRV_WITH_UNWIND_HACK
+endif
+
 
 #
 # Internal Networking - Ring-3 Testcase for the Ring-0 code (a bit hackish).
