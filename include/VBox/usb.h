@@ -134,6 +134,8 @@ typedef struct USBDEVICE
 #ifdef RT_OS_SOLARIS
     /** The /devices path of the device. */
     char           *pszDevicePath;
+    /** Do we have a partial or full device descriptor here. */
+    bool            fPartialDescriptor;
 #endif
 } USBDEVICE;
 /** Pointer to a USB device. */
