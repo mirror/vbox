@@ -1560,8 +1560,8 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
     {
         if (!s_aRegisters[uTrap])
         {
-            s_aRegisters[uTrap] = true;
             char szStatName[64];
+            s_aRegisters[uTrap] = true;
             RTStrPrintf(szStatName, sizeof(szStatName), "/REM/Trap/0x%02X", uTrap);
             STAM_REG(env->pVM, &s_aStatTrap[uTrap], STAMTYPE_COUNTER, szStatName, STAMUNIT_OCCURENCES, "Trap stats.");
         }
@@ -1650,8 +1650,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
     uint8_t                 u8TrapNo;
     int                     rc; 
 
-    Log2(("REMR3State:\n"));
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
+    Log2(("REMR3State:\n"));
          
     pCtx = pVM->rem.s.pCtx;
     fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVM);
@@ -2099,9 +2099,10 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     register PCPUMCTX pCtx = pVM->rem.s.pCtx;
     unsigned          i;
 
+    STAM_PROFILE_START(&pVM->rem.s.StatsStateBack, a);
     Log2(("REMR3StateBack:\n"));
     Assert(pVM->rem.s.fInREM);
-    STAM_PROFILE_START(&pVM->rem.s.StatsStateBack, a);
+    
         /*
      * Copy back the registers.
      * This is done in the order they are declared in the CPUMCTX structure.
@@ -2671,6 +2672,8 @@ REMR3DECL(int) REMR3NotifyCodePageChanged(PVM pVM, RTGCPTR pvCodePage)
  */
 REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, unsigned fFlags)
 {
+    uint32_t cbBitmap;
+    int rc;
     Log(("REMR3NotifyPhysRamRegister: GCPhys=%VGp cb=%d fFlags=%d\n", GCPhys, cb, fFlags));
     VM_ASSERT_EMT(pVM);
 
@@ -2694,8 +2697,8 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 #else /* VBOX_STRICT: allocate a full map and make the out of bounds pages invalid. */
         phys_ram_dirty = RTMemPageAlloc(_4G >> PAGE_SHIFT);
         AssertReleaseMsg(phys_ram_dirty, ("failed to allocate %d bytes of dirty bytes\n", _4G >> PAGE_SHIFT));
-        uint32_t cbBitmap = RT_ALIGN_32(phys_ram_dirty_size, PAGE_SIZE);
-        int rc = RTMemProtect(phys_ram_dirty + cbBitmap, (_4G >> PAGE_SHIFT) - cbBitmap, RTMEM_PROT_NONE);
+        cbBitmap = RT_ALIGN_32(phys_ram_dirty_size, PAGE_SIZE);
+        rc = RTMemProtect(phys_ram_dirty + cbBitmap, (_4G >> PAGE_SHIFT) - cbBitmap, RTMEM_PROT_NONE);
         AssertRC(rc);
         phys_ram_dirty += cbBitmap - phys_ram_dirty_size;
 #endif
@@ -3006,10 +3009,11 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enm
 REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef VBOX_STRICT
+    unsigned long off;
     if (pVM->rem.s.cHandlerNotifications)
         REMR3ReplayHandlerNotifications(pVM);
 
-    unsigned long off = get_phys_page_offset(GCPhys);
+    off = get_phys_page_offset(GCPhys);
     return (off & PAGE_OFFSET_MASK) == pVM->rem.s.iHandlerMemType
         || (off & PAGE_OFFSET_MASK) == pVM->rem.s.iMMIOMemType
         || (off & PAGE_OFFSET_MASK) == IO_MEM_ROM;
