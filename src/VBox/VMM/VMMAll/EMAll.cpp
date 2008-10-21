@@ -94,7 +94,7 @@ VMMDECL(EMSTATE) EMGetState(PVM pVM)
  */
 VMMDECL(void) EMFlushREMTBs(PVM pVM)
 {
-    Log(("EMFlushREMTBs\n"));
+    LogFlow(("EMFlushREMTBs\n"));
     pVM->em.s.fREMFlushTBs = true;
 }
 
