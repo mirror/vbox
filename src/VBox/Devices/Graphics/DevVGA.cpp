@@ -348,7 +348,7 @@ DECLINLINE(void) vga_set_dirty(VGAState *pThis, RTGCPHYS offVRAM)
 {
     AssertMsg(offVRAM < pThis->vram_size, ("offVRAM = %p, pThis->vram_size = %p\n", offVRAM, pThis->vram_size));
     ASMBitSet(&pThis->au32DirtyBitmap[0], offVRAM >> PAGE_SHIFT);
-    pThis->fHaveDirtyBits = true;
+    pThis->fHasDirtyBits = true;
 }
 
 /**
@@ -4406,10 +4406,10 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
     if (rc != VINF_SUCCESS)
         return rc;
 
-    if (pThis->fHaveDirtyBits && pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS32)
+    if (pThis->fHasDirtyBits && pThis->GCPhysVRAM && pThis->GCPhysVRAM != NIL_RTGCPHYS32)
     {
         PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
-        pThis->fHaveDirtyBits = false;
+        pThis->fHasDirtyBits = false;
     }
     if (pThis->fRemappedVGA)
     {
