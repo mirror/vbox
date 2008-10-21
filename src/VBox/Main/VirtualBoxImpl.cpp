@@ -2929,80 +2929,35 @@ ComObjPtr <GuestOSType> VirtualBox::getUnknownOSType()
 }
 
 /**
- *  Returns the list of opened machines (i.e. machines having direct sessions
- *  opened by client processes).
+ * Returns the list of opened machines (machines having direct sessionsopened by
+ * client processes).
  *
- *  @note the returned list contains smart pointers. So, clear it as soon as
- *  it becomes no more necessary to release instances.
- *  @note it can be possible that a session machine from the list has been
- *  already uninitialized, so a) lock the instance and b) chheck for
- *  instance->isReady() return value before manipulating the object directly
- *  (i.e. not through COM methods).
+ * @note The returned list contains smart pointers. So, clear it as soon as
+ * it becomes no more necessary to release instances.
  *
- *  @note Locks objects for reading.
+ * @note It can be possible that a session machine from the list has been
+ * already uninitialized, so do a usual AutoCaller/AutoReadLock sequence
+ * whenaccessing unprotected data directly.
+ *
+ * @note Locks objects for reading.
  */
 void VirtualBox::getOpenedMachines (SessionMachineVector &aVector)
 {
     AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), (void) 0);
+    AssertComRCReturnVoid (autoCaller.rc());
 
-    std::list <ComObjPtr <SessionMachine> > list;
+    aVector.clear();
 
+    AutoReadLock alock (this);
+
+    for (MachineList::iterator it = mData.mMachines.begin();
+         it != mData.mMachines.end();
+         ++ it)
     {
-        AutoReadLock alock (this);
-
-        for (MachineList::iterator it = mData.mMachines.begin();
-             it != mData.mMachines.end();
-             ++ it)
-        {
-            ComObjPtr <SessionMachine> sm = (*it)->sessionMachine();
-            /* SessionMachine is null when there are no open sessions */
-            if (!sm.isNull())
-                list.push_back (sm);
-        }
+        ComObjPtr <SessionMachine> sm;
+        if ((*it)->isSessionOpen (sm))
+            aVector.push_back (sm);
     }
-
-    aVector = SessionMachineVector (list.begin(), list.end());
-    return;
-}
-
-/**
- *  Returns the list of opened machines (i.e. machines having direct sessions
- *  opened by client processes).
- *
- *  @note the returned list contains smart pointers. So, clear it as soon as
- *  it becomes no more necessary to release instances.
- *  @note it can be possible that a session machine from the list has been
- *  already uninitialized, so a) lock the instance and b) chheck for
- *  instance->isReady() return value before manipulating the object directly
- *  (i.e. not through COM methods).
- *
- *  @note Locks objects for reading.
- */
-void VirtualBox::getSpawnedMachines (MachineVector &aVector)
-{
-    AutoCaller autoCaller (this);
-    AssertComRCReturn (autoCaller.rc(), (void) 0);
-
-    std::list <ComObjPtr <Machine> > list;
-
-    {
-        AutoReadLock alock (this);
-
-        for (MachineList::iterator it = mData.mMachines.begin();
-             it != mData.mMachines.end();
-             ++ it)
-        {
-            ComObjPtr <Machine> m = (*it);
-            SessionState_T state;
-            m->COMGETTER(SessionState(&state));
-            if (state == SessionState_Spawning)
-                list.push_back (m);
-        }
-    }
-
-    aVector = MachineVector (list.begin(), list.end());
-    return;
 }
 
 /**
@@ -4708,6 +4663,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
     SessionMachineVector machines;
     MachineVector spawnedMachines;
+
     size_t cnt = 0;
     size_t cntSpawned = 0;
 
@@ -4720,7 +4676,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
     /// @todo (dmik) processes reaping!
 
-    HANDLE *handles = new HANDLE [1];
+    HANDLE handles [MAXIMUM_WAIT_OBJECTS];
     handles [0] = that->mWatcherData.mUpdateReq;
 
     do
@@ -4735,27 +4691,18 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             /* release the caller to let uninit() ever proceed */
             autoCaller.release();
 
-#undef VBOX_CHECK_SPAWN_FAILURES
-#ifdef VBOX_CHECK_SPAWN_FAILURES
-            DWORD rc = ::WaitForMultipleObjects (cnt + 1, handles, FALSE, 500);
-#else
-            DWORD rc = ::WaitForMultipleObjects (cnt + 1, handles, FALSE, INFINITE);
-#endif
+            DWORD rc = ::WaitForMultipleObjects (1 + cnt + cntSpawned,
+                                                 handles, FALSE, INFINITE);
 
-            /*
-             *  Restore the caller before using VirtualBox. If it fails, this
-             *  means VirtualBox is being uninitialized and we must terminate.
-             */
+            /* Restore the caller before using VirtualBox. If it fails, this
+             * means VirtualBox is being uninitialized and we must terminate. */
             autoCaller.add();
             if (!autoCaller.isOk())
                 break;
 
             bool update = false;
-#ifdef VBOX_CHECK_SPAWN_FAILURES
-            if (rc == WAIT_OBJECT_0 || rc == WAIT_TIMEOUT)
-#else
+
             if (rc == WAIT_OBJECT_0)
-#endif
             {
                 /* update event is signaled */
                 update = true;
@@ -4772,39 +4719,85 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                 (machines [rc - WAIT_ABANDONED_0 - 1])->checkForDeath();
                 update = true;
             }
+            else if (rc > WAIT_OBJECT_0 + cnt && rc <= (WAIT_OBJECT_0 + cntSpawned))
+            {
+                /* spawned VM process has terminated (normally or abnormally) */
+                (spawnedMachines [rc - WAIT_OBJECT_0 - cnt - 1])->
+                    checkForSpawnFailure();
+                update = true;
+            }
+
             if (update)
             {
-                /* obtain a new set of opened machines */
-                that->getOpenedMachines (machines);
-                cnt = machines.size();
-                LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
-                AssertMsg ((cnt + 1) <= MAXIMUM_WAIT_OBJECTS,
-                           ("MAXIMUM_WAIT_OBJECTS reached"));
-                /* renew the set of event handles */
-                delete [] handles;
-                handles = new HANDLE [cnt + 1];
-                handles [0] = that->mWatcherData.mUpdateReq;
-                for (size_t i = 0; i < cnt; ++ i)
-                    handles [i + 1] = (machines [i])->ipcSem();
+                /* close old process handles */
+                for (size_t i = 1 + cnt; i < 1 + cnt + cntSpawned; ++ i)
+                    CloseHandle (handles [i]);
 
-#ifdef VBOX_CHECK_SPAWN_FAILURES
-                /* check for spawn errors */
-                that->getSpawnedMachines (spawnedMachines);
-                cntSpawned = spawnedMachines.size();
-                for (size_t i = 0; i < cntSpawned; ++ i)
-                    (spawnedMachines [i])->checkForSpawnFailure();
-#endif
+                AutoReadLock thatLock (that);
+
+                /* obtain a new set of opened machines */
+                cnt = 0;
+                machines.clear();
+
+                for (MachineList::iterator it = that->mData.mMachines.begin();
+                     it != that->mData.mMachines.end(); ++ it)
+                {
+                    /// @todo handle situations with more than 64 objects
+                    AssertMsgBreak ((1 + cnt) <= MAXIMUM_WAIT_OBJECTS,
+                                    ("MAXIMUM_WAIT_OBJECTS reached"));
+
+                    ComObjPtr <SessionMachine> sm;
+                    HANDLE ipcSem;
+                    if ((*it)->isSessionOpen (sm, &ipcSem))
+                    {
+                        machines.push_back (sm);
+                        handles [1 + cnt] = ipcSem;
+                        ++ cnt;
+                    }
+                }
+
+                LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
+
+                /* obtain a new set of spawned machines */
+                cntSpawned = 0;
+                spawnedMachines.clear();
+
+                for (MachineList::iterator it = that->mData.mMachines.begin();
+                     it != that->mData.mMachines.end(); ++ it)
+                {
+                    /// @todo handle situations with more than 64 objects
+                    AssertMsgBreak ((1 + cnt + cntSpawned) <= MAXIMUM_WAIT_OBJECTS,
+                                    ("MAXIMUM_WAIT_OBJECTS reached"));
+
+                    RTPROCESS pid;
+                    if ((*it)->isSessionSpawning (&pid))
+                    {
+                        HANDLE ph = OpenProcess (SYNCHRONIZE, FALSE, pid);
+                        AssertMsg (ph != NULL, ("OpenProcess (pid=%d) failed with %d\n",
+                                                pid, GetLastError()));
+                        if (rc == 0)
+                        {
+                            spawnedMachines.push_back (*it);
+                            handles [1 + cnt + cntSpawned] = ph;
+                            ++ cntSpawned;
+                        }
+                    }
+                }
+
+                LogFlowFunc (("UPDATE: spawned session count = %d\n", cntSpawned));
             }
         }
         while (true);
     }
     while (0);
 
-    /* delete the set of event handles */
-    delete [] handles;
+    /* close old process handles */
+    for (size_t i = 1 + cnt; i < 1 + cnt + cntSpawned; ++ i)
+        CloseHandle (handles [i]);
 
-    /* delete the set of opened machines if any */
+    /* release sets of machines if any */
     machines.clear();
+    spawnedMachines.clear();
 
     ::CoUninitialize();
 
@@ -4831,20 +4824,20 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
             int vrc = RTSemEventWait (that->mWatcherData.mUpdateReq, 500);
 
-            /*
-             *  Restore the caller before using VirtualBox. If it fails, this
-             *  means VirtualBox is being uninitialized and we must terminate.
-             */
+            /* Restore the caller before using VirtualBox. If it fails, this
+             * means VirtualBox is being uninitialized and we must terminate. */
             autoCaller.add();
             if (!autoCaller.isOk())
                 break;
 
             bool update = false;
+            bool updateSpawned = false;
 
             if (VBOX_SUCCESS (vrc))
             {
                 /* update event is signaled */
                 update = true;
+                updateSpawned = true;
             }
             else
             {
@@ -4913,35 +4906,77 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                         AssertMsg (arc == ERROR_INTERRUPT || arc == ERROR_TIMEOUT,
                                    ("DosWaitMuxWaitSem returned %d\n", arc));
                 }
+
+                /* are there any spawning sessions? */
+                if (cntSpawned > 0)
+                {
+                    for (size_t i = 0; i < cntSpawned; ++ i)
+                        updateSpawned |= (spawnedMachines [i])->
+                            checkForSpawnFailure();
+                }
             }
 
-            if (update)
+            if (update || updateSpawned)
             {
-                /* close the old muxsem */
-                if (muxSem != NULLHANDLE)
-                    ::DosCloseMuxWaitSem (muxSem);
-                /* obtain a new set of opened machines */
-                that->getOpenedMachines (machines);
-                cnt = machines.size();
-                LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
-                /// @todo use several muxwait sems if cnt is > 64
-                AssertMsg (cnt <= 64 /* according to PMREF */,
-                           ("maximum of 64 mutex semaphores reached (%d)", cnt));
-                if (cnt > 64)
-                    cnt = 64;
-                if (cnt > 0)
+                AutoReadLock thatLock (that);
+
+                if (update)
                 {
-                    /* renew the set of event handles */
-                    for (size_t i = 0; i < cnt; ++ i)
+                    /* close the old muxsem */
+                    if (muxSem != NULLHANDLE)
+                        ::DosCloseMuxWaitSem (muxSem);
+
+                    /* obtain a new set of opened machines */
+                    cnt = 0;
+                    machines.clear();
+
+                    for (MachineList::iterator it = that->mData.mMachines.begin();
+                         it != that->mData.mMachines.end(); ++ it)
                     {
-                        handles [i].hsemCur = (HSEM) machines [i]->ipcSem();
-                        handles [i].ulUser = i;
+                        /// @todo handle situations with more than 64 objects
+                        AssertMsg (cnt <= 64 /* according to PMREF */,
+                                   ("maximum of 64 mutex semaphores reached (%d)",
+                                    cnt));
+
+                        ComObjPtr <SessionMachine> sm;
+                        HMTX ipcSem;
+                        if ((*it)->isSessionOpen (sm, &ipcSem))
+                        {
+                            machines.push_back (sm);
+                            handles [cnt].hsemCur = (HSEM) ipcSem;
+                            handles [cnt].ulUser = cnt;
+                            ++ cnt;
+                        }
                     }
-                    /* create a new muxsem */
-                    APIRET arc = ::DosCreateMuxWaitSem (NULL, &muxSem, cnt, handles,
-                                                        DCMW_WAIT_ANY);
-                    AssertMsg (arc == NO_ERROR,
-                               ("DosCreateMuxWaitSem returned %d\n", arc)); NOREF(arc);
+
+                    LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
+
+                    if (cnt > 0)
+                    {
+                        /* create a new muxsem */
+                        APIRET arc = ::DosCreateMuxWaitSem (NULL, &muxSem, cnt,
+                                                            handles,
+                                                            DCMW_WAIT_ANY);
+                        AssertMsg (arc == NO_ERROR,
+                                   ("DosCreateMuxWaitSem returned %d\n", arc));
+                        NOREF(arc);
+                    }
+                }
+
+                if (updateSpawned)
+                {
+                    /* obtain a new set of spawned machines */
+                    spawnedMachines.clear();
+
+                    for (MachineList::iterator it = that->mData.mMachines.begin();
+                         it != that->mData.mMachines.end(); ++ it)
+                    {
+                        if ((*it)->isSessionSpawning())
+                            spawnedMachines.push_back (*it);
+                    }
+
+                    cntSpawned = spawnedMachines.size();
+                    LogFlowFunc (("UPDATE: spawned session count = %d\n", cntSpawned));
                 }
             }
         }
@@ -4953,8 +4988,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
     if (muxSem != NULLHANDLE)
         ::DosCloseMuxWaitSem (muxSem);
 
-    /* delete the set of opened machines if any */
+    /* release sets of machines if any */
     machines.clear();
+    spawnedMachines.clear();
 
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
@@ -4982,24 +5018,44 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             if (!autoCaller.isOk())
                 break;
 
-            if (VBOX_SUCCESS (rc) || update)
+            if (VBOX_SUCCESS (rc) || update || updateSpawned)
             {
                 /* VBOX_SUCCESS (rc) means an update event is signaled */
 
-                /* obtain a new set of opened machines */
-                that->getOpenedMachines (machines);
-                cnt = machines.size();
-                LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
-            }
+                AutoReadLock thatLock (that);
 
-            if (VBOX_SUCCESS (rc) || updateSpawned)
-            {
-                /* VBOX_SUCCESS (rc) means an update event is signaled */
+                if (VBOX_SUCCESS (rc) || update)
+                {
+                    /* obtain a new set of opened machines */
+                    machines.clear();
 
-                /* obtain a new set of spawned machines */
-                that->getSpawnedMachines (spawnedMachines);
-                cntSpawned = spawnedMachines.size();
-                LogFlowFunc (("UPDATE: spawned session count = %d\n", cntSpawned));
+                    for (MachineList::iterator it = that->mData.mMachines.begin();
+                         it != that->mData.mMachines.end(); ++ it)
+                    {
+                        ComObjPtr <SessionMachine> sm;
+                        if ((*it)->isSessionOpen (sm))
+                            machines.push_back (sm);
+                    }
+
+                    cnt = machines.size();
+                    LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
+                }
+
+                if (VBOX_SUCCESS (rc) || updateSpawned)
+                {
+                    /* obtain a new set of spawned machines */
+                    spawnedMachines.clear();
+
+                    for (MachineList::iterator it = that->mData.mMachines.begin();
+                         it != that->mData.mMachines.end(); ++ it)
+                    {
+                        if ((*it)->isSessionSpawning())
+                            spawnedMachines.push_back (*it);
+                    }
+
+                    cntSpawned = spawnedMachines.size();
+                    LogFlowFunc (("UPDATE: spawned session count = %d\n", cntSpawned));
+                }
             }
 
             update = false;
@@ -5053,8 +5109,9 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
     }
     while (0);
 
-    /* delete the set of opened machines if any */
+    /* release sets of machines if any */
     machines.clear();
+    spawnedMachines.clear();
 
 #else
 # error "Port me!"

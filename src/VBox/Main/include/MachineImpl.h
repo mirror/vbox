@@ -559,10 +559,6 @@ public:
     //  information valid!
     bool isRegistered() { return !!mData->mRegistered; }
 
-    ComObjPtr <SessionMachine> sessionMachine();
-
-    bool checkForSpawnFailure();
-
     /**
      *  Returns the VirtualBox object this machine belongs to.
      *
@@ -625,6 +621,21 @@ public:
                                INPTR BSTR aType, INPTR BSTR aEnvironment,
                                Progress *aProgress);
     HRESULT openExistingSession (IInternalSessionControl *aControl);
+
+#if defined (RT_OS_WINDOWS)
+    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                        HANDLE *aIPCSem = NULL);
+    bool isSessionSpawning (RTPROCESS *aPID = NULL);
+#elif defined (RT_OS_OS2)
+    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                        HMTX *aIPCSem = NULL);
+    bool isSessionSpawning (RTPROCESS *aPID = NULL);
+#else
+    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine);
+    bool isSessionSpawning();
+#endif
+
+    bool checkForSpawnFailure();
 
     HRESULT trySetRegistered (BOOL aRegistered);
 
@@ -858,13 +869,6 @@ public:
     // public methods only for internal purposes
 
     bool checkForDeath();
-    bool checkForSpawnFailure();
-
-#if defined (RT_OS_WINDOWS)
-    HANDLE ipcSem() { return mIPCSem; }
-#elif defined (RT_OS_OS2)
-    HMTX ipcSem() { return mIPCSem; }
-#endif
 
     HRESULT onDVDDriveChange();
     HRESULT onFloppyDriveChange();
@@ -929,14 +933,18 @@ private:
 
     SnapshotData mSnapshotData;
 
-    /** interprocess semaphore handle (id) for this machine */
-#if defined(RT_OS_WINDOWS)
+    /** interprocess semaphore handle for this machine */
+#if defined (RT_OS_WINDOWS)
     HANDLE mIPCSem;
     Bstr mIPCSemName;
-#elif defined(RT_OS_OS2)
+    friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                                        HANDLE *aIPCSem);
+#elif defined (RT_OS_OS2)
     HMTX mIPCSem;
     Bstr mIPCSemName;
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+    friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                                        HMTX *aIPCSem);
+#elif defined (VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
 #else
 # error "Port me!"
