@@ -33,6 +33,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <iprt/assert.h>
+#include <iprt/stdarg.h>
 #include <iprt/asm.h>
 
 __BEGIN_DECLS
@@ -309,6 +310,56 @@ SUPR3DECL(int) SUPInstall(void);
  * @returns VBox status code.
  */
 SUPR3DECL(int) SUPUninstall(void);
+
+/**
+ * Trusted main entry point.
+ *
+ * This is exported as "TrustedMain" by the dynamic libraries which contains the
+ * "real" application binary for which the hardened stub is built.  The entry
+ * point is invoked upon successfull initialization of the support library and
+ * runtime.
+ *
+ * @returns main kind of exit code.
+ * @param   argc            The argument count.
+ * @param   argv            The argument vector.
+ * @param   envp            The environment vector.
+ */
+typedef DECLCALLBACK(int) FNSUPTRUSTEDMAIN(int argc, char **argv, char **envp);
+/** Pointer to FNSUPTRUSTEDMAIN(). */
+typedef FNSUPTRUSTEDMAIN *PFNSUPTRUSTEDMAIN;
+
+/** Which operation failed. */
+typedef enum SUPINITOP
+{
+    /** Invalid. */
+    kSupInitOp_Invalid = 0,
+    /** Installation integrity error. */
+    kSupInitOp_Integrity,
+    /** Setuid related. */
+    kSupInitOp_RootCheck,
+    /** Driver related. */
+    kSupInitOp_Driver,
+    /** IPRT init related. */
+    kSupInitOp_IPRT,
+    /** Place holder. */
+    kSupInitOp_End
+} SUPINITOP;
+
+/**
+ * Trusted error entry point, optional.
+ *
+ * This is exported as "TrustedError" by the dynamic libraries which contains
+ * the "real" application binary for which the hardened stub is built.
+ *
+ * @param   pszWhere        Where the error occured (function name).
+ * @param   enmWhat         Which operation went wrong.
+ * @param   rc              The status code.
+ * @param   pszMsgFmt       Error message format string.
+ * @param   va              The message format arguments.
+ */
+typedef DECLCALLBACK(void) FNSUPTRUSTEDERROR(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va);
+/** Pointer to FNSUPTRUSTEDERROR. */
+typedef FNSUPTRUSTEDERROR *PFNSUPTRUSTEDERROR;
 
 /**
  * Secure main.

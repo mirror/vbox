@@ -94,9 +94,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef DECLCALLBACK(int) FNTRUSTEDMAIN(int argc, char **argv, char **envp);
-typedef FNTRUSTEDMAIN *PFNTRUSTEDMAIN;
-
 /** @see RTR3InitEx */
 typedef DECLCALLBACK(int) FNRTR3INITEX(uint32_t iVersion, const char *pszProgramPath, bool fInitSUPLib);
 typedef FNRTR3INITEX *PFNRTR3INITEX;
@@ -114,6 +111,21 @@ static char g_szSupLibHardenedDirPath[RTPATH_MAX];
 
 /** The program name. */
 static const char *g_pszSupLibHardenedProgName;
+
+#ifdef SUP_HARDENED_SUID
+/** The real UID at startup. */
+static uid_t g_uid;
+/** The real GID at startup. */
+static gid_t g_gid;
+#endif
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifdef SUP_HARDENED_SUID
+static void supR3HardenedMainDropPrivileges(void);
+#endif
+static PFNSUPTRUSTEDERROR supR3HardenedMainGetTrustedError(const char *pszProgName);
 
 
 /**
@@ -375,6 +387,78 @@ DECLHIDDEN(int) supR3HardenedPathProgram(char *pszPath, size_t cchPath)
 }
 
 
+DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
+{
+    /*
+     * To the console first, like supR3HardenedFatalV.
+     */
+    fprintf(stderr, "%s: Error %d in %s!\n", g_pszSupLibHardenedProgName, rc, pszWhere);
+    fprintf(stderr, "%s: ", g_pszSupLibHardenedProgName);
+    va_list vaCopy;
+    va_copy(vaCopy, va);
+    vfprintf(stderr, pszMsgFmt, vaCopy);
+    va_end(vaCopy);
+    fprintf(stderr, "\n");
+
+    switch (enmWhat)
+    {
+        case kSupInitOp_Driver:
+            fprintf(stderr,
+                    "\n"
+                    "%s: Tip! Make sure the kernel module is loaded. It may also help to reinstall VirtualBox.\n",
+                    g_pszSupLibHardenedProgName);
+            break;
+
+        case kSupInitOp_IPRT:
+        case kSupInitOp_Integrity:
+        case kSupInitOp_RootCheck:
+            fprintf(stderr,
+                    "\n"
+                    "%s: Tip! It may help to reinstall VirtualBox.\n",
+                    g_pszSupLibHardenedProgName);
+            break;
+
+        default:
+            /* no hints here */
+            break;
+    }
+
+#ifdef SUP_HARDENED_SUID
+    /*
+     * Drop any root privileges we might be holding, this won't return
+     * if it fails but end up calling supR3HardenedFatal[V].
+     */
+    supR3HardenedMainDropPrivileges();
+#endif /* SUP_HARDENED_SUID */
+
+    /*
+     * Now try resolve and call the TrustedError entry point if we can
+     * find it.
+     */
+    PFNSUPTRUSTEDERROR pfnTrustedError = supR3HardenedMainGetTrustedError(g_pszSupLibHardenedProgName);
+    if (pfnTrustedError)
+        pfnTrustedError(pszWhere, enmWhat, rc, pszMsgFmt, va);
+
+    /*
+     * Quit
+     */
+    for (;;)
+#ifdef _MSC_VER
+        exit(1);
+#else
+        _Exit(1);
+#endif
+}
+
+
+DECLHIDDEN(void)   supR3HardenedFatalMsg(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pszMsgFmt);
+    supR3HardenedFatalMsgV(pszWhere, enmWhat, rc, pszMsgFmt, va);
+    va_end(va);
+}
+
 
 DECLHIDDEN(void) supR3HardenedFatalV(const char *pszFormat, va_list va)
 {
@@ -457,22 +541,97 @@ static void supR3HardenedMainOpenDevice(void)
 
     switch (rc)
     {
+        /** @todo better messages! */
         case VERR_VM_DRIVER_NOT_INSTALLED:
-            supR3HardenedFatal("supR3HardenedMainOpenDevice: VERR_VM_DRIVER_NOT_INSTALLED\n");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
+                                  "VERR_VM_DRIVER_NOT_INSTALLED");
         case VERR_VM_DRIVER_NOT_ACCESSIBLE:
-            supR3HardenedFatal("supR3HardenedMainOpenDevice: VERR_VM_DRIVER_NOT_ACCESSIBLE\n");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
+                                  "VERR_VM_DRIVER_NOT_ACCESSIBLE");
         case VERR_VM_DRIVER_LOAD_ERROR:
-            supR3HardenedFatal("supR3HardenedMainOpenDevice: VERR_VM_DRIVER_LOAD_ERROR\n");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
+                                  "VERR_VM_DRIVER_LOAD_ERROR");
         case VERR_VM_DRIVER_OPEN_ERROR:
-            supR3HardenedFatal("supR3HardenedMainOpenDevice: VERR_VM_DRIVER_OPEN_ERROR\n");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
+                                  "VERR_VM_DRIVER_OPEN_ERROR");
         case VERR_VM_DRIVER_VERSION_MISMATCH:
-            supR3HardenedFatal("supR3HardenedMainOpenDevice: VERR_VM_DRIVER_VERSION_MISMATCH\n");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
+                                  "VERR_VM_DRIVER_VERSION_MISMATCH");
         case VERR_ACCESS_DENIED:
-            supR3HardenedFatal("supR3HardenedMainOpenDevice: VERR_ACCESS_DENIED\n");
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
+                                  "VERR_ACCESS_DENIED");
         default:
-            supR3HardenedFatal("supR3HardenedMainOpenDevice: rc=%d\n", rc);
+            supR3HardenedFatalMsg("suplibOsInit", kSupInitOp_Driver, rc,
+                                  "Unknown rc=%d", rc);
     }
 }
+
+
+#ifdef SUP_HARDENED_SUID
+/**
+ * Drop any root privileges we might be holding.
+ */
+static void supR3HardenedMainDropPrivileges(void)
+{
+    /*
+     * Try use setre[ug]id since this will clear the save uid/gid and thus
+     * leave fewer traces behind that libs like GTK+ may pick up.
+     */
+    uid_t euid, ruid, suid;
+    gid_t egid, rgid, sgid;
+# if defined(RT_OS_DARWIN)
+    /* The really great thing here is that setreuid isn't available on
+       OS X 10.4, libc emulates it. While 10.4 have a sligtly different and
+       non-standard setuid implementation compared to 10.5, the following
+       works the same way with both version since we're super user (10.5 req).
+       The following will set all three variants of the group and user IDs. */
+    setgid(g_gid);
+    setuid(g_uid);
+    euid = geteuid();
+    ruid = suid = getuid();
+    egid = getegid();
+    rgid = sgid = getgid();
+
+# elif defined(RT_OS_SOLARIS)
+    /* Solaris doesn't have setresuid, but the setreuid interface is BSD
+       compatible and will set the saved uid to euid when we pass it a ruid
+       that isn't -1 (which we do). */
+    setregid(g_gid, g_gid);
+    setreuid(g_uid, g_uid);
+    euid = geteuid();
+    ruid = suid = getuid();
+    egid = getegid();
+    rgid = sgid = getgid();
+
+# else
+    /* This is the preferred one, full control no questions about semantics.
+       PORTME: If this isn't work, try join one of two other gangs above. */
+    setresgid(g_gid, g_gid, g_gid);
+    setresuid(g_uid, g_uid, g_uid);
+    if (getresuid(&ruid, &euid, &suid) != 0)
+    {
+        euid = geteuid();
+        ruid = suid = getuid();
+    }
+    if (getresgid(&rgid, &egid, &sgid) != 0)
+    {
+        egid = getegid();
+        rgid = sgid = getgid();
+    }
+# endif
+
+    /* Check that it worked out all right. */
+    if (    euid != g_uid
+        ||  ruid != g_uid
+        ||  suid != g_uid
+        ||  egid != g_gid
+        ||  rgid != g_gid
+        ||  sgid != g_gid)
+        supR3HardenedFatal("SUPR3HardenedMain: failed to drop root privileges!"
+                           " (euid=%d ruid=%d suid=%d  egid=%d rgid=%d sgid=%d; wanted uid=%d and gid=%d)\n",
+                           euid, ruid, suid, egid, rgid, sgid, g_uid, g_gid);
+}
+#endif /* SUP_HARDENED_SUID */
 
 
 /**
@@ -500,32 +659,38 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     /** @todo consider using LOAD_WITH_ALTERED_SEARCH_PATH here! */
     HMODULE hMod = LoadLibraryEx(szPath, NULL /*hFile*/, 0 /* dwFlags */);
     if (!hMod)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: LoadLibraryEx(\"%s\",,) failed, rc=%d\n",
-                            szPath, GetLastError());
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_MODULE_NOT_FOUND,
+                              "LoadLibraryEx(\"%s\",,) failed (rc=%d)",
+                              szPath, GetLastError());
     PFNRTR3INITEX pfnRTInitEx = (PFNRTR3INITEX)GetProcAddress(hMod, SUP_HARDENED_SYM("RTR3InitEx"));
     if (!pfnRTInitEx)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"RTR3InitEx\" not found in \"%s\" (rc=%d)\n",
-                            szPath, GetLastError());
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_SYMBOL_NOT_FOUND,
+                              "Entrypoint \"RTR3InitEx\" not found in \"%s\" (rc=%d)",
+                              szPath, GetLastError());
 
     PFNSUPR3PREINIT pfnSUPPreInit = (PFNSUPR3PREINIT)GetProcAddress(hMod, SUP_HARDENED_SYM("supR3PreInit"));
     if (!pfnSUPPreInit)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"supR3PreInit\" not found in \"%s\" (rc=%d)\n",
-                            szPath, GetLastError());
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_SYMBOL_NOT_FOUND,
+                              "Entrypoint \"supR3PreInit\" not found in \"%s\" (rc=%d)",
+                              szPath, GetLastError());
 
 #else
     /* the dlopen crowd */
     void *pvMod = dlopen(szPath, RTLD_NOW | RTLD_GLOBAL);
     if (!pvMod)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: dlopen(\"%s\",) failed: %s\n",
-                            szPath, dlerror());
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_MODULE_NOT_FOUND,
+                              "dlopen(\"%s\",) failed: %s",
+                              szPath, dlerror());
     PFNRTR3INITEX pfnRTInitEx = (PFNRTR3INITEX)(uintptr_t)dlsym(pvMod, SUP_HARDENED_SYM("RTR3InitEx"));
     if (!pfnRTInitEx)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"RTR3InitEx\" not found in \"%s\"!\ndlerror: %s\n",
-                            szPath, dlerror());
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_SYMBOL_NOT_FOUND,
+                              "Entrypoint \"RTR3InitEx\" not found in \"%s\"!\ndlerror: %s",
+                              szPath, dlerror());
     PFNSUPR3PREINIT pfnSUPPreInit = (PFNSUPR3PREINIT)(uintptr_t)dlsym(pvMod, SUP_HARDENED_SYM("supR3PreInit"));
     if (!pfnSUPPreInit)
-        supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"supR3PreInit\" not found in \"%s\"!\ndlerror: %s\n",
-                            szPath, dlerror());
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, VERR_SYMBOL_NOT_FOUND,
+                              "Entrypoint \"supR3PreInit\" not found in \"%s\"!\ndlerror: %s",
+                              szPath, dlerror());
 #endif
 
     /*
@@ -534,7 +699,8 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     supR3HardenedGetPreInitData(&g_SupPreInitData);
     int rc = pfnSUPPreInit(&g_SupPreInitData, fFlags);
     if (RT_FAILURE(rc))
-        supR3HardenedFatal("supR3PreInit: Failed with rc=%d\n", rc);
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, rc,
+                              "supR3PreInit failed with rc=%d", rc);
     const char *pszExePath = NULL;
 #ifdef RT_OS_LINUX
     if (!supR3HardenedMainIsProcSelfExeAccssible())
@@ -542,7 +708,54 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
 #endif
     rc = pfnRTInitEx(0, pszExePath, !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV));
     if (RT_FAILURE(rc))
-        supR3HardenedFatal("RTR3Init: Failed with rc=%d\n", rc);
+        supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, rc,
+                              "RTR3Init failed with rc=%d", rc);
+}
+
+
+/**
+ * Loads the DLL/SO/DYLIB containing the actual program and
+ * resolves the TrustedError symbol.
+ *
+ * This is very similar to supR3HardenedMainGetTrustedMain().
+ *
+ * @returns Pointer to the trusted error symbol if it is exported, NULL
+ *          and no error messages otherwise.
+ * @param   pszProgName     The program name.
+ */
+static PFNSUPTRUSTEDERROR supR3HardenedMainGetTrustedError(const char *pszProgName)
+{
+    /*
+     * Construct the name.
+     */
+    char szPath[RTPATH_MAX];
+    supR3HardenedPathAppPrivateArch(szPath, sizeof(szPath) - 10);
+    size_t cch = strlen(szPath);
+    supR3HardenedStrPrintf(&szPath[cch], sizeof(szPath) - cch, "/%s%s", pszProgName, SUPLIB_DLL_SUFF);
+
+    /*
+     * Open it and resolve the symbol.
+     */
+#if defined(RT_OS_WINDOWS)
+    /** @todo consider using LOAD_WITH_ALTERED_SEARCH_PATH here! */
+    HMODULE hMod = LoadLibraryEx(szPath, NULL /*hFile*/, 0 /* dwFlags */);
+    if (!hMod)
+        return NULL;
+    FARPROC pfn = GetProcAddress(hMod, SUP_HARDENED_SYM("TrustedError"));
+    if (!pfn)
+        return NULL;
+    return (PFNSUPTRUSTEDERROR)pfn;
+
+#else
+    /* the dlopen crowd */
+    void *pvMod = dlopen(szPath, RTLD_NOW | RTLD_GLOBAL);
+    if (!pvMod)
+        return NULL;
+    void *pvSym = dlsym(pvMod, SUP_HARDENED_SYM("TrustedError"));
+    if (!pvSym)
+        return NULL;
+    return (PFNSUPTRUSTEDERROR)(uintptr_t)pvSym;
+#endif
 }
 
 
@@ -554,7 +767,7 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
  * @param   pszProgName     The program name.
  * @remarks This function will not return on failure.
  */
-static PFNTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName)
+static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName)
 {
     /*
      * Construct the name.
@@ -577,7 +790,7 @@ static PFNTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName)
     if (!pfn)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"TrustedMain\" not found in \"%s\" (rc=%d)\n",
                             szPath, GetLastError());
-    return (PFNTRUSTEDMAIN)pfn;
+    return (PFNSUPTRUSTEDMAIN)pfn;
 
 #else
     /* the dlopen crowd */
@@ -589,7 +802,7 @@ static PFNTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName)
     if (!pvSym)
         supR3HardenedFatal("supR3HardenedMainGetTrustedMain: Entrypoint \"TrustedMain\" not found in \"%s\"!\ndlerror: %s\n",
                             szPath, dlerror());
-    return (PFNTRUSTEDMAIN)(uintptr_t)pvSym;
+    return (PFNSUPTRUSTEDMAIN)(uintptr_t)pvSym;
 #endif
 }
 
@@ -626,15 +839,6 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     g_SupPreInitData.u32EndMagic = SUPPREINITDATA_MAGIC;
 
 #ifdef SUP_HARDENED_SUID
-    /*
-     * Check that we're root, if we aren't then the installation is butchered.
-     */
-    uid_t const uid = getuid();
-    gid_t const gid = getgid();
-    if (geteuid() != 0 /* root */)
-        supR3HardenedFatal("SUPR3HardenedMain: effective uid is not root (euid=%d egid=%d uid=%d gid=%d)\n",
-                           geteuid(), getegid(), uid, gid);
-
 # ifdef RT_OS_LINUX
     /*
      * On linux we have to make sure the path is initialized because we
@@ -642,6 +846,16 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      */
     supR3HardenedGetFullExePath();
 # endif
+
+    /*
+     * Check that we're root, if we aren't then the installation is butchered.
+     */
+    g_uid = getuid();
+    g_gid = getgid();
+    if (geteuid() != 0 /* root */)
+        supR3HardenedFatalMsg("SUPR3HardenedMain", kSupInitOp_RootCheck, VERR_PERMISSION_DENIED,
+                              "Effective UID is not root (euid=%d egid=%d uid=%d gid=%d)",
+                              geteuid(), getegid(), g_uid, g_gid);
 #endif
 
     /*
@@ -663,64 +877,9 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 
 #ifdef SUP_HARDENED_SUID
     /*
-     * Drop any root privileges we might be holding.
-     *
-     * Try use setre[ug]id since this will clear the save uid/gid and thus
-     * leave fewer traces behind that libs like GTK+ may pick up.
+     * Drop any root privileges we might be holding (won't return on failure)
      */
-    uid_t euid, ruid, suid;
-    gid_t egid, rgid, sgid;
-# if defined(RT_OS_DARWIN)
-    /* The really great thing here is that setreuid isn't available on
-       OS X 10.4, libc emulates it. While 10.4 have a sligtly different and
-       non-standard setuid implementation compared to 10.5, the following
-       works the same way with both version since we're super user (10.5 req).
-       The following will set all three variants of the group and user IDs. */
-    setgid(gid);
-    setuid(uid);
-    euid = geteuid();
-    ruid = suid = getuid();
-    egid = getegid();
-    rgid = sgid = getgid();
-
-# elif defined(RT_OS_SOLARIS)
-    /* Solaris doesn't have setresuid, but the setreuid interface is BSD
-       compatible and will set the saved uid to euid when we pass it a ruid
-       that isn't -1 (which we do). */
-    setregid(gid, gid);
-    setreuid(uid, uid);
-    euid = geteuid();
-    ruid = suid = getuid();
-    egid = getegid();
-    rgid = sgid = getgid();
-
-# else
-    /* This is the preferred one, full control no questions about semantics.
-       PORTME: If this isn't work, try join one of two other gangs above. */
-    setresgid(gid, gid, gid);
-    setresuid(uid, uid, uid);
-    if (getresuid(&ruid, &euid, &suid) != 0)
-    {
-        euid = geteuid();
-        ruid = suid = getuid();
-    }
-    if (getresgid(&rgid, &egid, &sgid) != 0)
-    {
-        egid = getegid();
-        rgid = sgid = getgid();
-    }
-# endif
-
-    /* Check that it worked out all right. */
-    if (    euid != uid
-        ||  ruid != uid
-        ||  suid != uid
-        ||  egid != gid
-        ||  rgid != gid
-        ||  sgid != gid)
-        supR3HardenedFatal("SUPR3HardenedMain: failed to drop root privileges!"
-                           " (euid=%d ruid=%d suid=%d  egid=%d rgid=%d sgid=%d; wanted uid=%d and gid=%d)\n",
-                           euid, ruid, suid, egid, rgid, sgid, uid, gid);
+    supR3HardenedMainDropPrivileges();
 #endif
 
     /*
@@ -733,7 +892,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * Load the DLL/SO/DYLIB containing the actual program
      * and pass control to it.
      */
-    PFNTRUSTEDMAIN pfnTrustedMain = supR3HardenedMainGetTrustedMain(pszProgName);
+    PFNSUPTRUSTEDMAIN pfnTrustedMain = supR3HardenedMainGetTrustedMain(pszProgName);
     return pfnTrustedMain(argc, argv, envp);
 }
 
