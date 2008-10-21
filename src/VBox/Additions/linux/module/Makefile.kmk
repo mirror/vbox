@@ -22,7 +22,7 @@
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-INSTALLS += vboxmod-mod vboxmod-sh
+INSTALLS += vboxadd-mod
 OTHERS.linux += \
 	$(VBOX_PATH_ADDITIONS)/src/vboxadd/build_in_tmp \
 	$(if $(VBOX_OSE),,$(VBOX_PATH_ADDITIONS)/src/vboxadd/dkms.conf)
@@ -49,9 +49,9 @@ $(VBOX_PATH_ADDITIONS)/src/vboxadd/dkms.conf: \
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
 
-vboxmod-mod_INST    = $(INST_ADDITIONS)src/vboxadd/
-vboxmod-mod_MODE    = a+r,u+w
-vboxmod-mod_SOURCES = $(subst ",,$(FILES_VBOXADD_NOBIN))
+vboxadd-mod_INST    = $(INST_ADDITIONS)src/vboxadd/
+vboxadd-mod_MODE    = a+r,u+w
+vboxadd-mod_SOURCES = $(subst ",,$(FILES_VBOXADD_NOBIN))
 
 #
 # The module (for syntax checking).
