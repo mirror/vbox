@@ -26,7 +26,6 @@
 ; Clara, CA 95054 USA or visit http://www.sun.com if you need
 ; additional information or have any questions.
 ;
-;
 
 %define VMX_VMCS_GUEST_FIELD_ES                                 0800h
 %define VMX_VMCS_GUEST_FIELD_CS                                 0802h
