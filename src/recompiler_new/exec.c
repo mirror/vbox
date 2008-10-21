@@ -296,7 +296,11 @@ static void page_init(void)
     if (qemu_host_page_size < TARGET_PAGE_SIZE)
         qemu_host_page_size = TARGET_PAGE_SIZE;
     qemu_host_page_bits = 0;
+#ifndef VBOX
     while ((1 << qemu_host_page_bits) < qemu_host_page_size)
+#else
+    while ((1 << qemu_host_page_bits) < (int)qemu_host_page_size)
+#endif
         qemu_host_page_bits++;
     qemu_host_page_mask = ~(qemu_host_page_size - 1);
     l1_phys_map = qemu_vmalloc(L1_SIZE * sizeof(void *));
@@ -1332,7 +1336,11 @@ TranslationBlock *tb_alloc(target_ulong pc)
     TranslationBlock *tb;
 
     if (nb_tbs >= code_gen_max_blocks ||
+#ifndef VBOX
         (code_gen_ptr - code_gen_buffer) >= code_gen_buffer_max_size)
+#else
+        (code_gen_ptr - code_gen_buffer) >= (int)code_gen_buffer_max_size)     
+#endif
         return NULL;
     tb = &tbs[nb_tbs++];
     tb->pc = pc;
