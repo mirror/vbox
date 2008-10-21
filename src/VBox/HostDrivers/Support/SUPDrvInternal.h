@@ -240,7 +240,7 @@ __END_DECLS
 #endif
 
 
-/** @def SUPDRV_WITH_UNWIND_HACK
+/** @def RT_WITH_W64_UNWIND_HACK
  * Changes a function name into the wrapped version if we've
  * enabled the unwind hack.
  *
@@ -249,13 +249,13 @@ __END_DECLS
  * stack. Needless to say, they kind of don't expect what
  * we're doing here and get kind of confused and may BSOD. */
 #ifdef DOXYGEN_RUNNING
-# define SUPDRV_WITH_UNWIND_HACK
+# define RT_WITH_W64_UNWIND_HACK
 #endif
 /** @def UNWIND_WRAP
- * If SUPDRV_WITH_UNWIND_HACK is defined, the name will be prefixed with
+ * If RT_WITH_W64_UNWIND_HACK is defined, the name will be prefixed with
  * 'supdrvNtWrap'.
  * @param Name  The function to wrapper.  */
-#ifdef SUPDRV_WITH_UNWIND_HACK
+#ifdef RT_WITH_W64_UNWIND_HACK
 # define UNWIND_WRAP(Name)  supdrvNtWrap##Name
 #else
 # define UNWIND_WRAP(Name)  Name

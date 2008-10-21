@@ -878,7 +878,7 @@ ServicesR0_SOURCES   = \
 
 if defined(VBOX_WITH_NETFLT)
  ServicesR0_SOURCES.win.amd64 += Network/win/SrvIntNetR0A-win.asm
- ServicesR0_DEFS.win.amd64    += SUPDRV_WITH_UNWIND_HACK
+ ServicesR0_DEFS.win.amd64    += RT_WITH_W64_UNWIND_HACK
 endif
 
 

@@ -48,7 +48,7 @@ ENDPROC SUPR0Printf
 %endif
 
 
-%ifdef SUPDRV_WITH_UNWIND_HACK
+%ifdef RT_WITH_W64_UNWIND_HACK
  %ifdef RT_ARCH_AMD64
 
 ;
@@ -292,5 +292,5 @@ ENDPROC   supdrvNtWrapModuleTerm
 
 
  %endif ; RT_ARCH_AMD64
-%endif ; SUPDRV_WITH_UNWIND_HACK
+%endif ; RT_WITH_W64_UNWIND_HACK
 

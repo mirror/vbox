@@ -37,7 +37,7 @@ VBoxNetFlt_LDFLAGS.darwin = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxNetFlt_LDFLAGS.win.x86 = -Entry:DriverEntry@8
 VBoxNetFlt_LDFLAGS.win.amd64 = -Entry:DriverEntry
 VBoxNetFlt_SOURCES.win.amd64 += win/VBoxNetFltA-win.asm
-VBoxNetFlt_DEFS.win.amd64    += SUPDRV_WITH_UNWIND_HACK
+VBoxNetFlt_DEFS.win.amd64    += RT_WITH_W64_UNWIND_HACK
 VBoxNetFlt_LIBS.win = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
