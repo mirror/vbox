@@ -3300,11 +3300,27 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 }
 
 
+#ifdef SUPDRV_WITH_UNWIND_HACK
+# if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
+#  define INTNET_DECL_CALLBACK(type) DECLASM(DECLHIDDEN(type))
+#  define INTNET_CALLBACK(_n) intnetNtWrap##_n
 
+   /* wrapper callback declarations */
+   INTNET_DECL_CALLBACK(bool) INTNET_CALLBACK(intnetR0TrunkIfPortSetSGPhys)(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable);
+   INTNET_DECL_CALLBACK(bool) INTNET_CALLBACK(intnetR0TrunkIfPortRecv)(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc);
+   INTNET_DECL_CALLBACK(void) INTNET_CALLBACK(intnetR0TrunkIfPortSGRetain)(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG);
+   INTNET_DECL_CALLBACK(void) INTNET_CALLBACK(intnetR0TrunkIfPortSGRelease)(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG);
 
+# else
+#  error "UNSUPPORTED (SUPDRV_WITH_UNWIND_HACK)"
+# endif
+#else
+#  define INTNET_DECL_CALLBACK(_t) static DECLCALLBACK(_t)
+#  define INTNET_CALLBACK(_n) _n
+#endif
 
 /** @copydoc INTNETTRUNKSWPORT::pfnSetSGPhys */
-static DECLCALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable)
+INTNET_DECL_CALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
     AssertMsgFailed(("Not implemented because it wasn't required on Darwin\n"));
@@ -3313,7 +3329,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitc
 
 
 /** @copydoc INTNETTRUNKSWPORT::pfnRecv */
-static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc)
+INTNET_DECL_CALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
     PINTNETNETWORK pNetwork = pThis->pNetwork;
@@ -3344,7 +3360,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
 
 
 /** @copydoc INTNETTRUNKSWPORT::pfnSGRetain */
-static DECLCALLBACK(void) intnetR0TrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
+INTNET_DECL_CALLBACK(void) intnetR0TrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
     PINTNETNETWORK pNetwork = pThis->pNetwork;
@@ -3361,7 +3377,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitch
 
 
 /** @copydoc INTNETTRUNKSWPORT::pfnSGRelease */
-static DECLCALLBACK(void) intnetR0TrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
+INTNET_DECL_CALLBACK(void) intnetR0TrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
     PINTNETNETWORK pNetwork = pThis->pNetwork;
@@ -3591,10 +3607,10 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
     if (!pTrunkIF)
         return VERR_NO_MEMORY;
     pTrunkIF->SwitchPort.u32Version     = INTNETTRUNKSWPORT_VERSION;
-    pTrunkIF->SwitchPort.pfnSetSGPhys   = intnetR0TrunkIfPortSetSGPhys;
-    pTrunkIF->SwitchPort.pfnRecv        = intnetR0TrunkIfPortRecv;
-    pTrunkIF->SwitchPort.pfnSGRetain    = intnetR0TrunkIfPortSGRetain;
-    pTrunkIF->SwitchPort.pfnSGRelease   = intnetR0TrunkIfPortSGRelease;
+    pTrunkIF->SwitchPort.pfnSetSGPhys   = INTNET_CALLBACK(intnetR0TrunkIfPortSetSGPhys);
+    pTrunkIF->SwitchPort.pfnRecv        = INTNET_CALLBACK(intnetR0TrunkIfPortRecv);
+    pTrunkIF->SwitchPort.pfnSGRetain    = INTNET_CALLBACK(intnetR0TrunkIfPortSGRetain);
+    pTrunkIF->SwitchPort.pfnSGRelease   = INTNET_CALLBACK(intnetR0TrunkIfPortSGRelease);
     pTrunkIF->SwitchPort.u32VersionEnd  = INTNETTRUNKSWPORT_VERSION;
     //pTrunkIF->pIfPort = NULL;
     pTrunkIF->pNetwork = pNetwork;
