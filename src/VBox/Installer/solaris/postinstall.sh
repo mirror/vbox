@@ -22,7 +22,6 @@
 
 # Check for xVM/Xen
 currentisa=`uname -i`
-osrevision=`uname -r`
 if test "$currentisa" = "i86xpv"; then
     echo "## VirtualBox cannot run under xVM Dom0! Fatal Error, Aborting installation!"
     exit 2
@@ -90,23 +89,13 @@ if test "$currentzone" = "global"; then
         touch /usr/share/applications/virtualbox.desktop
     fi
 
-    # Zone access service only necessary for Solaris 10
-    if test "$osrevision" = "5.10"; then
-        /usr/sbin/installf -c none $PKGINST /var/svc/manifest/application/virtualbox/zoneaccess.xml f
-        cp /opt/VirtualBox/virtualbox-zoneaccess.xml /var/svc/manifest/application/virtualbox/zoneaccess.xml
-
+    # Zone access service
+    if test -f /var/svc/manifest/application/virtualbox/zoneaccess.xml; then
         /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/zoneaccess.xml
         /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
-    else
-        /usr/sbin/removef $PKGINST /opt/VirtualBox/zoneaccess.sh 1>/dev/null 2>/dev/null
-        rm -f /opt/VirtualBox/zoneaccess.sh
     fi
-
-    /usr/sbin/removef $PKGINST /opt/VirtualBox/virtualbox-zoneaccess.xml 1>/dev/null 2>/dev/null
-    rm -f /opt/VirtualBox/virtualbox-zoneaccess.xml
 fi
 
-/usr/sbin/removef -f $PKGINST
 /usr/sbin/installf -f $PKGINST
 
 echo "Done."

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sun xVM VirtualBox
-# VirtualBox Zone Access Grant script for Solaris 10 (Hack).
+# VirtualBox Zone Access Grant script for Solaris (Hack).
 #
 # Copyright (C) 2007-2008 Sun Microsystems, Inc.
 #
@@ -17,9 +17,5 @@
 # additional information or have any questions.
 #
 
-# This is only required for Solaris 10 Zones for accessing the
-# VirtualBox Device. OpenSolaris/Nevada does NOT need this.
-
-sleep 1000000000 < /dev/vboxdrv &
-
+sleep 1000000000 < /dev/vboxdrv
 
