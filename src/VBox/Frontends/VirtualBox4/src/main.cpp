@@ -53,7 +53,7 @@
 #include <execinfo.h>
 
 #ifdef RT_OS_LINUX
-# include <uinstd.h>
+# include <unistd.h>
 #endif
 
 /* get REG_EIP from ucontext.h */
