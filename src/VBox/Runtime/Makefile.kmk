@@ -1030,7 +1030,8 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/time-r0drv-linux.c \
 	r0drv/linux/timer-r0drv-linux.c \
 	r0drv/memobj-r0drv.cpp \
-	r0drv/mpnotification-r0drv.c
+	r0drv/mpnotification-r0drv.c \
+	r0drv/powernotification-r0drv.c
 ## @todo thread2-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
@@ -1049,6 +1050,7 @@ RuntimeR0Drv_SOURCES.win = \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
+	r0drv/powernotification-r0drv.c \
 	r0drv/nt/alloc-r0drv-nt.cpp \
 	r0drv/nt/assert-r0drv-nt.cpp \
 	r0drv/nt/initterm-r0drv-nt.cpp \
@@ -1092,6 +1094,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
+	r0drv/powernotification-r0drv.c \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
@@ -1223,6 +1226,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/mppresent-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
+	r0drv/powernotification-r0drv.c \
  	r0drv/solaris/assert-r0drv-solaris.c \
  	r0drv/solaris/initterm-r0drv-solaris.c \
  	r0drv/solaris/semevent-r0drv-solaris.c \
