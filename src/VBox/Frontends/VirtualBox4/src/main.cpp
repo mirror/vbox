@@ -52,6 +52,10 @@
 #include <signal.h>
 #include <execinfo.h>
 
+#ifdef RT_OS_LINUX
+# include <uinstd.h>
+#endif
+
 /* get REG_EIP from ucontext.h */
 #ifndef __USE_GNU
 #define __USE_GNU
@@ -425,6 +429,9 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
             break;
     }
 
+#ifdef RT_OS_LINUX
+    sleep(2);
+#endif
     QMessageBox::critical (
         0,                      /* parent */
         msgTitle,               /* title */
