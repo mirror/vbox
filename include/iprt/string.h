@@ -721,6 +721,131 @@ RTDECL(char *) RTStrStripL(const char *psz);
  */
 RTDECL(char *) RTStrStripR(char *psz);
 
+/**
+ * Performs a case sensitive string compare between two UTF-8 strings.
+ *
+ * Encoding errors are ignored by the current implementation. So, the only
+ * difference between this and the CRT strcmp function is the handling of
+ * NULL arguments.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ */
+RTDECL(int) RTStrCmp(const char *psz1, const char *psz2);
+
+/**
+ * Performs a case insensitive string compare between two UTF-8 strings.
+ *
+ * This is a simplified compare, as only the simplified lower/upper case folding
+ * specified by the unicode specs are used. It does not consider character pairs
+ * as they are used in some languages, just simple upper & lower case compares.
+ *
+ * The result is the difference between the mismatching codepoints after they
+ * both have been lower cased.
+ *
+ * If the string encoding is invalid the function will assert (strict builds)
+ * and use RTStrCmp for the remainder of the string.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ */
+RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
+
+/**
+ * Find the length of a zero-terminated byte string, given
+ * a max string length.
+ *
+ * See also RTStrNLenEx.
+ *
+ * @returns The string length or cbMax. The returned length does not include
+ *          the zero terminator if it was found.
+ *
+ * @param   pszString   The string.
+ * @param   cchMax      The max string length.
+ */
+RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax);
+
+/**
+ * Find the length of a zero-terminated byte string, given
+ * a max string length.
+ *
+ * See also RTStrNLen.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if the string has a length less than cchMax.
+ * @retval  VERR_BUFFER_OVERFLOW if the end of the string wasn't found
+ *          before cchMax was reached.
+ *
+ * @param   pszString   The string.
+ * @param   cchMax      The max string length.
+ * @param   pcch        Where to store the string length excluding the
+ *                      terminator. This is set to cchMax if the terminator
+ *                      isn't found.
+ */
+RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch);
+
+/**
+ * Matches a simple string pattern.
+ *
+ * @returns true if the string matches the pattern, otherwise false.
+ *
+ * @param  pszPattern   The pattern. Special chars are '*' and '?', where the
+ *                      asterisk matches zero or more characters and question
+ *                      mark matches exactly one character.
+ * @param  pszString    The string to match against the pattern.
+ */
+RTDECL(bool) RTStrSimplePatternMatch(const char *pszPattern, const char *pszString);
+
+/**
+ * Matches a simple string pattern, neither which needs to be zero terminated.
+ *
+ * This is identical to RTStrSimplePatternMatch except that you can optionally
+ * specify the length of both the pattern and the string.  The function will
+ * stop when it hits a string terminator or either of the lengths.
+ *
+ * @returns true if the string matches the pattern, otherwise false.
+ *
+ * @param  pszPattern   The pattern. Special chars are '*' and '?', where the
+ *                      asterisk matches zero or more characters and question
+ *                      mark matches exactly one character.
+ * @param  cchPattern   The pattern length. Pass SIZE_T_MAX (~(size_t)0) if you
+ *                      don't know the length and wish to stop at the string
+ *                      terminator.
+ * @param  pszString    The string to match against the pattern.
+ * @param  cchString    The string length. Pass SIZE_T_MAX (~(size_t)0) if you
+ *                      don't know the length and wish to match up to the string
+ *                      terminator.
+ */
+RTDECL(bool) RTStrSimplePatternNMatch(const char *pszPattern, size_t cchPattern,
+                                      const char *pszString, size_t cchString);
+
+/**
+ * Matches multiple patterns against a string.
+ *
+ * The patterns are separated by the pipe character (|).
+ *
+ * @returns true if the string matches the pattern, otherwise false.
+ *
+ * @param   pszPatterns The patterns.
+ * @param   cchPatterns The lengths of the patterns to use. Pass SIZE_T_MAX
+ *                      (~(size_t)0) to stop at the terminator.
+ * @param   pszString   The string to match against the pattern.
+ * @param   cchString   The string length. Pass SIZE_T_MAX (~(size_t)0) stop
+ *                      stop at the terminator.
+ * @param   poffPattern Offset into the patterns string of the patttern that
+ *                      matched. If no match, this will be set to SIZE_T_MAX.
+ *                      This is optional, NULL is fine.
+ */
+RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPatterns,
+                                          const char *pszString, size_t cchString,
+                                          size_t *poffPattern);
+
 
 /** @defgroup rt_str_conv   String To/From Number Conversions
  * @ingroup grp_rt_str
@@ -1117,75 +1242,6 @@ RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8);
  * @param   pszValue    Pointer to the string value.
  */
 RTDECL(int8_t) RTStrToInt8(const char *pszValue);
-
-/**
- * Performs a case sensitive string compare between two UTF-8 strings.
- *
- * Encoding errors are ignored by the current implementation. So, the only
- * difference between this and the CRT strcmp function is the handling of
- * NULL arguments.
- *
- * @returns < 0 if the first string less than the second string.
- * @returns 0 if the first string identical to the second string.
- * @returns > 0 if the first string greater than the second string.
- * @param   psz1        First UTF-8 string. Null is allowed.
- * @param   psz2        Second UTF-8 string. Null is allowed.
- */
-RTDECL(int) RTStrCmp(const char *psz1, const char *psz2);
-
-/**
- * Performs a case insensitive string compare between two UTF-8 strings.
- *
- * This is a simplified compare, as only the simplified lower/upper case folding
- * specified by the unicode specs are used. It does not consider character pairs
- * as they are used in some languages, just simple upper & lower case compares.
- *
- * The result is the difference between the mismatching codepoints after they
- * both have been lower cased.
- *
- * If the string encoding is invalid the function will assert (strict builds)
- * and use RTStrCmp for the remainder of the string.
- *
- * @returns < 0 if the first string less than the second string.
- * @returns 0 if the first string identical to the second string.
- * @returns > 0 if the first string greater than the second string.
- * @param   psz1        First UTF-8 string. Null is allowed.
- * @param   psz2        Second UTF-8 string. Null is allowed.
- */
-RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
-
-/**
- * Find the length of a zero-terminated byte string, given
- * a max string length.
- *
- * See also RTStrNLenEx.
- *
- * @returns The string length or cbMax. The returned length does not include
- *          the zero terminator if it was found.
- *
- * @param   pszString   The string.
- * @param   cchMax      The max string length.
- */
-RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax);
-
-/**
- * Find the length of a zero-terminated byte string, given
- * a max string length.
- *
- * See also RTStrNLen.
- *
- * @returns IPRT status code.
- * @retval  VINF_SUCCESS if the string has a length less than cchMax.
- * @retval  VERR_BUFFER_OVERFLOW if the end of the string wasn't found
- *          before cchMax was reached.
- *
- * @param   pszString   The string.
- * @param   cchMax      The max string length.
- * @param   pcch        Where to store the string length excluding the
- *                      terminator. This is set to cchMax if the terminator
- *                      isn't found.
- */
-RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch);
 
 /** @} */
 
