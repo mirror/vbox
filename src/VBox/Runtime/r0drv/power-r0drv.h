@@ -1,4 +1,4 @@
-/* $Id: mp-r0drv.h 31917 2008-06-11 12:09:31Z bird $ */
+/* $Id$ */
 /** @file
  * IPRT - Power Management, Ring-0 Driver, Internal Header.
  */
