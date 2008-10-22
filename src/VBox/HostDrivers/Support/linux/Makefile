@@ -76,6 +76,7 @@ OBJS   = \
 	r0drv/initterm-r0drv.o \
 	r0drv/memobj-r0drv.o \
 	r0drv/mpnotification-r0drv.o \
+	r0drv/powernotification-r0drv.o \
 	r0drv/linux/assert-r0drv-linux.o \
 	r0drv/linux/alloc-r0drv-linux.o \
 	r0drv/linux/initterm-r0drv-linux.o \
