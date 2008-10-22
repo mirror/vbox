@@ -63,6 +63,8 @@
 # define REG_PC REG_EIP
 #endif
 
+
+
 /**
  * the signal handler that prints out a backtrace of the call stack.
  * the code is taken from http://www.linuxjournal.com/article/6391.
@@ -94,11 +96,8 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
     exit (0);
 }
 
-#endif // defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
+#endif
 
-/**
- * Qt warning/debug/fatal message handler.
- */
 static void QtMessageOutput (QtMsgType type, const char *msg)
 {
 #ifndef Q_WS_X11
@@ -133,9 +132,9 @@ static void QtMessageOutput (QtMsgType type, const char *msg)
 
 #ifndef Q_WS_WIN
 /**
- * Shows all available command line parameters.
+ * Show all available command line parameters.
  */
-static void ShowHelp()
+static void showHelp()
 {
     QString mode = "", dflt = "";
 #ifdef VBOX_GUI_USE_SDL
@@ -176,65 +175,9 @@ static void ShowHelp()
             mode.toLatin1().constData(),
             dflt.toLatin1().constData());
 }
-#endif // ifndef Q_WS_WIN
-
-/*
- * Initializes Qt and the rest. Must be called before
- */
-static void InitQtAndAll (QIApplication &aApp, int argc = 0, char **argv = NULL)
-{
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * The thing. Initializes Qt and all and does the opposite when dissolved.
- */
-class TheThing
-{
-public:
-
-    TheThing (int &argc, char ** &argv)
-        : mIsOk (false), mApp (NULL)
-    { init (&argc, &argv); }
-
-    TheThing()
-        : mIsOk (false), mApp (NULL)
-    { init(); }
-
-    ~TheThing() { uninit(); }
-
-    bool isOk() const { return mIsOk; }
-
-    QIApplication &app() const { return *mApp; }
-
-private:
-
-    void init (int *argc = NULL, char ***argv = NULL);
-    void uninit();
-
-    bool mIsOk;
-
-#ifdef Q_WS_WIN
-    HRESULT mInitRC;
 #endif
 
-    QIApplication *mApp;
-
-    char mAppRaw [sizeof (QIApplication)];
-
-    static int mFakeArgc;
-    static char *mFakeArgv [2];
-};
-
-int TheThing::mFakeArgc = 0;
-char *TheThing::mFakeArgv [2] = { NULL, NULL };
-
-/**
- * Initializer of the thing.
- */
-void TheThing::init (int *argc /*= NULL*/, char ***argv /*= NULL*/)
+extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 {
     LogFlowFuncEnter();
 
@@ -248,129 +191,8 @@ void TheThing::init (int *argc /*= NULL*/, char ***argv /*= NULL*/)
      * leave STA by calling CoUninitialize() and re-enter MTA on those systems
      * for some unknown reason), see also src/VBox/Main/glue/initterm.cpp. */
     /// @todo find a proper solution that satisfies both OLE and VBox
-    mInitRC = COMBase::InitializeCOM();
+    HRESULT hrc = COMBase::InitializeCOM();
 #endif
-
-    qInstallMsgHandler (QtMessageOutput);
-
-    /* guarantee successful allocation */
-    mApp = new (&mAppRaw) QIApplication (argc != NULL ? *argc : mFakeArgc,
-                                         argv != NULL ? *argv : mFakeArgv);
-    Assert (mApp != NULL);
-
-    /* Qt4.3 version has the QProcess bug which freezing the application
-     * for 30 seconds. This bug is internally used at initialization of
-     * Cleanlooks style. So we have to change this style to another one.
-     * See http://trolltech.com/developer/task-tracker/index_html?id=179200&method=entry
-     * for details. */
-    if (QString (qVersion()).startsWith ("4.3") &&
-        qobject_cast <QCleanlooksStyle*> (QApplication::style()))
-        QApplication::setStyle (new QPlastiqueStyle);
-
-#ifdef Q_WS_X11
-    /* Cause Qt4 has the conflict with fontconfig application as a result
-     * sometimes substituting some fonts with non scaleable-anti-aliased
-     * bitmap font we are reseting substitutes for the current application
-     * font family if it is non scaleable-anti-aliased. */
-    QFontDatabase fontDataBase;
-    QString subFamily (QFont::substitute (QApplication::font().family()));
-    bool isScaleable = fontDataBase.isSmoothlyScalable (subFamily);
-    if (!isScaleable)
-        QFont::removeSubstitution (QApplication::font().family());
-#endif
-
-#ifdef Q_WS_WIN
-    /* Drag in the sound drivers and DLLs early to get rid of the delay taking
-     * place when the main menu bar (or any action from that menu bar) is
-     * activated for the first time. This delay is especially annoying if it
-     * happens when the VM is executing in real mode (which gives 100% CPU
-     * load and slows down the load process that happens on the main GUI
-     * thread to several seconds). */
-    PlaySound (NULL, NULL, 0);
-#endif
-
-#ifdef Q_WS_MAC
-    ::darwinDisableIconsInMenus();
-#endif /* Q_WS_MAC */
-
-#ifdef Q_WS_X11
-    /* version check (major.minor are sensitive, fix number is ignored) */
-    QString ver_str = QString::fromLatin1 (QT_VERSION_STR);
-    QString ver_str_base = ver_str.section ('.', 0, 1);
-    QString rt_ver_str = QString::fromLatin1 (qVersion());
-    uint ver =
-        (ver_str.section ('.', 0, 0).toInt() << 16) +
-        (ver_str.section ('.', 1, 1).toInt() << 8) +
-        ver_str.section ('.', 2, 2).toInt();
-    uint rt_ver =
-        (rt_ver_str.section ('.', 0, 0).toInt() << 16) +
-        (rt_ver_str.section ('.', 1, 1).toInt() << 8) +
-        rt_ver_str.section ('.', 2, 2).toInt();
-    if (rt_ver < (ver & 0xFFFF00))
-    {
-        QString msg =
-            QApplication::tr ("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
-                              .arg (qAppName())
-                              .arg (ver_str_base)
-                              .arg (rt_ver_str);
-        QMessageBox::critical (
-            0, QApplication::tr ("Incompatible Qt Library Error"),
-            msg, QMessageBox::Abort, 0);
-        qFatal (msg.toAscii().constData());
-    }
-#endif
-
-    /* load a translation based on the current locale */
-    VBoxGlobal::loadLanguage();
-
-#ifdef Q_WS_WIN
-    /* Check for the COM error after we've initialized Qt */
-    if (FAILED (mInitRC))
-    {
-        vboxProblem().cannotInitCOM (mInitRC);
-        return;
-    }
-#endif
-
-    if (!vboxGlobal().isValid())
-        return;
-
-    /* Well, Ok... we are fine */
-    mIsOk = true;
-
-    LogFlowFuncLeave();
-}
-
-/**
- * Uninitializer of the thing.
- */
-void TheThing::uninit()
-{
-    LogFlowFuncEnter();
-
-    if (mApp != NULL)
-    {
-        mApp->~QIApplication();
-        mApp = NULL;
-    }
-
-#ifdef Q_WS_WIN
-    /* See COMBase::initializeCOM() in init() */
-    if (SUCCEEDED (mInitRC))
-        COMBase::CleanupCOM();
-#endif
-
-    LogFlowFuncLeave();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Trusted entry point.
- */
-extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
-{
-    LogFlowFuncEnter();
 
 #ifndef Q_WS_WIN
     int i;
@@ -380,7 +202,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             || !strcmp(argv[i], "-help")
             || !strcmp(argv[i], "--help"))
         {
-            ShowHelp();
+            showHelp();
             return 0;
         }
 #endif
@@ -396,15 +218,93 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
     sigaction (SIGUSR1, &sa, NULL);
 #endif
 
+    qInstallMsgHandler (QtMessageOutput);
+
     int rc = 1; /* failure */
 
-    /* scope TheThing */
-    do
+    /* scope the QIApplication variable */
     {
-        TheThing theThing (argc, argv);
+        QIApplication a (argc, argv);
 
-        if (theThing.isOk())
+        /* Qt4.3 version has the QProcess bug which freezing the application
+         * for 30 seconds. This bug is internally used at initialization of
+         * Cleanlooks style. So we have to change this style to another one.
+         * See http://trolltech.com/developer/task-tracker/index_html?id=179200&method=entry
+         * for details. */
+        if (QString (qVersion()).startsWith ("4.3") &&
+            qobject_cast <QCleanlooksStyle*> (QApplication::style()))
+            QApplication::setStyle (new QPlastiqueStyle);
+
+#ifdef Q_WS_X11
+        /* Cause Qt4 has the conflict with fontconfig application as a result
+         * sometimes substituting some fonts with non scaleable-anti-aliased 
+         * bitmap font we are reseting substitutes for the current application 
+         * font family if it is non scaleable-anti-aliased. */ 
+        QFontDatabase fontDataBase; 
+        QString subFamily (QFont::substitute (QApplication::font().family())); 
+        bool isScaleable = fontDataBase.isSmoothlyScalable (subFamily); 
+        if (!isScaleable) 
+            QFont::removeSubstitution (QApplication::font().family()); 
+#endif
+
+#ifdef Q_WS_WIN
+        /* Drag in the sound drivers and DLLs early to get rid of the delay taking
+         * place when the main menu bar (or any action from that menu bar) is
+         * activated for the first time. This delay is especially annoying if it
+         * happens when the VM is executing in real mode (which gives 100% CPU
+         * load and slows down the load process that happens on the main GUI
+         * thread to several seconds). */
+        PlaySound (NULL, NULL, 0);
+#endif
+
+#ifdef Q_WS_MAC
+        ::darwinDisableIconsInMenus();
+#endif /* Q_WS_MAC */
+
+#ifdef Q_WS_X11
+        /* version check (major.minor are sensitive, fix number is ignored) */
+        QString ver_str = QString::fromLatin1 (QT_VERSION_STR);
+        QString ver_str_base = ver_str.section ('.', 0, 1);
+        QString rt_ver_str = QString::fromLatin1 (qVersion());
+        uint ver =
+            (ver_str.section ('.', 0, 0).toInt() << 16) +
+            (ver_str.section ('.', 1, 1).toInt() << 8) +
+            ver_str.section ('.', 2, 2).toInt();
+        uint rt_ver =
+            (rt_ver_str.section ('.', 0, 0).toInt() << 16) +
+            (rt_ver_str.section ('.', 1, 1).toInt() << 8) +
+            rt_ver_str.section ('.', 2, 2).toInt();
+        if (rt_ver < (ver & 0xFFFF00))
         {
+            QString msg =
+                QApplication::tr ("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
+                                  .arg (qAppName())
+                                  .arg (ver_str_base)
+                                  .arg (rt_ver_str);
+            QMessageBox::critical (
+                0, QApplication::tr ("Incompatible Qt Library Error"),
+                msg, QMessageBox::Abort, 0);
+            qFatal (msg.toAscii().constData());
+        }
+#endif
+
+        /* load a translation based on the current locale */
+        VBoxGlobal::loadLanguage();
+
+        do
+        {
+#ifdef Q_WS_WIN
+            /* Check for the COM error after we've initialized Qt */
+            if (FAILED (hrc))
+            {
+                vboxProblem().cannotInitCOM (hrc);
+                break;
+            }
+#endif
+
+            if (!vboxGlobal().isValid())
+                break;
+
 #ifndef VBOX_OSE
 #ifdef Q_WS_X11
             /* show the user license file */
@@ -412,6 +312,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 break;
 #endif
 #endif
+
             vboxGlobal().checkForAutoConvertedSettings();
 
             VBoxGlobalSettings settings = vboxGlobal().settings();
@@ -422,7 +323,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             {
                 vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
                 if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
-                    rc = theThing.app().exec();
+                    rc = a.exec();
             }
             else if (noSelector)
             {
@@ -439,11 +340,17 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 vboxGlobal().showUpdateDialog (false /* aForce */);
 #endif
                 vboxGlobal().startEnumeratingMedia();
-                rc = theThing.app().exec();
+                rc = a.exec();
             }
         }
+        while (0);
     }
-    while (0);
+
+#ifdef Q_WS_WIN
+    /* See COMBase::initializeCOM() above */
+    if (SUCCEEDED (hrc))
+        COMBase::CleanupCOM();
+#endif
 
     LogFlowFunc (("rc=%d\n", rc));
     LogFlowFuncLeave();
@@ -453,9 +360,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
 #ifndef VBOX_WITH_HARDENING
 
-/**
- * Untrusted entry point. Calls TrustedMain().
- */
 int main (int argc, char **argv, char **envp)
 {
     /* Initialize VBox Runtime. Initialize the SUPLib as well only if we
@@ -481,64 +385,40 @@ int main (int argc, char **argv, char **envp)
 
 #else  /* VBOX_WITH_HARDENING */
 
-////////////////////////////////////////////////////////////////////////////////
-
 /**
- * Hardened main failed (TrustedMain() not called), report the error without any
- * unnecessary fuzz.
+ * Hardened main failed, report the error without any unnecessary fuzz.
  *
  * @remarks Do not call IPRT here unless really required, it might not be
  *          initialized.
  */
-extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere,
-                                          SUPINITOP enmWhat, int rc,
-                                          const char *pszMsgFmt, va_list va)
+extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
 {
-    TheThing theThing;
-
     /*
-     * Open the direct session to let the spawning progress dialog of the VM
-     * Selector window disappear. Otherwise, the dialog will pop up after 2
-     * seconds and become the foreground window hiding the message box we will
-     * show below.
-     *
-     * @todo Note that this is an ugly workaround because the real problem is
-     * the broken Window Manager on some platforms which allows windows of
-     * background processes to be raised above the windows of the foreground
-     * process drawing all the user's attention. The proper solution is to fix
-     * those broken WMs. A less proper but less ugly workaround is to replace
-     * VBoxProgressDialog/QProgressDialog with an implementation that doesn't
-     * try to put itself on top if it is not an active process.
+     * Init the Qt application object. This is a bit hackish as we
+     * don't have the argument vector handy.
      */
-    if (theThing.isOk() && vboxGlobal().isVMConsoleProcess())
-    {
-        CSession session =
-            vboxGlobal().openSession (vboxGlobal().managedVMUuid());
-        session.Close();
-    }
+    int argc = 0;
+    char *argv[2] = { NULL, NULL };
+    QApplication a (argc, &argv[0]);
 
     /*
      * Compose and show the error message.
      */
-    QString msgTitle =
-        QApplication::tr ("VirtualBox - Error In %1").arg (pszWhere);
+    QString msgTitle = QApplication::tr ("VirtualBox - Error In %1").arg (pszWhere);
 
-    char msgBuf [1024];
+    char msgBuf[1024];
     vsprintf (msgBuf, pszMsgFmt, va);
 
-    QString msgText = QApplication::tr ("%1\n\nrc=%2").arg (msgBuf).arg (rc);
-
+    QString msgText = QApplication::tr ("%1\n\nrc=%2").arg (msgBuf).arg(rc);
     switch (enmWhat)
     {
         case kSupInitOp_Driver:
-            msgText += QApplication::tr ("\n\nMake sure the kernel module has "
-                                         "been loaded successfully.");
+            msgText += QApplication::tr ("\n\nMake sure the kernel module has been loaded successfully.");
             break;
         case kSupInitOp_IPRT:
         case kSupInitOp_Integrity:
         case kSupInitOp_RootCheck:
-            msgText += QApplication::tr ("\n\nIt may help to reinstall "
-                                         "VirtualBox."); /* hope this isn't (C), (TM) or (R) Microsoft support ;-) */
+            msgText += QApplication::tr ("\n\nIt may help to reinstall VirtualBox."); /* hope this isn't (C), (TM) or (R) Microsoft support ;-) */
             break;
         default:
             /* no hints here */
@@ -551,7 +431,6 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere,
         msgText,                /* text */
         QMessageBox::Abort,     /* button0 */
         0);                     /* button1 */
-
     qFatal (msgText.toAscii().constData());
 }
 
