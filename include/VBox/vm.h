@@ -701,7 +701,7 @@ typedef struct VM
 #if GC_ARCH_BITS == 32
 # define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
 #else
-# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
+# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0x10900 : 0x10900)
 #endif
 #else  /* !VBOX_WITH_NEW_RECOMILER */
 #if GC_ARCH_BITS == 32
