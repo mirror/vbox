@@ -77,6 +77,7 @@ static NTSTATUS _stdcall   VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS _stdcall   VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static int                 VBoxDrvNtDeviceControlSlow(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PIRP pIrp, PIO_STACK_LOCATION pStack);
 static NTSTATUS _stdcall   VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static VOID     _stdcall   VBoxPowerDispatchCallback(PVOID pCallbackContext, PVOID pArgument1, PVOID pArgument2);
 static NTSTATUS _stdcall   VBoxDrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS            VBoxDrvNtErr2NtStatus(int rc);
 
@@ -141,7 +142,20 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 //#endif
                     pDrvObj->MajorFunction[IRP_MJ_READ]                     = VBoxDrvNtNotSupportedStub;
                     pDrvObj->MajorFunction[IRP_MJ_WRITE]                    = VBoxDrvNtNotSupportedStub;
+
                     /* more? */
+
+                    /* Register ourselves for power state changes. */
+                    UNICODE_STRING      CallbackName;
+                    OBJECT_ATTRIBUTES   Attr;
+
+                    RtlInitUnicodeString(&CallbackName, L"\\Callback\\PowerState");
+	                InitializeObjectAttributes(&Attr, &CallbackName, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+	                rc = ExCreateCallback(&pDevExt->pObjPowerCallback, &Attr, TRUE, TRUE);
+                    if (rc == STATUS_SUCCESS)
+		                pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback, VBoxPowerDispatchCallback, pDevObj);
+
                     dprintf(("VBoxDrv::DriverEntry   returning STATUS_SUCCESS\n"));
                     return STATUS_SUCCESS;
                 }
@@ -183,6 +197,12 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
     PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pDrvObj->DeviceObject->DeviceExtension;
 
     dprintf(("VBoxDrvNtUnload at irql %d\n", KeGetCurrentIrql()));
+
+    /* Clean up the power callback registration. */
+    if (pDevExt->hPowerCallback)
+        ExUnregisterCallback(pDevExt->hPowerCallback);
+    if (pDevExt->pObjPowerCallback)
+        ObDereferenceObject(pDevExt->pObjPowerCallback);
 
     /*
      * We ASSUME that it's not possible to unload a driver with open handles.
@@ -495,6 +515,30 @@ NTSTATUS _stdcall VBoxDrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
     return STATUS_NOT_SUPPORTED;
+}
+
+
+/**
+ * ExRegisterCallback handler for power events
+ *
+ * @param   pCallbackContext    User supplied parameter (pDevObj)
+ * @param   pArgument1          First argument
+ * @param   pArgument2          Second argument
+ */
+VOID _stdcall VBoxPowerDispatchCallback(PVOID pCallbackContext, PVOID pArgument1, PVOID pArgument2)
+{
+    PDEVICE_OBJECT pDevObj = (PDEVICE_OBJECT)pCallbackContext;
+
+    dprintf(("VBoxPowerDispatchCallback: %x %x\n", pArgument1, pArgument2));
+
+    /* Power change imminent? */
+    if ((unsigned)pArgument1 == PO_CB_SYSTEM_STATE_LOCK)
+    {
+        if ((unsigned)pArgument2 == 0)
+            dprintf(("VBoxPowerDispatchCallback: about to go into suspend mode!\n"));
+        else
+            dprintf(("VBoxPowerDispatchCallback: resumed!\n"));
+    }
 }
 
 
