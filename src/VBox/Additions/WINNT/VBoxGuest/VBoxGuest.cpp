@@ -1115,25 +1115,24 @@ NTSTATUS VBoxGuestSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  */
 NTSTATUS VBoxGuestShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    VMMDevPowerStateRequest *req = NULL;
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
 
     dprintf(("VBoxGuest::VBoxGuestShutdown\n"));
 
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
-
-    if (VBOX_SUCCESS(rc))
+    if (pDevExt && pDevExt->powerStateRequest)
     {
+        VMMDevPowerStateRequest *req = pDevExt->powerStateRequest;
+
+        req->header.requestType = VMMDevReq_SetPowerStatus;
         req->powerState = VMMDevPowerState_PowerOff;
 
-        rc = VbglGRPerform (&req->header);
+        int rc = VbglGRPerform (&req->header);
 
         if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
         {
             dprintf(("VBoxGuest::PowerStateRequest: error performing request to VMMDev."
                       "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
         }
-
-        VbglGRFree (&req->header);
     }
 
     return STATUS_SUCCESS;

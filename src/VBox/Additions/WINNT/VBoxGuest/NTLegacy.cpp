@@ -148,7 +148,12 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->irqAckEvents, sizeof (VMMDevEvents), VMMDevReq_AcknowledgeEvents);
     if (!VBOX_SUCCESS(rc))
     {
-       dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed. rc = %d\n", rc));
+       dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for irqAckEvents. rc = %d\n", rc));
+    }
+    rc = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->powerStateRequest, sizeof (VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
+    if (!VBOX_SUCCESS(rc))
+    {
+       dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for powerStateRequest. rc = %d\n", rc));
     }
 
 #if 0

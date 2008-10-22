@@ -184,7 +184,17 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                         rcVBox = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->irqAckEvents, sizeof (VMMDevEvents), VMMDevReq_AcknowledgeEvents);
                         if (!VBOX_SUCCESS(rc))
                         {
-                            dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed. rcVBox = %d\n", rcVBox));
+                            dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for irqAckEvents. rcVBox = %d\n", rcVBox));
+                            rc = STATUS_UNSUCCESSFUL;
+                        }
+                    }
+
+                    if (NT_SUCCESS(rc))
+                    {
+                        rcVBox = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->powerStateRequest, sizeof (VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
+                        if (!VBOX_SUCCESS(rc))
+                        {
+                            dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for powerStateRequest. rcVBox = %d\n", rcVBox));
                             rc = STATUS_UNSUCCESSFUL;
                         }
                     }
@@ -560,23 +570,21 @@ NTSTATUS VBoxGuestPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                             if (powerState.SystemState >= PowerSystemShutdown)
                             {
                                 dprintf(("VBoxGuest::VBoxGuestPower: Telling the VMMDev to close the VM...\n"));
-                                VMMDevPowerStateRequest *req = NULL;
 
-                                int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
-
-                                if (VBOX_SUCCESS(rc))
+                                if (pDevExt && pDevExt->powerStateRequest)
                                 {
+                                    VMMDevPowerStateRequest *req = pDevExt->powerStateRequest;
+
+                                    req->header.requestType = VMMDevReq_SetPowerStatus;
                                     req->powerState = VMMDevPowerState_PowerOff;
 
-                                    rc = VbglGRPerform (&req->header);
+                                    int rc = VbglGRPerform (&req->header);
 
                                     if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
                                     {
                                         dprintf(("VBoxGuest::PowerStateRequest: error communicating new power status to VMMDev."
                                                  "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
                                     }
-
-                                    VbglGRFree (&req->header);
                                 }
                             }
                             break;
