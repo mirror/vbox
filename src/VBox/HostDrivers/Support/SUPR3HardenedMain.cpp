@@ -433,11 +433,19 @@ DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWha
 
     /*
      * Now try resolve and call the TrustedError entry point if we can
-     * find it.
+     * find it.  We'll fork before we attempt this because that way the
+     * session management in main will see us exiting immediately (if
+     * it's invovled with us).
      */
-    PFNSUPTRUSTEDERROR pfnTrustedError = supR3HardenedMainGetTrustedError(g_pszSupLibHardenedProgName);
-    if (pfnTrustedError)
-        pfnTrustedError(pszWhere, enmWhat, rc, pszMsgFmt, va);
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+    int pid = fork();
+    if (pid <= 0)
+#endif
+    {
+        PFNSUPTRUSTEDERROR pfnTrustedError = supR3HardenedMainGetTrustedError(g_pszSupLibHardenedProgName);
+        if (pfnTrustedError)
+            pfnTrustedError(pszWhere, enmWhat, rc, pszMsgFmt, va);
+    }
 
     /*
      * Quit
