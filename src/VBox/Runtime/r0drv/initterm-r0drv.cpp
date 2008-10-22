@@ -84,7 +84,8 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
         {
 #ifndef IN_GUEST /* play safe for now */
             rc = rtR0MpNotificationInit();
-            rc |= rtR0PowerNotificationInit();
+            if (RT_SUCCESS(rc))
+                rc = rtR0PowerNotificationInit();
 #endif
             if (RT_SUCCESS(rc))
                 return rc;
