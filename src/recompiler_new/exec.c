@@ -115,7 +115,7 @@ spinlock_t tb_lock = SPIN_LOCK_UNLOCKED;
 uint8_t code_gen_prologue[1024] code_gen_section;
 
 #else /* VBOX */
-ALIGNED_MEMBER(uint8_t, code_gen_prologue[1024], 32);
+extern uint8_t* code_gen_prologue;
 #endif /* VBOX */
 
 static uint8_t *code_gen_buffer;
@@ -570,9 +570,15 @@ static void code_gen_alloc(unsigned long tb_size)
     }
     map_exec(code_gen_buffer, code_gen_buffer_size);
 #endif
-#endif // VBOX
-#endif /* !USE_STATIC_CODE_GEN_BUFFER */
     map_exec(code_gen_prologue, sizeof(code_gen_prologue));
+#endif /* !VBOX */
+#endif /* !USE_STATIC_CODE_GEN_BUFFER */
+#ifndef VBOX
+    map_exec(code_gen_prologue, sizeof(code_gen_prologue));
+#else
+    map_exec(code_gen_prologue, _1K);
+#endif
+
     code_gen_buffer_max_size = code_gen_buffer_size - 
         code_gen_max_block_size();
     code_gen_max_blocks = code_gen_buffer_size / CODE_GEN_AVG_BLOCK_SIZE;
