@@ -755,7 +755,8 @@ DLLS += VBoxRTDummy
 VBoxRTDummy_TEMPLATE = VBOXR3
 VBoxRTDummy_NOINST = true
 VBoxRTDummy_LIBS = $(PATH_BIN)/VBoxRT.so
-VBoxRTDummy_CLEAN= $(PATH_BIN)/VBoxRT.so 
+VBoxRTDummy_CLEAN= $(PATH_BIN)/VBoxRT.so
+BLDDIRS += $(PATH_BIN)
 
 $(PATH_BIN)/VBoxRT.so: $$(TARGET_VBoxRT) | $$(dir $$@)
 	$(INSTALL) $< $@
