@@ -47,14 +47,14 @@
 # include <VBox/sup.h>
 #endif
 
+#ifdef RT_OS_LINUX
+# include <unistd.h>
+#endif
+
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
 
 #include <signal.h>
 #include <execinfo.h>
-
-#ifdef RT_OS_LINUX
-# include <unistd.h>
-#endif
 
 /* get REG_EIP from ucontext.h */
 #ifndef __USE_GNU
