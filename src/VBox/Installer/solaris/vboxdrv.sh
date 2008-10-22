@@ -114,10 +114,11 @@ start_module()
         info "VirtualBox Host kernel module already loaded."
     else
         if test -n "_HARDENED_"; then
-            /usr/sbin/add_drv -m'* 0600 root sys' $MODNAME || abort "Failed to load VirtualBox Host Kernel module."
+            /usr/sbin/add_drv -m'* 0600 root sys' $MODNAME || abort "Failed to add VirtualBox Host Kernel module."
         else
-            /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME || abort "Failed to load VirtualBox Host Kernel module."
+            /usr/sbin/add_drv -m'* 0666 root sys' $MODNAME || abort "Failed to add VirtualBox Host Kernel module."
         fi
+        /usr/sbin/modload -p drv/$MODNAME
         if test ! module_loaded; then
             abort "Failed to load VirtualBox Host kernel module."
         elif test -c "/devices/pseudo/$MODNAME@0:$MODNAME"; then
@@ -134,9 +135,8 @@ stop_module()
         vboxdrv_mod_id=`/usr/sbin/modinfo | grep $MODNAME | cut -f 1 -d ' ' `
         if test -n "$vboxdrv_mod_id"; then
             /usr/sbin/modunload -i $vboxdrv_mod_id
-            rc=$?
-            if test "$rc" -eq 0; then
-                /usr/sbin/rem_drv $MODNAME || abort "Unloaded VirtualBox Host kernel module, but failed to remove it."
+            if test "$?" -eq 0; then
+                /usr/sbin/rem_drv $MODNAME || abort "Unloaded VirtualBox Host kernel module, but failed to remove it!"
                 info "VirtualBox Host kernel module unloaded."
             else
                 abort "Failed to unload VirtualBox Host kernel module. Old one still active!!"
@@ -171,8 +171,16 @@ start_vboxflt()
 stop_vboxflt()
 {
     if vboxflt_module_loaded; then
-        /usr/sbin/rem_drv $FLTMODNAME || abort "Failed to unload VirtualBox NetFilter kernel module. Old one still active!"
-        info "VirtualBox NetFilter kernel module unloaded."
+        vboxflt_mod_id=`/usr/sbin/modinfo | grep $FLTMODNAME | cut -f 1 -d ' '`
+        if test -n "$vboxflt_mod_id"; then
+            /usr/sbin/modunload -i $vboxflt_mod_id
+            if test "$?" -eq 0; then
+                /usr/sbin/rem_drv $FLTMODNAME || abort "Unloaded VirtualBox NetFilter kernel module, but failed to remove it!"
+                info "VirtualBox NetFilter kernel module unloaded."
+            else
+                abort "Failed to unload VirtualBox NetFilter kernel module. Old one still active!!"
+            fi
+        fi
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox NetFilter kernel module not loaded."
     fi

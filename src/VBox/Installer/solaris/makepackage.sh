@@ -130,11 +130,15 @@ fi
 filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox.desktop=virtualbox.desktop"'                 '$3 = "usr/share/applications/virtualbox.desktop=virtualbox.desktop"'
 filelist_fixup prototype '$3 == "opt/VirtualBox/VBox.png=VBox.png"'                                     '$3 = "usr/share/pixmaps/VBox.png=VBox.png"'
 
+# zoneaccess SMF manifest
+filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox-zoneaccess.xml=virtualbox-zoneaccess.xml"'   '$3 = "var/svc/manifest/application/virtualbox/zoneaccess.xml=virtualbox-zoneaccess.xml"'
+
 # webservice SMF manifest
 filelist_fixup prototype '$3 == "opt/VirtualBox/virtualbox-webservice.xml=virtualbox-webservice.xml"'   '$3 = "var/svc/manifest/application/virtualbox/webservice.xml=virtualbox-webservice.xml"'
 
 # webservice SMF start/stop script
 filelist_fixup prototype '$3 == "opt/VirtualBox/smf-vboxwebsrv.sh=smf-vboxwebsrv.sh"'                   '$3 = "opt/VirtualBox/smf-vboxwebsrv=smf-vboxwebsrv.sh"'
+
 echo " --- start of prototype  ---" 
 cat prototype
 echo " --- end of prototype --- "
