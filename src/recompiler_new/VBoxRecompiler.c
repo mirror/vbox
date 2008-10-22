@@ -28,6 +28,8 @@
 #include "osdep.h"
 #include "exec-all.h"
 
+void cpu_exec_init_all(unsigned long tb_size);
+
 #include <VBox/rem.h>
 #include <VBox/vmapi.h>
 #include <VBox/tm.h>
@@ -228,6 +230,9 @@ AssertCompile(RT_SIZEOFMEMB(REM, Env) <= REM_ENV_SIZE);
 #endif
 
 
+/* Prologue code, must be in lower 4G to simplify jumps to/from generated code */
+uint8_t* code_gen_prologue;
+
 /**
  * Initializes the REM.
  *
@@ -269,6 +274,8 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 
     /* ignore all notifications */
     pVM->rem.s.fIgnoreAll = true;
+
+    code_gen_prologue = RTMemExecAlloc(_1K);
 
     cpu_exec_init_all(0);
 

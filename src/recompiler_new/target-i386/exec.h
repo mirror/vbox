@@ -47,10 +47,6 @@ REGISTER_BOUND_GLOBAL(struct CPUX86State*, env, AREG0);
 
 #include "qemu-log.h"
 
-#ifdef VBOX
-void cpu_exec_init_all(unsigned long tb_size);
-#endif
-
 #ifndef reg_EAX
 #define EAX (env->regs[R_EAX])
 #endif
