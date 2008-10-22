@@ -1523,60 +1523,6 @@ static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg)
 
 
 /**
- * Matches a sample name against a pattern.
- *
- * @returns True if matches, false if not.
- * @param   pszPat      Pattern.
- * @param   pszName     Name to match against the pattern.
- */
-static bool stamR3Match(const char *pszPat, const char *pszName)
-{
-    /* ASSUMES ASCII */
-    for (;;)
-    {
-        char chPat = *pszPat;
-        switch (chPat)
-        {
-            default:
-                if (*pszName != chPat)
-                    return false;
-                break;
-
-            case '*':
-            {
-                while ((chPat = *++pszPat) == '*' || chPat == '?')
-                    /* nothing */;
-
-                for (;;)
-                {
-                    char ch = *pszName++;
-                    if (    ch == chPat
-                        &&  (   !chPat
-                             || stamR3Match(pszPat + 1, pszName)))
-                        return true;
-                    if (!ch)
-                        return false;
-                }
-                /* won't ever get here */
-                break;
-            }
-
-            case '?':
-                if (!*pszName)
-                    return false;
-                break;
-
-            case '\0':
-                return !*pszName;
-        }
-        pszName++;
-        pszPat++;
-    }
-    return true;
-}
-
-
-/**
  * Match a name against an array of patterns.
  *
  * @returns true if it matches, false if it doesn't match.
@@ -1591,7 +1537,7 @@ static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExp
     for (unsigned i = piExpression ? *piExpression : 0; i < cExpressions; i++)
     {
         const char *pszPat = papszExpressions[i];
-        if (stamR3Match(pszPat, pszName))
+        if (RTStrSimplePatternMatch(pszPat, pszName))
         {
             /* later:
             if (piExpression && i > *piExpression)
@@ -1705,7 +1651,7 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (*p
          * Note that it's doing exact matching. Organizing the samples in a tree would speed up thing
          * no end (at least for debug and profile builds). */
         for (PSTAMDESC pCur = pUVM->stam.s.pHead; pCur; pCur = pCur->pNext)
-            if (stamR3Match(pszPat, pCur->pszName))
+            if (RTStrSimplePatternMatch(pszPat, pCur->pszName))
             {
                 rc = pfnCallback(pCur, pvArg);
                 if (rc)
