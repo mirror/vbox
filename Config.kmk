@@ -1394,6 +1394,7 @@ else
   TOOL_VCC70_RC      := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
  else
   VBOX_WINDOWS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-winxp.ico
+  VBOX_NSIS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-nsis.ico
  endif
  VBOX_MACOSX_ICON_FILE  ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox.icns
 endif
