@@ -205,6 +205,9 @@ typedef struct VBOXGUESTDEVEXT
         PMDL        *paMdlMemBalloon;
     } MemBalloon;
 
+    /* Preallocated generic request for shutdown. */
+    VMMDevPowerStateRequest *powerStateRequest;
+
 } VBOXGUESTDEVEXT, *PVBOXGUESTDEVEXT;
 
 // Windows version identifier
