@@ -632,17 +632,20 @@ endif
 #
 # VBOX_WITHOUT_HARDENING is for developers (put in LocalConfig.kmk).
 # Note that this is a bit rough since hardening governs more than one
-# variable...
+# variable...  Also note that we allow VBOX_WITH_HARDENING=1 on the 
+# command line to overrule VBOX_WITHOUT_HARDENING (the check below).
 #
 ifdef VBOX_WITHOUT_HARDENING
  VBOX_WITH_HARDENING=
- VBOX_PATH_APP_PRIVATE=
- VBOX_PATH_APP_PRIVATE_ARCH=
- VBOX_PATH_SHARED_LIBS=
- VBOX_PATH_APP_DOCS=
- VBOX_WITH_RUNPATH=
- if1of ($(KBUILD_TARGET), linux solaris)
-  VBOX_WITH_ORIGIN=1
+ ifeq ($(VBOX_WITH_HARDENING),)
+  VBOX_PATH_APP_PRIVATE=
+  VBOX_PATH_APP_PRIVATE_ARCH=
+  VBOX_PATH_SHARED_LIBS=
+  VBOX_PATH_APP_DOCS=
+  VBOX_WITH_RUNPATH=
+  if1of ($(KBUILD_TARGET), linux solaris)
+   VBOX_WITH_ORIGIN=1
+  endif
  endif
 endif
 
