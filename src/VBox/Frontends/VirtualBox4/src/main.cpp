@@ -31,6 +31,10 @@
 # define QIApplication QApplication
 #endif
 
+#ifdef Q_WS_X11
+#include <QFontDatabase>
+#endif
+
 #include <QCleanlooksStyle>
 #include <QPlastiqueStyle>
 #include <qmessagebox.h>
@@ -265,11 +269,14 @@ void TheThing::init (int *argc /*= NULL*/, char ***argv /*= NULL*/)
 
 #ifdef Q_WS_X11
     /* Cause Qt4 has the conflict with fontconfig application as a result
-     * substituting some fonts with non anti-aliased bitmap font we are
-     * reseting all the substitutes here for the current application font. */
-# ifndef Q_OS_SOLARIS
-    QFont::removeSubstitution (QApplication::font().family());
-# endif /* Q_OS_SOLARIS */
+     * sometimes substituting some fonts with non scaleable-anti-aliased
+     * bitmap font we are reseting substitutes for the current application
+     * font family if it is non scaleable-anti-aliased. */
+    QFontDatabase fontDataBase;
+    QString subFamily (QFont::substitute (QApplication::font().family()));
+    bool isScaleable = fontDataBase.isSmoothlyScalable (subFamily);
+    if (!isScaleable)
+        QFont::removeSubstitution (QApplication::font().family());
 #endif
 
 #ifdef Q_WS_WIN
