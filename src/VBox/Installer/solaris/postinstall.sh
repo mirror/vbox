@@ -29,8 +29,8 @@ fi
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    echo "Configuring VirtualBox kernel module(s)..."
-    /opt/VirtualBox/vboxdrv.sh stopall silentunload
+    echo "Configuring VirtualBox kernel modules..."
+    /opt/VirtualBox/vboxdrv.sh stopall silentunload checkarch
     rc=$?
     if test "$rc" -eq 0; then
         /opt/VirtualBox/vboxdrv.sh start
@@ -83,6 +83,7 @@ if test "$currentzone" = "global"; then
 
     # create the device link
     /usr/sbin/devfsadm -i vboxdrv
+    sync
 
     # We need to touch the desktop link in order to add it to the menu right away
     if test -f "/usr/share/applications/virtualbox.desktop"; then

@@ -37,7 +37,8 @@ if test "$currentzone" = "global"; then
     fi
 
     # vboxdrv.sh would've been installed, we just need to call it.
-    /opt/VirtualBox/vboxdrv.sh stopall
+    /opt/VirtualBox/vboxdrv.sh fltstop alwaysremdrv
+    /opt/VirtualBox/vboxdrv.sh stop alwaysremdrv
 
     # remove devlink.tab entry for vboxdrv
     sed -e '
