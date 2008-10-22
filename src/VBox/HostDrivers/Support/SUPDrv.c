@@ -42,6 +42,7 @@
 #include <iprt/thread.h>
 #include <iprt/process.h>
 #include <iprt/mp.h>
+#include <iprt/power.h>
 #include <iprt/cpuset.h>
 #include <iprt/uuid.h>
 #include <VBox/log.h>
@@ -381,6 +382,8 @@ static SUPFUNC g_aFunctions[] =
     { "RTMpOnAll",                              (void *)UNWIND_WRAP(RTMpOnAll) },
     { "RTMpOnOthers",                           (void *)UNWIND_WRAP(RTMpOnOthers) },
     { "RTMpOnSpecific",                         (void *)UNWIND_WRAP(RTMpOnSpecific) },
+    { "RTPowerNotificationRegister",            (void *)RTPowerNotificationRegister },
+    { "RTPowerNotificationDeregister",          (void *)RTPowerNotificationDeregister },
     { "RTLogRelDefaultInstance",                (void *)RTLogRelDefaultInstance },
     { "RTLogSetDefaultInstanceThread",          (void *)UNWIND_WRAP(RTLogSetDefaultInstanceThread) },
     { "RTLogLogger",                            (void *)RTLogLogger }, /** @todo remove this */
