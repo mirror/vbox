@@ -208,6 +208,7 @@ RuntimeR3_SOURCES       = \
 	common/rand/randparkmiller.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
+	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \

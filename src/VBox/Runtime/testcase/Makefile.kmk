@@ -80,6 +80,7 @@ PROGRAMS += \
 	tstRTFsQueries \
 	tstSemPingPong \
 	tstStrFormat \
+	tstStrSimplePattern \
 	tstStrToNum \
 	tstSystemQueryOsInfo \
 	tstThread-1 \
@@ -290,6 +291,8 @@ tstSemPingPong_SOURCES = tstSemPingPong.cpp
 tstSems_SOURCES = tstSems.cpp
 
 tstStrFormat_SOURCES = tstStrFormat.cpp
+
+tstStrSimplePattern_SOURCES = tstStrSimplePattern.cpp
 
 tstStrToNum_SOURCES = tstStrToNum.cpp
 
