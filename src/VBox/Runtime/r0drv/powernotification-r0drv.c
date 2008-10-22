@@ -279,12 +279,6 @@ int rtR0PowerNotificationInit(void)
         rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTPowerNotifySpinLock);
         if (RT_SUCCESS(rc))
         {
-#if 0  /** @todo fix this */
-            rc = rtR0MpNotificationNativeInit();
-#endif
-            if (RT_SUCCESS(rc))
-                return rc;
-
             RTSpinlockDestroy(g_hRTPowerNotifySpinLock);
             g_hRTPowerNotifySpinLock = NIL_RTSPINLOCK;
         }
@@ -305,10 +299,6 @@ void rtR0PowerNotificationTerm(void)
 
             PRTPOWERNOTIFYREG pHead;
             RTSPINLOCKTMP Tmp;
-
-#if 0  /** @todo fix this */
-            rtR0MpNotificationNativeTerm();
-#endif
 
             /* pick up the list and the spinlock. */
             RTSpinlockAcquire(hSpinlock, &Tmp);
