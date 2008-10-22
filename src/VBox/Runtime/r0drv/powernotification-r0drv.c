@@ -269,7 +269,7 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
 }
 
 
-int rtR0PmNotificationInit(void)
+int rtR0PowerNotificationInit(void)
 {
     int rc = VINF_SUCCESS;
 
@@ -291,7 +291,7 @@ int rtR0PmNotificationInit(void)
 }
 
 
-void rtR0PmNotificationTerm(void)
+void rtR0PowerNotificationTerm(void)
 {
     RTSPINLOCK hSpinlock = g_hRTPowerNotifySpinLock;
     if (hSpinlock != NIL_RTSPINLOCK)
