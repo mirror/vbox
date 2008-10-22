@@ -378,10 +378,10 @@ endif
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm $(PATH_BIN)/UserManual_$(f).pdf) $(SOLARIS_INST_DIR)/)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_INST_DIR)/vbox.copyright)
-	$(QUIET)$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(INSTALL) -m 0644 $(VBOX_LICENSE_BINS)     $(SOLARIS_INST_DIR)/)
+	$(QUIET)$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QT4GUI)),$(INSTALL) -m 0644 $(VBOX_LICENSE_BINS)    $(SOLARIS_INST_DIR)/)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMBase.xpt                                     $(SOLARIS_INST_DIR)/components/VBoxXPCOMBase.xpt
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VirtualBox_XPCOM.xpt                                  $(SOLARIS_INST_DIR)/components/VirtualBox_XPCOM.xpt
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(CP) $(foreach f,$(SOLARIS_NLS),$(PATH_BIN)/$(f)) $(SOLARIS_INST_DIR)/nls,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/vboxwebsrv $(SOLARIS_INST_DIR)/vboxwebsrv,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $(PATH_BIN)/webtest    $(SOLARIS_INST_DIR)/webtest,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
@@ -397,7 +397,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp                                           $(SOLARIS_INST_DIR)/vboxdrv.sh
 	$(QUIET)$(RM) -f $(SOLARIS_INST_DIR)/vboxdrv.sh.tmp
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/VBox.sh                                            $(SOLARIS_INST_DIR)/VBox.sh
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop         $(SOLARIS_INST_DIR)/virtualbox.desktop,)
+	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop        $(SOLARIS_INST_DIR)/virtualbox.desktop,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBox.png                                                         $(SOLARIS_INST_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_INST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/preremove.sh                                       $(SOLARIS_INST_DIR)/preremove.sh
