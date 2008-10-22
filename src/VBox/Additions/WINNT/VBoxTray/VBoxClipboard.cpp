@@ -414,7 +414,7 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                         int vboxrc = vboxClipboardReadData (pCtx, u32Format, pMem, cbPrealloc, &cb);
                         Log(("vboxClipboardReadData vboxrc %d\n",  vboxrc));
 
-                        if (VBOX_SUCCESS (rc))
+                        if (VBOX_SUCCESS (vboxrc))
                         {
                             if (cb > cbPrealloc)
                             {
