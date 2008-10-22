@@ -279,8 +279,12 @@ int rtR0PowerNotificationInit(void)
         rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTPowerNotifySpinLock);
         if (RT_SUCCESS(rc))
         {
+            /** @todo OS specific init here */
+            return rc
+#if 0
             RTSpinlockDestroy(g_hRTPowerNotifySpinLock);
             g_hRTPowerNotifySpinLock = NIL_RTSPINLOCK;
+#endif
         }
         ASMAtomicDecS32(&g_cRTPowerUsers);
     }
@@ -296,9 +300,10 @@ void rtR0PowerNotificationTerm(void)
         AssertMsg(g_cRTPowerUsers > 0, ("%d\n", g_cRTPowerUsers));
         if (ASMAtomicDecS32(&g_cRTPowerUsers) == 0)
         {
-
             PRTPOWERNOTIFYREG pHead;
             RTSPINLOCKTMP Tmp;
+
+            /** @todo OS specific term here */
 
             /* pick up the list and the spinlock. */
             RTSpinlockAcquire(hSpinlock, &Tmp);
