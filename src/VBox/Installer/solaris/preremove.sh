@@ -46,7 +46,7 @@ if test "$currentzone" = "global"; then
     mv -f /etc/devlink.vbox /etc/devlink.tab
 
     # remove the link
-    if test -f /dev/vboxdrv; then
+    if test -h "/dev/vboxdrv" || test -f "/dev/vboxdrv"; then
         rm -f /dev/vboxdrv
     fi
 fi
