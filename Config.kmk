@@ -1246,7 +1246,7 @@ VBOX_PATH_NSIS ?= $(PATH_DEVTOOLS)/win.x86/nsis/v2.33-log-nsscm-r1
 VBOX_PATH_AUTOIT3 ?= $(PATH_DEVTOOLS)/win.x86/autoit/v3.2.10.0
 
 # Windows install tools...
-VBOX_PATH_WIX       ?= $(PATH_DEVTOOLS)/win.x86/wix/v2.0.4611.0
+VBOX_PATH_WIX       ?= $(PATH_DEVTOOLS)/win.x86/wix/v2.0.5805.0
 VBOX_PATH_MSITRAN   ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Bin/MsiTran.Exe
 VBOX_PATH_MSIDB     ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Bin/MsiDb.Exe
 VBOX_PATH_WISUBSTG  ?= $(PATH_DEVTOOLS)/win.x86/sdk/200504/Samples/SysMgmt/Msi/Scripts/WiSubStg.vbs
