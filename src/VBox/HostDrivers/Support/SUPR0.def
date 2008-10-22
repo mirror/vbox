@@ -107,6 +107,8 @@ EXPORTS
     RTMpGetCount
     RTMpCpuIdToSetIndex
     RTMpCpuId
+    RTPowerNotificationRegister
+    RTPowerNotificationDeregister
     RTLogDefaultInstance
     RTLogRelDefaultInstance
     RTLogSetDefaultInstanceThread
