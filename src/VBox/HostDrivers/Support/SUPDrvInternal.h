@@ -674,6 +674,13 @@ typedef struct SUPDRVDEVEXT
      * This CPU is responsible for the updating the common GIP data. */
     RTCPUID volatile        idGipMaster;
 
+#ifdef RT_OS_WINDOWS
+    /* Callback object returned by ExCreateCallback. */
+    PCALLBACK_OBJECT        pObjPowerCallback;
+    /* Callback handle returned by ExRegisterCallback. */
+    PVOID                   hPowerCallback;
+#endif
+
     /** Component factory mutex.
      * This protects pComponentFactoryHead and component factory querying. */
     RTSEMFASTMUTEX          mtxComponentFactory;
