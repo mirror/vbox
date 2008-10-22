@@ -280,7 +280,7 @@ int rtR0PowerNotificationInit(void)
         if (RT_SUCCESS(rc))
         {
             /** @todo OS specific init here */
-            return rc
+            return rc;
 #if 0
             RTSpinlockDestroy(g_hRTPowerNotifySpinLock);
             g_hRTPowerNotifySpinLock = NIL_RTSPINLOCK;
