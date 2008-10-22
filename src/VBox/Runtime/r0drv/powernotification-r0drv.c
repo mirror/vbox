@@ -38,6 +38,7 @@
 #include <iprt/mem.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
+#include "r0drv/mp-r0drv.h"
 #include "r0drv/power-r0drv.h"
 
 
