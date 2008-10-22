@@ -1095,7 +1095,6 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
-	r0drv/powernotification-r0drv.c \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
@@ -1113,7 +1112,8 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
 	r0drv/darwin/thread2-r0drv-darwin.cpp \
 	r0drv/darwin/time-r0drv-darwin.cpp \
-	r0drv/memobj-r0drv.cpp
+	r0drv/memobj-r0drv.cpp \
+	r0drv/powernotification-r0drv.c
 
 RuntimeR0Drv_SOURCES.os2 = \
 	common/string/memchr.asm \
@@ -1147,12 +1147,13 @@ RuntimeR0Drv_SOURCES.os2 = \
 	generic/mppresent-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
 	os2/sys0.asm \
-	r0drv/memobj-r0drv.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptIsEnabled-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptDisable-r0drv-generic.cpp \
 	r0drv/generic/RTThreadPreemptRestore-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
+	r0drv/memobj-r0drv.cpp \
+	r0drv/powernotification-r0drv.c \
 	r0drv/os2/alloc-r0drv-os2.cpp \
 	r0drv/os2/assert-r0drv-os2.cpp \
 	r0drv/os2/assertA-r0drv-os2.asm \
@@ -1215,7 +1216,8 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/freebsd/thread2-r0drv-freebsd.c \
 	r0drv/freebsd/time-r0drv-freebsd.c \
 	r0drv/freebsd/timer-r0drv-freebsd.c \
-	r0drv/memobj-r0drv.cpp
+	r0drv/memobj-r0drv.cpp \
+	r0drv/powernotification-r0drv.c
 
 RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
