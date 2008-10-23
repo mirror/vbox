@@ -248,17 +248,17 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
         QString currentFamily (QApplication::font().family());
         bool isCurrentScaleable = fontDataBase.isScalable (currentFamily);
-        LogFlowFunc (("Font: Current family is '%s'. It is %s.\n",
+        printf ("Font: Current family is '%s'. It is %s.\n",
             currentFamily.toLatin1().constData(),
-            isCurrentScaleable ? "scalable" : "not scalable"));
+            isCurrentScaleable ? "scalable" : "not scalable");
 
         QStringList subFamilies (QFont::substitutes (currentFamily));
         foreach (QString sub, subFamilies)
         {
             bool isSubScalable = fontDataBase.isScalable (sub);
-            LogFlowFunc (("Font: Substitute family is '%s'. It is %s.\n",
+            printf ("Font: Substitute family is '%s'. It is %s.\n",
                 sub.toLatin1().constData(),
-                isSubScalable ? "scalable" : "not scalable"));
+                isSubScalable ? "scalable" : "not scalable");
         }
 
         QString subFamily (QFont::substitute (currentFamily));
