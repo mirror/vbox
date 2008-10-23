@@ -488,7 +488,7 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                                         /* cbActual is the number of bytes, excluding those used
                                          * for the terminating null character.
                                          */
-                                        cb = (uint32_t)(cbActual + 1);
+                                        cb = (uint32_t)(cbActual + 2);
                                     }
                                 }
                             }
