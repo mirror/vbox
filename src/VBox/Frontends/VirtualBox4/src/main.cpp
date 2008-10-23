@@ -413,16 +413,17 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
     char msgBuf[1024];
     vsprintf (msgBuf, pszMsgFmt, va);
 
-    QString msgText = QApplication::tr ("%1\n\nrc=%2").arg (msgBuf).arg(rc);
+    QString msgText = QApplication::tr (
+            "<html><b>%1 (rc=%2)</b><br/><br/>").arg (msgBuf).arg (rc);
     switch (enmWhat)
     {
         case kSupInitOp_Driver:
-            msgText += QApplication::tr ("\n\n"
+            msgText += QApplication::tr (
 #ifdef RT_OS_LINUX
             "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
             "there is a permission problem with /dev/vboxdrv. Re-setup the kernel "
-            "module by executing\n\n"
-            "  '/etc/init.d/vboxdrv setup'\n\n"
+            "module by executing<br/><br/>"
+            "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
             "as root. Users of Ubuntu or Fedora should install the DKMS package "
             "at first. This package keeps track of Linux kernel changes and "
             "recompiles the vboxdrv kernel module if necessary."
@@ -434,12 +435,13 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
         case kSupInitOp_IPRT:
         case kSupInitOp_Integrity:
         case kSupInitOp_RootCheck:
-            msgText += QApplication::tr ("\n\nIt may help to reinstall VirtualBox."); /* hope this isn't (C), (TM) or (R) Microsoft support ;-) */
+            msgText += QApplication::tr ("It may help to reinstall VirtualBox."); /* hope this isn't (C), (TM) or (R) Microsoft support ;-) */
             break;
         default:
             /* no hints here */
             break;
     }
+    msgText += "</html>";
 
 #ifdef RT_OS_LINUX
     sleep(2);
