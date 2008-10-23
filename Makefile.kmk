@@ -519,6 +519,7 @@ VBOX_CORE_DOXYFILE_INPUT += \
 
 
 VBOX_CORE_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/Core
+BLDDIRS += $(VBOX_CORE_DOXYFILE_OUTPUT)
 
 -include $(PATH_TARGET)/Doxyfile.Core.dep
 
@@ -544,12 +545,8 @@ $(PATH_TARGET)/Doxyfile.Core: Doxyfile.Core \
 	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_OUTPUT_PREV = $(VBOX_CORE_DOXYFILE_OUTPUT)"
 	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
 
-# Create the output directory.
-$(call DIRDEP, $(VBOX_CORE_DOXYFILE_OUTPUT)):
-	$(MKDIR) -p $@
-
 # Do the actual job.
-$(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $(VBOX_CORE_DOXYFILE_INPUT) | $(call DIRDEP, $(VBOX_CORE_DOXYFILE_OUTPUT))
+$(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INPUT) | $(VBOX_CORE_DOXYFILE_OUTPUT)/
 	$(RM) -f $(PATH_TARGET)/docs.Core
 	$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
 	doxygen $(PATH_TARGET)/Doxyfile.Core

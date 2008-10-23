@@ -1692,7 +1692,7 @@ VBoxXPCOMBase-xpt-inst_CLEAN = \
 	$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt
 
 # combined typelib library
-$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt: $(VBOX_XPTFILES) | $$(TARGET_xpt_link) $(PATH_TARGET)/VBox-xpcom-xpt-files/
+$(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt: $$(VBOX_XPTFILES) | $$(TARGET_xpt_link) $(PATH_TARGET)/VBox-xpcom-xpt-files/
 	$(call MSG_LINK,XPCOM_TYPELIB,$@)
 	$(QUIET)$(MKDIR) -p -- $(PATH_BIN)/components
 	$(QUIET)$(TARGET_xpt_link) $@ $^
@@ -1734,7 +1734,7 @@ endef
 $(foreach idl, $(XPCOM_IDLFILES), $(eval $(def_IDL)))
 
 # dummy target.
-$(PATH_VBox-xpcom-string)/idl_ts: $(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include/,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES))))
+$(PATH_VBox-xpcom-string)/idl_ts: $$(addprefix $$(VBOX_PATH_SDK)/bindings/xpcom/include/,$$(notdir $$(subst .idl,.h,$$(XPCOM_IDLFILES))))
 	$(call MSG_L1,IDL processing completed.)
 	$(QUIET)$(MKDIR) -p $(dir $@)
 	$(QUIET)$(APPEND) -t $@

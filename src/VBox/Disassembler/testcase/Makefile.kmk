@@ -208,7 +208,7 @@ OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
 
 # We don't want any of the tests rules to run in parallel because the
 # output will be difficult to follow. Abusing VBOX_DISAS_TEST_CLEAN here...
-.NOTPARALLEL: $(VBOX_DISAS_TEST_CLEAN)
+.NOTPARALLEL: $$(VBOX_DISAS_TEST_CLEAN)
 
 
 #
@@ -219,7 +219,7 @@ TESTING += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/,$(VBOX_DISAS_TESTS))
 
 # Aliases for use till kBuild gets updated.
 .PHONY: check test
-check test: $(TESTING)
+check test: $$(TESTING)
 
 
 #
