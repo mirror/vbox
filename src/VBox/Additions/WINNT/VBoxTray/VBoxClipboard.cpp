@@ -416,7 +416,17 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
 
                         if (VBOX_SUCCESS (vboxrc))
                         {
-                            if (cb > cbPrealloc)
+                            if (cb == 0)
+                            {
+                                /* 0 bytes returned means the clipboard is empty.
+                                 * Deallocate the memory and set hMe to NULL to get to
+                                 * the clipboard empty code path.
+                                 */
+                                GlobalUnlock (pMem);
+                                GlobalFree (hMem);
+                                hMem = NULL;
+                            }
+                            else if (cb > cbPrealloc)
                             {
                                 GlobalUnlock (hMem);
                                 
