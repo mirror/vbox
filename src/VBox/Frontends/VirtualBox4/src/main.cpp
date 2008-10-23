@@ -245,10 +245,26 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
          * bitmap font we are reseting substitutes for the current application
          * font family if it is non scaleable-anti-aliased. */
         QFontDatabase fontDataBase;
-        QString subFamily (QFont::substitute (QApplication::font().family()));
-        bool isScaleable = fontDataBase.isScalable (subFamily);
-        if (!isScaleable)
-            QFont::removeSubstitution (QApplication::font().family());
+
+        QString currentFamily (QApplication::font().family());
+        bool isCurrentScaleable = fontDataBase.isScalable (currentFamily);
+        LogFlowFunc (("Font: Current family is '%s'. It is %s.\n",
+            currentFamily.toLatin1().constData(),
+            isCurrentScaleable ? "scalable" : "not scalable"));
+
+        QStringList subFamilies (QFont::substitutes (currentFamily));
+        foreach (QString sub, subFamilies)
+        {
+            bool isSubScalable = fontDataBase.isScalable (sub);
+            LogFlowFunc (("Font: Substitute family is '%s'. It is %s.\n",
+                sub.toLatin1().constData(),
+                isSubScalable ? "scalable" : "not scalable"));
+        }
+
+        QString subFamily (QFont::substitute (currentFamily));
+        bool isSubScaleable = fontDataBase.isScalable (subFamily);
+        if (isCurrentScaleable && !isSubScaleable)
+            QFont::removeSubstitution (currentFamily);
 #endif
 
 #ifdef Q_WS_WIN
