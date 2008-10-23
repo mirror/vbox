@@ -128,6 +128,8 @@ static struct
     } cpuid;
 
     HWACCMSTATE     enmHwAccmState;
+
+    bool            fSuspended;
 } HWACCMR0Globals;
 
 
@@ -525,6 +527,11 @@ static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pv
 VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
 {
     Assert(sizeof(HWACCMR0Globals.enmHwAccmState) == sizeof(uint32_t));
+
+    /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
+    if (HWACCMR0Globals.fSuspended)
+        return VERR_HWACCM_SUSPEND_PENDING;
+
     if (ASMAtomicCmpXchgU32((volatile uint32_t *)&HWACCMR0Globals.enmHwAccmState, enmNewHwAccmState, HWACCMSTATE_UNINITIALIZED))
     {
         int     aRc[RTCPUSET_MAX_CPUS];
@@ -677,6 +684,9 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
         SUPR0Printf("hwaccmR0PowerCallback RTPOWEREVENT_RESUME\n");
 #endif
 
+    if (enmEvent == RTPOWEREVENT_SUSPEND)
+        HWACCMR0Globals.fSuspended = true;
+
     if (HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED)
     {
         int     aRc[RTCPUSET_MAX_CPUS];
@@ -708,6 +718,8 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
         }
     }
+    if (enmEvent == RTPOWEREVENT_RESUME)
+        HWACCMR0Globals.fSuspended = false;
 }
 
 
@@ -727,6 +739,10 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 #ifdef LOG_ENABLED
     SUPR0Printf("HWACCMR0InitVM: %p\n", pVM);
 #endif
+
+    /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
+    if (HWACCMR0Globals.fSuspended)
+        return VERR_HWACCM_SUSPEND_PENDING;
 
     pVM->hwaccm.s.vmx.fSupported            = HWACCMR0Globals.vmx.fSupported;
     pVM->hwaccm.s.svm.fSupported            = HWACCMR0Globals.svm.fSupported;
@@ -782,6 +798,10 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
     SUPR0Printf("HWACCMR0TermVM: %p\n", pVM);
 #endif
 
+    /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
+    if (HWACCMR0Globals.fSuspended)
+        return VERR_HWACCM_SUSPEND_PENDING;
+
     /* Terminate a VT-x or AMD-V VM. */
     return HWACCMR0Globals.pfnTermVM(pVM);
 }
@@ -796,6 +816,10 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
 VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+    /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
+    if (HWACCMR0Globals.fSuspended)
+        return VERR_HWACCM_SUSPEND_PENDING;
 
 #ifdef LOG_ENABLED
     SUPR0Printf("HWACCMR0SetupVM: %p\n", pVM);
@@ -817,6 +841,10 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM)
     CPUMCTX *pCtx;
     int      rc;
     RTCPUID  idCpu = RTMpCpuId();
+
+    /* Make sure we can't enter a session after we've disabled hwaccm in preparation of a suspend. */
+    if (HWACCMR0Globals.fSuspended)
+        return VINF_EM_RAW_INTERRUPT;
 
     rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (VBOX_FAILURE(rc))
@@ -868,6 +896,8 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM)
     CPUMCTX *pCtx;
     int      rc;
 
+    AssertReturn(!HWACCMR0Globals.fSuspended, VERR_HWACCM_SUSPEND_PENDING);
+
     rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (VBOX_FAILURE(rc))
         return rc;
@@ -911,6 +941,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 
     Assert(!VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
     Assert(HWACCMR0Globals.aCpuInfo[idCpu].fConfigured);
+    AssertReturn(!HWACCMR0Globals.fSuspended, VERR_HWACCM_SUSPEND_PENDING);
 
     rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
     if (VBOX_FAILURE(rc))
