@@ -1041,6 +1041,16 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
         LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current VMCS version %x\n", pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision));
         break;
 
+    case VERR_VMX_UNABLE_TO_START_VM:
+        LogRel(("VERR_VMX_UNABLE_TO_START_VM: instruction error %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
+        LogRel(("VERR_VMX_UNABLE_TO_START_VM: exit reason       %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
+        break;
+
+    case VERR_VMX_UNABLE_TO_RESUME_VM:
+        LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: instruction error %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
+        LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: exit reason       %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
+        break;
+
     case VERR_VMX_INVALID_VMXON_PTR:
         break;
     }
