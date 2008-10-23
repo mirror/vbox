@@ -557,9 +557,8 @@ VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 #if 0   /** @todo get flat PC api! */
         uint32_t eip = CPUMGetGuestEIP(pVM);
 #else
-        PCPUMCTX pCtx;
-        CPUMQueryGuestCtxPtr(pVM, &pCtx);
-        RTGCPTR eip = pCtx->rip + pCtx->csHid.u64Base;
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVM);
+        RTGCPTR  eip = pCtx->rip + pCtx->csHid.u64Base;
 #endif
         for (iBp = 0; iBp < RT_ELEMENTS(pVM->dbgf.s.aBreakpoints); iBp++)
             if (    pVM->dbgf.s.aBreakpoints[iBp].enmType == DBGFBPTYPE_REM

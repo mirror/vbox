@@ -451,14 +451,12 @@ VMMDECL(void) CPUMSetGuestCtxCore(PVM pVM, PCCPUMCTXCORE pCtxCore)
 /**
  * Queries the pointer to the internal CPUMCTX structure
  *
- * @returns VBox status code.
+ * @returns The CPUMCTX pointer.
  * @param   pVM         Handle to the virtual machine.
- * @param   ppCtx       Receives the CPUMCTX pointer when successful.
  */
-VMMDECL(int) CPUMQueryGuestCtxPtr(PVM pVM, PCPUMCTX *ppCtx)
+VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVM pVM)
 {
-    *ppCtx = &pVM->cpum.s.Guest;
-    return VINF_SUCCESS;
+    return &pVM->cpum.s.Guest;
 }
 
 

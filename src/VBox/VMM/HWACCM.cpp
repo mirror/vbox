@@ -796,7 +796,7 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMOD
         {
             PCPUMCTX pCtx;
 
-            CPUMQueryGuestCtxPtr(pVM, &pCtx);
+            pCtx = CPUMQueryGuestCtxPtr(pVM);
 
             /* After a real mode switch to protected mode we must force
              * CPL to 0. Our real mode emulation had to set it to 3.

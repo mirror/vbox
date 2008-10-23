@@ -418,7 +418,6 @@ VMMR3DECL(void) PATMR3Relocate(PVM pVM)
     if (delta)
     {
         PCPUMCTX pCtx;
-        int      rc;
 
         /* Update CPUMCTX guest context pointer. */
         pVM->patm.s.pCPUMCtxGC   += delta;
@@ -427,8 +426,7 @@ VMMR3DECL(void) PATMR3Relocate(PVM pVM)
 
         RTAvloU32DoWithAll(&pVM->patm.s.PatchLookupTreeHC->PatchTree, true, RelocatePatches, (void *)pVM);
 
-        rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-        AssertRC(rc);
+        pCtx = CPUMQueryGuestCtxPtr(pVM);
 
         /* If we are running patch code right now, then also adjust EIP. */
         if (PATMIsPatchGCAddr(pVM, pCtx->eip))
@@ -3992,7 +3990,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         return VERR_PATCHING_REFUSED;
 
     /* Make sure the code selector is wide open; otherwise refuse. */
-    CPUMQueryGuestCtxPtr(pVM, &pCtx);
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
     if (CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx)) == 0)
     {
         RTRCPTR pInstrGCFlat = SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pInstrGC);
@@ -6182,10 +6180,8 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         {
             RTRCPTR retaddr;
             PCPUMCTX pCtx;
-            int      rc;
 
-            rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-            AssertRC(rc);
+            pCtx = CPUMQueryGuestCtxPtr(pVM);
 
             rc = PGMPhysSimpleReadGCPtr(pVM, &retaddr, pCtx->esp, sizeof(retaddr));
             AssertRC(rc);

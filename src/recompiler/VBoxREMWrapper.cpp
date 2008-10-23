@@ -494,8 +494,7 @@ static const REMPARMDESC g_aArgsCPUMSetChangedFlags[] =
 
 static const REMPARMDESC g_aArgsCPUMQueryGuestCtxPtr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTX *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL }
 };
 static const REMPARMDESC g_aArgsCSAMR3MonitorPage[] =
 {
@@ -1057,7 +1056,7 @@ static REMFNDESC g_aVMMImports[] =
     { "CPUMGetGuestESP",                        (void *)(uintptr_t)&CPUMGetGuestESP,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(uint32_t),   NULL },
     { "CPUMGetGuestCS",                         (void *)(uintptr_t)&CPUMGetGuestCS,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(RTSEL),      NULL },
     { "CPUMGetGuestSS",                         (void *)(uintptr_t)&CPUMGetGuestSS,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(RTSEL),      NULL },
-    { "CPUMQueryGuestCtxPtr",                   (void *)(uintptr_t)&CPUMQueryGuestCtxPtr,           &g_aArgsCPUMQueryGuestCtxPtr[0],            RT_ELEMENTS(g_aArgsCPUMQueryGuestCtxPtr),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "CPUMQueryGuestCtxPtr",                   (void *)(uintptr_t)&CPUMQueryGuestCtxPtr,           &g_aArgsCPUMQueryGuestCtxPtr[0],            RT_ELEMENTS(g_aArgsCPUMQueryGuestCtxPtr),              REMFNDESC_FLAGS_RET_INT,    sizeof(PCPUMCTX),   NULL },
     { "CSAMR3MonitorPage",                      (void *)(uintptr_t)&CSAMR3MonitorPage,              &g_aArgsCSAMR3MonitorPage[0],               RT_ELEMENTS(g_aArgsCSAMR3MonitorPage),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "CSAMR3UnmonitorPage",                    (void *)(uintptr_t)&CSAMR3UnmonitorPage,            &g_aArgsCSAMR3UnmonitorPage[0],             RT_ELEMENTS(g_aArgsCSAMR3UnmonitorPage),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "CSAMR3RecordCallAddress",                (void *)(uintptr_t)&CSAMR3RecordCallAddress,        &g_aArgsCSAMR3RecordCallAddress[0],         RT_ELEMENTS(g_aArgsCSAMR3RecordCallAddress),           REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },

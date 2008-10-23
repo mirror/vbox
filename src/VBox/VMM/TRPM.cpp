@@ -1342,8 +1342,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
     PCPUMCTX pCtx;
     int      rc;
 
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    AssertRC(rc);
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
     Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
     Assert(!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
 
