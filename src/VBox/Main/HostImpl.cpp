@@ -660,7 +660,7 @@ static bool vboxSolarisSortNICList(const ComObjPtr <HostNetworkInterface> Iface1
     Bstr Iface2Str;
     (*Iface2).COMGETTER(Name) (Iface2Str.asOutParam());
 
-    return Iface1Str < Iface2Str;    
+    return Iface1Str < Iface2Str;
 }
 
 static bool vboxSolarisSameNIC(const ComObjPtr <HostNetworkInterface> Iface1, const ComObjPtr <HostNetworkInterface> Iface2)
@@ -1255,8 +1255,14 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
     Assert(hr == S_OK);
     if(hr == S_OK)
     {
-        /* for now we just get all miniports the MS_TCPIP protocol binds to */
+#ifdef VBOX_NETFLT_ONDEMAND_BIND
+        /* for the protocol-based approach for now we just get all miniports the MS_TCPIP protocol binds to */
         hr = pNc->FindComponent(L"MS_TCPIP", &pTcpIpNcc);
+#else
+        /* for the filter-based approach we get all miniports our filter (sun_VBoxNetFlt)is bound to */
+        hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
+#endif
+
         Assert(hr == S_OK);
         if(hr == S_OK)
         {
