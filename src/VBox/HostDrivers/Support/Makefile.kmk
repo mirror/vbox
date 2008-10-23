@@ -396,6 +396,8 @@ endif
 #ifdef VBOX_WITH_NETFLT
 #vboxdrv_DEFS         += VBOX_WITH_NETFLT
 #endif
+vboxdrv_DEFS         += VBOX_SVN_REV=$(VBOX_SVN_REV)
+vboxdrv_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
