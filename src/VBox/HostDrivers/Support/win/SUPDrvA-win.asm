@@ -160,6 +160,7 @@ NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, RTLogLoggerExV
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTLogPrintfV
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, AssertMsg1
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, AssertMsg2             - can't wrap this buster.
+NtWrapDyn2DrvFunctionWithAllRegParams   supdrvNtWrap, RTPowerSignalEvent
 
 
 ;;
@@ -288,7 +289,6 @@ BEGINPROC supdrvNtWrapModuleTerm
         NtWrapDestroyMarker
         NtWrapEpilog supdrvNtWrapModuleTerm
 ENDPROC   supdrvNtWrapModuleTerm
-
 
 
  %endif ; RT_ARCH_AMD64

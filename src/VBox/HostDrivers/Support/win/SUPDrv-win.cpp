@@ -82,6 +82,10 @@ static VOID     _stdcall   VBoxPowerDispatchCallback(PVOID pCallbackContext, PVO
 static NTSTATUS _stdcall   VBoxDrvNtNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS            VBoxDrvNtErr2NtStatus(int rc);
 
+/*******************************************************************************
+*   External Functions                                                         *
+*******************************************************************************/
+DECLASM(int)   UNWIND_WRAP(RTPowerSignalEvent)(RTPOWEREVENT enmEvent);
 
 /*******************************************************************************
 *   Exported Functions                                                         *
@@ -541,7 +545,7 @@ VOID _stdcall VBoxPowerDispatchCallback(PVOID pCallbackContext, PVOID pArgument1
             dprintf(("VBoxPowerDispatchCallback: resumed!\n"));
 
         /* Inform any clients that have registered themselves with IPRT. */
-        RTPowerSignalEvent(((unsigned)pArgument2 == 0) ? RTPOWEREVENT_SUSPEND : RTPOWEREVENT_RESUME);
+        UNWIND_WRAP(RTPowerSignalEvent)(((unsigned)pArgument2 == 0) ? RTPOWEREVENT_SUSPEND : RTPOWEREVENT_RESUME);
     }
 }
 
