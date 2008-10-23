@@ -398,7 +398,7 @@ VirtualBox_BLDDIRS += $(PATH_VirtualBox)/ui
 VirtualBox_SOURCES += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp
 VirtualBox_CLEAN   += $(PATH_VirtualBox)/ui/vbox_image_collection.cpp $(PATH_VirtualBox)/ui/vbox_image_collection.txt
 
-$$(PATH_VirtualBox)/ui/vbox_image_collection.txt: $(PATH_SUB_CURRENT)/VBoxUI.pro $(VirtualBox_QT_IMAGES) | $$(dir $$@)
+$$(PATH_VirtualBox)/ui/vbox_image_collection.txt: $(PATH_SUB_CURRENT)/VBoxUI.pro $$(VirtualBox_QT_IMAGES) | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) -v $@ VirtualBox_QT_IMAGES
 

@@ -1533,6 +1533,7 @@ IPRT_DOXYFILE_INPUT := \
 
 
 IPRT_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/iprt
+BLDDIRS += $(IPRT_DOXYFILE_OUTPUT)
 
 includedep $(IPRT_OUT_DIR)/Doxyfile.iprt.dep
 
@@ -1558,12 +1559,8 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
 	@$(APPEND) $@.dep "DOXYGEN_OUTPUT_PREV = $(IPRT_DOXYFILE_OUTPUT)"
 	@$(APPEND) $@.dep "DOXYGEN_INPUT_PREV = $(IPRT_DOXYFILE_INPUT)"
 
-# Create the output directory.
-$(call DIRDEP, $(IPRT_DOXYFILE_OUTPUT)):
-	$(MKDIR) -p $@
-
 # Do the actual job.
-$(IPRT_OUT_DIR)/docs.iprt: $(IPRT_OUT_DIR)/Doxyfile.iprt $(IPRT_DOXYFILE_INPUT) | $(call DIRDEP, $(IPRT_DOXYFILE_OUTPUT))
+$(IPRT_OUT_DIR)/docs.iprt: $(IPRT_OUT_DIR)/Doxyfile.iprt $$(IPRT_DOXYFILE_INPUT) | $(IPRT_DOXYFILE_OUTPUT)/
 	$(RM) -f $(wildcard $(IPRT_DOXYFILE_OUTPUT)/html/*) $(IPRT_OUT_DIR)/docs.iprt
 	doxygen $(IPRT_OUT_DIR)/Doxyfile.iprt
 	$(APPEND) $(IPRT_OUT_DIR)/docs.iprt
