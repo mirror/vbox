@@ -291,7 +291,6 @@ VBOX_WITH_TESTCASES = 1
 #VBOX_WITHOUT_COM = 1
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
-# @todo disabled this for now, as it causes problem with old external xpcom components.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_XPCOM_NAMESPACE_CLEANUP = 1
 endif
@@ -632,7 +631,7 @@ endif
 #
 # VBOX_WITHOUT_HARDENING is for developers (put in LocalConfig.kmk).
 # Note that this is a bit rough since hardening governs more than one
-# variable...  Also note that we allow VBOX_WITH_HARDENING=1 on the 
+# variable...  Also note that we allow VBOX_WITH_HARDENING=1 on the
 # command line to overrule VBOX_WITHOUT_HARDENING (the check below).
 #
 ifdef VBOX_WITHOUT_HARDENING
