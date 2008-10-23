@@ -2641,7 +2641,7 @@ DECLINLINE(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u12
  * @param   ppv    Pointer to the pointer variable to update.
  * @param   pv     The pointer value to assign to *ppv.
  */
-DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, void *pv)
+DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, const void *pv)
 {
 #if ARCH_BITS == 32
     return (void *)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
@@ -2664,7 +2664,7 @@ DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, void *pv)
  */
 #define ASMAtomicXchgHandle(ph, hNew, phRes) \
     do { \
-        *(void **)(phRes) = ASMAtomicXchgPtr((void * volatile *)(ph), (void *)(hNew)); \
+        *(void **)(phRes) = ASMAtomicXchgPtr((void * volatile *)(ph), (const void *)(hNew)); \
         AssertCompile(sizeof(*ph) == sizeof(void *)); \
         AssertCompile(sizeof(*phRes) == sizeof(void *)); \
     } while (0)
@@ -2905,7 +2905,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
  * @param   pvNew       The new value to assigned to *ppv.
  * @param   pvOld       The old value to *ppv compare with.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, void *pvNew, void *pvOld)
+DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, const void *pvNew, const void *pvOld)
 {
 #if ARCH_BITS == 32
     return ASMAtomicCmpXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
@@ -3219,7 +3219,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  * @param   pvOld       The old value to *ppv compare with.
  * @param   ppvOld      Pointer store the old value at.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgExPtr(void * volatile *ppv, void *pvNew, void *pvOld, void **ppvOld)
+DECLINLINE(bool) ASMAtomicCmpXchgExPtr(void * volatile *ppv, const void *pvNew, const void *pvOld, void **ppvOld)
 {
 #if ARCH_BITS == 32
     return ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld, (uint32_t *)ppvOld);
@@ -4235,7 +4235,7 @@ DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
  * @param   ppv     Pointer to the pointer variable.
  * @param   pv      The pointer value to assigne to *ppv.
  */
-DECLINLINE(void) ASMAtomicWritePtr(void * volatile *ppv, void *pv)
+DECLINLINE(void) ASMAtomicWritePtr(void * volatile *ppv, const void *pv)
 {
 #if ARCH_BITS == 32
     ASMAtomicWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
@@ -4254,7 +4254,7 @@ DECLINLINE(void) ASMAtomicWritePtr(void * volatile *ppv, void *pv)
  * @param   ppv     Pointer to the pointer variable.
  * @param   pv      The pointer value to assigne to *ppv.
  */
-DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, void *pv)
+DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, const void *pv)
 {
 #if ARCH_BITS == 32
     ASMAtomicUoWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
@@ -4276,7 +4276,7 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, void *pv)
  */
 #define ASMAtomicWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicWritePtr((void * volatile *)(ph), (void *)hNew); \
+        ASMAtomicWritePtr((void * volatile *)(ph), (const void *)hNew); \
         AssertCompile(sizeof(*ph) == sizeof(void*)); \
     } while (0)
 
@@ -4291,7 +4291,7 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, void *pv)
  */
 #define ASMAtomicUoWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicUoWritePtr((void * volatile *)(ph), (void *)hNew); \
+        ASMAtomicUoWritePtr((void * volatile *)(ph), (const void *)hNew); \
         AssertCompile(sizeof(*ph) == sizeof(void*)); \
     } while (0)
 
