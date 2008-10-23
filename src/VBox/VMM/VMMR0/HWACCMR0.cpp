@@ -42,6 +42,7 @@
 #include <iprt/string.h>
 #include <iprt/memobj.h>
 #include <iprt/cpuset.h>
+#include <iprt/power.h>
 #include "HWVMXR0.h"
 #include "HWSVMR0.h"
 
@@ -52,6 +53,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
 static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static              int   hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu);
+static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -378,6 +380,9 @@ VMMR0DECL(int) HWACCMR0Init(void)
         HWACCMR0Globals.pfnSetupVM          = SVMR0SetupVM;
     }
 
+    rc = RTPowerNotificationRegister(hwaccmR0PowerCallback, 0);
+    Assert(RT_SUCCESS(rc));
+
     return VINF_SUCCESS;
 }
 
@@ -419,9 +424,13 @@ static int hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pid
 VMMR0DECL(int) HWACCMR0Term(void)
 {
     int aRc[RTCPUSET_MAX_CPUS];
+    int rc;
+
+    rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, 0);
+    Assert(RT_SUCCESS(rc));
 
     memset(aRc, 0, sizeof(aRc));
-    int rc = RTMpOnAll(HWACCMR0DisableCPU, aRc, NULL);
+    rc = RTMpOnAll(HWACCMR0DisableCPU, aRc, NULL);
     Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
 
     /* Free the per-cpu pages used for VT-x and AMD-V */
@@ -577,15 +586,15 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
  */
 static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    PVM             pVM = (PVM)pvUser1;
+    PVM             pVM = (PVM)pvUser1;     /* can be NULL! */
     int            *paRc = (int *)pvUser2;
     void           *pvPageCpu;
     RTHCPHYS        pPageCpuPhys;
     PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
-    Assert(pVM);
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
+    Assert(!pCpu->fConfigured);
 
     pCpu->idCpu     = idCpu;
 
@@ -638,13 +647,67 @@ static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void 
     pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
-    paRc[idCpu] = HWACCMR0Globals.pfnDisableCpu(pCpu, pvPageCpu, pPageCpuPhys);
-    AssertRC(paRc[idCpu]);
-    HWACCMR0Globals.aCpuInfo[idCpu].fConfigured = false;
+    if (pCpu->fConfigured)
+    {
+        paRc[idCpu] = HWACCMR0Globals.pfnDisableCpu(pCpu, pvPageCpu, pPageCpuPhys);
+        AssertRC(paRc[idCpu]);
+        pCpu->fConfigured = false;
+    }
+    else
+        paRc[idCpu] = VINF_SUCCESS; /* nothing to do */
 
     pCpu->uCurrentASID = 0;
-
     return;
+}
+
+/**
+ * Called whenever a system power state change occurs.
+ *
+ * @param   enmEvent        Power event
+ * @param   pvUser          User argument
+ */
+static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
+{
+    NOREF(pvUser);
+
+#ifdef LOG_ENABLED
+    if (enmEvent == RTPOWEREVENT_SUSPEND)
+        SUPR0Printf("hwaccmR0PowerCallback RTPOWEREVENT_SUSPEND\n");
+    else
+        SUPR0Printf("hwaccmR0PowerCallback RTPOWEREVENT_RESUME\n");
+#endif
+
+    if (HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED)
+    {
+        int     aRc[RTCPUSET_MAX_CPUS];
+        int     rc;
+        RTCPUID idCpu;
+
+        memset(aRc, 0, sizeof(aRc));
+        if (enmEvent == RTPOWEREVENT_SUSPEND)
+        {
+            /* Turn off VT-x or AMD-V on all CPUs. */
+            rc = RTMpOnAll(HWACCMR0DisableCPU, aRc, NULL);
+            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+        }
+        else
+        {
+            /* Reinit the CPUs from scratch as the suspend state has messed with the MSRs. */
+            rc = RTMpOnAll(HWACCMR0InitCPU, (void *)((HWACCMR0Globals.vmx.fSupported) ? X86_CPUID_VENDOR_INTEL_EBX : X86_CPUID_VENDOR_AMD_EBX), aRc);
+            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+
+            if (VBOX_SUCCESS(rc))
+                rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
+#ifdef LOG_ENABLED
+            if (VBOX_FAILURE(rc))
+                SUPR0Printf("hwaccmR0PowerCallback HWACCMR0InitCPU failed with %d\n", rc);
+#endif
+
+            /* Turn VT-x or AMD-V back on on all CPUs. */
+            rc = RTMpOnAll(HWACCMR0EnableCPU, NULL, aRc);
+            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+        }
+    }
 }
 
 
