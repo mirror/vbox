@@ -76,7 +76,7 @@ static struct
     DECLR0CALLBACKMEMBER(int, pfnSetupVM, (PVM pVM));
 
     /** Maximum ASID allowed. */
-    uint32_t                  uMaxASID;
+    uint32_t                        uMaxASID;
 
     struct
     {
@@ -127,9 +127,9 @@ static struct
         uint32_t                    u32AMDFeatureEDX;
     } cpuid;
 
-    HWACCMSTATE     enmHwAccmState;
+    HWACCMSTATE                     enmHwAccmState;
 
-    bool            fSuspended;
+    volatile        bool            fSuspended;
 } HWACCMR0Globals;
 
 
@@ -529,7 +529,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
     Assert(sizeof(HWACCMR0Globals.enmHwAccmState) == sizeof(uint32_t));
 
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
-    if (HWACCMR0Globals.fSuspended)
+    if (ASMAtomicReadBool(&HWACCMR0Globals.fSuspended))
         return VERR_HWACCM_SUSPEND_PENDING;
 
     if (ASMAtomicCmpXchgU32((volatile uint32_t *)&HWACCMR0Globals.enmHwAccmState, enmNewHwAccmState, HWACCMSTATE_UNINITIALIZED))
@@ -685,7 +685,7 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
 #endif
 
     if (enmEvent == RTPOWEREVENT_SUSPEND)
-        HWACCMR0Globals.fSuspended = true;
+        ASMAtomicWriteBool(&HWACCMR0Globals.fSuspended, true);
 
     if (HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED)
     {
@@ -719,7 +719,7 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
         }
     }
     if (enmEvent == RTPOWEREVENT_RESUME)
-        HWACCMR0Globals.fSuspended = false;
+        ASMAtomicWriteBool(&HWACCMR0Globals.fSuspended, false);
 }
 
 
@@ -741,7 +741,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 #endif
 
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
-    if (HWACCMR0Globals.fSuspended)
+    if (ASMAtomicReadBool(&HWACCMR0Globals.fSuspended))
         return VERR_HWACCM_SUSPEND_PENDING;
 
     pVM->hwaccm.s.vmx.fSupported            = HWACCMR0Globals.vmx.fSupported;
@@ -799,7 +799,7 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
 #endif
 
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
-    AssertReturn(!HWACCMR0Globals.fSuspended, VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
     /* Terminate a VT-x or AMD-V VM. */
     return HWACCMR0Globals.pfnTermVM(pVM);
@@ -817,7 +817,7 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
-    AssertReturn(!HWACCMR0Globals.fSuspended, VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
 #ifdef LOG_ENABLED
     SUPR0Printf("HWACCMR0SetupVM: %p\n", pVM);
@@ -841,11 +841,9 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM)
     RTCPUID  idCpu = RTMpCpuId();
 
     /* Make sure we can't enter a session after we've disabled hwaccm in preparation of a suspend. */
-    AssertReturn(!HWACCMR0Globals.fSuspended, VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    if (VBOX_FAILURE(rc))
-        return rc;
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
 
     /* Always load the guest's FPU/XMM state on-demand. */
     CPUMDeactivateGuestFPUState(pVM);
@@ -893,11 +891,9 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM)
     CPUMCTX *pCtx;
     int      rc;
 
-    AssertReturn(!HWACCMR0Globals.fSuspended, VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    if (VBOX_FAILURE(rc))
-        return rc;
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
 
     /* Note:  It's rather tricky with longjmps done by e.g. Log statements or the page fault handler.
      *        We must restore the host FPU here to make absolutely sure we don't leave the guest FPU state active
@@ -938,11 +934,9 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
 
     Assert(!VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
     Assert(HWACCMR0Globals.aCpuInfo[idCpu].fConfigured);
-    AssertReturn(!HWACCMR0Globals.fSuspended, VERR_HWACCM_SUSPEND_PENDING);
+    AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    if (VBOX_FAILURE(rc))
-        return rc;
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
 
     return HWACCMR0Globals.pfnRunGuestCode(pVM, pCtx);
 }
@@ -954,7 +948,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
  */
 VMMR0DECL(bool) HWACCMR0SuspendPending()
 {
-    return HWACCMR0Globals.fSuspended;
+    return ASMAtomicReadBool(&HWACCMR0Globals.fSuspended);
 }
 
 /**

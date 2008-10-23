@@ -531,7 +531,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
 
             CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
-            CPUMQueryGuestCtxPtr(pVM, &pGuestCtx);
+            pGuestCtx = CPUMQueryGuestCtxPtr(pVM);
 
             /* Copy the hypervisor context to make sure we have a valid guest context. */
             *pGuestCtx = *pHyperCtx;

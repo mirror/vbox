@@ -2540,12 +2540,11 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     uint32_t u32Dummy, u32Features, cpl;
     uint64_t val;
     CPUMCTX *pCtx;
-    int      rc;
+    int      rc = VINF_SUCCESS;
 
     /** @todo According to the Intel manuals, there's a REX version of RDMSR that is slightly different.
      *  That version clears the high dwords of both RDX & RAX */
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    AssertRC(rc);
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
 
     /* Get the current privilege level. */
     cpl = CPUMGetGuestCPL(pVM, pRegFrame);
@@ -2668,11 +2667,9 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     uint32_t u32Dummy, u32Features, cpl;
     uint64_t val;
     CPUMCTX *pCtx;
-    int      rc;
 
     /* Note: works the same in 32 and 64 bits modes. */
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    AssertRC(rc);
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
 
     /* Get the current privilege level. */
     cpl = CPUMGetGuestCPL(pVM, pRegFrame);
@@ -2688,9 +2685,11 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     switch (pRegFrame->ecx)
     {
     case MSR_IA32_APICBASE:
-        rc = PDMApicSetBase(pVM, val);
+    {
+        int rc = PDMApicSetBase(pVM, val);
         AssertRC(rc);
         break;
+    }
 
     case MSR_IA32_CR_PAT:
         pCtx->msrPAT = val;

@@ -2404,8 +2404,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                                                        0x2B,       /* OpenBSD 4.0 installation ISO */
                                                        0x2F};      /* OpenBSD 4.0 after install */
 
-                rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-                AssertRC(rc);   /* can't fail */
+                pCtx = CPUMQueryGuestCtxPtr(pVM);
 
                 for (unsigned i=0;i<RT_ELEMENTS(aOpenBsdPushCSOffset);i++)
                 {

@@ -889,7 +889,7 @@ VMMDECL(int)            CPUMRecalcHyperDRx(PVM pVM);
 
 VMMDECL(void)           CPUMPushHyper(PVM pVM, uint32_t u32);
 VMMDECL(void)           CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
-VMMDECL(int)            CPUMQueryGuestCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
+VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVM pVM);
 VMMDECL(int)            CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVM pVM);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetHyperCtxCore(PVM pVM);

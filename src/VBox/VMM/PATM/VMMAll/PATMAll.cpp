@@ -70,13 +70,10 @@ VMMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
 #ifdef IN_RING3
 #ifdef PATM_EMULATE_SYSENTER
     PCPUMCTX pCtx;
-    int      rc;
 
     /* Check if the sysenter handler has changed. */
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    AssertRC(rc);
-    if (   rc == VINF_SUCCESS
-        && pCtx->SysEnter.cs  != 0
+    pCtx = CPUMQueryGuestCtxPtr(pVM);
+    if (   pCtx->SysEnter.cs  != 0
         && pCtx->SysEnter.eip != 0
        )
     {
@@ -300,11 +297,7 @@ VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
  */
 VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
 {
-    PCPUMCTX pCtx = 0;
-    int      rc;
-
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    AssertRC(rc);
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVM);
 
     return PATMAreInterruptsEnabledByCtxCore(pVM, CPUMCTX2CORE(pCtx));
 }
@@ -388,11 +381,7 @@ VMMDECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint
  */
 VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-    PCPUMCTX pCtx;
-    int      rc;
-
-    rc = CPUMQueryGuestCtxPtr(pVM, &pCtx);
-    AssertRCReturn(rc, VINF_EM_RAW_RING_SWITCH);
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVM);
 
     if (pCpu->pCurInstr->opcode == OP_SYSENTER)
     {
