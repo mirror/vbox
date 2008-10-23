@@ -24,6 +24,7 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include "helpers.h"
 #include <iprt/asm.h>
+#include <strsafe.h>
 
 typedef struct _VBOXCLIPBOARDCONTEXT
 {
@@ -81,7 +82,7 @@ static int vboxClipboardConnect (VBOXCLIPBOARDCONTEXT *pCtx)
 
     info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
 
-    strcpy (info.Loc.u.host.achName, "VBoxSharedClipboard");
+    memcpy (info.Loc.u.host.achName, "VBoxSharedClipboard", sizeof ("VBoxSharedClipboard"));
 
     DWORD cbReturned;
 
@@ -419,10 +420,10 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                             if (cb == 0)
                             {
                                 /* 0 bytes returned means the clipboard is empty.
-                                 * Deallocate the memory and set hMe to NULL to get to
+                                 * Deallocate the memory and set hMem to NULL to get to
                                  * the clipboard empty code path.
                                  */
-                                GlobalUnlock (pMem);
+                                GlobalUnlock (hMem);
                                 GlobalFree (hMem);
                                 hMem = NULL;
                             }
@@ -452,7 +453,7 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                                         }
                                         else
                                         {
-                                            GlobalUnlock (pMem);
+                                            GlobalUnlock (hMem);
                                             GlobalFree (hMem);
                                             hMem = NULL;
                                         }
@@ -468,12 +469,32 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
                             if (hMem)
                             {
                                 /* pMem is the address of the data. cb is the size of returned data. */
-                                /* Verify the size of returned text. */
+                                /* Verify the size of returned text, the memory block for clipboard
+                                 * must have the exact string size.
+                                 */
                                 if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
                                 {
-                                    cb = (lstrlenW((LPWSTR)pMem) + 1) * 2;
+                                    size_t cbActual = 0;
+                                    HRESULT hrc = StringCbLengthW ((LPWSTR)pMem, cb, &cbActual);
+                                    if (FAILED (hrc))
+                                    {
+                                        /* Discard invalid data. */
+                                        GlobalUnlock (hMem);
+                                        GlobalFree (hMem);
+                                        hMem = NULL;
+                                    }
+                                    else
+                                    {
+                                        /* cbActual is the number of bytes, excluding those used
+                                         * for the terminating null character.
+                                         */
+                                        cb = (uint32_t)(cbActual + 1);
+                                    }
                                 }
+                            }
                                 
+                            if (hMem)
+                            {
                                 GlobalUnlock (hMem);
                                 
                                 hMem = GlobalReAlloc (hMem, cb, 0);
