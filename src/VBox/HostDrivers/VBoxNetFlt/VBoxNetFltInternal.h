@@ -172,6 +172,8 @@ typedef struct VBOXNETFLTINS
             /** pointer to the filter driver device context */
             PADAPT volatile pIfAdaptor;
 #  endif
+            /** The MAC address of the interface. Caching MAC for performance reasons */
+            RTMAC Mac;
 # else
 #  error "PORTME"
 # endif
