@@ -119,12 +119,13 @@ VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM);
 /** @addtogroup grp_hwaccm_r0
  * @{
  */
-VMMR0DECL(int)  HWACCMR0SetupVM(PVM pVM);
-VMMR0DECL(int)  HWACCMR0RunGuestCode(PVM pVM);
-VMMR0DECL(int)  HWACCMR0Enter(PVM pVM);
-VMMR0DECL(int)  HWACCMR0Leave(PVM pVM);
-VMMR0DECL(int)  HWACCMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
-VMMR0DECL(int)  HWACCMR0FlushTLB(PVM pVM);
+VMMR0DECL(int)   HWACCMR0SetupVM(PVM pVM);
+VMMR0DECL(int)   HWACCMR0RunGuestCode(PVM pVM);
+VMMR0DECL(int)   HWACCMR0Enter(PVM pVM);
+VMMR0DECL(int)   HWACCMR0Leave(PVM pVM);
+VMMR0DECL(int)   HWACCMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
+VMMR0DECL(int)   HWACCMR0FlushTLB(PVM pVM);
+VMMR0DECL(bool)  HWACCMR0SuspendPending();
 /** @} */
 #endif /* IN_RING0 */
 
