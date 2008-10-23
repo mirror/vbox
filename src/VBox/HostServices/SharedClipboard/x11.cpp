@@ -339,7 +339,8 @@ static void vboxClipboardGetCText(XtPointer pValue, unsigned cbSrcLen, void *pv,
     PRTUTF16 pu16SrcText = NULL;
     PRTUTF16 pu16DestText = reinterpret_cast<PRTUTF16>(pv);
     XTextProperty property;
-    int rc, cProps;
+    int rc = VINF_SUCCESS;
+    int cProps;
 
     LogFlowFunc (("converting COMPOUND TEXT to Utf-16LE.  cbSrcLen=%d, cb=%d, pu8SrcText=%.*s\n",
                    cbSrcLen, cb, cbSrcLen, reinterpret_cast<char *>(pValue)));
