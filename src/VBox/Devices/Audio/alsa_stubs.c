@@ -159,7 +159,7 @@ static SHARED_FUNC SharedFuncs[] =
 int audioLoadAlsaLib(void)
 {
     int rc = VINF_SUCCESS;
-    int i;
+    unsigned i;
     static enum { NO = 0, YES, FAIL } isLibLoaded = NO;
     RTLDRMOD hLib;
 
