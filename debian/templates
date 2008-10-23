@@ -1,61 +1,96 @@
-Template: virtualbox-ose/group-vboxusers
+Template: virtualbox/group-vboxusers
 Type: note
 Description: Creating group 'vboxusers'
- Users of VirtualBox must be member of that group in order to have write
- permissions to /dev/vboxdrv. Otherwise starting of VMs will not be possible.
+ Users of VirtualBox must be members of that group. Host network interfaces
+ will be assigned to that group.
+Description-de.UTF-8: Erzeuge Gruppe 'vboxusers'
+ Nutzer von VirtualBox müssen Mitglied dieser Gruppe sein. Hostinterfaces
+ werden dieser Gruppe zugewiesen.
 
-Template: virtualbox-ose/module-compilation-failed
+Template: virtualbox/module-compilation-failed
 Type: note
 Description: Compilation of the kernel module FAILED!
  VirtualBox will not start until this problem is fixed. Please consult
  /var/log/vbox-install.log to find out why the kernel module does not compile.
- Most probably the kernel sources were not found. Install them and execute
+ Most probably the kernel sources were not found. Install them (the package
+ name is probably linux-headers-<version> whereby <version> can be determined
+ by 'uname -r') and execute
    
    /etc/init.d/vboxdrv setup
    
  as root.
+Description-de.UTF-8: Konnte das Kernmodul nicht compilieren!
+ Sie können keine virtuelle Maschine starten, solange dieses Problem nicht
+ behoben ist. Bitte lesen Sie die Datei /var/log/vbox-install.log um die
+ Ursache herauszufinden. Wahrscheinlich konnten die Quellen für den aktiven
+ Linux-Kern nicht gefunden werden. Installieren Sie das entsprechende
+ Paket (möglicherweise linux-headers-<version> wobei Sie <version> mit
+ 'uname -r' herausfinden können) und führen Sie danach
+   
+   /etc/init.d/vboxdrv setup
+   
+ mit Root-Rechten aus.
 
-Template: virtualbox-ose/module-compilation-allowed
+Template: virtualbox/module-compilation-allowed
 Type: boolean
 Default: true
 Description: Should the vboxdrv kernel module be compiled now?
  Unable to find a precompiled module for the current kernel!
  .
- Without a suitable kernel module you will never be able to start VMs. It is
+ Without a suitable kernel module you will not be able to start any VMs. It is
  strongly recommended to compile a kernel module now. The kernel headers and
  the tools to build kernel modules (gcc, make, binutils, ...) are required.
- However, in case a suitable kernel module already exists at another place you
- might want to override the default position by setting KDIR=<full_path_to_vboxdrv_module>
- in /etc/default/virtualbox-ose. The compilation can also be done later by executing
+ However if you know that a suitable kernel module already exists at another
+ location, you might want to override the default by setting
+ KDIR=<full_path_to_vboxdrv_module> in /etc/default/virtualbox. The
+ compilation can also be done later by executing
    
    /etc/init.d/vboxdrv setup
    
  as root.
-
-Template: virtualbox-ose/delete-old-modules
-Type: boolean
-Default: true
-Description: Delete old modules?
- Old vboxdrv modules found. It is recommended to purge these modules as they might not
- work together with this version of VirtualBox. The module re-compilation can be
- forced later by executing
+Description-de.UTF-8: Soll das Kernmodul jetzt compiliert werden?
+ Es konnte kein Kernmodul für den aktuellen Linux-Kern gefunden werden!
+ .
+ Ohne ein passendes Kernmodul können Sie keine VM starten. Daher sollten Sie
+ jetzt ein Kernmodul compilieren. Dazu werden die Kern-Header und die Programme
+ zum Bauen eines Kernmoduls (gcc, make, binutils, ...) benötigt. Falls Sie
+ bereits ein passendes Kernmodul in ein anderes Verzeichnis installiert haben,
+ können Sie den Verzeichnisnamen durch Hinzufügen von KDIR=<voller_Pfad_zu_vboxdrv>
+ in der Datei /etc/default/virtualbox angeben. Sie können das Kernmodul auch
+ später compilieren, indem Sie
    
    /etc/init.d/vboxdrv setup
    
- as root
+ mit Root-Rechten ausführen.
 
-Template: virtualbox-ose/update_version_change
+Template: virtualbox/delete-old-modules
 Type: boolean
-Default: false
-Description: Proceed with VirtualBox upgrade?
- You are about to update VirtualBox to a new upstream version. Make sure to discard or
- merge all snapshots and saved states before you proceed because VM states are version
- specific.
+Default: true
+Description: Delete old vboxdrv kernel modules?
+ Old vboxdrv kernel modules found. It is recommended to purge these modules as they
+ might interfere with this version of VirtualBox. The module re-compilation
+ can be forced later by executing
+   
+   /etc/init.d/vboxdrv setup
+   
+ as root.
+Description-de.UTF-8: Alte Kernmodule löschen?
+ Es wurden alte vboxdrv-Kernmodule gefunden. Diese sollten gelöscht werden, da sie
+ eventuell nicht mit dieser Version von VirtualBox zusammen arbeiten. Das Compilieren
+ des Kernmoduls können Sie später durch
+   
+   /etc/init.d/vboxdrv setup
+   
+ erzwingen.
 
-Template: virtualbox-ose/old-installation-found
+Template: virtualbox/old-installation-found
 Type: note
 Description: Old installation found
  An old installation of VirtualBox was found. To install this package the old package
  has to be removed first. Have a look at /etc/vbox/vbox.cfg to determine the installation
  directory of the previous installation. After uninstalling the old package remove the file
  /etc/vbox/vbox.cfg.
+Description-de.UTF-8: Alte Version gefunden
+ Es wurde eine alte Version von VirtualBox gefunden. Bitte entfernen Sie die alte Version
+ bevor Sie fortfahren. In der Datei /etc/vbox/vbox.cfg finden Sie das Verzeichnis der alten
+ Version. Nachdem Sie diese entfernt haben, können Sie /etc/vbox/vbox.cfg löschen.

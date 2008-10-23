@@ -28,12 +28,13 @@ export DH_COMPAT=4
 #  HEADLESS=1       build the headless version
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 
-package  := virtualbox-ose
+package  := virtualbox
+verpkg   := virtualbox-ose
 current  := $(shell pwd)
 vboxroot := $(shell pwd)
 builddir := $(current)/debian/builddir
 moddir   := $(current)/debian/modules
-prefix   := $(current)/debian/$(package)
+prefix   := $(current)/debian/$(verpkg)
 arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
 ose      := 1
@@ -65,7 +66,7 @@ endif
 gccver   := $(subst ., ,$(shell gcc -dumpversion))
 gccvmaj  := $(word 1,$(gccver))
 gccvmin  := $(word 2,$(gccver))
-debdocs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/virtualbox\""
+debcfgs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 configure: debian/configure-stamp
@@ -92,7 +93,7 @@ debian/build-stamp $(verfile):
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
-	    $(debdocs) \
+	    $(debcfgs) \
 	    all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual.pdf $(builddir)/bin,)
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox.chm $(builddir)/bin,)
@@ -107,7 +108,7 @@ debian/build-stamp $(verfile):
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
 	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
-	    $(debdocs) \
+	    $(debcfgs) \
 	    packing
 	touch debian/build-stamp
 
@@ -152,7 +153,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -d -g 0 -o 0 $(prefix)/usr/bin
 	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)
 	install -d -g 0 -o 0 $(prefix)/usr/share/$(package)
-	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(package)
+	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(verpkg)
 	$(if $(HEADLESS),,mv $(archdir)/VirtualBox.desktop \
 	   $(prefix)/usr/share/applications/VirtualBox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
@@ -206,7 +207,7 @@ endif
 	dh_desktop
 	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)
-	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g; s|%PACKAGE%|virtualbox-ose|g;' \
+	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g; s|%PACKAGE%|virtualbox|g;' \
 	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
 	    src/VBox/Installer/linux/vboxnet.sh.in > debian/vboxnet.init
@@ -218,7 +219,7 @@ endif
 	dh_installdebconf
 	dh_installchangelogs
 	dh_link
-	dh_strip --keep-debug --exclude=libVBoxQtCore.so.4 --exclude=libVBoxQtGui.so.4
+	dh_strip --keep-debug --exclude=libVBoxQtCore.so.4 --exclude=libVBoxQtGui.so.4 --exclude=libqtaccessiblewidgets.so
 	# manually strip our R0/GC modules, dh_strip cannot handle them
 	for f in \
 	  $(prefix)/usr/lib/$(package)/*.r0 $(prefix)/usr/lib/$(package)/*.gc; do \
@@ -228,8 +229,8 @@ endif
 	    strip -S --remove-section=.comment $$f; \
 	    objcopy --add-gnu-debuglink=$(prefix)/usr/lib/debug/usr/lib/$(package)/`basename $$f` $$f; \
 	done
-	mkdir -p $(current)/debian/$(package)-dbg/usr/lib
-	mv $(current)/debian/$(package)/usr/lib/debug $(current)/debian/$(package)-dbg/usr/lib
+	mkdir -p $(current)/debian/$(verpkg)-dbg/usr/lib
+	mv $(current)/debian/$(verpkg)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
 	dh_compress -X.pdf -X.chm -X LICENSE
 	dh_fixperms
 	dh_makeshlibs

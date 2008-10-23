@@ -74,22 +74,23 @@ if [ "$SHUTDOWN" = "true" ]; then
 fi
 
 APP=`which $0`
+APP=`basename $APP`
 APP=${APP##/*/}
 case "$APP" in
   VirtualBox)
-    exec "/usr/lib/virtualbox-ose/VirtualBox" "$@"
+    exec "/usr/lib/virtualbox/VirtualBox" "$@"
     ;;
   VBoxManage)
-    exec "/usr/lib/virtualbox-ose/VBoxManage" "$@"
+    exec "/usr/lib/virtualbox/VBoxManage" "$@"
     ;;
   VBoxSDL)
-    exec "/usr/lib/virtualbox-ose/VBoxSDL" "$@"
+    exec "/usr/lib/virtualbox/VBoxSDL" "$@"
     ;;
   VBoxVRDP)
-    exec "/usr/lib/virtualbox-ose/VBoxVRDP" "$@"
+    exec "/usr/lib/virtualbox/VBoxHeadless" "$@"
     ;;
   VBoxHeadless)
-    exec "/usr/lib/virtualbox-ose/VBoxHeadless" "$@"
+    exec "/usr/lib/virtualbox/VBoxHeadless" "$@"
     ;;
   *)
     echo "Unknown application - $APP"

@@ -47,29 +47,29 @@ if [ -d /etc/udev/rules.d ]; then
 fi
 
 # create users groups
-db_input high virtualbox-ose/group-vboxusers || true
+db_input high virtualbox/group-vboxusers || true
 db_go || true
 addgroup --system vboxusers
 
 if [ ! -f /lib/modules/`uname -r`/misc/vboxdrv.ko ]; then
-  db_get virtualbox-ose/module-compilation-allowed
+  db_get virtualbox/module-compilation-allowed
   if [ "$RET" = "false" ]; then
     cat << EOF
 Unable to find a precompiled module for the current kernel
 though module compilation denied by debconf setting.
 EOF
   else
-    db_input critical virtualbox-ose/module-compilation-allowed || true
+    db_input critical virtualbox/module-compilation-allowed || true
     db_go || true
-    db_get virtualbox-ose/module-compilation-allowed
+    db_get virtualbox/module-compilation-allowed
     if [ "$RET" = "true" ]; then
       # Compile module. Don't show a message box here if everything works well.
       cat << EOF
 Messages emitted during module compilation will be logged to $LOG.
 EOF
-      if ! /usr/share/virtualbox-ose/src/build_in_tmp install > /var/log/vbox-install.log 2>&1; then
-        db_fset virtualbox-ose/module-compilation-failed seen false
-        db_input critical virtualbox-ose/module-compilation-failed || true
+      if ! /usr/share/virtualbox/src/build_in_tmp install > /var/log/vbox-install.log 2>&1; then
+        db_fset virtualbox/module-compilation-failed seen false
+        db_input critical virtualbox/module-compilation-failed || true
         db_go || true
         touch /etc/vbox/module_not_compiled
         # don't abort the installation!
@@ -91,14 +91,14 @@ fi
 
 # The starters need to be Suid root. They drop the privileges before starting
 # the real frontend.
-if ! dpkg-statoverride --list /usr/lib/virtualbox-ose/VirtualBox > /dev/nnull 2>&1; then
-  chmod 4711 /usr/lib/virtualbox-ose/VirtualBox
+if ! dpkg-statoverride --list /usr/lib/virtualbox/VirtualBox > /dev/nnull 2>&1; then
+  chmod 4711 /usr/lib/virtualbox/VirtualBox
 fi
-if ! dpkg-statoverride --list /usr/lib/virtualbox-ose/VBoxHeadless > /dev/nnull 2>&1; then
-  chmod 4711 /usr/lib/virtualbox-ose/VBoxHeadless
+if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxHeadless > /dev/nnull 2>&1; then
+  chmod 4711 /usr/lib/virtualbox/VBoxHeadless
 fi
-if ! dpkg-statoverride --list /usr/lib/virtualbox-ose/VBoxSDL > /dev/nnull 2>&1; then
-  chmod 4711 /usr/lib/virtualbox-ose/VBoxSDL
+if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxSDL > /dev/nnull 2>&1; then
+  chmod 4711 /usr/lib/virtualbox/VBoxSDL
 fi
 
 #DEBHELPER#
