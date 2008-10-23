@@ -80,24 +80,23 @@ static void VMXR0CheckError(PVM pVM, int rc)
  *
  * @returns VBox status code.
  * @param   pCpu            CPU info struct
- * @param   pVM             The VM to operate on.
+ * @param   pVM             The VM to operate on. (can be NULL after a resume!!)
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
 VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
 {
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
-    AssertReturn(pVM, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
-
-    /* Setup Intel VMX. */
-    Assert(pVM->hwaccm.s.vmx.fSupported);
 
 #ifdef LOG_ENABLED
     SUPR0Printf("VMXR0EnableCpu cpu %d page (%x) %x\n", pCpu->idCpu, pvPageCpu, (uint32_t)pPageCpuPhys);
 #endif
-    /* Set revision dword at the beginning of the VMXON structure. */
-    *(uint32_t *)pvPageCpu = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+    if (pVM)
+    {
+        /* Set revision dword at the beginning of the VMXON structure. */
+        *(uint32_t *)pvPageCpu = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+    }
 
     /** @todo we should unmap the two pages from the virtual address space in order to prevent accidental corruption.
      * (which can have very bad consequences!!!)
@@ -110,7 +109,8 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     int rc = VMXEnable(pPageCpuPhys);
     if (VBOX_FAILURE(rc))
     {
-        VMXR0CheckError(pVM, rc);
+        if (pVM) 
+            VMXR0CheckError(pVM, rc);
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
         return VERR_VMX_VMXON_FAILED;
     }

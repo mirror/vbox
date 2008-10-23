@@ -65,7 +65,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx);
  *
  * @returns VBox status code.
  * @param   pCpu            CPU info struct
- * @param   pVM             The VM to operate on.
+ * @param   pVM             The VM to operate on. (can be NULL after a resume)
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
