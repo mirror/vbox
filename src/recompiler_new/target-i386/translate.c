@@ -828,7 +828,7 @@ static void gen_check_external_event()
 {
     /** @todo: this code is either wrong, or low performing, 
         rewrite flags check in TCG IR */
-    tcg_gen_helper_0_0(helper_check_external_event);
+    //tcg_gen_helper_0_0(helper_check_external_event);
 }
 
 #ifndef VBOX
@@ -2689,6 +2689,13 @@ DECLINLINE(void) gen_op_movl_seg_T0_vm(int seg_reg)
     tcg_gen_shli_tl(cpu_T[0], cpu_T[0], 4);
     tcg_gen_st_tl(cpu_T[0], cpu_env, 
                   offsetof(CPUX86State,segs[seg_reg].base));
+#ifdef VBOX
+    int flags = DESC_P_MASK | DESC_S_MASK | DESC_W_MASK;
+    if (seg_reg == R_CS)
+        flags |= DESC_CS_MASK;
+    gen_op_movl_T0_im(flags);
+    tcg_gen_st32_tl(cpu_T[0], cpu_env, offsetof(CPUX86State,segs[seg_reg].flags));
+#endif
 }
 
 /* move T0 to seg_reg and compute if the CPU state may change. Never
