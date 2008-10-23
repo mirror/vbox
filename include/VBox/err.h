@@ -1247,6 +1247,8 @@
 #define VERR_HWACCM_UNKNOWN_CPU                     (-4100)
 /** No CPUID support. */
 #define VERR_HWACCM_NO_CPUID                        (-4101)
+/** Host is about to go into suspend mode. */
+#define VERR_HWACCM_SUSPEND_PENDING                 (-4102)
 /** @} */
 
 
