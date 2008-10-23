@@ -1400,7 +1400,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
         {
             /* No data available. */
             *pcbActual = 0;
-            return VINF_SUCCESS;
+            return VERR_NO_DATA;  /* The guest thinks we have data and we don't */
         }
         /* Only one of the host and the guest should ever be waiting. */
         if (!ASMAtomicCmpXchgU32(&g_ctx.waiter, 1, 0))
@@ -1412,6 +1412,9 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
         g_ctx.requestBuffer = pv;
         g_ctx.requestBufferSize = cb;
         g_ctx.requestActualSize = pcbActual;
+        /* Initially set the size of the data read to zero in case we fail
+         * somewhere. */
+        *pcbActual = 0;
         /* Send out a request for the data to the current clipboard owner */
         XtGetSelectionValue(g_ctx.widget, g_ctx.atomClipboard, g_ctx.atomHostTextFormat,
                             vboxClipboardGetProc, reinterpret_cast<XtPointer>(g_ctx.pClient),
@@ -1420,9 +1423,11 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
            callback will signal the event semaphore when it has processed the data for us. */
         if (RTSemEventWait(g_ctx.waitForData, CLIPBOARDTIMEOUT) != VINF_SUCCESS)
         {
-            LogRel(("vboxClipboardReadDataFromClient: XtGetSelectionValue failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
-            g_ctx.hostTextFormat = INVALID;
-            g_ctx.hostBitmapFormat = INVALID;
+            /* No need to polute the release log for this. */
+            // LogRel(("vboxClipboardReadDataFromClient: XtGetSelectionValue failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
+            /* A time out can legitimately occur if a client is temporarily too busy to answer fast */
+            // g_ctx.hostTextFormat = INVALID;
+            // g_ctx.hostBitmapFormat = INVALID;
             g_ctx.waiter = 0;
             return VERR_TIMEOUT;
         }
