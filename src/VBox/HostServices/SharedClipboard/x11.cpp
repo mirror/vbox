@@ -205,7 +205,7 @@ static int vboxClipboardReadDataFromClient (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t
     }
 
     /* Only one of the guest and the host should be waiting at any one time */
-    if (RT_FAILURE(ASMAtomicCmpXchgU32(&pCtx->waiter, 1, 0)))
+    if (!ASMAtomicCmpXchgU32(&pCtx->waiter, 1, 0))
     {
         LogRel(("vboxClipboardReadDataFromClient: deadlock situation - the host and the guest are both waiting for data from the other.\n"));
         return VERR_DEADLOCK;
@@ -1403,7 +1403,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
             return VINF_SUCCESS;
         }
         /* Only one of the host and the guest should ever be waiting. */
-        if (RT_FAILURE(ASMAtomicCmpXchgU32(&g_ctx.waiter, 1, 0)))
+        if (!ASMAtomicCmpXchgU32(&g_ctx.waiter, 1, 0))
         {
             LogRel(("vboxClipboardReadData: detected a deadlock situation - the host and the guest are waiting for each other.\n"));
             return VERR_DEADLOCK;
