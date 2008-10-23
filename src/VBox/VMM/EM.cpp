@@ -2377,6 +2377,8 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VERR_VMX_UNEXPECTED_EXCEPTION:
         case VERR_VMX_UNEXPECTED_EXIT_CODE:
         case VERR_VMX_INVALID_GUEST_STATE:
+        case VERR_VMX_UNABLE_TO_START_VM:
+        case VERR_VMX_UNABLE_TO_RESUME_VM:
             HWACCMR3CheckError(pVM, rc);
             break;
         /*

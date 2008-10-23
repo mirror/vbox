@@ -50,11 +50,7 @@ static uint32_t const g_aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
 /*******************************************************************************
 *   Local Functions                                                            *
 *******************************************************************************/
-#ifdef VBOX_STRICT
 static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx);
-#else
-#define VMXR0ReportWorldSwitchError(a, b, c)      do { } while (0);
-#endif /* VBOX_STRICT */
 static void vmxR0SetupTLBEPT(PVM pVM);
 static void vmxR0SetupTLBVPID(PVM pVM);
 static void vmxR0SetupTLBDummy(PVM pVM);
@@ -3112,7 +3108,6 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_STRICT
 /**
  * Report world switch error and dump some useful debug info
  *
@@ -3139,14 +3134,17 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
         {
+            Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
+            Log(("Current stack %08x\n", &rc));
+            
+            pVM->hwaccm.s.vmx.lasterror.ulLastInstrError = instrError;
+            pVM->hwaccm.s.vmx.lasterror.ulLastExitReason = exitReason;
+
+#ifdef VBOX_STRICT
             RTGDTR     gdtr;
             PX86DESCHC pDesc;
 
             ASMGetGDTR(&gdtr);
-
-            Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
-            Log(("Current stack %08x\n", &rc));
-
 
             VMXReadVMCS(VMX_VMCS_GUEST_RIP, &val);
             Log(("Old eip %VGv new %VGv\n", pCtx->rip, (RTGCPTR)val));
@@ -3250,13 +3248,14 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
             VMXReadVMCS(VMX_VMCS_HOST_RIP, &val);
             Log(("VMX_VMCS_HOST_RIP %VHv\n", val));
 
-#if HC_ARCH_BITS == 64
+# if HC_ARCH_BITS == 64
             Log(("MSR_K6_EFER       = %VX64\n", ASMRdMsr(MSR_K6_EFER)));
             Log(("MSR_K6_STAR       = %VX64\n", ASMRdMsr(MSR_K6_STAR)));
             Log(("MSR_K8_LSTAR      = %VX64\n", ASMRdMsr(MSR_K8_LSTAR)));
             Log(("MSR_K8_CSTAR      = %VX64\n", ASMRdMsr(MSR_K8_CSTAR)));
             Log(("MSR_K8_SF_MASK    = %VX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
-#endif
+# endif
+#endif /* VBOX_STRICT */
         }
         break;
     }
@@ -3267,4 +3266,3 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
         break;
     }
 }
-#endif /* VBOX_STRICT */
