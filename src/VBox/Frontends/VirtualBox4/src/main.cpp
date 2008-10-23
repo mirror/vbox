@@ -240,6 +240,9 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             QApplication::setStyle (new QPlastiqueStyle);
 
 #ifdef Q_WS_X11
+        /* This patch is not used for now on Solaris & OpenSolaris because
+         * there is no anti-aliasing enabled by default, Qt4 to be rebuilt. */
+#ifndef Q_OS_SOLARIS
         /* Cause Qt4 has the conflict with fontconfig application as a result
          * sometimes substituting some fonts with non scaleable-anti-aliased
          * bitmap font we are reseting substitutes for the current application
@@ -248,23 +251,27 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
         QString currentFamily (QApplication::font().family());
         bool isCurrentScaleable = fontDataBase.isScalable (currentFamily);
-        printf ("Font: Current family is '%s'. It is %s.\n",
-            currentFamily.toLatin1().constData(),
-            isCurrentScaleable ? "scalable" : "not scalable");
 
+        /*
+        LogFlowFunc (("Font: Current family is '%s'. It is %s.\n",
+            currentFamily.toLatin1().constData(),
+            isCurrentScaleable ? "scalable" : "not scalable"));
         QStringList subFamilies (QFont::substitutes (currentFamily));
         foreach (QString sub, subFamilies)
         {
             bool isSubScalable = fontDataBase.isScalable (sub);
-            printf ("Font: Substitute family is '%s'. It is %s.\n",
+            LogFlowFunc (("Font: Substitute family is '%s'. It is %s.\n",
                 sub.toLatin1().constData(),
-                isSubScalable ? "scalable" : "not scalable");
+                isSubScalable ? "scalable" : "not scalable"));
         }
+        */
 
         QString subFamily (QFont::substitute (currentFamily));
         bool isSubScaleable = fontDataBase.isScalable (subFamily);
+
         if (isCurrentScaleable && !isSubScaleable)
             QFont::removeSubstitution (currentFamily);
+#endif /* Q_OS_SOLARIS */
 #endif
 
 #ifdef Q_WS_WIN
