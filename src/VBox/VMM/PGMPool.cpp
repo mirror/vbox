@@ -25,29 +25,35 @@
  *      -# Relationship between shadow page tables and physical guest pages. This
  *         should allow us to skip most of the global flushes now following access
  *         handler changes. The main expense is flushing shadow pages.
- *      -# Limit the pool size (currently it's kind of limitless IIRC).
- *      -# Allocate shadow pages from GC. Currently we're allocating at SyncCR3 time.
+ *      -# Limit the pool size if necessary (default is kind of limitless).
+ *      -# Allocate shadow pages from RC. We use to only do this in SyncCR3.
  *      -# Required for 64-bit guests.
  *      -# Combining the PD cache and page pool in order to simplify caching.
  *
  *
  * @section sec_pgm_pool_outline    Design Outline
  *
- * The shadow page pool tracks pages used for shadowing paging structures (i.e. page
- * tables, page directory, page directory pointer table and page map level-4). Each
- * page in the pool has an unique identifier. This identifier is used to link a guest
- * physical page to a shadow PT. The identifier is a non-zero value and has a
- * relativly low max value - say 14 bits. This makes it possible to fit it into the
- * upper bits of the of the aHCPhys entries in the ram range.
+ * The shadow page pool tracks pages used for shadowing paging structures (i.e.
+ * page tables, page directory, page directory pointer table and page map
+ * level-4). Each page in the pool has an unique identifier. This identifier is
+ * used to link a guest physical page to a shadow PT. The identifier is a
+ * non-zero value and has a relativly low max value - say 14 bits. This makes it
+ * possible to fit it into the upper bits of the of the aHCPhys entries in the
+ * ram range.
  *
- * By restricting host physical memory to the first 48 bits (which is the announced
- * physical memory range of the K8L chip (scheduled for 2008)), we can safely use the
- * upper 16 bits for shadow page ID and reference counting.
+ * By restricting host physical memory to the first 48 bits (which is the
+ * announced physical memory range of the K8L chip (scheduled for 2008)), we
+ * can safely use the upper 16 bits for shadow page ID and reference counting.
  *
- * Now, it's possible for a page to be aliased, i.e. mapped by more than one PT or
- * PD. This is solved by creating a list of physical cross reference extents when
- * ever this happens. Each node in the list (extent) is can contain 3 page pool
- * indexes. The list it self is chained using indexes into the paPhysExt array.
+ * Update: The 48 bit assumption will be lifted with the new physical memory
+ * management (PGMPAGE), so we won't have any trouble when someone stuffs 2TB
+ * into a box in some years.
+ *
+ * Now, it's possible for a page to be aliased, i.e. mapped by more than one PT
+ * or PD. This is solved by creating a list of physical cross reference extents
+ * when ever this happens. Each node in the list (extent) is can contain 3 page
+ * pool indexes. The list it self is chained using indexes into the paPhysExt
+ * array.
  *
  *
  * @section sec_pgm_pool_life       Life Cycle of a Shadow Page
@@ -77,10 +83,11 @@
  *
  * @section sec_pgm_pool_impl       Implementation
  *
- * The pool will take pages from the MM page pool. The tracking data (attributes,
- * bitmaps and so on) are allocated from the hypervisor heap. The pool content can
- * be accessed both by using the page id and the physical address (HC). The former
- * is managed by means of an array, the latter by an offset based AVL tree.
+ * The pool will take pages from the MM page pool. The tracking data
+ * (attributes, bitmaps and so on) are allocated from the hypervisor heap. The
+ * pool content can be accessed both by using the page id and the physical
+ * address (HC). The former is managed by means of an array, the latter by an
+ * offset based AVL tree.
  *
  * Flushing of a pool page means that we iterate the content (we know what kind
  * it is) and updates the link information in the ram range.
@@ -124,43 +131,48 @@ int pgmR3PoolInit(PVM pVM)
      * Query Pool config.
      */
     PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/PGM/Pool");
+
+    /** @cfgm{/PGM/Pool/MaxPages, uint16_t, #pages, 16, 0x3fff, 1024}
+     * The max size of the shadow page pool in pages. The pool will grow dynamically
+     * up to this limit.
+     */
     uint16_t cMaxPages;
-    int rc = CFGMR3QueryU16(pCfg, "MaxPages", &cMaxPages);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
-        cMaxPages = 4*_1M >> PAGE_SHIFT;
-    else if (VBOX_FAILURE(rc))
-        AssertRCReturn(rc, rc);
-    else
-        AssertMsgReturn(cMaxPages <= PGMPOOL_IDX_LAST && cMaxPages >= RT_ALIGN(PGMPOOL_IDX_FIRST, 16),
-                        ("cMaxPages=%u (%#x)\n", cMaxPages, cMaxPages), VERR_INVALID_PARAMETER);
+    int rc = CFGMR3QueryU16Def(pCfg, "MaxPages", &cMaxPages, 4*_1M >> PAGE_SHIFT);
+    AssertLogRelRCReturn(rc, rc);
+    AssertLogRelMsgReturn(cMaxPages <= PGMPOOL_IDX_LAST && cMaxPages >= RT_ALIGN(PGMPOOL_IDX_FIRST, 16),
+                          ("cMaxPages=%u (%#x)\n", cMaxPages, cMaxPages), VERR_INVALID_PARAMETER);
     cMaxPages = RT_ALIGN(cMaxPages, 16);
 
+    /** @cfgm{/PGM/Pool/MaxUsers, uint16_t, #users, MaxUsers, 32K, MaxPages*2}
+     * The max number of shadow page user tracking records. Each shadow page has
+     * zero of other shadow pages (or CR3s) that references it, or uses it if you
+     * like. The structures describing these relationships are allocated from a
+     * fixed sized pool. This configuration variable defines the pool size.
+     */
     uint16_t cMaxUsers;
-    rc = CFGMR3QueryU16(pCfg, "MaxUsers", &cMaxUsers);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
-        cMaxUsers = cMaxPages * 2;
-    else if (VBOX_FAILURE(rc))
-        AssertRCReturn(rc, rc);
-    else
-        AssertMsgReturn(cMaxUsers >= cMaxPages && cMaxPages <= _32K,
-                        ("cMaxUsers=%u (%#x)\n", cMaxUsers, cMaxUsers), VERR_INVALID_PARAMETER);
+    rc = CFGMR3QueryU16Def(pCfg, "MaxUsers", &cMaxUsers, cMaxPages * 2);
+    AssertLogRelRCReturn(rc, rc);
+    AssertLogRelMsgReturn(cMaxUsers >= cMaxPages && cMaxPages <= _32K,
+                          ("cMaxUsers=%u (%#x)\n", cMaxUsers, cMaxUsers), VERR_INVALID_PARAMETER);
 
+    /** @cfgm{/PGM/Pool/MaxPhysExts, uint16_t, #extents, 16, MaxPages * 2, MAX(MaxPages*2,0x3fff)}
+     * The max number of extents for tracking aliased guest pages.
+     */
     uint16_t cMaxPhysExts;
-    rc = CFGMR3QueryU16(pCfg, "MaxPhysExts", &cMaxPhysExts);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
-        cMaxPhysExts = RT_MAX(cMaxPages * 2, PGMPOOL_IDX_LAST);
-    else if (VBOX_FAILURE(rc))
-        AssertRCReturn(rc, rc);
-    else
-        AssertMsgReturn(cMaxPhysExts >= 16 && cMaxPages <= PGMPOOL_IDX_LAST,
-                        ("cMaxPhysExts=%u (%#x)\n", cMaxPhysExts, cMaxUsers), VERR_INVALID_PARAMETER);
+    rc = CFGMR3QueryU16Def(pCfg, "MaxPhysExts", &cMaxPhysExts, RT_MAX(cMaxPages * 2, PGMPOOL_IDX_LAST));
+    AssertLogRelRCReturn(rc, rc);
+    AssertLogRelMsgReturn(cMaxPhysExts >= 16 && cMaxPages <= PGMPOOL_IDX_LAST,
+                          ("cMaxPhysExts=%u (%#x)\n", cMaxPhysExts, cMaxPhysExts), VERR_INVALID_PARAMETER);
 
+    /** @cfgm{/PGM/Pool/ChacheEnabled, bool, true}
+     * Enables or disabling caching of shadow pages. Chaching means that we will try
+     * reuse shadow pages instead of recreating them everything SyncCR3, SyncPT or
+     * SyncPage requests one. When reusing a shadow page, we can save time
+     * reconstructing it and it's children.
+     */
     bool fCacheEnabled;
-    rc = CFGMR3QueryBool(pCfg, "CacheEnabled", &fCacheEnabled);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
-        fCacheEnabled = true;
-    else if (VBOX_FAILURE(rc))
-        AssertRCReturn(rc, rc);
+    rc = CFGMR3QueryBoolDef(pCfg, "CacheEnabled", &fCacheEnabled, true);
+    AssertLogRelRCReturn(rc, rc);
 
     Log(("pgmR3PoolInit: cMaxPages=%#RX16 cMaxUsers=%#RX16 cMaxPhysExts=%#RX16 fCacheEnable=%RTbool\n",
          cMaxPages, cMaxUsers, cMaxPhysExts, fCacheEnabled));

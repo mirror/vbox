@@ -474,9 +474,10 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
                 }
 #ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
-                /* causes trouble when the guest uses a PDE to refer to the whole page table level structure. (invalidate here; faults later on when it tries
-                 * to change the page table entries
-                 * -> recheck; probably only applies to the GC case
+                /*
+                 * Causes trouble when the guest uses a PDE to refer to the whole page table level
+                 * structure. (Invalidate here; faults later on when it tries to change the page
+                 * table entries -> recheck; probably only applies to the RC case.)
                  */
                 else
                 {
@@ -508,8 +509,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
                     }
 #ifdef PGMPOOL_INVALIDATE_UPPER_SHADOW_TABLE_ENTRIES
-                    else
-                    if (uShw.pPDPae->a[iShw2].n.u1Present)
+                    else if (uShw.pPDPae->a[iShw2].n.u1Present)
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: pae pd iShw2=%#x: %RX64 -> freeing it!\n", iShw2, uShw.pPDPae->a[iShw2].u));
                         pgmPoolFree(pPool->CTX_SUFF(pVM),
@@ -526,7 +526,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_ROOT_PDPT:
             {
-                /* Hopefully this doesn't happen very often:
+                /*
+                 * Hopefully this doesn't happen very often:
                  * - touching unused parts of the page
                  * - messing with the bits of pd pointers without changing the physical address
                  */
@@ -613,7 +614,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
             {
-                /* Hopefully this doesn't happen very often:
+                /*
+                 * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
                 if (!VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
@@ -644,7 +646,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
             {
-                /* Hopefully this doesn't happen very often:
+                /*
+                 * Hopefully this doesn't happen very often:
                  * - messing with the bits of pd pointers without changing the physical address
                  */
                 if (!VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
@@ -743,6 +746,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pCpu, unsi
 DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PPGMPOOLPAGE pPage, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR pvFault)
 {
 #ifndef IN_GC
+    /** @todo could make this general, faulting close to rsp should be safe reuse heuristic. */
     if (   HWACCMHasPendingIrq(pVM)
         && (pRegFrame->rsp - pvFault) < 32)
     {
@@ -751,7 +755,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PPGMPOOLPAGE pPage, PCPUMCTXCOR
         return true;
     }
 #else
-    NOREF(pVM);
+    NOREF(pVM); NOREF(pvFault);
 #endif
 
     switch (pCpu->pCurInstr->opcode)
@@ -1072,9 +1076,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 # endif /* !IN_RING3 */
 #endif  /* PGMPOOL_WITH_MONITORING */
 
-
-
 #ifdef PGMPOOL_WITH_CACHE
+
 /**
  * Inserts a page into the GCPhys hash table.
  *
@@ -1413,10 +1416,10 @@ static void pgmPoolCacheFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->iAgeNext = NIL_PGMPOOL_IDX;
     pPage->iAgePrev = NIL_PGMPOOL_IDX;
 }
+
 #endif /* PGMPOOL_WITH_CACHE */
-
-
 #ifdef PGMPOOL_WITH_MONITORING
+
 /**
  * Looks for pages sharing the monitor.
  *
@@ -1488,6 +1491,7 @@ static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE p
 #endif
     return NULL;
 }
+
 
 /**
  * Enabled write monitoring of a guest page.
@@ -1679,8 +1683,8 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     return rc;
 }
 
+# ifdef PGMPOOL_WITH_MIXED_PT_CR3
 
-#ifdef PGMPOOL_WITH_MIXED_PT_CR3
 /**
  * Set or clear the fCR3Mix attribute in a chain of monitored pages.
  *
@@ -1799,8 +1803,8 @@ int pgmPoolMonitorUnmonitorCR3(PPGMPOOL pPool, uint16_t idxRoot)
     pPage->GCPhys = NIL_RTGCPHYS;
     return rc;
 }
-#endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
 
+# endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
 
 /**
  * Inserts the page into the list of modified pages.
@@ -2017,6 +2021,7 @@ void pgmPoolClearAll(PVM pVM)
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
 }
 
+
 /**
  * Handle SyncCR3 pool tasks
  *
@@ -2050,9 +2055,10 @@ int pgmPoolSyncCR3(PVM pVM)
     }
     return VINF_SUCCESS;
 }
-#endif /* PGMPOOL_WITH_MONITORING */
 
+#endif /* PGMPOOL_WITH_MONITORING */
 #ifdef PGMPOOL_WITH_USER_TRACKING
+
 /**
  * Frees up at least one user entry.
  *
@@ -2401,8 +2407,8 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
     }
 }
 
-
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+
 /**
  * Scans one shadow page table for mappings of a physical page.
  *
@@ -2574,8 +2580,8 @@ void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt)
 
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTs, f);
 }
-#endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
+#endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
 /**
  * Scans all shadow page tables for mappings of a physical page.
@@ -2818,8 +2824,8 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
 }
 
-
 #ifdef PGMPOOL_WITH_GCPHYS_TRACKING
+
 /**
  * Allocates a new physical cross reference extent.
  *
@@ -2888,6 +2894,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
     pPhysExt->iNext = pPool->iPhysExtFreeHead;
     pPool->iPhysExtFreeHead = iPhysExtStart;
 }
+
 
 /**
  * Insert a reference into a list of physical cross reference extents.
@@ -3075,7 +3082,6 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
 }
 
 
-
 /**
  * Clear references to guest physical memory.
  *
@@ -3102,8 +3108,10 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
             /* does it match? */
             const unsigned iPage = off >> PAGE_SHIFT;
             Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]));
+#ifdef LOG_ENABLED
 RTHCPHYS HCPhysPage = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]);
 Log(("pgmPoolTracDerefGCPhys %VHp vs %VHp\n", HCPhysPage, HCPhys));
+#endif
             if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
                 pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage]);
@@ -3274,8 +3282,8 @@ DECLINLINE(void) pgmPoolTrackDerefPTPaeBig(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
             pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, GCPhys);
         }
 }
-#endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
+#endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
 
 /**
  * Clear references to shadowed pages in a PAE (legacy or 64 bits) page directory.
@@ -3324,6 +3332,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPT64Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
     }
 }
 
+
 /**
  * Clear references to shadowed pages in a 64-bit level 4 page table.
  *
@@ -3347,6 +3356,7 @@ DECLINLINE(void) pgmPoolTrackDerefPML464Bit(PPGMPOOL pPool, PPGMPOOLPAGE pPage, 
     }
 }
 
+
 /**
  * Clear references to shadowed pages in an EPT page table.
  *
@@ -3365,6 +3375,7 @@ DECLINLINE(void) pgmPoolTrackDerefPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
             pgmPoolTracDerefGCPhys(pPool, pPage, pShwPT->a[i].u & EPT_PTE_PG_MASK, GCPhys);
         }
 }
+
 
 /**
  * Clear references to shadowed pages in an EPT page directory.
@@ -3389,6 +3400,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PEPT
     }
 }
 
+
 /**
  * Clear references to shadowed pages in an EPT page directory pointer table.
  *
@@ -3411,6 +3423,7 @@ DECLINLINE(void) pgmPoolTrackDerefPDPTEPT(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PE
         }
     }
 }
+
 
 /**
  * Clears all references made by this page.
@@ -3528,8 +3541,8 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
     pPage->fZeroed = true;
 }
-#endif /* PGMPOOL_WITH_USER_TRACKING */
 
+#endif /* PGMPOOL_WITH_USER_TRACKING */
 
 /**
  * Flushes all the special root pages as part of a pgmPoolFlushAllInt operation.
