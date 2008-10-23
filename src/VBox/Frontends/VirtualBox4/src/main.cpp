@@ -417,7 +417,19 @@ extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWha
     switch (enmWhat)
     {
         case kSupInitOp_Driver:
-            msgText += QApplication::tr ("\n\nMake sure the kernel module has been loaded successfully.");
+            msgText += QApplication::tr ("\n\n"
+#ifdef RT_OS_LINUX
+            "The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or "
+            "there is a permission problem with /dev/vboxdrv. Re-setup the kernel "
+            "module by executing\n\n"
+            "  '/etc/init.d/vboxdrv setup'\n\n"
+            "as root. Users of Ubuntu or Fedora should install the DKMS package "
+            "at first. This package keeps track of Linux kernel changes and "
+            "recompiles the vboxdrv kernel module if necessary."
+#else
+            "Make sure the kernel module has been loaded successfully."
+#endif
+            );
             break;
         case kSupInitOp_IPRT:
         case kSupInitOp_Integrity:
