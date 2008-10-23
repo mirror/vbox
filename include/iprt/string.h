@@ -814,11 +814,11 @@ RTDECL(bool) RTStrSimplePatternMatch(const char *pszPattern, const char *pszStri
  * @param  pszPattern   The pattern. Special chars are '*' and '?', where the
  *                      asterisk matches zero or more characters and question
  *                      mark matches exactly one character.
- * @param  cchPattern   The pattern length. Pass SIZE_T_MAX (~(size_t)0) if you
+ * @param  cchPattern   The pattern length. Pass RTSTR_MAX (~(size_t)0) if you
  *                      don't know the length and wish to stop at the string
  *                      terminator.
  * @param  pszString    The string to match against the pattern.
- * @param  cchString    The string length. Pass SIZE_T_MAX (~(size_t)0) if you
+ * @param  cchString    The string length. Pass RTSTR_MAX (~(size_t)0) if you
  *                      don't know the length and wish to match up to the string
  *                      terminator.
  */
@@ -833,13 +833,13 @@ RTDECL(bool) RTStrSimplePatternNMatch(const char *pszPattern, size_t cchPattern,
  * @returns true if the string matches the pattern, otherwise false.
  *
  * @param   pszPatterns The patterns.
- * @param   cchPatterns The lengths of the patterns to use. Pass SIZE_T_MAX
+ * @param   cchPatterns The lengths of the patterns to use. Pass RTSTR_MAX
  *                      (~(size_t)0) to stop at the terminator.
  * @param   pszString   The string to match against the pattern.
- * @param   cchString   The string length. Pass SIZE_T_MAX (~(size_t)0) stop
+ * @param   cchString   The string length. Pass RTSTR_MAX (~(size_t)0) stop
  *                      stop at the terminator.
  * @param   poffPattern Offset into the patterns string of the patttern that
- *                      matched. If no match, this will be set to SIZE_T_MAX.
+ *                      matched. If no match, this will be set to RTSTR_MAX.
  *                      This is optional, NULL is fine.
  */
 RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPatterns,
