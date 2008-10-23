@@ -241,14 +241,14 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
 #ifdef Q_WS_X11
         /* Cause Qt4 has the conflict with fontconfig application as a result
-         * sometimes substituting some fonts with non scaleable-anti-aliased 
-         * bitmap font we are reseting substitutes for the current application 
-         * font family if it is non scaleable-anti-aliased. */ 
-        QFontDatabase fontDataBase; 
-        QString subFamily (QFont::substitute (QApplication::font().family())); 
-        bool isScaleable = fontDataBase.isSmoothlyScalable (subFamily); 
-        if (!isScaleable) 
-            QFont::removeSubstitution (QApplication::font().family()); 
+         * sometimes substituting some fonts with non scaleable-anti-aliased
+         * bitmap font we are reseting substitutes for the current application
+         * font family if it is non scaleable-anti-aliased. */
+        QFontDatabase fontDataBase;
+        QString subFamily (QFont::substitute (QApplication::font().family()));
+        bool isScaleable = fontDataBase.isScalable (subFamily);
+        if (!isScaleable)
+            QFont::removeSubstitution (QApplication::font().family());
 #endif
 
 #ifdef Q_WS_WIN
