@@ -142,18 +142,22 @@ __BEGIN_DECLS
 /* Per-cpu information. */
 typedef struct
 {
-    RTCPUID     idCpu;
+    RTCPUID             idCpu;
 
-    RTR0MEMOBJ  pMemObj;
+    RTR0MEMOBJ          pMemObj;
     /* Current ASID (AMD-V)/VPID (Intel) */
-    uint32_t    uCurrentASID;
+    uint32_t            uCurrentASID;
     /* TLB flush count */
-    uint32_t    cTLBFlushes;
+    uint32_t            cTLBFlushes;
 
     /* Set the first time a cpu is used to make sure we start with a clean TLB. */
-    bool        fFlushTLB;
+    bool                fFlushTLB;
 
-    bool        fConfigured;
+    /** Configured for VT-x or AMD-V. */
+    bool                fConfigured;
+
+    /** In use by our code. (for power suspend) */
+    volatile bool       fInUse;
 } HWACCM_CPUINFO;
 typedef HWACCM_CPUINFO *PHWACCM_CPUINFO;
 

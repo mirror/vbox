@@ -602,6 +602,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
     Assert(!pCpu->fConfigured);
+    Assert(ASMAtomicReadBool(&pCpu->fInUse) == false);
 
     pCpu->idCpu     = idCpu;
 
@@ -647,6 +648,7 @@ static DECLCALLBACK(void) HWACCMR0DisableCPU(RTCPUID idCpu, void *pvUser1, void 
 
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
+    Assert(ASMAtomicReadBool(&pCpu->fInUse) == false);
 
     if (!pCpu->pMemObj)
         return;
@@ -734,6 +736,10 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
  */
 VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 {
+    int             rc;
+    RTCPUID         idCpu = RTMpCpuId();
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
 #ifdef LOG_ENABLED
@@ -779,8 +785,14 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     /* we'll aways increment this the first time (host uses ASID 0) */
     pVM->hwaccm.s.uCurrentASID              = 0;
 
+    ASMAtomicWriteBool(&pCpu->fInUse, true);
+
     /* Init a VT-x or AMD-V VM. */
-    return HWACCMR0Globals.pfnInitVM(pVM);
+    rc = HWACCMR0Globals.pfnInitVM(pVM);
+
+    ASMAtomicWriteBool(&pCpu->fInUse, false);
+
+    return rc;
 }
 
 
@@ -792,6 +804,10 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
  */
 VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
 {
+    int             rc;
+    RTCPUID         idCpu = RTMpCpuId();
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
 #ifdef LOG_ENABLED
@@ -801,8 +817,13 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
+    ASMAtomicWriteBool(&pCpu->fInUse, true);
+
     /* Terminate a VT-x or AMD-V VM. */
-    return HWACCMR0Globals.pfnTermVM(pVM);
+    rc = HWACCMR0Globals.pfnTermVM(pVM);
+
+    ASMAtomicWriteBool(&pCpu->fInUse, false);
+    return rc;
 }
 
 
@@ -814,6 +835,10 @@ VMMR0DECL(int) HWACCMR0TermVM(PVM pVM)
  */
 VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 {
+    int             rc;
+    RTCPUID         idCpu = RTMpCpuId();
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
     /* Make sure we don't touch hwaccm after we've disabled hwaccm in preparation of a suspend. */
@@ -823,8 +848,14 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
     SUPR0Printf("HWACCMR0SetupVM: %p\n", pVM);
 #endif
 
+    ASMAtomicWriteBool(&pCpu->fInUse, true);
+
     /* Setup VT-x or AMD-V. */
-    return HWACCMR0Globals.pfnSetupVM(pVM);
+    rc = HWACCMR0Globals.pfnSetupVM(pVM);
+
+    ASMAtomicWriteBool(&pCpu->fInUse, false);
+
+    return rc;
 }
 
 
@@ -836,12 +867,14 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
  */
 VMMR0DECL(int) HWACCMR0Enter(PVM pVM)
 {
-    CPUMCTX *pCtx;
-    int      rc;
-    RTCPUID  idCpu = RTMpCpuId();
+    PCPUMCTX        pCtx;
+    int             rc;
+    RTCPUID         idCpu = RTMpCpuId();
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
     /* Make sure we can't enter a session after we've disabled hwaccm in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
+    ASMAtomicWriteBool(&pCpu->fInUse, true);
 
     pCtx = CPUMQueryGuestCtxPtr(pVM);
 
@@ -860,7 +893,7 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM)
     else
         pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
 
-    rc  = HWACCMR0Globals.pfnEnterSession(pVM, &HWACCMR0Globals.aCpuInfo[idCpu]);
+    rc  = HWACCMR0Globals.pfnEnterSession(pVM, pCpu);
     AssertRC(rc);
     /* We must save the host context here (VT-x) as we might be rescheduled on a different cpu after a long jump back to ring 3. */
     rc |= HWACCMR0Globals.pfnSaveHostState(pVM);
@@ -888,8 +921,10 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM)
  */
 VMMR0DECL(int) HWACCMR0Leave(PVM pVM)
 {
-    CPUMCTX *pCtx;
-    int      rc;
+    PCPUMCTX        pCtx;
+    int             rc;
+    RTCPUID         idCpu = RTMpCpuId();
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
@@ -912,11 +947,11 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM)
 
 #ifdef VBOX_STRICT
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
-    RTCPUID idCpu = RTMpCpuId();
     AssertMsg(pVM->hwaccm.s.idEnteredCpu == idCpu, ("owner is %d, I'm %d", (int)pVM->hwaccm.s.idEnteredCpu, (int)idCpu));
     pVM->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
 #endif
 
+    ASMAtomicWriteBool(&pCpu->fInUse, false);
     return rc;
 }
 
@@ -931,10 +966,14 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM)
     CPUMCTX *pCtx;
     int      rc;
     RTCPUID  idCpu = RTMpCpuId(); NOREF(idCpu);
+#ifdef VBOX_STRICT
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+#endif
 
     Assert(!VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
     Assert(HWACCMR0Globals.aCpuInfo[idCpu].fConfigured);
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
+    Assert(ASMAtomicReadBool(&pCpu->fInUse) == true);
 
     pCtx = CPUMQueryGuestCtxPtr(pVM);
 
