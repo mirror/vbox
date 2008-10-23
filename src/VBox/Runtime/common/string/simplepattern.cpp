@@ -164,7 +164,7 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
         /*
          * Find the end of the current pattern.
          */
-        unsigned char ch;
+        unsigned char ch = '\0';
         const char *pszEnd = pszCur;
         while (cchPatterns && (ch = *pszEnd) != '\0' && ch != '|')
             cchPatterns--, pszEnd++;
