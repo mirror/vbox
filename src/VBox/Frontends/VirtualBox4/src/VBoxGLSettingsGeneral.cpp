@@ -54,7 +54,7 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
         aProps.SetDefaultVDIFolder (mPsVdi->path());
     if (aProps.isOk() && mPsMach->isModified())
         aProps.SetDefaultMachineFolder (mPsMach->path());
-    if (mPsVdi->isModified())
+    if (aProps.isOk() && mPsVRDP->isModified())
         aProps.SetRemoteDisplayAuthLibrary (mPsVRDP->path());
 }
 
