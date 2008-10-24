@@ -1928,11 +1928,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * We only care about keys starting with "VBoxInternal/"
          */
-        Utf8Str strExtraDataKeyUtf8 = Utf8Str(strExtraDataKey);
+        Utf8Str strExtraDataKeyUtf8(strExtraDataKey);
         char *pszExtraDataKey = (char *)strExtraDataKeyUtf8.raw();
-        if (strncmp(pszExtraDataKey, "VBoxInternal/", 13) != 0)
+        if (strncmp(pszExtraDataKey, "VBoxInternal/", sizeof("VBoxInternal/") - 1) != 0)
             continue;
-        pszExtraDataKey += 13;
+        pszExtraDataKey += sizeof("VBoxInternal/") - 1;
 
         /*
          * The key will be in the format "Node1/Node2/Value" or simply "Value".
@@ -1978,7 +1978,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * Empty strings means that we should remove the value, which we've
          * already done above.
          */
-        Utf8Str strCFGMValueUtf8 = Utf8Str(strExtraDataValue);
+        Utf8Str strCFGMValueUtf8(strExtraDataValue);
         const char *pszCFGMValue = strCFGMValueUtf8.raw();
         if (    pszCFGMValue
             && *pszCFGMValue)
