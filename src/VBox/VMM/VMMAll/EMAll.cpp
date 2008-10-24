@@ -84,20 +84,6 @@ VMMDECL(EMSTATE) EMGetState(PVM pVM)
     return pVM->em.s.enmState;
 }
 
-
-/**
- * Flushes the REM translation blocks the next time we execute code there.
- *
- * @param   pVM         The VM handle.
- *
- * @todo    This doesn't belong here, it should go in REMAll.cpp!
- */
-VMMDECL(void) EMFlushREMTBs(PVM pVM)
-{
-    LogFlow(("EMFlushREMTBs\n"));
-    pVM->em.s.fREMFlushTBs = true;
-}
-
 #ifndef IN_GC
 
 /**

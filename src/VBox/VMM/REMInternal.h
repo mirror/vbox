@@ -165,6 +165,9 @@ typedef struct REM
     /** In REMR3State. */
     bool                    fInStateSync;
 
+    /** Set when the translation blocks cache need to be flushed. */
+    bool                    fFlushTBs;
+
     /** Ignore all that can be ignored. */
     bool                    fIgnoreAll;
     /** Ignore CR3 load notifications from the REM. */
@@ -244,17 +247,17 @@ typedef struct REM
 
 #ifdef VBOX_WITH_NEW_RECOMPILER
 #if GC_ARCH_BITS == 32
-#define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
+# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
 #else
-#define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
+# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
 #endif
-#else
+#else  /* !VBOX_WITH_NEW_RECOMPILER */
 #if GC_ARCH_BITS == 32
-#define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6550 : 0xb4a0)
+# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x6550 : 0xb4a0)
 #else
-#define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x9440 : 0xd4a0)
+# define REM_ENV_SIZE        (HC_ARCH_BITS == 32 ? 0x9440 : 0xd4a0)
 #endif
-#endif // VBOX_WITH_NEW_RECOMILER
+#endif /* !VBOX_WITH_NEW_RECOMILER */
 
     /** Recompiler CPU state. */
 #ifdef REM_INCLUDE_CPU_H
@@ -264,7 +267,7 @@ typedef struct REM
     {
         char                achPadding[REM_ENV_SIZE];
     }                       Env;
-#endif
+#endif /* !REM_INCLUDE_CPU_H */
 } REM;
 
 /** Pointer to the REM Data. */
@@ -288,7 +291,7 @@ int     remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint
 void    remR3TrapStat(CPUState *env, uint32_t uTrap);
 void    remR3CpuId(CPUState *env, unsigned uOperator, void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
 void    remR3RecordCall(CPUState *env);
-#endif
+#endif /* REM_INCLUDE_CPU_H */
 void    remR3TrapClear(PVM pVM);
 void    remR3RaiseRC(PVM pVM, int rc);
 void    remR3DumpLnxSyscall(PVM pVM);
@@ -303,22 +306,22 @@ void    remR3DumpOBsdSyscall(PVM pVM);
 
 #ifdef VBOX_WITH_STATISTICS
 
-#define STATS_EMULATE_SINGLE_INSTR          1
-#define STATS_QEMU_COMPILATION              2
-#define STATS_QEMU_RUN_EMULATED_CODE        3
-#define STATS_QEMU_TOTAL                    4
-#define STATS_QEMU_RUN_TIMERS               5
-#define STATS_TLB_LOOKUP                    6
-#define STATS_IRQ_HANDLING                  7
-#define STATS_RAW_CHECK                     8
-
+# define STATS_EMULATE_SINGLE_INSTR         1
+# define STATS_QEMU_COMPILATION             2
+# define STATS_QEMU_RUN_EMULATED_CODE       3
+# define STATS_QEMU_TOTAL                   4
+# define STATS_QEMU_RUN_TIMERS              5
+# define STATS_TLB_LOOKUP                   6
+# define STATS_IRQ_HANDLING                 7
+# define STATS_RAW_CHECK                    8
 
 void remR3ProfileStart(int statcode);
 void remR3ProfileStop(int statcode);
-#else
-#define remR3ProfileStart(c)
-#define remR3ProfileStop(c)
-#endif
+
+#else  /* !VBOX_WITH_STATISTICS */
+# define remR3ProfileStart(c)
+# define remR3ProfileStop(c)
+#endif /* !VBOX_WITH_STATISTICS */
 
 /** @} */
 

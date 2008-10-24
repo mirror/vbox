@@ -747,12 +747,11 @@ static int emR3RemStep(PVM pVM)
     /*
      * Switch to REM, step instruction, switch back.
      */
-    int rc = REMR3State(pVM, pVM->em.s.fREMFlushTBs);
+    int rc = REMR3State(pVM);
     if (VBOX_SUCCESS(rc))
     {
         rc = REMR3Step(pVM);
         REMR3StateBack(pVM);
-        pVM->em.s.fREMFlushTBs = false;
     }
     LogFlow(("emR3RemStep: returns %Vrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVM),  CPUMGetGuestEIP(pVM)));
     return rc;
@@ -807,12 +806,11 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
         if (!fInREMState)
         {
             STAM_PROFILE_START(&pVM->em.s.StatREMSync, b);
-            rc = REMR3State(pVM, pVM->em.s.fREMFlushTBs);
+            rc = REMR3State(pVM);
             STAM_PROFILE_STOP(&pVM->em.s.StatREMSync, b);
             if (VBOX_FAILURE(rc))
                 break;
             fInREMState = true;
-            pVM->em.s.fREMFlushTBs = false;
 
             /*
              * We might have missed the raising of VMREQ, TIMER and some other

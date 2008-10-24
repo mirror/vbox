@@ -34,6 +34,8 @@
 #include <iprt/assert.h>
 
 
+#ifndef IN_RING3
+
 /**
  * Records a invlpg instruction for replaying upon REM entry.
  *
@@ -154,5 +156,19 @@ VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
     pRec->u.PhysicalModify.fHasHCHandler = fHasHCHandler;
     pRec->u.PhysicalModify.fRestoreAsRAM = fRestoreAsRAM;
     VM_FF_SET(pVM, VM_FF_REM_HANDLER_NOTIFY);
+}
+
+#endif /* !IN_RING3 */
+
+/**
+ * Make REM flush all translation block upon the next call to REMR3State().
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ */
+VMMDECL(void) REMFlushTBs(PVM pVM)
+{
+    LogFlow(("REMFlushTBs: fFlushTBs=%RTbool fInREM=%RTbool fInStateSync=%RTbool\n",
+             pVM->rem.s.fFlushTBs, pVM->rem.s.fInREM, pVM->rem.s.fInStateSync));
+    pVM->rem.s.fFlushTBs = true;
 }
 

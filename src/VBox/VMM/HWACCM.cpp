@@ -30,15 +30,16 @@
 #include <VBox/pgm.h>
 #include <VBox/trpm.h>
 #include <VBox/dbgf.h>
+#include <VBox/patm.h>
+#include <VBox/csam.h>
+#include <VBox/selm.h>
+#include <VBox/rem.h>
 #include <VBox/hwacc_vmx.h>
 #include <VBox/hwacc_svm.h>
 #include "HWACCMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/patm.h>
-#include <VBox/csam.h>
-#include <VBox/selm.h>
 
 #include <iprt/assert.h>
 #include <VBox/log.h>
@@ -603,7 +604,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
             *((unsigned char *)pVM->hwaccm.s.vmx.pRealModeTSS + HWACCM_VTX_TSS_SIZE - 2) = 0xff;
 
-            /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in 
+            /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in
              * real and protected mode without paging with EPT.
              */
             pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
@@ -615,11 +616,11 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
             /* We convert it here every time as pci regions could be reconfigured. */
             rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
-            AssertRC(rc);            
+            AssertRC(rc);
             LogRel(("HWACCM: Real Mode TSS guest physaddr  = %VGp\n", GCPhys));
 
             rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
-            AssertRC(rc);            
+            AssertRC(rc);
             LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %VGp\n", GCPhys));
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
@@ -882,7 +883,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 #ifdef HWACCM_VMX_EMULATE_REALMODE
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
-        /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case. 
+        /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case.
          * The base must also be equal to (sel << 4).
          */
         if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
@@ -913,7 +914,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 /* Flush the translation blocks as code pages may have been
                  * changed (Fedora4 boot image, reset, boot iso)
                  */
-                EMFlushREMTBs(pVM);
+                REMFlushTBs(pVM);
                 return false;
             }
         }
