@@ -1268,9 +1268,8 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
 
 
 #ifndef IN_GC
-/*
+/**
  * [REP] STOSWD emulation
- *
  */
 static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
@@ -1404,13 +1403,13 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
     *pcbSize = cbSize;
     return rc;
 }
-#endif
+#endif /* !IN_GC */
 
+#ifndef IN_GC
 
 /**
  * [LOCK] CMPXCHG emulation.
  */
-#ifndef IN_GC
 static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1, param2;
@@ -1474,7 +1473,8 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     return VINF_SUCCESS;
 }
 
-/*
+
+/**
  * [LOCK] CMPXCHG8B emulation.
  */
 static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
@@ -1528,6 +1528,10 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
 }
 
 #else /* IN_GC */
+
+/**
+ * [LOCK] CMPXCHG emulation.
+ */
 static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
@@ -1600,7 +1604,8 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     return VERR_EM_INTERPRETER;
 }
 
-/*
+
+/**
  * [LOCK] CMPXCHG8B emulation.
  */
 static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
@@ -1660,13 +1665,13 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     }
     return VERR_EM_INTERPRETER;
 }
+
 #endif /* IN_GC */
 
-
+#ifdef IN_GC
 /**
  * [LOCK] XADD emulation.
  */
-#ifdef IN_GC
 static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
