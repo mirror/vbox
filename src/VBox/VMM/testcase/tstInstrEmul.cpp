@@ -39,6 +39,9 @@ int main(int argc, char **argv)
 {
     int     rcRet = 0;                  /* error count. */
 
+    RTR3Init();
+    RTPrintf("tstInstrEmul: TESTING...\n");
+
     uint32_t eax, edx, ebx, ecx, eflags;
     uint64_t val;
 
@@ -51,8 +54,8 @@ int main(int argc, char **argv)
     if (    !(eflags & X86_EFL_ZF)
         ||  val != UINT64_C(0x200000001))
     {
-        printf("Lock cmpxchg8b failed the equal case! (val=%x%x)\n", val);
-        return -1;
+        RTPrintf("tstInstrEmul: FAILURE - Lock cmpxchg8b failed the equal case! (val=%x%x)\n", val);
+        return 1;
     }
     val = UINT64_C(0x123456789);
     eflags = EMEmulateLockCmpXchg8b(&val, &eax, &edx, ebx, ecx);
@@ -60,10 +63,10 @@ int main(int argc, char **argv)
         ||  eax != 0x23456789
         ||  edx != 0x1)
     {
-        printf("Lock cmpxchg8b failed the non-equal case! (val=%x%x)\n", val);
-        return -1;
+        RTPrintf("tstInstrEmul: FAILURE - Lock cmpxchg8b failed the non-equal case! (val=%x%x)\n", val);
+        return 1;
     }
-    printf("Testing lock cmpxchg instruction emulation - SUCCESS\n");
+    RTPrintf("tstInstrEmul: Testing lock cmpxchg instruction emulation - SUCCESS\n");
 
     val = UINT64_C(0xffffffffffff);
     eax = 0xffffffff;
@@ -74,8 +77,8 @@ int main(int argc, char **argv)
     if (    !(eflags & X86_EFL_ZF)
         ||  val != UINT64_C(0x200000001))
     {
-        printf("Cmpxchg8b failed the equal case! (val=%x%x)\n", val);
-        return -1;
+        RTPrintf("tstInstrEmul: FAILURE - Cmpxchg8b failed the equal case! (val=%x%x)\n", val);
+        return 1;
     }
     val = UINT64_C(0x123456789);
     eflags = EMEmulateCmpXchg8b(&val, &eax, &edx, ebx, ecx);
@@ -83,10 +86,18 @@ int main(int argc, char **argv)
         ||  eax != 0x23456789
         ||  edx != 0x1)
     {
-        printf("Cmpxchg8b failed the non-equal case! (val=%x%x)\n", val);
-        return -1;
+        RTPrintf("tstInstrEmul: FAILURE - Cmpxchg8b failed the non-equal case! (val=%x%x)\n", val);
+        return 1;
     }
-    printf("Testing cmpxchg instruction emulation - SUCCESS\n");
+    RTPrintf("tstInstrEmul: Testing cmpxchg instruction emulation - SUCCESS\n");
 
-    return rcRet;
+
+    /*
+     * Summary.
+     */
+    if (!rcRet)
+        RTPrintf("tstInstrEmul: SUCCESS\n");
+    else
+        RTPrintf("tstInstrEmul: FAILURE - %d errors\n", rcRet);
+    return rcRet ? 1 : 0;
 }
