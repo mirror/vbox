@@ -59,7 +59,7 @@ public:
 
 public slots:
 
-    void setPath (const QString &aPath);
+    void setPath (const QString &aPath, bool aRefreshText = true);
     void setHomeDir (const QString &aHomeDir);
 
 protected:
@@ -73,12 +73,13 @@ protected:
 private slots:
 
     void onActivated (int aIndex);
+    void onTextEdited (const QString &aPath);
     void copyToClipboard();
     void refreshText();
-    void setPathInternal (const QString &aText);
 
 private:
 
+    void changePath (const QString &aPath, bool aRefreshText = true);
     void selectPath();
     QIcon defaultIcon() const;
     QString fullPath (bool aAbsolute = true) const;
