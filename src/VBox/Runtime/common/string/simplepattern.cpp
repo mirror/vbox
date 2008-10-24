@@ -39,7 +39,7 @@
 RTDECL(bool) RTStrSimplePatternMatch(const char *pszPattern, const char *pszString)
 {
 #if 0
-    return RTStrSimplePatternNMatch(pszPattern, ~(size_t)0, pszString, ~(size_t)0);
+    return RTStrSimplePatternNMatch(pszPattern, RTSTR_MAX, pszString, RTSTR_MAX);
 #else
     /* ASSUMES ASCII / UTF-8 */
     for (;;)
@@ -187,7 +187,7 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
     }
 
     if (poffMatchingPattern)
-        *poffMatchingPattern = ~(size_t)0;
+        *poffMatchingPattern = RTSTR_MAX;
     return false;
 }
 
