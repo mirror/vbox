@@ -5163,7 +5163,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
         using namespace guestProp;
 
         Key guestPropertiesNode = aNode.findKey ("GuestProperties");
-        Bstr notificationPatterns ("");
+        Bstr notificationPatterns ("");  /* We catch allocation failure below. */
         if (!guestPropertiesNode.isNull())
         {
             Key::List properties = guestPropertiesNode.keys ("GuestProperty");
@@ -5180,14 +5180,26 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 ULONG64 timestamp = (*it).value<ULONG64> ("timestamp");
                 /* property flags (optional, defaults to empty) */
                 Bstr flags = (*it).stringValue ("flags");
-                validateFlags (Utf8Str (flags).raw(), &fFlags);
+                Utf8Str utf8Flags (flags);
+                if (utf8Flags.isNull ())
+                    return E_OUTOFMEMORY;
+                validateFlags (utf8Flags.raw(), &fFlags);
                 HWData::GuestProperty property = { name, value, timestamp, fFlags };
                 mHWData->mGuestProperties.push_back(property);
+                /* This is just sanity, as the push_back() will probably have thrown
+                 * an exception if we are out of memory.  Note that if we run out
+                 * allocating the Bstrs above, this will be caught here as well. */
+                if (   mHWData->mGuestProperties.back().mName.isNull ()
+                    || mHWData->mGuestProperties.back().mValue.isNull ()
+                   )
+                    return E_OUTOFMEMORY;
             }
             notificationPatterns = guestPropertiesNode.stringValue ("notificationPatterns");
         }
         mHWData->mPropertyServiceActive = false;
         mHWData->mGuestPropertyNotificationPatterns = notificationPatterns;
+        if (mHWData->mGuestPropertyNotificationPatterns.isNull ())
+            return E_OUTOFMEMORY;
     }
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
@@ -6553,14 +6565,14 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
 
 #ifdef VBOX_WITH_GUEST_PROPS
     /* Guest properties */
+    try
     {
         using namespace guestProp;
 
         Key guestPropertiesNode = aNode.createKey ("GuestProperties");
 
         for (HWData::GuestPropertyList::const_iterator it = mHWData->mGuestProperties.begin();
-             it != mHWData->mGuestProperties.end();
-             ++ it)
+             it != mHWData->mGuestProperties.end(); ++it)
         {
             HWData::GuestProperty property = *it;
 
@@ -6571,11 +6583,21 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             propertyNode.setValue <Bstr> ("value", property.mValue);
             propertyNode.setValue <ULONG64> ("timestamp", property.mTimestamp);
             writeFlags(property.mFlags, szFlags);
-            propertyNode.setValue <Bstr> ("flags", Bstr(szFlags));
+            Bstr flags (szFlags);
+            if (flags.isNull())
+                return E_OUTOFMEMORY;
+            propertyNode.setValue <Bstr> ("flags", flags);
         }
+        Bstr emptyStr ("");
+        if (emptyStr.isNull())
+            return E_OUTOFMEMORY;
         guestPropertiesNode.setValueOr <Bstr> ("notificationPatterns",
                                                mHWData->mGuestPropertyNotificationPatterns,
-                                               Bstr (""));
+                                               emptyStr);
+    }
+    catch (ENoMemory e)
+    {
+        return E_OUTOFMEMORY;
     }
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
