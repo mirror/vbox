@@ -3775,9 +3775,8 @@
       </desc>
       <param name="patterns" type="wstring" dir="in">
         <desc>
-          The patterns to match the properties against as a comma-separated
-          string with no spaces.  If this is empty, all properties currently
-          set will be returned.
+          The patterns to match the properties against, separated by '|'
+          characters.  If this is empty or NULL, all properties will match.
         </desc>
       </param>
       <param name="name" type="wstring" dir="out" safearray="yes">

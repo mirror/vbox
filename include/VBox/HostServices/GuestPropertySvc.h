@@ -364,10 +364,11 @@ typedef struct _EnumProperties
     VBoxGuestHGCMCallInfo hdr;
 
     /**
-     * Null-separated array of patterns to match the properties against.
+     * Array of patterns to match the properties against, separated by '|'
+     * characters.  For backwards compatibility, '\0' is also accepted
+     * as a separater.
      * (IN pointer)
-     * If no patterns are given then return all.  The list is terminated by an
-     * empty string.
+     * If only a single, empty pattern is given then match all.
      */
     HGCMFunctionParameter patterns;
     /**
