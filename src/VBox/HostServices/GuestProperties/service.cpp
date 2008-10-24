@@ -202,7 +202,7 @@ public:
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-        // pSelf->mpfnHostCallback = pfnExtension;
+        pSelf->mpfnHostCallback = pfnExtension;
         pSelf->mpvHostData = pvExtension;
         return VINF_SUCCESS;
     }
@@ -613,87 +613,6 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
 }
 
 /**
- * Matches a sample name against a pattern.
- *
- * @returns True if matches, false if not.
- * @param   pszPat      Pattern.
- * @param   pszName     Name to match against the pattern.
- * @todo move this into IPRT
- */
-static bool matchesSinglePattern(const char *pszPat, const char *pszName)
-{
-    /* ASSUMES ASCII */
-    for (;;)
-    {
-        char chPat = *pszPat;
-        switch (chPat)
-        {
-            default:
-                if (*pszName != chPat)
-                    return false;
-                break;
-
-            case '*':
-            {
-                while ((chPat = *++pszPat) == '*' || chPat == '?')
-                    /* nothing */;
-
-                for (;;)
-                {
-                    char ch = *pszName++;
-                    if (    ch == chPat
-                        &&  (   !chPat
-                             || matchesSinglePattern(pszPat + 1, pszName)))
-                        return true;
-                    if (!ch)
-                        return false;
-                }
-                /* won't ever get here */
-                break;
-            }
-
-            case '?':
-                if (!*pszName)
-                    return false;
-                break;
-
-            case '\0':
-                return !*pszName;
-        }
-        pszName++;
-        pszPat++;
-    }
-    return true;
-}
-
-
-/* Checks to see if the given string matches against one of the patterns in
- * the list. */
-static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
-                           const char *pszString)
-{
-    size_t iOffs = 0;
-    /* If the first pattern in the list is empty, treat it as "match all". */
-    bool matched = (cchPatterns > 0) && (0 == *paszPatterns) ? true : false;
-    while ((iOffs < cchPatterns) && !matched)
-    {
-        size_t cchCurrent;
-        if (   RT_SUCCESS(RTStrNLenEx(paszPatterns + iOffs,
-                                      cchPatterns - iOffs, &cchCurrent))
-            && (cchCurrent > 0)
-           )
-        {
-            matched = matchesSinglePattern(paszPatterns + iOffs, pszString);
-            iOffs += cchCurrent + 1;
-        }
-        else
-            iOffs = cchPatterns;
-    }
-    return matched;
-}
-
-
-/**
  * Enumerate guest properties by mask, checking the validity
  * of the arguments passed.
  *
@@ -729,11 +648,32 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &paszPatterns, &cchPatterns);
+    if (RT_SUCCESS(rc) && cchPatterns > MAX_PATTERN_LEN + 1)
+        rc = VERR_TOO_MUCH_DATA;
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cchBuf);
 
 /*
- * Start by enumerating all values in the current node into a temporary buffer.
+ * First repack the patterns into the format expected by RTStrSimplePatternMatch()
+ */
+    bool matchAll = false;
+    char pszPatterns[MAX_PATTERN_LEN + 1];
+    if (   (NULL == paszPatterns)
+        || (cchPatterns < 2)  /* An empty pattern string means match all */
+       )
+        matchAll = true;
+    else
+    {
+        for (unsigned i = 0; i < cchPatterns - 1; ++i)
+            if (paszPatterns[i] != '\0')
+                pszPatterns[i] = paszPatterns[i];
+            else
+                pszPatterns[i] = '|';
+        pszPatterns[cchPatterns - 1] = '\0';
+    }
+
+/*
+ * Next enumerate all values in the current node into a temporary buffer.
  */
     RTMemAutoPtr<char> TmpBuf;
     uint32_t cchTmpBuf = 0, iTmpBuf = 0;
@@ -755,7 +695,11 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         /* Only increment the buffer offest if the name matches, otherwise we
          * overwrite it next iteration. */
         if (   RT_SUCCESS(rc)
-            && matchesPattern(paszPatterns, cchPatterns, &TmpBuf[iTmpBuf])
+            && (   matchAll
+                || RTStrSimplePatternMultiMatch(pszPatterns, RTSTR_MAX,
+                                                &TmpBuf[iTmpBuf], RTSTR_MAX,
+                                                NULL)
+               )
            )
         {
             const char *pszName = &TmpBuf[iTmpBuf];

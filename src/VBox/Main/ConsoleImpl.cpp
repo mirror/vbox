@@ -3658,39 +3658,10 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
 
     VBOXHGCMSVCPARM parm[3];
 
-    /*
-     * Set up the pattern parameter, translating the comma-separated list to a
-     * double-terminated zero-separated one.
-     */
-    Utf8Str utf8In(aPatterns);
-    Utf8Str utf8Out(utf8In.length() + 2);  /* Double terminator */
-    if (   ((aPatterns != NULL) && (utf8In.isNull()))
-        || utf8Out.isNull())
-        return E_OUTOFMEMORY;
-    const char *pcszIn = utf8In.raw();
-    char *pszzOut = utf8Out.mutableRaw();
-    size_t iIn = 0, iOut = 0;
-    if (aPatterns != NULL)
-        while (pcszIn[iIn] != '\0')
-        {
-            if (pcszIn[iIn] != ',')
-            {
-                pszzOut[iOut] = pcszIn[iIn];
-                ++iIn;
-            }
-            else
-            {
-                pszzOut[iOut] = '\0';
-                while ((',' == pcszIn[iIn]) || (' ' == pcszIn[iIn]))
-                    ++iIn;
-            }
-            ++iOut;
-        }
-    pszzOut[iOut] = '\0';
-
+    Utf8Str utf8Patterns(aPatterns);
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[0].u.pointer.addr = pszzOut;
-    parm[0].u.pointer.size = iOut + 1;
+    parm[0].u.pointer.addr = utf8Patterns.mutableRaw();
+    parm[0].u.pointer.size = utf8Patterns.length() + 1;
 
     /*
      * Now things get slightly complicated.  Due to a race with the guest adding
