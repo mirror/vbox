@@ -109,6 +109,7 @@ VMMR3_SOURCES   = \
 	VMMAll/PGMAllMap.cpp \
 	VMMAll/PGMAllPhys.cpp \
 	VMMAll/PGMAllPool.cpp \
+	VMMAll/REMAll.cpp \
 	VMMAll/SELMAll.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \

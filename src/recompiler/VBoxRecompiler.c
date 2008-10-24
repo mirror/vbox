@@ -740,7 +740,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
     /*
      * Sync the state and enable single instruction / single stepping.
      */
-    int rc = REMR3State(pVM, false /* no need to flush the TBs; we always compile. */);
+    int rc = REMR3State(pVM);
     if (VBOX_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
@@ -1631,13 +1631,12 @@ void remR3RecordCall(CPUState *env)
  * @returns VBox status code.
  *
  * @param   pVM         VM Handle.
- * @param   fFlushTBs   Flush all translation blocks before executing code
  *
  * @remark  The caller has to check for important FFs before calling REMR3Run. REMR3State will
  *          no do this since the majority of the callers don't want any unnecessary of events
  *          pending that would immediatly interrupt execution.
  */
-REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
+REMR3DECL(int)  REMR3State(PVM pVM)
 {
     Log2(("REMR3State:\n"));
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
@@ -1649,10 +1648,14 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
 
-    if (fFlushTBs)
+    /*
+     * If we have to flush TBs, do that immediately.
+     */
+    if (pVM->rem.s.fFlushTBs)
     {
         STAM_COUNTER_INC(&gStatFlushTBs);
         tb_flush(&pVM->rem.s.Env);
+        pVM->rem.s.fFlushTBs = false;
     }
 
     /*

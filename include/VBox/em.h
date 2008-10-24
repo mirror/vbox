@@ -136,7 +136,6 @@ VMMDECL(int)        EMInterpretCLTS(PVM pVM);
 VMMDECL(int)        EMInterpretPortIO(PVM pVM, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp);
 VMMDECL(int)        EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame);
 VMMDECL(int)        EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame);
-VMMDECL(void)       EMFlushREMTBs(PVM pVM);
 
 /** @name Assembly routines
  * @{ */

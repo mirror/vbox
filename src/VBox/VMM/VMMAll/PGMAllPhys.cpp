@@ -19,6 +19,9 @@
  * additional information or have any questions.
  */
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** @def PGM_IGNORE_RAM_FLAGS_RESERVED
  * Don't respect the MM_RAM_FLAGS_RESERVED flag when converting to HC addresses.
  *
@@ -262,7 +265,6 @@ void pgmPhysFreePage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     /** @todo implement this... */
     AssertFatalFailed();
 }
-
 
 
 /**
@@ -1125,7 +1127,7 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
     pCache->Entry[iCacheIndex].GCPhys = GCPhys;
     pCache->Entry[iCacheIndex].pbR3   = pbR3;
 }
-#endif
+#endif /* IN_RING3 */
 
 /**
  * Read physical memory.
@@ -1215,7 +1217,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 
                         void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 
-                        /** @note Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
+                        /* Note! Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                         rc = pNode->pfnHandlerR3(pVM, GCPhys, pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pNode->pvUserR3);
                     }
 #endif /* IN_RING3 */
@@ -1263,7 +1265,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 
                         void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 
-                        /* Note: Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
+                        /* Note! Dangerous assumption that HC handlers don't do anything that really requires an EMT lock! */
                         rc = pNode->pfnHandlerR3(pVM, (RTGCPTR)GCPtr, pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, 0);
                     }
 #endif /* IN_RING3 */
@@ -1384,6 +1386,7 @@ end:
 #endif
     return;
 }
+
 
 /**
  * Write to physical memory.
