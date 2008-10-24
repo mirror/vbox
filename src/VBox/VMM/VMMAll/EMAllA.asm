@@ -1025,25 +1025,39 @@ BEGINPROC   EMEmulateCmpXchg
 ENDPROC     EMEmulateCmpXchg
 
 
-%if 0
-;; not tested!!
-
 ;;
 ; Emulate LOCK CMPXCHG8B instruction, CDECL calling conv.
-; VMMDECL(uint32_t) EMEmulateLockCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+; VMMDECL(uint32_t) EMEmulateLockCmpXchg8b(void *pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 ;
-; @returns EFLAGS after the operation, only arithmetic flags are valid.
-; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
-; @param    [esp + 08h]    Param 2 - Address of the eax register
-; @param    [esp + 0ch]    Param 3 - Address of the edx register
-; @param    [esp + 10h]    Param 4 - EBX
-; @param    [esp + 14h]    Param 5 - ECX
+; @returns EFLAGS after the operation, only the ZF flag is valid.
+; @param    [esp + 04h]  gcc:rdi  msc:rcx       Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]  gcc:rsi  msc:rdx       Param 2 - Address of the eax register
+; @param    [esp + 0ch]  gcc:rdx  msc:r8        Param 3 - Address of the edx register
+; @param    [esp + 10h]  gcc:rcx  msc:r9        Param 4 - EBX
+; @param    [esp + 14h]  gcc:r8   msc:[rsp + 8] Param 5 - ECX
 ; @uses     eax, ecx, edx
 ;
 align 16
 BEGINPROC   EMEmulateLockCmpXchg8b
-    push    ebp
-    push    ebx
+    push    xBP
+    push    xBX
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     rbp, rcx
+    mov     r10, rdx
+    mov     eax, dword [rdx]
+    mov     edx, dword [r8]
+    mov     rbx, r9
+    mov     ecx, [rsp + 28h + 16]
+ %else
+    mov     rbp, rdi
+    mov     r10, rdx
+    mov     eax, dword [rsi]
+    mov     edx, dword [rdx]
+    mov     rbx, rcx
+    mov     rcx, r8
+ %endif
+%else
     mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
     mov     eax, [esp + 08h + 8]        ; &EAX
     mov     eax, dword [eax]
@@ -1051,39 +1065,65 @@ BEGINPROC   EMEmulateLockCmpXchg8b
     mov     edx, dword [edx]
     mov     ebx, [esp + 10h + 8]        ; EBX
     mov     ecx, [esp + 14h + 8]        ; ECX
+%endif
 
-    lock cmpxchg8b qword [ebp]          ; do CMPXCHG8B
+    lock    cmpxchg8b qword [xBP]          ; do CMPXCHG8B
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     dword [r10], eax
+    mov     dword [r8], edx
+ %else
+    mov     dword [rsi], eax
+    mov     dword [r10], edx
+ %endif
+%else
     mov     ebx, dword [esp + 08h + 8]
     mov     dword [ebx], eax
     mov     ebx, dword [esp + 0ch + 8]
     mov     dword [ebx], edx
-
+%endif
     ; collect flags and return.
     pushf
-    pop     eax
+    pop     MY_RET_REG
 
-    pop     ebx
-    pop     ebp
+    pop     xBX
+    pop     xBP
     retn
-
 ENDPROC     EMEmulateLockCmpXchg8b
 
 ;;
 ; Emulate CMPXCHG8B instruction, CDECL calling conv.
-; VMMDECL(uint32_t) EMEmulateCmpXchg8b(RTHCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+; VMMDECL(uint32_t) EMEmulateCmpXchg8b(void *pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 ;
 ; @returns EFLAGS after the operation, only arithmetic flags are valid.
-; @param    [esp + 04h]    Param 1 - First parameter - pointer to first parameter
-; @param    [esp + 08h]    Param 2 - Address of the eax register
-; @param    [esp + 0ch]    Param 3 - Address of the edx register
-; @param    [esp + 10h]    Param 4 - EBX
-; @param    [esp + 14h]    Param 5 - ECX
+; @param    [esp + 04h]  gcc:rdi  msc:rcx       Param 1 - First parameter - pointer to first parameter
+; @param    [esp + 08h]  gcc:rsi  msc:rdx       Param 2 - Address of the eax register
+; @param    [esp + 0ch]  gcc:rdx  msc:r8        Param 3 - Address of the edx register
+; @param    [esp + 10h]  gcc:rcx  msc:r9        Param 4 - EBX
+; @param    [esp + 14h]  gcc:r8   msc:[rsp + 8] Param 5 - ECX
 ; @uses     eax, ecx, edx
 ;
 align 16
 BEGINPROC   EMEmulateCmpXchg8b
-    push    ebp
-    push    ebx
+    push    xBP
+    push    xBX
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     rbp, rcx
+    mov     r10, rdx
+    mov     eax, dword [rdx]
+    mov     edx, dword [r8]
+    mov     rbx, r9
+    mov     ecx, [rsp + 28h + 16]
+ %else
+    mov     rbp, rdi
+    mov     r10, rdx
+    mov     eax, dword [rsi]
+    mov     edx, dword [rdx]
+    mov     rbx, rcx
+    mov     rcx, r8
+ %endif
+%else
     mov     ebp, [esp + 04h + 8]        ; ebp = first parameter
     mov     eax, [esp + 08h + 8]        ; &EAX
     mov     eax, dword [eax]
@@ -1091,20 +1131,31 @@ BEGINPROC   EMEmulateCmpXchg8b
     mov     edx, dword [edx]
     mov     ebx, [esp + 10h + 8]        ; EBX
     mov     ecx, [esp + 14h + 8]        ; ECX
+%endif
 
-    cmpxchg8b qword [ebp]               ; do CMPXCHG8B
+    cmpxchg8b qword [xBP]          ; do CMPXCHG8B
+    
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     dword [r10], eax
+    mov     dword [r8], edx
+ %else
+    mov     dword [rsi], eax
+    mov     dword [r10], edx
+ %endif
+%else
     mov     ebx, dword [esp + 08h + 8]
     mov     dword [ebx], eax
     mov     ebx, dword [esp + 0ch + 8]
     mov     dword [ebx], edx
+%endif
 
     ; collect flags and return.
     pushf
-    pop     eax
+    pop     MY_RET_REG
 
-    pop     ebx
-    pop     ebp
+    pop     xBX
+    pop     xBP
     retn
 ENDPROC     EMEmulateCmpXchg8b
 
-%endif
