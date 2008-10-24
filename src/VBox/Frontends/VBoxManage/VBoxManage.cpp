@@ -2219,12 +2219,19 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
             if (details == VMINFO_MACHINEREADABLE)
             {
+                uint64_t ThroughputSend = 0;
+                uint64_t ThroughputReceive = 0;
+                if (EndTime != BeginTime)
+                {
+                    ThroughputSend = (BytesSent * 1000) / (EndTime - BeginTime);
+                    ThroughputReceive = (BytesReceived * 1000) / (EndTime - BeginTime);
+                }
                 RTPrintf("VRDPBytesSent=%llu\n", BytesSent);
-                RTPrintf("VRDPThroughputSend=%llu\n", (BytesSent * 1000) / (EndTime - BeginTime) );
+                RTPrintf("VRDPThroughputSend=%llu\n", ThroughputSend);
                 RTPrintf("VRDPBytesSentTotal=%llu\n", BytesSentTotal);
 
                 RTPrintf("VRDPBytesReceived=%llu\n", BytesReceived);
-                RTPrintf("VRDPThroughputReceive=%llu\n", (BytesReceived * 1000) / (EndTime - BeginTime) );
+                RTPrintf("VRDPThroughputReceive=%llu\n", ThroughputReceive);
                 RTPrintf("VRDPBytesReceivedTotal=%llu\n", BytesReceivedTotal);
             }
             else
@@ -7934,7 +7941,7 @@ static int handleMetricsSetup(int argc, char *argv[],
     if (listMatches)
         listAffectedMetrics(aVirtualBox,
                             ComSafeArrayAsInParam(affectedMetrics));
-    
+
     return 0;
 }
 
