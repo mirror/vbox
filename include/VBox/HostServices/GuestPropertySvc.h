@@ -95,7 +95,7 @@ const struct
 enum { MAX_FLAGS_LEN =   sizeof(flagNames[0]) + 2  /* + 2 for ", " */
                        + sizeof(flagNames[1]) + 2
                        + sizeof(flagNames[2]) + 2
-                       + sizeof(flagNames[3])
+                       + sizeof(flagNames[3]) + 1  /* + 1 for '\0' */
      };
 
 /**
