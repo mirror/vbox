@@ -70,6 +70,7 @@
 #include <iprt/process.h>
 #include <iprt/cpputils.h>
 #include <iprt/env.h>
+#include <iprt/string.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -2829,127 +2830,6 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aName, ULONG64 *aTim
     return GetGuestProperty(aName, &dummyValue, aTimestamp, &dummyFlags);
 }
 
-/**
- * Matches a sample name against a pattern.
- *
- * @returns True if matches, false if not.
- * @param   pszPat      Pattern.
- * @param   cchPat      Number of characters in pszPat
- * @param   pszName     Name to match against the pattern.
- * @todo move this into IPRT
- */
-static bool matchesSinglePatternEx(const char *pszPat, size_t cchPat, const char *pszName)
-{
-    /* ASSUMES ASCII */
-    for (;;)
-    {
-        char chPat = *pszPat;
-        switch (chPat)
-        {
-            default:
-                if (*pszName != chPat)
-                    return false;
-                break;
-
-            case '*':
-            {
-                while (   (--cchPat > 0)
-                       && ((chPat = *++pszPat) == '*' || chPat == '?')
-                      )
-                    /* nothing */;
-
-                for (;;)
-                {
-                    char ch = *pszName++;
-                    if (   cchPat == 0
-                        || (cchPat == 1 && ch == chPat)
-                        || matchesSinglePatternEx(pszPat, cchPat, pszName)
-                       )
-                        return true;
-                    if (!ch)
-                        return false;
-                }
-                /* won't ever get here */
-                break;
-            }
-
-            case '?':
-                if (!*pszName)
-                    return false;
-                break;
-
-            case '\0':
-                return !*pszName;
-        }
-        pszName++;
-        pszPat++;
-        if (--cchPat == 0)
-            return !*pszName;
-        Assert(cchPat > 0);
-    }
-    return true;
-}
-
-/* Checks to see if a pattern matches a name. */
-static bool matchesSinglePattern(const char *pszPat, const char *pszName)
-{
-    return matchesSinglePatternEx(pszPat, strlen(pszPat), pszName);
-}
-
-/* Checks to see if the given string matches against one of the patterns in
- * the list. */
-static bool matchesPattern(const char *paszPatterns, size_t cchPatterns,
-                           const char *pszString)
-{
-    size_t iOffs = 0;
-    /* If the first pattern in the list is empty, treat it as "match all". */
-    bool matched = (cchPatterns > 0) && (0 == *paszPatterns);
-    while ((iOffs < cchPatterns) && !matched)
-    {
-        size_t cchCurrent;
-        if (   RT_SUCCESS(RTStrNLenEx(paszPatterns + iOffs,
-                                      cchPatterns - iOffs, &cchCurrent))
-            && (cchCurrent > 0)
-           )
-        {
-            matched = matchesSinglePattern(paszPatterns + iOffs, pszString);
-            iOffs += cchCurrent + 1;
-        }
-        else
-            iOffs = cchPatterns;
-    }
-    return matched;
-}
-
-/* Checks to see if the given string matches against one of the patterns in
- * the comma-separated list.  Note that spaces at the beginning of patterns
- * are ignored - '?' should be used here if that is really needed. */
-static bool matchesPatternComma(const char *pcszPatterns, const char *pcszString)
-{
-    AssertPtr(pcszPatterns);
-    const char *pcszCur = pcszPatterns;
-    /* If list is empty, treat it as "match all". */
-    bool matched = (0 == *pcszPatterns);
-    bool done = false;
-    while (!done && !matched)
-    {
-        const char *pcszNext = strchr(pcszCur, ',');
-        if (pcszNext != NULL)
-        {
-            matched = matchesSinglePatternEx(pcszCur, pcszNext - pcszCur, pcszString);
-            pcszCur = pcszNext;
-            while ((',' == *pcszCur) || (' ' == *pcszCur))
-                ++pcszCur;
-        }
-        else
-        {
-            matched = matchesSinglePattern(pcszCur, pcszString);
-            done = true;
-        }
-    }
-    return matched;
-}
-
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
@@ -2972,6 +2852,9 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
         || utf8Patterns.isNull()
        )
         return E_OUTOFMEMORY;
+    bool matchAll = false;
+    if (0 == utf8Patterns.length())
+        matchAll = true;
 
     uint32_t fFlags = NILFLAG;
     if ((aFlags != NULL) && RT_FAILURE (validateFlags (utf8Flags.raw(), &fFlags))
@@ -3055,7 +2938,12 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
                                                  true /* isSetter */,
                                                  &dummy, &dummy64, &dummy);
     }
-    if (SUCCEEDED (rc) && matchesPatternComma (utf8Patterns.raw(), utf8Name.raw()))
+    if (   SUCCEEDED (rc)
+        && (   matchAll
+            || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
+                                             utf8Name.raw(), RTSTR_MAX, NULL)
+           )
+       )
         mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
@@ -3090,6 +2978,9 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
     using namespace guestProp;
     HRESULT rc = E_FAIL;
 
+    bool matchAll = false;
+    if ((NULL == aPatterns) || (0 == aPatterns[0]))
+        matchAll = true;
     if (!mHWData->mPropertyServiceActive)
     {
 
@@ -3099,7 +2990,12 @@ STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArr
         HWData::GuestPropertyList propList;
         for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
              it != mHWData->mGuestProperties.end(); ++it)
-            if (matchesPatternComma(Utf8Str(aPatterns).raw(), Utf8Str(it->mName).raw()))
+            if (   matchAll
+                || RTStrSimplePatternMultiMatch (Utf8Str(aPatterns).raw(),
+                                                 RTSTR_MAX,
+                                                 Utf8Str(it->mName).raw(),
+                                                 RTSTR_MAX, NULL)
+               )
                 propList.push_back(*it);
 
 /*
@@ -9346,9 +9242,22 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
     if ((aValue != NULL) && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
         return E_POINTER;  /* aValue can be NULL to indicate deletion */
 
+    Utf8Str utf8Name(aName);
+    Utf8Str utf8Flags(aFlags);
+    Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
+    if (   utf8Name.isNull()
+        || ((aFlags != NULL) && utf8Flags.isNull())
+        || utf8Patterns.isNull()
+       )
+        return E_OUTOFMEMORY;
+
     uint32_t fFlags = NILFLAG;
-    if ((aFlags != NULL) && RT_FAILURE (validateFlags (Utf8Str(aFlags).raw(), &fFlags)))
+    if ((aFlags != NULL) && RT_FAILURE (validateFlags (utf8Flags.raw(), &fFlags)))
         return E_INVALIDARG;
+
+    bool matchAll = false;
+    if (0 == utf8Patterns.length())
+        matchAll = true;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -9374,8 +9283,10 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
 
     /* send a callback notification if appropriate */
     alock.leave();
-    if (matchesPatternComma (Utf8Str(mHWData->mGuestPropertyNotificationPatterns).raw(),
-                             Utf8Str(aName).raw()))
+    if (   matchAll
+        || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
+                                         utf8Name.raw(), RTSTR_MAX, NULL)
+       )
         mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
 
     return S_OK;

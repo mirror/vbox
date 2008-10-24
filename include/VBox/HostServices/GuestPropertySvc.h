@@ -56,6 +56,8 @@ enum { MAX_NAME_LEN = 64 };
 enum { MAX_VALUE_LEN = 128 };
 /** Maximum number of properties per guest */
 enum { MAX_PROPS = 256 };
+/** Maximum size for enumeration patterns */
+enum { MAX_PATTERN_LEN = 1024 };
 
 /**
  * The guest property flag values which are currently accepted.
