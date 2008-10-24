@@ -826,9 +826,21 @@ DECLINLINE(void) gen_jmp_im(target_ulong pc)
 #ifdef VBOX
 static void gen_check_external_event()
 {
-    /** @todo: this code is either wrong, or low performing, 
-        rewrite flags check in TCG IR */
-    //tcg_gen_helper_0_0(helper_check_external_event);
+    int skip_label;
+    
+    skip_label = gen_new_label();
+    tcg_gen_ld32u_tl(cpu_tmp0, cpu_env, offsetof(CPUState, interrupt_request));
+    /* Keep in sync with helper_check_external_event() */
+    tcg_gen_andi_tl(cpu_tmp0, cpu_tmp0, 
+                    CPU_INTERRUPT_EXTERNAL_EXIT
+                    | CPU_INTERRUPT_EXTERNAL_TIMER
+                    | CPU_INTERRUPT_EXTERNAL_DMA
+                    | CPU_INTERRUPT_EXTERNAL_HARD);
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_tmp0, 0, skip_label);
+
+    tcg_gen_helper_0_0(helper_check_external_event);
+
+   gen_set_label(skip_label);
 }
 
 #ifndef VBOX
