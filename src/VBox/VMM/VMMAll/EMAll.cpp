@@ -1481,10 +1481,63 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     LogFlow(("%s %VGv rax=%RX64 %RX64 ZF=%d\n", emGetMnemonic(pCpu), GCPtrPar1, pRegFrame->rax, valpar, !!(eflags & X86_EFL_ZF)));
 
     /* Update guest's eflags and finish. */
-    pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
+    pRegFrame->eflags.u32 =   (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
                             | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
 
     *pcbSize = param2.size;
+    return VINF_SUCCESS;
+}
+
+/*
+ * [LOCK] CMPXCHG8B emulation.
+ */
+static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    Assert(pCpu->mode != CPUMODE_64BIT);    /** @todo check */
+    OP_PARAMVAL param1;
+
+    /* Source to make DISQueryParamVal read the register value - ugly hack */
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
+    if(VBOX_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    RTGCPTR  GCPtrPar1;
+    void    *pvParam1;
+    uint64_t eflags;
+
+    AssertReturn(pCpu->param1.size == 8, VERR_EM_INTERPRETER);
+    switch(param1.type)
+    {
+    case PARMTYPE_ADDRESS:
+        GCPtrPar1 = param1.val.val64;
+        GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
+
+        rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrPar1, &pvParam1);
+        if (VBOX_FAILURE(rc))
+        {
+            AssertRC(rc);
+            return VERR_EM_INTERPRETER;
+        }
+        break;
+
+    default:
+        return VERR_EM_INTERPRETER;
+    }
+
+    LogFlow(("%s %VGv=%08x eax=%08x\n", emGetMnemonic(pCpu), pvParam1, pRegFrame->eax));
+
+    if (pCpu->prefix & PREFIX_LOCK)
+        eflags = EMEmulateLockCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
+    else
+        eflags = EMEmulateCmpXchg8b(pvParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx);
+
+    LogFlow(("%s %VGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pCpu), pvParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
+
+    /* Update guest's eflags and finish; note that *only* ZF is affected. */
+    pRegFrame->eflags.u32 =   (pRegFrame->eflags.u32 & ~(X86_EFL_ZF))
+                            | (eflags                &  (X86_EFL_ZF));
+
+    *pcbSize = 8;
     return VINF_SUCCESS;
 }
 
@@ -2832,6 +2885,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         ||  (   (pCpu->prefix & PREFIX_LOCK)
              && pCpu->pCurInstr->opcode != OP_OR
              && pCpu->pCurInstr->opcode != OP_BTR
+             && pCpu->pCurInstr->opcode != OP_CMPXCHG
+             && pCpu->pCurInstr->opcode != OP_CMPXCHG8B
             )
        )
 #endif
@@ -2929,15 +2984,14 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         INTERPRET_CASE(OP_CMPXCHG, CmpXchg);
 #ifdef IN_GC
         INTERPRET_CASE(OP_STI,Sti);
-        INTERPRET_CASE(OP_CMPXCHG8B, CmpXchg8b);
         INTERPRET_CASE(OP_XADD, XAdd);
 #endif
+        INTERPRET_CASE(OP_CMPXCHG8B, CmpXchg8b);
         INTERPRET_CASE(OP_HLT,Hlt);
         INTERPRET_CASE(OP_IRET,Iret);
         INTERPRET_CASE(OP_WBINVD,WbInvd);
 #ifdef VBOX_WITH_STATISTICS
 #ifndef IN_GC
-        INTERPRET_STAT_CASE(OP_CMPXCHG8B, CmpXchg8b);
         INTERPRET_STAT_CASE(OP_XADD, XAdd);
 #endif
         INTERPRET_STAT_CASE(OP_MOVNTPS,MovNTPS);

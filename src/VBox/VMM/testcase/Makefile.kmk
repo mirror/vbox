@@ -25,7 +25,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Target lists.
 #
-PROGRAMS   += tstVMStructSize tstVMStructGC tstAsmStructs tstAsmStructsGC tstVMM tstVMM-HwAccm tstGlobalConfig
+PROGRAMS   += tstVMStructSize tstVMStructGC tstAsmStructs tstAsmStructsGC tstVMM tstVMM-HwAccm tstGlobalConfig tstInstrEmul
 ifneq ($(KBUILD_TARGET),win)
 PROGRAMS   += tstVMMFork
 endif
@@ -53,18 +53,21 @@ ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
  ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
   OTHERS += \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run \
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run
  endif
 endif
 
 # The normal testing pass.
 TESTING += \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
-	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
+	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run \
+        $(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run
 
 OTHER_CLEAN += \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run \
+        $(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.h \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o \
 	$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac \
@@ -134,6 +137,12 @@ tstMMHyperHeap_LIBS     = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstSSM_TEMPLATE         = VBOXR3TSTEXE
 tstSSM_SOURCES          = tstSSM.cpp
 tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+
+tstInstrEmul_TEMPLATE   = VBOXR3TSTEXE
+tstInstrEmul_SOURCES    = tstInstrEmul.cpp \
+                          ../VMMAll/EMAllA.asm
+
+tstInstrEmul_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstCFGM_TEMPLATE        = VBOXR3TSTEXE
 tstCFGM_SOURCES         = tstCFGM.cpp
@@ -320,3 +329,11 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize) 
 # alias for the two struct tests.
 run-struct-tests: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run
 
+
+#
+# Run rule for tstInstrEmul.
+#
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run: $$(INSTARGET_tstInstrEmul)
+	$(QUIET)$(RM) -f $@
+	$(INSTARGET_tstInstrEmul)
+	$(QUIET)$(APPEND) "$@" "done"
