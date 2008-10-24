@@ -87,9 +87,9 @@ VBoxFilePathSelectorWidget::VBoxFilePathSelectorWidget (QWidget *aParent)
     setMinimumWidth (200);
 
     /* Setup connections */
-    connect (lineEdit(), SIGNAL (textEdited (const QString &)),
-             this, SLOT (setPathInternal (const QString &)));
     connect (this, SIGNAL (activated (int)), this, SLOT (onActivated (int)));
+    connect (lineEdit(), SIGNAL (textEdited (const QString &)),
+             this, SLOT (onTextEdited (const QString &)));
     connect (mCopyAction, SIGNAL (triggered (bool)), this, SLOT (copyToClipboard()));
 
     /* Applying language settings */
@@ -154,11 +154,12 @@ QString VBoxFilePathSelectorWidget::path() const
     return mPath;
 }
 
-void VBoxFilePathSelectorWidget::setPath (const QString &aPath)
+void VBoxFilePathSelectorWidget::setPath (const QString &aPath, bool aRefreshText /* = true */)
 {
     mPath = aPath.isEmpty() ? QString::null :
             QDir::toNativeSeparators (aPath);
-    refreshText();
+    if (aRefreshText)
+        refreshText();
 }
 
 void VBoxFilePathSelectorWidget::setHomeDir (const QString &aHomeDir)
@@ -272,7 +273,7 @@ void VBoxFilePathSelectorWidget::onActivated (int aIndex)
         }
         case ResetId:
         {
-            setPathInternal (QString::null);
+            changePath (QString::null);
             break;
         }
         default:
@@ -282,6 +283,11 @@ void VBoxFilePathSelectorWidget::onActivated (int aIndex)
     setFocus();
 }
 
+void VBoxFilePathSelectorWidget::onTextEdited (const QString &aPath)
+{
+    changePath (aPath, false /* refresh text? */);
+}
+
 void VBoxFilePathSelectorWidget::copyToClipboard()
 {
     QString text (fullPath());
@@ -289,6 +295,15 @@ void VBoxFilePathSelectorWidget::copyToClipboard()
     if (QApplication::clipboard()->supportsSelection())
         QApplication::clipboard()->setText (text, QClipboard::Selection);
     QApplication::clipboard()->setText (text, QClipboard::Clipboard);
+}
+
+void VBoxFilePathSelectorWidget::changePath (const QString &aPath,
+                                             bool aRefreshText /* = true */)
+{
+    QString oldPath = mPath;
+    setPath (aPath, aRefreshText);
+    if (!mModified && mPath != oldPath)
+        mModified = true;
 }
 
 void VBoxFilePathSelectorWidget::selectPath()
@@ -307,7 +322,7 @@ void VBoxFilePathSelectorWidget::selectPath()
         return;
 
     path.remove (QRegExp ("[\\\\/]$"));
-    setPathInternal (path);
+    changePath (path);
 }
 
 QIcon VBoxFilePathSelectorWidget::defaultIcon() const
@@ -385,10 +400,6 @@ void VBoxFilePathSelectorWidget::refreshText()
 {
     if (mIsEditableMode)
     {
-        /* Skip this step if text already the same */
-        if (mPath == lineEdit()->text())
-            return;
-
         /* Cursor positioning variables */
         int curPos = -1;
         int diffPos = -1;
@@ -405,7 +416,8 @@ void VBoxFilePathSelectorWidget::refreshText()
         /* In editable mode there should be no any icon
          * and text have be corresponding real stored path
          * which can be absolute or relative. */
-        setItemText (PathId, mPath);
+        if (lineEdit()->text() != mPath)
+            setItemText (PathId, mPath);
         setItemIcon (PathId, QIcon());
         setToolTip (mMode == Mode_Folder ?
             tr ("Please type the desired folder path here.") :
@@ -457,13 +469,5 @@ void VBoxFilePathSelectorWidget::refreshText()
         setToolTip (fullPath());
         setItemData (PathId, toolTip(), Qt::ToolTipRole);
     }
-}
-
-void VBoxFilePathSelectorWidget::setPathInternal (const QString &aText)
-{
-    QString oldPath = mPath;
-    setPath (aText);
-    if (mPath != oldPath)
-        mModified = true;
 }
 
