@@ -264,12 +264,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 #endif
 
     /* ctx. */
-    rc = CPUMQueryGuestCtxPtr(pVM, &pVM->rem.s.pCtx);
-    if (VBOX_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to obtain guest ctx pointer. rc=%Vrc\n", rc));
-        return rc;
-    }
+    pVM->rem.s.pCtx = CPUMQueryGuestCtxPtr(pVM);
     AssertMsg(MMR3PhysGetRamSize(pVM) == 0, ("Init order have changed! REM depends on notification about ALL physical memory registrations\n"));
 
     /* ignore all notifications */
@@ -3178,6 +3173,21 @@ int32_t remR3PhysReadS32(RTGCPHYS SrcGCPhys)
 uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys)
 {
     uint64_t val;
+    STAM_PROFILE_ADV_START(&gStatMemRead, a);
+    VBOX_CHECK_ADDR(SrcGCPhys);
+    val = PGMR3PhysReadU64(cpu_single_env->pVM, SrcGCPhys);
+    STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+    return val;
+}
+
+/**
+ * Read guest RAM and ROM, signed 64-bit.
+ *
+ * @param   SrcGCPhys       The source address (guest physical).
+ */
+int64_t remR3PhysReadS64(RTGCPHYS SrcGCPhys)
+{
+    int64_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
     val = PGMR3PhysReadU64(cpu_single_env->pVM, SrcGCPhys);

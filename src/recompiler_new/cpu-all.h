@@ -1189,8 +1189,12 @@ extern uint8_t *phys_ram_base;
 extern uint8_t *phys_ram_dirty;
 
 /* physical memory access */
-#define TLB_INVALID_MASK   (1 << 3)
-#define IO_MEM_SHIFT       4
+
+/* MMIO pages are identified by a combination of an IO device index and
+   3 flags.  The ROMD code stores the page ram offset in iotlb entry, 
+   so only a limited number of ids are avaiable.  */
+
+#define IO_MEM_SHIFT       3
 #define IO_MEM_NB_ENTRIES  (1 << (TARGET_PAGE_BITS  - IO_MEM_SHIFT))
 
 #define IO_MEM_RAM         (0 << IO_MEM_SHIFT) /* hardcoded offset */
@@ -1200,9 +1204,8 @@ extern uint8_t *phys_ram_dirty;
 #if defined(VBOX) && !defined(VBOX_WITH_NEW_PHYS_CODE)
 #define IO_MEM_RAM_MISSING (5 << IO_MEM_SHIFT) /* used internally, never use directly */
 #endif
-/* acts like a ROM when read and like a device when written. As an
-   exception, the write memory callback gets the ram offset instead of
-   the physical address */
+
+/* Acts like a ROM when read and like a device when written.  */
 #define IO_MEM_ROMD        (1)
 #define IO_MEM_SUBPAGE     (2)
 #define IO_MEM_SUBWIDTH    (4)
