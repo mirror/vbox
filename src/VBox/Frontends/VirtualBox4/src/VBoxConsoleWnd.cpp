@@ -230,7 +230,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     vmShowInformationDlgAction = new QAction (this);
     vmShowInformationDlgAction->setIcon (VBoxGlobal::iconSet (
-        ":/description_16px.png", ":/description_disabled_16px.png"));
+        ":/session_info_16px.png", ":/session_info_disabled_16px.png"));
 
     vmDisableMouseIntegrAction = new QAction (this);
     vmDisableMouseIntegrAction->setIcon (VBoxGlobal::iconSet (

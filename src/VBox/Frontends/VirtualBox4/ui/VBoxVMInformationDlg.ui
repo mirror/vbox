@@ -29,9 +29,6 @@
   <property name="windowTitle" >
    <string>VBoxVMInformationDlg</string>
   </property>
-  <property name="windowIcon" >
-   <iconset resource="../VirtualBox.qrc" >:/description_16px.png</iconset>
-  </property>
   <widget class="QWidget" name="centralwidget" >
    <layout class="QVBoxLayout" >
     <item>

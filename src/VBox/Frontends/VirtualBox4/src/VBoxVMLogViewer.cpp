@@ -76,6 +76,10 @@ VBoxVMLogViewer::VBoxVMLogViewer (QWidget *aParent,
     /* Apply UI decorations */
     Ui::VBoxVMLogViewer::setupUi (this);
 
+    /* Apply window icons */
+    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
+                                             ":/vm_show_logs_32px.png", ":/show_logs_16px.png"));
+
     /* Enable size grip without using a status bar. */
     setSizeGripEnabled (true);
 

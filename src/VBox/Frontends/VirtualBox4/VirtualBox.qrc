@@ -130,7 +130,9 @@
     <file alias="fd_unmount_dis_16px.png">images/fd_unmount_dis_16px.png</file>
     <file alias="guesttools_16px.png">images/guesttools_16px.png</file>
     <file alias="guesttools_disabled_16px.png">images/guesttools_disabled_16px.png</file>
-    <file alias="diskim_16px.png">images/diskim_16px.png</file>
+    <file alias="diskimage_16px.png">images/diskimage_16px.png</file>
+    <file alias="diskimage_32px.png">images/diskimage_32px.png</file>
+    <file alias="diskimage_disabled_32px.png">images/diskimage_disabled_32px.png</file>
     <file alias="settings_16px.png">images/settings_16px.png</file>
     <file alias="delete_16px.png">images/delete_16px.png</file>
     <file alias="new_16px.png">images/new_16px.png</file>
@@ -243,6 +245,10 @@
     <file alias="description_disabled_16px.png">images/description_disabled_16px.png</file>
     <file alias="edit_description_16px.png">images/edit_description_16px.png</file>
     <file alias="edit_description_disabled_16px.png">images/edit_description_disabled_16px.png</file>
+    <file alias="session_info_16px.png">images/session_info_16px.png</file>
+    <file alias="session_info_disabled_16px.png">images/session_info_disabled_16px.png</file>
+    <file alias="session_info_32px.png">images/session_info_32px.png</file>
+    <file alias="session_info_disabled_32px.png">images/session_info_disabled_32px.png</file>
     <file alias="global_settings_16px.png">images/global_settings_16px.png</file>
     <file alias="global_settings_disabled_16px.png">images/global_settings_disabled_16px.png</file>
     <file alias="vrdp_16px.png">images/vrdp_16px.png</file>

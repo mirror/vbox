@@ -29,9 +29,6 @@
   <property name="windowTitle" >
    <string>Log Viewer</string>
   </property>
-  <property name="windowIcon" >
-   <iconset resource="../VirtualBox.qrc" >:/show_logs_16px.png</iconset>
-  </property>
   <widget class="QWidget" name="centralwidget" >
    <layout class="QVBoxLayout" >
     <item>
