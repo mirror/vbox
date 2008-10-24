@@ -72,6 +72,10 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     /* No icon for this window on the mac, cause this would act as proxy icon
      * which isn't necessary here. */
     setWindowIcon (QIcon());
+#else
+    /* Apply window icons */
+    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
+                                             ":/session_info_32px.png", ":/session_info_16px.png"));
 #endif
 
     /* Enable size grip without using a status bar. */

@@ -35,9 +35,6 @@
   <property name="windowTitle" >
    <string>Virtual Disk Manager</string>
   </property>
-  <property name="windowIcon" >
-   <iconset resource="../VirtualBox.qrc" >:/diskim_16px.png</iconset>
-  </property>
   <widget class="QWidget" name="mCentralWidget" >
    <layout class="QHBoxLayout" >
     <item>

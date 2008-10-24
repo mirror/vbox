@@ -278,7 +278,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
     mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
     mBtnEdit->setFocusPolicy (Qt::StrongFocus);
     mBtnEdit->setIcon (VBoxGlobal::iconSet (":/edit_description_16px.png",
-                                               ":/edit_description_disabled_16px.png"));
+                                            ":/edit_description_disabled_16px.png"));
     mBtnEdit->setToolButtonStyle (Qt::ToolButtonTextBesideIcon);
     connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
     hBtnLayout->addWidget (mBtnEdit);
@@ -402,7 +402,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     /* actions */
 
     fileDiskMgrAction = new QAction (this);
-    fileDiskMgrAction->setIcon (VBoxGlobal::iconSet (":/diskim_16px.png"));
+    fileDiskMgrAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
     fileSettingsAction = new QAction(this);
     fileSettingsAction->setMenuRole (QAction::PreferencesRole);
     fileSettingsAction->setIcon (VBoxGlobal::iconSet (":/global_settings_16px.png"));
