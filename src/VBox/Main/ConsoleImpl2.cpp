@@ -1885,21 +1885,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      *
      * Here we check the extra data entries for CFGM values
      * and create the nodes and insert the values on the fly. Existing
-     * values will be removed and reinserted. If a value is a valid number,
-     * it will be inserted as a number, otherwise as a string.
+     * values will be removed and reinserted. CFGM is typed, so by default
+     * we will guess whether it's a string or an integer (byte arrays are
+     * not currently supported). It's possible to override this autodetection
+     * by adding "string:", "integer:" or "bytes:" (future).
      *
      * We first perform a run on global extra data, then on the machine
      * extra data to support global settings with local overrides.
      *
      */
+    /** @todo add support for removing nodes and byte blobs. */
     Bstr strExtraDataKey;
     bool fGlobalExtraData = true;
     for (;;)
     {
+        /*
+         * Get the next key
+         */
         Bstr strNextExtraDataKey;
         Bstr strExtraDataValue;
-
-        /* get the next key */
         if (fGlobalExtraData)
             hrc = virtualBox->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
                                                   strExtraDataValue.asOutParam());
@@ -1919,70 +1923,85 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
             break;
         }
-
         strExtraDataKey = strNextExtraDataKey;
+
+        /*
+         * We only care about keys starting with "VBoxInternal/"
+         */
         Utf8Str strExtraDataKeyUtf8 = Utf8Str(strExtraDataKey);
-
-        /* we only care about keys starting with "VBoxInternal/" */
-        if (strncmp(strExtraDataKeyUtf8.raw(), "VBoxInternal/", 13) != 0)
+        char *pszExtraDataKey = (char *)strExtraDataKeyUtf8.raw();
+        if (strncmp(pszExtraDataKey, "VBoxInternal/", 13) != 0)
             continue;
-        char *pszExtraDataKey = (char*)strExtraDataKeyUtf8.raw() + 13;
+        pszExtraDataKey += 13;
 
-        /* the key will be in the format "Node1/Node2/Value" or simply "Value". */
+        /*
+         * The key will be in the format "Node1/Node2/Value" or simply "Value".
+         * Split the two and get the node, delete the value and create the node
+         * if necessary.
+         */
         PCFGMNODE pNode;
         char *pszCFGMValueName = strrchr(pszExtraDataKey, '/');
         if (pszCFGMValueName)
         {
-            /* terminate the node and advance to the value */
+            /* terminate the node and advance to the value (Utf8Str might not
+               offically like this but wtf) */
             *pszCFGMValueName = '\0';
             pszCFGMValueName++;
 
             /* does the node already exist? */
             pNode = CFGMR3GetChild(pRoot, pszExtraDataKey);
             if (pNode)
-            {
-                /* the value might already exist, remove it to be safe */
                 CFGMR3RemoveValue(pNode, pszCFGMValueName);
-            }
             else
             {
                 /* create the node */
                 rc = CFGMR3InsertNode(pRoot, pszExtraDataKey, &pNode);
-                AssertMsgRC(rc, ("failed to insert node '%s'\n", pszExtraDataKey));
-                if (VBOX_FAILURE(rc) || !pNode)
+                if (VBOX_FAILURE(rc))
+                {
+                    AssertLogRelMsgRC(rc, ("failed to insert node '%s'\n", pszExtraDataKey));
                     continue;
+                }
+                Assert(pNode);
             }
         }
         else
         {
+            /* root value (no node path). */
             pNode = pRoot;
             pszCFGMValueName = pszExtraDataKey;
             pszExtraDataKey--;
-
-            /* the value might already exist, remove it to be safe */
             CFGMR3RemoveValue(pNode, pszCFGMValueName);
         }
 
-        /* now let's have a look at the value */
+        /*
+         * Now let's have a look at the value.
+         * Empty strings means that we should remove the value, which we've
+         * already done above.
+         */
         Utf8Str strCFGMValueUtf8 = Utf8Str(strExtraDataValue);
         const char *pszCFGMValue = strCFGMValueUtf8.raw();
-        /* empty value means remove value which we've already done */
-        if (pszCFGMValue && *pszCFGMValue)
+        if (    pszCFGMValue
+            && *pszCFGMValue)
         {
-            /* if it's a valid number, we'll insert it as such, otherwise string */
             uint64_t u64Value;
-            char *pszNext = NULL;
-            if (   RTStrToUInt64Ex(pszCFGMValue, &pszNext, 0, &u64Value) == VINF_SUCCESS
-                && (!pszNext || *pszNext == '\0') /* check if the _whole_ string is a valid number */
-                )
+
+            /* check for type prefix first. */
+            if (!strncmp(pszCFGMValue, "string:", sizeof("string:") - 1))
+                rc = CFGMR3InsertString(pNode, pszCFGMValueName, pszCFGMValue + sizeof("string:") - 1);
+            else if (!strncmp(pszCFGMValue, "integer:", sizeof("integer:") - 1))
             {
+                rc = RTStrToUInt64Full(pszCFGMValue + sizeof("integer:") - 1, 0, &u64Value);
+                if (RT_SUCCESS(rc))
+                    rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
+            }
+            else if (!strncmp(pszCFGMValue, "bytes:", sizeof("bytes:") - 1))
+                rc = VERR_NOT_IMPLEMENTED;
+            /* auto detect type. */
+            else if (RT_SUCCESS(RTStrToUInt64Full(pszCFGMValue, 0, &u64Value)))
                 rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
-            }
             else
-            {
                 rc = CFGMR3InsertString(pNode, pszCFGMValueName, pszCFGMValue);
-            }
-            AssertMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", pszCFGMValue, pszExtraDataKey));
+            AssertLogRelMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", pszCFGMValue, pszExtraDataKey));
         }
     }
 
