@@ -3512,7 +3512,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
     VBOXHGCMSVCPARM parm[4];
     Utf8Str Utf8Name = aName;
     AssertReturn(!Utf8Name.isNull(), E_OUTOFMEMORY);
-    char pszBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN + 2];
+    char pszBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
 
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     /* To save doing a const cast, we use the mutableRaw() member. */
@@ -4593,7 +4593,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
     for (pValue = CFGMR3GetFirstValue (pValues); pValue != NULL;
          pValue = CFGMR3GetNextValue (pValue))
     {
-        char szPropName[guestProp::MAX_NAME_LEN + 1];
+        char szPropName[guestProp::MAX_NAME_LEN];
         vrc = CFGMR3GetValueName (pValue, szPropName, sizeof(szPropName));
         if (RT_SUCCESS(vrc))
         {
@@ -4619,9 +4619,9 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
     {
         using namespace guestProp;
 
-        char szPropName [MAX_NAME_LEN + 1];
-        char szPropValue [MAX_VALUE_LEN + 1];
-        char szPropFlags [MAX_FLAGS_LEN + 1];
+        char szPropName [MAX_NAME_LEN];
+        char szPropValue [MAX_VALUE_LEN];
+        char szPropFlags [MAX_FLAGS_LEN];
         ULONG64 u64Timestamp = 0;  /* default */
         vrc = CFGMR3GetValueName (pValue, szPropName, sizeof (szPropName));
         if (RT_SUCCESS(vrc))

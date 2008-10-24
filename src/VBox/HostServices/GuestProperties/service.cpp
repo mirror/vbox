@@ -372,7 +372,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     char *pszName, *pchBuf;
     uint32_t cchName, cchBuf;
     size_t cchValue, cchFlags, cchBufActual;
-    char szFlags[MAX_FLAGS_LEN + 1];
+    char szFlags[MAX_FLAGS_LEN];
     uint32_t fFlags;
 
     /*
@@ -648,7 +648,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[0], (void **) &paszPatterns, &cchPatterns);
-    if (RT_SUCCESS(rc) && cchPatterns > MAX_PATTERN_LEN + 1)
+    if (RT_SUCCESS(rc) && cchPatterns > MAX_PATTERN_LEN)
         rc = VERR_TOO_MUCH_DATA;
     if (RT_SUCCESS(rc))
         rc = VBoxHGCMParmPtrGet(&paParms[1], (void **) &pchBuf, &cchBuf);
@@ -657,7 +657,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * First repack the patterns into the format expected by RTStrSimplePatternMatch()
  */
     bool matchAll = false;
-    char pszPatterns[MAX_PATTERN_LEN + 1];
+    char pszPatterns[MAX_PATTERN_LEN];
     if (   (NULL == paszPatterns)
         || (cchPatterns < 2)  /* An empty pattern string means match all */
        )
@@ -757,7 +757,7 @@ void Service::notifyHost(const char *pszProperty)
     char szValue[MAX_VALUE_LEN];
     uint64_t u64Timestamp = 0;
     uint32_t fFlags = NILFLAG;
-    char szFlags[MAX_FLAGS_LEN + 1];
+    char szFlags[MAX_FLAGS_LEN];
     char *pszName = NULL, *pszValue = NULL, *pszFlags = NULL;
 
     AssertPtr(mpValueNode);

@@ -245,8 +245,8 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    char szModeName[MAX_NAME_LEN + 1];
-    char szModeParms[MAX_VALUE_LEN + 1];
+    char szModeName[MAX_NAME_LEN];
+    char szModeParms[MAX_VALUE_LEN];
     uint32_t u32ClientId = 0;
     RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%s", pszName);
     RTStrPrintf(szModeParms, sizeof(szModeParms), "%dx%dx%d", cx, cy, cBits);
@@ -289,7 +289,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
     int rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        char szModeName[MAX_NAME_LEN + 1];
+        char szModeName[MAX_NAME_LEN];
         RTStrPrintf(szModeName, sizeof(szModeName), VIDEO_PROP_PREFIX"%s", pszName);
         /** @todo add a VbglR3GuestPropReadValueF/FV that does the RTStrPrintf for you. */
         rc = VbglR3GuestPropReadValue(u32ClientId, szModeName, szModeParms,
