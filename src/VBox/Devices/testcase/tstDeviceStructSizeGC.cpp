@@ -995,6 +995,8 @@ int main()
     GEN_CHECK_OFF(AHCIPort, StatBytesWritten);
     GEN_CHECK_OFF(AHCIPort, StatBytesRead);
     GEN_CHECK_OFF(AHCIPort, StatQueueFillRate);
+    GEN_CHECK_OFF(AHCIPort, pu8Buf);
+    GEN_CHECK_OFF(AHCIPort, cbBuf);
 
     GEN_CHECK_SIZE(AHCI);
     GEN_CHECK_OFF(AHCI, dev);
