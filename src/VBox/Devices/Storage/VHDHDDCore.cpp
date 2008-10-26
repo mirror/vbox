@@ -878,11 +878,8 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         /*
          * Get the data block first.
          */
-        uint64_t uOffsetSectorAligned       = uOffset & ~0x1ff;
-        uint32_t cbOffsetDifference         = uOffset - uOffsetSectorAligned;
-        uint32_t cBlockAllocationTableEntry = (uOffsetSectorAligned / VHD_SECTOR_SIZE) / pImage->cSectorsPerDataBlock;
-        uint32_t cSectorsToRead             = (cbRead / VHD_SECTOR_SIZE) + (cbOffsetDifference ? 1 : 0);
-        uint32_t cBATEntryIndex             = (uOffsetSectorAligned / VHD_SECTOR_SIZE) % pImage->cSectorsPerDataBlock;
+        uint32_t cBlockAllocationTableEntry = (uOffset / 512) / pImage->cSectorsPerDataBlock;
+        uint32_t cBATEntryIndex = (uOffset / 512) % pImage->cSectorsPerDataBlock;
         uint64_t uVhdOffset;
 
         LogFlow(("%s: cBlockAllocationTableEntry=%u cBatEntryIndex=%u\n", __FUNCTION__, cBlockAllocationTableEntry, cBATEntryIndex));
@@ -898,13 +895,13 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
             return VERR_VDI_BLOCK_FREE;
         }
 
-        uVhdOffset = (((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * VHD_SECTOR_SIZE) + cbOffsetDifference;
+        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
         Log(("%s: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
 
         /*
          * Clip read range to remain in this data block.
          */
-        cbRead = RT_MIN(cbRead, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE) - cbOffsetDifference));
+        cbRead = RT_MIN(cbRead, (pImage->cbDataBlock - (cBATEntryIndex * 512)));
 
         /* Read in the block's bitmap. */
         rc = RTFileReadAt(pImage->File,
@@ -946,9 +943,9 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                         break;
 
                     iBATEntryIndexCurr++;
-                } while (cSectors < cSectorsToRead);
+                } while (cSectors < (cbRead / VHD_SECTOR_SIZE));
 
-                cbRead = RT_MIN(cbRead, cSectors * VHD_SECTOR_SIZE);
+                cbRead = cSectors * VHD_SECTOR_SIZE;
 
                 Log(("%s: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
                 rc = RTFileReadAt(pImage->File, uVhdOffset, pvBuf, cbRead, NULL);
@@ -976,9 +973,9 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                         break;
 
                     iBATEntryIndexCurr++;
-                } while (cSectors < cSectorsToRead);
+                } while (cSectors < (cbRead / VHD_SECTOR_SIZE));
 
-                cbRead = RT_MIN(cbRead, cSectors * VHD_SECTOR_SIZE);
+                cbRead = cSectors * VHD_SECTOR_SIZE;
                 Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
                 rc = VERR_VDI_BLOCK_FREE;
             }
@@ -1009,17 +1006,17 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
     LogFlow(("%s: pBackendData=%p uOffset=%llu pvBuf=%p cbWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
              __FUNCTION__, pBackendData, uOffset, pvBuf, cbWrite, pcbPreRead, pcbPostRead, fWrite));
 
+    Assert(uOffset % 512 == 0);
+    Assert(cbWrite % 512 == 0);
+
     if (pImage->pBlockAllocationTable)
     {
         /*
          * Get the data block first.
          */
-        uint64_t uOffsetSectorAligned       = uOffset & ~0x1ff;
-        uint32_t cbOffsetDifference         = uOffset - uOffsetSectorAligned;
-        uint32_t cSector                    = uOffsetSectorAligned / VHD_SECTOR_SIZE;
-        uint32_t cSectorsToWrite            = (cbWrite / VHD_SECTOR_SIZE) + (cbOffsetDifference ? 1 : 0);
+        uint32_t cSector = uOffset / 512;
         uint32_t cBlockAllocationTableEntry = cSector / pImage->cSectorsPerDataBlock;
-        uint32_t cBATEntryIndex             = cSector % pImage->cSectorsPerDataBlock;
+        uint32_t cBATEntryIndex = cSector % pImage->cSectorsPerDataBlock;
         uint64_t uVhdOffset;
 
         /*
@@ -1042,7 +1039,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
             /*
              * Set the new end of the file and link the new block into the BAT.
              */
-            pImage->pBlockAllocationTable[cBlockAllocationTableEntry] = pImage->uCurrentEndOfFile / VHD_SECTOR_SIZE;
+            pImage->pBlockAllocationTable[cBlockAllocationTableEntry] = pImage->uCurrentEndOfFile / 512;
             pImage->uCurrentEndOfFile += cbNewBlock;
             RTMemFree(pNewBlock);
         }
@@ -1050,12 +1047,12 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
         /*
          * Calculate the real offset in the file.
          */
-        uVhdOffset = (((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * VHD_SECTOR_SIZE) + cbOffsetDifference;
+        uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
 
         /*
          * Clip write range.
          */
-        cbWrite = RT_MIN(cbWrite, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE) - cbOffsetDifference));
+        cbWrite = RT_MIN(cbWrite, (pImage->cbDataBlock - (cBATEntryIndex * 512)));
         RTFileWriteAt(pImage->File, uVhdOffset, pvBuf, cbWrite, NULL);
 
         /* Read in the block's bitmap. */
@@ -1065,7 +1062,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
         if (RT_SUCCESS(rc))
         {
             /* Set the bits for all sectors having been written. */
-            for (uint32_t iSector = 0; iSector < cSectorsToWrite; iSector++)
+            for (uint32_t iSector = 0; iSector < (cbWrite / VHD_SECTOR_SIZE); iSector++)
             {
                 uint32_t iBitmap    = cBATEntryIndex / 8; /* Byte in the block bitmap. */
                 uint8_t  iBitInByte = (8 - 1) - (cBATEntryIndex % 8);
