@@ -262,8 +262,10 @@ int cpu_exec(CPUState *env1)
     uint8_t *tc_ptr;
     unsigned long next_tb;
 
+#ifndef VBOX
     if (cpu_halted(env1) == EXCP_HALTED)
         return EXCP_HALTED;
+#endif
 
     cpu_single_env = env1;
 
