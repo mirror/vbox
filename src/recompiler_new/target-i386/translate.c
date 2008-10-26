@@ -826,21 +826,32 @@ DECLINLINE(void) gen_jmp_im(target_ulong pc)
 #ifdef VBOX
 static void gen_check_external_event()
 {
+#if 0
+    /** @todo: nike make it work */
+    /* This code is more effective, but for whatever reason TCG fails to compile it */
     int skip_label;
+    TCGv t0;
     
     skip_label = gen_new_label();
-    tcg_gen_ld32u_tl(cpu_tmp0, cpu_env, offsetof(CPUState, interrupt_request));
+    t0 = tcg_temp_local_new(TCG_TYPE_TL);
+    /* t0 = cpu_tmp0; */
+
+    tcg_gen_ld32u_tl(t0, cpu_env, offsetof(CPUState, interrupt_request));
     /* Keep in sync with helper_check_external_event() */
-    tcg_gen_andi_tl(cpu_tmp0, cpu_tmp0, 
+    tcg_gen_andi_tl(t0, t0, 
                     CPU_INTERRUPT_EXTERNAL_EXIT
                     | CPU_INTERRUPT_EXTERNAL_TIMER
                     | CPU_INTERRUPT_EXTERNAL_DMA
                     | CPU_INTERRUPT_EXTERNAL_HARD);
-    tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_tmp0, 0, skip_label);
+    tcg_gen_brcond_i32(TCG_COND_EQ, t0, 0, skip_label);
+    tcg_temp_free(t0);
 
     tcg_gen_helper_0_0(helper_check_external_event);
 
    gen_set_label(skip_label);
+#else
+    tcg_gen_helper_0_0(helper_check_external_event);
+#endif
 }
 
 #ifndef VBOX
@@ -7911,7 +7922,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                 tcg_gen_helper_1_1(helper_lsl, t0, cpu_T[0]);
             tcg_gen_andi_tl(cpu_tmp0, cpu_cc_src, CC_Z);
             label1 = gen_new_label();
-            tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_tmp0, 0, label1);
+            tcg_gen_brcond_i32(TCG_COND_EQ, cpu_tmp0, 0, label1);
             gen_op_mov_reg_v(ot, reg, t0);
             gen_set_label(label1);
             s->cc_op = CC_OP_EFLAGS;
@@ -8241,6 +8252,16 @@ DECLINLINE(void) gen_intermediate_code_internal(CPUState *env,
     dc->addseg = (flags >> HF_ADDSEG_SHIFT) & 1;
     dc->f_st = 0;
     dc->vm86 = (flags >> VM_SHIFT) & 1;
+#ifdef VBOX_WITH_CALL_RECORD
+    dc->vme = !!(env->cr[4] & CR4_VME_MASK);
+    if (    !(env->state & CPU_RAW_RING0)
+        &&  (env->cr[0] & CR0_PG_MASK)
+        &&  !(env->eflags & X86_EFL_IF)
+        &&  dc->code32)
+        dc->record_call = 1;
+    else
+        dc->record_call = 0;
+#endif
     dc->cpl = (flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (flags >> IOPL_SHIFT) & 3;
     dc->tf = (flags >> TF_SHIFT) & 1;
@@ -8333,6 +8354,25 @@ DECLINLINE(void) gen_intermediate_code_internal(CPUState *env,
         /* stop translation if indicated */
         if (dc->is_jmp)
             break;
+#ifdef VBOX
+#ifdef DEBUG
+/*
+        if(cpu_check_code_raw(env, pc_ptr, env->hflags | (env->eflags & (IOPL_MASK | TF_MASK | VM_MASK))) == ERROR_SUCCESS)
+        {
+            //should never happen as the jump to the patch code terminates the translation block
+            dprintf(("QEmu is about to execute instructions in our patch block at %08X!!\n", pc_ptr));
+        }
+*/
+#endif
+        if (env->state & CPU_EMULATE_SINGLE_INSTR)
+        {
+            env->state &= ~CPU_EMULATE_SINGLE_INSTR;
+            gen_jmp_im(pc_ptr - dc->cs_base);
+            gen_eob(dc);
+            break;
+        }
+#endif /* VBOX */
+
         /* if single step mode, we generate only one instruction and
            generate an exception */
         /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
