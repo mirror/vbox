@@ -38,6 +38,8 @@
 
 
 
+#ifndef IN_RING0
+
 /**
  * Converts a GC selector based address to a flat address.
  *
@@ -57,20 +59,17 @@ VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
     /** @todo check the limit. */
     X86DESC    Desc;
     if (!(Sel & X86_SEL_LDT))
-        Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+        Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
     else
     {
         /** @todo handle LDT pages not present! */
-#ifdef IN_GC
-        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-#else
-        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-#endif
+        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
 
     return (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
 }
+#endif /* !IN_RING0 */
 
 
 /**
@@ -100,7 +99,6 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
         ||  pCtxCore->eflags.Bits.u1VM)
     {
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
-
         if (CPUMAreHiddenSelRegsValid(pVM))
             uFlat += pHiddenSel->u64Base;
         else
@@ -108,9 +106,13 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
         return (RTGCPTR)uFlat;
     }
 
+#ifdef IN_RING0
+    Assert(CPUMAreHiddenSelRegsValid(pVM));
+#else
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return SELMToFlatBySel(pVM, Sel, Addr);
+#endif
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
     if (    CPUMIsGuestInLongMode(pVM)
@@ -118,14 +120,15 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
     {
         switch (SelReg)
         {
-        case DIS_SELREG_FS:
-        case DIS_SELREG_GS:
-            return (RTGCPTR)(pHiddenSel->u64Base + Addr);
+            case DIS_SELREG_FS:
+            case DIS_SELREG_GS:
+                return (RTGCPTR)(pHiddenSel->u64Base + Addr);
 
-        default:
-            return Addr;    /* base 0 */
+            default:
+                return Addr;    /* base 0 */
         }
     }
+
     /* AMD64 manual: compatibility mode ignores the high 32 bits when calculating an effective address. */
     Assert(pHiddenSel->u64Base <= 0xffffffff);
     return ((pHiddenSel->u64Base + (RTGCUINTPTR)Addr) & 0xffffffff);
@@ -148,11 +151,13 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
  */
 VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RTGCPTR Addr, unsigned fFlags, PRTGCPTR ppvGC)
 {
+    /*
+     * Fetch the selector first.
+     */
     PCPUMSELREGHID pHiddenSel;
     RTSEL          Sel;
-    int            rc;
-
-    rc = DISFetchRegSegEx(pCtxCore, SelReg, &Sel, &pHiddenSel); AssertRC(rc);
+    int rc = DISFetchRegSegEx(pCtxCore, SelReg, &Sel, &pHiddenSel);
+    AssertRC(rc);
 
     /*
      * Deal with real & v86 mode first.
@@ -188,7 +193,6 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
         u1Granularity = pHiddenSel->Attr.n.u1Granularity;
         u1DescType    = pHiddenSel->Attr.n.u1DescType;
         u4Type        = pHiddenSel->Attr.n.u4Type;
-
         u32Limit      = pHiddenSel->u32Limit;
 
         /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0 (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
@@ -198,14 +202,14 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
             fCheckLimit = false;
             switch (SelReg)
             {
-            case DIS_SELREG_FS:
-            case DIS_SELREG_GS:
-                pvFlat = (pHiddenSel->u64Base + Addr);
-                break;
+                case DIS_SELREG_FS:
+                case DIS_SELREG_GS:
+                    pvFlat = (pHiddenSel->u64Base + Addr);
+                    break;
 
-            default:
-                pvFlat = Addr;
-                break;
+                default:
+                    pvFlat = Addr;
+                    break;
             }
         }
         else
@@ -303,7 +307,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
             if (   !(fFlags & SELMTOFLAT_FLAGS_HYPER)
                 && (unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.GuestGdtr.cbGdt)
                 return VERR_INVALID_SELECTOR;
-            Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+            Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
         }
         else
         {
@@ -311,11 +315,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
                 return VERR_INVALID_SELECTOR;
 
             /** @todo handle LDT page(s) not present! */
-#ifdef IN_GC
-            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-#else
-            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-#endif
+            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
             Desc = paLDT[Sel >> X86_SEL_SHIFT];
         }
 
@@ -340,7 +340,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
             /*
             * Type check.
             */
-#define BOTH(a, b) ((a << 16) | b)
+# define BOTH(a, b) ((a << 16) | b)
             switch (BOTH(u1DescType, u4Type))
             {
 
@@ -428,12 +428,13 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
                     return VERR_INVALID_SELECTOR;
 
             }
-#undef BOTH
+# undef BOTH
         }
     }
 #endif /* !IN_RING0 */
     return VERR_SELECTOR_NOT_PRESENT;
 }
+
 
 #ifndef IN_RING0
 /**
@@ -511,7 +512,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
             if (   !(fFlags & SELMTOFLAT_FLAGS_HYPER)
                 && (unsigned)(Sel & X86_SEL_MASK) >= pVM->selm.s.GuestGdtr.cbGdt)
                 return VERR_INVALID_SELECTOR;
-            Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+            Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
         }
         else
         {
@@ -519,11 +520,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
                 return VERR_INVALID_SELECTOR;
 
             /** @todo handle LDT page(s) not present! */
-#ifdef IN_GC
-            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-#else
-            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-#endif
+            PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
             Desc = paLDT[Sel >> X86_SEL_SHIFT];
         }
 
@@ -651,6 +648,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
 }
 #endif /* !IN_RING0 */
 
+
 /**
  * Validates and converts a GC selector based code address to a flat
  * address when in real or v8086 mode.
@@ -674,6 +672,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVM pVM, RTSEL SelCS, PCPUM
 }
 
 
+#ifndef IN_RING0
 /**
  * Validates and converts a GC selector based code address to a flat
  * address when in protected/long mode using the standard algorithm.
@@ -694,15 +693,11 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
     /** @todo validate limit! */
     X86DESC    Desc;
     if (!(SelCS & X86_SEL_LDT))
-        Desc = pVM->selm.s.CTXSUFF(paGdt)[SelCS >> X86_SEL_SHIFT];
+        Desc = pVM->selm.s.CTX_SUFF(paGdt)[SelCS >> X86_SEL_SHIFT];
     else
     {
         /** @todo handle LDT page(s) not present! */
-#ifdef IN_GC
-        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.GCPtrLdt + pVM->selm.s.offLdtHyper);
-#else
-        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.HCPtrLdt + pVM->selm.s.offLdtHyper);
-#endif
+        PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
         Desc = paLDT[SelCS >> X86_SEL_SHIFT];
     }
 
@@ -747,6 +742,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
     }
     return VERR_SELECTOR_NOT_PRESENT;
 }
+#endif /* !IN_RING0 */
 
 
 /**
@@ -812,6 +808,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
 }
 
 
+#ifdef IN_GC
 /**
  * Validates and converts a GC selector based code address to a flat address.
  *
@@ -839,6 +836,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL
     }
     return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, pcBits);
 }
+#endif /* IN_GC */
 
 
 /**
@@ -860,13 +858,18 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCP
         ||  eflags.Bits.u1VM)
         return selmValidateAndConvertCSAddrRealMode(pVM, SelCS, pHiddenCSSel, Addr, ppvFlat);
 
+#ifdef IN_RING0
+    Assert(CPUMAreHiddenSelRegsValid(pVM));
+#else
     /** @todo when we're in 16 bits mode, we should cut off the address as well? (like in selmValidateAndConvertCSAddrRealMode) */
     if (!CPUMAreHiddenSelRegsValid(pVM))
         return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, NULL);
+#endif
     return selmValidateAndConvertCSAddrHidden(pVM, SelCPL, SelCS, pHiddenCSSel, Addr, ppvFlat);
 }
 
 
+#ifndef IN_RING0
 /**
  * Return the cpu mode corresponding to the (CS) selector
  *
@@ -881,15 +884,16 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, RTSEL Sel)
     /** @todo validate limit! */
     X86DESC Desc;
     if (!(Sel & X86_SEL_LDT))
-        Desc = pVM->selm.s.CTXSUFF(paGdt)[Sel >> X86_SEL_SHIFT];
+        Desc = pVM->selm.s.CTX_SUFF(paGdt)[Sel >> X86_SEL_SHIFT];
     else
     {
         /** @todo handle LDT page(s) not present! */
-        PX86DESC   paLDT = (PX86DESC)((char *)pVM->selm.s.CTXMID(,PtrLdt) + pVM->selm.s.offLdtHyper);
+        PX86DESC   paLDT = (PX86DESC)((char *)pVM->selm.s.CTX_SUFF(pvLdt) + pVM->selm.s.offLdtHyper);
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
     return (Desc.Gen.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
 }
+#endif /* !IN_RING0 */
 
 
 /**
@@ -903,6 +907,9 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, RTSEL Sel)
  */
 VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
 {
+#ifdef IN_RING0
+    Assert(CPUMAreHiddenSelRegsValid(pVM));
+#else  /* !IN_RING0 */
     if (!CPUMAreHiddenSelRegsValid(pVM))
     {
         /*
@@ -914,6 +921,7 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL 
 
         return selmGetCpuModeFromSelector(pVM, Sel);
     }
+#endif /* !IN_RING0 */
     if (    CPUMIsGuestInLongMode(pVM)
         &&  pHiddenSel->Attr.n.u1Long)
         return CPUMODE_64BIT;
@@ -922,6 +930,7 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL 
     return (pHiddenSel->Attr.n.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
 
 }
+
 
 /**
  * Returns Hypervisor's Trap 08 (\#DF) selector.
@@ -960,6 +969,7 @@ VMMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
     pVM->selm.s.Tss.esp1 = (uint32_t)esp;
 }
 
+
 #ifndef IN_RING0
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
@@ -968,6 +978,9 @@ VMMDECL(void) SELMSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  * @param   pVM     VM Handle.
  * @param   pSS     Ring1 SS register value.
  * @param   pEsp    Ring1 ESP register value.
+ *
+ * @todo Merge in the GC version of this, eliminating it - or move this to
+ *       SELM.cpp, making it SELMR3GetRing1Stack.
  */
 VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 {
@@ -979,15 +992,15 @@ VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 
         Assert(pVM->selm.s.GCPtrGuestTss && pVM->selm.s.cbMonitoredGuestTss);
 
-#ifdef IN_GC
+# ifdef IN_GC
         bool    fTriedAlready = false;
 
 l_tryagain:
         rc  = MMGCRamRead(pVM, &tss.ss0,  (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0)), sizeof(tss.ss0));
         rc |= MMGCRamRead(pVM, &tss.esp0, (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0)), sizeof(tss.esp0));
-  #ifdef DEBUG
+#  ifdef DEBUG
         rc |= MMGCRamRead(pVM, &tss.offIoBitmap, (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap)), sizeof(tss.offIoBitmap));
-  #endif
+#  endif
 
         if (VBOX_FAILURE(rc))
         {
@@ -1005,7 +1018,7 @@ l_tryagain:
             return rc;
         }
 
-#else /* !IN_GC */
+# else /* !IN_GC */
         /* Reading too much. Could be cheaper than two seperate calls though. */
         rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
         if (VBOX_FAILURE(rc))
@@ -1013,9 +1026,9 @@ l_tryagain:
             AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
             return rc;
         }
-#endif /* !IN_GC */
+# endif /* !IN_GC */
 
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
         uint32_t ssr0  = pVM->selm.s.Tss.ss1;
         uint32_t espr0 = pVM->selm.s.Tss.esp1;
         ssr0 &= ~1;
@@ -1024,7 +1037,7 @@ l_tryagain:
             Log(("SELMGetRing1Stack: Updating TSS ring 0 stack to %04X:%08X\n", tss.ss0, tss.esp0));
 
         Log(("offIoBitmap=%#x\n", tss.offIoBitmap));
-#endif
+# endif
         /* Update our TSS structure for the guest's ring 1 stack */
         SELMSetRing1Stack(pVM, tss.ss0 | 1, (RTGCPTR32)tss.esp0);
         pVM->selm.s.fSyncTSSRing0Stack = false;
@@ -1035,11 +1048,13 @@ l_tryagain:
 
     return VINF_SUCCESS;
 }
-#endif
+#endif /* !IN_RING0 */
+
 
 /**
  * Returns Guest TSS pointer
  *
+ * @returns Pointer to the guest TSS, RTRCPTR_MAX if not being monitored.
  * @param   pVM     VM Handle.
  */
 VMMDECL(RTGCPTR) SELMGetGuestTSS(PVM pVM)
@@ -1085,6 +1100,7 @@ VMMDECL(int) SELMSelInfoValidateCS(PCSELMSELINFO pSelInfo, RTSEL SelCPL)
 }
 
 #ifndef IN_RING0
+
 /**
  * Gets the hypervisor code selector (CS).
  * @returns CS selector.
@@ -1147,16 +1163,17 @@ VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM)
  * @remark  This is intended only for very special use, like in the world
  *          switchers. Don't exploit this API!
  */
-VMMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM)
+VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
 {
     /*
-     * Always convert this from the HC pointer since. We're can be
+     * Always convert this from the HC pointer since we can be
      * called before the first relocation and have to work correctly
      * without having dependencies on the relocation order.
      */
-    return (RTGCPTR)MMHyperHC2GC(pVM, pVM->selm.s.paGdtHC);
+    return (RTRCPTR)MMHyperR3ToRC(pVM, pVM->selm.s.paGdtR3);
 }
-#endif /* IN_RING0 */
+
+#endif /* !IN_RING0 */
 
 /**
  * Gets info about the current TSS.
@@ -1177,7 +1194,7 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss
         /*
          * Do we have a valid TSS?
          */
-        if (    pVM->selm.s.GCSelTss == (RTSEL)~0
+        if (    pVM->selm.s.GCSelTss == RTSEL_MAX
             || !pVM->selm.s.fGuestTss32Bit)
             return VERR_SELM_NO_TSS;
 
@@ -1204,3 +1221,4 @@ VMMDECL(int) SELMGetTSSInfo(PVM pVM, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss
     }
     return VINF_SUCCESS;
 }
+

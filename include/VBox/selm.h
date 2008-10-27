@@ -127,7 +127,7 @@ VMMDECL(RTSEL) SELMGetHyperTSSTrap08(PVM pVM);
  * @remark  This is intended only for very special use, like in the world
  *          switchers. Don't exploit this API!
  */
-VMMDECL(RTGCPTR) SELMGetHyperGDT(PVM pVM);
+VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM);
 
 /**
  * Gets info about the current TSS.

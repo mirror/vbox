@@ -99,7 +99,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
      * Code and data selectors are generally 1:1, with the
      * 'little' adjustment we do for DPL 0 selectors.
      */
-    PX86DESC   pShadowDescr = &pVM->selm.s.paGdtGC[iGDTEntry];
+    PX86DESC   pShadowDescr = &pVM->selm.s.paGdtRC[iGDTEntry];
     if (Desc.Gen.u1DescType)
     {
         /*
@@ -149,20 +149,15 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
 #ifdef VBOX_STRICT
     if (Sel == (pRegFrame->cs & X86_SEL_MASK))
         Log(("GDT write to selector in CS register %04X\n", pRegFrame->cs));
-    else
-    if (Sel == (pRegFrame->ds & X86_SEL_MASK))
+    else if (Sel == (pRegFrame->ds & X86_SEL_MASK))
         Log(("GDT write to selector in DS register %04X\n", pRegFrame->ds));
-    else
-    if (Sel == (pRegFrame->es & X86_SEL_MASK))
+    else if (Sel == (pRegFrame->es & X86_SEL_MASK))
         Log(("GDT write to selector in ES register %04X\n", pRegFrame->es));
-    else
-    if (Sel == (pRegFrame->fs & X86_SEL_MASK))
+    else if (Sel == (pRegFrame->fs & X86_SEL_MASK))
         Log(("GDT write to selector in FS register %04X\n", pRegFrame->fs));
-    else
-    if (Sel == (pRegFrame->gs & X86_SEL_MASK))
+    else if (Sel == (pRegFrame->gs & X86_SEL_MASK))
         Log(("GDT write to selector in GS register %04X\n", pRegFrame->gs));
-    else
-    if (Sel == (pRegFrame->ss & X86_SEL_MASK))
+    else if (Sel == (pRegFrame->ss & X86_SEL_MASK))
         Log(("GDT write to selector in SS register %04X\n", pRegFrame->ss));
 #endif
     return VINF_SUCCESS;
@@ -181,9 +176,9 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
-    LogFlow(("selmgcGuestGDTWriteHandler errcode=%x fault=%VGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
+    LogFlow(("selmRCGuestGDTWriteHandler errcode=%x fault=%VGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
 
     /*
      * First check if this is the LDT entry.
@@ -217,7 +212,7 @@ VMMRCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                     rc2 = selmGCSyncGDTEntry(pVM, pRegFrame, iGDTE2);
                 if (rc2 == VINF_SUCCESS)
                 {
-                    STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestGDTHandled);
+                    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTHandled);
                     return rc;
                 }
             }
@@ -237,7 +232,7 @@ VMMRCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         /* Not necessary when we need to go back to the host context to sync the LDT or TSS. */
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
     }
-    STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestGDTUnhandled);
+    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
     return rc;
 }
 
@@ -254,13 +249,13 @@ VMMRCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) selmgcGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmRCGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     /** @todo To be implemented. */
-    ////LogCom(("selmgcGuestLDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
+    ////LogCom(("selmRCGuestLDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
 
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
-    STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestLDT);
+    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT);
     return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
 }
 
@@ -277,9 +272,9 @@ VMMRCDECL(int) selmgcGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
-    LogFlow(("selmgcGuestTSSWriteHandler errcode=%x fault=%VGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
+    LogFlow(("selmRCGuestTSSWriteHandler errcode=%x fault=%VGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
 
     /*
      * Try emulate the access and compare the R0 ss:esp with the shadow tss values.
@@ -297,11 +292,11 @@ VMMRCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         if (    pGuestTSS->esp0 !=  pVM->selm.s.Tss.esp1
             ||  pGuestTSS->ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
         {
-            Log(("selmgcGuestTSSWriteHandler: R0 stack: %RTsel:%VGv -> %RTsel:%VGv\n",
+            Log(("selmRCGuestTSSWriteHandler: R0 stack: %RTsel:%VGv -> %RTsel:%VGv\n",
                  (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, (RTSEL)pGuestTSS->ss0, pGuestTSS->esp0));
             pVM->selm.s.Tss.esp1 = pGuestTSS->esp0;
             pVM->selm.s.Tss.ss1 = pGuestTSS->ss0 | 1;
-            STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSHandledChanged);
+            STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
         }
         if (CPUMGetGuestCR4(pVM) & X86_CR4_VME)
         {
@@ -330,22 +325,21 @@ VMMRCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                     }
                     AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, rc));
                 }
-                STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSRedir);
+                STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSRedir);
             }
         }
-        STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSHandled);
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandled);
     }
     else
     {
         Assert(VBOX_FAILURE(rc));
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
-        STAM_COUNTER_INC(&pVM->selm.s.StatGCWriteGuestTSSUnhandled);
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSUnhandled);
         if (rc == VERR_EM_INTERPRETER)
             rc = VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;
     }
     return rc;
 }
-
 
 
 /**
@@ -360,11 +354,12 @@ VMMRCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) selmgcShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmRCShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
-    LogRel(("FATAL ERROR: selmgcShadowGDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
+    LogRel(("FATAL ERROR: selmRCShadowGDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
     return VERR_SELM_SHADOW_GDT_WRITE;
 }
+
 
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow LDT.
@@ -378,12 +373,13 @@ VMMRCDECL(int) selmgcShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) selmgcShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmRCShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
-    LogRel(("FATAL ERROR: selmgcShadowLDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
-    Assert((RTRCPTR)pvFault >= pVM->selm.s.GCPtrLdt && (RTRCUINTPTR)pvFault < (RTRCUINTPTR)pVM->selm.s.GCPtrLdt + 65536 + PAGE_SIZE);
+    LogRel(("FATAL ERROR: selmRCShadowLDTWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
+    Assert((RTRCPTR)pvFault >= pVM->selm.s.pvLdtRC && (RTRCUINTPTR)pvFault < (RTRCUINTPTR)pVM->selm.s.pvLdtRC + 65536 + PAGE_SIZE);
     return VERR_SELM_SHADOW_LDT_WRITE;
 }
+
 
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow TSS.
@@ -397,9 +393,9 @@ VMMRCDECL(int) selmgcShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) selmgcShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+VMMRCDECL(int) selmRCShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
-    LogRel(("FATAL ERROR: selmgcShadowTSSWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
+    LogRel(("FATAL ERROR: selmRCShadowTSSWriteHandler: eip=%08X pvFault=%VGv pvRange=%VGv\r\n", pRegFrame->eip, pvFault, pvRange));
     return VERR_SELM_SHADOW_TSS_WRITE;
 }
 
@@ -416,21 +412,19 @@ VMMRCDECL(int) SELMGCGetRing1Stack(PVM pVM, uint32_t *pSS, uint32_t *pEsp)
 {
     if (pVM->selm.s.fSyncTSSRing0Stack)
     {
-        RCPTRTYPE(uint8_t *) GCPtrTss = (RCPTRTYPE(uint8_t *))pVM->selm.s.GCPtrGuestTss;
-        int     rc;
-        VBOXTSS tss;
+        uint8_t *   GCPtrGuestTss = (uint8_t *)(uintptr_t)pVM->selm.s.GCPtrGuestTss;
+        bool        fTriedAlready = false;
+        int         rc;
+        VBOXTSS     tss;
 
         Assert(pVM->selm.s.GCPtrGuestTss && pVM->selm.s.cbMonitoredGuestTss);
 
-#ifdef IN_GC
-        bool    fTriedAlready = false;
-
 l_tryagain:
-        rc  = MMGCRamRead(pVM, &tss.ss0,  GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0), sizeof(tss.ss0));
-        rc |= MMGCRamRead(pVM, &tss.esp0, GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0), sizeof(tss.esp0));
-  #ifdef DEBUG
-        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(tss.offIoBitmap));
-  #endif
+        rc  = MMGCRamRead(pVM, &tss.ss0,  GCPtrGuestTss + RT_OFFSETOF(VBOXTSS, ss0), sizeof(tss.ss0));
+        rc |= MMGCRamRead(pVM, &tss.esp0, GCPtrGuestTss + RT_OFFSETOF(VBOXTSS, esp0), sizeof(tss.esp0));
+#ifdef DEBUG
+        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, GCPtrGuestTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(tss.offIoBitmap));
+#endif
 
         if (VBOX_FAILURE(rc))
         {
@@ -439,24 +433,14 @@ l_tryagain:
                 /* Shadow page might be out of sync. Sync and try again */
                 /** @todo might cross page boundary */
                 fTriedAlready = true;
-                rc = PGMPrefetchPage(pVM, (RTGCPTR)(RTRCUINTPTR)GCPtrTss);
+                rc = PGMPrefetchPage(pVM, (RTGCPTR)(uintptr_t)GCPtrGuestTss);
                 if (rc != VINF_SUCCESS)
                     return rc;
                 goto l_tryagain;
             }
-            AssertMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
+            AssertMsgFailed(("Unable to read TSS structure at %RRv\n", GCPtrGuestTss));
             return rc;
         }
-
-#else /* !IN_GC */
-        /* Reading too much. Could be cheaper than two seperate calls though. */
-        rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
-        if (VBOX_FAILURE(rc))
-        {
-            AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
-            return rc;
-        }
-#endif /* !IN_GC */
 
 #ifdef LOG_ENABLED
         uint32_t ssr0  = pVM->selm.s.Tss.ss1;
