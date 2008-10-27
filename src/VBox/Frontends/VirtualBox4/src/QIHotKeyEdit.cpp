@@ -378,12 +378,19 @@ QString QIHotKeyEdit::keyName (int aKeyVal)
         int scan;
         switch (aKeyVal)
         {
+            /* Processing special keys... */
             case VK_RSHIFT: scan = 0x36 << 16; break;
             case VK_RCONTROL: scan = (0x1D << 16) | (1 << 24); break;
             case VK_RMENU: scan = (0x38 << 16) | (1 << 24); break;
+            /* Processing extended keys... */
+            case VK_APPS:
+            case VK_LWIN:
+            case VK_RWIN:
+            case VK_PAUSE:
+            case VK_NUMLOCK: scan = (::MapVirtualKey (aKeyVal, 0) | 256) << 16; break;
             default: scan = ::MapVirtualKey (aKeyVal, 0) << 16;
         }
-        TCHAR *str = new TCHAR[256];
+        TCHAR *str = new TCHAR [256];
         if (::GetKeyNameText (scan, str, 256))
         {
             name = QString::fromUtf16 (str);
