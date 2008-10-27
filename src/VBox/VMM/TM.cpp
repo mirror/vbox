@@ -537,6 +537,12 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->tm.s.StatTimerCallbackSetFF,STAMTYPE_COUNTER,       "/TM/CallbackSetFF",    STAMUNIT_OCCURENCES,        "The number of times the timer callback set FF.");
 
+    STAM_REG(pVM, &pVM->tm.s.StatTSCNotFixed,       STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotFixed",         STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCNotTicking,     STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotTicking",       STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchup,        STAMTYPE_COUNTER,       "/TM/TSC/Intercept/Catchup",          STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,           STAMTYPE_COUNTER,       "/TM/TSC/Intercept/Warp",             STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCSyncNotTicking, STAMTYPE_COUNTER,       "/TM/TSC/Intercept/SyncNotTicking",       STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
+
 
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,        STAMTYPE_PROFILE_ADV,   "/TM/VirtualSync/CatchUp",              STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
     STAM_REG(pVM, (void *)&pVM->tm.s.fVirtualSyncCatchUp,       STAMTYPE_U8,        "/TM/VirtualSync/CatchUpActive",        STAMUNIT_NONE,           "Catch-Up active indicator.");

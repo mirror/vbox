@@ -487,6 +487,12 @@ typedef struct TM
     /** The timer callback. */
     STAMCOUNTER                 StatTimerCallbackSetFF;
 
+
+    STAMCOUNTER                 StatTSCNotFixed;
+    STAMCOUNTER                 StatTSCNotTicking;
+    STAMCOUNTER                 StatTSCCatchup;
+    STAMCOUNTER                 StatTSCWarp;
+    STAMCOUNTER                 StatTSCSyncNotTicking;
 } TM;
 /** Pointer to TM VM instance data. */
 typedef TM *PTM;
