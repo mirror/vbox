@@ -2714,8 +2714,8 @@ void AddHardDisksToList (const CHardDisk2Vector &aVector,
     for (CHardDisk2Vector::ConstIterator it = aVector.begin();
          it != aVector.end(); ++ it)
     {
-        VBoxMedium medium (CMedium (*it), VBoxDefs::MediaType_HardDisk,
-                           aParent);
+        CMedium cmedium (*it);
+        VBoxMedium medium (cmedium, VBoxDefs::MediaType_HardDisk, aParent);
 
         /* Search for a proper alphabetic position */
         VBoxMediaList::iterator jt = first;
@@ -2794,7 +2794,8 @@ void VBoxGlobal::startEnumeratingMedia()
         for (CDVDImage2Vector::ConstIterator it = vec.begin();
              it != vec.end(); ++ it)
         {
-            VBoxMedium medium (CMedium (*it), VBoxDefs::MediaType_DVD);
+            CMedium cmedium (*it);
+            VBoxMedium medium (cmedium, VBoxDefs::MediaType_DVD);
 
             /* Search for a proper alphabetic position */
             VBoxMediaList::iterator jt = first;
@@ -2816,7 +2817,8 @@ void VBoxGlobal::startEnumeratingMedia()
         for (CFloppyImage2Vector::ConstIterator it = vec.begin();
              it != vec.end(); ++ it)
         {
-            VBoxMedium medium (CMedium (*it), VBoxDefs::MediaType_Floppy);
+            CMedium cmedium (*it);
+            VBoxMedium medium (cmedium, VBoxDefs::MediaType_Floppy);
 
             /* Search for a proper alphabetic position */
             VBoxMediaList::iterator jt = first;
