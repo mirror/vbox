@@ -97,13 +97,13 @@ typedef struct TRPM
     TRPMEVENT       enmActiveType;
 
     /** Errorcode for the active interrupt/trap. */
-    RTGCUINT        uActiveErrorCode;
+    RTGCUINT        uActiveErrorCode; /**< @todo don't use RTGCUINT */
 
     /** CR2 at the time of the active exception. */
     RTGCUINTPTR     uActiveCR2;
 
     /** Saved trap vector number. */
-    RTGCUINT        uSavedVector;
+    RTGCUINT        uSavedVector; /**< @todo don't use RTGCUINT */
 
     /** Saved trap type. */
     TRPMEVENT       enmSavedType;
