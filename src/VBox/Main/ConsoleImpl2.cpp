@@ -56,6 +56,11 @@
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
 
+#if defined(RT_OS_SOLARIS) && defined(VBOX_WITH_NETFLT)
+# include <zone.h>
+#endif
+
+
 /*
  * VC++ 8 / amd64 has some serious trouble with this function.
  * As a temporary measure, we'll drop global optimizations.
@@ -1184,6 +1189,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         *pszColon = '\0';
 
                     const char *pszTrunk = szTrunk;
+
+                    /* Zone access controls*/
+                    zoneid_t ZoneId = getzoneid();
+                    if (ZoneId != GLOBAL_ZONEID)
+                        rc = CFGMR3InsertInteger(pCfg, "QuietlyIgnoreAllPromisc", true);   RC_CHECK();
+
 # elif defined(RT_OS_WINDOWS)
                     ComPtr<IHostNetworkInterfaceCollection> coll;
                     hrc = host->COMGETTER(NetworkInterfaces)(coll.asOutParam());    H();
