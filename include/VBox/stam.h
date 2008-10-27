@@ -966,11 +966,11 @@ typedef const STAMRATIOU32 *PCSTAMRATIOU32;
  * @{
  */
 
-VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM);
+VMMR3DECL(int)  STAMR3InitUVM(PUVM pUVM);
 VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM);
-VMMR3DECL(int) STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+VMMR3DECL(int)  STAMR3RegisterU(PUVM pUVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                 const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
-VMMR3DECL(int) STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+VMMR3DECL(int)  STAMR3Register(PVM pVM, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
 
 /** @def STAM_REL_REG
@@ -1085,18 +1085,18 @@ VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample);
 #define STAM_DEREG(pVM, pvSample) \
     STAM_STATS({ STAM_REL_DEREG(pVM, pvSample); })
 
-VMMR3DECL(int) STAMR3ResetU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int) STAMR3Reset(PVM pVM, const char *pszPat);
-VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
-VMMR3DECL(int) STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
-VMMR3DECL(int) STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot);
-VMMR3DECL(int) STAMR3SnapshotFree(PVM pVM, char *pszSnapshot);
-VMMR3DECL(int) STAMR3DumpU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int) STAMR3Dump(PVM pVM, const char *pszPat);
-VMMR3DECL(int) STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int) STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat);
-VMMR3DECL(int) STAMR3PrintU(PUVM pUVM, const char *pszPat);
-VMMR3DECL(int) STAMR3Print(PVM pVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3ResetU(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
+VMMR3DECL(int)  STAMR3Snapshot(PVM pVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
+VMMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot);
+VMMR3DECL(int)  STAMR3SnapshotFree(PVM pVM, char *pszSnapshot);
+VMMR3DECL(int)  STAMR3DumpU(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3Dump(PVM pVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3DumpToReleaseLogU(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3DumpToReleaseLog(PVM pVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3PrintU(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3Print(PVM pVM, const char *pszPat);
 
 /**
  * Callback function for STAMR3Enum().
@@ -1116,8 +1116,8 @@ typedef DECLCALLBACK(int) FNSTAMR3ENUM(const char *pszName, STAMTYPE enmType, vo
 /** Pointer to a FNSTAMR3ENUM(). */
 typedef FNSTAMR3ENUM *PFNSTAMR3ENUM;
 
-VMMR3DECL(int) STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
-VMMR3DECL(int) STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
+VMMR3DECL(int)  STAMR3EnumU(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
+VMMR3DECL(int)  STAMR3Enum(PVM pVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
 VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit);
 
 /** @} */
@@ -1127,3 +1127,4 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit);
 __END_DECLS
 
 #endif
+
