@@ -2586,7 +2586,8 @@ void AddHardDisksToList (VBoxMediaList &aList,
     for (CHardDisk2Vector::ConstIterator it = aVector.begin();
          it != aVector.end(); ++ it)
     {
-        VBoxMedium medium (CMedium (*it), VBoxDefs::MediaType_HardDisk,
+        CMedium cmedium (*it);
+        VBoxMedium medium (cmedium, VBoxDefs::MediaType_HardDisk,
                            aParent);
 
         /* search for a proper alphabetic position */
