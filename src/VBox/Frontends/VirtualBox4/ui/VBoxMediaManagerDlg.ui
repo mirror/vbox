@@ -16,8 +16,8 @@
  Clara, CA 95054 USA or visit http://www.sun.com if you need
  additional information or have any questions.
  </comment>
- <class>VBoxDiskImageManagerDlg</class>
- <widget class="QMainWindow" name="VBoxDiskImageManagerDlg" >
+ <class>VBoxMediaManagerDlg</class>
+ <widget class="QMainWindow" name="VBoxMediaManagerDlg" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -34,6 +34,10 @@
   </property>
   <property name="windowTitle" >
    <string>Virtual Disk Manager</string>
+  </property>
+  <property name="windowIcon" >
+   <iconset resource="../VirtualBox.qrc" >
+    <normaloff>:/diskim_16px.png</normaloff>:/diskim_16px.png</iconset>
   </property>
   <widget class="QWidget" name="mCentralWidget" >
    <layout class="QHBoxLayout" >
@@ -56,7 +60,7 @@
          </attribute>
          <layout class="QVBoxLayout" >
           <item>
-           <widget class="QITreeWidget" name="mHdsTree" >
+           <widget class="QITreeWidget" name="mHardDiskView" >
             <property name="contextMenuPolicy" >
              <enum>Qt::CustomContextMenu</enum>
             </property>
@@ -98,29 +102,20 @@
              <enum>QFrame::Sunken</enum>
             </property>
             <layout class="QGridLayout" >
-             <property name="leftMargin" >
-              <number>5</number>
-             </property>
-             <property name="topMargin" >
-              <number>5</number>
-             </property>
-             <property name="rightMargin" >
-              <number>5</number>
-             </property>
-             <property name="bottomMargin" >
-              <number>5</number>
-             </property>
              <property name="verticalSpacing" >
               <number>0</number>
+             </property>
+             <property name="margin" >
+              <number>5</number>
              </property>
              <item row="0" column="0" >
               <widget class="QLabel" name="mLbHD1" >
                <property name="text" >
-                <string>&lt;nobr>Location:&lt;/nobr></string>
+                <string>Location</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="1" colspan="3" >
+             <item row="0" column="1" colspan="2" >
               <widget class="QILabel" name="mHdsPane1" >
                <property name="sizePolicy" >
                 <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
@@ -133,7 +128,7 @@
              <item row="1" column="0" >
               <widget class="QLabel" name="mLbHD2" >
                <property name="text" >
-                <string>&lt;nobr>Disk Type:&lt;/nobr></string>
+                <string>Type (Format)</string>
                </property>
               </widget>
              </item>
@@ -147,49 +142,15 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="2" >
+             <item row="2" column="0" >
               <widget class="QLabel" name="mLbHD3" >
                <property name="text" >
-                <string>&lt;nobr>&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr></string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="3" >
-              <widget class="QILabel" name="mHdsPane3" >
-               <property name="sizePolicy" >
-                <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0" >
-              <widget class="QLabel" name="mLbHD4" >
-               <property name="text" >
-                <string>&lt;nobr>Attached to:&lt;/nobr></string>
+                <string>Attached to</string>
                </property>
               </widget>
              </item>
              <item row="2" column="1" >
-              <widget class="QILabel" name="mHdsPane4" >
-               <property name="sizePolicy" >
-                <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2" >
-              <widget class="QLabel" name="mLbHD5" >
-               <property name="text" >
-                <string>&lt;nobr>&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr></string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="3" >
-              <widget class="QILabel" name="mHdsPane5" >
+              <widget class="QILabel" name="mHdsPane3" >
                <property name="sizePolicy" >
                 <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
                  <horstretch>0</horstretch>
@@ -209,7 +170,7 @@
          </attribute>
          <layout class="QVBoxLayout" >
           <item>
-           <widget class="QITreeWidget" name="mCdsTree" >
+           <widget class="QITreeWidget" name="mDVDView" >
             <property name="contextMenuPolicy" >
              <enum>Qt::CustomContextMenu</enum>
             </property>
@@ -246,25 +207,16 @@
              <enum>QFrame::Sunken</enum>
             </property>
             <layout class="QGridLayout" >
-             <property name="leftMargin" >
-              <number>5</number>
-             </property>
-             <property name="topMargin" >
-              <number>5</number>
-             </property>
-             <property name="rightMargin" >
-              <number>5</number>
-             </property>
-             <property name="bottomMargin" >
-              <number>5</number>
-             </property>
              <property name="verticalSpacing" >
               <number>0</number>
+             </property>
+             <property name="margin" >
+              <number>5</number>
              </property>
              <item row="0" column="0" >
               <widget class="QLabel" name="mLbCD1" >
                <property name="text" >
-                <string>&lt;nobr>Location:&lt;/nobr></string>
+                <string>Location</string>
                </property>
               </widget>
              </item>
@@ -281,7 +233,7 @@
              <item row="1" column="0" >
               <widget class="QLabel" name="mLbCD2" >
                <property name="text" >
-                <string>&lt;nobr>Attached to:&lt;/nobr></string>
+                <string>Attached to</string>
                </property>
               </widget>
              </item>
@@ -306,7 +258,7 @@
          </attribute>
          <layout class="QVBoxLayout" >
           <item>
-           <widget class="QITreeWidget" name="mFdsTree" >
+           <widget class="QITreeWidget" name="mFloppyView" >
             <property name="contextMenuPolicy" >
              <enum>Qt::CustomContextMenu</enum>
             </property>
@@ -343,28 +295,19 @@
              <enum>QFrame::Sunken</enum>
             </property>
             <layout class="QGridLayout" >
-             <property name="leftMargin" >
-              <number>5</number>
-             </property>
-             <property name="topMargin" >
-              <number>5</number>
-             </property>
-             <property name="rightMargin" >
-              <number>5</number>
-             </property>
-             <property name="bottomMargin" >
-              <number>5</number>
-             </property>
              <property name="horizontalSpacing" >
-              <number>-1</number>
+              <number>6</number>
              </property>
              <property name="verticalSpacing" >
               <number>0</number>
              </property>
+             <property name="margin" >
+              <number>5</number>
+             </property>
              <item row="0" column="0" >
               <widget class="QLabel" name="mLbFD1" >
                <property name="text" >
-                <string>&lt;nobr>Location:&lt;/nobr></string>
+                <string>Location</string>
                </property>
               </widget>
              </item>
@@ -381,7 +324,7 @@
              <item row="1" column="0" >
               <widget class="QLabel" name="mLbFD2" >
                <property name="text" >
-                <string>&lt;nobr>Attached to:&lt;/nobr></string>
+                <string>Attached to</string>
                </property>
               </widget>
              </item>
@@ -405,7 +348,7 @@
       <item>
        <widget class="QIDialogButtonBox" name="mButtonBox" >
         <property name="standardButtons" >
-         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>
+         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
         </property>
        </widget>
       </item>

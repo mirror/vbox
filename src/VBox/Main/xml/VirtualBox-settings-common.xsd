@@ -6,7 +6,7 @@
  *  Sun xVM VirtualBox Settings Schema
  *  Common definitions
 
-     Copyright (C) 2004-2007 Sun Microsystems, Inc.
+     Copyright (C) 2004-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,7 @@
 <xsd:annotation>
   <xsd:documentation xml:lang="en">
     Sun xVM VirtualBox Settings Schema (common definitions).
-    Copyright (c) 2004-2007 Sun Microsystems, Inc.
+    Copyright (c) 2004-2008 Sun Microsystems, Inc.
   </xsd:documentation>
 </xsd:annotation>
 
@@ -237,71 +237,38 @@
 /////////////////////////////////////////////////////////////////////////
 -->
 
-<xsd:complexType name="TImage">
-  <xsd:attribute name="src" type="TLocalFile" use="required"/>
-  <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
-</xsd:complexType>
-
-<xsd:complexType name="TVirtualDiskImage">
-  <xsd:attribute name="filePath" type="TLocalFile" use="required"/>
-</xsd:complexType>
-
-<xsd:complexType name="TDiffHardDisk">
+<xsd:complexType name="TDiffHardDisk2">
   <xsd:sequence>
-    <xsd:element name="VirtualDiskImage" type="TVirtualDiskImage"/>
-    <xsd:element name="DiffHardDisk" type="TDiffHardDisk" minOccurs="0" maxOccurs="unbounded"/>
+    <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
+    <xsd:element name="HardDisk" type="TDiffHardDisk2" minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
   <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
+  <xsd:attribute name="location" type="TLocalFile" use="required"/>
+  <xsd:attribute name="format" type="TNonEmptyString" use="required"/>
 </xsd:complexType>
 
-<xsd:complexType name="THardDisk">
+<xsd:complexType name="THardDisk2">
+  <xsd:complexContent>
+    <xsd:extension base="TDiffHardDisk2">
+      <xsd:attribute name="type" use="required">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="Normal"/>
+            <xsd:enumeration value="Immutable"/>
+            <xsd:enumeration value="Writethrough"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:attribute>
+    </xsd:extension>
+  </xsd:complexContent>
+</xsd:complexType>
+
+<xsd:complexType name="TImage2">
   <xsd:sequence>
-    <xsd:choice>
-      <xsd:element name="VirtualDiskImage" type="TVirtualDiskImage"/>
-      <xsd:element name="ISCSIHardDisk">
-        <xsd:complexType>
-          <xsd:attribute name="server" type="xsd:token" use="required"/>
-          <xsd:attribute name="port" type="xsd:unsignedShort" default="0"/>
-          <xsd:attribute name="target" type="xsd:token" use="required"/>
-          <xsd:attribute name="lun" type="TUInt64Hex" default="0x0"/>
-          <xsd:attribute name="userName" type="xsd:token"/>
-          <xsd:attribute name="password" type="xsd:token"/>
-        </xsd:complexType>
-      </xsd:element>
-      <xsd:element name="VMDKImage">
-        <xsd:complexType>
-          <xsd:attribute name="filePath" type="TLocalFile" use="required"/>
-        </xsd:complexType>
-      </xsd:element>
-      <xsd:element name="PhysicalVolume">
-        <xsd:complexType>
-          <xsd:attribute name="path" type="TLocalFile" use="required"/>
-        </xsd:complexType>
-      </xsd:element>
-      <xsd:element name="CustomHardDisk">
-        <xsd:complexType>
-           <xsd:attribute name="location" type="TLocalFile" use="required"/>
-           <xsd:attribute name="format" type="xsd:string" use="required"/>
-        </xsd:complexType>
-      </xsd:element>
-      <xsd:element name="VHDImage">
-        <xsd:complexType>
-          <xsd:attribute name="filePath" type="TLocalFile" use="required"/>
-        </xsd:complexType>
-      </xsd:element>
-    </xsd:choice>
-    <xsd:element name="DiffHardDisk" type="TDiffHardDisk" minOccurs="0" maxOccurs="unbounded"/>
+    <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
   </xsd:sequence>
   <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
-  <xsd:attribute name="type" use="required">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:string">
-        <xsd:enumeration value="normal"/>
-        <xsd:enumeration value="immutable"/>
-        <xsd:enumeration value="writethrough"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
+  <xsd:attribute name="location" type="TLocalFile" use="required"/>
 </xsd:complexType>
 
 <xsd:complexType name="TImageRef">
@@ -335,8 +302,8 @@
 </xsd:complexType>
 
 <xsd:complexType name="TSystemProperties">
-  <xsd:attribute name="defaultVDIFolder" type="TLocalFile"/>
   <xsd:attribute name="defaultMachineFolder" type="TLocalFile"/>
+  <xsd:attribute name="defaultHardDiskFolder" type="TLocalFile"/>
   <xsd:attribute name="remoteDisplayAuthLibrary" type="TLocalFile"/>
   <xsd:attribute name="webServiceAuthLibrary" type="TLocalFile"/>
   <xsd:attribute name="HWVirtExEnabled" type="xsd:boolean"/>
@@ -368,27 +335,27 @@
         </xsd:sequence>
       </xsd:complexType>
     </xsd:element>
-    <xsd:element name="DiskRegistry">
+    <xsd:element name="MediaRegistry">
       <xsd:complexType>
         <xsd:all>
           <xsd:element name="HardDisks" minOccurs="0">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="HardDisk" type="THardDisk" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="HardDisk" type="THardDisk2" minOccurs="0" maxOccurs="unbounded"/>
               </xsd:sequence>
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="DVDImages" minOccurs="0">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="Image" type="TImage" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="Image" type="TImage2" minOccurs="0" maxOccurs="unbounded"/>
               </xsd:sequence>
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="FloppyImages" minOccurs="0">
             <xsd:complexType>
               <xsd:sequence>
-                <xsd:element name="Image" type="TImage" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element name="Image" type="TImage2" minOccurs="0" maxOccurs="unbounded"/>
               </xsd:sequence>
             </xsd:complexType>
           </xsd:element>

@@ -52,7 +52,7 @@ void VBoxVMFirstRunWzd::init()
     VBoxGlobal::adoptLabelPixmap (pmSummary);
 
     /* media page */
-    cbImage = new VBoxMediaComboBox (bgSource, "cbImage", VBoxDefs::CD);
+    cbImage = new VBoxMediaComboBox (bgSource, "cbImage", VBoxDefs::MediaType_DVD);
     ltVdm->insertWidget (0, cbImage);
     tbVdm->setIconSet (VBoxGlobal::iconSet ("select_file_16px.png",
                                             "select_file_dis_16px.png"));
@@ -109,8 +109,8 @@ void VBoxVMFirstRunWzd::setup (const CMachine &aMachine)
 {
     machine = aMachine;
 
-    CHardDiskAttachmentEnumerator en = machine.GetHardDiskAttachments().Enumerate();
-    if (en.HasMore())
+    CHardDisk2AttachmentVector vec = machine.GetHardDisk2Attachments();
+    if (vec.size() != 0)
     {
         txWelcomeHD->setHidden (true);
         txTypeHD->setHidden (true);
@@ -208,7 +208,7 @@ void VBoxVMFirstRunWzd::accept()
         else if (rbImage->isChecked())
         {
             CDVDDrive virtualDrive = machine.GetDVDDrive();
-            virtualDrive.MountImage (cbImage->getId());
+            virtualDrive.MountImage (cbImage->id());
         }
     }
     /* Floppy Media selected */
@@ -226,7 +226,7 @@ void VBoxVMFirstRunWzd::accept()
         else if (rbImage->isChecked())
         {
             CFloppyDrive virtualDrive = machine.GetFloppyDrive();
-            virtualDrive.MountImage (cbImage->getId());
+            virtualDrive.MountImage (cbImage->id());
         }
     }
 
@@ -282,7 +282,7 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
         }
 
         /* Switch media images type to CD */
-        cbImage->setType (VBoxDefs::CD);
+        cbImage->setType (VBoxDefs::MediaType_DVD);
     }
     /* Floppy Media type selected */
     else if (sender() == rbFdType)
@@ -307,13 +307,11 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
         }
 
         /* Switch media images type to FD */
-        cbImage->setType (VBoxDefs::FD);
+        cbImage->setType (VBoxDefs::MediaType_Floppy);
     }
-    /* Update media images list */
-    if (!vboxGlobal().isMediaEnumerationStarted())
-        vboxGlobal().startEnumeratingMedia();
-    else
-        cbImage->refresh();
+
+    /* Repopulate the media list */
+    cbImage->repopulate();
 
     /* Revalidate updated page */
     wvalType->revalidate();
@@ -331,17 +329,22 @@ void VBoxVMFirstRunWzd::mediaSourceChanged()
 }
 
 
-void VBoxVMFirstRunWzd::openVdm()
+void VBoxVMFirstRunWzd::openMediaManager()
 {
-    VBoxDiskImageManagerDlg vdm (this, "VBoxDiskImageManagerDlg",
-                                 WType_Dialog | WShowModal);
-    QUuid machineId = machine.GetId();
-    VBoxDefs::DiskType type = rbCdType->isChecked() ? VBoxDefs::CD :
-        rbFdType->isChecked() ? VBoxDefs::FD : VBoxDefs::InvalidType;
-    vdm.setup (type, true, &machineId);
-    if (vdm.exec() == VBoxDiskImageManagerDlg::Accepted)
+    VBoxDefs::MediaType type =
+        rbCdType->isChecked() ? VBoxDefs::MediaType_DVD :
+        rbFdType->isChecked() ? VBoxDefs::MediaType_Floppy :
+        VBoxDefs::MediaType_Invalid;
+
+    AssertReturnVoid (type != VBoxDefs::MediaType_Invalid);
+
+    VBoxMediaManagerDlg dlg (this, "VBoxMediaManagerDlg",
+                             WType_Dialog | WShowModal);
+
+    dlg.setup (type, true /* aDoSelect */);
+    if (dlg.exec() == VBoxMediaManagerDlg::Accepted)
     {
-        cbImage->setCurrentItem (vdm.getSelectedUuid());
+        cbImage->setCurrentItem (dlg.selectedId());
 
         /* Revalidate updated page */
         wvalType->revalidate();

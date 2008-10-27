@@ -242,7 +242,7 @@ public:
      */
     static const Bstr Null;
 
-private:
+protected:
 
     void safe_assign (const BSTR str)
     {
@@ -272,10 +272,10 @@ private:
 
     BSTR bstr;
 
-    friend class Utf8Str; // to access our raw_copy()
+    friend class Utf8Str; /* to access our raw_copy() */
 };
 
-// symmetric compare operators
+/* symmetric compare operators */
 inline bool operator== (const BSTR l, const Bstr &r) { return r.operator== (l); }
 inline bool operator!= (const BSTR l, const Bstr &r) { return r.operator!= (l); }
 
@@ -478,7 +478,7 @@ public:
      */
     static const Utf8Str Null;
 
-private:
+protected:
 
     void safe_assign (const char *s)
     {
@@ -516,7 +516,7 @@ private:
 
     char *str;
 
-    friend class Bstr; // to access our raw_copy()
+    friend class Bstr; /* to access our raw_copy() */
 };
 
 // symmetric compare operators
@@ -625,6 +625,49 @@ public:
      *  @param args     list of arguments for the format string
      */
     Utf8StrFmtVA (const char *format, va_list args) { init (format, args); }
+};
+
+/**
+ * THe BstrFmt class is a shortcut to <tt>Bstr (Utf8StrFmt (...))</tt>.
+ */
+class BstrFmt : public Bstr
+{
+public:
+
+    /**
+     * Constructs a new string given the format string and the list of the
+     * arguments for the format string.
+     *
+     * @param aFormat   printf-like format string (in UTF-8 encoding).
+     * @param ...       List of the arguments for the format string.
+     */
+    explicit BstrFmt (const char *aFormat, ...)
+    {
+        va_list args;
+        va_start (args, aFormat);
+        raw_copy (bstr, Utf8StrFmtVA (aFormat, args));
+        va_end (args);
+    }
+};
+
+/**
+ * THe BstrFmtVA class is a shortcut to <tt>Bstr (Utf8StrFmtVA (...))</tt>.
+ */
+class BstrFmtVA : public Bstr
+{
+public:
+
+    /**
+     * Constructs a new string given the format string and the list of the
+     * arguments for the format string.
+     *
+     * @param aFormat   printf-like format string (in UTF-8 encoding).
+     * @param aArgs     List of arguments for the format string
+     */
+    BstrFmtVA (const char *aFormat, va_list aArgs)
+    {
+        raw_copy (bstr, Utf8StrFmtVA (aFormat, aArgs));
+    }
 };
 
 } /* namespace com */

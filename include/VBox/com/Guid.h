@@ -64,7 +64,13 @@ public:
     Guid () { ::RTUuidClear (&uuid); }
     Guid (const Guid &that) { uuid = that.uuid; }
     Guid (const RTUUID &that) { uuid = that; }
-    Guid (const GUID &that) { ::memcpy (&uuid, &that, sizeof (GUID)); }
+
+    Guid (const GUID &that)
+    {
+        AssertCompileSize (GUID, sizeof (RTUUID));
+        ::memcpy (&uuid, &that, sizeof (GUID));
+    }
+
     Guid (const char *that)
     {
         ::RTUuidClear (&uuid);

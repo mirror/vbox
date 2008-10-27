@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,6 +26,8 @@
 
 #include "VirtualBoxBase.h"
 
+#include "MediumImpl.h"
+
 class Machine;
 
 class ATL_NO_VTABLE DVDDrive :
@@ -38,22 +40,23 @@ public:
 
     struct Data
     {
-        Data() {
-            mDriveState = DriveState_NotMounted;
+        Data()
+        {
+            mState = DriveState_NotMounted;
             mPassthrough = false;
         }
 
         bool operator== (const Data &that) const
         {
             return this == &that ||
-                   (mDriveState == that.mDriveState &&
-                    mDVDImage.equalsTo (that.mDVDImage) &&
+                   (mState == that.mState &&
+                    mImage.equalsTo (that.mImage) &&
                     mHostDrive.equalsTo (that.mHostDrive));
         }
 
-        ComPtr <IDVDImage> mDVDImage;
+        ComObjPtr <DVDImage2> mImage;
         ComPtr <IHostDVDDrive> mHostDrive;
-        DriveState_T mDriveState;
+        DriveState_T mState;
         BOOL mPassthrough;
     };
 
@@ -82,7 +85,7 @@ public:
     void uninit();
 
     // IDVDDrive properties
-    STDMETHOD(COMGETTER(State)) (DriveState_T *aDriveState);
+    STDMETHOD(COMGETTER(State)) (DriveState_T *aState);
     STDMETHOD(COMGETTER(Passthrough)) (BOOL *aPassthrough);
     STDMETHOD(COMSETTER(Passthrough)) (BOOL aPassthrough);
 
@@ -90,7 +93,7 @@ public:
     STDMETHOD(MountImage) (INPTR GUIDPARAM aImageId);
     STDMETHOD(CaptureHostDrive) (IHostDVDDrive *aHostDVDDrive);
     STDMETHOD(Unmount)();
-    STDMETHOD(GetImage) (IDVDImage **aDVDImage);
+    STDMETHOD(GetImage) (IDVDImage2 **aDVDImage);
     STDMETHOD(GetHostDrive) (IHostDVDDrive **aHostDVDDrive);
 
     // public methods only for internal purposes

@@ -152,7 +152,7 @@
       <item row="4" column="2" >
        <widget class="QToolButton" name="mTbIsoCD" >
         <property name="whatsThis" >
-         <string>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</string>
+         <string>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</string>
         </property>
         <property name="text" >
          <string/>

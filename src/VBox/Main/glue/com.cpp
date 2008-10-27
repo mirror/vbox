@@ -47,7 +47,8 @@
 #include "VBox/com/com.h"
 #include "VBox/com/assert.h"
 
-#include <VBox/com/Guid.h>
+#include "VBox/com/Guid.h"
+#include "VBox/com/array.h"
 
 
 #ifdef RT_OS_DARWIN
@@ -191,5 +192,12 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
 
 /* static */
 const Guid Guid::Empty; /* default ctor is OK */
+
+#if defined (VBOX_WITH_XPCOM)
+
+/* static */
+const nsID *SafeGUIDArray::nsIDRef::Empty = (const nsID *) Guid::Empty.raw();
+
+#endif /* (VBOX_WITH_XPCOM) */
 
 } /* namespace com */

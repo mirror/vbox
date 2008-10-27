@@ -23,21 +23,15 @@
 
 #include "VBox/com/defs.h"
 
+#include "VBox/com/VirtualBox.h"
+
+#include "VirtualBoxImpl.h"
+#include "Logging.h"
+
 #include "svchlp.h"
 
 #include <VBox/err.h>
 #include <iprt/runtime.h>
-
-#include "MachineImpl.h"
-#include "HardDiskImpl.h"
-#include "DVDImageImpl.h"
-#include "FloppyImageImpl.h"
-#include "GuestOSTypeImpl.h"
-#include "ProgressImpl.h"
-#include "SystemPropertiesImpl.h"
-#include "VirtualBoxImpl.h"
-
-#include "Logging.h"
 
 #include <atlbase.h>
 #include <atlcom.h>

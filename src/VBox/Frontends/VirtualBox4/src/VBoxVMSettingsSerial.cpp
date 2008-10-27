@@ -90,7 +90,7 @@ void VBoxVMSettingsSerial::putBackToPort()
     mPort.SetIRQ (mLeIRQ->text().toULong (NULL, 0));
     mPort.SetIOBase (mLeIOPort->text().toULong (NULL, 0));
     mPort.SetServer (mCbPipe->isChecked());
-    mPort.SetPath (QDir::convertSeparators (mLePath->text()));
+    mPort.SetPath (QDir::toNativeSeparators (mLePath->text()));
     /* This *must* be last. The host mode will be changed to disconnected if
      * some of the necessary settings above will not meet the requirements for
      * the selected mode. */

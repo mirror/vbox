@@ -832,7 +832,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b>New&lt;/b> button or select an existing hard disk image from the drop-down list or by pressing the &lt;b>Existing&lt;/b> button (to invoke the Virtual Disk Manager dialog).&lt;/p>&lt;p>If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p></string>
+              <string>&lt;p>Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b>New&lt;/b> button or select an existing hard disk image from the drop-down list or by pressing the &lt;b>Existing&lt;/b> button (to invoke the Virtual Media Manager dialog).&lt;/p>&lt;p>If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p></string>
              </property>
              <property name="wordWrap" >
               <bool>true</bool>
@@ -862,7 +862,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="grbHDA" >
+            <widget class="QGroupBox" name="mGbHDA" >
              <property name="sizePolicy" >
               <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
                <horstretch>0</horstretch>
@@ -870,7 +870,10 @@
               </sizepolicy>
              </property>
              <property name="title" >
-              <string>B&amp;oot Hard Disk (Primary Master)</string>
+              <string>Boot Hard &amp;Disk (Primary Master)</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
              </property>
              <layout class="QGridLayout" >
               <property name="topMargin" >
@@ -904,7 +907,7 @@
                </spacer>
               </item>
               <item row="0" column="0" colspan="3" >
-               <widget class="VBoxMediaComboBox" name="mMediaCombo" >
+               <widget class="VBoxMediaComboBox" name="mHDCombo" >
                 <property name="sizePolicy" >
                  <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
                   <horstretch>0</horstretch>
@@ -1243,7 +1246,7 @@
   <tabstop>mBtnBack3</tabstop>
   <tabstop>mBtnNext3</tabstop>
   <tabstop>mBtnCancel3</tabstop>
-  <tabstop>mMediaCombo</tabstop>
+  <tabstop>mHDCombo</tabstop>
   <tabstop>mPbNewHD</tabstop>
   <tabstop>mPbExistingHD</tabstop>
   <tabstop>mBtnBack4</tabstop>

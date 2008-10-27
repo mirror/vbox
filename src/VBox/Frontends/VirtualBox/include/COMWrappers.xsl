@@ -10,7 +10,7 @@
  */
 
 /*
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -351,6 +351,90 @@
 
 </xsl:template>
 
+<xsl:template name="declareAttributes">
+
+  <xsl:param name="iface"/>
+
+  <xsl:apply-templates select="$iface//attribute[not(@internal='yes')]" mode="declare"/>
+  <xsl:if test="$iface//attribute[not(@internal='yes')]">
+    <xsl:text>&#x0A;</xsl:text>
+  </xsl:if>
+  <!-- go to the base interface -->
+  <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
+    <xsl:choose>
+      <!-- interfaces within library/if -->
+      <xsl:when test="name(..)='if'">
+        <xsl:call-template name="declareAttributes">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../preceding-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../following-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:when>
+      <!-- interfaces within library -->
+      <xsl:otherwise>
+        <xsl:call-template name="declareAttributes">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:if>
+
+</xsl:template>
+
+<xsl:template name="declareMethods">
+
+  <xsl:param name="iface"/>
+
+  <xsl:apply-templates select="$iface//method[not(@internal='yes')]" mode="declare"/>
+  <xsl:if test="$iface//method[not(@internal='yes')]">
+    <xsl:text>&#x0A;</xsl:text>
+  </xsl:if>
+  <!-- go to the base interface -->
+  <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
+    <xsl:choose>
+      <!-- interfaces within library/if -->
+      <xsl:when test="name(..)='if'">
+        <xsl:call-template name="declareMethods">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../preceding-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../following-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:when>
+      <!-- interfaces within library -->
+      <xsl:otherwise>
+        <xsl:call-template name="declareMethods">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:if>
+
+</xsl:template>
+
 <xsl:template name="declareMembers">
 
   <xsl:text>    // constructors and assignments taking CUnknown and </xsl:text>
@@ -358,35 +442,96 @@
   <!-- default constructor -->
   <xsl:text>    C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text> () : Base () {}&#x0A;</xsl:text>
-  <!-- constructor taking CUnknown -->
+  <xsl:text> () {}&#x0A;&#x0A;</xsl:text>
+  <!-- constructor taking CWhatever -->
+  <xsl:text>    template &lt;class OI, class OB&gt; explicit C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+<xsl:text> (const CInterface &lt;OI, OB&gt; &amp; that)
+    {
+        attach (that.raw());
+        if (SUCCEEDED (mRC))
+        {
+            mRC = that.lastRC();
+            setErrorInfo (that.errorInfo());
+        }
+    }
+</xsl:text>
+  <xsl:text>&#x0A;</xsl:text>
+  <!-- specialization for ourselves (copy constructor) -->
   <xsl:text>    C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text> (const CUnknown &amp; that) : Base (that) {}&#x0A;</xsl:text>
-  <!-- constructor taking raw iface pointer -->
-  <xsl:text>    C</xsl:text>
+  <xsl:text> (const C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text> &amp; that) : Base (that) {}&#x0A;&#x0A;</xsl:text>
+  <!-- constructor taking a raw iface pointer -->
+  <xsl:text>    template &lt;class OI&gt; explicit C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text> (OI * aIface) { attach (aIface); }&#x0A;&#x0A;</xsl:text>
+  <!-- specialization for ourselves -->
+  <xsl:text>    explicit C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
   <xsl:text> (</xsl:text>
   <xsl:value-of select="@name"/>
-  <xsl:text> *i) : Base (i) {}&#x0A;</xsl:text>
-  <!-- assignment taking CUnknown -->
+  <xsl:text> * aIface) : Base (aIface) {}&#x0A;&#x0A;</xsl:text>
+  <!-- assignment taking CWhatever -->
+  <xsl:text>    template &lt;class OI, class OB&gt; C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+<xsl:text> &amp; operator = (const CInterface &lt;OI, OB&gt; &amp; that)
+    {
+        attach (that.raw());
+        if (SUCCEEDED (mRC))
+        {
+            mRC = that.lastRC();
+            setErrorInfo (that.errorInfo());
+        }
+        return *this;
+    }
+</xsl:text>
+  <xsl:text>&#x0A;</xsl:text>
+  <!-- specialization for ourselves -->
   <xsl:text>    C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text> &amp; operator = (const CUnknown &amp; that)&#x0A;    {&#x0A;        return (C</xsl:text>
+  <xsl:text> &amp; operator = (const C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text> &amp;) Base::operator = (that);&#x0A;    }&#x0A;&#x0A;</xsl:text>
+<xsl:text> &amp; that)
+    {
+        Base::operator= (that);
+        return *this;
+    }
+</xsl:text>
+  <xsl:text>&#x0A;</xsl:text>
+  <!-- assignment taking a raw iface pointer -->
+  <xsl:text>    template &lt;class OI&gt; C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+<xsl:text> &amp; operator = (OI * aIface)
+    {
+        attach (aIface);
+        return *this;
+    }
+</xsl:text>
+  <xsl:text>&#x0A;</xsl:text>
+  <!-- specialization for ourselves -->
+  <xsl:text>    C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text> &amp; operator = (</xsl:text>
+  <xsl:value-of select="@name"/>
+<xsl:text> * aIface)
+    {
+        Base::operator= (aIface);
+        return *this;
+    }
+</xsl:text>
+  <xsl:text>&#x0A;</xsl:text>
 
   <xsl:text>    // attributes (properties)&#x0A;&#x0A;</xsl:text>
-  <xsl:apply-templates select=".//attribute[not(@internal='yes')]" mode="declare"/>
-  <xsl:if test=".//attribute[not(@internal='yes')]">
-    <xsl:text>&#x0A;</xsl:text>
-  </xsl:if>
+  <xsl:call-template name="declareAttributes">
+    <xsl:with-param name="iface" select="."/>
+  </xsl:call-template>
 
   <xsl:text>    // methods&#x0A;&#x0A;</xsl:text>
-  <xsl:apply-templates select=".//method[not(@internal='yes')]" mode="declare"/>
-  <xsl:if test=".//method[not(@internal='yes')]">
-    <xsl:text>&#x0A;</xsl:text>
-  </xsl:if>
+  <xsl:call-template name="declareMethods">
+    <xsl:with-param name="iface" select="."/>
+  </xsl:call-template>
 
   <xsl:text>    // friend wrappers&#x0A;&#x0A;</xsl:text>
   <xsl:text>    friend class CUnknown;&#x0A;</xsl:text>
@@ -560,40 +705,139 @@
 
 </xsl:template>
 
+<xsl:template name="defineAttributes">
+
+  <xsl:param name="iface"/>
+
+  <xsl:apply-templates select="$iface//attribute[not(@internal='yes')]" mode="define">
+    <xsl:with-param name="namespace" select="."/>
+  </xsl:apply-templates>
+
+  <!-- go to the base interface -->
+  <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
+    <xsl:choose>
+      <!-- interfaces within library/if -->
+      <xsl:when test="name(..)='if'">
+        <xsl:call-template name="defineAttributes">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../preceding-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../following-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:when>
+      <!-- interfaces within library -->
+      <xsl:otherwise>
+        <xsl:call-template name="defineAttributes">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:if>
+
+</xsl:template>
+
+<xsl:template name="defineMethods">
+
+  <xsl:param name="iface"/>
+
+  <xsl:apply-templates select="$iface//method[not(@internal='yes')]" mode="define">
+    <xsl:with-param name="namespace" select="."/>
+  </xsl:apply-templates>
+
+  <!-- go to the base interface -->
+  <xsl:if test="$iface/@extends and $iface/@extends!='$unknown'">
+    <xsl:choose>
+      <!-- interfaces within library/if -->
+      <xsl:when test="name(..)='if'">
+        <xsl:call-template name="defineMethods">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../preceding-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            ../following-sibling::if[@target=../@target]/
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:when>
+      <!-- interfaces within library -->
+      <xsl:otherwise>
+        <xsl:call-template name="defineMethods">
+          <xsl:with-param name="iface" select="
+            preceding-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends] |
+            following-sibling::
+              *[(self::interface or self::collection) and @name=$iface/@extends]
+          "/>
+        </xsl:call-template>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:if>
+
+</xsl:template>
+
 <xsl:template name="defineMembers">
-    <xsl:apply-templates select=".//attribute[not(@internal='yes')]" mode="define"/>
-    <xsl:apply-templates select=".//method[not(@internal='yes')]" mode="define"/>
+  <xsl:call-template name="defineAttributes">
+    <xsl:with-param name="iface" select="."/>
+  </xsl:call-template>
+  <xsl:call-template name="defineMethods">
+    <xsl:with-param name="iface" select="."/>
+  </xsl:call-template>
 </xsl:template>
 
 <!-- attribute definitions -->
 <xsl:template match="interface//attribute | collection//attribute" mode="define">
+
+  <xsl:param name="namespace" select="(ancestor::interface | ancestor::collection)[1]"/>
+
   <xsl:apply-templates select="parent::node()" mode="begin"/>
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:call-template name="composeMethod">
     <xsl:with-param name="return" select="."/>
     <xsl:with-param name="define" select="'yes'"/>
+    <xsl:with-param name="namespace" select="$namespace"/>
   </xsl:call-template>
   <xsl:if test="not(@readonly='yes')">
     <xsl:call-template name="composeMethod">
       <xsl:with-param name="return" select="''"/>
       <xsl:with-param name="define" select="'yes'"/>
+      <xsl:with-param name="namespace" select="$namespace"/>
     </xsl:call-template>
   </xsl:if>
   <xsl:apply-templates select="@if" mode="end"/>
   <xsl:apply-templates select="parent::node()" mode="end"/>
   <xsl:text>&#x0A;</xsl:text>
+
 </xsl:template>
 
 <!-- method definitions -->
 <xsl:template match="interface//method | collection//method" mode="define">
+
+  <xsl:param name="namespace" select="(ancestor::interface | ancestor::collection)[1]"/>
+
   <xsl:apply-templates select="parent::node()" mode="begin"/>
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:call-template name="composeMethod">
     <xsl:with-param name="define" select="'yes'"/>
+    <xsl:with-param name="namespace" select="$namespace"/>
   </xsl:call-template>
   <xsl:apply-templates select="@if" mode="end"/>
   <xsl:apply-templates select="parent::node()" mode="end"/>
   <xsl:text>&#x0A;</xsl:text>
+
 </xsl:template>
 
 
@@ -621,11 +865,16 @@
  *      'yes' to procuce inlined definition outside the class
  *      declaration, or
  *      empty string to produce method declaration only (w/o body)
+ *  @param namespace
+ *      actual interface node for which this method is being defined
+ *      (necessary to properly set a class name for inherited methods).
+ *      If not specified, will default to the parent interface/collection
+ *      node of the method being defined.
 -->
 <xsl:template name="composeMethod">
   <xsl:param name="return" select="param[@dir='return']"/>
   <xsl:param name="define" select="''"/>
-  <xsl:variable name="namespace" select="(ancestor::interface | ancestor::collection)[1]"/>
+  <xsl:param name="namespace" select="(ancestor::interface | ancestor::collection)[1]"/>
   <xsl:choose>
     <!-- no return value -->
     <xsl:when test="not($return)">
@@ -1023,7 +1272,7 @@
           </xsl:call-template>
           <xsl:choose>
             <xsl:when test="@type='$unknown'">
-              <xsl:text>.iface()</xsl:text>
+              <xsl:text>.raw()</xsl:text>
             </xsl:when>
             <xsl:otherwise>
               <xsl:text>.mIface</xsl:text>
@@ -1037,7 +1286,7 @@
           </xsl:call-template>
           <xsl:choose>
             <xsl:when test="@type='$unknown'">
-              <xsl:text>.ifaceRef()</xsl:text>
+              <xsl:text>.rawRef()</xsl:text>
             </xsl:when>
             <xsl:otherwise>
               <xsl:text>.mIface</xsl:text>
@@ -1544,6 +1793,11 @@
               <xsl:value-of select="@type"/>
               <xsl:text>&gt; </xsl:text>
             </xsl:when>
+            <!-- GUID is special too -->
+            <xsl:when test="@type='uuid'">
+              <xsl:text>    com::SafeGUIDArray </xsl:text>
+            </xsl:when>
+            <!-- everything else is not -->
             <xsl:otherwise>
               <xsl:text>    com::SafeArray &lt;</xsl:text>
               <xsl:apply-templates select="@type" mode="com"/>

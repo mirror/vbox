@@ -1,6 +1,8 @@
 <?xml version="1.0" ?>
 
 <!--
+ * $Id$ *
+ *
  * :tabSize=2:indentSize=2:noTabs=true:
  * :folding=explicit:collapseFolds=1:
  *
@@ -73,20 +75,66 @@
 <if target="xpidl">
   <!-- NS_IMPL_THREADSAFE_ISUPPORTSxx_CI macros are placed here, for convenience -->
   <cpp>
-// currenty, nsISupportsImpl.h lacks the below-like macros
+/* currenty, nsISupportsImpl.h lacks the below-like macros */
+
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI  NS_IMPL_QUERY_INTERFACE1_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI  NS_IMPL_QUERY_INTERFACE2_CI
+
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_CI
-#define NS_IMPL_THREADSAFE_ISUPPORTS1_CI(_class, _interface)                  \
-  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
-  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
-  NS_IMPL_QUERY_INTERFACE1_CI(_class, _interface)                             \
-  NS_IMPL_CI_INTERFACE_GETTER1(_class, _interface)
+# define NS_IMPL_THREADSAFE_ISUPPORTS1_CI(_class, _interface)                 \
+   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
+   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
+   NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI(_class, _interface)                 \
+   NS_IMPL_CI_INTERFACE_GETTER1(_class, _interface)
 #endif
+
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS2_CI
-#define NS_IMPL_THREADSAFE_ISUPPORTS2_CI(_class, _i1, _i2)                    \
-  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
-  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
-  NS_IMPL_QUERY_INTERFACE2_CI(_class, _i1, _i2)                               \
-  NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
+# define NS_IMPL_THREADSAFE_ISUPPORTS2_CI(_class, _i1, _i2)                   \
+   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
+   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
+   NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI(_class, _i1, _i2)                   \
+   NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
+#endif
+
+#ifndef NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI
+# define NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI(_class, _i1, _ic1)             \
+   NS_INTERFACE_MAP_BEGIN(_class)                                             \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i1, _ic1)                               \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, _ic1)                       \
+    NS_IMPL_QUERY_CLASSINFO(_class)                                           \
+   NS_INTERFACE_MAP_END
+#endif
+
+#ifndef NS_IMPL_QUERY_INTERFACE2_AMBGUOUS_CI
+# define NS_IMPL_QUERY_INTERFACE2_AMBIGUOUS_CI(_class, _i1, _ic1,             \
+                                               _i2, _ic2)                     \
+   NS_INTERFACE_MAP_BEGIN(_class)                                             \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i1, _ic1)                               \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i2, _ic2)                               \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, _ic1)                       \
+    NS_IMPL_QUERY_CLASSINFO(_class)                                           \
+   NS_INTERFACE_MAP_END
+#endif
+
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_AMBIGUOUS_CI NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_AMBIGUOUS_CI NS_IMPL_QUERY_INTERFACE2_AMBIGUOUS_CI
+
+#ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_AMBIGUOUS_CI
+# define NS_IMPL_THREADSAFE_ISUPPORTS1_AMBIGUOUS_CI(_class, _i1, _ic1)        \
+   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
+   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
+   NS_IMPL_THREADSAFE_QUERY_INTERFACE1_AMBIGUOUS_CI(_class, _i1, _ic1)        \
+   NS_IMPL_CI_INTERFACE_GETTER1(_class, _i1)
+#endif
+
+#ifndef NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI
+# define NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(_class, _i1, _ic1,        \
+                                                     _i2, _ic2)               \
+   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
+   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
+   NS_IMPL_THREADSAFE_QUERY_INTERFACE2_AMBIGUOUS_CI(_class, _i1, _ic1,        \
+                                                    _i2, _ic2)                \
+   NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
 #endif
   </cpp>
 </if>
@@ -170,7 +218,7 @@
     </const>
     <const name="Paused"                value="5">
       <desc>
-        The execution of the machine has been paused.
+        Execution of the machine has been paused.
         <note>
           This value can be used in comparison expressions: all state values
           above it represent unstable states of the running virtual
@@ -186,7 +234,7 @@
     </const>
     <const name="Stuck"                 value="6">
       <desc>
-        The execution of the machine has reached the "Guru Meditation"
+        Execution of the machine has reached the "Guru Meditaion"
         condition. This condition indicates an internal VMM failure which may
         happen as a result of either an unhandled low-level virtual hardware
         exception or one of the recompiler exceptions (such as
@@ -195,21 +243,21 @@
     </const>
     <const name="Starting"              value="7">
       <desc>
-        The machine is being started after
+        Machine is being started after
         <link to="IConsole::powerUp">powering it on</link> from a
         zero execution state.
       </desc>
     </const>
     <const name="Stopping"              value="8">
       <desc>
-        The machine is being normally stopped
+        Machine is being normally stopped
         (after explicitly <link to="IConsole::powerDown">powering it off</link>,
         or after the guest OS has initiated a shutdown sequence).
       </desc>
     </const>
     <const name="Saving"                value="9">
       <desc>
-        The machine is saving its execution state to a file as a
+        Machine is saving its execution state to a file as a
         result of calling <link to="IConsole::saveState"/> or an online
         snapshot of the machine is being taken using
         <link to="IConsole::takeSnapshot"/>.
@@ -217,16 +265,22 @@
     </const>
     <const name="Restoring"             value="10">
       <desc>
-        The execution state of the machine is being restored from a file
+        Execution state of the machine is being restored from a file
         after <link to="IConsole::powerUp">powering it on</link> from
         a saved execution state.
       </desc>
     </const>
     <const name="Discarding"            value="11">
       <desc>
-        A snapshot of the machine is being discarded after calling
+        Snapshot of the machine is being discarded after calling
         <link to="IConsole::discardSnapshot"/> or its current state is
         being discarded after <link to="IConsole::discardCurrentState"/>.
+      </desc>
+    </const>
+    <const name="SettingUp"             value="12">
+      <desc>
+        Lengthy setup operation is in progress (e.g.
+        <link to="IMachine::attachHardDisk2"/>).
       </desc>
     </const>
   </enum>
@@ -355,41 +409,6 @@
     <const name="Idle"              value="1"/>
     <const name="Reading"           value="2"/>
     <const name="Writing"           value="3"/>
-  </enum>
-
-  <enum
-    name="ResourceUsage"
-    uuid="FC56E4B6-B195-48e2-A5E1-A667B0D9F809"
-  >
-    <desc>
-      Usage type constants for
-      <link to="IVirtualBox::getDVDImageUsage"/> and
-      <link to="IVirtualBox::getFloppyImageUsage"/>.
-    </desc>
-
-    <const name="Null"              value="0">
-      <desc><tt>null</tt> value. Never used by the API.</desc>
-    </const>
-    <const name="Permanent"         value="1">
-      <desc>
-        Scopes the VMs that use the resource permanently
-        (the information about this usage is stored in the VM
-        settings file).
-      </desc>
-    </const>
-    <const name="Temporary"         value="2">
-      <desc>
-        Scopes the VMs that are temporarily using the resource
-        (the information about the usage is not yet saved in the VM
-        settings file). Temporary usage can take place only in the
-        context of an open session.
-      </desc>
-    </const>
-    <const name="All"               value="3">
-      <desc>
-        Combines Permanent and Temporary.
-      </desc>
-    </const>
   </enum>
 
   <enum
@@ -912,7 +931,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="557a07bc-e6ae-4520-a361-4a8493199137"
+    uuid="2aa11223-ba64-4610-84b8-066d2a89384f"
     wsmap="managed"
   >
     <desc>
@@ -1042,34 +1061,33 @@
       <desc>Associated system information object.</desc>
     </attribute>
 
-    <attribute name="machines" type="IMachineCollection" readonly="yes">
-      <desc>
-        Collection of machine objects registered within this VirtualBox
-        instance.
-      </desc>
-    </attribute>
-
     <attribute name="machines2" type="IMachine" readonly="yes" safearray="yes">
       <desc>
         Array of machine objects registered within this VirtualBox instance.
       </desc>
     </attribute>
 
-    <attribute name="hardDisks" type="IHardDiskCollection" readonly="yes">
+    <attribute name="hardDisks2" type="IHardDisk2" readonly="yes" safearray="yes">
       <desc>
-        Collection of hard disk objects registered within this VirtualBox
-        instance.
+        Array of hard disk objects known to this VirtualBox installation.
 
-        This collection contains only "top-level" (basic or independent) hard
-        disk images, but not differencing ones. All differencing images of the
-        given top-level image (i.e. all its children) can be enumerated using
-        <link to="IHardDisk::children"/>.
+        This array contains only base (root) hard disks. All differencing
+        hard disks of the given base hard disk can be enumerated using
+        <link to="IHardDisk2::children"/>.
       </desc>
     </attribute>
 
-    <attribute name="DVDImages" type="IDVDImageCollection" readonly="yes"/>
+    <attribute name="DVDImages" type="IDVDImage2" readonly="yes" safearray="yes">
+      <desc>
+        Array of CD/DVD image objects registered with this VirtualBox instance.
+      </desc>
+    </attribute>
 
-    <attribute name="FloppyImages" type="IFloppyImageCollection" readonly="yes"/>
+    <attribute name="floppyImages" type="IFloppyImage2" readonly="yes" safearray="yes">
+      <desc>
+        Array of floppy image objects registered with this VirtualBox instance.
+      </desc>
+    </attribute>
 
     <attribute name="progressOperations" type="IProgressCollection" readonly="yes"/>
 
@@ -1342,435 +1360,291 @@
       </param>
     </method>
 
-    <method name="createHardDisk">
+    <method name="createHardDisk2">
       <desc>
+        Creates a new base hard disk object that will use the given storage
+        format and location for hard disk data.
 
-        Creates a new unregistered hard disk that will use the given
-        storage type.
+        Note that the actual storage unit is not created by this method. In
+        order to do it, and before you are able to attach the created hard disk
+        to virtual machiens, you must call one of the following methods to
+        allocate a format-specific storage unit at the specified location:
+        <ul>
+          <li><link to="IHardDisk2::createDynamicStorage()"/></li>
+          <li><link to="IHardDisk2::createFixedStorage()"/></li>
+          <li><link to="IHardDisk2::createDiffStorage()"/></li>
+        </ul>
 
-        Most properties of the created hard disk object are
-        uninitialized. Valid values must be assigned to them (and probalby
-        some actions performed) to make the actual usage of this hard disk
-        (<link to="#registerHardDisk()">register</link>, attach to a virtual
-        machine, etc.). See the description of <link to="IHardDisk"/> and
-        descriptions of storage type specific interfaces for more information.
+        Some hard disk attributes, such as <link to="id"/>, may remain
+        uninitialized until the hard disk storage unit is successfully created
+        by one of the above methods.
 
-        <note>
-          For hard disks using
-          the <link
-          to="HardDiskStorageType::VirtualDiskImage">VirtualDiskImage</link>
-          storage type, an image file is not actually created until you call
-          <link to="IVirtualDiskImage::createDynamicImage()"/> or
-          <link to="IVirtualDiskImage::createFixedImage()"/>.
-        </note>
+        After the storage unit is successfully created, the hard disk gets
+        remembered by this VirtualBox installation and will be accessible
+        trhough <link to="#getHardDisk2"/> and <link to="#findHardDisk2"/>
+        methods. Remembered root (base) hard disks are also returned as part of
+        the <link to="#hardDisks2"/> array. See IHardDisk2 for more details.
 
+        The list of all <link to="IHardDisk2::format">storage formats</link>
+        supported by this VirtualBox installation can be obtained using
+        <link to="ISystemProperties::hardDiskFormats"/>.
+
+        Note that the format of the location string is storage format specific.
+        See <link to="IMedium::location"/>, IHardDisk2 and
+        <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
       </desc>
-
-      <param name="storageType" type="HardDiskStorageType" dir="in">
-        <desc>Storage type of the hard disk image to create.</desc>
+      <param name="format" type="wstring" dir="in">
+        <desc>
+          Storage format to use for the new hard disk.
+        </desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Created hard disk object of the given storage type.</desc>
-      </param>
-
-    </method>
-
-    <method name="openHardDisk">
-      <desc>
-
-        Opens a hard disk from an existing location.
-
-        This method tries to guess the
-        <link to="HardDiskStorageType">hard disk storage type</link> from the
-        format of the location string and from the contents of the resource the
-        location points to. Currently, a <i>file path</i> is the only
-        supported format for the location string which must point to either a
-        VDI file or to a VMDK file. On success, an IHardDisk object will be
-        returned that also implements the corresponding interface
-        (IVirtualDiskImage or IVMDKImage, respectively). The
-        <link to="IHardDisk::storageType"/> property may also be used to
-        determine the storage type of the returned object (instead of trying
-        to query one of these interfaces).
-
-        <note>
-          The specified file path can be absolute (full path) or relative to
-          the <link to="IVirtualBox::homeFolder">VirtualBox home
-          directory</link>. If only a file name without any path is given,
-          the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-          folder</link> will be used as a path to the image file.
-        </note>
-
-        The opened hard disk remains unregistered
-        until <link to="#registerHardDisk()"/> is called.
-
-      </desc>
-
       <param name="location" type="wstring" dir="in">
         <desc>
-          Location of the resource that contains a valid hard disk.
+          Location of the storage unit for the new hard disk.
         </desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Opened hard disk object.</desc>
+      <param name="hardDisk" type="IHardDisk2" dir="return">
+        <desc>Created hard disk object.</desc>
       </param>
     </method>
 
-    <method name="openVirtualDiskImage">
+    <method name="openHardDisk2">
       <desc>
+        Opens a hard disk from an existing location.
 
-        Opens a hard disk from an existing Virtual Disk Image file.
-        The opened hard disk remains unregistered
-        until <link to="#registerHardDisk()"/> is called.
+        After the hard disk is successfully opened by this method, it gets
+        remembered by (known to) this VirtualBox installation and will be
+        accessible trhough <link to="#getHardDisk2()"/> and
+        <link to="#findHardDisk2()"/> methods. Remembered root (base) hard disks
+        are also returned as part of the <link to="#hardDisks2"/> array and can
+        be attached to virtual machines. See IHardDisk2 for more details.
 
-        @deprecated Use <link to="IVirtualBox::openHardDisk()"/> instead.
+        If a differencing hard disk is to be opened by this method, the
+        operation will succeed only if its parent hard disk and all ancestors,
+        if any, are already known to this VirtualBox installation (for example,
+        were opened by this method before).
 
-        <note>Opening differencing images is not supported.</note>
+        This method tries to guess the storage format of the specified hard disk
+        by reading hard disk data at the specified location.
 
-        <note>The specified file path can be absolute (full path) or
-          relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
-            home directory</link>. If only a file name without any path is
-          given, the <link to="ISystemProperties::defaultVDIFolder">
-            default VDI folder</link> will be used as a path to the image
-          file.</note>
-
+        Note that the format of the location string is storage format specific.
+        See <link to="IMedium::location"/>, IHardDisk2 and
+        <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
       </desc>
-
-      <param name="filePath" type="wstring" dir="in">
+      <param name="location" type="wstring" dir="in">
         <desc>
-          Name of the file that contains a valid Virtual Disk Image.
+          Location of the storage unit that contains hard disk data in one of
+          the supported storage formats.
         </desc>
       </param>
-      <param name="image" type="IVirtualDiskImage" dir="return">
+      <param name="hardDisk" type="IHardDisk2" dir="return">
         <desc>Opened hard disk object.</desc>
       </param>
     </method>
 
-    <method name="registerHardDisk">
+    <method name="getHardDisk2" const="yes">
       <desc>
+        Returns a hard disk with the given UUID.
 
-        Registers the given hard disk within this VirtualBox
-        installation. The hard disk must not be registered, must be
-        <link to="IHardDisk::accessible"/> and must not be a
-        differencing hard disk, otherwise the registration will fail.
-
-      </desc>
-      <param name="hardDisk" type="IHardDisk" dir="in">
-        <desc>Hard disk object to register.</desc>
-      </param>
-    </method>
-
-    <method name="getHardDisk" const="yes">
-      <desc>
-        Returns the registered hard disk with the given UUID.
+        The hard disk with the given UUID must be known to this VirtualBox
+        installation, i.e. it must be previously created by
+        <link to="#createHardDisk2()"/> or opened by <link
+        to="#openHardDisk2()"/>, or attached to some known virtual machine.
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the hard disk to look for.</desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
+      <param name="hardDisk" type="IHardDisk2" dir="return">
         <desc>Found hard disk object.</desc>
       </param>
     </method>
 
-    <method name="findHardDisk">
+    <method name="findHardDisk2">
       <desc>
+        Returns a hard disk that uses the given location to store hard
+        disk data.
 
-        Returns a registered hard disk that uses the given location to
-        store data. The search is done by comparing the
-        value of the @a location argument to the
-        <link to="IHardDisk::location"/> attribute of each registered
-        hard disk.
+        The given hard disk must be known to this VirtualBox installation, i.e.
+        it must be previously created by
+        <link to="#createHardDisk2()"/> or opened by <link
+        to="#openHardDisk2()"/>, or attached to some known virtual machine.
 
-        For locations repesented by file paths (such as VDI and VMDK
-        images), the specified location can be either an absolute file
-        path or a path relative to
-        the <link to="IVirtualBox::homeFolder"> VirtualBox home
-          directory</link>. If only a file name without any path is
-        given, the <link to="ISystemProperties::defaultVDIFolder">
-          default VDI folder</link> will be used as a path to construct
-        the absolute image file name to search for. Note that on host
-        systems with case sensitive filesystems, a case sensitive
-        comparison is performed, otherwise the case of symbols in the
-        file path is ignored.
+        The search is done by comparing the value of the @a location argument to
+        the <link to="IHardDisk2::location"/> attribute of each known hard
+        disk.
 
+        For locations repesented by file names in the host's filesystem, the
+        requested location can be a path relative to the
+        <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
+        only a file name without any path is given, the
+        <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
+        folder</link> will be prepended to the file name before seacrhing. Note
+        that on case sensitive filesystems, a case sensitive comparison is
+        performed, otherwise the case of symbols in the file path is ignored.
       </desc>
       <param name="location" type="wstring" dir="in">
-        <desc>Hard disk location specification to search for.</desc>
+        <desc>Location string to search for.</desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
+      <param name="hardDisk" type="IHardDisk2" dir="return">
         <desc>Found hard disk object.</desc>
-      </param>
-    </method>
-
-    <method name="findVirtualDiskImage">
-      <desc>
-
-        Returns a registered hard disk that uses the given image file.
-
-        @deprecated Use <link to="IVirtualBox::findHardDisk()"/> instead.
-
-        <note>The specified file path can be absolute (full path) or
-          relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
-            home directory</link>. If only a file name without any path is
-          given, the <link to="ISystemProperties::defaultVDIFolder">
-            default VDI folder</link> will be used as a path to the image
-          file.</note>
-
-        <note>On host systems with case sensitive filesystems, a case
-          sensitive comparison is performed, otherwise the case of symbols
-          in the file path is ignored.</note>
-
-      </desc>
-      <param name="filePath" type="wstring" dir="in">
-        <desc>Virtual Disk Image file path to look for.</desc>
-      </param>
-      <param name="image" type="IVirtualDiskImage" dir="return">
-        <desc>Found hard disk object.</desc>
-      </param>
-    </method>
-
-    <method name="unregisterHardDisk">
-      <desc>
-        Unregisters a hard disk previously registered using
-        <link to="#registerHardDisk()"/>.
-        <note>
-          The specified hard disk must not be attached to any of
-          the existing virtual machines and must not have children
-          (differencing) hard disks.
-        </note>
-      </desc>
-      <param name="id" type="uuid" dir="in">
-        <desc>UUID of the hard disk to unregister.</desc>
-      </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Unregistered hard disk object.</desc>
       </param>
     </method>
 
     <method name="openDVDImage">
       <desc>
-        Opens the CD/DVD image contained in the specified file of
-        the supported format and assigns it the given UUID. The opened
-        image remains unregistered
-        until <link to="#registerDVDImage()"/> is called.
+        Opens a CD/DVD image contained in the specified file of the supported
+        format and assigns it the given UUID.
+
+        After the image is successfully opened by this method, it gets
+        remembered by (known to) this VirtualBox installation and will be
+        accessible trhough <link to="#getDVDImage()"/> and
+        <link to="#findDVDImage()"/> methods. Remembered images are also
+        returned as part of the <link to="#DVDImages"/> array and can be mounted
+        to virtual machines. See IMedium for more details.
+
+        See <link to="IMedium::location"/> to get more details about the format
+        of the location string.
+
+        <note>
+          Currently, only ISO CD/DVD images are supported by VirtualBox.
+        </note>
       </desc>
-      <param name="filePath" type="wstring" dir="in">
+      <param name="location" type="wstring" dir="in">
         <desc>
-          Full name of the file that contains a valid
-          CD/DVD image. Currently, only ISO images are supported.
-          <note>
-            The specified file name can be absolute or relative
-            to the <link to="IVirtualBox::homeFolder">
-              VirtualBox home directory</link>.
-          </note>
+          Full path to the file that contains a valid CD/DVD image.
         </desc>
       </param>
       <param name="id" type="uuid" dir="in">
         <desc>
-          UUID to assign to the given image file within this
-          VirtualBox installation. If an empty (null) UUID is
-          specified, the system will randomly generate an UUID.
+          UUID to assign to the given image within this VirtualBox installation.
+          If an empty (null) UUID is specified, the system will randomly
+          generate a new UUID.
         </desc>
       </param>
-      <param name="image" type="IDVDImage" dir="return">
+      <param name="image" type="IDVDImage2" dir="return">
         <desc>Opened CD/DVD image object.</desc>
-      </param>
-    </method>
-
-    <method name="registerDVDImage">
-      <desc>
-        Registers a CD/DVD image within this VirtualBox
-        installation. The image must not be registered and must not
-        be associated with the same image file as any of the already
-        registered images, otherwise the registration will fail.
-      </desc>
-      <param name="image" type="IDVDImage" dir="in">
-        <desc>CD/DVD image object to register.</desc>
       </param>
     </method>
 
     <method name="getDVDImage">
       <desc>
-        Returns a registered CD/DVD image with the given UUID.
+        Returns a CD/DVD image with the given UUID.
+
+        The image with the given UUID must be known to this VirtualBox
+        installation, i.e. it must be previously opened by <link
+        to="#openDVDImage()"/>, or mounted to some known virtual machine.
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
-      <param name="image" type="IDVDImage" dir="return">
+      <param name="image" type="IDVDImage2" dir="return">
         <desc>Found CD/DVD image object.</desc>
       </param>
     </method>
 
     <method name="findDVDImage">
       <desc>
-        Returns a registered CD/DVD image with the given image file.
-        <note>
-          On host systems with case sensitive filesystems, a case
-          sensitive comparison is performed, otherwise the case of
-          symbols in the file path is ignored.
-        </note>
+        Returns a CD/DVD image with the given image location.
+
+        The image with the given UUID must be known to this VirtualBox
+        installation, i.e. it must be previously opened by <link
+        to="#openDVDImage()"/>, or mounted to some known virtual machine.
+
+        The search is done by comparing the value of the @a location argument to
+        the <link to="IMedia::location"/> attribute of each known CD/DVD image.
+
+        The requested location can be a path relative to the
+        <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
+        only a file name without any path is given, the
+        <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
+        folder</link> will be prepended to the file name before seacrhing. Note
+        that on case sensitive filesystems, a case sensitive comparison is
+        performed, otherwise the case of symbols in the file path is ignored.
       </desc>
-      <param name="filePath" type="wstring" dir="in">
+      <param name="location" type="wstring" dir="in">
         <desc>CD/DVD image file path to look for.</desc>
       </param>
-      <param name="image" type="IDVDImage" dir="return">
+      <param name="image" type="IDVDImage2" dir="return">
         <desc>Found CD/DVD image object.</desc>
-      </param>
-    </method>
-
-    <method name="getDVDImageUsage">
-      <desc>
-        Returns the list of of UUIDs of all virtual machines that use
-        the given CD/DVD image.
-      </desc>
-      <param name="id" type="uuid" dir="in">
-        <desc>UUID of the image to get the usage information for.</desc>
-      </param>
-      <param name="usage" type="ResourceUsage" dir="in">
-        <desc>Type of the usage (permanent, temporary or all).</desc>
-      </param>
-      <param name="machineIDs" type="wstring" dir="return">
-        <desc>
-          List of UUIDs of all machines that use the given image
-          in the way specified by the usage parameter.
-          The list is returned as a string containing UUIDs separated
-          by spaces. A null string means that the image is not used.
-          <note>
-            When the usage type is <link to="ResourceUsage::All"/> and the image
-            is used by the VM both permanently and temporarily, the VM's UUID
-            will be present only once in the list.
-          </note>
-        </desc>
-      </param>
-    </method>
-
-    <method name="unregisterDVDImage">
-      <desc>
-        Unregisters the CD/DVD image previously registered using
-        <link to="#registerDVDImage()"/>.
-        <note>
-          The specified image must not be mounted to any of
-          the existing virtual machines.
-        </note>
-      </desc>
-      <param name="id" type="uuid" dir="in">
-        <desc>UUID of the CD/DVD image to unregister.</desc>
-      </param>
-      <param name="image" type="IDVDImage" dir="return">
-        <desc>Unregistered image object.</desc>
       </param>
     </method>
 
     <method name="openFloppyImage">
       <desc>
-        Opens a floppy image contained in the specified file of
-        the supported format and assigns it the given UUID. The opened
-        image remains unregistered
-        until <link to="#registerFloppyImage()"/> is called.
+        Opens a floppy image contained in the specified file of the supported
+        format and assigns it the given UUID.
+
+        After the image is successfully opened by this method, it gets
+        remembered by (known to) this VirtualBox installation and will be
+        accessible trhough <link to="#getFloppyImage()"/> and
+        <link to="#findFloppyImage()"/> methods. Remembered images are also
+        returned as part of the <link to="#FloppyImages"/> array and can be
+        mounted to virtual machines. See IMedium for more details.
+
+        See <link to="IMedium::location"/> to get more details about the format
+        of the location string.
+
+        <note>
+          Currently, only raw floppy images are supported by VirtualBox.
+        </note>
       </desc>
-      <param name="filePath" type="wstring" dir="in">
+      <param name="location" type="wstring" dir="in">
         <desc>
-          Full name of the file that contains a valid
-          floppy image.
-          <note>
-            The specified file name can be absolute or relative
-            to the <link to="IVirtualBox::homeFolder">
-              VirtualBox home directory</link>.
-          </note>
+          Full path to the file that contains a valid floopy image.
         </desc>
       </param>
       <param name="id" type="uuid" dir="in">
         <desc>
-          UUID to assign to the given image file within this
-          VirtualBox installation. If an empty (null) UUID is
-          specified, the system will randomly generate an UUID.
+          UUID to assign to the given image file within this VirtualBox
+          installation. If an empty (null) UUID is specified, the system will
+          randomly generate a new UUID.
         </desc>
       </param>
-      <param name="image" type="IFloppyImage" dir="return">
-        <desc>Opened CD/DVD image object.</desc>
-      </param>
-    </method>
-
-    <method name="registerFloppyImage">
-      <desc>
-        Registers a floppy image within this VirtualBox
-        installation. The image must not be registered and must not
-        be associated with the same image file as any of the already
-        registered images, otherwise the registration will fail.
-      </desc>
-      <param name="image" type="IFloppyImage" dir="in">
-        <desc>Floppy image object to register.</desc>
+      <param name="image" type="IFloppyImage2" dir="return">
+        <desc>Opened floppy image object.</desc>
       </param>
     </method>
 
     <method name="getFloppyImage">
       <desc>
-        Returns a registered floppy image with the given UUID.
+        Returns a floppy image with the given UUID.
+
+        The image with the given UUID must be known to this VirtualBox
+        installation, i.e. it must be previously opened by <link
+        to="#openFloppyImage()"/>, or mounted to some known virtual machine.
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
-      <param name="image" type="IFloppyImage" dir="return">
+      <param name="image" type="IFloppyImage2" dir="return">
         <desc>Found floppy image object.</desc>
       </param>
     </method>
 
     <method name="findFloppyImage">
       <desc>
-        Returns a registered floppy image with the given image file.
-        <note>
-          On host systems with case sensitive filesystems, a case
-          sensitive comparison is performed, otherwise the case of
-          symbols in the file path is ignored.
-        </note>
+        Returns a floppy image with the given image location.
+
+        The image with the given UUID must be known to this VirtualBox
+        installation, i.e. it must be previously opened by <link
+        to="#openFloppyImage()"/>, or mounted to some known virtual machine.
+
+        The search is done by comparing the value of the @a location argument to
+        the <link to="IMedia::location"/> attribute of each known floppy image.
+
+        The requested location can be a path relative to the
+        <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
+        only a file name without any path is given, the
+        <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
+        folder</link> will be prepended to the file name before seacrhing. Note
+        that on case sensitive filesystems, a case sensitive comparison is
+        performed, otherwise the case of symbols in the file path is ignored.
       </desc>
-      <param name="filePath" type="wstring" dir="in">
+      <param name="location" type="wstring" dir="in">
         <desc>Floppy image file path to look for.</desc>
       </param>
-      <param name="image" type="IFloppyImage" dir="return">
+      <param name="image" type="IFloppyImage2" dir="return">
         <desc>Found floppy image object.</desc>
-      </param>
-    </method>
-
-    <method name="getFloppyImageUsage">
-      <desc>
-        Returns the list of of UUIDs of all virtual machines that use
-        the given floppy image.
-      </desc>
-      <param name="id" type="uuid" dir="in">
-        <desc>UUID of the image to get the usage information for.</desc>
-      </param>
-      <param name="usage" type="ResourceUsage" dir="in">
-        <desc>Type of the usage (permanent, temporary or all).</desc>
-      </param>
-      <param name="machineIDs" type="wstring" dir="return">
-        <desc>
-          List of UUIDs of all machines that use the given image
-          in the way specified by the usage parameter.
-          The list is returned as a string containing UUIDs separated
-          by spaces. A null string means that the image is not used.
-          <note>
-            When the usage type is <link to="ResourceUsage::All"/> and the image
-            is used by the VM both permanently and temporarily, the VM's UUID
-            will be present only once in the list.
-          </note>
-        </desc>
-      </param>
-    </method>
-
-    <method name="unregisterFloppyImage">
-      <desc>
-        Unregisters the floppy image previously registered using
-        <link to="#registerFloppyImage()"/>.
-        <note>
-          The specified image must not be mounted to any of
-          the existing virtual machines.
-        </note>
-      </desc>
-      <param name="id" type="uuid" dir="in">
-        <desc>UUID of the floppy image to unregister.</desc>
-      </param>
-      <param name="image" type="IFloppyImage" dir="return">
-        <desc>Unregistered image object.</desc>
       </param>
     </method>
 
@@ -1940,7 +1814,7 @@
 
         <li>Call <link to="IMachine::saveSettings" />.</li>
 
-        <li>Close the session by calling <link to="ISession::close" />.</li>
+        <li>Close the session by calling <link to="ISession::close()"/>.</li>
         </ol>
       </desc>
       <param name="session" type="ISession" dir="in">
@@ -2661,7 +2535,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="0338ea27-4717-49e4-a227-791c1cef8da1"
+     uuid="ceb17b5b-fd1f-424f-9dd3-2ab04c06eefc"
      wsmap="managed"
      >
     <desc>
@@ -2946,15 +2820,15 @@
       <desc>VRDP server object.</desc>
     </attribute>
 
-    <attribute name="hardDiskAttachments" type="IHardDiskAttachmentCollection" readonly="yes">
-      <desc>Collection of hard disks attached to the machine.</desc>
+    <attribute name="hardDisk2Attachments" type="IHardDisk2Attachment" readonly="yes" safearray="yes">
+      <desc>Array of hard disks attached to this machine.</desc>
     </attribute>
 
     <attribute name="DVDDrive" type="IDVDDrive" readonly="yes">
       <desc>Associated DVD drive object.</desc>
     </attribute>
 
-    <attribute name="FloppyDrive" type="IFloppyDrive" readonly="yes">
+    <attribute name="floppyDrive" type="IFloppyDrive" readonly="yes">
       <desc>Associated floppy drive object.</desc>
     </attribute>
 
@@ -3243,76 +3117,107 @@
       </param>
     </method>
 
-    <method name="attachHardDisk">
+    <method name="attachHardDisk2">
       <desc>
+        Attaches a virtual hard disk identified by the given UUID to a device
+        slot of the specified bus.
 
-        Attaches a virtual hard disk identified by the given UUID to the
-        given device slot of the given channel on the given bus. The
-        specified device slot must not have another disk attached and the
-        given hard disk must not be already attached to this machine.
+        For the IDE bus, the @a channel parameter can be either @c 0 or @c 1, to
+        specify the primary or secondary IDE controller, respectively. The
+        SATA bus supports 30 channels, so this parameter can be a number in
+        range from @c 0 to @c 29.
 
-        See <link to="IHardDisk"/> for detailed information about
+        For the primary controller of the IDE bus, the @a device number can be
+        either @c 0 or @c 1, to specify the master or the slave device,
+        respectively. For the scondary IDE controller, the device number is
+        always @c 1 because the master device is reserved for the CD-ROM drive.
+
+        For the SATA bus, the @a device parameter is not currently used and
+        must always be @c 0.
+
+        The specified device slot must not have another disk attached to it, or
+        this method will fail.
+
+        See <link to="IHardDisk2"/> for more detailed information about
         attaching hard disks.
 
-        <note>You cannot attach a hard disk to a running machine. Also,
-          you cannot attach a hard disk to a newly created machine until
-          it is registered.</note>
-
-        <note>Attaching a hard disk to a machine creates a <i>lazy</i>
-          attachment. In particular, no differeincing images are
-          actually created until <link to="#saveSettings()"/> is called to
-          commit all changed settings.</note>
-
+        <note>
+          You cannot attach a hard disk to a running machine. Also, you cannot
+          attach a hard disk to a newly created machine until this machine's
+          settings are saved to disk using <link to="#saveSettings()"/>.
+        </note>
+        <note>
+          If the hard disk is being attached indirectly, a new differencing hard
+          disk will be implicitly created for it and attached instead. If the
+          changes made to the machine settings (icluding this indirect
+          attachment) are later cancelled using <link to="#discardSettings()"/>,
+          this implicitly created diffrerencing hard disk will be implicitly
+          deleted.
+        </note>
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the hard disk to attach.</desc>
       </param>
       <param name="bus" type="StorageBus" dir="in">
-        <desc>Type of storage bus to use (IDE or SATA).</desc>
+        <desc>Type of the storage bus to use (IDE or SATA).</desc>
       </param>
       <param name="channel" type="long" dir="in">
-        <desc>Channel to attach the hard disk to. For IDE controllers,
-        this can either be 0 or 1, for the primary or secondary controller,
-        respectively.</desc>
+        <desc>Channel to attach the hard disk to.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>Device slot in the given channel to attach the hard disk to.
-        For IDE devices, within each channel (0 or 1), this can again be
-        0 or 1, for master or slave, respectively.</desc>
+        <desc>
+          Device slot in the given channel to attach the hard disk to.
+        </desc>
       </param>
     </method>
 
-    <method name="getHardDisk" const="yes">
+    <method name="getHardDisk2" const="yes">
       <desc>
-        Returns the hard disk attached to the
-        given controller under the specified device number.
+        Returns the virtual hard disk attached to a device slot of the specified
+        bus.
+
+        Note that if the hard disk was indirectly attached by
+        <link to="#attachHardDisk2()"/> to the given device slot then this
+        method will return not the same object as passed to the
+        <link to="#attachHardDisk2()"/> call. See <link to="IHardDisk2"/> for
+        more detailed information about attaching hard disks.
       </desc>
-      <param name="bus" type="StorageBus" dir="in"/>
-      <param name="channel" type="long" dir="in"/>
-      <param name="device" type="long" dir="in"/>
-      <param name="hardDisk" type="IHardDisk" dir="return"/>
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>Type of the storage bus to query (IDE or SATA).</desc>
+      </param>
+      <param name="channel" type="long" dir="in">
+        <desc>Channel to query.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given channel to query.</desc>
+      </param>
+      <param name="hardDisk" type="IHardDisk2" dir="return">
+        <desc>Attached hard disk object.</desc>
+      </param>
     </method>
 
-    <method name="detachHardDisk">
+    <method name="detachHardDisk2">
       <desc>
+        Detaches the virtual hard disk attached to a device slot of the
+        specified bus.
 
-        Detaches the hard disk drive attached to the given device slot
-        of the given controller.
-
-        See <link to="IHardDisk"/> for detailed information about
-        attaching hard disks.
-
-        <note>You cannot detach a hard disk from a running
-          machine.</note>
+        Detaching the hard disk from the virtual machine is deferred. This means
+        that the hard disk remains associated with the machine when this methor
+        returns and gets actually de-associated only after a successful
+        <link to="#saveSettings()"/> call. See <link to="IHardDisk2"/>
+        for more detailed information about attaching hard disks.
 
         <note>
-          Detaching a hard disk from a machine creates a <i>lazy</i>
-          detachment. In particular, if the detached hard disk is a
-          differencing hard disk, it is not actually deleted until
-          <link to="#saveSettings()"/> is called to commit all changed settings.
-          Keep in mind, that doing <link to="#saveSettings()"/> will
-          <b>physically delete</b> all detached differencing hard disks,
-          so be careful.
+          You cannot detach the hard disk from a running machine.
+        </note>
+        <note>
+          Detaching differencing hard disks implicitly created by <link
+          to="#attachHardDisk2()"/> for the indirect attachment using this
+          method will <b>not</b> implicitly delete them. The
+          <link to="IHardDisk2::deleteStorage()"/> operation should be
+          explicitly performed by the caller after the hard disk is successfully
+          detached and the settings are saved with
+          <link to="#saveSettings()"/>, if it is the desired action.
         </note>
 
       </desc>
@@ -3927,7 +3832,7 @@
     <method name="onFloppyDriveChange">
       <desc>
         Notification when a property of the
-        virtual <link to="IMachine::FloppyDrive">floppy drive</link> changes.
+        virtual <link to="IMachine::floppyDrive">floppy drive</link> changes.
         Interested callees should use IFloppyDrive methods to find out what
         has changed.
       </desc>
@@ -5352,15 +5257,15 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="12c2e31e-247f-4d51-82e5-5b9d4a6c7d5b"
+     uuid="c7c060a9-91af-4e74-9188-a6b15a725e49"
      wsmap="managed"
      >
     <desc>
-      The ISystemProperties interface represents global properties
-      of the given VirtualBox installation.
+      The ISystemProperties interface represents global properties of the given
+      VirtualBox installation.
 
-      These properties define limits and default values for various
-      attributes and parameters. Most of the properties are read-only, but some can be
+      These properties define limits and default values for various attributes
+      and parameters. Most of the properties are read-only, but some can be
       changed by a user.
     </desc>
 
@@ -5414,40 +5319,6 @@
       </desc>
     </attribute>
 
-    <attribute name="defaultVDIFolder" type="wstring">
-      <desc>
-        Full path to the default directory used to create new or open
-        existing virtual disk images when an image file name contains no
-        path.
-
-        The initial value of this property is
-        <tt>&lt;</tt><link to="IVirtualBox::homeFolder">
-          VirtualBox_home</link><tt>&gt;/VDI</tt>.
-
-        <note>
-          Setting this property to <tt>null</tt> will restore the
-          initial value.
-        </note>
-        <note>
-          When settings this property, the specified path can be
-          absolute (full path) or relative
-          to the <link to="IVirtualBox::homeFolder">
-            VirtualBox home directory</link>.
-          When reading this property, a full path is
-          always returned.
-        </note>
-        <note>
-          The specified path may not exist, it will be created
-          when necessary.
-        </note>
-
-        <see>
-          <link to="IVirtualBox::createHardDisk()"/>,
-          <link to="IVirtualBox::openVirtualDiskImage()"/>
-        </see>
-      </desc>
-    </attribute>
-
     <attribute name="defaultMachineFolder" type="wstring">
       <desc>
         Full path to the default directory used to create new or open
@@ -5478,6 +5349,60 @@
         <see>
           <link to="IVirtualBox::createMachine()"/>,
           <link to="IVirtualBox::openMachine()"/>
+        </see>
+      </desc>
+    </attribute>
+
+    <attribute name="defaultHardDiskFolder" type="wstring">
+      <desc>
+        Full path to the default directory used to create new or open existing
+        virtual disks.
+
+        This path is used when the storage unit of a hard disk is a regular file
+        in the host's filesystem and only a file name that contains no path is
+        given.
+
+        The initial value of this property is
+        <tt>&lt;</tt>
+        <link to="IVirtualBox::homeFolder">VirtualBox_home</link>
+        <tt>&gt;/HardDisks</tt>.
+
+        <note>
+          Setting this property to <tt>null</tt> will restore the
+          initial value.
+        </note>
+        <note>
+          When settings this property, the specified path can be relative
+          to the
+          <link to="IVirtualBox::homeFolder">VirtualBox home directory</link> or
+          absolute. When reading this property, a full path is
+          always returned.
+        </note>
+        <note>
+          The specified path may not exist, it will be created
+          when necessary.
+        </note>
+
+        <see>
+          IHardDisk2,
+          <link to="IVirtualBox::createHardDisk2()"/>,
+          <link to="IVirtualBox::openHardDisk2()"/>,
+          <link to="IMedium::location"/>
+        </see>
+      </desc>
+    </attribute>
+
+    <attribute name="hardDiskFormats" type="IHardDiskFormat" safearray="yes" readonly="yes">
+      <desc>
+        List of all hard disk storage formats supported by this VirtualBox
+        installation.
+
+        Note that the virtual hard disk framework is backend-based, therefore
+        the list of supported formats depends on what backends are currently
+        installed.
+
+        <see>
+          <link to="IHardDiskFormat"/>,
         </see>
       </desc>
     </attribute>
@@ -6081,52 +6006,463 @@
 
   </interface>
 
+
   <!--
-  // IHardDisk
+  // IMedia
   /////////////////////////////////////////////////////////////////////////
   -->
 
   <enum
-    name="HardDiskStorageType"
-    uuid="48138584-ad99-479d-a36f-eb82a7663685"
+    name="MediaState"
+    uuid="8b86e03c-2f1c-412a-8fbd-326f62701200"
   >
     <desc>
-      Virtual hard disk storage type.
-      <see>IHardDisk</see>
+      Virtual media state.
+      <see>IMedia</see>
     </desc>
 
-    <const name="VirtualDiskImage"  value="0">
+    <const name="NotCreated" value="0">
       <desc>
-        Virtual Disk Image, VDI (a regular file in the file
-        system of the host OS, see <link to="IVirtualDiskImage"/>)
+        Associated media storage does not exist (either was not created yet or
+        was deleted).
       </desc>
     </const>
-    <const name="ISCSIHardDisk"     value="1">
+    <const name="Created" value="1">
       <desc>
-        iSCSI Remote Disk (a disk accessed via the Internet
-        SCSI protocol over a TCP/IP network, see
-        <link to="IISCSIHardDisk"/>)
+        Associated storage exists and accessible.
       </desc>
     </const>
-    <const name="VMDKImage"         value="2">
+    <const name="LockedRead" value="2">
       <desc>
-        VMware Virtual Machine Disk image (a regular file in the file
-        system of the host OS, see <link to="IVMDKImage"/>)
+        Media is locked for reading, no data modification is possible.
       </desc>
     </const>
-    <const name="CustomHardDisk"    value="3">
+    <const name="LockedWrite" value="3">
       <desc>
-        Disk formats supported through plugins (see
-        <link to="ICustomHardDisk"/>)
+        Media is locked for writing, no concurrent data reading or modification
+        is possible.
       </desc>
     </const>
-    <const name="VHDImage"          value="4">
+    <const name="Inaccessible" value="4">
       <desc>
-        Virtual PC Virtual Machine Disk image (a regular file in the file
-        system of the host OS, see <link to="IVHDImage"/>)
+        Associated media storage is not accessible.
+      </desc>
+    </const>
+    <const name="Creating" value="5">
+      <desc>
+        Associated media storage is being created.
+      </desc>
+    </const>
+    <const name="Deleting" value="6">
+      <desc>
+        Associated media storage is being deleted.
       </desc>
     </const>
   </enum>
+
+  <interface
+    name="IMedium" extends="$unknown"
+    uuid="a7fb3bfb-c180-4274-bae4-7fbc89046e13"
+    wsmap="managed"
+  >
+    <desc>
+      The IMedium interface is a common interface for all objects representing
+      virtual media such as hard disks, DVD images.
+
+      Each medium is associated with a storage unit (such as a file on the host
+      computer or a network resource) that holds actual data. The location of
+      the storage unit is represented by the #location attribute. The value of
+      this attribute is media type dependent.
+
+      The exact media type may be determined by querying the appropriate
+      interface such as:
+      <ul>
+        <li>IHardDisk2 (virtual hard disks)</li>
+        <li>IDVDImage2 (standard CD/DVD ISO image files)</li>
+        <li>IFloppyImage2 (raw floppy image files)</li>
+      </ul>
+
+      Existing media are opened using the following methods, depending on the
+      media type:
+      <ul>
+        <li><link to="IVirtualBox::openHardDisk2()"/></li>
+        <li><link to="IVirtualBox::openDVDImage()"/></li>
+        <li><link to="IVirtualBox::openFloppyImage()"/></li>
+      </ul>
+
+      New hard disk media are created using the
+      <link to="IVirtualBox::createHardDisk2()"/> method. CD/DVD and floppy
+      images are created outside VirtualBox, usually by storing a copy
+      of the real medium of the corresponding type in a regular file.
+
+      <h3>Known Media</h3>
+
+      When an existing medium gets opened for the first time, it gets
+      automatically remembered by the given VirtualBox installation or, in other
+      words, becomes a <i>known medium</i>. Known media are stored in the media
+      registry transparently maintaned by VirtualBox and stored in settings
+      files so that this registry is preserved when VirtualBox is not running.
+
+      Newly created virtual hard disks get remembered only when the associated
+      storage unit is actually created (see IHardDisk2 for more details).
+
+      All known media can be enumerated using
+      <link to="IVirtualBox::hardDisks2"/>,
+      <link to="IVirtualBox::DVDImages"/> and
+      <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
+      quickly found by by UUID using <link to="IVirtualBox::getHardDisk2()"/>
+      and similar methods or by location using
+      <link to="IVirtualBox::findHardDisk2()"/> and similar methods.
+
+      Only known media can be attached to virtual machines.
+
+      Removing known media from the media registry is performed when the given
+      medium is closed using the <link to="#close()"/> method or when its
+      associated storage unit is deleted (only for hard disks).
+
+      <h3>Accessibility Checks</h3>
+
+      The given medium (with the created storage unit) is considered to be
+      <i>accessible</i> when its storage unit can be successfully read from.
+      Accessible media are indicated by the <link to="MediaState::Created"/>
+      value of the <link to="#state"/> attribute. When the storage unit cannot
+      be read (for example, because it is located on a disconnected network
+      resource, or was accidentially deleted outside VirtualBox), the medium is
+      considered to be <i>inaccessible</i> which is indicated by the
+      <link to="MediaState::Inaccessible"/> state. The details about the reason
+      of being inaccessible can be obtained using the
+      <link to="#lastAccessError"/> attribute.
+
+      A new accessiblity check is performed each time the <link to="#state"/>
+      attribute is read. Please note that this check may take long time (several
+      seconds or even minutes, depending on the storage unit location and
+      format), and will block the calling thread until finished. For this
+      reason, it is recommended to never read this attribute on the main UI
+      thread to avoid making the UI unresponsive.
+
+      Note that when VirtualBox starts up (e.g. the VirtualBox object gets
+      created for the first time), all known media are in the
+      <link to="MediaState::Inaccessible"/> state but the value of the <link
+      to="#lastAccessError"/> attribute is <tt>null</tt> because no actual
+      accessibility check is made on startup. This is done to make the
+      VirtualBox object ready for serving requests as
+      fast as possible and let the end-user application decide if it needs to
+      check media accessibility right away or not.
+    </desc>
+
+    <attribute name="id" type="uuid" readonly="yes">
+      <desc>
+        UUID of the medium. For a newly created medium, this value is a randomly
+        generated UUID.
+      </desc>
+    </attribute>
+
+    <attribute name="description" type="wstring">
+      <desc>
+        Optional description of the medium. For newly created media, the value
+        of this attribute value is <tt>null</tt>.
+
+        Media types that don't support this attribute will return E_NOTIMPL in
+        attempt to get or set this attribute's value.
+
+        <note>
+          For some storage types, reading this attribute may return an outdated
+          (last known) value when <link to="#state"/> is <link
+          to="MediaState::Inaccessible"/> or <link
+          to="MediaState::LockedWrite"/> because the value of this attribute is
+          stored within the storage unit itself. Also note that changing the
+          attribute value is not possible in such case, as well as when the
+          medium is the <link to="MediaState::LockedRead"/> state.
+        </note>
+      </desc>
+    </attribute>
+
+    <attribute name="state" type="MediaState" readonly="yes">
+      <desc>
+        Current media state. Inspect <link to="MediaState"/> values for details.
+
+        Reading this attribute may take long time because a new accessibility
+        check of the storage unit is performed every time the attribute is read.
+        This check may cause a significant delay if the storage unit of the
+        given medium is, for example, a file located on a network share which is
+        not currently accessible due to connectivity problems -- the call will
+        not return until a timeout interval defined by the host OS for this
+        operation expires.
+
+        If the last known state of the medium is <link to="MediaState::Created"/>
+        and the accessibility check fails then the state wull be set to
+        <link to="MediaState::Inaccessible"/> and <link to="#lastAccessError"/>
+        may be used to get more details about the failure. If the state of the
+        medium is <link to="MediaState::LockedRead"/> or
+        <link to="MediaState::LockedWrite"/> then it remains the same, and a
+        non-null value of <link to="#lastAccessError"/> will indicate a failed
+        accessibility check in this case.
+
+        Note that not all media states are applicable to certain media types.
+        For example, states <link to="MediaState::NotCreated"/>,
+        <link to="MediaState::LockedWrite"/>, <link to="MediaState::Creating"/>,
+        <link to="MediaState::Deleting"/> are meaningless for IDVDImage2 and
+        IFloppyImage2 media.
+      </desc>
+    </attribute>
+
+    <attribute name="location" type="wstring">
+      <desc>
+        Location of the storage unit holding media data.
+
+        The format of the loocation string is media type specific. For media
+        types that use regular files in a host's file system, the location
+        string is just a full file name.
+
+        Some media types may support changing the storage unit location by
+        simply changing the value of this property. If this operation is not
+        supported, the implementation will return E_NOTIMPL in attempt to set
+        this attribute's value.
+
+        When setting a value of the location attribute which is a regular file
+        in the host's file system, the given file name may be either relative to
+        the <link to="IVirtualBox::homeFolder">VirtualBox home folder</link> or
+        absolute. Note that if the given location specification does not contain
+        the file extension part then a proper default extension will be
+        automatically appended by the implementation depending on the media type.
+      </desc>
+    </attribute>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        Name of the storage unit holding media data.
+
+        The returned string is a short version of the <link to="#location"/>
+        attribute that is suitable for representing the medium in situations
+        where the full location specification is too long (such as lists
+        and comboboxes in GUI frontends). This string is also used by frontends
+        to sort the media list alphabetically when needed.
+
+        For example, for locations that are regular files in the host's file
+        system, the value of this attribute is just a file name (+ extension),
+        without the path specification.
+
+        Note that as opposed to the <link to="#location"/> attribute, the name
+        name attribute will not necessary be unique for a list of media of the
+        given type and format.
+      </desc>
+    </attribute>
+
+    <attribute name="size" type="unsigned long long" readonly="yes">
+      <desc>
+        Physical size of the storage unit used to hold media data (in bytes).
+
+        <note>
+          For media whose <link to="#state"/> is <link
+          to="MediaState::Inaccessible"/>, the value of this property is the
+          last known size. For <link to="MediaState::NotCreated"/> media,
+          the returned value is zero.
+        </note>
+      </desc>
+    </attribute>
+
+    <attribute name="lastAccessError" type="wstring" readonly="yes">
+      <desc>
+        Text message that represents the result of the last acccessibility
+        check.
+
+        Accessibility checks are performed each time the <link to="#state"/>
+        attribute is read. A @c null string is returned if the last
+        accessibility check was succeessful. A non-null string indicates a
+        failure and should normally describe a reason of the failure (for
+        example, a file read error).
+      </desc>
+    </attribute>
+
+    <attribute name="machineIds" type="uuid" safearray="yes" readonly="yes">
+      <desc>
+        Array of UUIDs of all machines this medium is attached to.
+
+        A <tt>null</tt> array is returned if this medium is not attached to any
+        machine or to any machine's snapshot.
+
+        <note>
+          The returned array will include a machine even if this medium is not
+          attached to that machine in the current state but attached to it in
+          one of the machine's snapshots. See <link to="#getSnapshotIds()"/> for
+          details.
+        </note>
+      </desc>
+    </attribute>
+
+    <method name="getSnapshotIds">
+      <desc>
+        Returns an array of UUIDs of all snapshots of the given machine where
+        this medium is attached to it.
+
+        If the medium is attached to the machine in the current state, then the
+        first element in the array will always be the ID of the queried machine
+        (i.e. the value equal to the @c machineId argument), followed by
+        snapshit IDs (if any).
+
+        If the medium is not attached to the machine in the current state, then
+        the array will contain only snapshot IDs.
+
+        The returned array may be <tt>null</tt> if this medium is not attached
+        to the given machine at all, neither in the current state nor in one of
+        snapshots.
+      </desc>
+      <param name="machineId" type="uuid" dir="in">
+        <desc>
+          UUID of the machine to query.
+        </desc>
+      </param>
+      <param name="snapshotIds" type="uuid" safearray="yes" dir="return">
+        <desc>
+          Array of snapshot UUIDs of the given machine using this medium.
+        </desc>
+      </param>
+    </method>
+
+    <method name="lockRead">
+      <desc>
+        Locks this medium for reading.
+
+        The read lock is shared: many clients can simultaneously lock the
+        same media for reading unless it is already locked for writing (see
+        <link to="#lockWrite()"/>) in which case an error is returned.
+
+        When the medium is locked for reading, it cannot be modified from within
+        VirtualBox. This means that any method that changes the properties of
+        this medium or contents of the storage unit will return an error (unless
+        explicitly stated otherwise) and that an attempt to start a virtual
+        machine that wants to modify the medium will also fail.
+
+        When the virtual machine is started up, it locks for reading all media
+        it uses in read-only mode. If some media cannot be locked for reading,
+        the startup procedure will fail.
+
+        The medium locked for reading must be unlocked using the
+        <link to="#unlockRead()"/> method. Calls to <link to="#lockRead()"/> can
+        be nested and must be followed by the same number of paired
+        <link to="#unlockRead()"/> calls.
+
+        This method sets the media state to <link to="MediaState::LockedRead"/>
+        on success. The state proir to this call must be
+        <link to="MediaState::Created"/>,
+        <link to="MediaState::Inaccessible"/> or
+        <link to="MediaState::LockedRead"/>. As you can see, inacessible media
+        can be locked too. This is not an error; this method performs a logical
+        lock that prevents modifications of this media through the VirtualBox
+        API, not a physical lock of the underlying storage unit.
+
+        Either on success or on failure, this method returns the current state
+        of the medium <b>before</b> the operation.
+      </desc>
+      <param name="state" type="MediaState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="unlockRead">
+      <desc>
+        Cancels the read lock previously set by <link to="#lockRead()"/>.
+
+        Either on success or on failure, this method returns the current state
+        of the medium <b>after</b> the operation.
+
+        See <link to="#lockRead()"/> for more details.
+      </desc>
+      <param name="state" type="MediaState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="lockWrite">
+      <desc>
+        Locks this medium for writing.
+
+        The write lock, as opposed to <link to="#lockRead()"/>, is exclusive:
+        there may be only one client that holds a write lock and there may be no
+        read locks while the write lock is held.
+
+        When the medium is locked for writing, it cannot be modified from within
+        VirtualBox and it is not guaranteed that the values of its properties
+        are up-to-date. Any method that changes the properties of this medium or
+        contents of the storage unit will return an error ((unless explicitly
+        stated otherwise) and an attempt to start a virtual machine that wants
+        to modify or to read the medium will also fail.
+
+        When the virtual machine is started up, it locks for writing all media
+        it uses to write data to. If some media cannot be locked for writing,
+        the startup procedure will fail.
+
+        The medium locked for writing must be unlocked using the
+        <link to="#unlockWrite()"/> method. Calls to <link to="#lockWrite()"/>
+        can <b>not</b> be nested and must be followed by a paired
+        <link to="#unlockWrite()"/> call.
+
+        This method sets the media state to <link to="MediaState::LockedWrite"/>
+        on success. The state proir to this call must be
+        <link to="MediaState::Created"/> or
+        <link to="MediaState::Inaccessible"/>. As you can see, inacessible media
+        can be locked too. This is not an error; this method performs a logical
+        lock that prevents modifications of this media through the VirtualBox
+        API, not a physical lock of the underlying storage unit.
+
+        Either on success or on failure, this method returns the current state
+        of the medium <b>before</b> the operation.
+      </desc>
+      <param name="state" type="MediaState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="unlockWrite">
+      <desc>
+        Cancels the write lock previously set by <link to="#lockWrite()"/>.
+
+        Either on success or on failure, this method returns the current state
+        of the medium <b>after</b> the operation.
+
+        See <link to="#lockWrite()"/> for more details.
+      </desc>
+      <param name="state" type="MediaState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="close">
+      <desc>
+        Closes this media.
+
+        The hard disk must not be attahced to any known virtual machine and must
+        not have any known child hard disks, otherwise the operation will fail.
+
+        When the hard disk is successfully closed, it gets removed from the list
+        of remembered hard disks, but its storage unit is not deleted. In
+        particular, this means that this hard disk can be later opened again
+        using the <link to="IVirtualBox::openHardDisk2"/> call.
+
+        Note that after this method successfully returns, the given hard disk
+        object becomes uninitialized. This means that any attempt to call any of
+        its methods or attributes will fail with the <tt>"Object not ready"
+        (E_ACCESSDENIED)</tt> error.
+
+        <see>#deleteStorage()</see>
+      </desc>
+    </method>
+
+  </interface>
+
+
+  <!--
+  // IHardDisk2
+  /////////////////////////////////////////////////////////////////////////
+  -->
 
   <enum
     name="HardDiskType"
@@ -6158,1444 +6494,846 @@
   </enum>
 
   <interface
-     name="IHardDiskAttachment" extends="$unknown"
-     uuid="c0ffe596-21c6-4797-8d8a-b47b66881e7a"
-     wsmap="struct"
-     >
+    name="IHardDisk2Attachment" extends="$unknown"
+    uuid="fa2f4619-2c14-4090-869e-73b45419b7b5"
+    wsmap="struct"
+  >
     <desc>
+      The IHardDisk2Attachment interface represents a hard disk attachment of a
+      virtual machine.
+
+      Every hard disk attachments specifies a slot of the virtual hard disk
+      controller and a virtual virtual hard disk attached to this slot.
+
+      The array of hard disk attachments is returned by
+      <link to="IMachine::hardDiskAttachments"/>.
+
+      <note>
+        With the COM API, this is an interface like all the others. With the
+        webservice, this is mapped to a structure, so querying the attribute
+        will not return an object, but a complete structure.
+      </note>
     </desc>
-    <attribute name="hardDisk" type="IHardDisk" readonly="yes">
-      <desc>Harddisk object this attachment is about.</desc>
+    <attribute name="hardDisk" type="IHardDisk2" readonly="yes">
+      <desc>Hard disk object associated with this attachment.</desc>
     </attribute>
 
     <attribute name="bus" type="StorageBus" readonly="yes">
-      <desc>Disk controller ID of this attachment.</desc>
+      <desc>Interface bus of this attachment.</desc>
     </attribute>
 
     <attribute name="channel" type="long" readonly="yes">
-      <desc>Channel number of the attachment.</desc>
+      <desc>Channel number of this attachment.</desc>
     </attribute>
 
     <attribute name="device" type="long" readonly="yes">
-      <desc>Device slot number of the attachment.</desc>
+      <desc>Device slot number of this attachment.</desc>
     </attribute>
 
   </interface>
 
-  <enumerator
-     name="IHardDiskAttachmentEnumerator" type="IHardDiskAttachment"
-     uuid="9955e486-2f0b-432a-99e4-0ebbd338875e"
-     />
-
-  <collection
-     name="IHardDiskAttachmentCollection" type="IHardDiskAttachment"
-     enumerator="IHardDiskAttachmentEnumerator"
-     uuid="8f727842-bb77-45d4-92de-4ec14bf613c9"
-     readonly="yes"
-     />
-
-  <enumerator
-     name="IHardDiskEnumerator" type="IHardDisk"
-     uuid="b976f97b-cdb8-47e3-9860-084031cbd533"
-     />
-
-  <collection
-     name="IHardDiskCollection" type="IHardDisk"
-     enumerator="IHardDiskEnumerator"
-     uuid="43EAC2BC-5C61-40fa-BC38-46DE2C7DB6BB"
-     readonly="yes"
-     />
-
   <interface
-     name="IHardDisk" extends="$unknown"
-     uuid="FD443EC1-000F-4F5B-9282-D72760A66916"
-     wsmap="managed"
-     >
+    name="IHardDisk2" extends="IMedium"
+    uuid="be30c487-3071-4067-8a03-8fed74a80708"
+    wsmap="managed"
+  >
     <desc>
-      The IHardDisk interface represents a virtual hard disk drive
-      used by virtual machines.
+      The IHardDisk2 interface represents a virtual hard disk drive
+      used by a virtual machine.
 
-      The virtual hard disk drive virtualizes the hard disk hardware and
-      looks like a regular hard disk inside the virtual machine and
-      the guest OS.
+      Virtual hard disk objects virtualize the hard disk hardware and look like
+      regular hard disks for the guest OS running inside the virtual machine.
 
-      <h3>Storage Types</h3>
+      <h3>Hard Disk Types</h3>
 
-      The <link to="HardDiskStorageType">storage type</link> of the
-      virtual hard disk determines where and how it stores its data
-      (sectors). Currently, the following storage types are supported:
+      There are three types of hard disks:
+      <link to="HardDiskType::Normal">Normal</link>,
+      <link to="HardDiskType::Immutable">Immutable</link> and
+      <link to="HardDiskType::Writethrough">Writethrough</link>. The type of the
+      hard disk defines how the hard disk is attached to a virtual machine and
+      what happens when a <link to="ISnapshot">snapshot</link> of the virtual
+      machine with the attached hard disk is taken. The type of the hard disk is
+      defined by the <link to="#type"/> attribute.
 
+      All hard disks can be also divided in two big groups: <i>base</i> hard
+      disks and <i>differencing</i> hard disks. A base hard disk contains all
+      sectors of the hard disk data in its storage unit and therefore can be
+      used independently. On the contrary, a differencing hard disk contains
+      only some part of the hard disk data (a subset of sectors) and needs
+      another hard disk to get access to the missing sectors of data. This
+      another hard disk is called a <i>parent</i> hard disk and defines a hard
+      disk to which this differencing hard disk is known to be <i>linked to</i>.
+      The parent hard disk may be itself a differencing hard disk. This
+      way, differencing hard disks form a linked hard disk chain. This chain
+      always ends with the base hard disk which is sometimes referred to as the
+      root hard disk of this chain. Note that several differencing hard disks
+      may be linked to the same parent hard disk. This way, all known hard disks
+      form a hard disk tree which is based on their parent-child relationship.
+
+      Differencing hard disks can be distinguished from base hard disks by
+      querying the <link to="#parent"/> attribute: base hard disks do not have
+      parents they would depend on, so the value of this attribute is always
+      <tt>null</tt> for them. Using this attribute, it is possible to walk up
+      the hard disk tree (from the child hard disk to its parent). It is also
+      possible to walk down the tree using the <link to="#children"/>
+      attribute.
+
+      Note that the type of all differencing hard disks is
+      <link to="HardDiskType::Normal">Normal</link>; all other values are
+      meaningless for them. Base hard disks may be of any type.
+
+      <h3>Creating Hard Disks</h3>
+
+      New base hard disks are created using
+      <link to="IVirtualBox::createHardDisk2()"/>. Existing hard disks are
+      opened using <link to="IVirtualBox::openHardDisk2()"/>. Differencing hard
+      disks are usually implicitly created by VirtualBox when needed but may
+      also be created explicitly using <link to="#createDiffStorage()"/>.
+
+      After the hard disk is successfully created (including the storage unit)
+      or opened, it becomes a known hard disk (remembered in the internal media
+      registry). Known hard disks can be attached to a virtual machine, accessed
+      through <link to="IVirtualBox::getHardDisk2()"/> and
+      <link to="IVirtualBox::findHardDisk2()"/> methods or enumerated using the
+      <link to="IVirtualBox::hardDisks2"/> array (only for base hard disks).
+
+      The following methods, besides <link to="IMedium::close()"/>,
+      automatically remove the hard disk from the media registry:
       <ul>
-
-        <li>
-          <i>Virtual Disk Image (VDI)</i>, a regular file in the file system
-          of the host OS (represented by the <link to="IVirtualDiskImage"/>
-          interface). This file has a special format optimized so that unused
-          sectors of data occupy much less space than on a physical hard disk.
-        </li>
-
-        <li>
-          <i>iSCSI Remote Disk</i>, a disk accessed via the Internet SCSI
-          protocol over a TCP/IP network link (represented by the
-          <link to="IISCSIHardDisk"/> interface).
-        </li>
-
-        <li>
-          <i>VMware VMDK image</i>, a regular file in the file system of the
-          host OS (represented by the <link to="IVMDKImage"/> interface).
-          Note that the regular file may be just a descriptor referring to
-          further files, so don't make assumptions about the OS representation
-          of a VMDK image.
-        </li>
-
-        <li>
-          <i>Custom HardDisk</i>, a disk accessed via a plugin which is loaded
-          when the disk is accessed (represented by the
-          <link to="ICustomHardDisk"/> interface).
-        </li>
-
-        <li>
-          <i>Virtual PC VHD Image</i>, a regular file in the file system of the
-          host OS (represented by the <link to="IVHDImage"/> interface).
-        </li>
-
+        <li><link to="#deleteStorage()"/></li>
+        <li><link to="#mergeToParent()"/></li>
+        <li><link to="#mergeToAncestor()"/></li>
       </ul>
 
-      The storage type of the particular hard disk object is indicated by
-      the <link to="#storageType"/> property.
+      If the storage unit of the hard disk is a regular file in the host's
+      filesystem then the rules stated in the description of the
+      <link to="IMedium::location"/> attribute apply when setting its value. In
+      addition, a plain file name without any path may be given, in which case
+      the <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
+      folder</link> will be prepended to it.
 
-      Each storage type is represented by its own interface (as shown
-      above), that allows to query and set properties and perform
-      operations specific to that storage type. When an IHardDisk object
-      reports it uses some particular storage type, it also guaranteed to
-      support the corresponding interface which you can query. And vice
-      versa, every object that supports a storage-specific interface, also
-      supports IHardDisk.
+      <h4>Automatic composition of the file name part</h4>
 
-      <h3>Virtual Hard Disk Types</h3>
+      Another extension to the <link to="IMedium::location"/> attribute is that
+      there is a possibility to cause VirtualBox to compose a unique value for
+      the file name part of the location using the UUID of the hard disk. This
+      applies only to hard disks in <link to="MediaState::NotCreated"/> state,
+      e.g. before the storage unit is created, and works as follows. You set the
+      value of the <link to="IMedium::location"/> attribute to a location
+      specification which only contains the path specification but not the file
+      name part and ends with either a forward slash or a backslash character.
+      In response, VirtualBox will genereate a new UUID for the hard disk and
+      compose the file name using the following pattern:
+      <pre>
+        &lt;path&gt;/{&lt;uuid&gt;}.&lt;ext&gt;
+      </pre>
+      where <tt>&lt;path&gt;</tt> is the supplied path specification,
+      <tt>&lt;uuid&gt;</tt> is the newly generated UUID and <tt>&lt;ext&gt;</tt>
+      is the default extension for the storage format of this hard disk. After
+      that, you may call any of the metods that create a new hard disk storage
+      unit and they will use the generated UUID and file name.
 
-      The <link to="HardDiskType">type</link> of the virtual hard disk
-      determines how it is attached to the virtual machine when you call
-      <link to="IMachine::attachHardDisk()"/> and what happens to it when
-      a <link to="ISnapshot">snapshot</link> of the virtual machine is
-      taken.
+      <h3>Attaching Hard Disks</h3>
 
-      There are three types of virtual hard disks:
+      Hard disks are attached to virtual machines using the
+      <link to="IMachine::attachHardDisk2()"/> method and detached using the
+      <link to="IMachine::detachHardDisk2()"/> method. Depending on their
+      <link to="#type"/>, hard disks are attached either
+      <i>directly</i> or <i>indirectly</i>.
 
-      <ul>
-        <li><i>Normal</i></li>
-        <li><i>Immutable</i></li>
-        <li><i>Writethrough</i></li>
-      </ul>
+      When a hard disk is being attached directly, it is associated with the
+      virtual machine and used for hard disk operations when the machine is
+      running. When a hard disk is being attached indirectly, a new differencing
+      hard disk linked to it is implicitly created and this differencing hard
+      disk is associated with the machine and used for hard disk operations.
+      This also means that if <link to="IMachine::attachHardDisk2()"/> performs
+      a direct attachment then the same hard disk will be returned in response
+      to the subsequent  <link to="IMachine::getHardDisk2()"/> call; however if
+      an indirect attachment is performed then
+      <link to="IMachine::getHardDisk2()"/> will return the implicitly created
+      differencing hard disk, not the original one passed to <link
+      to="IMachine::attachHardDisk2()"/>. The following table shows the
+      dependency of the attachment type on the hard disk type:
 
-      The virtual disk type is indicated by the <link to="#type"/>
-      property. Each of the above types is described in detail further
-      down.
+      <table>
+        <tr>
+          <th>Hard Disk Type</th>
+          <th>Direct or Indirect?</th>
+        </tr>
+        <tr>
+          <td>Normal (Base)</td>
+          <td>
+            Normal base hard disks that do not have children (i.e. differencing
+            hard disks linked to them) and that are not already attached to
+            virtual machines in snapshots are attached <b>directly</b>.
+            Otherwise, they are attached <b>indirectly</b> because having
+            dependent children or being part of the snapshot makes it impossible
+            to modify hard disk contents without breaking the integrity of the
+            dependent party. The <link to="#readOnly"/> attribute allows to
+            quickly determine the kind of the attachment for the given hard
+            disk. Note that if a normal base hard disk is to be indirectly
+            attached to a virtual machine with snapshots then a special
+            procedure called <i>smart attachment</i> is performed (see below).
+          </td>
+        </tr>
+        <tr>
+          <td>Normal (Differencing)</td>
+          <td>
+            Differencing hard disks are like normal base hard disks: attached
+            <b>directly</b> if they do not have children and are not attached to
+            virtual machines in snapshots, and <b>indirectly</b> otherwise. Note
+            that the smart attachment procedure is never performed for
+            differencing hard disks.
+          </td>
+        </tr>
+        <tr>
+          <td>Immutable</td>
+          <td>
+            Immutabe hard disks are always attached <b>indirectly</b> because
+            they are designed to be non-writable. If an immutable hard disk is
+            attached to a virtual machine with snapshots then a special
+            procedure called smart attachment is performed (see below).
+          </td>
+        </tr>
+        <tr>
+          <td>Writethrough</td>
+          <td>
+            Writethrough hard disks are always attached <b>directly</b>, also as
+            designed. This also means that writethrough hard disks cannot have
+            other hard disks linked to them at all.
+          </td>
+        </tr>
+      </table>
 
-      There is also a forth, "hidden" virtual disk type:
-      <i>Differencing</i>. It is "hidden" because you cannot directly
-      create hard disks of this type -- they are automatically created by
-      VirtualBox when necessary.
+      Note that the same hard disk, regardless of its type, may be attached to
+      more than one virtual machine at a time. In this case, the machine that is
+      started first gains exclusive access to the hard disk and attempts to
+      start other machines having this hard disk attached will fail until the
+      first machine is powered down.
 
-      <b>Differencing Hard Disks</b>
+      Detaching hard disks is performed in a <i>deferred</i> fashion. This means
+      that the given hard disk remains associated with the given machine after a
+      successful <link to="IMachine::detachHardDisk2()"/> call until
+      <link to="IMachine::saveSettings()"/> is called to save all changes to
+      machine settings to disk. This deferring is necessary to guarantee that
+      the hard disk configuration may be restored at any time by a call to
+      <link to="IMachine::discardSettings()"/>  before the settings
+      are saved (committed).
 
-      Unlike disks of other types (that are similar to real hard disks),
-      the differencing hard disk does not store the full range of data
-      sectors. Instead, it stores only a subset of sectors of some other
-      disk that were changed since the differencing hard disk has been
-      created. Thus, every differencing hard disk has a parent hard disk
-      it is linked to, and represents the difference between the initial
-      and the current hard disk state. A differencing hard disk can be
-      linked to another differencing hard disk -- this way, differencing
-      hard disks can form a branch of changes. More over, a given virtual
-      hard disk can have more than one differencing hard disk linked to
-      it.
+      Note that if <link to="IMachine::discardSettings()"/> is called after
+      indirectly attaching some hard disks to the machine but before a call to
+      <link to="IMachine::saveSettings()"/> is made, it will implicitly delete
+      all differencing hard disks implicitly created by
+      <link to="IMachine::attachHardDisk2()"/> for these indirect attachments.
+      Such implicitly created hard disks will also be immediately deleted when
+      detached explicitly using the <link to="IMachine::detachHardDisk2()"/>
+      call if it is made before <link to="IMachine::saveSettings()"/>. This
+      implicit deletion is safe because newly created differencing hard
+      disks do not contain any user data.
 
-      A disk the differencing hard disk is linked to (or, in other words,
-      based on) is called a <i>parent</i> hard disk and is accessible through
-      the <link to="#parent"/> property. Similarly, all existing differencing
-      hard disks for a given parent hard disk are called its <i>child</i> hard
-      disks (and accessible through the <link to="#children"/> property).
+      However, keep in mind that detaching differencing hard disks that were
+      implicitly created by <link to="IMachine::attachHardDisk2()"/>
+      before the last <link to="IMachine::saveSettings()"/> call will
+      <b>not</b> implicitly delete them as they may already contain some data
+      (for example, as a result of virtual machine execution). If these hard
+      disks are no more necessary, the caller can always delete them explicitly
+      using <link to="#deleteStorage()"/> after they are actually de-associated
+      from this machine by the <link to="IMachine::saveSettings()"/> call.
 
-      All differencing hard disks use Virtual Disk Image files to store
-      changed sectors. They have the <link to="#type"/> property set to
-      Normal, but can be easily distinguished from normal hard disks using
-      the <link to="#parent"/> property: all differencing hard disks have
-      a parent, while all normal hard disks don't.
+      <h3>Smart Attachment</h3>
 
-      When the virtual machine makes an attempt to read a sector that is
-      missing in a differencing hard disk, its parent is accessed to
-      resolve the sector in question. This process continues until the
-      sector is found, or until the root hard disk is encountered, which
-      always contains all sectors. As a consequence,
+      When normal base or immutable hard disks are indirectly attached to a
+      virtual machine then some additionals steps are performed to make sure the
+      virtual machine will have the most recent "view" of the hard disk being
+      attached. These steps include walking through the machine's snapshots
+      starting from the current one and going through ancestors up to the first
+      snapshot. Hard disks attached to the virtual machine in all
+      of the encountered snapshots are checked whether they are descendants of
+      the given normal base or immutable hard disk. The first found child (which
+      is the differencing hard disk) will be used instead of the normal base or
+      immutable hard disk as a parent for creating a new differencing hard disk
+      that will be actually attached to the machine. And only if no descendants
+      are found or if the virtual machine does not have any snapshots then the
+      normal base or immutable hard disk will be used itself as a parent for
+      this differencing hard disk.
 
-      <ul>
+      It is easier to explain what smart attachment does using the
+      following example:
+      <pre>
+BEFORE attaching B.vdi:       AFTER attaching B.vdi:
 
-        <li>
-          The virtual hard disk geometry seen by the guest OS is
-          always defined by the root hard disk.
-        </li>
+Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
+ Snapshot 2 (D1->B.vdi)        Snapshot 2 (D1->B.vdi)
+  Snapshot 3 (D2->D1.vdi)       Snapshot 3 (D2->D1.vdi)
+   Snapshot 4 (none)             Snapshot 4 (none)
+    CurState   (none)             CurState   (D3->D2.vdi)
 
-        <li>
-          All hard disks on a branch, up to the root, must be
-          <link to="#accessible"/> for a given differencing hard disk in order
-          to let it function properly when the virtual machine is
-          running.
-        </li>
+                              NOT
+                                 ...
+                                  CurState   (D3->B.vdi)
+      </pre>
+      The first column is the virtual machine configuration before the base hard
+      disk <tt>B.vdi</tt> is attached, the second column shows the machine after
+      this hard disk is attached. Constructs like <tt>D1->B.vdi</tt> and similar
+      mean that the hard disk that is actually attached to the machine is a
+      differencing hard disk, <tt>D1.vdi</tt>, which is linked to (based on)
+      another hard disk, <tt>B.vdi</tt>.
 
-      </ul>
+      As we can see from the example, the hard disk <tt>B.vdi</tt> was detached
+      from the machine before taking Snapshot 4. Later, after Snapshot 4 was
+      taken, the user decides to attach <tt>B.vdi</tt> again. <tt>B.vdi</tt> has
+      dependent child hard disks (<tt>D1.vdi</tt>, <tt>D2.vdi</tt>), therefore
+      it cannot be attached directly and needs an indirect attachment (i.e.
+      implicit creation of a new differencing hard disk). Due to the smart
+      attachment procedure, the new differencing hard disk
+      (<tt>D3.vdi</tt>) will be based on <tt>D2.vdi</tt>, not on
+      <tt>B.vdi</tt> itself, since <tt>D2.vdi</tt> is the most recent view of
+      <tt>B.vdi</tt> existing for this snapshot branch of the given virtual
+      machine.
 
-      Differencing hard disks can be implicitly created by VirtualBox in
-      the following cases:
+      Note that if there is more than one descendant hard disk of the given base
+      hard disk found in a snapshot, and there is an exact device, channel and
+      bus match, then this exact match will be used. Otherwise, the youngest
+      descendant will be picked up.
 
-      <ul>
-
-        <li>
-          When a hard disk is <i>indirectly</i> attached to the virtual
-          machine using <link to="IMachine::attachHardDisk()"/>.  In this
-          case, all disk writes performed by the guest OS will go to the
-          created diffferencing hard disk, as opposed to the
-          <i>direct</i> attachment, where all changes are written to the
-          attached hard disk itself.
-        </li>
-
-        <li>
-          When a <link to="ISnapshot">snapshot</link> of the virtual machine
-          is taken. After that, disk writes to hard disks the differencing
-          ones have been created for, will be directed to those differencing
-          hard disks, to preserve the contents of the original disks.
-        </li>
-
-      </ul>
-
-      Whether to create a differencing hard disk or not depends on the
-      type of the hard disk attached to the virtual machine. This is
-      explained below.
-
-      Note that in the current implementation, only the
-      <link to="VirtualDiskImage"/> storage type is used to
-      represent differencing hard disks. In other words, all
-      differencing hard disks are <link to="IVirtualDiskImage"/>
-      objects.
-
-      <b>Normal Hard Disks</b>
-
-      Normal hard disks are the most commonly used virtual hard disk. A
-      normal hard disk is attached to the machine directly if it is not
-      already attached to some other machine. Otherwise, an attempt to
-      make an indirect attachment through a differencing hard disk will be
-      made. This attempt will fail if the hard disk is attached to a
-      virtual machine without snapshots (because it's impossible to create
-      a differencing hard disk based on a hard disk that is subject to
-      change).
-
-      When an indirect attachment takes place, in the simplest case, where
-      the machine the hard disk is being attached to doesn't have
-      snapshots, the differencing hard disk will be based on the normal
-      hard disk being attached. Otherwise, the first (i.e. the most
-      recent) descendant of the given normal hard disk found in the
-      current snapshot branch (starting from the current snapshot and
-      going up to the root) will be actually used as a base.
-
-      Note that when you detach an indirectly attached hard disk from the
-      machine, the created differencing hard disk image is simply
-      <b>deleted</b>, so <b>all changes are lost</b>. If you attach the
-      same disk again, a clean differencing disk will be created based on
-      the most recent child, as described above.
-
-      When taking a snapshot, the contents of all normal hard disks (and
-      all differencing disks whose roots are normal hard disks) currently
-      attached to the virtual machine is preserved by creating
-      differencing hard disks based on them.
-
-      <b>Immutable Hard Disks</b>
-
-      Immutable hard disks can be used to provide a sort of read-only
-      access. An immutable hard disk is always attached indirectly. The
-      created differencing hard disk is automatically wiped out (recreated
-      from scratch) every time you power off the virtual machine. Thus,
-      the contents of the immutable disk remains unchanged between runs.
-
-      Detaching an immutable hard disk deletes the differencing disk
-      created for it, with the same effect as in case with normal hard
-      disks.
-
-      When taking a snapshot, the differencing part of the immutable
-      hard disk is cloned (i.e. copied to a separate Virtual Disk Image
-      file) without any changes. This is necessary to preserve the exact
-      virtual machine state when you create an online snapshot.
-
-      <b>Writethrough Hard Disks</b>
-
-      Hard disks of this type are always attached directly. This means
-      that every given writethrough hard disk can be attached only to one
-      virtual machine at a time.
-
-      It is impossible to take a snapshot of a virtual machine with the
-      writethrough hard disk attached, because taking a snapshot implies
-      saving the execution state and preserving the contents of all hard
-      disks, but writethrough hard disks cannot be preserved. Preserving
-      hard disk contents is necessary to ensure the guest OS stored in the
-      snapshot will get the same hard disk state when restored, which is
-      especially important when it has open file handles or when there are
-      cached files and directories stored in memory.
-
-      <h3>Creating, Opening and Registering Hard Disks</h3>
-
-      Non-differencing hard disks are either created from scratch using
-      <link to="IVirtualBox::createHardDisk()"/> or opened from a VDI file
-      using <link to="IVirtualBox::openVirtualDiskImage()"/> (only for hard
-      disks using the VirtualDiskImage storage type). Once a hard disk is
-      created or opened, it needs to be registered using
-      <link to="IVirtualBox::registerHardDisk()"/> to make it available for
-      attaching to virtual machines. See the documentation of individual
-      interfaces for various storage types to get more information.
-
-      Differencing hard disks are never created explicitly and cannot
-      be registered or unregistered; they are automatically registered
-      upon creation and deregistered when deleted.
-
-      <h3>More about Indirect Hard Disk Attachments</h3>
-
-      Normally, when you attach a hard disk to the virtual machine, and then
-      query the corresponding attachment using
-      <link to="IMachine::getHardDisk()"/> or
-      <link to="IMachine::hardDiskAttachments"/> you will get the same hard
-      disk object, whose UUID you passed earlier to
-      <link to="IMachine::attachHardDisk()"/>. However, when an indirect
-      attachment takes place, calling <link to="IMachine::getHardDisk()"/>
-      will return a differencing hard disk object, that is either based on the
-      attached hard disk or on another differencing hard disk, the attached
-      hard disk is eventually a root for (as described above). In both cases
-      the returned hard disk object is the object the virtual machine actually
-      uses to perform disk writes to.
-
-      Regardless of whether the attachment is direct or indirect, the
-      <link to="#machineId"/> property of the attached disk will contain an
-      UUID of the machine object <link to="IMachine::attachHardDisk()"/>
-      has been called on.
-
-      Note that both <link to="IMachine::attachHardDisk()"/> and
-      <link to="IMachine::detachHardDisk()"/> are <i>lazy</i> operations. In
-      particular, this means that when an indirect attachment is made,
-      differencing hard disks are not created until machine settings are
-      committed using <link to="IMachine::saveSettings()"/>. Similarly, when a
-      differencing hard disk is detached, it is not deleted until
-      <link to="IMachine::saveSettings()"/> is called. Calling
-      <link to="IMachine::discardSettings()"/> cancels all lazy attachments or
-      detachments made since the last commit and effectively restores the
-      previous set of hard disks.
-
-      <h3>Hard Disk Accessibility</h3>
-
-      The <link to="#accessible"/> attribute of the hard disk object
-      defines the accessibility state of the respective hard disk storage
-      (for example, the VDI file for IVirtualDiskImage objects). If the
-      value of this attribute is <tt>false</tt> then some hard disk
-      attributes may contain invalid or outdated values (for example, the
-      virtual or the actual hard disk size) until a new accessibility
-      check is done that returns <tt>true</tt> (see the attribute
-      description for more details).
-
-      <note>
-        Since checking the accessibility of a hard disk is a potentially
-        very slow operation, it is not performed implicitly when the
-        VirtualBox server process starts up to prevent the application from
-        freezing. In particular, this means that if you try to read hard disk
-        properties that depend on the accessibility state without first
-        reading the value of the <link to="#accessible"/> attribute and
-        ensuring its value is <tt>true</tt>, you will get wrong (zero) values.
-      </note>
-
+      There is one more important aspect of the smart attachment procedure which
+      is not related to snapshots at all. Before walking through the snapshots
+      as described above, the backup copy of the current list of hard disk
+      attachment is searched for descendants. This backup copy is created when
+      the hard disk configuartion is changed for the first time after the last
+      <link to="IMachine::saveSettings()"/> call and used by
+      <link to="IMachine::discardSettings()"/> to undo the recent hard disk
+      changes. When such a descendant is found in this backup copy, it will be
+      simply reattached back, without creating a new differencing hard disk for
+      it. This optimization is necessary to make it possible to re-attach the
+      base or immutable hard disk to a different bus, channel or device slot
+      without losing the contents of the differencing hard disk actually
+      attached to the machine in place of it.
     </desc>
 
-    <attribute name="id" type="uuid" readonly="yes">
+    <attribute name="format" type="wstring" readonly="yes">
       <desc>
+        Storage format of this hard disk.
 
-        UUID of the hard disk. For newly created hard disk objects,
-        this value is a randomly generated UUID.
+        The value of this attribute is a string that specifies a backend used to
+        store hard disk data. The storage format is defined when you create a
+        new hard disk or automatically detected when you open an existing hard
+        disk medium, and cannot be changed later.
 
-      </desc>
-    </attribute>
-
-    <attribute name="description" type="wstring">
-      <desc>
-
-        Optional description of the hard disk. For a newly created hard
-        disk, this value is <tt>null</tt>.
-
-        <note>For some storage types, reading this property is
-          meaningless when <link to="#accessible"/> is <tt>false</tt>.
-          Also, you cannot assign it a new value in this case.</note>
-
-      </desc>
-    </attribute>
-
-    <attribute name="storageType" type="HardDiskStorageType" readonly="yes">
-      <desc>
-
-        Storage type of this hard disk.
-
-        Storage type is defined when you open or create a new hard disk
-        object.
-
-      </desc>
-    </attribute>
-
-    <attribute name="location" type="wstring" readonly="yes">
-      <desc>
-
-        Storage location of this hard disk. The returned string serves
-        for informational purposes only. To access detailed information
-        about the storage, query the appropriate storage-specific
-        interface.
-
+        The list of all storage formats supported by this VirtualBox
+        installation can be obtained using
+        <link to="ISystemProperties::hardDiskFormats"/>.
       </desc>
     </attribute>
 
     <attribute name="type" type="HardDiskType">
       <desc>
+        Type (role) of this hard disk.
 
-        Type (behavior) of this hard disk. For a newly created or opened hard
-        disk, this value is <link to="HardDiskType::Normal"/>.
+        The following constraints apply when changing the value of this
+        attribute:
+        <ul>
+          <li>If a hard disk is attached to a virtual machine (either in the
+              current state or in one of the snapshots), its type cannot be
+              changed.
+          </li>
+          <li>As long as the hard disk has children, its type cannot be set
+              to <link to="HardDiskType::Writethrough"/>.
+          </li>
+          <li>The type of all differencing hard disks is
+              <link to="HardDiskType::Normal"/> and cannot be changed.
+          </li>
+        </ul>
 
-        <note>
-          In the current implementation, this property can be
-          changed only on an unregistered hard disk object. This may be
-          changed later.
-        </note>
-
+        The type of a newly created or opened hard disk is set to
+        <link to="HardDiskType::Normal"/>.
       </desc>
     </attribute>
 
-    <attribute name="parent" type="IHardDisk" readonly="yes">
+    <attribute name="parent" type="IHardDisk2" readonly="yes">
       <desc>
-
-        Parent of this hard disk (a hard disk this one is directly based
+        Parent of this hard disk (a hard disk this hard disk is directly based
         on).
 
-        Only differencing hard disks have parents, so a <tt>null</tt>
-        object is returned for a hard disk of any other type.
+        Only differencing hard disks have parents. For base (non-differencing)
+        hard disks, <tt>null</tt> is returned.
       </desc>
     </attribute>
 
-    <attribute name="children" type="IHardDiskCollection" readonly="yes">
+    <attribute name="children" type="IHardDisk2" safearray="yes" readonly="yes">
       <desc>
-
-        Children of this hard disk (all differencing hard disks for
-        those this one is a parent). An empty collection is returned, if
-        this hard disk doesn't have any children.
-
+        Children of this hard disk (all differencing hard disks directly based
+        on this hard disk). A <tt>null</tt> array is returned if this hard disk
+        does not have any children.
       </desc>
     </attribute>
 
-    <attribute name="root" type="IHardDisk" readonly="yes">
+    <attribute name="root" type="IHardDisk2" readonly="yes">
       <desc>
+        Root hard disk of this hard disk.
 
-        Root hard disk of this hard disk. If this hard disk is a
-        differencing hard disk, its root hard disk is the first disk on
-        the branch. For all other types of hard disks, this property
-        returns the hard disk object itself (i.e. the same object you
-        read this property on).
-
+        If this is a differencing hard disk, its root hard disk is the base hard
+        disk the given hard disk branch starts from. For all other types of hard
+        disks, this property returns the hard disk object itself (i.e. the same
+        object this property is read on).
       </desc>
     </attribute>
 
-    <attribute name="accessible" type="boolean" readonly="yes">
+    <attribute name="readOnly" type="boolean" readonly="yes">
       <desc>
+        Returns <tt>true</tt> if this hard disk is read-only and <tt>false</tt>
+        otherwise.
 
-        Whether the hard disk storage is currently accessible or not.
-        The storage, for example, can be unaccessible if it doesn't exist
-        or if it is placed on a network resource that is not available
-        by the time this attribute is read.
+        A hard disk is considered to be read-only when its contents cannot be
+        modified without breaking the integrity of other parties that depednd on
+        this hard disk such as its child hard disks or snapshots of virtual
+        machines where this hard disk is attached to these machines. If there
+        are no children and no such snapshots then there is no dependency and
+        the hard disk is not read-only.
 
-        In the current implementation, the value of this property is
-        also <tt>false</tt> if this hard disk is attached to a running
-        virtual machine.
+        The value of this attribute can be used to determine the kind of the
+        attachment that will take place when attaching this hard disk to a
+        virtual machine. If the value is <tt>false</tt> then the hard disk will
+        be attached directly. If the value is <tt>true</tt> then the hard disk
+        will be attached indirectly by creating a new differencing child hard
+        disk for that. See the interface description for more information.
 
-        The accessibility check is performed automatically every time
-        this attribute is read. You should keep it in mind that this check
-        may be slow and can block the calling thread for a long time (for
-        example, if the network resourse where the hard disk storage is
-        located is down).
+        Note that all <link to="HardDiskType::Immutable">Immutable</link> hard
+        disks are always read-only while all
+        <link to="HardDiskType::Writethrough">Writethrough</link> hard disks are
+        always not.
 
-        The following attributes of the hard disk object are considered
-        to be invalid when this attribute is <tt>false</tt>:
-        <ul>
-          <li><link to="#size"/></li>
-          <li><link to="#actualSize"/></li>
-        </ul>
-        Individual hard disk storage type interfaces may define
-        additional attributes that depend on the accessibility state.
+        <note>
+          The read-only condition represented by this attribute is related to
+          the hard disk type and usage, not to the current
+          <link to="IMedium::state">media state</link> and not to the read-only
+          state of the storage unit.
+        </note>
       </desc>
     </attribute>
 
-    <attribute name="allAccessible" type="boolean" readonly="yes">
+    <attribute name="logicalSize" type="unsigned long long" readonly="yes">
       <desc>
-
-        Whether the whole hard disk branch, starting from this image and
-        going through its ancestors up to the root, is accessible or
-        not.
-
-        This property makes sense only for differencing hard disks. For
-        all other types of hard disks it returns the same value as
-        <link to="#accessible"/>.
-
-      </desc>
-    </attribute>
-
-    <attribute name="lastAccessError" type="wstring" readonly="yes">
-      <desc>
-
-        String describing the reason of inaccessibility of this hard
-        disk after the last call to <link to="#accessible"/> that
-        returned <tt>false</tt>. A <tt>null</tt> value of this property
-        means that the last accessibility check returned <tt>true</tt>.
-
-      </desc>
-    </attribute>
-
-    <attribute name="size" type="unsigned long long" readonly="yes">
-      <desc>
-
         Logical size of this hard disk (in megabytes), as reported to the
         guest OS running inside the vurtual machine this disk is
-        attached to. The logical size is defined when the hard disk is
-        created.
-
-        <note>Reading this property on a differencing hard disk will
-          return the size of its root hard disk.</note>
-
-        <note>Reading this property is meaningless when
-          <link to="#accessible"/> is <tt>false</tt></note>
-
-      </desc>
-    </attribute>
-
-    <attribute name="actualSize" type="unsigned long long" readonly="yes">
-      <desc>
-
-        Physical size of the storage used to store hard disk data (in
-        bytes). This size is usually less than the logical size of the
-        hard disk, depending on the storage type and on the size
-        optimization method used for that storage.
-
-        <note>Reading this property is meaningless when
-          <link to="#accessible"/> is <tt>false</tt></note>
-
-      </desc>
-    </attribute>
-
-    <attribute name="machineId" type="uuid" readonly="yes">
-      <desc>
-
-        UUID of the machine this hard disk is attached to (or a
-        <tt>null</tt> UUID if it is not attached).
-
-        <note>Immutable hard disks are never attached directly, so this
-          attribute is always <tt>null</tt> in this case.</note>
-
-      </desc>
-    </attribute>
-
-    <attribute name="snapshotId" type="uuid" readonly="yes">
-      <desc>
-
-        UUID of the <link to="ISnapshot">snapshot</link> this hard disk
-        is associated with (or <tt>null</tt> UUID if it is not
-        associated with any snapshot).
+        attached to. The logical size is defined when the hard disk is created
+        and cannot be changed later.
 
         <note>
-          This attribute is always <tt>null</tt> if <link to="#machineId"/>
-          is <tt>null</tt>.
+          Reading this property on a differencing hard disk will return the size
+          of its <link to="#root"/> hard disk.
         </note>
-
         <note>
-          Writethrough hard disks are always attached directly and cannot be
-          involved when taking snapshots, so this attribute is meaningless and
-          therefore always <tt>null</tt>.
+          For hard disks whose state is <link to="#state"/> is <link
+          to="MediaState::Inaccessible"/>, the value of this property is the
+          last known logical size. For <link to="MediaState::NotCreated"/> hard
+          disks, the returned value is zero.
         </note>
-
       </desc>
     </attribute>
 
-    <method name="cloneToImage">
+    <!-- storage methods -->
 
+    <method name="createDynamicStorage">
       <desc>
-
-        Starts creating a clone of this hard disk. The cloned hard disk
-        will use the specified Virtual Disk Image file as a storage and
-        will contain exactly the same sector data as the hard disk being
-        cloned, except that a new UUID for the clone will be randomly
-        generated.
-
-        The specified image file path can be absolute (full path) or
-        relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
-          home directory</link>. If only a file name without any path is
-        given, the <link to="ISystemProperties::defaultVDIFolder">
-          default VDI folder</link> will be used as a path to the image
-        file.
-
-        It is an error to use the object returned in the @a image
-        parameter until the returned @a progress object reports success.
-
-        <note>In the current implementation, only non-differencing hard
-          disks can be cloned.</note>
-
-      </desc>
-
-      <param name="filePath" type="wstring" dir="in">
-        <desc>Path to a file where to store the cloned hard disk.</desc>
-      </param>
-      <param name="image" type="IVirtualDiskImage" dir="out">
-        <desc>Cloned hard disk object.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-
-    </method>
-
-  </interface>
-
-  <!--
-  // IVirtualDiskImage
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-     name="IVirtualDiskImage" extends="$unknown"
-     uuid="a8265b5a-0d20-4a46-a02f-65693a4e8239"
-     wsmap="managed"
-     >
-
-    <desc>
-      The IVirtualDiskImage interface represent a specific type of
-      <link to="IHardDisk" /> that uses VDI image files.
-
-      The Virtual Disk Image (VDI) format is VirtualBox's native format for
-      hard disk containers.
-
-      Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
-
-      Hard disks using virtual disk images can be either opened using
-      <link to="IVirtualBox::openHardDisk()"/> or created from
-      scratch using <link to="IVirtualBox::createHardDisk()"/>.
-
-      When a new hard disk object is created from scratch, an image file for it
-      is not automatically created. To do it, you need to specify a
-      valid <link to="#filePath">file path</link>, and call
-      <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
-      When it is done, the hard disk object can be registered by calling
-      <link to="IVirtualBox::registerHardDisk()"/> and then
-      <link to="IMachine::attachHardDisk()">attached</link> to
-      virtual machines.
-
-      The <link to="IHardDisk::description">description</link> of the
-      Virtual Disk Image is stored in the image file. For this reason,
-      changing the value of this property requires the hard disk to be
-      <link to="IHardDisk::accessible">accessible</link>. The description
-      of a registered hard disk can be changed only if a virtual machine
-      using it is not running.
-
-    </desc>
-
-    <attribute name="filePath" type="wstring">
-      <desc>
-
-        Full file name of the virtual disk image of this hard disk. For
-        newly created hard disk objects, this value is <tt>null</tt>.
-
-        When assigning a new path, it can be absolute (full path) or relative
-        to the <link to="IVirtualBox::homeFolder"> VirtualBox home
-        directory</link>. If only a file name without any path is given,
-        the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-        folder</link> will be used as a path to the image file.
-
-        When reading this propery, a full path is always returned.
-
-        <note>
-          This property cannot be changed when <link to="#created"/>
-          returns <tt>true</tt>.
-        </note>
-
-      </desc>
-    </attribute>
-
-    <attribute name="created" type="boolean" readonly="yes">
-      <desc>
-
-        Whether the virual disk image is created or not. For newly
-        created hard disk objects or after a successful invocation of
-        <link to="#deleteImage()"/>, this value is <tt>false</tt> until
-        <link to="#createFixedImage()"/> or <link
-                                               to="#createDynamicImage()"/> is called.
-
-      </desc>
-    </attribute>
-
-    <method name="createDynamicImage">
-
-      <desc>
-
-        Starts creating a dymically expanding hard disk image in the
-        background. The previous image associated with this object, if
-        any, must be deleted using <link to="#deleteImage"/>, otherwise
+        Starts creating a dymically expanding hard disk storage unit in the
+        background. The previous storage unit created for this this object, if
+        any, must be first deleted using <link to="#deleteStorage"/>, otherwise
         the operation will fail.
 
-        <note>After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-          <link to="IVirtualBox::registerHardDisk()">registered</link>
-          within this VirtualBox installation.</note>
+        Before the operation starts, the hard disk is placed to
+        <link to="MediaState::Creating"/> state. If the create operation
+        fails, the media will placed back to <link to="MediaState::NotCreated"/>
+        state.
 
+        After the returned progress object reports that the operation is
+        successfully complete, the media state will be set to <link
+        to="MediaState::Created"/>, the hard disk will be remembered by this
+        VirtualBox installation and may be attached to virtual machines.
       </desc>
-
-      <param name="size" type="unsigned long long" dir="in">
+      <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Maximum logical size of the hard disk in megabytes.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
-
     </method>
 
-    <method name="createFixedImage">
+    <method name="createFixedStorage">
       <desc>
-
-        Starts creating a fixed-size hard disk image in the background.  The
-        previous image, if any, must be deleted using
-        <link to="#deleteImage"/>, otherwise the operation will fail.
-
-        <note>
-          After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-          <link to="IVirtualBox::registerHardDisk()">registered</link>
-          within this VirtualBox installation.
-        </note>
-
-      </desc>
-
-      <param name="size" type="unsigned long long" dir="in">
-        <desc>Logical size of the hard disk in megabytes.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-
-    </method>
-
-    <method name="deleteImage">
-      <desc>
-
-        Deletes the existing hard disk image. The hard disk must not be
-        registered within this VirtualBox installation, otherwise the
-        operation will fail.
-
-        <note>
-          After this operation succeeds, it will be impossible to
-          register the hard disk until the image file is created
-          again.
-        </note>
-
-        <note>
-          This operation is valid only for non-differencing hard disks, after
-          they are unregistered using
-          <link to="IVirtualBox::unregisterHardDisk()"/>.
-        </note>
-
-      </desc>
-    </method>
-
-  </interface>
-
-  <!--
-  // IISCSIHardDisk
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-     name="IISCSIHardDisk" extends="$unknown"
-     uuid="003f6ca9-3257-4ef9-99c9-c66ce44576cb"
-     wsmap="managed"
-     >
-
-    <desc>
-      THe IISCSIHardDisk interface represents a specific type of
-      <link to="IHardDisk"/> that uses iSCSI.
-
-      The IISCSIHardDisk interface represents <link to="IHardDisk">virtual
-      hard disks</link> that use the Internet SCSI (iSCSI) protocol to store
-      hard disk data on remote machines.
-
-      Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
-
-      iSCSI hard disks can be created using
-      <link to="IVirtualBox::createHardDisk()"/>. When a new hard disk object
-      is created, all its properties are uninitialized. After you assign some
-      meaningful values to them, the hard disk object can be registered by
-      calling <link to="IVirtualBox::registerHardDisk()"/> and
-      then <link to="IMachine::attachHardDisk()">attached</link> to virtual
-      machines.
-
-      The <link to="IHardDisk::description">description</link>
-      of the iSCSI hard disk is stored in the VirtualBox
-      configuration file, so it can be changed (at appropriate
-      times) even when
-      <link to="IHardDisk::accessible">accessible</link> returns
-      <tt>false</tt>.  However, the hard disk must not be
-      attached to a running virtual machine.
-
-      <note>
-        In the current imlementation, the type of all iSCSI hard disks
-        is <link to="HardDiskType::Writethrough">Writethrough</link>
-        and cannot be changed.
-      </note>
-
-    </desc>
-
-    <attribute name="server" type="wstring">
-      <desc>
-
-        iSCSI Server name (either a host name or an IP address). For
-        newly created hard disk objects, this value is <tt>null</tt>.
-
-      </desc>
-    </attribute>
-
-    <attribute name="port" type="unsigned short">
-      <desc>
-
-        iSCSI Server port. For newly created hard disk objects, this
-        value is <tt>0</tt>, which means the default port.
-
-      </desc>
-    </attribute>
-
-    <attribute name="target" type="wstring">
-      <desc>
-
-        iSCSI target name. For newly created hard disk objects, this
-        value is <tt>null</tt>.
-
-      </desc>
-    </attribute>
-
-    <attribute name="lun" type="unsigned long long">
-      <desc>
-
-        Logical unit number for this iSCSI disk. For newly created hard
-        disk objects, this value is <tt>0</tt>.
-
-      </desc>
-    </attribute>
-
-    <attribute name="userName" type="wstring">
-      <desc>
-
-        User name for accessing this iSCSI disk. For newly created hard
-        disk objects, this value is <tt>null</tt>.
-
-      </desc>
-    </attribute>
-
-    <attribute name="password" type="wstring">
-      <desc>
-
-        User password for accessing this iSCSI disk. For newly created
-        hard disk objects, this value is <tt>null</tt>.
-
-      </desc>
-    </attribute>
-
-  </interface>
-
-  <!--
-  // IVMDKImage
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-     name="IVMDKImage" extends="$unknown"
-     uuid="178398f5-8559-4fee-979e-420af5b53eef"
-     wsmap="managed"
-     >
-    <desc>
-      The IVMDKImage interface represents a specific type of
-      <link to="IHardDisk"/> that uses VMDK image files.
-
-      The Virtual Machine Disk (VMDK) format is the industry standard format
-      for virtual hard disk image files, which VirtualBox supports besides its
-      own native VDI format.
-
-      Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
-
-      Hard disks using VMDK images can be either opened using
-      <link to="IVirtualBox::openHardDisk()"/> or created from
-      scratch using <link to="IVirtualBox::createHardDisk()"/>.
-
-      When a new hard disk object is created from scratch, an image file for it
-      is not automatically created. To do it, you need to specify a
-      valid <link to="#filePath">file path</link>, and call
-      <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
-      When it is done, the hard disk object can be registered by calling
-      <link to="IVirtualBox::registerHardDisk()"/> and then
-      <link to="IMachine::attachHardDisk()">attached</link> to
-      virtual machines.
-
-      The <link to="IHardDisk::description">description</link>
-      of the VMDK hard disk is stored in the VirtualBox
-      configuration file, so it can be changed (at appropriate
-      times) even when
-      <link to="IHardDisk::accessible">accessible</link> returns
-      <tt>false</tt>.  However, the hard disk must not be
-      attached to a running virtual machine.
-
-      <note>
-        In the current imlementation, the type of all VMDK hard disks
-        is <link to="HardDiskType::Writethrough">Writethrough</link> and cannot
-        be changed.
-      </note>
-
-    </desc>
-
-    <attribute name="filePath" type="wstring">
-      <desc>
-
-        Full file name of the VMDK image of this hard disk. For
-        newly created hard disk objects, this value is <tt>null</tt>.
-
-        When assigning a new path, it can be absolute (full path) or relative
-        to the <link to="IVirtualBox::homeFolder"> VirtualBox home
-        directory</link>. If only a file name without any path is given,
-        the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-        folder</link> will be used as a path to the image file.
-
-        When reading this propery, a full path is always returned.
-
-        <note>
-          This property cannot be changed when <link to="#created"/>
-          returns <tt>true</tt>.
-        </note>
-
-      </desc>
-    </attribute>
-
-    <attribute name="created" type="boolean" readonly="yes">
-      <desc>
-
-        Whether the virual disk image is created or not. For newly created
-        hard disk objects or after a successful invocation of
-        <link to="#deleteImage()"/>, this value is <tt>false</tt> until
-        <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>
-        is called.
-
-      </desc>
-    </attribute>
-
-    <method name="createDynamicImage">
-
-      <desc>
-
-        Starts creating a dymically expanding hard disk image in the
-        background. The previous image associated with this object, if
-        any, must be deleted using <link to="#deleteImage"/>, otherwise
+        Starts creating a fixed-size hard disk storage unit in the background.
+        The previous storage unit created for this this object, if
+        any, must be first deleted using <link to="#deleteStorage"/>, otherwise
         the operation will fail.
 
-        <note>
-          After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-          <link to="IVirtualBox::registerHardDisk()">registered</link> within
-          this VirtualBox installation.
-        </note>
+        Before the operation starts, the hard disk is placed to
+        <link to="MediaState::Creating"/> state. If the create operation
+        fails, the media will placed back to <link to="MediaState::NotCreated"/>
+        state.
 
+        After the returned progress object reports that the operation is
+        successfully complete, the media state will be set to <link
+        to="MediaState::Created"/>, the hard disk will be remembered by this
+        VirtualBox installation and may be attached to virtual machines.
       </desc>
-
-      <param name="size" type="unsigned long long" dir="in">
-        <desc>Maximum logical size of the hard disk in megabytes.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-
-    </method>
-
-    <method name="createFixedImage">
-      <desc>
-
-        Starts creating a fixed-size hard disk image in the background.  The
-        previous image, if any, must be deleted using
-        <link to="#deleteImage"/>, otherwise the operation will fail.
-
-        <note>
-          After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-          <link to="IVirtualBox::registerHardDisk()">registered</link> within
-          this VirtualBox installation.
-        </note>
-
-      </desc>
-
-      <param name="size" type="unsigned long long" dir="in">
+      <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Logical size of the hard disk in megabytes.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
-
     </method>
 
-    <method name="deleteImage">
+    <method name="deleteStorage">
       <desc>
+        Starts deleting the storage unit of this hard disk.
 
-        Deletes the existing hard disk image. The hard disk must not be
-        registered within this VirtualBox installation, otherwise the
-        operation will fail.
+        The hard disk must not be attahced to any known virtual machine and must
+        not have any known child hard disks, otherwise the operation will fail.
+        It will also fail if there is no storage unit to delete or if deletion
+        is already in progress, or if the hard disk is being in use (locked for
+        read or for write) or inaccessible. Therefore, the only valid state for
+        this operation to succeed is <link to="MediaState::Created"/>.
 
-        <note>
-          After this operation succeeds, it will be impossible to register the
-          hard disk until the image file is created again.
-        </note>
+        Before the operation starts, the hard disk is placed to
+        <link to="MediaState::Deleting"/> state and gets removed from the list
+        of remembered hard disks (media registry). If the delete operation
+        fails, the media will be remembered again and placed back to
+        <link to="MediaState::Created"/> state.
 
-        <note>
-          This operation is valid only for non-differencing hard disks, after
-          they are unregistered using
-          <link to="IVirtualBox::unregisterHardDisk()"/>.
-        </note>
+        After the returned progress object reports that the operation is
+        complete, the media state will be set to
+        <link to="MediaState::NotCreated"/> and you will be able to use one of
+        the storage creation methods to create it again.
 
+        <see>#close()</see>
       </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
     </method>
 
-  </interface>
+    <!-- diff methods -->
 
-  <!--
-  // ICustomHardDisk
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-     name="ICustomHardDisk" extends="$unknown"
-     uuid="a7b0236d-3ff4-47c0-a4aa-ddc4ddc1141a"
-     wsmap="managed"
-     >
-    <desc>
-      The ICustomHardDisk interface represents a specific type of
-      <link to="IHardDisk" /> that is supported through a third-party plugin.
-
-      This interface allows to add support for custom hard disk formats to
-      VirtualBox.
-
-      Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
-
-      Hard disks using custom hard disk formats can be either opened using
-      <link to="IVirtualBox::openHardDisk()"/> or created from scratch using
-      <link to="IVirtualBox::createHardDisk()"/>.
-
-      When a new hard disk object is created from scratch, an image file for
-      it is not automatically created. To do it, you need to specify a
-      valid <link to="#location">location</link>, and call
-      <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
-      When it is done, the hard disk object can be registered by calling
-      <link to="IVirtualBox::registerHardDisk()"/> and then
-      <link to="IMachine::attachHardDisk()">attached</link> to
-      virtual machines.
-
-      The <link to="IHardDisk::description">description</link>
-      of the hard disk is stored in the VirtualBox
-      configuration file, so it can be changed (at appropriate
-      times) even when
-      <link to="IHardDisk::accessible">accessible</link> returns
-      <tt>false</tt>.  However, the hard disk must not be
-      attached to a running virtual machine.
-
-    </desc>
-
-    <attribute name="location" type="wstring">
+    <method name="createDiffStorage">
       <desc>
+        Starts creating an empty differencing storage unit based on this hard
+        disk in the format and at the location defined by the @a target
+        argument.
 
-        Location of this custom hard disk. For
-        newly created hard disk objects, this value is <tt>null</tt>.
+        The target hard disk must be in <link to="MediaState::NotCreated"/>
+        state (i.e. must not have an existing storage unit). Upon successful
+        completion, this operation will set the type of the target hard disk to
+        <link to="HardDiskType::Normal"/> and create a storage unit necessary to
+        represent the differencing hard disk data in the given format (according
+        to the storage format of the target object).
 
-        The format of the location string is plugin-dependent. In case if the
-        plugin uses a regular file in the local file system to store hard disk
-        data, then the location is a file path and the following rules apply:
+        After the returned progress object reports that the operation is
+        successfully complete, the target hard disk gets remembered by this
+        VirtualBox installation and may be attached to virtual machines.
+
+        <note>
+          The hard disk will be placed to <link to="MediaState::LockedRead"/>
+          state for the duration of this operation.
+        </note>
+      </desc> <param name="target" type="IHardDisk2" dir="in">
+        <desc>Target hard disk.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="mergeTo">
+      <desc>
+        Starts merging the contents of this hard disk and all intermediate
+        differencing hard disks in the chain to the given target hard disk.
+
+        The target hard disk must be either a descendant of this hard disk or
+        its ancestor (otherwise this method will immediately return a failure).
+        It follows that there are two logical directions of the merge operation:
+        from ancestor to descendant (<i>forward merge</i>) and from descendant to
+        ancestor (<i>backward merge</i>). Let us consider the following hard disk
+        chain:
+
+        <pre>Base &lt;- Diff_1 &lt;- Diff_2</pre>
+
+        Here, calling this method on the <tt>Base</tt> hard disk object with
+        <tt>Diff_2</tt> as an argument will be a forward merge; calling it on
+        <tt>Diff_2</tt> with <tt>Base</tt> as an argument will be a backward
+        merge. Note that in both cases the contents of the resulting hard disk
+        will be the same, the only difference is the hard disk object that takes
+        the result of the merge operation. In case of the forward merge in the
+        above example, the result will be written to <tt>Diff_2</tt>; in case of
+        the backward merge, the result will be written to <tt>Base</tt>. In
+        other words, the result of the operation is always stored in the target
+        hard disk.
+
+        Upon successful operation completion, the storage units of all hard
+        disks in the chain between this (source) hard disk and the target hard
+        disk, including the source hard disk itself, will be automatically
+        deleted and the relevant hard disk objects (including this hard disk)
+        will become uninitialized. This means that any attempt to call any of
+        their methods or attributes will fail with the
+        <tt>"Object not ready" (E_ACCESSDENIED)</tt> error. Applied to the above
+        example, the forward merge of <tt>Base</tt> to <tt>Diff_2</tt> will
+        delete and uninitialize both <tt>Base</tt> and <tt>Diff_1</tt> hard
+        disks. Note that <tt>Diff_2</tt> in this case will become a base hard
+        disk itself since it will no longer be based on any other hard disk.
+
+        Considering the above, all of the following condtions must be met in
+        order for the merge operation to succeed:
         <ul>
           <li>
-            when assigning a new path, it must be absolute (full path) or
-            relative to the <link to="IVirtualBox::homeFolder"> VirtualBox
-            home directory</link>.  If only a file name without any path is
-            given, the <link to="ISystemProperties::defaultVDIFolder"> default
-            VDI folder</link> will be used as a path to the image file.
+            Neither this (source) hard disk nor any intermediate
+            differencing hard disk in the chain between it and the target
+            hard disk is attached to any virtual machine.
           </li>
           <li>
-            When reading this propery, a full path is always returned.
+            Neither the source hard disk nor the target hard disk is an
+            <link to="HardDiskType::Immutable"/> hard disk.
+          </li>
+          <li>
+            The part of the hard disk tree from the source hard disk to the
+            target hard disk is a linear chain, i.e. all hard disks in this
+            chain have exactly one child which is the next hard disk in this
+            chain. The only exception from this rule is the target hard disk in
+            the forward merge operation; it is allowed to have any number of
+            child hard disks because the merge operation will hot change its
+            logical contents (as it is seen by the guest OS or by children).
+          </li>
+          <li>
+            None of the involved hard disks are in
+            <link to="MediaState::LockedRead"/> or
+            <link to="MediaState::LockedWrite"/> state.
           </li>
         </ul>
 
         <note>
-          This property cannot be changed when <link to="#created"/>
-          returns <tt>true</tt>.
+          This (source) hard disk and all intermediates will be placed to <link
+          to="MediaState::Deleting"/> state and the target hard disk will be
+          placed to <link to="MediaState::LockedWrite"/> state and for the
+          duration of this operation.
         </note>
-
       </desc>
-    </attribute>
-
-    <attribute name="format" type="wstring" readonly="yes">
-      <desc>
-
-      The plugin name of the image file.
-
-      </desc>
-    </attribute>
-
-    <attribute name="created" type="boolean" readonly="yes">
-      <desc>
-
-        Whether the virual disk image is created or not. For newly created
-        hard disk objects or after a successful invocation of
-        <link to="#deleteImage()"/>, this value is <tt>false</tt> until
-        <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>
-        is called.
-
-      </desc>
-    </attribute>
-
-    <method name="createDynamicImage">
-
-      <desc>
-
-        Starts creating a dymically expanding hard disk image in the
-        background. The previous image associated with this object, if
-        any, must be deleted using <link to="#deleteImage"/>, otherwise
-        the operation will fail.
-
-        <note>
-          After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-          <link to="IVirtualBox::registerHardDisk()">registered</link> within
-          this VirtualBox installation.
-        </note>
-
-      </desc>
-
-      <param name="size" type="unsigned long long" dir="in">
-        <desc>Maximum logical size of the hard disk in megabytes.</desc>
+      <param name="targetId" type="uuid" dir="in">
+        <desc>UUID of the target ancestor or descendant hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
-
     </method>
 
-    <method name="createFixedImage">
-      <desc>
+    <!-- clone methods -->
 
-        Starts creating a fixed-size hard disk image in the background.  The
-        previous image, if any, must be deleted using
-        <link to="#deleteImage"/>, otherwise the operation will fail.
+    <method name="cloneTo">
+      <desc>
+        Starts creating a clone of this hard disk in the format and at the
+        location defined by the @a target argument.
+
+        The target hard disk must be in <link to="MediaState::NotCreated"/>
+        state (i.e. must not have an existing storage unit). Upon successful
+        completion, the cloned hard disk will contain exactly the same sector
+        data as the hard disk being cloned, except that a new UUID for the clone
+        will be randomly generated.
+
+        After the returned progress object reports that the operation is
+        successfully complete, the target hard disk gets remembered by this
+        VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-          <link to="IVirtualBox::registerHardDisk()">registered</link> within
-          this VirtualBox installation.
+          If the cloned hard disk is a differencing hard disk, it will inherit
+          parent dependency of the original hard disk.
         </note>
-
+        <note>
+          This hard disk will be placed to <link to="MediaState::LockedRead"/>
+          state for the duration of this operation.
+        </note>
       </desc>
-
-      <param name="size" type="unsigned long long" dir="in">
-        <desc>Logical size of the hard disk in megabytes.</desc>
+      <param name="target" type="IHardDisk2" dir="in">
+        <desc>Target hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
-
     </method>
 
-    <method name="deleteImage">
+    <method name="flattenTo">
       <desc>
+        Starts creating a deep (independent) clone of this hard disk in the
+        format and at the location defined by the @a target argument.
 
-        Deletes the existing hard disk image. The hard disk must not be
-        registered within this VirtualBox installation, otherwise the
-        operation will fail.
+        This operation is similar to <link to="#cloneTo()"/> except that when
+        applied to a differencing hard disk, it will also copy missing hard disk
+        data from all parent hard disks it is linked to. This will make the
+        created clone an independent base hard disk that contains all hard disk
+        data and does not need any other hard disks to operate.
+
+        After the returned progress object reports that the operation is
+        successfully complete, the target hard disk gets remembered by this
+        VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          After this operation succeeds, it will be impossible to register the
-          hard disk until the image file is created again.
+          For base hard disks, this operation is identical to
+          <link to="#cloneTo()"/>.
         </note>
-
         <note>
-          This operation is valid only for non-differencing hard disks, after
-          they are unregistered using
-          <link to="IVirtualBox::unregisterHardDisk()"/>.
+          This hard disk and all its parent hard disks will be placed to <link
+          to="MediaState::LockedRead"/> state for the duration of this
+          operation.
         </note>
-
       </desc>
+      <param name="target" type="IHardDisk2" dir="in">
+        <desc>Target hard disk.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
     </method>
 
   </interface>
 
+
   <!--
-  // IVHDImage
+  // IHardDiskFormat
   /////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-     name="IVHDImage" extends="$unknown"
-     uuid="163b88c3-7552-424a-8205-daf17a004747"
+     name="IHardDiskFormat" extends="$unknown"
+     uuid="e4d3c3af-bcff-4b6a-a50f-854298864cb4"
      wsmap="managed"
      >
     <desc>
+        The IHardDiskFormat interface represents a virtual hard disk format.
 
-      The IVHDImage interface represents <link to="IHardDisk">virtual hard
-      disks</link> that use Virtual PC Virtual Machine Disk image files to store
-      hard disk data.
+        Each hard disk format has an associated backend which is used to handle
+        hard disks stored in this format. This interface provides information
+        about the properties of the associated backend.
 
-      Hard disks using VHD images can be either opened using
-      <link to="IVirtualBox::openHardDisk()"/> or created from
-      scratch using <link to="IVirtualBox::createHardDisk()"/>.
+        Each hard disk format is identified by a string represented by the
+        <link to="#id"/> attribute. This string is used in calls like
+        <link to="IVirtualBox::createHardDisk2()"/> to specify the desired
+        format.
 
-      Objects that support this interface also support the
-      <link to="IHardDisk"/> interface.
+        The list of all supported hard disk formats can be obtained using
+        <link to="ISystemProperties::hardDiskFormats"/>.
 
-      When a new hard disk object is created from scatch, an image file for it
-      is not automatically created. To do it, you need to specify a
-      valid <link to="#filePath">file path</link>, and call
-      <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>.
-      When it is done, the hard disk object can be registered by calling
-      <link to="IVirtualBox::registerHardDisk()"/> and then
-      <link to="IMachine::attachHardDisk()">attached</link> to
-      virtual machines.
-
-      The <link to="IHardDisk::description">description</link>
-      of the VHD hard disk is stored in the VirtualBox
-      configuration file, so it can be changed (at appropriate
-      times) even when
-      <link to="IHardDisk::accessible">accessible</link> returns
-      <tt>false</tt>.  However, the hard disk must not be
-      attached to a running virtual machine.
-
-      <note>
-        In the current imlementation, the type of all VHD hard disks
-        is <link to="HardDiskType::Writethrough">Writethrough</link> and cannot
-        be changed.
-      </note>
-
+        <see>IHardDisk2</see>
     </desc>
 
-    <attribute name="filePath" type="wstring">
+    <attribute name="id" type="wstring" readonly="yes">
       <desc>
+        Identfier of this format.
 
-        Full file name of the VHD image of this hard disk. For
-        newly created hard disk objects, this value is <tt>null</tt>.
-
-        When assigning a new path, it can be absolute (full path) or relative
-        to the <link to="IVirtualBox::homeFolder"> VirtualBox home
-        directory</link>. If only a file name without any path is given,
-        the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-        folder</link> will be used as a path to the image file.
-
-        When reading this propery, a full path is always returned.
-
-        <note>
-          This property cannot be changed when <link to="#created"/>
-          returns <tt>true</tt>. In this case, the specified file name can be
-          absolute (full path) or relative to
-          the <link to="IVirtualBox::homeFolder"> VirtualBox home
-          directory</link>.  If only a file name without any path is given,
-          the <link to="ISystemProperties::defaultVDIFolder"> default VDI
-          folder</link> will be used as a path to the image file.
-        </note>
-
+        This string is used in methods of other interfaces where it is necessary
+        to specify a hard disk format, such as
+        <link to="IVirtualBox::createHardDisk2()"/>.
       </desc>
     </attribute>
 
-    <attribute name="created" type="boolean" readonly="yes">
+    <attribute name="supportUuid" type="boolean" readonly="yes">
       <desc>
-
-        Whether the virual disk image is created or not. For newly created
-        hard disk objects or after a successful invocation of
-        <link to="#deleteImage()"/>, this value is <tt>false</tt> until
-        <link to="#createFixedImage()"/> or <link to="#createDynamicImage()"/>
-        is called.
-
+        Supports UUIDs as expected by VirtualBox code.
       </desc>
     </attribute>
 
-    <method name="createDynamicImage">
-
+    <attribute name="supportCreateFixed" type="boolean" readonly="yes">
       <desc>
-
-        Starts creating a dymically expanding hard disk image in the
-        background. The previous image associated with this object, if
-        any, must be deleted using <link to="#deleteImage"/>, otherwise
-        the operation will fail.
-
-        <note>
-          After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-         <link to="IVirtualBox::registerHardDisk()">registered</link> within
-          this VirtualBox installation.
-        </note>
-
+        Supports creating fixed size images, allocating all space instantly.
       </desc>
+    </attribute>
 
-      <param name="size" type="unsigned long long" dir="in">
-        <desc>Maximum logical size of the hard disk in megabytes.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-
-    </method>
-
-    <method name="createFixedImage">
+    <attribute name="supportCreateDynamic" type="boolean" readonly="yes">
       <desc>
-
-        Starts creating a fixed-size hard disk image in the background.  The
-        previous image, if any, must be deleted using
-        <link to="#deleteImage"/>, otherwise the operation will fail.
-
-        <note>
-          After the returned progress object reports that the
-          operation is complete, this hard disk object can be
-          <link to="IVirtualBox::registerHardDisk()">registered</link> within
-          this VirtualBox installation.
-        </note>
-
+        Supports creating dynamically growing images, allocating space on
+        demand.
       </desc>
+    </attribute>
 
-      <param name="size" type="unsigned long long" dir="in">
-        <desc>Logical size of the hard disk in megabytes.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-
-    </method>
-
-    <method name="deleteImage">
+    <attribute name="supportCreateSplit2G" type="boolean" readonly="yes">
       <desc>
-
-        Deletes the existing hard disk image. The hard disk must not be
-        registered within this VirtualBox installation, otherwise the
-        operation will fail.
-
-        <note>
-          After this operation succeeds, it will be impossible to register the
-          hard disk until the image file is created again.
-        </note>
-
-        <note>
-          This operation is valid only for non-differencing hard disks, after
-          they are unregistered using
-          <link to="IVirtualBox::unregisterHardDisk()"/>.
-        </note>
-
+        Supports creating images split in chunks of a bit less than 2GBytes.
       </desc>
-    </method>
+    </attribute>
+
+    <attribute name="supportDiff" type="boolean" readonly="yes">
+      <desc>
+        Supports being used as differencing image format backend.
+      </desc>
+    </attribute>
+
+    <attribute name="supportASync" type="boolean" readonly="yes">
+      <desc>
+        Supports asynchronous I/O operations for at least some configurations.
+      </desc>
+    </attribute>
+
+    <attribute name="supportFile" type="boolean" readonly="yes">
+      <desc>
+        The backend operates on files. The caller needs to know to handle the
+        location appropriately. For a list of supported file extentions see
+        <link to="IHardDiskFormat::fileExtensions"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="supportConfig" type="boolean" readonly="yes">
+      <desc>
+        The backend uses the config interface. The caller needs to know how to
+        provide the mandatory configuration parts this way.
+      </desc>
+    </attribute>
+
+    <attribute name="fileExtensions" type="wstring" safearray="yes" readonly="yes">
+      <desc>
+        Array of strings containing the supported file extensions.
+
+        The first extension in the array is the extension preferred by the
+        backend. It is recommended to use this extension when specifyng a
+        location of the storage unit for a new hard disk.
+
+        Note that some backends do not work on files, so this array may be
+        empty.
+
+        <see>IHardDiskFormat::supportFile</see>
+      </desc>
+    </attribute>
 
   </interface>
 
+
   <!--
-  // IDVDImage
+  // IFloppyImage2
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enumerator
-     name="IDVDImageEnumerator" type="IDVDImage"
-     uuid="9BE77C8D-E1BE-4bf2-A67B-B4DD3D2B0F28"
-     />
+  <interface
+    name="IFloppyImage2" extends="IMedium"
+    uuid="fcdee8f0-03f9-11dd-95ff-0800200c9a66"
+    wsmap="managed"
+  >
+    <desc>
+      The IFloppyImage2 interface represents a medium containing the image
+      of a floppy disk.
+    </desc>
 
-  <collection
-     name="IDVDImageCollection" type="IDVDImage"
-     enumerator="IDVDImageEnumerator"
-     uuid="AE7053FA-ADD2-4ea4-AFCF-24D5F8DDED64"
-     readonly="yes"
-     >
-    <method name="findByPath">
-      <desc>
-        Searches this collection for a DVD image with the given disk path.
-        <note>
-          The method returns an error if the given name does not
-          correspond to any DVD image in the collection.
-        </note>
-      </desc>
-      <param name="path" type="wstring" dir="in">
-        <desc>Name of the DVD image's file system location.</desc>
-      </param>
-      <param name="image" type="IDVDImage" dir="return">
-        <desc>Found DVD image object</desc>
-      </param>
-    </method>
-  </collection>
+  </interface>
+
+
+  <!--
+  // IDVDImage2
+  /////////////////////////////////////////////////////////////////////////
+  -->
 
   <interface
-     name="IDVDImage" extends="$unknown"
-     uuid="140FFF03-E479-4194-8562-ABC4F8171009"
-     wsmap="managed"
-     >
+    name="IDVDImage2" extends="IMedium"
+    uuid="1c5165f1-9543-478d-a117-84a1d2317068"
+    wsmap="managed"
+  >
     <desc>
-
-      The IDVDImage interface represents a file containing the image
-      of the DVD or CD disk.
-
-      <h3>Image Accessibility</h3>
-
-      The <link to="#accessible"/> attribute of the image object
-      defines the accessibility state of the image file. If the
-      value of this attribute is <tt>false</tt> then some image
-      attributes may contain invalid or outdated values (for example, the
-      the image file size) until a new accessibility
-      check is done that returns <tt>true</tt>.
-
-      <note>
-        Because of the possible slowness of the accessibility check,
-        it is not implicitly performed upon the VirtualBox server startup
-        (to prevent the application freeze). In partcular, this means that
-        if you try to read image properties that depend on the
-        accessibility state without first reading the value of the
-        <link to="#accessible"/> attribute and ensuring it's value is
-        <tt>true</tt>, you will get wrong (zero) values.
-      </note>
-
+      The IDVDImage2 interface represents a medium containing the image
+      of a CD or DVD disk in the ISO format.
     </desc>
-    <attribute name="id" type="uuid" readonly="yes">
-      <desc>UUID of the CD/DVD image.</desc>
-    </attribute>
-
-    <attribute name="filePath" type="wstring" readonly="yes">
-      <desc>Full file name of the CD/DVD image.</desc>
-    </attribute>
-
-    <attribute name="accessible" type="boolean" readonly="yes">
-      <desc>
-
-        Whether the CD/DVD image is currently accessible or not.
-        The image, for example, can be unaccessible if it is placed
-        on a network share that is not available by the time
-        this property is read.
-
-        The accessibility check is performed automatically every time
-        this attribute is read. You should keep it in mind that this check
-        may be slow and can block the calling thread for a long time (for
-        example, if the network share where the image is located is down).
-
-        The following attributes of the image object are considered
-        to be invalid when this attribute is <tt>false</tt>:
-        <ul>
-          <li><link to="#size"/></li>
-        </ul>
-
-      </desc>
-    </attribute>
-
-    <attribute name="size" type="unsigned long long" readonly="yes">
-      <desc>Size of the ISO image in bytes.</desc>
-    </attribute>
 
   </interface>
 
@@ -7606,14 +7344,16 @@
   -->
 
   <interface
-     name="IDVDDrive" extends="$unknown"
-     uuid="d9bd101a-8079-4fb9-bad1-31bf32482b75"
-     wsmap="managed"
-     >
+    name="IDVDDrive" extends="$unknown"
+    uuid="d650ef30-be9b-4dae-b463-11d5824681a5"
+    wsmap="managed"
+  >
     <desc>
       The IDVDDrive interface represents the virtual CD/DVD drive of the
-      virtual machine. Used in <link to="IMachine::DVDDrive"/>.
+      virtual machine. An object of this type is returned by
+      <link to="IMachine::DVDDrive"/>.
     </desc>
+
     <attribute name="state" type="DriveState" readonly="yes">
       <desc>Current drive state.</desc>
     </attribute>
@@ -7621,133 +7361,35 @@
     <attribute name="passthrough" type="boolean">
       <desc>
         When a host drive is mounted and passthrough is enabled
-        the guest will be able to directly send SCSI commands to
-        the host drive. This enables the guest to use CD/DVD writers
+        the guest OS will be able to directly send SCSI commands to
+        the host drive. This enables the guest OS to use CD/DVD writers
         but is potentially dangerous.
       </desc>
     </attribute>
 
     <method name="mountImage">
-      <desc>Mounts the specified image.</desc>
+      <desc>Mounts a CD/DVD image with the specified UUID.</desc>
       <param name="imageId" type="uuid" dir="in"/>
     </method>
 
     <method name="captureHostDrive">
-      <desc>Captures the specified host drive.</desc>
+      <desc>Captures the specified host CD/DVD drive.</desc>
       <param name="drive" type="IHostDVDDrive" dir="in"/>
     </method>
 
     <method name="unmount">
-      <desc>Unmounts the currently mounted image/device.</desc>
+      <desc>Unmounts the currently mounted image or host drive.</desc>
     </method>
 
     <method name="getImage">
-      <desc>Gets the currently mounted image ID.</desc>
-      <param name="image" type="IDVDImage" dir="return"/>
+      <desc>Returns the currently mounted CD/DVD image.</desc>
+      <param name="image" type="IDVDImage2" dir="return"/>
     </method>
 
     <method name="getHostDrive">
-      <desc>Gets the currently mounted image ID.</desc>
+      <desc>Returns the currently mounted host CD/DVD drive.</desc>
       <param name="drive" type="IHostDVDDrive" dir="return"/>
     </method>
-
-  </interface>
-
-  <!--
-  // IFloppyImage
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <enumerator
-     name="IFloppyImageEnumerator" type="IFloppyImage"
-     uuid="902C4089-76B7-41f1-91E8-49A261A28A2C"
-     />
-
-  <collection
-     name="IFloppyImageCollection" type="IFloppyImage"
-     enumerator="IFloppyImageEnumerator"
-     uuid="327A8928-8572-446e-AD9A-18FE30E81F3F"
-     readonly="yes">
-    <method name="findByPath">
-      <desc>
-        Searches this collection for a floppy image with the given disk path.
-        <note>
-          The method returns an error if the given name does not
-          correspond to any floppy image in the collection.
-        </note>
-      </desc>
-      <param name="path" type="wstring" dir="in">
-        <desc>Name of the floppy image's file system location.</desc>
-      </param>
-      <param name="image" type="IFloppyImage" dir="return">
-        <desc>Found Floppy image object</desc>
-      </param>
-    </method>
-  </collection>
-
-  <interface
-     name="IFloppyImage" extends="$unknown"
-     uuid="CC696755-EA98-4ffe-9DC5-C003047034AB"
-     wsmap="managed"
-     >
-    <desc>
-
-      The IFloppyImage interface represents a file containing the image
-      of a floppy disk.
-
-      <h3>Image Accessibility</h3>
-
-      The <link to="#accessible"/> attribute of the image object
-      defines the accessibility state of the image file. If the
-      value of this attribute is <tt>false</tt> then some image
-      attributes may contain invalid or outdated values (for example, the
-      the image file size) until a new accessibility
-      check is done that returns <tt>true</tt>.
-
-      <note>
-        Because of the possible slowness of the accessibility check,
-        it is not implicitly performed upon the VirtualBox server startup
-        (to prevent the application freeze). In partcular, this means that
-        if you try to read image properties that depend on the
-        accessibility state without first reading the value of the
-        <link to="#accessible"/> attribute and ensuring it's value is
-        <tt>true</tt>, you will get wrong (zero) values.
-      </note>
-
-    </desc>
-    <attribute name="id" type="uuid" readonly="yes">
-      <desc>UUID of the floppy image.</desc>
-    </attribute>
-
-    <attribute name="filePath" type="wstring" readonly="yes">
-      <desc>Full file name of the floppy image.</desc>
-    </attribute>
-
-    <attribute name="accessible" type="boolean" readonly="yes">
-      <desc>
-
-        Whether the floppy image is currently accessible or not.
-        The image, for example, can be unaccessible if it is placed
-        on a network share that is not available by the time
-        this property is read.
-
-        The accessibility check is performed automatically every time
-        this attribute is read. You should keep it in mind that this check
-        may be slow and can block the calling thread for a long time (for
-        example, if the network share where the image is located is down).
-
-        The following attributes of the image object are considered
-        to be invalid when this attribute is <tt>false</tt>:
-        <ul>
-          <li><link to="#size"/></li>
-        </ul>
-
-      </desc>
-    </attribute>
-
-    <attribute name="size" type="unsigned long" readonly="yes">
-      <desc>Size of the floppy image in bytes.</desc>
-    </attribute>
 
   </interface>
 
@@ -7759,18 +7401,19 @@
 
   <interface
      name="IFloppyDrive" extends="$unknown"
-     uuid="E9318F71-78D2-4b00-863C-B7CB0030A2D9"
+     uuid="159412cd-bab8-452e-8097-218a020825a6"
      wsmap="managed"
-     >
+  >
     <desc>
       The IFloppyDrive interface represents the virtual floppy drive of the
-      virtual machine. Used in <link to="IMachine::FloppyDrive" />.
+      virtual machine. An object of this type is returned by
+      <link to="IMachine::floppyDrive" />.
     </desc>
 
     <attribute name="enabled" type="boolean">
       <desc>
         Flag whether the floppy drive is enabled. If it is disabled,
-        the floppy drive will not be reported to the guest.
+        the floppy drive will not be reported to the guest OS.
       </desc>
     </attribute>
 
@@ -7779,26 +7422,26 @@
     </attribute>
 
     <method name="mountImage">
-      <desc>Mounts the specified image.</desc>
+      <desc>Mounts a floppy image with the specified UUID.</desc>
       <param name="imageId" type="uuid" dir="in"/>
     </method>
 
     <method name="captureHostDrive">
-      <desc>Captures the specified host drive.</desc>
+      <desc>Captures the specified host floppy drive.</desc>
       <param name="drive" type="IHostFloppyDrive" dir="in"/>
     </method>
 
     <method name="unmount">
-      <desc>Unmounts the currently mounted image/device.</desc>
+      <desc>Unmounts the currently mounted image or host drive.</desc>
     </method>
 
     <method name="getImage">
-      <desc>Gets the currently mounted image ID.</desc>
-      <param name="image" type="IFloppyImage" dir="return"/>
+      <desc>Returns the currently mounted floppy image.</desc>
+      <param name="image" type="IFloppyImage2" dir="return"/>
     </method>
 
     <method name="getHostDrive">
-      <desc>Gets the currently mounted image ID.</desc>
+      <desc>Returns the currently mounted host floppy drive.</desc>
       <param name="drive" type="IHostFloppyDrive" dir="return"/>
     </method>
 

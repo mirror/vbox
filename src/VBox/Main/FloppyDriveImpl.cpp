@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -20,6 +22,7 @@
  */
 
 #include "FloppyDriveImpl.h"
+
 #include "MachineImpl.h"
 #include "HostImpl.h"
 #include "HostFloppyDriveImpl.h"
@@ -135,6 +138,17 @@ HRESULT FloppyDrive::initCopy (Machine *aParent, FloppyDrive *aThat)
     AutoReadLock thatLock (aThat);
     mData.attachCopy (aThat->mData);
 
+    /* at present, this must be a snapshot machine */
+    Assert (!aParent->snapshotId().isEmpty());
+
+    if (mData->mState == DriveState_ImageMounted)
+    {
+        /* associate the DVD image media with the snapshot */
+        HRESULT rc = mData->mImage->attachTo (aParent->id(),
+                                              aParent->snapshotId());
+        AssertComRC (rc);
+    }
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -153,6 +167,20 @@ void FloppyDrive::uninit()
     AutoUninitSpan autoUninitSpan (this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    if ((mParent->type() == Machine::IsMachine ||
+         mParent->type() == Machine::IsSnapshotMachine) &&
+        mData->mState == DriveState_ImageMounted)
+    {
+        /* Deassociate the DVD image (only when mParent is a real Machine or a
+         * SnapshotMachine instance; SessionMachine instances
+         * refer to real Machine hard disks). This is necessary for a clean
+         * re-initialization of the VM after successfully re-checking the
+         * accessibility state. */
+        HRESULT rc = mData->mImage->detachFrom (mParent->id(),
+                                                mParent->snapshotId());
+        AssertComRC (rc);
+    }
 
     mData.free();
 
@@ -205,9 +233,9 @@ STDMETHODIMP FloppyDrive::COMSETTER(Enabled) (BOOL aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aDriveState)
+STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aState)
 {
-    if (!aDriveState)
+    if (!aState)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -215,7 +243,7 @@ STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aDriveState)
 
     AutoReadLock alock (this);
 
-    *aDriveState = mData->mDriveState;
+    *aState = mData->mState;
 
     return S_OK;
 }
@@ -225,7 +253,8 @@ STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aDriveState)
 
 STDMETHODIMP FloppyDrive::MountImage (INPTR GUIDPARAM aImageId)
 {
-    if (Guid::isEmpty (aImageId))
+    Guid imageId = aImageId;
+    if (imageId.isEmpty())
         return E_INVALIDARG;
 
     AutoCaller autoCaller (this);
@@ -242,25 +271,30 @@ STDMETHODIMP FloppyDrive::MountImage (INPTR GUIDPARAM aImageId)
     /* Our lifetime is bound to mParent's lifetime, so we don't add caller.
      * We also don't lock mParent since its mParent field is const. */
 
-    ComPtr <IFloppyImage> image;
-    rc = mParent->virtualBox()->GetFloppyImage (aImageId, image.asOutParam());
+    ComObjPtr <FloppyImage2> image;
+    rc = mParent->virtualBox()->findFloppyImage2 (&imageId, NULL,
+                                                  true /* aSetError */, &image);
 
     if (SUCCEEDED (rc))
     {
-        if (mData->mDriveState != DriveState_ImageMounted ||
-            !mData->mFloppyImage.equalsTo (image))
+        if (mData->mState != DriveState_ImageMounted ||
+            !mData->mImage.equalsTo (image))
         {
-            mData.backup();
+            rc = image->attachTo (mParent->id(), mParent->snapshotId());
+            if (SUCCEEDED (rc))
+            {
+                mData.backup();
 
-            unmount();
+                unmount();
 
-            mData->mFloppyImage = image;
-            mData->mDriveState = DriveState_ImageMounted;
+                mData->mImage = image;
+                mData->mState = DriveState_ImageMounted;
 
-            /* leave the lock before informing callbacks */
-            alock.unlock();
+                /* leave the lock before informing callbacks */
+                alock.unlock();
 
-            mParent->onFloppyDriveChange();
+                mParent->onFloppyDriveChange();
+            }
         }
     }
 
@@ -281,7 +315,7 @@ STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
 
     AutoWriteLock alock (this);
 
-    if (mData->mDriveState != DriveState_HostDriveCaptured ||
+    if (mData->mState != DriveState_HostDriveCaptured ||
         !mData->mHostDrive.equalsTo (aHostFloppyDrive))
     {
         mData.backup();
@@ -289,7 +323,7 @@ STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
         unmount();
 
         mData->mHostDrive = aHostFloppyDrive;
-        mData->mDriveState = DriveState_HostDriveCaptured;
+        mData->mState = DriveState_HostDriveCaptured;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -311,13 +345,13 @@ STDMETHODIMP FloppyDrive::Unmount()
 
     AutoWriteLock alock (this);
 
-    if (mData->mDriveState != DriveState_NotMounted)
+    if (mData->mState != DriveState_NotMounted)
     {
         mData.backup();
 
         unmount();
 
-        mData->mDriveState = DriveState_NotMounted;
+        mData->mState = DriveState_NotMounted;
 
         /* leave the lock before informing callbacks */
         alock.unlock();
@@ -328,7 +362,7 @@ STDMETHODIMP FloppyDrive::Unmount()
     return S_OK;
 }
 
-STDMETHODIMP FloppyDrive::GetImage (IFloppyImage **aFloppyImage)
+STDMETHODIMP FloppyDrive::GetImage (IFloppyImage2 **aFloppyImage)
 {
     if (!aFloppyImage)
         return E_POINTER;
@@ -338,7 +372,7 @@ STDMETHODIMP FloppyDrive::GetImage (IFloppyImage **aFloppyImage)
 
     AutoReadLock alock (this);
 
-    mData->mFloppyImage.queryInterfaceTo (aFloppyImage);
+    mData->mImage.queryInterfaceTo (aFloppyImage);
 
     return S_OK;
 }
@@ -467,14 +501,14 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
 
     node.setValue <bool> ("enabled", !!mData->mEnabled);
 
-    switch (mData->mDriveState)
+    switch (mData->mState)
     {
         case DriveState_ImageMounted:
         {
-            Assert (!mData->mFloppyImage.isNull());
+            Assert (!mData->mImage.isNull());
 
             Guid id;
-            HRESULT rc = mData->mFloppyImage->COMGETTER(Id) (id.asOutParam());
+            HRESULT rc = mData->mImage->COMGETTER(Id) (id.asOutParam());
             AssertComRC (rc);
             Assert (!id.isEmpty());
 
@@ -499,9 +533,8 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
             /* do nothing, i.e.leave the drive node empty */
             break;
         default:
-            ComAssertMsgFailedRet (("Invalid drive state: %d\n",
-                                      mData->mDriveState),
-                                     E_FAIL);
+            ComAssertMsgFailedRet (("Invalid drive state: %d\n", mData->mState),
+                                    E_FAIL);
     }
 
     return S_OK;
@@ -525,6 +558,19 @@ bool FloppyDrive::rollback()
         /* we need to check all data to see whether anything will be changed
          * after rollback */
         changed = mData.hasActualChanges();
+
+        if (changed)
+        {
+            Data *oldData = mData.backedUpData();
+
+            if (!mData->mImage.isNull() &&
+                !oldData->mImage.equalsTo (mData->mImage))
+            {
+                /* detach the current image that will go away after rollback */
+                mData->mImage->detachFrom (mParent->id(), mParent->snapshotId());
+            }
+        }
+
         mData.rollback();
     }
 
@@ -551,6 +597,15 @@ void FloppyDrive::commit()
 
     if (mData.isBackedUp())
     {
+        Data *oldData = mData.backedUpData();
+
+        if (!oldData->mImage.isNull() &&
+            !oldData->mImage.equalsTo (mData->mImage))
+        {
+            /* detach the old image that will go away after commit */
+            oldData->mImage->detachFrom (mParent->id(), mParent->snapshotId());
+        }
+
         mData.commit();
         if (mPeer)
         {
@@ -594,8 +649,8 @@ HRESULT FloppyDrive::unmount()
 {
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
-    if (mData->mFloppyImage)
-        mData->mFloppyImage.setNull();
+    if (mData->mImage)
+        mData->mImage.setNull();
     if (mData->mHostDrive)
         mData->mHostDrive.setNull();
 

@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
+<!-- $Id$ -->
 
 <!--
  *  A template to generate a XPCOM IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -133,6 +134,11 @@
     <xsl:apply-templates mode="forward"/>
   </xsl:if>
 </xsl:template>
+<xsl:template match="if" mode="forwarder">
+  <xsl:if test="@target='midl'">
+    <xsl:apply-templates mode="forwarder"/>
+  </xsl:if>
+</xsl:template>
 
 
 <!--
@@ -224,7 +230,38 @@
   <xsl:text>}; /* interface </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text> */&#x0A;&#x0A;</xsl:text>
+  <!-- Interface implementation forwarder macro -->
+  <xsl:text>/* Interface implementation forwarder macro */&#x0A;</xsl:text>
+  <xsl:text>%{C++&#x0A;</xsl:text>
+  <!-- 1) indivudual methods -->
+  <xsl:apply-templates select="attribute" mode="forwarder"/>
+  <xsl:apply-templates select="method" mode="forwarder"/>
+  <xsl:apply-templates select="if" mode="forwarder"/>
+  <!-- 2) COM_FORWARD_Interface_TO(smth) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO(smth) NS_FORWARD_</xsl:text>
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text> (smth)&#x0A;</xsl:text>
+  <!-- 3) COM_FORWARD_Interface_TO_OBJ(obj) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO ((obj)->)&#x0A;</xsl:text>
+  <!-- 4) COM_FORWARD_Interface_TO_BASE(base) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO (base::)&#x0A;</xsl:text>
+  <!-- -->
+  <xsl:text>%}&#x0A;&#x0A;</xsl:text>
+  <!-- end -->
 </xsl:template>
+
 
 <!--
  *  attributes
@@ -300,6 +337,160 @@
   <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 
+<xsl:template match="interface//attribute | collection//attribute" mode="forwarder">
+
+  <xsl:variable name="parent" select="ancestor::interface | ancestor::collection"/>
+
+  <xsl:apply-templates select="@if" mode="begin"/>
+
+  <!-- getter: COM_FORWARD_Interface_GETTER_Name_TO(smth) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_GETTER_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO(smth) NS_IMETHOD Get</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text> (</xsl:text>
+  <xsl:if test="@safearray='yes'">
+    <xsl:text>PRUint32 * a</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>Size, </xsl:text>
+  </xsl:if>
+  <xsl:apply-templates select="@type" mode="forwarder"/>
+  <xsl:if test="@safearray='yes'">
+    <xsl:text> *</xsl:text>
+  </xsl:if>
+  <xsl:text> * a</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>) { return smth Get</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text> (</xsl:text>
+  <xsl:if test="@safearray='yes'">
+    <xsl:text>a</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>Size, </xsl:text>
+  </xsl:if>
+  <xsl:text>a</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>); }&#x0A;</xsl:text>
+  <!-- getter: COM_FORWARD_Interface_GETTER_Name_TO_OBJ(obj) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_GETTER_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_GETTER_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO ((obj)->)&#x0A;</xsl:text>
+  <!-- getter: COM_FORWARD_Interface_GETTER_Name_TO_BASE(base) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_GETTER_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_GETTER_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO (base::)&#x0A;</xsl:text>
+  <!-- -->
+  <xsl:if test="not(@readonly='yes')">
+    <!-- setter: COM_FORWARD_Interface_SETTER_Name_TO(smth) -->
+    <xsl:text>#define COM_FORWARD_</xsl:text>
+    <xsl:value-of select="$parent/@name"/>
+    <xsl:text>_SETTER_</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>_TO(smth) NS_IMETHOD Set</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text> (</xsl:text>
+    <xsl:if test="@safearray='yes'">
+      <xsl:text>PRUint32 a</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>Size, </xsl:text>
+    </xsl:if>
+    <xsl:if test="not(@safearray='yes') and (@type='string' or @type='wstring')">
+      <xsl:text>const </xsl:text>
+    </xsl:if>
+    <xsl:apply-templates select="@type" mode="forwarder"/>
+    <xsl:if test="@safearray='yes'">
+      <xsl:text> *</xsl:text>
+    </xsl:if>
+    <xsl:text> a</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>) { return smth Set</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text> (a</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>); }&#x0A;</xsl:text>
+    <!-- setter: COM_FORWARD_Interface_SETTER_Name_TO_OBJ(obj) -->
+    <xsl:text>#define COM_FORWARD_</xsl:text>
+    <xsl:value-of select="$parent/@name"/>
+    <xsl:text>_SETTER_</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+    <xsl:value-of select="$parent/@name"/>
+    <xsl:text>_SETTER_</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>_TO ((obj)->)&#x0A;</xsl:text>
+    <!-- setter: COM_FORWARD_Interface_SETTER_Name_TO_BASE(base) -->
+    <xsl:text>#define COM_FORWARD_</xsl:text>
+    <xsl:value-of select="$parent/@name"/>
+    <xsl:text>_SETTER_</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+    <xsl:value-of select="$parent/@name"/>
+    <xsl:text>_SETTER_</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>_TO (base::)&#x0A;</xsl:text>
+  </xsl:if>
+
+  <xsl:apply-templates select="@if" mode="end"/>
+
+</xsl:template>
+
+
 <!--
  *  methods
 -->
@@ -327,6 +518,104 @@
   </xsl:if>
   <xsl:apply-templates select="@if" mode="end"/>
   <xsl:text>&#x0A;</xsl:text>
+</xsl:template>
+
+<xsl:template match="interface//method | collection//method" mode="forwarder">
+
+  <xsl:variable name="parent" select="ancestor::interface | ancestor::collection"/>
+
+  <xsl:apply-templates select="@if" mode="begin"/>
+
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO(smth) NS_IMETHOD </xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:choose>
+    <xsl:when test="param">
+      <xsl:text> (</xsl:text>
+      <xsl:for-each select="param [position() != last()]">
+        <xsl:apply-templates select="." mode="forwarder"/>
+        <xsl:text>, </xsl:text>
+      </xsl:for-each>
+      <xsl:apply-templates select="param [last()]" mode="forwarder"/>
+      <xsl:text>) { return smth </xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text> (</xsl:text>
+      <xsl:for-each select="param [position() != last()]">
+        <xsl:if test="@safearray='yes'">
+          <xsl:text>a</xsl:text>
+          <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="@name"/>
+          </xsl:call-template>
+          <xsl:text>Size+++, </xsl:text>
+        </xsl:if>
+        <xsl:text>a</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>, </xsl:text>
+      </xsl:for-each>
+      <xsl:if test="param [last()]/@safearray='yes'">
+        <xsl:text>a</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="param [last()]/@name"/>
+        </xsl:call-template>
+        <xsl:text>Size, </xsl:text>
+      </xsl:if>
+      <xsl:text>a</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="param [last()]/@name"/>
+      </xsl:call-template>
+      <xsl:text>); }</xsl:text>
+    </xsl:when>
+    <xsl:otherwise test="not(param)">
+      <xsl:text>() { return smth </xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>(); }</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+  <xsl:text>&#x0A;</xsl:text>
+  <!-- COM_FORWARD_Interface_Method_TO_OBJ(obj) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO ((obj)->)&#x0A;</xsl:text>
+  <!-- COM_FORWARD_Interface_Method_TO_BASE(base) -->
+  <xsl:text>#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="$parent/@name"/>
+  <xsl:text>_</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+  <xsl:text>_TO (base::)&#x0A;</xsl:text>
+
+  <xsl:apply-templates select="@if" mode="end"/>
+
 </xsl:template>
 
 
@@ -549,6 +838,31 @@
   </xsl:choose>
 </xsl:template>
 
+<xsl:template match="method/param" mode="forwarder">
+  <xsl:if test="@safearray='yes'">
+    <xsl:text>PRUint32</xsl:text>
+    <xsl:if test="@dir='out' or @dir='return'">
+      <xsl:text> *</xsl:text>
+    </xsl:if>
+    <xsl:text> a</xsl:text>
+    <xsl:call-template name="capitalize">
+      <xsl:with-param name="str" select="@name"/>
+    </xsl:call-template>
+    <xsl:text>Size, </xsl:text>
+  </xsl:if>
+  <xsl:apply-templates select="@type" mode="forwarder"/>
+  <xsl:if test="@dir='out' or @dir='return'">
+    <xsl:text> *</xsl:text>
+  </xsl:if>
+  <xsl:if test="@safearray='yes'">
+    <xsl:text> *</xsl:text>
+  </xsl:if>
+  <xsl:text> a</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+</xsl:template>
+
 
 <!--
  *  attribute/parameter type conversion
@@ -641,7 +955,7 @@
             </xsl:when>
             <xsl:when test="name(..)='param'">
               <xsl:choose>
-                <xsl:when test="../@dir='in'">
+                <xsl:when test="../@dir='in' and not(../@safearray='yes')">
                   <xsl:text>nsIDRef</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>
@@ -684,6 +998,112 @@
                 <xsl:value-of select="."/>
               </xsl:message>
             </xsl:otherwise>
+          </xsl:choose>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template match="
+  attribute/@type | param/@type |
+  enumerator/@type | collection/@type | collection/@enumerator
+" mode="forwarder">
+
+  <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
+
+  <xsl:choose>
+    <!-- modifiers (ignored for 'enumeration' attributes)-->
+    <xsl:when test="name(current())='type' and ../@mod">
+      <xsl:choose>
+        <xsl:when test="../@mod='ptr'">
+          <xsl:choose>
+            <!-- standard types -->
+            <!--xsl:when test=".='result'">??</xsl:when-->
+            <xsl:when test=".='boolean'">PRBool *</xsl:when>
+            <xsl:when test=".='octet'">PRUint8 *</xsl:when>
+            <xsl:when test=".='short'">PRInt16 *</xsl:when>
+            <xsl:when test=".='unsigned short'">PRUint16 *</xsl:when>
+            <xsl:when test=".='long'">PRInt32 *</xsl:when>
+            <xsl:when test=".='long long'">PRInt64 *</xsl:when>
+            <xsl:when test=".='unsigned long'">PRUint32 *</xsl:when>
+            <xsl:when test=".='unsigned long long'">PRUint64 *</xsl:when>
+            <xsl:when test=".='char'">char *</xsl:when>
+            <!--xsl:when test=".='string'">??</xsl:when-->
+            <xsl:when test=".='wchar'">PRUnichar *</xsl:when>
+            <!--xsl:when test=".='wstring'">??</xsl:when-->
+          </xsl:choose>
+        </xsl:when>
+      </xsl:choose>
+    </xsl:when>
+    <!-- no modifiers -->
+    <xsl:otherwise>
+      <xsl:choose>
+        <!-- standard types -->
+        <xsl:when test=".='result'">nsresult</xsl:when>
+        <xsl:when test=".='boolean'">PRBool</xsl:when>
+        <xsl:when test=".='octet'">PRUint8</xsl:when>
+        <xsl:when test=".='short'">PRInt16</xsl:when>
+        <xsl:when test=".='unsigned short'">PRUint16</xsl:when>
+        <xsl:when test=".='long'">PRInt32</xsl:when>
+        <xsl:when test=".='long long'">PRInt64</xsl:when>
+        <xsl:when test=".='unsigned long'">PRUint32</xsl:when>
+        <xsl:when test=".='unsigned long long'">PRUint64</xsl:when>
+        <xsl:when test=".='char'">char</xsl:when>
+        <xsl:when test=".='wchar'">PRUnichar</xsl:when>
+        <!-- string types -->
+        <xsl:when test=".='string'">char *</xsl:when>
+        <xsl:when test=".='wstring'">PRUnichar *</xsl:when>
+        <!-- UUID type -->
+        <xsl:when test=".='uuid'">
+          <xsl:choose>
+            <xsl:when test="name(..)='attribute'">
+              <xsl:choose>
+                <xsl:when test="../@readonly='yes'">
+                  <xsl:text>nsID *</xsl:text>
+                </xsl:when>
+              </xsl:choose>
+            </xsl:when>
+            <xsl:when test="name(..)='param'">
+              <xsl:choose>
+                <xsl:when test="../@dir='in' and not(../@safearray='yes')">
+                  <xsl:text>const nsID &amp;</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:text>nsID *</xsl:text>
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:when>
+          </xsl:choose>
+        </xsl:when>
+        <!-- system interface types -->
+        <xsl:when test=".='$unknown'">nsISupports *</xsl:when>
+        <xsl:otherwise>
+          <xsl:choose>
+            <!-- enum types -->
+            <xsl:when test="
+              (ancestor::library/enum[@name=current()]) or
+              (ancestor::library/if[@target=$self_target]/enum[@name=current()])
+            ">
+              <xsl:text>PRUint32</xsl:text>
+            </xsl:when>
+            <!-- custom interface types -->
+            <xsl:when test="
+              (name(current())='enumerator' and
+               ((ancestor::library/enumerator[@name=current()]) or
+                (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
+              ) or
+              ((ancestor::library/interface[@name=current()]) or
+               (ancestor::library/if[@target=$self_target]/interface[@name=current()])
+              ) or
+              ((ancestor::library/collection[@name=current()]) or
+               (ancestor::library/if[@target=$self_target]/collection[@name=current()])
+              )
+            ">
+              <xsl:value-of select="."/>
+              <xsl:text> *</xsl:text>
+            </xsl:when>
+            <!-- other types -->
           </xsl:choose>
         </xsl:otherwise>
       </xsl:choose>

@@ -644,7 +644,7 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
 {
     /* default folders */
 
-    leVDIFolder->setText (props.GetDefaultVDIFolder());
+    leHardDiskFolder->setText (props.GetDefaultHardDiskFolder());
     leMachineFolder->setText (props.GetDefaultMachineFolder());
 
     /* vrdp lib path */
@@ -690,7 +690,7 @@ void VBoxGlobalSettingsDlg::getFrom (const CSystemProperties &props,
         while (en.HasMore())
         {
             CHostUSBDeviceFilter hostFilter = en.GetNext();
-            CUSBDeviceFilter filter = CUnknown (hostFilter);
+            CUSBDeviceFilter filter (hostFilter);
             addUSBFilter (filter, false);
         }
         lvUSBFilters->setCurrentItem (lvUSBFilters->firstChild());
@@ -725,8 +725,8 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
 {
     /* default folders */
 
-    if (leVDIFolder->isModified())
-        props.SetDefaultVDIFolder (leVDIFolder->text());
+    if (leHardDiskFolder->isModified())
+        props.SetDefaultHardDiskFolder (leHardDiskFolder->text());
     if (props.isOk() && leMachineFolder->isModified())
         props.SetDefaultMachineFolder (leMachineFolder->text());
 
@@ -773,7 +773,7 @@ void VBoxGlobalSettingsDlg::putBackTo (CSystemProperties &props,
         CUSBDeviceFilter filter = settings->filter();
         filter.SetActive (uli->isOn());
 
-        CHostUSBDeviceFilter insertedFilter = CUnknown (filter);
+        CHostUSBDeviceFilter insertedFilter (filter);
         if (mUSBFilterListModified)
             host.InsertUSBDeviceFilter (host.GetUSBDeviceFilters().GetCount(),
                                         insertedFilter);
@@ -840,7 +840,7 @@ void VBoxGlobalSettingsDlg::tbResetFolder_clicked()
     Assert (tb);
 
     QLineEdit *le = 0;
-    if (tb == tbResetVDIFolder) le = leVDIFolder;
+    if (tb == tbResetHardDiskFolder) le = leHardDiskFolder;
     else if (tb == tbResetMachineFolder) le = leMachineFolder;
     else if (tb == tbResetVRDPLib) le = leVRDPLib;
     Assert (le);
@@ -859,7 +859,7 @@ void VBoxGlobalSettingsDlg::tbSelectFolder_clicked()
     Assert (tb);
 
     QLineEdit *le = 0;
-    if (tb == tbSelectVDIFolder) le = leVDIFolder;
+    if (tb == tbSelectHardDiskFolder) le = leHardDiskFolder;
     else if (tb == tbSelectMachineFolder) le = leMachineFolder;
     else if (tb == tbSelectVRDPLib) le = leVRDPLib;
     Assert (le);
@@ -991,7 +991,7 @@ void VBoxGlobalSettingsDlg::addUSBFilterAct_activated()
         .CreateUSBDeviceFilter (usbFilterName.arg (maxFilterIndex + 1));
     hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
 
-    CUSBDeviceFilter filter = CUnknown (hostFilter);
+    CUSBDeviceFilter filter (hostFilter);
     filter.SetActive (true);
     addUSBFilter (filter, true);
 
@@ -1024,7 +1024,7 @@ void VBoxGlobalSettingsDlg::menuAddUSBFilterFrom_activated (int aIndex)
         .CreateUSBDeviceFilter (vboxGlobal().details (usb));
     hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
 
-    CUSBDeviceFilter filter = CUnknown (hostFilter);
+    CUSBDeviceFilter filter (hostFilter);
     filter.SetVendorId (QString().sprintf ("%04hX", usb.GetVendorId()));
     filter.SetProductId (QString().sprintf ("%04hX", usb.GetProductId()));
     filter.SetRevision (QString().sprintf ("%04hX", usb.GetRevision()));

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 /* Qt icludes */
 #include <QObject>
 
+class VBoxMedium;
 class QAction;
 class QMenu;
 
@@ -203,7 +204,7 @@ public:
     void cannotLoadGlobalConfig (const CVirtualBox &vbox, const QString &error);
     void cannotSaveGlobalConfig (const CVirtualBox &vbox);
     void cannotSetSystemProperties (const CSystemProperties &props);
-    void cannotAccessUSB (const COMBase &obj);
+    void cannotAccessUSB (const COMBaseWithEI &aObj);
 
     void cannotCreateMachine (const CVirtualBox &vbox,
                               QWidget *parent = 0);
@@ -231,8 +232,10 @@ public:
     void cannotDiscardSavedState (const CConsole &console);
 
     void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
-    void cannotDiscardSnapshot (const CConsole &console, const CSnapshot &snapshot);
-    void cannotDiscardSnapshot (const CProgress &progress, const CSnapshot &snapshot);
+    void cannotDiscardSnapshot (const CConsole &aConsole,
+                                const QString &aSnapshotName);
+    void cannotDiscardSnapshot (const CProgress &aProgress,
+                                const QString &aSnapshotName);
     void cannotDiscardCurrentState (const CConsole &console);
     void cannotDiscardCurrentState (const CProgress &progress);
     void cannotDiscardCurrentSnapshotAndState (const CConsole &console);
@@ -248,38 +251,46 @@ public:
     bool confirmMachineDeletion (const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);
 
-    bool confirmReleaseImage (QWidget *parent, const QString &usage);
+    bool confirmReleaseMedium (QWidget *aParent, const VBoxMedium &aMedium,
+                               const QString &aUsage);
 
-    void sayCannotOverwriteHardDiskImage (QWidget *parent, const QString &src);
-    int confirmHardDiskImageDeletion (QWidget *parent, const QString &src);
-    void cannotDeleteHardDiskImage (QWidget *parent, const CVirtualDiskImage &vdi);
+    bool confirmRemoveMedium (QWidget *aParent, const VBoxMedium &aMedium);
 
-    bool confirmHardDiskUnregister (QWidget *parent, const QString &src);
+    void sayCannotOverwriteHardDiskStorage (QWidget *aParent,
+                                            const QString &aLocation);
+    int confirmDeleteHardDiskStorage (QWidget *aParent,
+                                      const QString &aLocation);
+    void cannotDeleteHardDiskStorage (QWidget *aParent, const CHardDisk2 &aHD,
+                                      const CProgress &aProgress);
 
     int confirmDetachSATASlots (QWidget *aParent);
     int confirmRunNewHDWzdOrVDM (QWidget* aParent);
 
-    void cannotCreateHardDiskImage (
-        QWidget *parent, const CVirtualBox &vbox, const QString &src,
-        const CVirtualDiskImage &vdi, const CProgress &progress);
-    void cannotAttachHardDisk (QWidget *parent, const CMachine &m, const QUuid &id,
-                               KStorageBus bus, LONG channel, LONG dev);
-    void cannotDetachHardDisk (QWidget *parent, const CMachine &m,
-                               KStorageBus bus, LONG channel, LONG dev);
-    void cannotRegisterMedia (QWidget *parent, const CVirtualBox &vbox,
-                              VBoxDefs::DiskType type, const QString &src);
-    void cannotUnregisterMedia (QWidget *parent, const CVirtualBox &vbox,
-                                VBoxDefs::DiskType type, const QString &src);
+    void cannotCreateHardDiskStorage (QWidget *aParent, const CVirtualBox &aVBox,
+                                      const QString &aLocaiton,
+                                      const CHardDisk2 &aHD,
+                                      const CProgress &aProgress);
+    void cannotAttachHardDisk (QWidget *aParent, const CMachine &aMachine,
+                               const QString &aLocation, KStorageBus aBus,
+                               LONG aChannel, LONG aDevice);
+    void cannotDetachHardDisk (QWidget *aParent, const CMachine &aMachine,
+                               const QString &aLocation, KStorageBus aBus,
+                               LONG aChannel, LONG aDevice);
+
+    void cannotMountMedium (QWidget *aParent, const CMachine &aMachine,
+                            const VBoxMedium &aMedium, const COMResult &aResult);
+    void cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
+                            const VBoxMedium &aMedium, const COMResult &aResult);
+    void cannotOpenMedium (QWidget *aParent, const CVirtualBox &aVBox,
+                           VBoxDefs::MediaType aType, const QString &aLocation);
+    void cannotCloseMedium (QWidget *aParent, const VBoxMedium &aMedium,
+                            const COMResult &aResult);
 
     void cannotOpenSession (const CSession &session);
     void cannotOpenSession (const CVirtualBox &vbox, const CMachine &machine,
                             const CProgress &progress = CProgress());
 
-    void cannotGetMediaAccessibility (const CUnknown &unk);
-
-/// @todo (r=dmik) later
-//    void cannotMountMedia (const CUnknown &unk);
-//    void cannotUnmountMedia (const CUnknown &unk);
+    void cannotGetMediaAccessibility (const VBoxMedium &aMedium);
 
 #if defined Q_WS_WIN
     void cannotCreateHostInterface (const CHost &host, const QString &name,
@@ -360,6 +371,8 @@ public:
                            const QString &errorID,
                            const QString &errorMsg);
 
+    static QString toAccusative (VBoxDefs::MediaType aType);
+
     static QString formatRC (HRESULT aRC);
 
     static QString formatErrorInfo (const COMErrorInfo &aInfo,
@@ -370,7 +383,7 @@ public:
         return formatErrorInfo (COMErrorInfo (aInfo));
     }
 
-    static QString formatErrorInfo (const COMBase &aWrapper)
+    static QString formatErrorInfo (const COMBaseWithEI &aWrapper)
     {
         Assert (aWrapper.lastRC() != S_OK);
         return formatErrorInfo (aWrapper.errorInfo(), aWrapper.lastRC());

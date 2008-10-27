@@ -178,8 +178,8 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Base COM class the CInterface template and all wrapper classes are derived
- *  from. Provides common functionality for all COM wrappers.
+ * Base COM class the CInterface template and all wrapper classes are derived
+ * from. Provides common functionality for all COM wrappers.
  */
 class COMBase
 {
@@ -189,19 +189,11 @@ public:
     static HRESULT CleanupCOM();
 
     /**
-     *  Returns the result code of the last interface method called
-     *  by the wrapper instance or the result of CInterface::createInstance()
-     *  operation.
+     * Returns the result code of the last interface method called by the
+     * wrapper instance or the result of CInterface::createInstance()
+     * operation.
      */
     HRESULT lastRC() const { return mRC; }
-
-    /**
-     *  Returns error info set by the last unsuccessfully invoked interface
-     *  method. Returned error info is useful only if CInterface::lastRC()
-     *  represents a failure or a warning (i.e. CInterface::isReallyOk() is
-     *  false).
-     */
-    virtual COMErrorInfo errorInfo() const { return COMErrorInfo(); }
 
 #if !defined (VBOX_WITH_XPCOM)
 
@@ -230,24 +222,32 @@ public:
     template <typename QT, typename CT>
     static void ToSafeArray (const QValueVector <QT> &aVec, com::SafeArray <CT> &aArr)
     {
+        Q_UNUSED (aVec);
+        Q_UNUSED (aArr);
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
 
     template <typename CT, typename QT>
     static void FromSafeArray (const com::SafeArray <CT> &aArr, QValueVector <QT> &aVec)
     {
+        Q_UNUSED (aArr);
+        Q_UNUSED (aVec);
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
 
     template <typename QT, typename CT>
     static void ToSafeArray (const QValueVector <QT *> &aVec, com::SafeArray <CT *> &aArr)
     {
+        Q_UNUSED (aVec);
+        Q_UNUSED (aArr);
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
 
     template <typename CT, typename QT>
     static void FromSafeArray (const com::SafeArray <CT *> &aArr, QValueVector <QT *> &aVec)
     {
+        Q_UNUSED (aArr);
+        Q_UNUSED (aVec);
         AssertMsgFailedReturnVoid (("No conversion!\n"));
     }
 
@@ -280,6 +280,13 @@ public:
     static void FromSafeArray (const com::SafeArray <BSTR> &aArr,
                                QValueVector <QString> &aVec);
 
+    /* Arrays of GUID */
+
+    static void ToSafeArray (const QValueVector <QUuid> &aVec,
+                             com::SafeGUIDArray &aArr);
+    static void FromSafeArray (const com::SafeGUIDArray &aArr,
+                               QValueVector <QUuid> &aVec);
+
     /* Arrays of interface pointers. Note: we need a separate pair of names
      * only because the MSVC8 template matching algorithm is poor and tries to
      * instantiate a com::SafeIfaceArray <BSTR> (!!!) template otherwise for
@@ -298,7 +305,7 @@ public:
         for (typename QValueVector <CI>::const_iterator it = aVec.begin();
              it != aVec.end(); ++ it, ++ i)
         {
-            aArr [i] = (*it).iface();
+            aArr [i] = (*it).raw();
             if (aArr [i])
                 aArr [i]->AddRef();
         }
@@ -456,7 +463,10 @@ protected:
 
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
-    void fetchErrorInfo (IUnknown * /*callee*/, const GUID * /*calleeIID*/) const {}
+    static void addref (IUnknown *aIface) { if (aIface) aIface->AddRef(); }
+    static void release (IUnknown *aIface) { if (aIface) aIface->Release(); }
+
+protected:
 
     mutable HRESULT mRC;
 
@@ -466,30 +476,32 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Alternative base class for the CInterface template that adds
- *  the errorInfo() method for providing extended error info about
- *  unsuccessful invocation of the last called interface method.
+ * Alternative base class for the CInterface template that adds the errorInfo()
+ * method for providing extended error info about unsuccessful invocation of the
+ * last called interface method.
  */
 class COMBaseWithEI : public COMBase
 {
 public:
 
     /**
-     *  Returns error info set by the last unsuccessfully invoked interface
-     *  method. Returned error info is useful only if CInterface::lastRC()
-     *  represents a failure or a warning (i.e. CInterface::isReallyOk() is
-     *  false).
+     * Returns error info set by the last unsuccessfully invoked interface
+     * method. Returned error info is useful only if CInterface::lastRC()
+     * represents a failure or a warning (i.e. CInterface::isReallyOk() is
+     * false).
      */
-    COMErrorInfo errorInfo() const { return mErrInfo; }
+    const COMErrorInfo &errorInfo() const { return mErrInfo; }
 
 protected:
 
-    /* no arbitrary instance creations */
+    /* no arbitrary instance creation */
     COMBaseWithEI() : COMBase () {};
 
-    void fetchErrorInfo (IUnknown *callee, const GUID *calleeIID) const
+    void setErrorInfo (const COMErrorInfo &aErrInfo) { mErrInfo = aErrInfo; }
+
+    void fetchErrorInfo (IUnknown *aCallee, const GUID *aCalleeIID) const
     {
-        mErrInfo.fetchFromCurrentThread (callee, calleeIID);
+        mErrInfo.fetchFromCurrentThread (aCallee, aCalleeIID);
     }
 
     mutable COMErrorInfo mErrInfo;
@@ -498,7 +510,7 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Simple class that encapsulates the result code and COMErrorInfo.
+ * Simple class that encapsulates the result code and COMErrorInfo.
  */
 class COMResult
 {
@@ -506,18 +518,35 @@ public:
 
     COMResult() : mRC (S_OK) {}
 
-    /** Queries the current result code and error info from the given component */
-    COMResult (const COMBase &aComponent)
-    {
-        mErrInfo = aComponent.errorInfo();
-        mRC = aComponent.lastRC();
-    }
+    /**
+     * Queries the current result code from the given component.
+     */
+    explicit COMResult (const COMBase &aComponent)
+        : mRC (aComponent.lastRC()) {}
 
-    /** Queries the current result code and error info from the given component */
+    /**
+     * Queries the current result code and error info from the given component.
+     */
+    COMResult (const COMBaseWithEI &aComponent)
+        : mRC (aComponent.lastRC())
+        , mErrInfo (aComponent.errorInfo()) {}
+
+    /**
+     * Queries the current result code from the given component.
+     */
     COMResult &operator= (const COMBase &aComponent)
     {
-        mErrInfo = aComponent.errorInfo();
         mRC = aComponent.lastRC();
+        return *this;
+    }
+
+    /**
+     * Queries the current result code and error info from the given component.
+     */
+    COMResult &operator= (const COMBaseWithEI &aComponent)
+    {
+        mRC = aComponent.lastRC();
+        mErrInfo = aComponent.errorInfo();
         return *this;
     }
 
@@ -545,24 +574,22 @@ public:
 
 private:
 
-    COMErrorInfo mErrInfo;
     HRESULT mRC;
+    COMErrorInfo mErrInfo;
 };
 
 /////////////////////////////////////////////////////////////////////////////
 
-class CUnknown;
-
 /**
- *  Wrapper template class for all interfaces.
+ * Wrapper template class for all interfaces.
  *
- *  All interface methods named as they are in the original, i.e. starting
- *  with the capital letter. All utility non-interface methods are named
- *  starting with the small letter. Utility methods should be not normally
- *  called by the end-user client application.
+ * All interface methods named as they are in the original, i.e. starting
+ * with the capital letter. All utility non-interface methods are named
+ * starting with the small letter. Utility methods should be not normally
+ * called by the end-user client application.
  *
- *  @param  I   interface class (i.e. IUnknown/nsISupports derivant)
- *  @param  B   base class, either COMBase (by default) or COMBaseWithEI
+ * @param  I    Interface class (i.e. IUnknown/nsISupports derivant).
+ * @param  B    Base class, either COMBase (by default) or COMBaseWithEI.
  */
 template <class I, class B = COMBase>
 class CInterface : public B
@@ -572,7 +599,7 @@ public:
     typedef B Base;
     typedef I Iface;
 
-    /* constructors & destructor */
+    // constructors & destructor
 
     CInterface() : mIface (NULL) {}
 
@@ -581,22 +608,20 @@ public:
         addref (mIface);
     }
 
-    CInterface (const CUnknown &that);
-
-    CInterface (I *i) : mIface (i) { addref (mIface); }
+    CInterface (I *aIface) : mIface (aIface) { addref (mIface); }
 
     virtual ~CInterface() { release (mIface); }
 
-    /* utility methods */
+    // utility methods
 
-    void createInstance (const CLSID &clsid)
+    void createInstance (const CLSID &aClsId)
     {
         AssertMsg (!mIface, ("Instance is already non-NULL\n"));
         if (!mIface)
         {
 #if !defined (VBOX_WITH_XPCOM)
 
-            B::mRC = CoCreateInstance (clsid, NULL, CLSCTX_ALL,
+            B::mRC = CoCreateInstance (aClsId, NULL, CLSCTX_ALL,
                                        _ATL_IIDOF (I), (void **) &mIface);
 
 #else /* !defined (VBOX_WITH_XPCOM) */
@@ -604,7 +629,7 @@ public:
             nsCOMPtr <nsIComponentManager> manager;
             B::mRC = NS_GetComponentManager (getter_AddRefs (manager));
             if (SUCCEEDED (B::mRC))
-                B::mRC = manager->CreateInstance (clsid, nsnull, NS_GET_IID (I),
+                B::mRC = manager->CreateInstance (aClsId, nsnull, NS_GET_IID (I),
                                                   (void **) &mIface);
 
 #endif /* !defined (VBOX_WITH_XPCOM) */
@@ -616,33 +641,46 @@ public:
         }
     }
 
-    void attach (I *i)
+    /**
+     * Attaches to the given foreign interface pointer by querying the own
+     * interface on it. The operation may fail.
+     */
+    template <class OI>
+    void attach (OI *aIface)
     {
-        /* be aware of self (from COM point of view) assignment */
-        I *old_iface = mIface;
-        mIface = i;
-        addref (mIface);
-        release (old_iface);
-        B::mRC = S_OK;
-    };
-
-    void attachUnknown (IUnknown *i)
-    {
-        /* be aware of self (from COM point of view) assignment */
-        I *old_iface = mIface;
-        mIface = NULL;
-        B::mRC = S_OK;
-        if (i)
+        /* be aware of self assignment */
+        addref (aIface);
+        release (mIface);
+        if (aIface)
+        {
+            mIface = NULL;
 #if !defined (VBOX_WITH_XPCOM)
-            B::mRC = i->QueryInterface (_ATL_IIDOF (I), (void **) &mIface);
+            B::mRC = aIface->QueryInterface (_ATL_IIDOF (I), (void **) &mIface);
 #else /* !defined (VBOX_WITH_XPCOM) */
-            B::mRC = i->QueryInterface (NS_GET_IID (I), (void **) &mIface);
+            B::mRC = aIface->QueryInterface (NS_GET_IID (I), (void **) &mIface);
 #endif /* !defined (VBOX_WITH_XPCOM) */
-        release (old_iface);
+        }
+        else
+        {
+            mIface = NULL;
+            B::mRC = S_OK;
+        }
     };
 
+    /** Specialization of attach() for our own interface I. Never fails. */
+    void attach (I *aIface)
+    {
+        /* be aware of self assignment */
+        addref (aIface);
+        release (mIface);
+        mIface = aIface;
+        B::mRC = S_OK;
+    };
+
+    /** Detaches from the underlying interface pointer. */
     void detach() { release (mIface); mIface = NULL; }
 
+    /** Returns @c true if not attached to any interface pointer. */
     bool isNull() const { return mIface == NULL; }
 
     /**
@@ -662,7 +700,7 @@ public:
      */
     bool isReallyOk() const { return !isNull() && B::mRC == S_OK; }
 
-    /* utility operators */
+    // utility operators
 
     CInterface &operator= (const CInterface &that)
     {
@@ -671,17 +709,22 @@ public:
         return *this;
     }
 
-    I *iface() const { return mIface; }
+    CInterface &operator= (I *aIface)
+    {
+        attach (aIface);
+        return *this;
+    }
+
+    /**
+     * Returns the raw interface pointer. Not intended to be used for anything
+     * else but in generated wrappers and for debugging. You've been warned.
+     */
+    I *raw() const { return mIface; }
 
     bool operator== (const CInterface &that) const { return mIface == that.mIface; }
     bool operator!= (const CInterface &that) const { return mIface != that.mIface; }
 
-    CInterface &operator= (const CUnknown &that);
-
 protected:
-
-    static void addref (I *i) { if (i) i->AddRef(); }
-    static void release (I *i) { if (i) i->Release(); }
 
     mutable I *mIface;
 };
@@ -692,87 +735,75 @@ class CUnknown : public CInterface <IUnknown, COMBaseWithEI>
 {
 public:
 
-    CUnknown() : CInterface <IUnknown, COMBaseWithEI> () {}
+    typedef CInterface <IUnknown, COMBaseWithEI> Base;
 
-    template <class C>
-    explicit CUnknown (const C &that)
-    {
-        mIface = NULL;
-        if (that.mIface)
-#if !defined (VBOX_WITH_XPCOM)
-            mRC = that.mIface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &mIface);
-#else /* !defined (VBOX_WITH_XPCOM) */
-            mRC = that.mIface->QueryInterface (NS_GET_IID (IUnknown), (void**) &mIface);
-#endif /* !defined (VBOX_WITH_XPCOM) */
-        if (SUCCEEDED (mRC))
-        {
-            mRC = that.lastRC();
-            mErrInfo = that.errorInfo();
-        }
-    }
+    CUnknown() {}
 
-    /* specialization for CUnknown */
-    CUnknown (const CUnknown &that) : CInterface <IUnknown, COMBaseWithEI> ()
-    {
-        mIface = that.mIface;
-        addref (mIface);
-        COMBaseWithEI::operator= (that);
-    }
-
-    template <class C>
-    CUnknown &operator= (const C &that)
-    {
-        /* be aware of self (from COM point of view) assignment */
-        IUnknown *old_iface = mIface;
-        mIface = NULL;
-        mRC = S_OK;
-#if !defined (VBOX_WITH_XPCOM)
-        if (that.mIface)
-            mRC = that.mIface->QueryInterface (_ATL_IIDOF (IUnknown), (void**) &mIface);
-#else /* !defined (VBOX_WITH_XPCOM) */
-        if (that.mIface)
-            mRC = that.mIface->QueryInterface (NS_GET_IID (IUnknown), (void**) &mIface);
-#endif /* !defined (VBOX_WITH_XPCOM) */
-        if (SUCCEEDED (mRC))
-        {
-            mRC = that.lastRC();
-            mErrInfo = that.errorInfo();
-        }
-        release (old_iface);
-        return *this;
-    }
-
-    /* specialization for CUnknown */
-    CUnknown &operator= (const CUnknown &that)
+    /** Creates an instance given another CInterface-based instance. */
+    template <class OI, class OB>
+    explicit CUnknown (const CInterface <OI, OB> &that)
     {
         attach (that.mIface);
-        COMBaseWithEI::operator= (that);
+        if (SUCCEEDED (mRC))
+        {
+            /* preserve old error info if any */
+            mRC = that.lastRC();
+            setErrorInfo (that.errorInfo());
+        }
+    }
+
+    /** Constructor specialization for IUnknown. */
+    CUnknown (const CUnknown &that) : Base (that) {}
+
+    /** Creates an instance given a foreign interface pointer. */
+    template <class OI>
+    explicit CUnknown (OI *aIface)
+    {
+        attach (aIface);
+    }
+
+    /** Constructor specialization for IUnknown. */
+    explicit CUnknown (IUnknown *aIface) : Base (aIface) {}
+
+    /** Assigns from another CInterface-based instance. */
+    template <class OI, class OB>
+    CUnknown &operator= (const CInterface <OI, OB> &that)
+    {
+        attach (that.mIface);
+        if (SUCCEEDED (mRC))
+        {
+            /* preserve old error info if any */
+            mRC = that.lastRC();
+            setErrorInfo (that.errorInfo());
+        }
         return *this;
     }
 
-    /* @internal Used in wrappers. */
-    IUnknown *&ifaceRef() { return mIface; };
+    /** Assignment specialization for CUnknown. */
+    CUnknown &operator= (const CUnknown &that)
+    {
+        Base::operator= (that);
+        return *this;
+    }
+
+    /** Assigns from a foreign interface pointer. */
+    template <class OI>
+    CUnknown &operator= (OI *aIface)
+    {
+        attach (aIface);
+        return *this;
+    }
+
+    /** Assignment specialization for IUnknown. */
+    CUnknown &operator= (IUnknown *aIface)
+    {
+        Base::operator= (aIface);
+        return *this;
+    }
+
+    /* @internal Used in generated wrappers. Never use directly. */
+    IUnknown *&rawRef() { return mIface; };
 };
-
-/* inlined CInterface methods that use CUnknown */
-
-template <class I, class B>
-inline CInterface <I, B>::CInterface (const CUnknown &that)
-    : mIface (NULL)
-{
-    attachUnknown (that.iface());
-    if (SUCCEEDED (B::mRC))
-        B::operator= ((B &) that);
-}
-
-template <class I, class B>
-inline CInterface <I, B> &CInterface <I, B>::operator =(const CUnknown &that)
-{
-    attachUnknown (that.iface());
-    if (SUCCEEDED (B::mRC))
-        B::operator= ((B &) that);
-    return *this;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -112,22 +112,19 @@ void listVMs(IVirtualBox *virtualBox)
     /*
      * Get the list of all registered VMs
      */
-    IMachineCollection *collection = nsnull;
-    IMachineEnumerator *enumerator = nsnull;
-    rc = virtualBox->GetMachines(&collection);
-    if (NS_SUCCEEDED(rc))
-        rc = collection->Enumerate(&enumerator);
+    IMachine **machines = NULL;
+    PRUint32 machineCnt = 0;
+
+    rc = virtualBox->GetMachines2(&machineCnt, &machines);
     if (NS_SUCCEEDED(rc))
     {
         /*
          * Iterate through the collection
          */
-        PRBool hasMore = false;
-        while (enumerator->HasMore(&hasMore), hasMore)
+        for (PRUint32 i = 0; i < machineCnt; ++ i)
         {
-            IMachine *machine = nsnull;
-            rc = enumerator->GetNext(&machine);
-            if ((NS_SUCCEEDED(rc)) && machine)
+            IMachine *machine = machines [i];
+            if (machine)
             {
                 PRBool isAccessible = PR_FALSE;
                 machine->GetAccessible (&isAccessible);
@@ -176,16 +173,12 @@ void listVMs(IVirtualBox *virtualBox)
                     osType->Release();
                 }
 
+                /* don't forget to release the objects in the array... */
                 machine->Release();
             }
         }
     }
     printf("----------------------------------------------------\n\n");
-    /* don't forget to release the objects... */
-    if (enumerator)
-        enumerator->Release();
-    if (collection)
-        collection->Release();
 }
 
 /**
@@ -304,18 +297,10 @@ void createVM(IVirtualBox *virtualBox)
     /*
      * Create a virtual harddisk
      */
-    nsCOMPtr<IHardDisk> hardDisk = 0;
-    nsCOMPtr<IVirtualDiskImage> vdi = 0;
-    rc = virtualBox->CreateHardDisk(HardDiskStorageType::VirtualDiskImage,
-                                    getter_AddRefs(hardDisk));
-    if (NS_SUCCEEDED (rc))
-    {
-        rc = hardDisk->QueryInterface(NS_GET_IID(IVirtualDiskImage),
-                                      (void **)(getter_AddRefs(vdi)));
-        if (NS_SUCCEEDED (rc))
-            rc = vdi->SetFilePath(NS_LITERAL_STRING("TestHardDisk.vdi").get());
-    }
-
+    nsCOMPtr<IHardDisk2> hardDisk = 0;
+    rc = virtualBox->CreateHardDisk2(NS_LITERAL_STRING("VDI").get(),
+                                     NS_LITERAL_STRING("TestHardDisk.vdi").get(),
+                                     getter_AddRefs(hardDisk));
     if (NS_FAILED(rc))
     {
         printf("Failed creating a hard disk object! rc=%08X\n", rc);
@@ -328,8 +313,8 @@ void createVM(IVirtualBox *virtualBox)
          * a dynamically expanding image.
          */
         nsCOMPtr <IProgress> progress;
-        rc = vdi->CreateDynamicImage(100,                                             // size in megabytes
-                                     getter_AddRefs(progress));                       // optional progress object
+        rc = hardDisk->CreateDynamicStorage(100,                                // size in megabytes
+                                            getter_AddRefs(progress));          // optional progress object
         if (NS_FAILED(rc))
         {
             printf("Failed creating hard disk image! rc=%08X\n", rc);
@@ -352,31 +337,20 @@ void createVM(IVirtualBox *virtualBox)
             else
             {
                 /*
-                 * Now we have to register the new hard disk with VirtualBox.
+                 * Now that it's created, we can assign it to the VM. This is done
+                 * by UUID, so query that one fist. The UUID has been assigned automatically
+                 * when we've created the image.
                  */
-                rc = virtualBox->RegisterHardDisk(hardDisk);
+                nsID *vdiUUID = nsnull;
+                hardDisk->GetId(&vdiUUID);
+                rc = machine->AttachHardDisk2(*vdiUUID,
+                                              StorageBus::IDE, // controler identifier
+                                              0,               // channel number on the controller
+                                              0);              // device number on the controller
+                nsMemory::Free(vdiUUID);
                 if (NS_FAILED(rc))
                 {
-                    printf("Error: could not register hard disk! rc=%08X\n", rc);
-                }
-                else
-                {
-                    /*
-                     * Now that it's registered, we can assign it to the VM. This is done
-                     * by UUID, so query that one fist. The UUID has been assigned automatically
-                     * when we've created the image.
-                     */
-                    nsID *vdiUUID = nsnull;
-                    hardDisk->GetId(&vdiUUID);
-                    rc = machine->AttachHardDisk(*vdiUUID,
-                                                StorageBus::IDE, // controler identifier
-                                                0,               // channel number on the controller
-                                                0);              // device number on the controller
-                    nsMemory::Free(vdiUUID);
-                    if (NS_FAILED(rc))
-                    {
-                        printf("Error: could not attach hard disk! rc=%08X\n", rc);
-                    }
+                    printf("Error: could not attach hard disk! rc=%08X\n", rc);
                 }
             }
         }
@@ -389,7 +363,7 @@ void createVM(IVirtualBox *virtualBox)
      * as the boot device.
      */
     nsID uuid = {0};
-    nsCOMPtr<IDVDImage> dvdImage;
+    nsCOMPtr<IDVDImage2> dvdImage;
 
     rc = virtualBox->OpenDVDImage(NS_LITERAL_STRING("/home/achimha/isoimages/winnt4ger.iso").get(),
                                   uuid, /* NULL UUID, i.e. a new one will be created */
@@ -401,38 +375,27 @@ void createVM(IVirtualBox *virtualBox)
     else
     {
         /*
-         * Register it with VBox
+         * Now assign it to our VM
          */
-        rc = virtualBox->RegisterDVDImage(dvdImage);
+        nsID *isoUUID = nsnull;
+        dvdImage->GetId(&isoUUID);
+        nsCOMPtr<IDVDDrive> dvdDrive;
+        machine->GetDVDDrive(getter_AddRefs(dvdDrive));
+        rc = dvdDrive->MountImage(*isoUUID);
+        nsMemory::Free(isoUUID);
         if (NS_FAILED(rc))
         {
-            printf("Error: could not register CD image! rc=%08X\n", rc);
+            printf("Error: could not mount ISO image! rc=%08X\n", rc);
         }
         else
         {
             /*
-             * Now assign it to our VM
+             * Last step: tell the VM to boot from the CD.
              */
-            nsID *isoUUID = nsnull;
-            dvdImage->GetId(&isoUUID);
-            nsCOMPtr<IDVDDrive> dvdDrive;
-            machine->GetDVDDrive(getter_AddRefs(dvdDrive));
-            rc = dvdDrive->MountImage(*isoUUID);
-            nsMemory::Free(isoUUID);
+            rc = machine->SetBootOrder (1, DeviceType::DVD);
             if (NS_FAILED(rc))
             {
-                printf("Error: could not mount ISO image! rc=%08X\n", rc);
-            }
-            else
-            {
-                /*
-                 * Last step: tell the VM to boot from the CD.
-                 */
-                rc = machine->SetBootOrder (1, DeviceType::DVD);
-                if (NS_FAILED(rc))
-                {
-                    printf("Could not set boot device! rc=%08X\n", rc);
-                }
+                printf("Could not set boot device! rc=%08X\n", rc);
             }
         }
     }

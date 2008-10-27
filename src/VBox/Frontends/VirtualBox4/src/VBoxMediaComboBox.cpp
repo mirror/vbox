@@ -21,25 +21,17 @@
  */
 
 #include "VBoxMediaComboBox.h"
-#include "VBoxDiskImageManagerDlg.h"
 
 #include <QFileInfo>
 #include <QDir>
-#include <QPixmap>
+#include <QAbstractItemView>
 
-/* static // compose item name */
-QString VBoxMediaComboBox::fullItemName (const QString &aSrc)
-{
-    QFileInfo fi (aSrc);
-    return QString ("%1 (%2)").arg (fi.fileName())
-               .arg (QDir::convertSeparators (fi.absolutePath()));
-}
-
-
-VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, int aType /* = -1 */,
-                                      bool aUseEmptyItem /* = false */)
+VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     : QComboBox (aParent)
-    , mType (aType), mUseEmptyItem (aUseEmptyItem)
+    , mType (VBoxDefs::MediaType_Invalid)
+    , mLastId (QUuid())
+    , mShowDiffs (false)
+    , mMachineId (QUuid())
 {
     /* Setup the elide mode */
     view()->setTextElideMode (Qt::ElideRight);
@@ -47,297 +39,311 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent, int aType /* = -1 */,
     sp1.setHorizontalStretch (2);
     setSizePolicy (sp1);
 
-#if 0
-//#ifdef Q_WS_MAC
-    /* Fix the background color of the QComboBox */
-    QBrush brush (Qt::white);
-//    if (aParent)
-//        brush = aParent->palette().brush (QPalette::Background);
-    QPalette pal = view()->palette();
-    pal.setBrush (QPalette::Window, brush);
-    pal.setBrush (QPalette::AlternateBase, brush);
-    view()->setPalette (pal);
-    view()->setAutoFillBackground (false);
-#endif /* Q_WS_MAC */
-
     /* Setup enumeration handlers */
-    connect (&vboxGlobal(), SIGNAL (mediaEnumStarted()),
-             this, SLOT (mediaEnumStarted()));
-    connect (&vboxGlobal(), SIGNAL (mediaEnumerated (const VBoxMedia &, int)),
-             this, SLOT (mediaEnumerated (const VBoxMedia &, int)));
+    connect (&vboxGlobal(), SIGNAL (mediumEnumStarted()),
+             this, SLOT (mediumEnumStarted()));
+    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const VBoxMedium &)),
+             this, SLOT (mediumEnumerated (const VBoxMedium &)));
 
     /* Setup update handlers */
-    connect (&vboxGlobal(), SIGNAL (mediaAdded (const VBoxMedia &)),
-             this, SLOT (mediaAdded (const VBoxMedia &)));
-    connect (&vboxGlobal(), SIGNAL (mediaUpdated (const VBoxMedia &)),
-             this, SLOT (mediaUpdated (const VBoxMedia &)));
-    connect (&vboxGlobal(), SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
-             this, SLOT (mediaRemoved (VBoxDefs::DiskType, const QUuid &)));
+    connect (&vboxGlobal(), SIGNAL (mediumAdded (const VBoxMedium &)),
+             this, SLOT (mediumAdded (const VBoxMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
+             this, SLOT (mediumUpdated (const VBoxMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediaType, const QUuid &)),
+             this, SLOT (mediumRemoved (VBoxDefs::MediaType, const QUuid &)));
 
     /* Setup other connections */
     connect (this, SIGNAL (activated (int)),
              this, SLOT (processActivated (int)));
-    connect (this, SIGNAL (currentIndexChanged (int)),
-             this, SLOT (processIndexChanged (int)));
 
-    /* In some qt themes embedded list-box is not used by default, so create it */
+    /* In some qt themes the list-box is not used by default, so create it */
     // @todo (dsen): check it for qt4
     // if (!listBox())
     //     setListBox (new Q3ListBox (this));
     if (view())
         connect (view(), SIGNAL (entered (const QModelIndex&)),
                  this, SLOT (processOnItem (const QModelIndex&)));
-
-    /* Cache pixmaps as class members */
-    QIcon icon;
-    icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
-    if (!icon.isNull())
-        mPmInacc = icon.pixmap (14, 14);
-    icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxCritical, this);
-    if (!icon.isNull())
-        mPmError = icon.pixmap (14, 14);
 }
 
+/**
+ * Fills this combobox with the current media list.
+ */
 void VBoxMediaComboBox::refresh()
 {
     /* Clearing lists */
-    clear(), mUuidList.clear(), mTipList.clear();
-    /* Prepend empty item if used */
-    if (mUseEmptyItem)
-        newItem (tr ("<no hard disk>"), QUuid(), tr ("No hard disk"), 0);
-    /* Load current media list */
-    VBoxMediaList list = vboxGlobal().currentMediaList();
-    VBoxMediaList::const_iterator it;
-    for (it = list.begin(); it != list.end(); ++ it)
-        mediaEnumerated (*it, 0);
-    /* Activate item selected during current list loading */
-    processIndexChanged (currentIndex());
+    clear(), mMedia.clear();
+
+    VBoxMediaList list (vboxGlobal().currentMediaList());
+    foreach (VBoxMedium medium, list)
+        mediumAdded (medium);
+
+    /* If no media of the desired type, add the "no media" pseudo-item */
+    if (count() == 0)
+        addNoMediaItem();
+
+    /* Inform the interested parties about the possibly changed active item's
+     * icon, text, tooltip etc. */
+    emit activated (currentIndex());
 }
 
-
-void VBoxMediaComboBox::setUseEmptyItem (bool aUseEmptyItem)
+/**
+ * Requests the global media list enumeration and repopulates the list with its
+ * results.
+ */
+void VBoxMediaComboBox::repopulate()
 {
-    mUseEmptyItem = aUseEmptyItem;
+    if (!vboxGlobal().isMediaEnumerationStarted())
+        vboxGlobal().startEnumeratingMedia();
+    else
+        refresh();
 }
 
-void VBoxMediaComboBox::setBelongsTo (const QUuid &aMachineId)
+QUuid VBoxMediaComboBox::id (int aIndex /*= -1*/) const
 {
-    mMachineId = aMachineId;
+    AssertReturn (aIndex == -1 ||
+                  (aIndex >= 0 && aIndex < mMedia.size()),
+                  QUuid());
+
+    return mMedia [aIndex == -1 ? currentIndex() : aIndex].id;
+}
+
+QString VBoxMediaComboBox::location (int aIndex /*= -1*/) const
+{
+    AssertReturn (aIndex == -1 ||
+                  (aIndex >= 0 && aIndex < mMedia.size()),
+                  QString::null);
+
+    return mMedia [aIndex == -1 ? currentIndex() : aIndex].location;
 }
 
 void VBoxMediaComboBox::setCurrentItem (const QUuid &aId)
 {
-    mRequiredId = aId;
-    int index = mUuidList.indexOf (mRequiredId);
-    if (index != -1)
-        setCurrentIndex (index);
+    mLastId = aId;
+
+    int index;
+    if (findMediaIndex (aId, index))
+    {
+        /* Note that the media combobox may be not populated here yet, so we
+         * don't assert */
+        QComboBox::setCurrentIndex (index);
+        emit activated (index);
+    }
 }
 
-void VBoxMediaComboBox::setType (int aType)
+void VBoxMediaComboBox::setType (VBoxDefs::MediaType aType)
 {
     mType = aType;
 }
 
-
-QUuid VBoxMediaComboBox::getId (int aId /* = -1 */) const
+void VBoxMediaComboBox::setMachineId (const QUuid &aMachineId)
 {
-    return aId == -1 && currentIndex() >= 0 && currentIndex() < mUuidList.size() ?
-           mUuidList [currentIndex()] :
-           aId < 0 || aId >= mUuidList.size() ? QUuid() :
-           mUuidList [aId];
+    mMachineId = aMachineId;
+}
+
+/**
+ * Enables or disables the "show diffs" mode.
+ *
+ * In disabled "show diffs" mode, this combobox will only include base hard
+ * disks plus differencing hard disks that are attached to the associated
+ * machine passed to the constructor in the current state (if any). Note
+ * that for these differencing hard disks, the details of their base hard disks
+ * are shown instead of their own details (human-friendly mode).
+ *
+ * In enabled "show diffs" mode, all hard disks, base and differencing, are
+ * shown.
+ *
+ * Note that you must call #refresh() in order for this change to take effect.
+ *
+ * @param aShowDiffs    @c true to enable "show diffs" mode.
+ */
+void VBoxMediaComboBox::setShowDiffs (bool aShowDiffs)
+{
+    AssertReturnVoid (aShowDiffs == true || !mMachineId.isNull());
+
+    mShowDiffs = aShowDiffs;
 }
 
 
-void VBoxMediaComboBox::mediaEnumStarted()
+void VBoxMediaComboBox::mediumEnumStarted()
 {
     refresh();
 }
 
-void VBoxMediaComboBox::mediaEnumerated (const VBoxMedia &aMedia, int /*aIndex*/)
+void VBoxMediaComboBox::mediumEnumerated (const VBoxMedium &aMedium)
 {
-    processMedia (aMedia);
+    mediumUpdated (aMedium);
 }
 
-
-void VBoxMediaComboBox::mediaAdded (const VBoxMedia &aMedia)
+void VBoxMediaComboBox::mediumAdded (const VBoxMedium &aMedium)
 {
-    processMedia (aMedia);
-}
-
-void VBoxMediaComboBox::mediaUpdated (const VBoxMedia &aMedia)
-{
-    processMedia (aMedia);
-}
-
-void VBoxMediaComboBox::mediaRemoved (VBoxDefs::DiskType aType,
-                                      const QUuid &aId)
-{
-    if (mType == -1 || !(aType & mType))
+    if (mType != aMedium.type())
         return;
 
-    /* Search & remove media */
-    int index = mUuidList.indexOf (aId);
-    if (index != -1)
+    if (!mShowDiffs && aMedium.type() == VBoxDefs::MediaType_HardDisk)
     {
-        removeItem (index);
-        mUuidList.removeAt (index);
-        mTipList.removeAt (index);
+        if (aMedium.parent() != NULL)
+        {
+            /* In !mShowDiffs mode, we ignore all diffs except ones that are
+             * directly attached to the related VM in the current state */
+            if (!aMedium.isAttachedInCurStateTo (mMachineId))
+                return;
+        }
     }
+
+    appendItem (aMedium);
+
+    /* Activate the required item if there is any */
+    if (aMedium.id() == mLastId)
+        setCurrentItem (aMedium.id());
+    /* Select last added item if there is no item selected */
+    else if (currentText().isEmpty())
+        QComboBox::setCurrentIndex (count() - 1);
+}
+
+void VBoxMediaComboBox::mediumUpdated (const VBoxMedium &aMedium)
+{
+    if (mType != aMedium.type())
+        return;
+
+    int index;
+    if (!findMediaIndex (aMedium.id(), index))
+        return;
+
+    replaceItem (index, aMedium);
+
+    /* Emit the signal to ensure the parent dialog handles the change of
+     * the selected item's data */
+    emit activated (currentIndex());
+}
+
+void VBoxMediaComboBox::mediumRemoved (VBoxDefs::MediaType aType,
+                                       const QUuid &aId)
+{
+    if (mType != aType)
+        return;
+
+    int index;
+    if (!findMediaIndex (aId, index))
+        return;
+
+    removeItem (index);
+    mMedia.erase (mMedia.begin() + index);
+
+    /* If no media left, add the "no media" pseudo-item */
+    if (count() == 0)
+        addNoMediaItem();
+
+    /* Emit the signal to ensure the parent dialog handles the change of
+     * the selected item */
+    emit activated (currentIndex());
 }
 
 
 void VBoxMediaComboBox::processActivated (int aIndex)
 {
-    mRequiredId = aIndex < 0 || aIndex >= mUuidList.size() ?
-        QUuid() : mUuidList [aIndex];
+    AssertReturnVoid (aIndex >= 0 && aIndex < mMedia.size());
+
+    mLastId = mMedia [aIndex].id;
+
+    updateToolTip (aIndex);
 }
 
-void VBoxMediaComboBox::processIndexChanged (int aIndex)
+void VBoxMediaComboBox::addNoMediaItem()
 {
-    /* Combobox tooltip re-attaching */
+    AssertReturnVoid (count() == 0);
+    AssertReturnVoid (mMedia.size() == 0);
+
+    mMedia.append (
+        Medium (QUuid(), QString::null,
+                tr ("No media available. Use the Virtual Media "
+                    "Manager to add media of the corresponding type.")));
+    insertItem (-1, tr ("<no media>"));
+
+    setCurrentItem (0);
+}
+
+void VBoxMediaComboBox::updateToolTip (int aIndex)
+{
+    /* Set the combobox tooltip */
     setToolTip (QString::null);
-    if (aIndex >= 0 && aIndex < mTipList.size())
-        setToolTip (mTipList [aIndex]);
+    if (aIndex >= 0 && aIndex < mMedia.size())
+        setToolTip (mMedia [aIndex].toolTip);
 }
 
 void VBoxMediaComboBox::processOnItem (const QModelIndex &aIndex)
 {
-    /* Combobox item's tooltip attaching */
+    /* Set the combobox item's tooltip */
     int index = aIndex.row();
     view()->viewport()->setToolTip (QString::null);
-    view()->viewport()->setToolTip (mTipList [index]);
+    view()->viewport()->setToolTip (mMedia [index].toolTip);
 }
 
 
-void VBoxMediaComboBox::processMedia (const VBoxMedia &aMedia)
+void VBoxMediaComboBox::appendItem (const VBoxMedium &aMedium)
 {
-    if (mType == -1 || !(aMedia.type & mType))
-        return;
-
-    switch (aMedia.type)
+    if (!mShowDiffs && aMedium.parent() != NULL)
     {
-        case VBoxDefs::HD:
+        /* We are adding the direct machine diff in !mShowDiffs mode. Since its
+         * base hard disk has been already appended (enumerated before), we want
+         * to replace the base with the diff to avoid shownig both (both would
+         * be labeled using the base filename and therefore look like
+         * duplicates). Note though that these visual duplicates are still
+         * possible in !mShowDiffs mode if the same base hard disk is attached*
+         * to the VM through different diffs (this is why we don't assert
+         * below on findMediaIndex() == true). However, this situation is
+         * unavoidable so we accept it assuming that the user will switch to
+           mShowDiffs mode if he needs clarity. */
+        int index;
+        if (findMediaIndex (aMedium.root().id(), index))
         {
-            CHardDisk hd = aMedia.disk;
-            /* Ignoring non-root disks */
-            if (hd.GetParent().isNull())
-                processHdMedia (aMedia);
-            break;
+            replaceItem (index, aMedium);
+            return;
         }
-        case VBoxDefs::CD:
-            processCdMedia (aMedia);
-            break;
-        case VBoxDefs::FD:
-            processFdMedia (aMedia);
-            break;
-        default:
-            AssertFailed();
     }
+
+    /* If there is a "no media" pseudo-item, remove it */
+    if (count() == 1 && mMedia [0].id.isNull())
+        clear(), mMedia.clear();
+
+    mMedia.append (Medium (aMedium.id(), aMedium.location(),
+                           aMedium.toolTipCheckRO (!mShowDiffs)));
+
+    insertItem (count(), aMedium.iconCheckRO (!mShowDiffs),
+                aMedium.details (!mShowDiffs));
 }
 
-void VBoxMediaComboBox::processHdMedia (const VBoxMedia &aMedia)
+void VBoxMediaComboBox::replaceItem (int aIndex, const VBoxMedium &aMedium)
 {
-    QUuid mediaId;
-    QString toolTip;
-    CHardDisk hd = aMedia.disk;
-    QString src = hd.GetLocation();
-    QUuid machineId = hd.GetMachineId();
-    /* Append list only with free hd */
-    if (machineId.isNull() || machineId == mMachineId)
-    {
-        mediaId = hd.GetId();
-        toolTip = VBoxDiskImageManagerDlg::composeHdToolTip (hd, aMedia.status);
-    }
-    if (!mediaId.isNull())
-        updateShortcut (src, mediaId, toolTip, aMedia.status);
+    AssertReturnVoid (aIndex >= 0 && aIndex < mMedia.size());
+
+    mMedia [aIndex].id = aMedium.id();
+    mMedia [aIndex].location = aMedium.location();
+    mMedia [aIndex].toolTip = aMedium.toolTipCheckRO (!mShowDiffs);
+
+    setItemText (aIndex, aMedium.details (!mShowDiffs));
+    setItemIcon (aIndex, aMedium.iconCheckRO (!mShowDiffs));
+
+    if (aIndex == currentIndex())
+        updateToolTip (aIndex);
 }
 
-void VBoxMediaComboBox::processCdMedia (const VBoxMedia &aMedia)
+/**
+ * Searches for a medium with the given ID in mMedia and stores its index in @a
+ * aIndex. Returns @c true if the media was found and @c false otherwise (@a
+ * aIndex will be set to a value >= mMedia.size() in this case).
+ *
+ * @param aId       Media ID to search for.
+ * @param aIndex    Where to store the found media index.
+ */
+bool VBoxMediaComboBox::findMediaIndex (const QUuid &aId, int &aIndex)
 {
-    CDVDImage cd = aMedia.disk;
-    QString src = cd.GetFilePath();
-    QUuid mediaId = cd.GetId();
-    QString toolTip = VBoxDiskImageManagerDlg::composeCdToolTip (cd, aMedia.status);
-    updateShortcut (src, mediaId, toolTip, aMedia.status);
-}
+    aIndex = 0;
 
-void VBoxMediaComboBox::processFdMedia (const VBoxMedia &aMedia)
-{
-    CFloppyImage fd = aMedia.disk;
-    QString src = fd.GetFilePath();
-    QUuid mediaId = fd.GetId();
-    QString toolTip = VBoxDiskImageManagerDlg::composeFdToolTip (fd, aMedia.status);
-    updateShortcut (src, mediaId, toolTip, aMedia.status);
-}
-
-
-void VBoxMediaComboBox::updateShortcut (const QString &aSrc,
-                                        const QUuid &aId,
-                                        const QString &aTip,
-                                        VBoxMedia::Status aStatus)
-{
-    /* Compose item's name */
-    QString name = fullItemName (aSrc);
-    /* Update warning/error icons */
-    QPixmap *pixmap = 0;
-    if (aStatus == VBoxMedia::Inaccessible)
-        pixmap = &mPmInacc;
-    else if (aStatus == VBoxMedia::Error)
-        pixmap = &mPmError;
-
-    /* Search media */
-    int index = mUuidList.indexOf (aId);
-    /* Create or update media */
-    index == -1 ? newItem (name, aId, aTip, pixmap) :
-                  updItem (index, name, aTip, pixmap);
-
-    /* Activate required item if it was updated */
-    if (aId == mRequiredId)
-        setCurrentItem (aId);
-    /* Activate first item in list if current is not required */
-    else if (getId() != mRequiredId)
-        setCurrentIndex (0);
-    /* Update current item if it was not really changed */
-    processIndexChanged (currentIndex());
-}
-
-void VBoxMediaComboBox::newItem (const QString &aName,
-                                 const QUuid   &aId,
-                                 const QString &aTip,
-                                 QPixmap       *aPixmap)
-{
-    int initCount = count();
-
-    int insertPosition = initCount;
-    for (int i = 0; i < initCount; ++ i)
-        /* Searching for the first real (non-null) vdi item
-           which have name greater than the item to be inserted.
-           This is necessary for sorting items alphabetically. */
-        if (itemText (i).localeAwareCompare (aName) > 0 &&
-            !getId (i).isNull())
-        {
-            insertPosition = i;
+    for (; aIndex < mMedia.size(); ++ aIndex)
+        if (mMedia [aIndex].id == aId)
             break;
-        }
 
-    insertPosition == initCount ? mUuidList.append (aId) :
-        mUuidList.insert (insertPosition, aId);
-
-    insertPosition == initCount ? mTipList.append (aTip) :
-        mTipList.insert (insertPosition, aTip);
-
-    aPixmap ? insertItem (insertPosition, *aPixmap, aName) :
-              insertItem (insertPosition, aName);
-}
-
-void VBoxMediaComboBox::updItem (int            aIndex,
-                                 const QString &aNewName,
-                                 const QString &aNewTip,
-                                 QPixmap       *aNewPix)
-{
-    setItemText (aIndex, aNewName);
-    if (aNewPix)
-        setItemIcon (aIndex, *aNewPix);
-    mTipList [aIndex] = aNewTip;
+    return aIndex < mMedia.size();
 }
 

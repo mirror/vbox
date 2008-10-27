@@ -29,7 +29,7 @@
   exclude-result-prefixes="#default vb xsl xsd"
 >
 
-<xsl:output method = "xml" indent = "yes"/>
+<xsl:output method="xml" indent="yes"/>
 
 <xsl:variable name="curVer" select="substring-before(/vb:VirtualBox/@version, '-')"/>
 <xsl:variable name="curVerPlat" select="substring-after(/vb:VirtualBox/@version, '-')"/>
@@ -108,6 +108,14 @@ The source version is not supported.
   <xsl:copy>
     <xsl:attribute name="version"><xsl:value-of select="concat('1.3','-',$curVerPlat)"/></xsl:attribute>
     <xsl:apply-templates select="node()" mode="v1.3"/>
+  </xsl:copy>
+</xsl:template>
+
+<!-- 1.3 => 1.4 -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.3']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.4','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.4"/>
   </xsl:copy>
 </xsl:template>
 
@@ -433,20 +441,160 @@ Value '<xsl:value-of select="@mode"/>' of 'BootMenu::mode' attribute is invalid.
   </LPT>
 </xsl:template>
 
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.3 => 1.4
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v1.4">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.4"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Global settings
+-->
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:DiskRegistry/vb:HardDisks/vb:HardDisk |
+                     vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:DiskRegistry/vb:HardDisks//vb:DiffHardDisk"
+              mode="v1.4-HardDisk-format-location">
+  <xsl:attribute name="format">
+    <xsl:choose>
+      <xsl:when test="*[self::vb:VirtualDiskImage][1]">VDI</xsl:when>
+      <xsl:when test="*[self::vb:VMDKImage][1]">VMDK</xsl:when>
+      <xsl:when test="*[self::vb:VHDImage][1]">VHD</xsl:when>
+      <xsl:when test="*[self::vb:CustomHardDisk][1]">
+        <xsl:value-of select="@format"/>
+      </xsl:when>
+      <xsl:when test="*[self::vb:ISCSIHardDisk][1]">
+        <xsl:message terminate="yes">
+ISCSIHardDisk node requires manual conversion. Contact the product vendor.
+        </xsl:message>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:message terminate="yes">
+Sub-element '<xsl:value-of select="name(*[1])"/>' of 'HardDisk' element is invalid.
+        </xsl:message>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:attribute>
+  <xsl:attribute name="location">
+    <xsl:choose>
+      <xsl:when test="*[self::vb:VirtualDiskImage][1]">
+        <xsl:value-of select="vb:VirtualDiskImage/@filePath"/>
+      </xsl:when>
+      <xsl:when test="*[self::vb:VMDKImage][1]">
+        <xsl:value-of select="@filePath"/>
+      </xsl:when>
+      <xsl:when test="*[self::vb:VHDImage][1]">
+        <xsl:value-of select="@filePath"/>
+      </xsl:when>
+      <xsl:when test="*[self::vb:CustomHardDisk][1]">
+        <xsl:value-of select="@location"/>
+      </xsl:when>
+      <!--xsl:when test="*[name()='ISCSIHardDisk'][1]">
+        <xsl:value-of select="concat('iscsi://',@userName,':',@password,'@',@server,':',@port,'/',@target,'/',@lun)"/>
+      </xsl:when-->
+    </xsl:choose>
+  </xsl:attribute>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:DiskRegistry/vb:HardDisks/vb:HardDisk"
+              mode="v1.4">
+  <HardDisk>
+    <xsl:attribute name="uuid"><xsl:value-of select="@uuid"/></xsl:attribute>
+    <xsl:apply-templates select="." mode="v1.4-HardDisk-format-location"/>
+    <xsl:attribute name="type">
+      <xsl:choose>
+        <xsl:when test="@type='normal'">Normal</xsl:when>
+        <xsl:when test="@type='immutable'">Immutable</xsl:when>
+        <xsl:when test="@type='writethrough'">Writethrough</xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">
+Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:attribute>
+    <xsl:apply-templates select="vb:DiffHardDisk" mode="v1.4"/>
+  </HardDisk>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:DiskRegistry/vb:HardDisks/vb:HardDisk//
+                     vb:DiffHardDisk"
+              mode="v1.4">
+  <HardDisk>
+    <xsl:attribute name="uuid"><xsl:value-of select="@uuid"/></xsl:attribute>
+    <xsl:apply-templates select="." mode="v1.4-HardDisk-format-location"/>
+    <xsl:apply-templates select="vb:DiffHardDisk" mode="v1.4"/>
+  </HardDisk>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:DiskRegistry/vb:DVDImages/vb:Image |
+                     vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:DiskRegistry/vb:FloppyImages/vb:Image"
+              mode="v1.4">
+  <Image>
+    <xsl:attribute name="uuid"><xsl:value-of select="@uuid"/></xsl:attribute>
+    <xsl:attribute name="location"><xsl:value-of select="@src"/></xsl:attribute>
+  </Image>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:DiskRegistry"
+              mode="v1.4">
+  <MediaRegistry>
+    <HardDisks>
+      <xsl:apply-templates select="vb:HardDisks/vb:HardDisk" mode="v1.4"/>
+    </HardDisks>
+    <DVDImages>
+      <xsl:apply-templates select="vb:DVDImages/vb:Image" mode="v1.4"/>
+    </DVDImages>
+    <FloppyImages>
+      <xsl:apply-templates select="vb:FloppyImages/vb:Image" mode="v1.4"/>
+    </FloppyImages>
+  </MediaRegistry>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Global/vb:SystemProperties"
+              mode="v1.4">
+  <SystemProperties>
+    <!-- note: we don't use the @defaultVDIFolder value for @defaultHardDiskFolder
+         since we want to let VBoxSVC set the default value -->
+    <xsl:apply-templates select="@*[not(name()='defaultVDIFolder')]|node()" mode="v1.4"/>
+  </SystemProperties>
+</xsl:template>
+
+<!--
+ *  Machine settings
+-->
+
+
 <!-- @todo add lastStateChange with the current timestamp if missing.
   *  current-dateTime() is available only in XPath 2.0 so we will need to pass
   *  the current time as a parameter to the XSLT processor. -->
 <!--
-<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3.pre']/
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='Xo.Yo']/
                      vb:Machine"
-              mode="v1.3">
+              mode="X.Y">
   <xsl:copy>
     <xsl:if test="not(@lastStateChange)">
       <xsl:attribute name="lastStateChange">
         <xsl:value-of select="current-dateTime()"/>
       </xsl:attribute>
     </xsl:if>
-    <xsl:apply-templates select="@*|node()" mode="v1.3"/>
+    <xsl:apply-templates select="@*|node()" mode="vX.Y"/>
   </xsl:copy>
 </xsl:template>
 -->

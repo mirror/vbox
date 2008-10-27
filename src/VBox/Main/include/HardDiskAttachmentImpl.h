@@ -23,27 +23,56 @@
 #define ____H_HARDDISKATTACHMENTIMPL
 
 #include "VirtualBoxBase.h"
-#include "Collection.h"
 
-#include "HardDiskImpl.h"
+#include "HardDisk2Impl.h"
 
-class ATL_NO_VTABLE HardDiskAttachment :
-    public VirtualBoxSupportErrorInfoImpl <HardDiskAttachment, IHardDiskAttachment>,
-    public VirtualBoxSupportTranslation <HardDiskAttachment>,
-    public VirtualBoxBase,
-    public IHardDiskAttachment
+class ATL_NO_VTABLE HardDisk2Attachment :
+    public VirtualBoxBaseNEXT,
+    public com::SupportErrorInfoImpl <HardDisk2Attachment, IHardDisk2Attachment>,
+    public VirtualBoxSupportTranslation <HardDisk2Attachment>,
+    public IHardDisk2Attachment
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR (HardDiskAttachment)
+    /** Equality predicate for stdc++. */
+    struct EqualsTo
+        : public std::unary_function <ComObjPtr <HardDisk2Attachment>, bool>
+    {
+        explicit EqualsTo (StorageBus_T aBus, LONG aChannel, LONG aDevice)
+            : bus (aBus), channel (aChannel), device (aDevice) {}
 
-    DECLARE_NOT_AGGREGATABLE(HardDiskAttachment)
+        bool operator() (const argument_type &aThat) const
+        {
+            return aThat->bus() == bus && aThat->channel() == channel &&
+                   aThat->device() == device;
+        }
+
+        const StorageBus_T bus;
+        const LONG channel;
+        const LONG device;
+    };
+
+    /** Hard disk reference predicate for stdc++. */
+    struct RefersTo
+        : public std::unary_function <ComObjPtr <HardDisk2Attachment>, bool>
+    {
+        explicit RefersTo (HardDisk2 *aHardDisk) : hardDisk (aHardDisk) {}
+
+        bool operator() (const argument_type &aThat) const
+        {
+            return aThat->hardDisk().equalsTo (hardDisk);
+        }
+
+        const ComObjPtr <HardDisk2> hardDisk;
+    };
+
+    DECLARE_NOT_AGGREGATABLE(HardDisk2Attachment)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(HardDiskAttachment)
+    BEGIN_COM_MAP (HardDisk2Attachment)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IHardDiskAttachment)
+        COM_INTERFACE_ENTRY(IHardDisk2Attachment)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -52,43 +81,55 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (HardDisk *aHD, StorageBus_T aBus, LONG aChannel, LONG aDevice, BOOL aDirty);
+    HRESULT init (HardDisk2 *aHD, StorageBus_T aBus, LONG aChannel,
+                  LONG aDevice, bool aImplicit = false);
+    void uninit();
 
-    // IHardDiskAttachment properties
-    STDMETHOD(COMGETTER(HardDisk))   (IHardDisk **aHardDisk);
+    // IHardDisk2Attachment properties
+    STDMETHOD(COMGETTER(HardDisk))   (IHardDisk2 **aHardDisk);
     STDMETHOD(COMGETTER(Bus))        (StorageBus_T *aBus);
     STDMETHOD(COMGETTER(Channel))    (LONG *aChannel);
     STDMETHOD(COMGETTER(Device))     (LONG *aDevice);
 
-    // public methods for internal purposes only
-    // (ensure there is a caller and a read or write lock before calling them!)
+    // unsafe inline public methods for internal purposes only (ensure there is
+    // a caller and a read lock before calling them!)
 
-    BOOL isDirty() const { return mDirty; }
-    void setDirty (BOOL aDirty) { mDirty = aDirty; }
+    bool isImplicit() const { return m.implicit; }
+    void setImplicit (bool aImplicit) { m.implicit = aImplicit; }
 
-    const ComObjPtr <HardDisk> &hardDisk() const { return mHardDisk; }
-    StorageBus_T bus() const { return mBus; }
-    LONG channel() const { return mChannel; }
-    LONG device() const { return mDevice; }
+    const ComObjPtr <HardDisk2> &hardDisk() const { return m.hardDisk; }
+    StorageBus_T bus() const { return m.bus; }
+    LONG channel() const { return m.channel; }
+    LONG device() const { return m.device; }
 
-    void updateHardDisk (const ComObjPtr <HardDisk> &aHardDisk, BOOL aDirty)
+    /** Must be called from under this object's write lock.  */
+    void updateHardDisk (const ComObjPtr <HardDisk2> &aHardDisk, bool aImplicit)
     {
-        mHardDisk = aHardDisk;
-        mDirty = aDirty;
+        m.hardDisk = aHardDisk;
+        m.implicit = aImplicit;
     }
 
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"HardDiskAttachment"; }
+    /** For com::SupportErrorInfoImpl. */
+    static const char *ComponentName() { return "HardDisk2Attachment"; }
 
 private:
 
-    BOOL mDirty;
-    ComObjPtr <HardDisk> mHardDisk;
-    StorageBus_T mBus;
-    LONG mChannel;
-    LONG mDevice;
-};
+    struct Data
+    {
+        Data() : bus (StorageBus_Null), channel (0), device (0)
+               , implicit (false) {}
 
-COM_DECL_READONLY_ENUM_AND_COLLECTION (HardDiskAttachment)
+        /// @todo NEWMEDIA shouldn't it be constant too? It'd be nice to get
+        /// rid of locks at all in this simple readonly structure-like interface
+        ComObjPtr <HardDisk2> hardDisk;
+        const StorageBus_T bus;
+        const LONG channel;
+        const LONG device;
+
+        bool implicit : 1;
+    };
+
+    Data m;
+};
 
 #endif // ____H_HARDDISKATTACHMENTIMPL

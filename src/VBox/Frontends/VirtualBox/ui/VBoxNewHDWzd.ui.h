@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,90 +39,34 @@ static const Q_UINT64 MinVDISize = 4;
 static const Q_UINT64 InitialVDISize = 2 * _1K;
 
 /**
- *  Composes a file name from the given relative or full file name
- *  based on the home directory and the default VDI directory.
+ * Composes a file name from the given relative or full file name based on the
+ * home directory and the default VDI directory. See IMedum::location for
+ * details.
  */
-static QString composeFullFileName (const QString file)
+static QString composeFullFileName (const QString &aName)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QString homeFolder = vbox.GetHomeFolder();
-    QString defaultFolder = vbox.GetSystemProperties().GetDefaultVDIFolder();
+    QString defaultFolder = vbox.GetSystemProperties().GetDefaultHardDiskFolder();
 
-    QFileInfo fi = QFileInfo (file);
-    if (fi.fileName() == file)
+    /* Note: the logic below must match the logic of the IMedum::location
+     * setter, otherwise the returned path may differ from the path actually
+     * set for the hard disk by the VirtualBox API */
+
+    QFileInfo fi (aName);
+    if (fi.fileName() == aName)
     {
         /* no path info at all, use defaultFolder */
-        fi = QFileInfo (defaultFolder, file);
+        fi = QFileInfo (defaultFolder, aName);
     }
     else if (fi.isRelative())
     {
         /* resolve relatively to homeFolder */
-        fi = QFileInfo (homeFolder, file);
+        fi = QFileInfo (homeFolder, aName);
     }
 
     return QDir::convertSeparators (fi.absFilePath());
 }
-
-/// @todo (r=dmik) not currently used
-#if 0
-class QISizeValidator : public QValidator
-{
-public:
-
-    QISizeValidator (QObject * aParent,
-                     Q_UINT64 aMinSize, Q_UINT64 aMaxSize,
-                     const char * aName = 0) :
-        QValidator (aParent, aName), mMinSize (aMinSize), mMaxSize (aMaxSize) {}
-
-    ~QISizeValidator() {}
-
-    State validate (QString &input, int &/*pos*/) const
-    {
-        QRegExp regexp ("^([^M^G^T^P^\\d\\s]*)(\\d+(([^\\s^\\d^M^G^T^P]+)(\\d*))?)?(\\s*)([MGTP]B?)?$");
-        int position = regexp.search (input);
-        if (position == -1)
-            return Invalid;
-        else
-        {
-            if (!regexp.cap (1).isEmpty() ||
-                 regexp.cap (4).length() > 1 ||
-                 regexp.cap (5).length() > 2 ||
-                 regexp.cap (6).length() > 1)
-                return Invalid;
-
-            if (regexp.cap (7).length() == 1)
-                return Intermediate;
-
-            QString size = regexp.cap (2);
-            if (size.isEmpty())
-                return Intermediate;
-
-            bool result = false;
-            bool warning = false;
-            if (!regexp.cap (4).isEmpty() && regexp.cap (5).isEmpty())
-            {
-                size += "0";
-                warning = true;
-            }
-            QLocale::system().toDouble (size, &result);
-
-            Q_UINT64 sizeB = vboxGlobal().parseSize (input);
-            if (sizeB > mMaxSize || sizeB < mMinSize)
-                warning = true;
-
-            if (result)
-                return warning ? Intermediate : Acceptable;
-            else
-                return Invalid;
-        }
-    }
-
-protected:
-
-    Q_UINT64 mMinSize;
-    Q_UINT64 mMaxSize;
-};
-#endif
 
 static inline int log2i (Q_UINT64 val)
 {
@@ -154,6 +98,10 @@ static inline Q_UINT64 sliderToSizeMB (int val, int sliderScale)
     return tickMB + (tickMBNext - tickMB) * step / sliderScale;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void VBoxNewHDWzd::init()
 {
     /* disable help buttons */
@@ -174,76 +122,78 @@ void VBoxNewHDWzd::init()
     VBoxGlobal::adoptLabelPixmap (pmNameAndSize);
     VBoxGlobal::adoptLabelPixmap (pmSummary);
 
-    /* Image type page */
+    /* Storage type page */
 
     /* Name and Size page */
 
     CSystemProperties sysProps = vboxGlobal().virtualBox().GetSystemProperties();
 
-    maxVDISize = sysProps.GetMaxVDISize();
+    mMaxVDISize = sysProps.GetMaxVDISize();
 
     /* Detect how many steps to recognize between adjacent powers of 2
-     * to ensure that the last slider step is exactly maxVDISize */
-    sliderScale = 0;
+     * to ensure that the last slider step is exactly mMaxVDISize */
+    mSliderScale = 0;
     {
-        int pow = log2i (maxVDISize);
+        int pow = log2i (mMaxVDISize);
         Q_UINT64 tickMB = Q_UINT64 (1) << pow;
-        if (tickMB < maxVDISize)
+        if (tickMB < mMaxVDISize)
         {
             Q_UINT64 tickMBNext = Q_UINT64 (1) << (pow + 1);
-            Q_UINT64 gap = tickMBNext - maxVDISize;
-            /// @todo (r=dmik) overflow may happen if maxVDISize is TOO big
-            sliderScale = (int) ((tickMBNext - tickMB) / gap);
+            Q_UINT64 gap = tickMBNext - mMaxVDISize;
+            /// @todo (r=dmik) overflow may happen if mMaxVDISize is TOO big
+            mSliderScale = (int) ((tickMBNext - tickMB) / gap);
         }
     }
-    sliderScale = QMAX (sliderScale, 8);
+    mSliderScale = QMAX (mSliderScale, 8);
 
     leName->setValidator (new QRegExpValidator (QRegExp( ".+" ), this));
 
     leSize->setValidator (new QRegExpValidator (vboxGlobal().sizeRegexp(), this));
     leSize->setAlignment (Qt::AlignRight);
 
-    wvalNameAndSize = new QIWidgetValidator (pageNameAndSize, this);
-    connect (wvalNameAndSize, SIGNAL (validityChanged (const QIWidgetValidator *)),
+    mWValNameAndSize = new QIWidgetValidator (pageNameAndSize, this);
+    connect (mWValNameAndSize, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableNext (const QIWidgetValidator *)));
-    connect (wvalNameAndSize, SIGNAL (isValidRequested (QIWidgetValidator *)),
+    connect (mWValNameAndSize, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
-    /* we ask revalidate only when currentSize is changed after manually
+    /* we ask revalidate only when mCurrentSize is changed after manually
      * editing the line edit field; the slider cannot produce invalid values */
     connect (leSize, SIGNAL (textChanged (const QString &)),
-             wvalNameAndSize, SLOT (revalidate()));
+             mWValNameAndSize, SLOT (revalidate()));
 
     /* Summary page */
 
-    teSummary = new QITextEdit (pageSummary);
-    teSummary->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
-    teSummary->setFrameShape (QTextEdit::NoFrame);
-    teSummary->setReadOnly (TRUE);
-    summaryLayout->insertWidget (1, teSummary);
+    mSummaryText = new QITextEdit (pageSummary);
+    mSummaryText->setSizePolicy (QSizePolicy::Minimum, QSizePolicy::Minimum);
+    mSummaryText->setFrameShape (QTextEdit::NoFrame);
+    mSummaryText->setReadOnly (TRUE);
+    summaryLayout->insertWidget (1, mSummaryText);
 
     /* filter out Enter keys in order to direct them to the default dlg button */
     QIKeyFilter *ef = new QIKeyFilter (this, Key_Enter);
-    ef->watchOn (teSummary);
+    ef->watchOn (mSummaryText);
 
     /* set initial values
      * ---------------------------------------------------------------------- */
 
-    /* Image type page */
+    /* Storage type page */
 
     /* Name and Size page */
+
+    /// @todo NEWMEDIA use extension as reported by CHardDiskFormat
 
     static ulong HDNumber = 0;
     leName->setText (QString ("NewHardDisk%1.vdi").arg (++ HDNumber));
 
     slSize->setFocusPolicy (QWidget::StrongFocus);
-    slSize->setPageStep (sliderScale);
-    slSize->setLineStep (sliderScale / 8);
+    slSize->setPageStep (mSliderScale);
+    slSize->setLineStep (mSliderScale / 8);
     slSize->setTickInterval (0);
-    slSize->setMinValue (sizeMBToSlider (MinVDISize, sliderScale));
-    slSize->setMaxValue (sizeMBToSlider (maxVDISize, sliderScale));
+    slSize->setMinValue (sizeMBToSlider (MinVDISize, mSliderScale));
+    slSize->setMaxValue (sizeMBToSlider (mMaxVDISize, mSliderScale));
 
     txSizeMin->setText (vboxGlobal().formatSize (MinVDISize * _1M));
-    txSizeMax->setText (vboxGlobal().formatSize (maxVDISize * _1M));
+    txSizeMax->setText (vboxGlobal().formatSize (mMaxVDISize * _1M));
 
     /* limit the max. size of QLineEdit (STUPID Qt has NO correct means for that) */
     leSize->setMaximumSize (
@@ -254,11 +204,11 @@ void VBoxNewHDWzd::init()
 
     /* Summary page */
 
-    teSummary->setPaper (pageSummary->backgroundBrush());
+    mSummaryText->setPaper (pageSummary->backgroundBrush());
 
     /* update the next button state for pages with validation
      * (validityChanged() connected to enableNext() will do the job) */
-    wvalNameAndSize->revalidate();
+    mWValNameAndSize->revalidate();
 
     /* the finish button on the Summary page is always enabled */
     setFinishEnabled (pageSummary, true);
@@ -301,15 +251,15 @@ void VBoxNewHDWzd::setRecommendedFileName (const QString &aName)
 
 void VBoxNewHDWzd::setRecommendedSize (Q_UINT64 aSize)
 {
-    AssertReturnVoid (aSize >= MinVDISize && aSize <= maxVDISize);
-    currentSize = aSize;
-    slSize->setValue (sizeMBToSlider (currentSize, sliderScale));
-    leSize->setText (vboxGlobal().formatSize (currentSize * _1M));
-    updateSizeToolTip (currentSize * _1M);
+    AssertReturnVoid (aSize >= MinVDISize && aSize <= mMaxVDISize);
+    mCurrentSize = aSize;
+    slSize->setValue (sizeMBToSlider (mCurrentSize, mSliderScale));
+    leSize->setText (vboxGlobal().formatSize (mCurrentSize * _1M));
+    updateSizeToolTip (mCurrentSize * _1M);
 }
 
 
-QString VBoxNewHDWzd::imageFileName()
+QString VBoxNewHDWzd::location()
 {
     QString name = QDir::convertSeparators (leName->text());
 
@@ -319,28 +269,15 @@ QString VBoxNewHDWzd::imageFileName()
         name.truncate (len - 1);
 
     QString ext = QFileInfo (name).extension();
-    /* compare against the proper case */
-#if defined (Q_OS_FREEBSD) || defined (Q_OS_LINUX) || defined (Q_OS_NETBSD) || defined (Q_OS_OPENBSD) || defined (Q_OS_SOLARIS)
-#elif defined (Q_OS_WIN) || defined (Q_OS_OS2) || defined (Q_OS_MACX)
-    ext = ext.lower();
-#else
-    #error Port me!
-#endif
 
-    if (ext != "vdi")
+    if (RTPathCompare (ext.utf8(), "vdi") != 0)
         name += ".vdi";
 
     return name;
 }
 
 
-Q_UINT64 VBoxNewHDWzd::imageSize()
-{
-    return currentSize;
-}
-
-
-bool VBoxNewHDWzd::isDynamicImage()
+bool VBoxNewHDWzd::isDynamicStorage()
 {
     return rbDynamicType->isOn();
 }
@@ -361,7 +298,7 @@ void VBoxNewHDWzd::revalidate (QIWidgetValidator *wval)
 
     if (pg == pageNameAndSize)
     {
-        valid = currentSize >= MinVDISize && currentSize <= maxVDISize;
+        valid = mCurrentSize >= MinVDISize && mCurrentSize <= mMaxVDISize;
     }
 
     wval->setOtherValid (valid);
@@ -379,9 +316,9 @@ void VBoxNewHDWzd::showPage( QWidget *page )
 {
     if (currentPage() == pageNameAndSize)
     {
-        if (QFileInfo (imageFileName()).exists())
+        if (QFileInfo (location()).exists())
         {
-            vboxProblem().sayCannotOverwriteHardDiskImage (this, imageFileName());
+            vboxProblem().sayCannotOverwriteHardDiskStorage (this, location());
             return;
         }
     }
@@ -392,7 +329,7 @@ void VBoxNewHDWzd::showPage( QWidget *page )
                                              : rbFixedType->text();
         type = VBoxGlobal::removeAccelMark (type);
 
-        Q_UINT64 sizeB = imageSize() * _1M;
+        Q_UINT64 sizeB = mCurrentSize * _1M;
 
         // compose summary
         QString summary = QString (tr(
@@ -403,10 +340,10 @@ void VBoxNewHDWzd::showPage( QWidget *page )
             "</table>"
         ))
             .arg (type)
-            .arg (composeFullFileName (imageFileName()))
+            .arg (composeFullFileName (location()))
             .arg (VBoxGlobal::formatSize (sizeB))
             .arg (sizeB);
-        teSummary->setText (summary);
+        mSummaryText->setText (summary);
         /* set Finish to default */
         finishButton()->setDefault (true);
     }
@@ -435,7 +372,7 @@ void VBoxNewHDWzd::showPage( QWidget *page )
     }
     else if (page == pageSummary)
     {
-        teSummary->setFocus();
+        mSummaryText->setFocus();
     }
 
     page->layout()->activate();
@@ -453,69 +390,58 @@ void VBoxNewHDWzd::accept()
 }
 
 /**
- *  Performs steps necessary to create a hard disk. This method handles all
- *  errors and shows the corresponding messages when appropriate.
+ * Performs steps necessary to create a hard disk. This method handles all
+ * errors and shows the corresponding messages when appropriate.
  *
- *  @return     wheter the creation was successful or not
+ * @return Wheter the creation was successful or not.
  */
 bool VBoxNewHDWzd::createHardDisk()
 {
-    QString src = imageFileName();
-    Q_UINT64 size = imageSize();
+    QString loc = location();
 
-    AssertReturn (!src.isEmpty(), false);
-    AssertReturn (size > 0, false);
+    AssertReturn (!loc.isEmpty(), false);
+    AssertReturn (mCurrentSize > 0, false);
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     CProgress progress;
-    CHardDisk hd = vbox.CreateHardDisk (KHardDiskStorageType_VirtualDiskImage);
 
-    /// @todo (dmik) later, change wrappers so that converting
-    //  to CUnknown is not necessary for cross-assignments
-    CVirtualDiskImage vdi = CUnknown (hd);
+    CHardDisk2 hd = vbox.CreateHardDisk2 (QString ("VDI"), loc);
 
     if (!vbox.isOk())
     {
-        vboxProblem().cannotCreateHardDiskImage (this,
-                                                 vbox, src, vdi, progress);
+        vboxProblem().cannotCreateHardDiskStorage (this, vbox, loc, hd,
+                                                   progress);
         return false;
     }
 
-    vdi.SetFilePath (src);
-
-    if (isDynamicImage())
-        progress = vdi.CreateDynamicImage (size);
+    if (isDynamicStorage())
+        progress = hd.CreateDynamicStorage (mCurrentSize);
     else
-        progress = vdi.CreateFixedImage (size);
+        progress = hd.CreateFixedStorage (mCurrentSize);
 
-    if (!vdi.isOk())
+    if (!hd.isOk())
     {
-        vboxProblem().cannotCreateHardDiskImage (this,
-                                                 vbox, src, vdi, progress);
+        vboxProblem().cannotCreateHardDiskStorage (this, vbox, loc, hd,
+                                                   progress);
         return false;
     }
 
     vboxProblem().showModalProgressDialog (progress, caption(), parentWidget());
 
-    if (progress.GetResultCode() != 0)
+    if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        vboxProblem().cannotCreateHardDiskImage (this,
-                                                 vbox, src, vdi, progress);
+        vboxProblem().cannotCreateHardDiskStorage (this, vbox, loc, hd,
+                                                   progress);
         return false;
     }
 
-    vbox.RegisterHardDisk (hd);
-    if (!vbox.isOk())
-    {
-        vboxProblem().cannotRegisterMedia (this, vbox, VBoxDefs::HD,
-                                           vdi.GetFilePath());
-        /* delete the image file on failure */
-        vdi.DeleteImage();
-        return false;
-    }
+    /* inform everybody there is a new medium */
+    vboxGlobal().addMedium (VBoxMedium (CMedium (hd),
+                                        VBoxDefs::MediaType_HardDisk,
+                                        KMediaState_Created));
 
-    chd = hd;
+    mHD = hd;
     return true;
 }
 
@@ -524,9 +450,9 @@ void VBoxNewHDWzd::slSize_valueChanged( int val )
 {
     if (focusWidget() == slSize)
     {
-        currentSize = sliderToSizeMB (val, sliderScale);
-        leSize->setText (vboxGlobal().formatSize (currentSize * _1M));
-        updateSizeToolTip (currentSize * _1M);
+        mCurrentSize = sliderToSizeMB (val, mSliderScale);
+        leSize->setText (vboxGlobal().formatSize (mCurrentSize * _1M));
+        updateSizeToolTip (mCurrentSize * _1M);
     }
 }
 
@@ -535,10 +461,10 @@ void VBoxNewHDWzd::leSize_textChanged( const QString &text )
 {
     if (focusWidget() == leSize)
     {
-        currentSize = vboxGlobal().parseSize (text);
-        updateSizeToolTip (currentSize);
-        currentSize /= _1M;
-        slSize->setValue (sizeMBToSlider (currentSize, sliderScale));
+        mCurrentSize = vboxGlobal().parseSize (text);
+        updateSizeToolTip (mCurrentSize);
+        mCurrentSize /= _1M;
+        slSize->setValue (sizeMBToSlider (mCurrentSize, mSliderScale));
     }
 }
 
@@ -557,12 +483,12 @@ void VBoxNewHDWzd::tbNameSelect_clicked()
     if (!fld.exists())
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        fld = QFileInfo (vbox.GetSystemProperties().GetDefaultVDIFolder());
+        fld = QFileInfo (vbox.GetSystemProperties().GetDefaultHardDiskFolder());
         if (!fld.exists())
             fld = vbox.GetHomeFolder();
     }
 
-//    QFileDialog fd (this, "NewDiskImageDialog", TRUE);
+//    QFileDialog fd (this, "NewMediaDialog", TRUE);
 //    fd.setMode (QFileDialog::AnyFile);
 //    fd.setViewMode (QFileDialog::List);
 //    fd.addFilter (tr( "Hard disk images (*.vdi)" ));
@@ -573,7 +499,7 @@ void VBoxNewHDWzd::tbNameSelect_clicked()
         fld.absFilePath(),
         tr ("Hard disk images (*.vdi)"),
         this,
-        "NewDiskImageDialog",
+        "NewMediaDialog",
         tr ("Select a file for the new hard disk image file"));
 
 //    if ( fd.exec() == QDialog::Accepted ) {

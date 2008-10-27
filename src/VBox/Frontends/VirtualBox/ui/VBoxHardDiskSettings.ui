@@ -55,7 +55,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
                 </property>
                 <widget class="QCheckBox">
                     <property name="name">
-                        <cstring>mCbSATA</cstring>
+                        <cstring>mSATACheck</cstring>
                     </property>
                     <property name="text">
                         <string>&amp;Enable SATA Controller</string>
@@ -80,51 +80,76 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
                         <property name="name">
                             <cstring>unnamed</cstring>
                         </property>
-                        <widget class="QListView">
-                            <column>
-                                <property name="text">
-                                    <string>Slot</string>
-                                </property>
-                                <property name="clickable">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="resizable">
-                                    <bool>true</bool>
-                                </property>
-                            </column>
-                            <column>
-                                <property name="text">
-                                    <string>Hard Disk</string>
-                                </property>
-                                <property name="clickable">
-                                    <bool>true</bool>
-                                </property>
-                                <property name="resizable">
-                                    <bool>true</bool>
-                                </property>
-                            </column>
+                        <vbox>
                             <property name="name">
-                                <cstring>mLvHD</cstring>
+                                <cstring>unnamed</cstring>
                             </property>
-                            <property name="allColumnsShowFocus">
-                                <bool>true</bool>
-                            </property>
-                            <property name="resizeMode">
-                                <enum>LastColumn</enum>
-                            </property>
-                            <property name="whatsThis" stdset="0">
-                                <string>
-                                  &lt;qt&gt;Lists all hard disks attached to
-                                  this machine. Use a mouse double-click or the
-                                  &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
-                                  key on the highlighted item to activate the
-                                  drop-down list and choose the desired value.
-                                  Use the context menu or buttons to the right
-                                  to add or remove hard disk
-                                  attachments.&lt;/qt&gt;
-                                </string>
-                            </property>
-                        </widget>
+                            <widget class="QListView">
+                                <column>
+                                    <property name="text">
+                                        <string>Slot</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <column>
+                                    <property name="text">
+                                        <string>Hard Disk</string>
+                                    </property>
+                                    <property name="clickable">
+                                        <bool>true</bool>
+                                    </property>
+                                    <property name="resizable">
+                                        <bool>true</bool>
+                                    </property>
+                                </column>
+                                <property name="name">
+                                    <cstring>mLvHD</cstring>
+                                </property>
+                                <property name="allColumnsShowFocus">
+                                    <bool>true</bool>
+                                </property>
+                                <property name="resizeMode">
+                                    <enum>LastColumn</enum>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>
+                                      &lt;qt&gt;Lists all hard disks attached to
+                                      this machine. Use a mouse double-click or the
+                                      &lt;tt&gt;F2&lt;/tt&gt;/&lt;tt&gt;Space&lt;/tt&gt;
+                                      key on the highlighted item to activate the
+                                      drop-down list and choose the desired value.
+                                      Use the context menu or buttons to the right
+                                      to add or remove hard disk
+                                      attachments.&lt;/qt&gt;
+                                    </string>
+                                </property>
+                            </widget>
+                            <widget class="QCheckBox">
+                                <property name="name">
+                                    <cstring>mShowDiffsCheck</cstring>
+                                </property>
+                                <property name="text">
+                                    <string>&amp;Show Differencing Hard Disks</string>
+                                </property>
+                                <property name="whatsThis" stdset="0">
+                                    <string>
+                                      &lt;qt&gt;If checked, it will show
+                                      differencing hard disks actually attached
+                                      to the slots instead of their base hard
+                                      disks (shown in case of indirect
+                                      attachments) and will also let attach
+                                      other differencing hard disks explicitly.
+                                      Check this only if you need a complex hard
+                                      disk setup.&lt;/qt&gt;
+                                    </string>
+                                </property>
+                            </widget>
+                        </vbox>
                         <widget class="QLayoutWidget">
                             <property name="name">
                                 <cstring>mToolBarLayout</cstring>
@@ -217,7 +242,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
         </property>
         <property name="whatsThis" stdset="0">
             <string>
-              &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
+              &lt;qt&gt;Invokes the Virtual Media Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
             </string>
         </property>
@@ -240,7 +265,37 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
         <sender>mSelectHardDiskAct</sender>
         <signal>activated()</signal>
         <receiver>VBoxHardDiskSettings</receiver>
-        <slot>showVDM()</slot>
+        <slot>showMediaManager()</slot>
+    </connection>
+    <connection>
+        <sender>mSATACheck</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>onSATACheckToggled(bool)</slot>
+    </connection>
+    <connection>
+        <sender>mLvHD</sender>
+        <signal>pressed(QListViewItem*,const QPoint&amp;,int)</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>moveFocus(QListViewItem*, const QPoint&amp;,int)</slot>
+    </connection>
+    <connection>
+        <sender>mLvHD</sender>
+        <signal>currentChanged(QListViewItem*)</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>onCurrentChanged(QListViewItem*)</slot>
+    </connection>
+    <connection>
+        <sender>mLvHD</sender>
+        <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>onContextMenuRequested(QListViewItem*,const QPoint&amp;,int)</slot>
+    </connection>
+    <connection>
+        <sender>mShowDiffsCheck</sender>
+        <signal>toggled(bool)</signal>
+        <receiver>VBoxHardDiskSettings</receiver>
+        <slot>onShowDiffsCheckToggled(bool)</slot>
     </connection>
 </connections>
 <includes>
@@ -258,7 +313,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxProblemReporter.h</include>
     <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
-    <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+    <include location="local" impldecl="in implementation">VBoxMediaManagerDlg.h</include>
     <include location="local" impldecl="in implementation">VBoxNewHDWzd.h</include>
     <include location="local" impldecl="in implementation">VBoxHardDiskSettings.ui.h</include>
 </includes>
@@ -274,15 +329,16 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
 </variables>
 <signals>
     <signal>afterCurrentChanged()</signal>
-    <signal>hddListChanged()</signal>
+    <signal>hardDiskListChanged()</signal>
 </signals>
 <slots>
     <slot>addHDItem()</slot>
     <slot>delHDItem()</slot>
-    <slot>showVDM()</slot>
+    <slot>showMediaManager()</slot>
     <slot>moveFocus( QListViewItem *, const QPoint &amp;, int )</slot>
     <slot>onCurrentChanged( QListViewItem * )</slot>
-    <slot>onToggleSATAController( bool aOn )</slot>
+    <slot>onSATACheckToggled( bool aOn )</slot>
+    <slot>onShowDiffsCheckToggled( bool aOn )</slot>
     <slot>onAfterCurrentChanged( QListViewItem * )</slot>
     <slot>onContextMenuRequested( QListViewItem *, const QPoint &amp;, int )</slot>
     <slot>adjustList()</slot>
@@ -292,7 +348,7 @@ VBox GUI: Hard Disk Settings UI (Qt Designer).
     <function>getFromMachine( const CMachine &amp; )</function>
     <function>putBackToMachine()</function>
     <function returnType="QString">checkValidity()</function>
-    <function access="private" returnType="HDListItem*">createItem( HDSlotUniquizer *, const CMachine &amp; )</function>
+    <function access="private" returnType="HDListItem*">createItem()</function>
     <function access="private" returnType="bool">event( QEvent * )</function>
     <function access="private">showEvent( QShowEvent * )</function>
     <function access="private" returnType="bool">eventFilter( QObject * , QEvent * )</function>

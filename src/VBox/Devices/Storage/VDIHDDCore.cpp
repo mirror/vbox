@@ -1419,14 +1419,14 @@ static unsigned vdiGetOpenFlags(void *pBackendData)
 /** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
 static int vdiSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
-    LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
+    LogFlowFunc(("pBackendData=%#p uOpenFlags=%#x\n", pBackendData, uOpenFlags));
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
     const char *pszFilename;
 
-    /* Image must be opened and the new flags must be valid. Just readonly flag
-     * is supported. */
-    if (!pImage || uOpenFlags & ~VD_OPEN_FLAGS_READONLY)
+    /* Image must be opened and the new flags must be valid. Just readonly and
+     * info flags are supported. */
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;

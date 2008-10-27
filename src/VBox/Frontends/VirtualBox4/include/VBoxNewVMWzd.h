@@ -48,12 +48,11 @@ protected:
 private slots:
 
     void accept();
-    void showVDIManager();
-    void showNewVDIWizard();
+    void showHardDiskManager();
+    void showNewHardDiskWizard();
     void slRAMValueChanged (int aValue);
     void leRAMTextChanged (const QString &aTtext);
     void cbOSActivated (int aItem);
-    void currentMediaChanged (int aItem);
     void revalidate (QIWidgetValidator *aWval);
     void enableNext (const QIWidgetValidator *aWval);
     void onPageShow();
@@ -67,9 +66,8 @@ private:
     QIWidgetValidator *mWvalNameAndOS;
     QIWidgetValidator *mWvalMemory;
     QIWidgetValidator *mWvalHDD;
-    QUuid              uuidHD;
-    CHardDisk          chd;
-    CMachine           cmachine;
+    CHardDisk2 mHardDisk;
+    CMachine mMachine;
 };
 
 #endif // __VBoxNewVMWzd_h__

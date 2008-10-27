@@ -34,10 +34,12 @@
 /* embedded settings converter template for updating settings files */
 #include "xml_SettingsConverter_xsl.h"
 
+/* embedded VirtualBox element definition that contains a proper 'version'
+ * attribute constraint */
 static const unsigned char g_ab_xml_VirtualBox_settings_root_xsd[] =
 "<xsd:schema"
 "  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\""
-"  xmlns=\"http://www.innotek.de/VirtualBox-settings\"" 
+"  xmlns=\"http://www.innotek.de/VirtualBox-settings\""
 "  xmlns:vb=\"http://www.innotek.de/VirtualBox-settings\""
 "  targetNamespace=\"http://www.innotek.de/VirtualBox-settings\""
 "  elementFormDefault=\"qualified\""

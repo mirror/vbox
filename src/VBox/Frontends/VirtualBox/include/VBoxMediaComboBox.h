@@ -26,6 +26,7 @@
 #include "VBoxGlobal.h"
 
 #include <qcombobox.h>
+#include <qvaluelist.h>
 
 class QListBoxItem;
 
@@ -35,50 +36,68 @@ class VBoxMediaComboBox : public QComboBox
 
 public:
 
-    VBoxMediaComboBox (QWidget *aParent = 0, const char *aName = 0,
-                       int aType = 0, bool aUseEmptyItem = false);
+    typedef QMap <QUuid, QUuid> BaseToDiffMap;
+
+    VBoxMediaComboBox (QWidget *aParent, const char *aName,
+                       VBoxDefs::MediaType aType, QUuid aMachineId = QUuid());
     ~VBoxMediaComboBox() {}
 
-    void  refresh();
-    void  setUseEmptyItem (bool);
-    void  setBelongsTo (const QUuid &);
-    QUuid getId (int aId = -1);
-    QUuid getBelongsTo();
-    void  setCurrentItem (const QUuid &);
-    void  setType (int);
+    void refresh();
+    void repopulate();
+
+    QUuid id (int = -1);
+    QString location (int = -1);
+
+    void setCurrentItem (const QUuid &);
+    void setType (VBoxDefs::MediaType);
+
+    void setShowDiffs (bool aShowDiffs);
+    bool showDiffs() const { return mShowDiffs; }
 
 protected slots:
 
     void mediaEnumStarted();
-    void mediaEnumerated (const VBoxMedia &, int);
-    void mediaAdded (const VBoxMedia &);
-    void mediaUpdated (const VBoxMedia &);
-    void mediaRemoved (VBoxDefs::DiskType, const QUuid &);
+    void mediumEnumerated (const VBoxMedium &, int);
+    void mediumAdded (const VBoxMedium &);
+    void mediumUpdated (const VBoxMedium &);
+    void mediumRemoved (VBoxDefs::MediaType, const QUuid &);
     void processOnItem (QListBoxItem *);
     void processActivated (int);
 
 protected:
 
-    void updateToolTip (int);
-    void processMedia (const VBoxMedia &);
-    void processHdMedia (const VBoxMedia &);
-    void processCdMedia (const VBoxMedia &);
-    void processFdMedia (const VBoxMedia &);
-    void appendItem (const QString &, const QUuid &,
-                     const QString &, QPixmap *);
-    void replaceItem (int, const QString &,
-                      const QString &, QPixmap *);
-    void updateShortcut (const QString &, const QUuid &, const QString &,
-                          VBoxMedia::Status);
+    void addNoMediaItem();
 
-    int         mType;
-    QStringList mUuidList;
-    QStringList mTipList;
-    QUuid       mMachineId;
-    QUuid       mRequiredId;
-    bool        mUseEmptyItem;
-    QPixmap     mPmInacc;
-    QPixmap     mPmError;
+    void updateToolTip (int);
+
+    void appendItem (const VBoxMedium &);
+    void replaceItem (int, const VBoxMedium &);
+
+    bool findMediaIndex (const QUuid &aId, size_t &aIndex);
+
+    VBoxDefs::MediaType mType;
+
+    /** Obtruncated VBoxMedium structure. */
+    struct Medium
+    {
+        Medium() {}
+        Medium (const QUuid &aId, const QString &aLocation,
+                const QString aToolTip)
+            : id (aId), location (aLocation), toolTip (aToolTip) {}
+
+        QUuid id;
+        QString location;
+        QString toolTip;
+    };
+
+    typedef QValueVector <Medium> Media;
+    Media mMedia;
+
+    QUuid mLastId;
+
+    bool mShowDiffs : 1;
+
+    QUuid mMachineId;
 };
 
 #endif /* __VBoxMediaComboBox_h__ */

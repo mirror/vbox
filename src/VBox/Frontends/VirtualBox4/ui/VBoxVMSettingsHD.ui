@@ -28,7 +28,7 @@
   </property>
   <layout class="QGridLayout" >
    <item row="0" column="0" >
-    <widget class="QCheckBox" name="mCbSATA" >
+    <widget class="QCheckBox" name="mSATACheck" >
      <property name="whatsThis" >
       <string>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</string>
      </property>
@@ -80,7 +80,7 @@
          <enum>Qt::ActionsContextMenu</enum>
         </property>
         <property name="whatsThis" >
-         <string>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</string>
+         <string>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt>Space&lt;/tt> key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</string>
         </property>
         <property name="horizontalScrollBarPolicy" >
          <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -106,6 +106,16 @@
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" >
+    <widget class="QCheckBox" name="mShowDiffsCheck" >
+     <property name="whatsThis" >
+      <string>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</string>
+     </property>
+     <property name="text" >
+      <string>&amp;Show Differencing Hard Disks</string>
+     </property>
     </widget>
    </item>
   </layout>

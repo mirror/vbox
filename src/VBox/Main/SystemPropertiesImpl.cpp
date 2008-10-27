@@ -68,15 +68,45 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
 
     mParent = aParent;
 
-    setDefaultVDIFolder (NULL);
     setDefaultMachineFolder (NULL);
+    setDefaultHardDiskFolder (NULL);
     setRemoteDisplayAuthLibrary (NULL);
 
     mHWVirtExEnabled = false;
     mLogHistoryCount = 3;
 
-    setReady(true);
-    return S_OK;
+    HRESULT rc = S_OK;
+
+    /* Fetch info of all available hd backends. */
+
+    /// @todo NEWMEDIA VDBackendInfo needs to be improved to let us enumerate
+    /// any number of backends
+
+    /// @todo We currently leak memory because it's not actually clear what to
+    /// free in structures returned by VDBackendInfo. Must be fixed ASAP!
+
+    VDBACKENDINFO aVDInfo [100];
+    unsigned cEntries;
+    int vrc = VDBackendInfo (RT_ELEMENTS (aVDInfo), aVDInfo, &cEntries);
+    AssertRC (vrc);
+    if (VBOX_SUCCESS (vrc))
+    {
+        for (unsigned i = 0; i < cEntries; ++ i)
+        {
+            ComObjPtr <HardDiskFormat> hdf;
+            rc = hdf.createObject();
+            CheckComRCBreakRC (rc);
+
+            rc = hdf->init (&aVDInfo [i]);
+            CheckComRCBreakRC (rc);
+
+            mHardDiskFormats.push_back (hdf);
+        }
+    }
+
+    setReady (SUCCEEDED (rc));
+
+    return rc;
 }
 
 /**
@@ -226,32 +256,6 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(DefaultVDIFolder) (BSTR *aDefaultVDIFolder)
-{
-    if (!aDefaultVDIFolder)
-        return E_POINTER;
-
-    AutoWriteLock alock (this);
-    CHECK_READY();
-
-    mDefaultVDIFolderFull.cloneTo (aDefaultVDIFolder);
-
-    return S_OK;
-}
-
-STDMETHODIMP SystemProperties::COMSETTER(DefaultVDIFolder) (INPTR BSTR aDefaultVDIFolder)
-{
-    AutoWriteLock alock (this);
-    CHECK_READY();
-
-    HRESULT rc = setDefaultVDIFolder (aDefaultVDIFolder);
-    if (FAILED (rc))
-        return rc;
-
-    alock.unlock();
-    return mParent->saveSettings();
-}
-
 STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMachineFolder)
 {
     if (!aDefaultMachineFolder)
@@ -276,6 +280,47 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (INPTR BSTR aDefa
 
     alock.unlock();
     return mParent->saveSettings();
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultHardDiskFolder)
+{
+    if (!aDefaultHardDiskFolder)
+        return E_POINTER;
+
+    AutoWriteLock alock (this);
+    CHECK_READY();
+
+    mDefaultHardDiskFolderFull.cloneTo (aDefaultHardDiskFolder);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (INPTR BSTR aDefaultHardDiskFolder)
+{
+    AutoWriteLock alock (this);
+    CHECK_READY();
+
+    HRESULT rc = setDefaultHardDiskFolder (aDefaultHardDiskFolder);
+    if (FAILED (rc))
+        return rc;
+
+    alock.unlock();
+    return mParent->saveSettings();
+}
+
+STDMETHODIMP SystemProperties::
+COMGETTER(HardDiskFormats) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats))
+{
+    if (ComSafeArrayOutIsNull (aHardDiskFormats))
+        return E_POINTER;
+
+    AutoWriteLock alock (this);
+    CHECK_READY();
+
+    SafeIfaceArray <IHardDiskFormat> hardDiskFormats (mHardDiskFormats);
+    hardDiskFormats.detachTo (ComSafeArrayOutArg (aHardDiskFormats));
+
+    return S_OK;
 }
 
 STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemoteDisplayAuthLibrary)
@@ -396,12 +441,12 @@ HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
 
     Bstr bstr;
 
-    bstr = properties.stringValue ("defaultVDIFolder");
-    rc = setDefaultVDIFolder (bstr);
-    CheckComRCReturnRC (rc);
-
     bstr = properties.stringValue ("defaultMachineFolder");
     rc = setDefaultMachineFolder (bstr);
+    CheckComRCReturnRC (rc);
+
+    bstr = properties.stringValue ("defaultHardDiskFolder");
+    rc = setDefaultHardDiskFolder (bstr);
     CheckComRCReturnRC (rc);
 
     bstr = properties.stringValue ("remoteDisplayAuthLibrary");
@@ -436,11 +481,11 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
     /* then, recreate it */
     properties = aGlobal.createKey ("SystemProperties");
 
-    if (mDefaultVDIFolder)
-        properties.setValue <Bstr> ("defaultVDIFolder", mDefaultVDIFolder);
-
     if (mDefaultMachineFolder)
         properties.setValue <Bstr> ("defaultMachineFolder", mDefaultMachineFolder);
+
+    if (mDefaultHardDiskFolder)
+        properties.setValue <Bstr> ("defaultHardDiskFolder", mDefaultHardDiskFolder);
 
     if (mRemoteDisplayAuthLibrary)
         properties.setValue <Bstr> ("remoteDisplayAuthLibrary", mRemoteDisplayAuthLibrary);
@@ -458,28 +503,6 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT SystemProperties::setDefaultVDIFolder (const BSTR aPath)
-{
-    Utf8Str path;
-    if (aPath && *aPath)
-        path = aPath;
-    else
-        path = "VDI";
-
-    // get the full file name
-    char folder [RTPATH_MAX];
-    int vrc = RTPathAbsEx (mParent->homeDir(), path, folder, sizeof (folder));
-    if (VBOX_FAILURE (vrc))
-        return setError (E_FAIL,
-            tr ("Cannot set the default VDI folder to '%ls' (%Vrc)"),
-            path.raw(), vrc);
-
-    mDefaultVDIFolder = path;
-    mDefaultVDIFolderFull = folder;
-
-    return S_OK;
-}
-
 HRESULT SystemProperties::setDefaultMachineFolder (const BSTR aPath)
 {
     Utf8Str path;
@@ -488,16 +511,38 @@ HRESULT SystemProperties::setDefaultMachineFolder (const BSTR aPath)
     else
         path = "Machines";
 
-    // get the full file name
-    char folder [RTPATH_MAX];
-    int vrc = RTPathAbsEx (mParent->homeDir(), path, folder, sizeof (folder));
+    /* get the full file name */
+    Utf8Str folder;
+    int vrc = mParent->calculateFullPath (path, folder);
     if (VBOX_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Cannot set the default machines folder to '%ls' (%Vrc)"),
+            tr ("Invalid default machine folder '%ls' (%Vrc)"),
             path.raw(), vrc);
 
     mDefaultMachineFolder = path;
     mDefaultMachineFolderFull = folder;
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::setDefaultHardDiskFolder (const BSTR aPath)
+{
+    Utf8Str path;
+    if (aPath && *aPath)
+        path = aPath;
+    else
+        path = "HardDisks";
+
+    /* get the full file name */
+    Utf8Str folder;
+    int vrc = mParent->calculateFullPath (path, folder);
+    if (VBOX_FAILURE (vrc))
+        return setError (E_FAIL,
+            tr ("Invalid default hard disk folder '%ls' (%Vrc)"),
+            path.raw(), vrc);
+
+    mDefaultHardDiskFolder = path;
+    mDefaultHardDiskFolderFull = folder;
 
     return S_OK;
 }

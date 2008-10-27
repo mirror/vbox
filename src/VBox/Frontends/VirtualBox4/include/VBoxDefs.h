@@ -106,8 +106,15 @@ private:
 /* A common namespace for all enums */
 struct VBoxDefs
 {
-    /** Disk image type. */
-    enum DiskType { InvalidType, HD = 0x01, CD = 0x02, FD = 0x04 };
+    /** Media type. */
+    enum MediaType
+    {
+        MediaType_Invalid,
+        MediaType_HardDisk,
+        MediaType_DVD,
+        MediaType_Floppy,
+        MediaType_All
+    };
 
     /** VM display rendering mode. */
     enum RenderMode
@@ -126,7 +133,7 @@ struct VBoxDefs
         MousePointerChangeEventType,
         MachineStateChangeEventType,
         AdditionsStateChangeEventType,
-        MediaChangeEventType,
+        MediaDriveChangeEventType,
         MachineDataChangeEventType,
         MachineRegisteredEventType,
         SessionStateChangeEventType,
@@ -139,7 +146,7 @@ struct VBoxDefs
         SharedFolderChangeEventType,
         RuntimeErrorEventType,
         ModifierKeyChangeEventType,
-        EnumerateMediaEventType,
+        MediaEnumEventType,
 #if defined (Q_WS_WIN)
         ShellExecuteEventType,
 #endif

@@ -79,7 +79,7 @@ void VBoxUSBFilterSettings::getFromFilter (const CUSBDeviceFilter &aFilter)
         }
         case VBoxUSBFilterSettings::HostType:
         {
-            const CHostUSBDeviceFilter filter = CUnknown (aFilter);
+            const CHostUSBDeviceFilter filter (aFilter);
             KUSBDeviceFilterAction action = filter.GetAction();
             if (action == KUSBDeviceFilterAction_Ignore)
                 cbAction->setCurrentItem (0);
@@ -149,7 +149,7 @@ COMResult VBoxUSBFilterSettings::putBackToFilter()
             }
             case VBoxUSBFilterSettings::HostType:
             {
-                CHostUSBDeviceFilter filter = CUnknown (mFilter);
+                CHostUSBDeviceFilter filter (mFilter);
                 filter.SetAction (vboxGlobal().toUSBDevFilterAction (
                     cbAction->currentText()));
                 break;

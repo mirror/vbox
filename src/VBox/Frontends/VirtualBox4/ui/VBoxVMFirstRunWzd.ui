@@ -486,7 +486,7 @@
                  <widget class="VBoxMediaComboBox" name="mCbImage" />
                 </item>
                 <item>
-                 <widget class="QToolButton" name="mTbVdm" >
+                 <widget class="QToolButton" name="mTbVmm" >
                   <property name="icon" >
                    <iconset resource="../VirtualBox.qrc" >:/select_file_16px.png</iconset>
                   </property>

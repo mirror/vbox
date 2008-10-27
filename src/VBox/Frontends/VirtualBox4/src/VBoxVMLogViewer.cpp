@@ -216,7 +216,7 @@ void VBoxVMLogViewer::save()
     QString dtString = dtInfo.toString ("yyyy-MM-dd-hh-mm-ss");
     QString defaultFileName = QString ("%1-%2.log")
         .arg (mMachine.GetName()).arg (dtString);
-    QString defaultFullName = QDir::convertSeparators (
+    QString defaultFullName = QDir::toNativeSeparators (
         QDir::home().absolutePath() + "/" + defaultFileName);
     QString newFileName = QFileDialog::getSaveFileName (this,
         tr ("Save VirtualBox Log As"), defaultFullName);

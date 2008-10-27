@@ -129,7 +129,7 @@ signals:
     void mouseStateChanged (int state);
     void machineStateChanged (KMachineState state);
     void additionsStateChanged (const QString &, bool, bool, bool);
-    void mediaChanged (VBoxDefs::DiskType aType);
+    void mediaDriveChanged (VBoxDefs::MediaType aType);
     void networkStateChange();
     void usbStateChange();
     void sharedFoldersChanged();

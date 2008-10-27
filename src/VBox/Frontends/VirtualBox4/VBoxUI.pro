@@ -26,7 +26,7 @@ LANGUAGE	= C++
 
 FORMS = \
     ui/VBoxCloseVMDlg.ui \
-    ui/VBoxDiskImageManagerDlg.ui \
+    ui/VBoxMediaManagerDlg.ui \
     ui/VBoxSettingsDialog.ui \
     ui/VBoxNewHDWzd.ui \
     ui/VBoxNewVMWzd.ui \

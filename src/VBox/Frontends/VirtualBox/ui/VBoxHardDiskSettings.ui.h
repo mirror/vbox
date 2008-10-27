@@ -147,8 +147,8 @@ private:
 };
 
 /**
- *  QComboBox class reimplementation to use as selector for IDE & SATA
- *  slots.
+ * QComboBox class reimplementation to use as an editor for the device slot
+ * column.
  */
 class HDSlotItem : public QComboBox
 {
@@ -257,39 +257,7 @@ private:
     QValueList<HDSlot> mHDSlots;
 };
 
-/**
- *  VBoxMediaComboBox class reimplementation to use as selector for VDI
- *  image.
- */
-class HDVdiItem : public VBoxMediaComboBox
-{
-    Q_OBJECT
-
-public:
-
-    HDVdiItem (QWidget *aParent, int aType, QListViewItem *aItem)
-        : VBoxMediaComboBox (aParent, "HDVdiItem", aType)
-        , mItem (aItem)
-    {
-        setFocusPolicy (QWidget::NoFocus);
-        connect (&vboxGlobal(),
-                 SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
-                 this, SLOT (repaintHandler()));
-    }
-
-private slots:
-
-    void repaintHandler()
-    {
-        mItem->repaint();
-    }
-
-private:
-
-    QListViewItem *mItem;
-};
-
-QValueList<HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber, bool aFilter)
+QValueList <HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber, bool aFilter)
 {
     QValueList<HDSlot> list = mIDEList + mSATAList;
 
@@ -315,6 +283,40 @@ QValueList<HDSlot> HDSlotUniquizer::list (HDSlotItem *aSubscriber, bool aFilter)
     return list;
 }
 
+/**
+ * VBoxMediaComboBox class reimplementation to use as an editor for the hard
+ * disk column.
+ */
+class HDItem : public VBoxMediaComboBox
+{
+    Q_OBJECT
+
+public:
+
+    HDItem (QWidget *aParent, const char *aName, QUuid aMachineID,
+            QListViewItem *aItem)
+        : VBoxMediaComboBox (aParent, aName, VBoxDefs::MediaType_HardDisk,
+                             aMachineID)
+        , mItem (aItem)
+    {
+        setFocusPolicy (QWidget::NoFocus);
+
+        connect (this, SIGNAL (activated (int)),
+                 this, SLOT (onThisActivated (int)));
+    }
+
+private slots:
+
+    void onThisActivated (int)
+    {
+        mItem->repaint();
+    }
+
+private:
+
+    QListViewItem *mItem;
+};
+
 class HDSpaceItem : public QListViewItem
 {
 public:
@@ -336,72 +338,61 @@ public:
 
     enum { HDListItemType = 1010 };
 
-    HDListItem (VBoxHardDiskSettings *aWidget, QListView *aParent,
-                QListViewItem *aAfter,
-                HDSlotUniquizer *aUniq, const CMachine &aMachine)
+    HDListItem (QListView *aParent, QListViewItem *aAfter,
+                VBoxHardDiskSettings *aSettings, HDSlotUniquizer *aUniq,
+                const QUuid &aMachineId)
         : QListViewItem (aParent, aAfter)
-        , mWidget (aWidget)
-        , mUniq (aUniq)
-        , mMachine (aMachine)
         , mFocusColumn (-1)
         , mAutoFocus (false)
     {
-        init();
+        init (aSettings, aUniq, aMachineId);
     }
 
-    HDListItem (VBoxHardDiskSettings *aWidget, QListView *aParent,
-                HDSlotUniquizer *aUniq, const CMachine &aMachine)
+    HDListItem (QListView *aParent,
+                VBoxHardDiskSettings *aSettings, HDSlotUniquizer *aUniq,
+                const QUuid &aMachineId)
         : QListViewItem (aParent)
-        , mWidget (aWidget)
-        , mUniq (aUniq)
-        , mMachine (aMachine)
         , mFocusColumn (-1)
+        , mAutoFocus (false)
     {
-        init();
+        init (aSettings, aUniq, aMachineId);
+    }
+
+    virtual ~HDListItem()
+    {
+        mHDCombo->deleteLater();
+        mSlotCombo->deleteLater();
     }
 
     int rtti() const { return HDListItemType; }
 
-    QString toolTip()
-    {
-        return QToolTip::textFor (mVector [1]);
-    }
+    QString toolTip() { return QToolTip::textFor (mHDCombo); }
 
-    HDListItem* nextSibling() const
-    {
-        QListViewItem *item = QListViewItem::nextSibling();
-        return item && item->rtti() == HDListItemType ?
-            static_cast<HDListItem*> (item) : 0;
-    }
+    void setId (const QUuid &aId) { mHDCombo->setCurrentItem (aId); }
 
-    void setId (const QUuid &aId) const
-    {
-        static_cast<VBoxMediaComboBox*> (mVector [1])->setCurrentItem (aId);
-    }
+    QUuid id() const { return mHDCombo->id(); }
+    QString location() const { return mHDCombo->location(); }
 
-    QUuid getId() const
-    {
-        return static_cast<VBoxMediaComboBox*> (mVector [1])->getId();
-    }
+    KStorageBus bus() { return mSlotCombo->currentBus(); }
 
-    KStorageBus bus() const
-    {
-        return static_cast<HDSlotItem*> (mVector [0])->currentBus();
-    }
+    LONG channel() const { return mSlotCombo->currentChannel(); }
 
-    LONG channel() const
-    {
-        return static_cast<HDSlotItem*> (mVector [0])->currentChannel();
-    }
-
-    LONG device() const
-    {
-        return static_cast<HDSlotItem*> (mVector [0])->currentDevice();
-    }
+    LONG device() const { return mSlotCombo->currentDevice(); }
 
     QString text (int aColumn) const
     {
-        return mVector [aColumn]->currentText();
+        AssertReturn (aColumn >= 0 && (size_t) aColumn < ELEMENTS (mCombos),
+                      QString::null);
+
+        return mCombos [aColumn]->currentText();
+    }
+
+    const QPixmap *pixmap (int aColumn) const
+    {
+        AssertReturn (aColumn >= 0 && (size_t) aColumn < ELEMENTS (mCombos),
+                      NULL);
+
+        return mCombos [aColumn]->pixmap (mCombos [aColumn]->currentItem());
     }
 
     void moveFocusToColumn (int aCol)
@@ -419,8 +410,12 @@ public:
     void showEditor()
     {
         if (mFocusColumn >= 0)
-            if (mVector [mFocusColumn]->count())
-                mVector [mFocusColumn]->popup();
+        {
+            AssertReturnVoid ((size_t) mFocusColumn < ELEMENTS (mCombos));
+
+            if (mCombos [mFocusColumn]->count())
+                mCombos [mFocusColumn]->popup();
+        }
     }
 
     int focusColumn() const
@@ -428,92 +423,117 @@ public:
         return mFocusColumn;
     }
 
-    void setAttachment (const CHardDiskAttachment &aHda)
+    void setAttachment (const CHardDisk2Attachment &aHda)
     {
         QString device = vboxGlobal()
             .toFullString (aHda.GetBus(), aHda.GetChannel(), aHda.GetDevice());
 
-        if (mVector [0]->listBox()->findItem (device, Qt::ExactMatch))
-            static_cast<HDSlotItem*> (mVector [0])->setText (device);
+        if (mSlotCombo->listBox()->findItem (device, Qt::ExactMatch))
+            mSlotCombo->setText (device);
 
-        static_cast<VBoxMediaComboBox*> (mVector [1])->
-            setCurrentItem (aHda.GetHardDisk().GetRoot().GetId());
-
-        mVector [0]->setHidden (true);
-        mVector [1]->setHidden (true);
+        mHDCombo->setCurrentItem (aHda.GetHardDisk().GetId());
     }
 
-    int vdiCount()
+    int hardDiskCount()
     {
-        return mVector [1]->count();
+        int count = mHDCombo->count();
+        if (count == 1 && mHDCombo-> id (0).isNull())
+            return 0; /* ignore the "no media" item */
+        return count;
     }
 
-    void tryToChooseExcluding (const QStringList &aUsedList)
+    void tryToSelectNotOneOf (const QValueList <QUuid> &aUsedList)
     {
-        for (int i = 0; i < mVector [1]->count(); ++ i)
+        for (int i = 0; i < mHDCombo->count(); ++ i)
         {
-            if (!aUsedList.contains (mVector [1]->text (i)))
+            if (!aUsedList.contains (mHDCombo->id (i)))
             {
-                setId (static_cast<HDVdiItem*> (mVector [1])->getId (i));
+                mHDCombo->setCurrentItem (mHDCombo->id (i));
                 break;
             }
         }
     }
 
+    void setShowDiffs (bool aOn)
+    {
+        if (mHDCombo->showDiffs() != aOn)
+        {
+            mHDCombo->setShowDiffs (aOn);
+            mHDCombo->refresh();
+        }
+    }
+
 private:
 
-    void init()
+    void init (VBoxHardDiskSettings *aSettings, HDSlotUniquizer *aUniq,
+               const QUuid &aMachineId)
     {
+        AssertReturnVoid (listView()->columns() == ELEMENTS (mCombos));
+
         setSelectable (false);
-        mVector.setAutoDelete (true);
-        mVector.resize (listView()->columns());
 
-        QComboBox *cbslot = new HDSlotItem (listView()->viewport(), mUniq);
-        QObject::connect (cbslot, SIGNAL (activated (int)),
-                          mWidget, SIGNAL (hddListChanged()));
-        mVector.insert (0, cbslot);
+        mSlotCombo = new HDSlotItem (listView()->viewport(), aUniq);
+        QObject::connect (mSlotCombo, SIGNAL (activated (int)),
+                          aSettings, SIGNAL (hardDiskListChanged()));
+        mCombos [0] = mSlotCombo;
 
-        VBoxMediaComboBox *cbvdi = new HDVdiItem (listView()->viewport(),
-                                                  VBoxDefs::HD, this);
-        QObject::connect (cbvdi, SIGNAL (activated (int)),
-                          mWidget, SIGNAL (hddListChanged()));
-        mVector.insert (1, cbvdi);
-        cbvdi->setBelongsTo (mMachine.GetId());
-        cbvdi->refresh();
+        mHDCombo = new HDItem (listView()->viewport(), "mHDCombo",
+                               aMachineId, this);
+        QObject::connect (mHDCombo, SIGNAL (activated (int)),
+                          aSettings, SIGNAL (hardDiskListChanged()));
+        mCombos [1] = mHDCombo;
+
+        /* populate the media combobox */
+        mHDCombo->refresh();
+
 #ifdef Q_WS_MAC
         /* White background on Mac OS X */
-        cbslot->setPaletteBackgroundColor (cbslot->parentWidget()->paletteBackgroundColor());
-        cbvdi->setPaletteBackgroundColor (cbvdi->parentWidget()->paletteBackgroundColor());
+        mSlotCombo->setPaletteBackgroundColor (mSlotCombo->parentWidget()->
+                                               paletteBackgroundColor());
+        mHDCombo->setPaletteBackgroundColor (mHDCombo->parentWidget()->
+                                             paletteBackgroundColor());
 #endif /* Q_WS_MAC */
+
+        mSlotCombo->setHidden (true);
+        mHDCombo->setHidden (true);
     }
 
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
                     int aColumn, int aWidth, int aAlign)
     {
-        QComboBox *cb = mVector [aColumn];
+        AssertReturnVoid (aColumn >= 0 && (size_t) aColumn < ELEMENTS (mCombos));
 
-        int indent = 0;
-        for (int i = 0; i < aColumn; ++ i)
-            indent = listView()->columnWidth (i);
+        QComboBox *cb = mCombos [aColumn];
 
-        QRect rect = listView()->itemRect (this);
-
-        int xc = rect.x() + indent;
-        int yc = rect.y();
-        int wc = listView()->columnWidth (aColumn);
-        int hc = rect.height();
-
-        cb->move (xc, yc);
-        cb->resize (wc, hc);
+        /// @todo (r=dmik) show/hide functionality should be removed from here
+        /// to the appropriate places like focus handling routines
 
         if (aColumn == mFocusColumn)
         {
+            int indent = 0;
+            for (int i = 0; i < aColumn; ++ i)
+                indent = listView()->columnWidth (i);
+
+            QRect rect = listView()->itemRect (this);
+
+            int xc = rect.x() + indent;
+            int yc = rect.y();
+            int wc = listView()->columnWidth (aColumn);
+            int hc = rect.height();
+
+            cb->move (xc, yc);
+            cb->resize (wc, hc);
+
             if (cb->isHidden())
                 cb->show();
             if (mAutoFocus && !cb->hasFocus())
                 QTimer::singleShot (0, cb, SLOT (setFocus()));
+
+            return;
+
         }
-        else if (aColumn != mFocusColumn && !cb->isHidden())
+
+        if (aColumn != mFocusColumn && !cb->isHidden())
             cb->hide();
 
         QListViewItem::paintCell (aPainter, aColorGroup, aColumn, aWidth, aAlign);
@@ -531,10 +551,9 @@ private:
         setHeight ((int) (height() * 1.3));
     }
 
-    VBoxHardDiskSettings  *mWidget;
-    HDSlotUniquizer       *mUniq;
-    CMachine               mMachine;
-    QPtrVector<QComboBox>  mVector;
+    HDSlotItem            *mSlotCombo;
+    VBoxMediaComboBox     *mHDCombo;
+    QComboBox             *mCombos [2];
     int                    mFocusColumn;
     bool                   mAutoFocus;
 };
@@ -584,16 +603,6 @@ void VBoxHardDiskSettings::init()
     mSelectHardDiskAct->setIconSet
         (VBoxGlobal::iconSet ("select_file_16px.png", "select_file_dis_16px.png"));
 
-    /* connections */
-    connect (mCbSATA, SIGNAL (toggled (bool)),
-             this, SLOT (onToggleSATAController (bool)));
-    connect (mLvHD, SIGNAL (pressed (QListViewItem*, const QPoint&, int)),
-             this, SLOT (moveFocus (QListViewItem*, const QPoint&, int)));
-    connect (mLvHD, SIGNAL (currentChanged (QListViewItem*)),
-             this, SLOT (onCurrentChanged (QListViewItem*)));
-    connect (mLvHD, SIGNAL (contextMenuRequested (QListViewItem*, const QPoint&, int)),
-             this, SLOT (onContextMenuRequested (QListViewItem*, const QPoint&, int)));
-
     /* rest */
 
     new HDSpaceItem (mLvHD);
@@ -605,6 +614,9 @@ void VBoxHardDiskSettings::init()
 
 void VBoxHardDiskSettings::getFromMachine (const CMachine &aMachine)
 {
+    AssertReturnVoid (mMachine.isNull());
+    AssertReturnVoid (!aMachine.isNull());
+
     mMachine = aMachine;
 
     {
@@ -613,22 +625,22 @@ void VBoxHardDiskSettings::getFromMachine (const CMachine &aMachine)
         {
             /* hide the SATA check box if the SATA controller is not available
              * (i.e. in VirtualBox OSE) */
-            mCbSATA->setHidden (true);
+            mSATACheck->setHidden (true);
         }
         else
         {
-            mCbSATA->setChecked (ctl.GetEnabled());
+            mSATACheck->setChecked (ctl.GetEnabled());
         }
     }
 
-    CHardDiskAttachmentEnumerator en =
-        mMachine.GetHardDiskAttachments().Enumerate();
-    while (en.HasMore())
+    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    for (size_t i = 0; i < vec.size(); ++ i)
     {
-        CHardDiskAttachment hda = en.GetNext();
-        HDListItem *item = createItem (mSlotUniquizer, mMachine);
+        CHardDisk2Attachment hda = vec [i];
+        HDListItem *item = createItem();
         item->setAttachment (hda);
     }
+
     mLvHD->setSortColumn (0);
     mLvHD->sort();
     mLvHD->setSorting (-1);
@@ -641,44 +653,47 @@ void VBoxHardDiskSettings::putBackToMachine()
     CSATAController ctl = mMachine.GetSATAController();
     if (!ctl.isNull())
     {
-        ctl.SetEnabled (mCbSATA->isChecked());
+        ctl.SetEnabled (mSATACheck->isChecked());
     }
 
     /* Detach all attached Hard Disks */
-    CHardDiskAttachmentEnumerator en =
-        mMachine.GetHardDiskAttachments().Enumerate();
-    while (en.HasMore())
+    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    for (size_t i = 0; i < vec.size(); ++ i)
     {
-        CHardDiskAttachment hda = en.GetNext();
-        mMachine.DetachHardDisk (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+        CHardDisk2Attachment hda = vec [i];
+        mMachine.DetachHardDisk2 (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
         if (!mMachine.isOk())
             vboxProblem().cannotDetachHardDisk (this, mMachine,
+                vboxGlobal().getMedium (CMedium (hda.GetHardDisk())).location(),
                 hda.GetBus(), hda.GetChannel(), hda.GetDevice());
     }
 
-    /* Sort&Attach all listed Hard Disks */
+    /* Sort & attach all listed Hard Disks */
+
     mLvHD->setSortColumn (0);
     mLvHD->sort();
     LONG maxSATAPort = 1;
-    HDListItem *item = mLvHD->firstChild() &&
-        mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
-        static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
-    while (item)
+
+    for (QListViewItem *item = mLvHD->firstChild(); item;
+         item = item->nextSibling())
     {
-        if (item->bus() == KStorageBus_SATA)
-            maxSATAPort = maxSATAPort < (item->channel()+1) ?
-                          (item->channel()+1) : maxSATAPort;
-        mMachine.AttachHardDisk (item->getId(),
-            item->bus(), item->channel(), item->device());
+        if (item->rtti() != HDListItem::HDListItemType)
+            continue;
+
+        HDListItem *hdi = static_cast <HDListItem *> (item);
+
+        if (hdi->bus() == KStorageBus_SATA)
+            maxSATAPort = QMAX (hdi->channel() + 1, maxSATAPort);
+        mMachine.AttachHardDisk2 (hdi->id(),
+            hdi->bus(), hdi->channel(), hdi->device());
         if (!mMachine.isOk())
-            vboxProblem().cannotAttachHardDisk (this, mMachine, item->getId(),
-                item->bus(), item->channel(), item->device());
-        item = item->nextSibling();
+            vboxProblem().cannotAttachHardDisk (this, mMachine,
+                hdi->location(), hdi->bus(), hdi->channel(), hdi->device());
     }
 
     if (!ctl.isNull())
     {
-        mMachine.GetSATAController().SetPortCount (maxSATAPort);
+        ctl.SetPortCount (maxSATAPort);
     }
 }
 
@@ -686,19 +701,22 @@ QString VBoxHardDiskSettings::checkValidity()
 {
     QString result;
     QStringList slList;
-    QStringList idList;
+    QValueList <QUuid> idList;
 
     /* Search for coincidences through all the media-id */
-    HDListItem *item = mLvHD->firstChild() &&
-        mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
-        static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
-    while (item)
+    for (QListViewItem *item = mLvHD->firstChild(); item;
+         item = item->nextSibling())
     {
-        QString id = item->getId().toString();
-        if (item->getId().isNull())
+        if (item->rtti() != HDListItem::HDListItemType)
+            continue;
+
+        HDListItem *hdi = static_cast <HDListItem *> (item);
+
+        QUuid id = hdi->id();
+        if (id.isNull())
         {
             result = tr ("No hard disk is selected for <i>%1</i>")
-                .arg (item->text (0));
+                .arg (hdi->text (0));
             break;
         }
         else if (idList.contains (id))
@@ -713,7 +731,6 @@ QString VBoxHardDiskSettings::checkValidity()
             slList << item->text (0);
             idList << id;
         }
-        item = item->nextSibling();
     }
 
     return result;
@@ -721,29 +738,34 @@ QString VBoxHardDiskSettings::checkValidity()
 
 void VBoxHardDiskSettings::addHDItem()
 {
-    /* Create new item */
-    HDListItem *item = createItem (mSlotUniquizer, mMachine);
+    /* Create a new item */
+    HDListItem *item = createItem();
     item->moveFocusToColumn (1);
     mLvHD->setCurrentItem (item);
     if (!mLvHD->hasFocus())
         mLvHD->setFocus();
-    /* Qt3 isn't emits currentChanged() signal if first list-view item added */
+
+    /* Qt3 doesn't emit currentChanged() signal when the first item is added */
     if (mLvHD->childCount() == 1)
         onCurrentChanged (item);
 
-    /* Search through the attachments for the used VDIs */
-    QStringList usedList;
-    HDListItem *it = mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
-        static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
-    while (it && it != item)
+    /* Search through the attachments for the used hard disks */
+    QValueList <QUuid> usedList;
+    for (QListViewItem *it = mLvHD->firstChild(); it;
+         it = it->nextSibling())
     {
-        usedList << it->text (1);
-        it = it->nextSibling();
-    }
-    item->tryToChooseExcluding (usedList);
+        if (it->rtti() != HDListItem::HDListItemType)
+            continue;
 
-    /* Ask the user for method to add new vdi */
-    int result = mLvHD->childCount() - 1 > item->vdiCount() ?
+        HDListItem *hdi = static_cast <HDListItem *> (it);
+
+        usedList << hdi->id();
+    }
+
+    item->tryToSelectNotOneOf (usedList);
+
+    /* Ask the user for a method to add a new hard disk */
+    int result = mLvHD->childCount() - 1 > item->hardDiskCount() ?
         vboxProblem().confirmRunNewHDWzdOrVDM (this) :
         QIMessageBox::Cancel;
     if (result == QIMessageBox::Yes)
@@ -751,19 +773,14 @@ void VBoxHardDiskSettings::addHDItem()
         VBoxNewHDWzd dlg (this, "VBoxNewHDWzd");
         if (dlg.exec() == QDialog::Accepted)
         {
-            CHardDisk hd = dlg.hardDisk();
-            VBoxMedia::Status status =
-                hd.GetAccessible() ? VBoxMedia::Ok :
-                hd.isOk() ? VBoxMedia::Inaccessible :
-                VBoxMedia::Error;
-            vboxGlobal().addMedia (VBoxMedia (CUnknown (hd), VBoxDefs::HD, status));
+            CHardDisk2 hd = dlg.hardDisk();
             item->setId (dlg.hardDisk().GetId());
         }
     }
     else if (result == QIMessageBox::No)
-        showVDM();
+        showMediaManager();
 
-    emit hddListChanged();
+    emit hardDiskListChanged();
 }
 
 void VBoxHardDiskSettings::delHDItem()
@@ -785,33 +802,31 @@ void VBoxHardDiskSettings::delHDItem()
         }
     }
 
-    emit hddListChanged();
+    emit hardDiskListChanged();
 }
 
-void VBoxHardDiskSettings::showVDM()
+void VBoxHardDiskSettings::showMediaManager()
 {
     HDListItem *item = mLvHD->currentItem() &&
         mLvHD->currentItem()->rtti() == HDListItem::HDListItemType ?
-        static_cast<HDListItem*> (mLvHD->currentItem()) : 0;
+        static_cast <HDListItem *> (mLvHD->currentItem()) : 0;
 
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg",
-                                 WType_Dialog | WShowModal);
+    VBoxMediaManagerDlg dlg (this, "VBoxMediaManagerDlg",
+                             WType_Dialog | WShowModal);
 
-    QUuid machineId = mMachine.GetId();
-    QUuid hdId = item->getId();
+    dlg.setup (VBoxDefs::MediaType_HardDisk, true /* aDoSelect */,
+               true /* aRefresh */, mMachine, item->id(),
+               mShowDiffsCheck->isOn());
 
-    dlg.setup (VBoxDefs::HD, true, &machineId, true /* aRefresh */,
-               mMachine, hdId, QUuid(), QUuid());
-
-    if (dlg.exec() == VBoxDiskImageManagerDlg::Accepted)
-        item->setId (dlg.getSelectedUuid());
+    if (dlg.exec() == VBoxMediaManagerDlg::Accepted)
+        item->setId (dlg.selectedId());
 }
 
 void VBoxHardDiskSettings::moveFocus (QListViewItem *aItem, const QPoint&, int aCol)
 {
     if (aItem && aItem->rtti() == HDListItem::HDListItemType)
     {
-        static_cast<HDListItem*> (aItem)->moveFocusToColumn (aCol);
+        static_cast <HDListItem *> (aItem)->moveFocusToColumn (aCol);
         onAfterCurrentChanged (aItem);
     }
 }
@@ -822,21 +837,25 @@ void VBoxHardDiskSettings::onCurrentChanged (QListViewItem *aItem)
     QApplication::postEvent (this, new OnItemChangedEvent (aItem));
 }
 
-void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
+void VBoxHardDiskSettings::onSATACheckToggled (bool aOn)
 {
     if (!aOn)
     {
-        HDListItem *firstItem = mLvHD->firstChild() &&
-            mLvHD->firstChild()->rtti() == HDListItem::HDListItemType ?
-            static_cast<HDListItem*> (mLvHD->firstChild()) : 0;
-
-        /* Search the list for the SATA ports in */
-        HDListItem *sataItem = firstItem;
-        while (sataItem)
+        /* Search the list for the SATA ports */
+        HDListItem *sataItem = NULL;
+        for (QListViewItem *item = mLvHD->firstChild(); item;
+             item = item->nextSibling())
         {
-            if (sataItem->bus() == KStorageBus_SATA)
+            if (item->rtti() != HDListItem::HDListItemType)
+                continue;
+
+            HDListItem *hdi = static_cast <HDListItem *> (item);
+
+            if (hdi->bus() == KStorageBus_SATA)
+            {
+                sataItem = hdi;
                 break;
-            sataItem = sataItem->nextSibling();
+            }
         }
 
         /* If list contains at least one SATA port */
@@ -846,29 +865,36 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
             if (rc != QIMessageBox::Ok)
             {
                 /* Switch check-box back to "on" */
-                mCbSATA->blockSignals (true);
-                mCbSATA->setChecked (true);
-                mCbSATA->blockSignals (false);
+                mSATACheck->blockSignals (true);
+                mSATACheck->setChecked (true);
+                mSATACheck->blockSignals (false);
                 return;
             }
             else
             {
                 /* Delete SATA items */
-                HDListItem *it = firstItem;
                 mLvHD->blockSignals (true);
-                while (it)
+                for (QListViewItem *item = mLvHD->firstChild(); item;)
                 {
-                    HDListItem *curIt = it;
-                    it = it->nextSibling();
-                    if (curIt->bus() == KStorageBus_SATA)
+                    if (item->rtti() == HDListItem::HDListItemType)
                     {
-                        if (curIt == mLvHD->currentItem())
-                            mPrevItem = 0;
-                        delete curIt;
+                        HDListItem *hdi = static_cast <HDListItem *> (item);
+                        if (hdi->bus() == KStorageBus_SATA)
+                        {
+                            if (hdi == mLvHD->currentItem())
+                                mPrevItem = NULL;
+
+                            item = hdi->nextSibling();
+                            delete hdi;
+                            continue;
+                        }
                     }
+
+                    item = item->nextSibling();
                 }
+
                 mLvHD->blockSignals (false);
-                emit hddListChanged();
+                emit hardDiskListChanged();
             }
         }
     }
@@ -878,6 +904,20 @@ void VBoxHardDiskSettings::onToggleSATAController (bool aOn)
     {
         mSlotUniquizer->setSATAPortsCount (newSATAPortsCount);
         onAfterCurrentChanged (mPrevItem);
+    }
+}
+
+void VBoxHardDiskSettings::onShowDiffsCheckToggled (bool aOn)
+{
+    for (QListViewItem *item = mLvHD->firstChild(); item;
+         item = item->nextSibling())
+    {
+        if (item->rtti() != HDListItem::HDListItemType)
+            continue;
+
+        HDListItem *hdi = static_cast <HDListItem *> (item);
+
+        hdi->setShowDiffs (aOn);
     }
 }
 
@@ -915,18 +955,25 @@ void VBoxHardDiskSettings::onContextMenuRequested (QListViewItem * /*aItem*/,
     mContextMenu->exec (aPoint);
 }
 
-HDListItem* VBoxHardDiskSettings::createItem (HDSlotUniquizer *aUniq,
-                                              const CMachine &aMachine)
+HDListItem *VBoxHardDiskSettings::createItem()
 {
     QListViewItem *item = mLvHD->lastItem();
     Assert (item->rtti() == HDSpaceItem::HDSpaceItemType);
     HDListItem *last = item->itemAbove() &&
         item->itemAbove()->rtti() == HDListItem::HDListItemType ?
-        static_cast<HDListItem*> (item->itemAbove()) : 0;
+        static_cast <HDListItem *> (item->itemAbove()) : 0;
 
-    return last ?
-        new HDListItem (this, mLvHD, last, aUniq, aMachine) :
-        new HDListItem (this, mLvHD, aUniq, aMachine);
+    QUuid machineId = mMachine.GetId();
+
+    HDListItem *newItem = last ?
+        new HDListItem (mLvHD, last, this, mSlotUniquizer, machineId) :
+        new HDListItem (mLvHD, this, mSlotUniquizer, machineId);
+
+    AssertReturn (newItem != NULL, NULL);
+
+    newItem->setShowDiffs (mShowDiffsCheck->isOn());
+
+    return newItem;
 }
 
 bool VBoxHardDiskSettings::event (QEvent *aEvent)
@@ -936,7 +983,7 @@ bool VBoxHardDiskSettings::event (QEvent *aEvent)
         /* Redirect postponed onCurrentChanged event */
         case OnItemChangedEvent::Type:
         {
-            OnItemChangedEvent *e = static_cast<OnItemChangedEvent*> (aEvent);
+            OnItemChangedEvent *e = static_cast <OnItemChangedEvent *> (aEvent);
             onAfterCurrentChanged (e->mItem);
             break;
         }
@@ -973,7 +1020,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
             QListViewItem *clickedItem = mLvHD->itemAt (e->pos());
             HDListItem *item = clickedItem &&
                 clickedItem->rtti() == HDListItem::HDListItemType ?
-                static_cast<HDListItem*> (clickedItem) : 0;
+                static_cast <HDListItem *> (clickedItem) : 0;
 
             if (!item && mAddAttachmentAct->isEnabled())
                 addHDItem();
@@ -989,11 +1036,11 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
                 break;
             }
 
-            QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
+            QMouseEvent *e = static_cast <QMouseEvent *> (aEvent);
             QListViewItem *hoveredItem = mLvHD->itemAt (e->pos());
             HDListItem *item = hoveredItem &&
                 hoveredItem->rtti() == HDListItem::HDListItemType ?
-                static_cast<HDListItem*> (hoveredItem) : 0;
+                static_cast <HDListItem *> (hoveredItem) : 0;
 
             QString oldTip = QToolTip::textFor (mLvHD->viewport());
             QString newTip = item ? item->toolTip() :
@@ -1013,7 +1060,7 @@ bool VBoxHardDiskSettings::eventFilter (QObject *aObject, QEvent *aEvent)
 
             HDListItem *item = mLvHD->currentItem() &&
                 mLvHD->currentItem()->rtti() == HDListItem::HDListItemType ?
-                static_cast<HDListItem*> (mLvHD->currentItem()) : 0;
+                static_cast <HDListItem *> (mLvHD->currentItem()) : 0;
 
             QKeyEvent *e = static_cast<QKeyEvent*> (aEvent);
             /* Process cursor-left as "move focus left" action */

@@ -273,16 +273,16 @@ private:
     bool mSupportsGraphics;
 };
 
-/** DVD/FD change event */
-class MediaChangeEvent : public QEvent
+/** DVD/Floppy drive change event */
+class MediaDriveChangeEvent : public QEvent
 {
 public:
-    MediaChangeEvent (VBoxDefs::DiskType aType)
-        : QEvent ((QEvent::Type) VBoxDefs::MediaChangeEventType)
+    MediaDriveChangeEvent (VBoxDefs::MediaType aType)
+        : QEvent ((QEvent::Type) VBoxDefs::MediaDriveChangeEventType)
         , mType (aType) {}
-    VBoxDefs::DiskType diskType() const { return mType; }
+    VBoxDefs::MediaType type() const { return mType; }
 private:
-    VBoxDefs::DiskType mType;
+    VBoxDefs::MediaType mType;
 };
 
 /** Menu activation event */
@@ -467,14 +467,16 @@ public:
     STDMETHOD(OnDVDDriveChange)()
     {
         LogFlowFunc (("DVD Drive changed\n"));
-        QApplication::postEvent (mView, new MediaChangeEvent (VBoxDefs::CD));
+        QApplication::postEvent (mView,
+            new MediaDriveChangeEvent (VBoxDefs::MediaType_DVD));
         return S_OK;
     }
 
     STDMETHOD(OnFloppyDriveChange)()
     {
         LogFlowFunc (("Floppy Drive changed\n"));
-        QApplication::postEvent (mView, new MediaChangeEvent (VBoxDefs::FD));
+        QApplication::postEvent (mView,
+            new MediaDriveChangeEvent (VBoxDefs::MediaType_Floppy));
         return S_OK;
     }
 
@@ -1263,12 +1265,12 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 
-            case VBoxDefs::MediaChangeEventType:
+            case VBoxDefs::MediaDriveChangeEventType:
             {
-                MediaChangeEvent *mce = (MediaChangeEvent *) e;
+                MediaDriveChangeEvent *mce = (MediaDriveChangeEvent *) e;
                 LogFlowFunc (("MediaChangeEvent\n"));
 
-                emit mediaChanged (mce->diskType());
+                emit mediaDriveChanged (mce->type());
                 return true;
             }
 

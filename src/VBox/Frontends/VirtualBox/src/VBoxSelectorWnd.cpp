@@ -28,7 +28,7 @@
 
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxNewVMWzd.h"
-#include "VBoxDiskImageManagerDlg.h"
+#include "VBoxMediaManagerDlg.h"
 #include "VBoxVMSettingsDlg.h"
 #include "VBoxGlobalSettingsDlg.h"
 #include "VBoxVMLogViewer.h"
@@ -399,8 +399,8 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     /* actions */
 
-    fileDiskMgrAction = new QAction( this, "fileDiskMgrAction" );
-    fileDiskMgrAction->setIconSet (VBoxGlobal::iconSet ("diskim_16px.png"));
+    fileMediaMgrAction = new QAction( this, "fileMediaMgrAction" );
+    fileMediaMgrAction->setIconSet (VBoxGlobal::iconSet ("diskim_16px.png"));
     fileSettingsAction = new QAction(this, "fileSettingsAction");
     fileSettingsAction->setIconSet (VBoxGlobal::iconSet ("global_settings_16px.png"));
     fileExitAction = new QAction (this, "fileExitAction");
@@ -518,7 +518,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     /* add actions to menubar */
 
     QPopupMenu *fileMenu = new QPopupMenu(this, "fileMenu");
-    fileDiskMgrAction->addTo( fileMenu );
+    fileMediaMgrAction->addTo( fileMenu );
     fileMenu->insertSeparator();
     fileSettingsAction->addTo(fileMenu);
     fileMenu->insertSeparator();
@@ -625,7 +625,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     clearWState (WState_Polished);
 
     /* signals and slots connections */
-    connect (fileDiskMgrAction, SIGNAL (activated()), this, SLOT(fileDiskMgr()));
+    connect (fileMediaMgrAction, SIGNAL (activated()), this, SLOT(fileMediaMgr()));
     connect (fileSettingsAction, SIGNAL (activated()), this, SLOT(fileSettings()));
     connect (fileExitAction, SIGNAL (activated()), this, SLOT (fileExit()));
     connect (vmNewAction, SIGNAL (activated()), this, SLOT (vmNew()));
@@ -711,9 +711,9 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 // Public slots
 /////////////////////////////////////////////////////////////////////////////
 
-void VBoxSelectorWnd::fileDiskMgr()
+void VBoxSelectorWnd::fileMediaMgr()
 {
-    VBoxDiskImageManagerDlg::showModeless();
+    VBoxMediaManagerDlg::showModeless();
 }
 
 void VBoxSelectorWnd::fileSettings()
@@ -837,7 +837,7 @@ void VBoxSelectorWnd::vmDelete()
 {
     VBoxVMListBoxItem *item = (VBoxVMListBoxItem *) vmListBox->selectedItem();
 
-    AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
+    AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
     if (vboxProblem().confirmMachineDeletion (item->machine()))
     {
@@ -846,22 +846,23 @@ void VBoxSelectorWnd::vmDelete()
         bool ok = false;
         if (item->accessible())
         {
-            /* open a direct session to modify VM settings */
+            /* Open a direct session to modify VM settings */
             CSession session = vboxGlobal().openSession (id);
             if (session.isNull())
                 return;
             CMachine machine = session.GetMachine();
-            /* detach all hard disks before unregistering */
+            /* Detach all attached Hard Disks */
+            CHardDisk2AttachmentVector vec = machine.GetHardDisk2Attachments();
+            for (uint i = 0; i < vec.size(); ++ i)
             {
-                CHardDiskAttachmentEnumerator hen
-                    = machine.GetHardDiskAttachments().Enumerate();
-                while (hen.HasMore())
-                {
-                    CHardDiskAttachment att = hen.GetNext();
-                    machine.DetachHardDisk (att.GetBus(), att.GetChannel(), att.GetDevice());
-                }
+                CHardDisk2Attachment hda = vec [i];
+                machine.DetachHardDisk2 (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+                if (!machine.isOk())
+                    vboxProblem().cannotDetachHardDisk (this, machine,
+                        vboxGlobal().getMedium (CMedium (hda.GetHardDisk())).location(),
+                        hda.GetBus(), hda.GetChannel(), hda.GetDevice());
             }
-            /* commit changes */
+            /* Commit changes */
             machine.SaveSettings();
             if (!machine.isOk())
                 vboxProblem().cannotSaveMachineSettings (machine);
@@ -1139,9 +1140,9 @@ void VBoxSelectorWnd::languageChange()
     /* ensure the details and screenshot view are updated */
     vmListBoxCurrentChanged();
 
-    fileDiskMgrAction->setMenuText (tr ("Virtual &Disk Manager..."));
-    fileDiskMgrAction->setAccel (tr ("Ctrl+D"));
-    fileDiskMgrAction->setStatusTip (tr ("Display the Virtual Disk Manager dialog"));
+    fileMediaMgrAction->setMenuText (tr ("&Virtual Media Manager..."));
+    fileMediaMgrAction->setAccel (tr ("Ctrl+D"));
+    fileMediaMgrAction->setStatusTip (tr ("Display the Virtual Media Manager dialog"));
 
 #ifdef Q_WS_MAC
     /*
@@ -1434,22 +1435,22 @@ void VBoxSelectorWnd::mediaEnumFinished (const VBoxMediaList &list)
         if (QApplication::activeModalWidget())
             break;
 
-        /* ignore the signal if a VBoxDiskImageManagerDlg window is active */
+        /* ignore the signal if a VBoxMediaManagerDlg window is active */
         if (qApp->activeWindow() &&
-            !strcmp (qApp->activeWindow()->className(), "VBoxDiskImageManagerDlg"))
+            !strcmp (qApp->activeWindow()->className(), "VBoxMediaManagerDlg"))
             break;
 
         /* look for at least one inaccessible media */
         VBoxMediaList::const_iterator it;
         for (it = list.begin(); it != list.end(); ++ it)
-            if ((*it).status == VBoxMedia::Inaccessible)
+            if ((*it).state() == KMediaState_Inaccessible)
                 break;
 
         if (it != list.end() && vboxProblem().remindAboutInaccessibleMedia())
         {
             /* Show the VDM dialog but don't refresh once more after a
              * just-finished refresh */
-            VBoxDiskImageManagerDlg::showModeless (false /* aRefresh */);
+            VBoxMediaManagerDlg::showModeless (false /* aRefresh */);
         }
     }
     while (0);

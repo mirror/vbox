@@ -28,122 +28,128 @@
 #include "COMDefs.h"
 #include "VBoxMediaComboBox.h"
 
+/* Qt includes */
 #include <QComboBox>
 
 /** Register type to store slot data */
-class HDSltValue
+class SlotValue
 {
 public:
-    HDSltValue()
-        : name (QString::null), bus (KStorageBus_Null)
-        , channel (0), device (0) {}
-    HDSltValue (const QString &aName, KStorageBus aBus,
-                LONG aChannel, LONG aDevice)
-        : name (aName), bus (aBus)
-        , channel (aChannel), device (aDevice) {}
-    HDSltValue (const HDSltValue &aOther)
-        : name (aOther.name), bus (aOther.bus)
-        , channel (aOther.channel), device (aOther.device) {}
+    SlotValue()
+        : bus (KStorageBus_Null), channel (0), device (0)
+        , name (QString::null) {}
+    SlotValue (KStorageBus aBus, LONG aChannel, LONG aDevice)
+        : bus (aBus), channel (aChannel), device (aDevice)
+        , name (vboxGlobal().toFullString (aBus, aChannel, aDevice)) {}
+    SlotValue (const SlotValue &aOther)
+        : bus (aOther.bus), channel (aOther.channel), device (aOther.device)
+        , name (aOther.name) {}
 
-    HDSltValue& operator= (const HDSltValue &aOther)
+    SlotValue& operator= (const SlotValue &aOther)
     {
-        name    = aOther.name;
         bus     = aOther.bus;
         channel = aOther.channel;
         device  = aOther.device;
+        name    = aOther.name;
         return *this;
     }
 
-    bool operator== (const HDSltValue &aOther)
+    bool operator== (const SlotValue &aOther)
     {
-        return name    == aOther.name &&
-               bus     == aOther.bus &&
+        return bus     == aOther.bus &&
                channel == aOther.channel &&
                device  == aOther.device;
     }
 
-    bool operator!= (const HDSltValue &aOther)
+    bool operator!= (const SlotValue &aOther)
     {
         return ! (*this == aOther);
     }
 
-    QString     name;
     KStorageBus bus;
     LONG        channel;
     LONG        device;
+    QString     name;
 };
-Q_DECLARE_METATYPE (HDSltValue);
+Q_DECLARE_METATYPE (SlotValue);
 
-/** Register type to store vdi data */
-class HDVdiValue
+/** Register type to store disk data */
+class DiskValue
 {
 public:
-    HDVdiValue()
-        : name (QString::null), id (QUuid()) {}
-    HDVdiValue (const QString &aName, const QUuid &aId)
-        : name (aName), id (aId) {}
-    HDVdiValue (const HDVdiValue &aOther)
-        : name (aOther.name), id (aOther.id) {}
+    DiskValue()
+        : id (QUuid())
+        , name (QString::null), tip (QString::null), pix (QPixmap()) {}
+    DiskValue (const QUuid &aId);
+    DiskValue (const DiskValue &aOther)
+        : id (aOther.id)
+        , name (aOther.name), tip (aOther.tip), pix (aOther.pix) {}
 
-    HDVdiValue& operator= (const HDVdiValue &aOther)
+    DiskValue& operator= (const DiskValue &aOther)
     {
-        name = aOther.name;
         id   = aOther.id;
+        name = aOther.name;
+        tip  = aOther.tip;
+        pix  = aOther.pix;
         return *this;
     }
 
-    bool operator== (const HDVdiValue &aOther)
+    bool operator== (const DiskValue &aOther)
     {
-        return name == aOther.name &&
-               id   == aOther.id;
+        return id == aOther.id;
     }
 
-    bool operator!= (const HDVdiValue &aOther)
+    bool operator!= (const DiskValue &aOther)
     {
         return ! (*this == aOther);
     }
 
-    QString name;
     QUuid   id;
+    QString name;
+    QString tip;
+    QPixmap pix;
 };
-Q_DECLARE_METATYPE (HDVdiValue);
+Q_DECLARE_METATYPE (DiskValue);
 
-/** Declare type to store both slt&vdi data */
-class HDValue
+/** Declare type to store both slot&disk data */
+class Attachment
 {
 public:
-    HDValue (HDSltValue aSlt, HDVdiValue aVdi)
-        : slt (aSlt), vdi (aVdi) {}
+    Attachment (SlotValue aSlot, DiskValue aDisk)
+        : slot (aSlot), disk (aDisk) {}
 
     /* Define sorting rules */
-    bool operator< (const HDValue &aOther) const
+    bool operator< (const Attachment &aOther) const
     {
-        return slt.bus <  aOther.slt.bus ||
-               (slt.bus == aOther.slt.bus && slt.channel <  aOther.slt.channel) ||
-               (slt.bus == aOther.slt.bus && slt.channel == aOther.slt.channel && slt.device <  aOther.slt.device);
+        return (slot.bus <  aOther.slot.bus) ||
+               (slot.bus == aOther.slot.bus && slot.channel <  aOther.slot.channel) ||
+               (slot.bus == aOther.slot.bus && slot.channel == aOther.slot.channel && slot.device <  aOther.slot.device);
     }
 
-    HDSltValue slt;
-    HDVdiValue vdi;
+    SlotValue slot;
+    DiskValue disk;
 };
 
-/** QAbstractTableModel class reimplementation to feat slot/vdi
-  * selection mechanism */
-class HDItemsModel : public QAbstractTableModel
+/**
+ * QAbstractTableModel class reimplementation.
+ * Used to feat slot/disk selection mechanism.
+ */
+class AttachmentsModel : public QAbstractTableModel
 {
     Q_OBJECT;
 
 public:
 
-    HDItemsModel (QObject *aParent, int aSltId, int aVdiId)
-        : QAbstractTableModel (aParent)
-        , mSltId (aSltId), mVdiId (aVdiId) {}
+    AttachmentsModel (QITableView *aParent, int aSlotId, int aDiskId)
+        : QAbstractTableModel (aParent), mParent (aParent)
+        , mSlotId (aSlotId), mDiskId (aDiskId) {}
+
+    Qt::ItemFlags flags (const QModelIndex &aIndex) const;
 
     int columnCount (const QModelIndex &aParent = QModelIndex()) const
         { NOREF (aParent); return 2; }
     int rowCount (const QModelIndex &aParent = QModelIndex()) const
-        { NOREF (aParent); return mSltList.count() + 1; }
-    Qt::ItemFlags flags (const QModelIndex &aIndex) const;
+        { NOREF (aParent); return mUsedSlotsList.count() + 1; }
 
     QVariant data (const QModelIndex &aIndex,
                    int aRole = Qt::DisplayRole) const;
@@ -154,33 +160,38 @@ public:
                          Qt::Orientation aOrientation,
                          int aRole = Qt::DisplayRole) const;
 
-    void addItem (const HDSltValue &aSlt = HDSltValue(),
-                  const HDVdiValue &aVdi = HDVdiValue());
+    void addItem (const SlotValue &aSlot = SlotValue(),
+                  const DiskValue &aDisk = DiskValue());
     void delItem (int aIndex);
 
-    const QList<HDSltValue>& slotsList() { return mSltList; }
-    const QList<HDVdiValue>& vdiList() { return mVdiList; }
-    QList<HDValue> fullList (bool aSorted = true);
+    const QList<SlotValue>& usedSlotsList() { return mUsedSlotsList; }
+    const QList<DiskValue>& usedDisksList() { return mUsedDisksList; }
+    QList<Attachment> fullUsedList();
 
     void removeSata();
+    void updateDisks();
 
 private:
 
-    QList<HDSltValue> mSltList;
-    QList<HDVdiValue> mVdiList;
-    int mSltId;
-    int mVdiId;
+    QITableView *mParent;
+    QList<SlotValue> mUsedSlotsList;
+    QList<DiskValue> mUsedDisksList;
+    int mSlotId;
+    int mDiskId;
 };
 
-/** QComboBox class reimplementation used as editor for hd slot */
-class HDSltEditor : public QComboBox
+/**
+ * QComboBox class reimplementation.
+ * Used as editor for HD Attachment SLOT field.
+ */
+class SlotEditor : public QComboBox
 {
     Q_OBJECT;
     Q_PROPERTY (QVariant slot READ slot WRITE setSlot USER true);
 
 public:
 
-    HDSltEditor (QWidget *aParent);
+    SlotEditor (QWidget *aParent);
 
     QVariant slot() const;
     void setSlot (QVariant aSlot);
@@ -195,36 +206,42 @@ private slots:
 
 private:
 
-#if 0
+#if 0 /* F2 key binding left for future releases... */
     void keyPressEvent (QKeyEvent *aEvent);
 #endif
 
-    void populate (const HDSltValue &aIncluding);
+    void populate (const SlotValue &aIncluding);
 
-    QList<HDSltValue> mList;
+    QList<SlotValue> mList;
 };
 
-/** VBoxMediaComboBox class reimplementation used as editor for hd vdi */
-class HDVdiEditor : public VBoxMediaComboBox
+/**
+ * VBoxMediaComboBox class reimplementation.
+ * Used as editor for HD Attachment DISK field.
+ */
+class DiskEditor : public VBoxMediaComboBox
 {
     Q_OBJECT;
-    Q_PROPERTY (QVariant vdi READ vdi WRITE setVdi USER true);
+    Q_PROPERTY (QVariant disk READ disk WRITE setDisk USER true);
 
 public:
 
-    HDVdiEditor (QWidget *aParent);
-   ~HDVdiEditor();
+    static DiskEditor* activeEditor();
 
-    QVariant vdi() const;
-    void setVdi (QVariant aVdi);
+    DiskEditor (QWidget *aParent);
+   ~DiskEditor();
 
-    void tryToChooseUniqueVdi (QList<HDVdiValue> &aList);
-
-    static HDVdiEditor* activeEditor();
+    QVariant disk() const;
+    void setDisk (QVariant aDisk);
 
 signals:
 
     void readyToCommit (QWidget *aThis);
+
+protected:
+
+    void paintEvent (QPaintEvent *aEvent);
+    void initStyleOption (QStyleOptionComboBox *aOption) const;
 
 private slots:
 
@@ -232,57 +249,89 @@ private slots:
 
 private:
 
-#if 0
+#if 0 /* F2 key binding left for future releases... */
     void keyPressEvent (QKeyEvent *aEvent);
 #endif
 
-    static HDVdiEditor *mInstance;
+    static DiskEditor *mInstance;
 };
 
-/** Singleton QObject class reimplementation to use for making
-  * selected IDE & SATA slots unique */
-class HDSlotUniquizer : public QObject
+/**
+ * Singleton QObject class reimplementation.
+ * Used to make selected HD Attachments slots unique &
+ * stores some specific data used for HD Settings.
+ */
+class HDSettings : public QObject
 {
     Q_OBJECT;
 
 public:
 
-    static HDSlotUniquizer* instance (QWidget *aParent = 0,
-                                      HDItemsModel *aWatched = 0,
-                                      const CMachine &aMachine = CMachine());
+    static HDSettings* instance (QWidget *aParent = 0,
+                                 AttachmentsModel *aWatched = 0);
 
-    QList<HDSltValue> list (const HDSltValue &aIncluding, bool aFilter = true);
+    QList<SlotValue> slotsList (const SlotValue &aIncluding = SlotValue(),
+                                bool aFilter = false) const;
+    QList<DiskValue> disksList() const;
 
-    int sataCount() { return mSataCount; }
-    void setSataCount (int aSataCount)
-    {
-        mSataCount = aSataCount;
-        makeSATAList();
-    }
+    bool tryToChooseUniqueDisk (DiskValue &aResult) const;
 
     const CMachine& machine() const { return mMachine; }
+    void setMachine (const CMachine &aMachine) { mMachine = aMachine; }
+
+    int sataCount() const { return mSataCount; }
+    void setSataCount (int aSataCount)
+    {
+        if (mSataCount != aSataCount)
+        {
+            mSataCount = aSataCount;
+            makeSATAList();
+        }
+    }
+
+    bool showDiffs() const { return mShowDiffs; }
+    void setShowDiffs (bool aShowDiffs)
+    {
+        mShowDiffs = aShowDiffs;
+        update();
+    }
 
 protected:
 
-    HDSlotUniquizer (QWidget *aParent, HDItemsModel *aWatched,
-                     const CMachine &aMachine);
-    virtual ~HDSlotUniquizer();
+    HDSettings (QWidget *aParent, AttachmentsModel *aWatched);
+    virtual ~HDSettings();
+
+private slots:
+
+    void update()
+    {
+        makeMediumList();
+        mModel->updateDisks();
+    }
 
 private:
 
     void makeIDEList();
     void makeSATAList();
+    void makeMediumList();
 
-    static HDSlotUniquizer *mInstance;
+    static HDSettings *mInstance;
+
+    AttachmentsModel *mModel;
+    CMachine mMachine;
+
+    QList<SlotValue> mIDEList;
+    QList<SlotValue> mSATAList;
+    QList<DiskValue> mDisksList;
 
     int mSataCount;
-    HDItemsModel *mModel;
-    QList<HDSltValue> mIDEList;
-    QList<HDSltValue> mSATAList;
-    const CMachine &mMachine;
+    bool mShowDiffs;
 };
 
-/** QWidget class reimplementation used as hard disks settings */
+/**
+ * QWidget class reimplementation.
+ * Used as HD Settings widget.
+ */
 class VBoxVMSettingsHD : public VBoxSettingsPage,
                          public Ui::VBoxVMSettingsHD
 {
@@ -310,28 +359,37 @@ protected:
 
 private slots:
 
-    void newClicked();
-    void delClicked();
-    void vdmClicked();
+    void addAttachment();
+    void delAttachment();
+    void showMediaManager();
 
-    void onCurrentChanged (const QModelIndex &aIndex);
-    void cbSATAToggled (int);
-    void onMediaRemoved (VBoxDefs::DiskType, const QUuid &);
+    void onSATACheckToggled (int);
+    void onShowDiffsCheckToggled (int);
+
+    void updateActions (const QModelIndex &aIndex);
 
 private:
 
+    /* events */
     bool eventFilter (QObject *aObj, QEvent *aEvent);
-
-    int maxNameLength() const;
     void showEvent (QShowEvent *aEvent);
 
+    /* private functions */
+    QUuid getWithMediaManager (const QUuid &aInitialId = QUuid());
+    QUuid getWithNewHDWizard();
+    int maxNameLength() const;
+
+    /* variables */
     CMachine mMachine;
+    AttachmentsModel *mModel;
     QIWidgetValidator *mValidator;
-    HDItemsModel *mModel;
+
     QAction *mNewAction;
     QAction *mDelAction;
     QAction *mVdmAction;
+
     bool mWasTableSelected;
+    bool mPolished;
 };
 
 #endif // __VBoxVMSettingsHD_h__

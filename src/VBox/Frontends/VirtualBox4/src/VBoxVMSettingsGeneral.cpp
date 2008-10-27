@@ -205,7 +205,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mCbApic->setChecked (biosSettings.GetIOAPICEnabled());
 
     /*
-     * Check for VT-x and AMD-V capabilities. 
+     * Check for VT-x and AMD-V capabilities.
      * This is a best effort check. A full check requires ring-0 access (msrs).
      */
     bool fVTxAMDVSupported = false;
@@ -254,7 +254,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     fVTxAMDVSupported = false;
 #endif
     mCbVirt->setEnabled (fVTxAMDVSupported);
-    
+
     /* VT-x/AMD-V */
     aMachine.GetHWVirtExEnabled() == KTSBool_True ?
         mCbVirt->setCheckState (Qt::Checked) :
@@ -344,7 +344,7 @@ void VBoxVMSettingsGeneral::putBackTo()
         mMachine.SetSnapshotFolder (mPsSnapshot->path());
         if (!mMachine.isOk())
             vboxProblem().cannotSetSnapshotFolder (mMachine,
-                    QDir::convertSeparators (mPsSnapshot->path()));
+                    QDir::toNativeSeparators (mPsSnapshot->path()));
     }
 
     /* Description (set empty to null to avoid an empty <Description> node

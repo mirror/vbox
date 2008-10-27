@@ -57,7 +57,7 @@ private slots:
     void onGbChange (bool aSwitchedOn);
     void onRbChange();
     void onCbChange();
-    void showImageManager();
+    void showMediaManager();
 
 private:
 

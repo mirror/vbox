@@ -257,7 +257,7 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
                     //  (succeeded or failed).
                     if (vboxProblem()
                             .confirmMountAdditions (mUrl.toString(),
-                                                    QDir::convertSeparators (mTarget)))
+                                                    QDir::toNativeSeparators (mTarget)))
                         vboxGlobal().consoleWnd().installGuestAdditionsFrom (mTarget);
                     QTimer::singleShot (0, this, SLOT (suicide()));
                     break;
@@ -268,13 +268,13 @@ bool VBoxDownloaderWgt::event (QEvent *aEvent)
                         VBoxProblemReporter::Error,
                         tr ("<p>Failed to save the downloaded file as "
                             "<nobr><b>%1</b>.</nobr></p>")
-                        .arg (QDir::convertSeparators (mTarget)));
+                        .arg (QDir::toNativeSeparators (mTarget)));
                 }
 
                 /// @todo read the todo above (probably should just parametrize
                 /// the title)
                 QString target = vboxGlobal().getExistingDirectory (
-                    QFileInfo (mTarget).absolutePath(), this, 
+                    QFileInfo (mTarget).absolutePath(), this,
                     tr ("Select folder to save Guest Additions image to"), true);
                 if (target.isNull())
                     QTimer::singleShot (0, this, SLOT (suicide()));

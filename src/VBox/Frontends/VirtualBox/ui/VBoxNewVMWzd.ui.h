@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -102,23 +102,14 @@ void VBoxNewVMWzd::init()
              this, SLOT (enableNext (const QIWidgetValidator *)));
 
     /* HDD Images page */
-    mediaCombo = new VBoxMediaComboBox (grbHDA, "mediaCombo", VBoxDefs::HD, true);
-    grbHDALayout->addMultiCellWidget (mediaCombo, 0, 0, 0, 2);
-    setTabOrder (mediaCombo, pbNewHD);
+    mHDCombo = new VBoxMediaComboBox (grbHDA, "mHDCombo",
+                                      VBoxDefs::MediaType_HardDisk);
+    grbHDALayout->addMultiCellWidget (mHDCombo, 0, 0, 0, 2);
+    setTabOrder (mHDCombo, pbNewHD);
     setTabOrder (pbNewHD, pbExistingHD);
-    connect (mediaCombo, SIGNAL (activated (int)),
-             this, SLOT (currentMediaChanged (int)));
-    if (!vboxGlobal().isMediaEnumerationStarted())
-        vboxGlobal().startEnumeratingMedia();
-    else
-        mediaCombo->refresh();
 
-    /// @todo (dmik) remove?
-    wvalHDD = new QIWidgetValidator (pageHDD, this);
-    connect (wvalHDD, SIGNAL (validityChanged (const QIWidgetValidator *)),
-             this, SLOT (enableNext (const QIWidgetValidator *)));
-    connect (wvalHDD, SIGNAL (isValidRequested (QIWidgetValidator *)),
-             this, SLOT (revalidate (QIWidgetValidator *)));
+    /* request to check media accessibility */
+    mHDCombo->repopulate();
 
     /* Summary page */
 
@@ -175,7 +166,6 @@ void VBoxNewVMWzd::init()
      */
     wvalNameAndOS->revalidate();
     wvalMemory->revalidate();
-    wvalHDD->revalidate();
 
     /* the finish button on the Summary page is always enabled */
     setFinishEnabled (pageSummary, true);
@@ -221,28 +211,22 @@ void VBoxNewVMWzd::enableNext (const QIWidgetValidator *wval)
     setNextEnabled (wval->widget(), wval->isValid());
 }
 
-
 void VBoxNewVMWzd::revalidate (QIWidgetValidator *wval)
 {
     /* do individual validations for pages */
 
     bool valid = wval->isOtherValid();
 
-    if (wval == wvalHDD)
-    {
-        if (!chd.isNull() && mediaCombo->getId() != chd.GetId())
-            ensureNewHardDiskDeleted();
-    }
-
-    wval->setOtherValid( valid );
+    wval->setOtherValid (valid);
 }
-
 
 void VBoxNewVMWzd::showPage (QWidget *page)
 {
     if (page == pageSummary)
     {
-        if (!mediaCombo->currentItem())
+        bool haveHardDisk = grbHDA->isChecked() && !mHDCombo->id().isNull();
+
+        if (!haveHardDisk)
         {
             if (!vboxProblem().confirmHardDisklessMachine (this))
                 return;
@@ -257,10 +241,10 @@ void VBoxNewVMWzd::showPage (QWidget *page)
             .arg (vboxGlobal().vmGuestOSType (cbOS->currentItem()).GetDescription())
             .arg (slRAM->value());
 
-        if (mediaCombo->currentItem())
+        if (haveHardDisk)
             summary += QString (tr (
                 "<tr><td>Boot Hard Disk:</td><td>%4</td></tr>"))
-                .arg (mediaCombo->currentText());
+                .arg (mHDCombo->currentText());
 
         teSummary->setText ("<table>" + summary + "</table>");
 
@@ -275,11 +259,9 @@ void VBoxNewVMWzd::showPage (QWidget *page)
 
     QWizard::showPage (page);
 
-    /*
-     *  fix focus on the last page. when we go to the last page
-     *  having the Next in focus the focus goes to the Cancel
-     *  button because when the Next hides Finish is not yet shown.
-     */
+    /* fix focus on the last page. when we go to the last page having the Next
+     * in focus the focus goes to the Cancel button because when the Next hides
+       Finish is not yet shown. */
     if (page == pageSummary && focusWidget() == cancelButton())
         finishButton()->setFocus();
 
@@ -289,7 +271,7 @@ void VBoxNewVMWzd::showPage (QWidget *page)
     else if (page == pageMemory)
         slRAM->setFocus();
     else if (page == pageHDD)
-        mediaCombo->setFocus();
+        mHDCombo->setFocus();
     else if (page == pageSummary)
         teSummary->setFocus();
 
@@ -298,10 +280,8 @@ void VBoxNewVMWzd::showPage (QWidget *page)
 
 void VBoxNewVMWzd::accept()
 {
-    /*
-     *  Try to create the machine when the Finish button is pressed.
-     *  On failure, the wisard will remain open to give it another try.
-     */
+    /* Try to create the machine when the Finish button is pressed. On
+     * failure, the wizard will remain open to give it another try. */
     if (constructMachine())
         QWizard::accept();
 }
@@ -311,16 +291,20 @@ bool VBoxNewVMWzd::constructMachine()
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* create a machine with the default settings file location */
-    if (cmachine.isNull())
+    if (mMachine.isNull())
     {
-        cmachine = vbox.CreateMachine (QString(), leName->text(), QUuid());
+        mMachine = vbox.CreateMachine (QString(), leName->text(), QUuid());
         if (!vbox.isOk())
         {
             vboxProblem().cannotCreateMachine (vbox, this);
             return false;
         }
-        if (uuidHD.isNull() || !chd.isNull())
-            cmachine.SetExtraData (VBoxDefs::GUI_FirstRun, "yes");
+
+        /* The FirstRun wizard is to be shown only when we don't attach any hard
+         * disk or attach a new (empty) one. Selecting an existing hard disk
+         * will cancel the wizard. */
+        if (mHDCombo->id().isNull() || !mHardDisk.isNull())
+            mMachine.SetExtraData (VBoxDefs::GUI_FirstRun, "yes");
     }
 
     /* name is set in CreateMachine() */
@@ -329,20 +313,20 @@ bool VBoxNewVMWzd::constructMachine()
     CGuestOSType type = vboxGlobal().vmGuestOSType (cbOS->currentItem());
     AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
     QString typeId = type.GetId();
-    cmachine.SetOSTypeId (typeId);
+    mMachine.SetOSTypeId (typeId);
 
     if (typeId == "os2warp3"  ||
         typeId == "os2warp4"  ||
         typeId == "os2warp45" ||
         typeId == "ecs")
-        cmachine.SetHWVirtExEnabled (KTSBool_True);
+        mMachine.SetHWVirtExEnabled (KTSBool_True);
 
     /* RAM size */
-    cmachine.SetMemorySize (slRAM->value());
+    mMachine.SetMemorySize (slRAM->value());
 
     /* add one network adapter (NAT) by default */
     {
-        CNetworkAdapter cadapter = cmachine.GetNetworkAdapter (0);
+        CNetworkAdapter cadapter = mMachine.GetNetworkAdapter (0);
 #ifdef VBOX_WITH_E1000
         /* Default to e1k on solaris */
         if (typeId == "solaris" ||
@@ -357,23 +341,24 @@ bool VBoxNewVMWzd::constructMachine()
     }
 
     /* register the VM prior to attaching hard disks */
-    vbox.RegisterMachine (cmachine);
+    vbox.RegisterMachine (mMachine);
     if (!vbox.isOk())
     {
-        vboxProblem().cannotCreateMachine (vbox, cmachine, this);
+        vboxProblem().cannotCreateMachine (vbox, mMachine, this);
         return false;
     }
 
-    /* Boot hard disk (Primary Master) */
-    if (!uuidHD.isNull())
+    /* Boot hard disk (IDE Primary Master) */
+    QUuid hardDiskId = mHDCombo->id();
+    if (!hardDiskId.isNull())
     {
         bool ok = false;
-        QUuid id = cmachine.GetId();
+        QUuid id = mMachine.GetId();
         CSession session = vboxGlobal().openSession (id);
         if (!session.isNull())
         {
             CMachine m = session.GetMachine();
-            m.AttachHardDisk (uuidHD, KStorageBus_IDE, 0, 0);
+            m.AttachHardDisk2 (hardDiskId, KStorageBus_IDE, 0, 0);
             if (m.isOk())
             {
                 m.SaveSettings();
@@ -383,7 +368,8 @@ bool VBoxNewVMWzd::constructMachine()
                     vboxProblem().cannotSaveMachineSettings (m, this);
             }
             else
-                vboxProblem().cannotAttachHardDisk (this, m, uuidHD,
+                vboxProblem().cannotAttachHardDisk (this, m,
+                                                    mHDCombo->location(),
                                                     KStorageBus_IDE, 0, 0);
             session.Close();
         }
@@ -392,66 +378,68 @@ bool VBoxNewVMWzd::constructMachine()
             /* unregister on failure */
             vbox.UnregisterMachine (id);
             if (vbox.isOk())
-                cmachine.DeleteSettings();
+                mMachine.DeleteSettings();
             return false;
         }
     }
 
-    /* ensure we don't delete a newly created hard disk on success */
-    chd.detach();
+    /* ensure we don't try to delete a newly created hard disk on success */
+    mHardDisk.detach();
 
     return true;
 }
 
 void VBoxNewVMWzd::ensureNewHardDiskDeleted()
 {
-    if (!chd.isNull())
+    if (!mHardDisk.isNull())
     {
-        QUuid hdId = chd.GetId();
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        vbox.UnregisterHardDisk (chd.GetId());
-        if (!vbox.isOk())
-            vboxProblem().cannotUnregisterMedia (this, vbox, VBoxDefs::HD,
-                                                 chd.GetLocation());
-        else
+        /* remember ID as it may be lost after the deletion */
+        QUuid id = mHardDisk.GetId();
+
+        bool success = false;
+
+        CProgress progress = mHardDisk.DeleteStorage();
+        if (mHardDisk.isOk())
         {
-            CVirtualDiskImage vdi = CUnknown (chd);
-            if (!vdi.isNull())
-            {
-                vdi.DeleteImage();
-                if (!vdi.isOk())
-                    vboxProblem().cannotDeleteHardDiskImage (this, vdi);
-            }
+            vboxProblem().showModalProgressDialog (progress, caption(),
+                                                   parentWidget());
+            if (progress.isOk() && progress.GetResultCode() == S_OK)
+                success = true;
         }
-        chd.detach();
-        vboxGlobal().removeMedia (VBoxDefs::HD, hdId);
+
+        if (success)
+            vboxGlobal().removeMedium (VBoxDefs::MediaType_HardDisk, id);
+        else
+            vboxProblem().cannotDeleteHardDiskStorage (this, mHardDisk,
+                                                       progress);
+        mHardDisk.detach();
     }
 }
 
 CMachine VBoxNewVMWzd::machine()
 {
-    return cmachine;
+    return mMachine;
 }
 
-void VBoxNewVMWzd::showVDIManager()
+void VBoxNewVMWzd::showHardDiskManager()
 {
-    VBoxDiskImageManagerDlg dlg (this, "VBoxDiskImageManagerDlg", WType_Dialog | WShowModal);
-    dlg.setup (VBoxDefs::HD, true);
-    QUuid newId = dlg.exec() == VBoxDiskImageManagerDlg::Accepted ?
-        dlg.getSelectedUuid() : mediaCombo->getId();
+    VBoxMediaManagerDlg dlg (this, "VBoxMediaManagerDlg", WType_Dialog | WShowModal);
+    dlg.setup (VBoxDefs::MediaType_HardDisk, true);
 
-    if (uuidHD != newId)
+    if (dlg.exec() == VBoxMediaManagerDlg::Accepted)
     {
-        ensureNewHardDiskDeleted();
-        uuidHD = newId;
-        mediaCombo->setCurrentItem (uuidHD);
+        QUuid newId = dlg.selectedId();
+        if (mHDCombo->id() != newId)
+        {
+            ensureNewHardDiskDeleted();
+            mHDCombo->setCurrentItem (newId);
+        }
     }
-    mediaCombo->setFocus();
-    /* revailidate */
-    wvalHDD->revalidate();
+
+    mHDCombo->setFocus();
 }
 
-void VBoxNewVMWzd::showNewVDIWizard()
+void VBoxNewVMWzd::showNewHardDiskWizard()
 {
     VBoxNewHDWzd dlg (this, "VBoxNewHDWzd");
 
@@ -463,19 +451,10 @@ void VBoxNewVMWzd::showNewVDIWizard()
     if (dlg.exec() == QDialog::Accepted)
     {
         ensureNewHardDiskDeleted();
-        chd = dlg.hardDisk();
-        /* fetch uuid and name/path */
-        uuidHD = chd.GetId();
-        /* update media combobox */
-        VBoxMedia::Status status =
-            chd.GetAccessible() == TRUE ? VBoxMedia::Ok :
-            chd.isOk() ? VBoxMedia::Inaccessible :
-            VBoxMedia::Error;
-        vboxGlobal().addMedia (VBoxMedia (CUnknown (chd), VBoxDefs::HD, status));
-        mediaCombo->setCurrentItem (uuidHD);
-        mediaCombo->setFocus();
-        /* revailidate */
-        wvalHDD->revalidate();
+        mHardDisk = dlg.hardDisk();
+
+        mHDCombo->setCurrentItem (mHardDisk.GetId());
+        mHDCombo->setFocus();
     }
 }
 
@@ -483,7 +462,6 @@ void VBoxNewVMWzd::slRAM_valueChanged (int val)
 {
     leRAM->setText (QString().setNum (val));
 }
-
 
 void VBoxNewVMWzd::leRAM_textChanged (const QString &text)
 {
@@ -504,9 +482,3 @@ void VBoxNewVMWzd::cbOS_activated (int item)
             .arg (type.GetRecommendedHDD()));
 }
 
-void VBoxNewVMWzd::currentMediaChanged (int)
-{
-    uuidHD = mediaCombo->getId();
-    /* revailidate */
-    wvalHDD->revalidate();
-}

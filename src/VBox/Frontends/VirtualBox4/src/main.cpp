@@ -358,6 +358,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             }
             else
             {
+                /* pre-populate the media list before showing the main widget */
+                vboxGlobal().startEnumeratingMedia();
                 vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
                 vboxGlobal().selectorWnd().show();
 #ifdef VBOX_WITH_REGISTRATION_REQUEST
@@ -366,7 +368,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 #ifdef VBOX_WITH_UPDATE_REQUEST
                 vboxGlobal().showUpdateDialog (false /* aForce */);
 #endif
-                vboxGlobal().startEnumeratingMedia();
                 rc = a.exec();
             }
         }

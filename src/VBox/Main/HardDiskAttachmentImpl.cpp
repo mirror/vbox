@@ -20,124 +20,125 @@
  */
 
 #include "HardDiskAttachmentImpl.h"
-#include "HardDiskImpl.h"
 
 #include "Logging.h"
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (HardDiskAttachment)
-
-HRESULT HardDiskAttachment::FinalConstruct()
+HRESULT HardDisk2Attachment::FinalConstruct()
 {
-    mBus = StorageBus_Null;
-    mChannel = 0;
-    mDevice = 0;
-
     return S_OK;
 }
 
-void HardDiskAttachment::FinalRelease()
+void HardDisk2Attachment::FinalRelease()
 {
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Initializes the hard disk attachment object.
- *  The initialized object becomes immediately dirty
+ * Initializes the hard disk attachment object.
  *
- *  @param aHD      hard disk object
- *  @param aBus     bus type
- *  @param aChannel channel number
- *  @param aDevice  device number on the channel
- *  @param aDirty   whether the attachment is initially dirty or not
+ * @param aHD       Hard disk object.
+ * @param aBus      Bus type.
+ * @param aChannel  Channel number.
+ * @param aDevice   Device number on the channel.
+ * @param aImplicit Wether the attachment contains an implicitly created diff.
  */
-HRESULT HardDiskAttachment::init (HardDisk *aHD, StorageBus_T aBus, LONG aChannel, LONG aDevice,
-                                  BOOL aDirty)
+HRESULT HardDisk2Attachment::init (HardDisk2 *aHD, StorageBus_T aBus, LONG aChannel,
+                                   LONG aDevice, bool aImplicit /*= false*/)
 {
-    ComAssertRet (aHD, E_INVALIDARG);
+    AssertReturn (aHD, E_INVALIDARG);
 
-    if (aBus == StorageBus_IDE)
-    {
-        if (aChannel < 0 || aChannel > 1)
-            return setError (E_FAIL,
-                tr ("Invalid IDE channel for hard disk '%ls': %d. "
-                    "IDE channel number must be in range [0,1]"),
-                aHD->toString().raw(), aChannel);
-        if (aDevice < 0 || aDevice > 1 || (aChannel == 1 && aDevice == 0))
-            return setError (E_FAIL,
-                tr ("Invalid IDE device slot for hard disk '%ls': %d. "
-                    "IDE device slot number must be in range [0,1] for "
-                    "channel 0 and always 1 for channel 1"),
-                aHD->toString().raw(), aDevice);
-    }
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    AutoWriteLock alock (this);
+    m.hardDisk = aHD;
+    unconst (m.bus) = aBus;
+    unconst (m.channel) = aChannel;
+    unconst (m.device) = aDevice;
 
-    mDirty = aDirty;
+    m.implicit = aImplicit;
 
-    mHardDisk = aHD;
-    mBus = aBus;
-    mChannel = aChannel;
-    mDevice = aDevice;
+    /* Confirm a successful initialization when it's the case */
+    autoInitSpan.setSucceeded();
 
-    setReady (true);
     return S_OK;
 }
 
-// IHardDiskAttachment properties
+/**
+ * Uninitializes the instance.
+ * Called from FinalRelease().
+ */
+void HardDisk2Attachment::uninit()
+{
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
+}
+
+// IHardDisk2Attachment properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(HardDisk) (IHardDisk **aHardDisk)
+STDMETHODIMP HardDisk2Attachment::COMGETTER(HardDisk) (IHardDisk2 **aHardDisk)
 {
     if (!aHardDisk)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    ComAssertRet (!!mHardDisk, E_FAIL);
+    AutoReadLock alock (this);
 
-    mHardDisk.queryInterfaceTo (aHardDisk);
+    m.hardDisk.queryInterfaceTo (aHardDisk);
+
     return S_OK;
 }
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(Bus) (StorageBus_T *aBus)
+STDMETHODIMP HardDisk2Attachment::COMGETTER(Bus) (StorageBus_T *aBus)
 {
     if (!aBus)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *aBus = mBus;
+    /* m.bus is constant during life time, no need to lock */
+    *aBus = m.bus;
+
     return S_OK;
 }
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(Channel) (LONG *aChannel)
+STDMETHODIMP HardDisk2Attachment::COMGETTER(Channel) (LONG *aChannel)
 {
     if (!aChannel)
         return E_INVALIDARG;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *aChannel = mChannel;
+    /* m.channel is constant during life time, no need to lock */
+    *aChannel = m.channel;
+
     return S_OK;
 }
 
-STDMETHODIMP HardDiskAttachment::COMGETTER(Device) (LONG *aDevice)
+STDMETHODIMP HardDisk2Attachment::COMGETTER(Device) (LONG *aDevice)
 {
     if (!aDevice)
         return E_INVALIDARG;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    *aDevice = mDevice;
+    /* m.device is constant during life time, no need to lock */
+    *aDevice = m.device;
+
     return S_OK;
 }
 

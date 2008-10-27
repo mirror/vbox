@@ -24,7 +24,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
-#include "VBoxDiskImageManagerDlg.h"
+#include "VBoxMediaManagerDlg.h"
 
 #include <QFileInfo>
 
@@ -40,14 +40,14 @@ VBoxVMSettingsFD::VBoxVMSettingsFD()
     connect (mRbHostFD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
     connect (mRbIsoFD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
     connect (mCbIsoFD, SIGNAL (activated (int)), this, SLOT (onCbChange()));
-    connect (mTbIsoFD, SIGNAL (clicked()), this, SLOT (showImageManager()));
+    connect (mTbIsoFD, SIGNAL (clicked()), this, SLOT (showMediaManager()));
 
     /* Setup iconsets */
     mTbIsoFD->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
                                             ":/select_file_dis_16px.png"));
 
     /* Setup dialog */
-    mCbIsoFD->setType (VBoxDefs::FD);
+    mCbIsoFD->setType (VBoxDefs::MediaType_Floppy);
 
     mLastSelected = mRbHostFD;
     /* Applying language settings */
@@ -109,8 +109,8 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
         }
         case KDriveState_ImageMounted:
         {
-            CFloppyImage img = floppy.GetImage();
-            QString src = img.GetFilePath();
+            CFloppyImage2 img = floppy.GetImage();
+            QString src = img.GetLocation();
             AssertMsg (!src.isNull(), ("Image file must not be null"));
             QFileInfo fi (src);
             mRbIsoFD->setChecked (true);
@@ -130,6 +130,7 @@ void VBoxVMSettingsFD::getFrom (const CMachine &aMachine)
             AssertMsgFailed (("invalid floppy state: %d\n", floppy.GetState()));
     }
 
+    mCbIsoFD->setMachineId (mMachine.GetId());
     mCbIsoFD->setCurrentItem (mUuidIsoFD);
     if (!vboxGlobal().isMediaEnumerationStarted())
         vboxGlobal().startEnumeratingMedia();
@@ -239,21 +240,22 @@ void VBoxVMSettingsFD::onRbChange()
 
 void VBoxVMSettingsFD::onCbChange()
 {
-    mUuidIsoFD = mGbFD->isChecked() ? mCbIsoFD->getId() : QUuid();
+    mUuidIsoFD = mGbFD->isChecked() ? mCbIsoFD->id() : QUuid();
     emit fdChanged();
     if (mValidator)
         mValidator->revalidate();
 }
 
-void VBoxVMSettingsFD::showImageManager()
+void VBoxVMSettingsFD::showMediaManager()
 {
     QUuid oldId = mUuidIsoFD;
-    VBoxDiskImageManagerDlg dlg (this);
-    dlg.setup (VBoxDefs::FD, true, mMachine.GetId(), true /* aRefresh */,
-               mMachine, QUuid(), mCbIsoFD->getId(), QUuid());
+    VBoxMediaManagerDlg dlg (this);
+
+    dlg.setup (VBoxDefs::MediaType_Floppy, true /* aDoSelect */,
+               true /* aRefresh */, mMachine, mCbIsoFD->id());
 
     QUuid newId = dlg.exec() == QDialog::Accepted ?
-                  dlg.selectedUuid() : mCbIsoFD->getId();
+                  dlg.selectedId() : mCbIsoFD->id();
     if (oldId != newId)
     {
         mUuidIsoFD = newId;

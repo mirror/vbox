@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -110,30 +110,524 @@ uint64_t VMCPUTimer::ticks()
 }
 #endif
 
-// VBoxEnumerateMediaEvent
+// VBoxMedium
 /////////////////////////////////////////////////////////////////////////////
 
-class VBoxEnumerateMediaEvent : public QEvent
+void VBoxMedium::init()
+{
+    AssertReturnVoid (!mMedium.isNull());
+
+    switch (mType)
+    {
+        case VBoxDefs::MediaType_HardDisk:
+        {
+            mHardDisk = mMedium;
+            AssertReturnVoid (!mHardDisk.isNull());
+            break;
+        }
+        case VBoxDefs::MediaType_DVD:
+        {
+            mDVDImage = mMedium;
+            AssertReturnVoid (!mDVDImage.isNull());
+            Assert (mParent == NULL);
+            break;
+        }
+        case VBoxDefs::MediaType_Floppy:
+        {
+            mFloppyImage = mMedium;
+            AssertReturnVoid (!mFloppyImage.isNull());
+            Assert (mParent == NULL);
+            break;
+        }
+        default:
+            AssertFailed();
+    }
+
+    refresh();
+}
+
+/**
+ * Queries the medium state. Call this and then read the state field instad
+ * of calling GetState() on medium directly as it will properly handle the
+ * situation when GetState() itself fails by setting state to Inaccessible
+ * and memorizing the error info describing why GetState() failed.
+ *
+ * As the last step, this method calls #refresh() to refresh all precomposed
+ * strings.
+ *
+ * @note This method blocks for the duration of the state check. Since this
+ *       check may take quite a while (e.g. for a medium located on a
+ *       network share), the calling thread must not be the UI thread. You
+ *       have been warned.
+ */
+void VBoxMedium::blockAndQueryState()
+{
+    mState = mMedium.GetState();
+
+    /* save the result to distinguish between inaccessible and e.g.
+     * uninitialized objects */
+    mResult = COMResult (mMedium);
+
+    if (!mResult.isOk())
+    {
+        mState = KMediaState_Inaccessible;
+        mLastAccessError = QString::null;
+    }
+    else
+        mLastAccessError = mMedium.GetLastAccessError();
+
+    refresh();
+}
+
+/**
+ * Refreshes the precomposed strings containing such media parameters as
+ * location, size by querying the respective data from the associated
+ * media object.
+ *
+ * Note that some string such as #size() are meaningless if the media state is
+ * KMediaState_NotCreated (i.e. the medium has not yet been checked for
+ * accessibility).
+ */
+void VBoxMedium::refresh()
+{
+    mId = mMedium.GetId();
+    mLocation = mMedium.GetLocation();
+    mName = mMedium.GetName();
+
+    if (mType == VBoxDefs::MediaType_HardDisk)
+    {
+        /// @todo NEWMEDIA use CSystemProperties::GetHardDIskFormats to see if the
+        /// given hard disk format is a file
+        mLocation = QDir::toNativeSeparators (mLocation);
+        mHardDiskFormat = mHardDisk.GetFormat();
+        mHardDiskType = vboxGlobal().hardDiskTypeString (mHardDisk);
+
+        mIsReadOnly = mHardDisk.GetReadOnly();
+
+        /* adjust the parent if necessary (note that mParent must always point
+         * to an item from VBoxGlobal::currentMediaList()) */
+
+        CHardDisk2 parent = mHardDisk.GetParent();
+        Assert (!parent.isNull() || mParent == NULL);
+
+        if (!parent.isNull() &&
+            (mParent == NULL || mParent->mHardDisk != parent))
+        {
+            /* search for the parent (must be there) */
+            const VBoxMediaList &list = vboxGlobal().currentMediaList();
+            for (VBoxMediaList::const_iterator it = list.begin();
+                 it != list.end(); ++ it)
+            {
+                if ((*it).mType != VBoxDefs::MediaType_HardDisk)
+                    break;
+
+                if ((*it).mHardDisk == parent)
+                {
+                    /* we unconst here because by the const list we don't mean
+                     * const items */
+                    mParent = unconst (&*it);
+                    break;
+                }
+            }
+
+            Assert (mParent != NULL && mParent->mHardDisk == parent);
+        }
+    }
+    else
+    {
+        mLocation = QDir::toNativeSeparators (mLocation);
+        mHardDiskFormat = QString::null;
+        mHardDiskType = QString::null;
+
+        mIsReadOnly = false;
+    }
+
+    if (mState != KMediaState_Inaccessible &&
+        mState != KMediaState_NotCreated)
+    {
+        mSize = vboxGlobal().formatSize (mMedium.GetSize());
+        if (mType == VBoxDefs::MediaType_HardDisk)
+            mLogicalSize = vboxGlobal()
+                .formatSize (mHardDisk.GetLogicalSize() * _1M);
+        else
+            mLogicalSize = mSize;
+    }
+    else
+    {
+        mSize = mLogicalSize = QString ("--");
+    }
+
+    /* detect usage */
+
+    mUsage = QString::null; /* important: null means not used! */
+
+    mCurStateMachineIds.clear();
+
+    QVector <QUuid> machineIds = mMedium.GetMachineIds();
+    if (machineIds.size() > 0)
+    {
+        QString usage;
+
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+
+        for (QVector <QUuid>::ConstIterator it = machineIds.begin();
+             it != machineIds.end(); ++ it)
+        {
+            CMachine machine = vbox.GetMachine (*it);
+
+            QString name = machine.GetName();
+            QString snapshots;
+
+            QVector <QUuid> snapIds = mMedium.GetSnapshotIds (*it);
+            for (QVector <QUuid>::ConstIterator jt = snapIds.begin();
+                 jt != snapIds.end(); ++ jt)
+            {
+                if (*jt == *it)
+                {
+                    /* the medium is attached to the machine in the current
+                     * state, we don't distinguish this for now by always
+                     * giving the VM name in front of snapshot names. */
+
+                    mCurStateMachineIds.push_back (*jt);
+                    continue;
+                }
+
+                CSnapshot snapshot = machine.GetSnapshot (*jt);
+                if (!snapshots.isNull())
+                    snapshots += ", ";
+                snapshots += snapshot.GetName();
+            }
+
+            if (!usage.isNull())
+                usage += ", ";
+
+            usage += name;
+
+            if (!snapshots.isNull())
+            {
+                usage += QString (" (%2)").arg (snapshots);
+                mIsUsedInSnapshots = true;
+            }
+            else
+                mIsUsedInSnapshots = false;
+        }
+
+        Assert (!usage.isEmpty());
+        mUsage = usage;
+    }
+
+    /* compose the tooltip (makes sense to keep the format in sync with
+     * VBoxMediaManagerDlg::languageChangeImp() and
+     * VBoxMediaManagerDlg::processCurrentChanged()) */
+
+    mToolTip = QString ("<nobr><b>%1</b></nobr>").arg (mLocation);
+
+    if (mType == VBoxDefs::MediaType_HardDisk)
+    {
+        mToolTip += VBoxGlobal::tr (
+            "<br><nobr>Type&nbsp;(Format):&nbsp;&nbsp;%2&nbsp;(%3)</nobr>",
+            "hard disk")
+            .arg (mHardDiskType)
+            .arg (mHardDiskFormat);
+    }
+
+    mToolTip += VBoxGlobal::tr (
+        "<br><nobr>Attached to:&nbsp;&nbsp;%1</nobr>", "medium")
+        .arg (mUsage.isNull() ?
+              VBoxGlobal::tr ("<i>Not&nbsp;Attached</i>", "medium") :
+              mUsage);
+
+    switch (mState)
+    {
+        case KMediaState_NotCreated:
+        {
+            mToolTip += VBoxGlobal::tr ("<br><i>Checking accessibility...</i>",
+                                        "medium");
+            break;
+        }
+        case KMediaState_Inaccessible:
+        {
+            if (mResult.isOk())
+            {
+                /* not accessibile */
+                mToolTip += QString ("<hr>%1").
+                    arg (VBoxGlobal::highlight (mLastAccessError,
+                                                true /* aToolTip */));
+            }
+            else
+            {
+                /* accessibility check (eg GetState()) itself failed */
+                mToolTip = VBoxGlobal::tr (
+                    "<hr>Failed to check media accessibility.<br>%1.",
+                    "medium").
+                    arg (VBoxProblemReporter::formatErrorInfo (mResult));
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* reset mNoDiffs */
+    mNoDiffs.isSet = false;
+}
+
+/**
+ * Returns a root medium of this medium. For non-hard disk media, this is always
+ * this medium itself.
+ */
+VBoxMedium &VBoxMedium::root() const
+{
+    VBoxMedium *root = unconst (this);
+    while (root->mParent != NULL)
+        root = root->mParent;
+
+    return *root;
+}
+
+/**
+ * Returns a tooltip for this medium.
+ *
+ * In "don't show diffs" mode (where the attributes of the base hard disk are
+ * shown instead of the attributes of the differencing hard disk), extra
+ * information will be added to the tooltip to give the user a hint that the
+ * medium is actually a differencing hard disk.
+ *
+ * @param aNoDiffs  @c true to enable user-friendly "don't show diffs" mode.
+ * @param aCheckRO  @c true to perform the #readOnly() check and add a notice
+ *                  accordingly.
+ */
+QString VBoxMedium::toolTip (bool aNoDiffs /*= false*/,
+                             bool aCheckRO /*= false*/) const
+{
+    unconst (this)->checkNoDiffs (aNoDiffs);
+
+    QString tip = aNoDiffs ? mNoDiffs.toolTip : mToolTip;
+
+    if (aCheckRO && mIsReadOnly)
+        tip += VBoxGlobal::tr (
+            "<hr><img src=%1/>&nbsp;Attaching this hard disk will "
+            "be performed indirectly using a newly created "
+            "differencing hard disk.",
+            "medium").
+            arg (":/new_16px.png");
+
+    return tip;
+}
+
+/**
+ * Returns an icon corresponding to the media state. Distinguishes between
+ * the Inaccessible state and the situation when querying the state itself
+ * failed.
+ *
+ * In "don't show diffs" mode (where the attributes of the base hard disk are
+ * shown instead of the attributes of the differencing hard disk), the most
+ * worst media state on the given hard disk chain will be used to select the
+ * media icon.
+ *
+ * @param aNoDiffs  @c true to enable user-friendly "don't show diffs" mode.
+ * @param aCheckRO  @c true to perform the #readOnly() check and change the icon
+ *                  accordingly.
+ */
+QPixmap VBoxMedium::icon (bool aNoDiffs /*= false*/,
+                          bool aCheckRO /*= false*/) const
+{
+    QPixmap icon;
+
+    if (state (aNoDiffs) == KMediaState_Inaccessible)
+        icon = result (aNoDiffs).isOk() ?
+            vboxGlobal().warningIcon() : vboxGlobal().errorIcon();
+
+    if (aCheckRO && mIsReadOnly)
+        icon = VBoxGlobal::
+            joinPixmaps (icon, QPixmap (":/new_16px.png"));
+
+    return icon;
+}
+
+/**
+ * Returns the details of this medium as a single-line string
+ *
+ * For hard disks, the details include the location, type and the logical size
+ * of the hard disk. Note that if @a aNoDiffs is @c true, these properties are
+ * queried on the root hard disk of the given hard disk because the primary
+ * purpose of the returned string is to be human readabile (so that seeing a
+ * complex diff hard disk name is usually not desirable).
+ *
+ * For other media types, the location and the actual size are returned.
+ * Arguments @a aPredictDiff and @a aNoRoot are ignored in this case.
+ *
+ * @param aNoDiffs      @c true to enable user-friendly "don't show diffs" mode.
+ * @param aPredictDiff  @c true to mark the hard disk as differencing if
+ *                      attaching it would create a differencing hard disk (not
+ *                      used when @a aNoRoot is true).
+ * @param aUseHTML      @c true to allow for emphasizing using bold and italics.
+ *
+ * @note Use #detailsHTML() instead of passing @c true for @a aUseHTML.
+ *
+ * @note The media object may become uninitialized by a third party while this
+ *       method is reading its properties. In this case, the method will return
+ *       an empty string.
+ */
+QString VBoxMedium::details (bool aNoDiffs /*= false*/,
+                             bool aPredictDiff /*= false*/,
+                             bool aUseHTML /*= false */) const
+{
+    // @todo *** the below check is rough; if mMedium becomes uninitialized, any
+    // of getters called afterwards will also fail. The same relates to the
+    // root hard disk object (that will be the hard disk itself in case of
+    // non-differencing disks). However, this check was added to fix a
+    // particular use case: when the hard disk is a differencing hard disk and
+    // it happens to be discarded (and uninitialized) after this method is
+    // called but before we read all its properties (yes, it's possible!), the
+    // root object will be null and calling methods on it will assert in the
+    // debug builds. This check seems to be enough as a quick solution (fresh
+    // hard disk attachments will be re-read by a machine state change signal
+    // after the discard operation is finished, so the user will eventually see
+    // correct data), but in order to solve the problem properly we need to use
+    // exceptions everywhere (or check the result after every method call). See
+    // also Defect #2149.
+    if (!mMedium.isOk())
+        return QString::null;
+
+    QString details, str;
+
+    VBoxMedium *root = unconst (this);
+    KMediaState state = mState;
+
+    if (mType == VBoxDefs::MediaType_HardDisk)
+    {
+        if (aNoDiffs)
+        {
+            root = &this->root();
+
+            bool isDiff =
+                (!aPredictDiff && mParent != NULL) ||
+                (aPredictDiff && mIsReadOnly);
+
+            details = isDiff && aUseHTML ?
+                QString ("<i>%1</i>, ").arg (root->mHardDiskType) :
+                QString ("%1, ").arg (root->mHardDiskType);
+
+            /* overall (worst) state */
+            state = this->state (true /* aNoDiffs */);
+
+            /* we cannot get the logical size if the root is not checked yet */
+            if (root->mState == KMediaState_NotCreated)
+                state = KMediaState_NotCreated;
+        }
+        else
+        {
+            details = QString ("%1, ").arg (root->mHardDiskType);
+        }
+    }
+
+    /// @todo prepend the details with the warning/error
+    //  icon when not accessible
+
+    switch (state)
+    {
+        case KMediaState_NotCreated:
+            str = VBoxGlobal::tr ("Checking...", "medium");
+            details += aUseHTML ? QString ("<i>%1</i>").arg (str) : str;
+            break;
+        case KMediaState_Inaccessible:
+            str = VBoxGlobal::tr ("Inaccessible", "medium");
+            details += aUseHTML ? QString ("<b>%1</b>").arg (str) : str;
+            break;
+        default:
+            details += mType == VBoxDefs::MediaType_HardDisk ?
+                       root->mLogicalSize : root->mSize;
+            break;
+    }
+
+    details = aUseHTML ?
+        QString ("%1 (<nobr>%2</nobr>)").
+            arg (VBoxGlobal::locationForHTML (root->mName), details) :
+        QString ("%1 (%2)").
+            arg (VBoxGlobal::locationForHTML (root->mName), details);
+
+    return details;
+}
+
+/**
+ * Checks if mNoDiffs is filled in and does it if not.
+ *
+ * @param aNoDiffs  @if false, this method immediately returns.
+ */
+void VBoxMedium::checkNoDiffs (bool aNoDiffs)
+{
+    if (!aNoDiffs || mNoDiffs.isSet)
+        return;
+
+    /* fill mNoDiffs */
+
+    mNoDiffs.toolTip = QString::null;
+
+    /* detect the overall (worst) state of the given hard disk chain */
+    mNoDiffs.state = mState;
+    for (VBoxMedium *cur = mParent; cur != NULL;
+         cur = cur->mParent)
+    {
+        if (cur->mState == KMediaState_Inaccessible)
+        {
+            mNoDiffs.state = cur->mState;
+
+            if (mNoDiffs.toolTip.isNull())
+                mNoDiffs.toolTip = VBoxGlobal::tr (
+                    "<hr>Some of the media in this hard disk chain are "
+                    "inaccessible. Please use the Virtual Media Manager "
+                    "in <b>Show Differencing Hard Disks</b> mode to inspect "
+                    "these media.");
+
+            if (!cur->mResult.isOk())
+            {
+                mNoDiffs.result = cur->mResult;
+                break;
+            }
+
+            /* comtinue looking for another !cur->mResult.isOk() */
+        }
+    }
+
+    if (mParent != NULL && !mIsReadOnly)
+    {
+        mNoDiffs.toolTip = VBoxGlobal::tr (
+            "%1"
+            "<hr>This base hard disk is indirectly attached using the "
+            "following differencing hard disk:<br>"
+            "%2%3").
+            arg (root().toolTip(), mToolTip, mNoDiffs.toolTip);
+    }
+
+    if (mNoDiffs.toolTip.isNull())
+        mNoDiffs.toolTip = mToolTip;
+
+    mNoDiffs.isSet = true;
+}
+
+// VBoxMediaEnumEvent
+/////////////////////////////////////////////////////////////////////////////
+
+class VBoxMediaEnumEvent : public QEvent
 {
 public:
 
     /** Constructs a regular enum event */
-    VBoxEnumerateMediaEvent (const VBoxMedia &aMedia, int aIndex)
-        : QEvent ((QEvent::Type) VBoxDefs::EnumerateMediaEventType)
-        , mMedia (aMedia), mLast (false), mIndex (aIndex)
+    VBoxMediaEnumEvent (const VBoxMedium &aMedium)
+        : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
+        , mMedium (aMedium), mLast (false)
         {}
     /** Constructs the last enum event */
-    VBoxEnumerateMediaEvent()
-        : QEvent ((QEvent::Type) VBoxDefs::EnumerateMediaEventType)
-        , mLast (true), mIndex (-1)
+    VBoxMediaEnumEvent()
+        : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
+        , mLast (true)
         {}
 
-    /** the last enumerated media (not valid when #last is true) */
-    const VBoxMedia mMedia;
-    /** whether this is the last event for the given enumeration or not */
+    /** The last enumerated medium (not valid when #last is true) */
+    const VBoxMedium mMedium;
+    /** Whether this is the last event for the given enumeration or not */
     const bool mLast;
-    /** last enumerated media index (-1 when #last is true) */
-    const int mIndex;
 };
 
 #if defined (Q_WS_WIN)
@@ -143,7 +637,7 @@ public:
 
     /** Constructs a regular enum event */
     VBoxShellExecuteEvent (QThread *aThread, const QString &aURL,
-                             bool aOk)
+                           bool aOk)
         : QEvent ((QEvent::Type) VBoxDefs::ShellExecuteEventType)
         , mThread (aThread), mURL (aURL), mOk (aOk)
         {}
@@ -698,7 +1192,7 @@ VBoxGlobal::VBoxGlobal()
     , mRegDlg (NULL)
 #endif
     , mUpdDlg (NULL)
-    , media_enum_thread (NULL)
+    , mMediaEnumThread (NULL)
     , verString ("1.0")
     , vm_state_color (KMachineState_COUNT)
     , machineStates (KMachineState_COUNT)
@@ -708,7 +1202,6 @@ VBoxGlobal::VBoxGlobal()
     , storageBusDevices (2)
     , storageBusChannels (3)
     , diskTypes (KHardDiskType_COUNT)
-    , diskStorageTypes (KHardDiskStorageType_COUNT)
     , vrdpAuthTypes (KVRDPAuthType_COUNT)
     , portModeTypes (KPortMode_COUNT)
     , usbFilterActionTypes (KUSBDeviceFilterAction_COUNT)
@@ -1266,88 +1759,35 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
 }
 
 /**
- *  Returns the details of the given hard disk as a single-line string
- *  to be used in the VM details view.
+ * Searches for the given hard disk in the list of known media descriptors and
+ * calls VBoxMedium::details() on the found desriptor.
  *
- *  The details include the type and the virtual size of the hard disk.
- *  Note that for differencing hard disks based on immutable hard disks,
- *  the Immutable hard disk type is returned.
+ * If the requeststed hard disk is not found (for example, it's a new hard disk
+ * for a new VM created outside our UI), then media enumeration is requested and
+ * the search is repeated. We assume that the secont attempt always succeeds and
+ * assert otherwise.
  *
- *  @param aHD      hard disk image (when predict = true, must be a top-level image)
- *  @param aPredict when true, the function predicts the type of the resulting
- *                  image after attaching the given image to the machine.
- *                  Otherwise, a real type of the given image is returned
- *                  (with the exception mentioned above).
- *
- *  @note The hard disk object may become uninitialized by a third party
- *  while this method is reading its properties. In this case, the method will
- *  return an empty string.
+ * @note Technically, the second attempt may fail if, for example, the new hard
+ *       passed to this method disk gets removed before #startEnumeratingMedia()
+ *       succeeds. This (unexpected object uninitialization) is a generic
+ *       problem though and needs to be addressed using exceptions (see also the
+ *       @todo in VBoxMedium::details()).
  */
-QString VBoxGlobal::details (const CHardDisk &aHD, bool aPredict /* = false */,
-                             bool aDoRefresh)
+QString VBoxGlobal::details (const CHardDisk2 &aHD,
+                             bool aPredictDiff)
 {
-    Assert (!aPredict || aHD.GetParent().isNull());
+    CMedium cmedium (aHD);
+    VBoxMedium medium;
 
-    VBoxMedia media;
-    if (!aDoRefresh)
-        media = VBoxMedia (CUnknown (aHD), VBoxDefs::HD, VBoxMedia::Ok);
-    else if (!findMedia (CUnknown (aHD), media))
+    if (!findMedium (cmedium, medium))
     {
         /* media may be new and not alredy in the media list, request refresh */
         startEnumeratingMedia();
-        if (!findMedia (CUnknown (aHD), media))
-            AssertFailed();
+        if (!findMedium (cmedium, medium))
+            AssertFailedReturn (QString::null);
     }
 
-    CHardDisk root = aHD.GetRoot();
-
-    // @todo *** this check is rough; if aHD becomes uninitialized, any of aHD
-    // getters called afterwards will also fail. The same relates to the root
-    // object (that will be aHD itself in case of non-differencing
-    // disks). However, this check was added to fix a particular use case:
-    // when aHD is a differencing hard disk and it happens to be discarded
-    // (and uninitialized) after this method is called but before we read all
-    // its properties (yes, it's possible!), the root object will be null and
-    // calling methods on it will assert in the debug builds. This check seems
-    // to be enough as a quick solution (fresh hard disk attachments will be
-    // re-read by a state change signal after the discard operation is
-    // finished, so the user will eventually see correct data), but in order
-    // to solve the problem properly we need to use exceptions everywhere (or
-    // check the result after every method call). See also Comment #17 and
-    // below in Defect #2126.
-    if (!aHD.isOk())
-        return QString::null;
-
-    QString details;
-
-    KHardDiskType type = root.GetType();
-
-    if (type == KHardDiskType_Normal &&
-        (aHD != root || (aPredict && root.GetChildren().GetCount() != 0)))
-            details = tr ("Differencing", "hard disk");
-    else
-        details = hardDiskTypeString (root);
-
-    details += ", ";
-
-    /// @todo prepend the details with the warning/error
-    //  icon when not accessible
-
-    switch (media.status)
-    {
-        case VBoxMedia::Unknown:
-            details += tr ("<i>Checking...</i>", "hard disk");
-            break;
-        case VBoxMedia::Ok:
-            details += formatSize (root.GetSize() * _1M);
-            break;
-        case VBoxMedia::Error:
-        case VBoxMedia::Inaccessible:
-            details += tr ("<i>Inaccessible</i>", "hard disk");
-            break;
-    }
-
-    return details;
+    return medium.detailsHTML (true /* aNoDiffs */, aPredictDiff);
 }
 
 /**
@@ -1398,7 +1838,7 @@ QString VBoxGlobal::toolTip (const CUSBDevice &aDevice) const
                         .arg (ser);
 
     /* add the state field if it's a host USB device */
-    CHostUSBDevice hostDev = CUnknown (aDevice);
+    CHostUSBDevice hostDev (aDevice);
     if (!hostDev.isNull())
     {
         tip += QString (tr ("<br><nobr>State: %1</nobr>", "USB device tooltip"))
@@ -1451,7 +1891,7 @@ QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
                                                 .arg (port);
 
     /* add the state field if it's a host USB device */
-    CHostUSBDevice hostDev = CUnknown (aFilter);
+    CHostUSBDevice hostDev (aFilter);
     if (!hostDev.isNull())
     {
         tip += tip.isEmpty() ? "":"<br/>" + tr ("<nobr>State: %1</nobr>", "USB filter tooltip")
@@ -1462,32 +1902,14 @@ QString VBoxGlobal::toolTip (const CUSBDeviceFilter &aFilter) const
 }
 
 /**
- *  Puts soft hyphens after every path component in the given file name.
- *  @param fn   file name (must be a full path name)
- */
-QString VBoxGlobal::prepareFileNameForHTML (const QString &fn) const
-{
-/// @todo (dmik) remove?
-//    QString result = QDir::convertSeparators (fn);
-//#ifdef Q_OS_LINUX
-//    result.replace ('/', "/<font color=red>&shy;</font>");
-//#else
-//    result.replace ('\\', "\\<font color=red>&shy;</font>");
-//#endif
-//    return result;
-    QFileInfo fi (fn);
-    return fi.fileName();
-}
-
-/**
- *  Returns a details report on a given VM enclosed in a HTML table.
+ * Returns a details report on a given VM represented as a HTML table.
  *
- *  @param m            machine to create a report for
- *  @param isNewVM      true when called by the New VM Wizard
- *  @param withLinks    true if section titles should be hypertext links
+ * @param aMachine      Machine to create a report for.
+ * @param aIsNewVM      @c true when called by the New VM Wizard.
+ * @param aWithLinks    @c true if section titles should be hypertext links.
  */
-QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
-                                   bool withLinks, bool aDoRefresh)
+QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
+                                   bool aWithLinks)
 {
     static const char *sTableTpl =
         "<table border=0 cellspacing=1 cellpadding=0>%1</table>";
@@ -1556,7 +1978,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
     /* common generated content */
 
-    const QString &sectionTpl = withLinks
+    const QString &sectionTpl = aWithLinks
         ? sSectionHrefTpl
         : sSectionBoldTpl;
 
@@ -1564,29 +1986,23 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
     {
         int rows = 2; /* including section header and footer */
 
-        CHardDiskAttachmentEnumerator aen = m.GetHardDiskAttachments().Enumerate();
-        while (aen.HasMore())
+        CHardDisk2AttachmentVector vec = aMachine.GetHardDisk2Attachments();
+        for (size_t i = 0; i < (size_t) vec.size(); ++ i)
         {
-            CHardDiskAttachment hda = aen.GetNext();
-            CHardDisk hd = hda.GetHardDisk();
-            /// @todo for the explaination of the below isOk() checks, see
-            /// @todo *** in #details (const CHardDisk &, bool).
+            CHardDisk2Attachment hda = vec [i];
+            CHardDisk2 hd = hda.GetHardDisk();
+
+            /// @todo for the explaination of the below isOk() checks, see ***
+            /// in #details (const CHardDisk &, bool).
             if (hda.isOk())
             {
-                CHardDisk root = hd.GetRoot();
-                if (hd.isOk())
-                {
-                    QString src = root.GetLocation();
-                    KStorageBus bus = hda.GetBus();
-                    LONG channel = hda.GetChannel();
-                    LONG device = hda.GetDevice();
-                    hardDisks += QString (sSectionItemTpl)
-                        .arg (toFullString (bus, channel, device))
-                        .arg (QString ("%1 [<nobr>%2</nobr>]")
-                              .arg (prepareFileNameForHTML (src))
-                              .arg (details (hd, isNewVM /* predict */, aDoRefresh)));
-                    ++ rows;
-                }
+                KStorageBus bus = hda.GetBus();
+                LONG channel = hda.GetChannel();
+                LONG device = hda.GetDevice();
+                hardDisks += QString (sSectionItemTpl)
+                    .arg (toFullString (bus, channel, device))
+                    .arg (details (hd, aIsNewVM));
+                ++ rows;
             }
         }
 
@@ -1607,23 +2023,23 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
     /* compose details report */
 
-    const QString &generalBasicTpl = withLinks
+    const QString &generalBasicTpl = aWithLinks
         ? sGeneralBasicHrefTpl
         : sGeneralBasicBoldTpl;
 
-    const QString &generalFullTpl = withLinks
+    const QString &generalFullTpl = aWithLinks
         ? sGeneralFullHrefTpl
         : sGeneralFullBoldTpl;
 
     QString detailsReport;
 
-    if (isNewVM)
+    if (aIsNewVM)
     {
         detailsReport
             = generalBasicTpl
-                .arg (m.GetName())
-                .arg (vmGuestOSTypeDescription (m.GetOSTypeId()))
-                .arg (m.GetMemorySize())
+                .arg (aMachine.GetName())
+                .arg (vmGuestOSTypeDescription (aMachine.GetOSTypeId()))
+                .arg (aMachine.GetMemorySize())
             + hardDisks;
     }
     else
@@ -1632,7 +2048,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         QString bootOrder;
         for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); i++)
         {
-            KDeviceType device = m.GetBootOrder (i);
+            KDeviceType device = aMachine.GetBootOrder (i);
             if (device == KDeviceType_Null)
                 continue;
             if (!bootOrder.isEmpty())
@@ -1642,7 +2058,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         if (bootOrder.isEmpty())
             bootOrder = toString (KDeviceType_Null);
 
-        CBIOSSettings biosSettings = m.GetBIOSSettings();
+        CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
 
         /* ACPI */
         QString acpi = biosSettings.GetACPIEnabled()
@@ -1655,22 +2071,22 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             : tr ("Disabled", "details report (IO APIC)");
 
         /* VT-x/AMD-V */
-        QString virt = m.GetHWVirtExEnabled() == KTSBool_True ?
+        QString virt = aMachine.GetHWVirtExEnabled() == KTSBool_True ?
                        tr ("Enabled", "details report (VT-x/AMD-V)") :
                        tr ("Disabled", "details report (VT-x/AMD-V)");
 
         /* PAE/NX */
-        QString pae = m.GetPAEEnabled()
+        QString pae = aMachine.GetPAEEnabled()
             ? tr ("Enabled", "details report (PAE/NX)")
             : tr ("Disabled", "details report (PAE/NX)");
 
         /* General + Hard Disks */
         detailsReport
             = generalFullTpl
-                .arg (m.GetName())
-                .arg (vmGuestOSTypeDescription (m.GetOSTypeId()))
-                .arg (m.GetMemorySize())
-                .arg (m.GetVRAMSize())
+                .arg (aMachine.GetName())
+                .arg (vmGuestOSTypeDescription (aMachine.GetOSTypeId()))
+                .arg (aMachine.GetMemorySize())
+                .arg (aMachine.GetVRAMSize())
                 .arg (bootOrder)
                 .arg (acpi)
                 .arg (ioapic)
@@ -1681,7 +2097,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         QString item;
 
         /* DVD */
-        CDVDDrive dvd = m.GetDVDDrive();
+        CDVDDrive dvd = aMachine.GetDVDDrive();
         item = QString (sSectionItemTpl);
         switch (dvd.GetState())
         {
@@ -1690,9 +2106,9 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 break;
             case KDriveState_ImageMounted:
             {
-                CDVDImage img = dvd.GetImage();
+                CDVDImage2 img = dvd.GetImage();
                 item = item.arg (tr ("Image", "details report (DVD)"),
-                                 prepareFileNameForHTML (img.GetFilePath()));
+                                 locationForHTML (img.GetName()));
                 break;
             }
             case KDriveState_HostDriveCaptured:
@@ -1718,7 +2134,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                   item); // items
 
         /* Floppy */
-        CFloppyDrive floppy = m.GetFloppyDrive();
+        CFloppyDrive floppy = aMachine.GetFloppyDrive();
         item = QString (sSectionItemTpl);
         switch (floppy.GetState())
         {
@@ -1727,9 +2143,9 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                 break;
             case KDriveState_ImageMounted:
             {
-                CFloppyImage img = floppy.GetImage();
+                CFloppyImage2 img = floppy.GetImage();
                 item = item.arg (tr ("Image", "details report (floppy)"),
-                                 prepareFileNameForHTML (img.GetFilePath()));
+                                 locationForHTML (img.GetName()));
                 break;
             }
             case KDriveState_HostDriveCaptured:
@@ -1756,7 +2172,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
 
         /* audio */
         {
-            CAudioAdapter audio = m.GetAudioAdapter();
+            CAudioAdapter audio = aMachine.GetAudioAdapter();
             int rows = audio.GetEnabled() ? 3 : 2;
             if (audio.GetEnabled())
                 item = QString (sSectionItemTpl)
@@ -1783,7 +2199,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             int rows = 2; /* including section header and footer */
             for (ulong slot = 0; slot < count; slot ++)
             {
-                CNetworkAdapter adapter = m.GetNetworkAdapter (slot);
+                CNetworkAdapter adapter = aMachine.GetNetworkAdapter (slot);
                 if (adapter.GetEnabled())
                 {
                     KNetworkAttachmentType type = adapter.GetAttachmentType();
@@ -1829,7 +2245,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             int rows = 2; /* including section header and footer */
             for (ulong slot = 0; slot < count; slot ++)
             {
-                CSerialPort port = m.GetSerialPort (slot);
+                CSerialPort port = aMachine.GetSerialPort (slot);
                 if (port.GetEnabled())
                 {
                     KPortMode mode = port.GetHostMode();
@@ -1839,7 +2255,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
                         mode == KPortMode_HostDevice)
                         data += QString ("%1 (<nobr>%2</nobr>)")
                             .arg (vboxGlobal().toString (mode))
-                            .arg (QDir::convertSeparators (port.GetPath()));
+                            .arg (QDir::toNativeSeparators (port.GetPath()));
                     else
                         data += toString (mode);
 
@@ -1871,13 +2287,13 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
             int rows = 2; /* including section header and footer */
             for (ulong slot = 0; slot < count; slot ++)
             {
-                CParallelPort port = m.GetParallelPort (slot);
+                CParallelPort port = aMachine.GetParallelPort (slot);
                 if (port.GetEnabled())
                 {
                     QString data =
                         toLPTPortName (port.GetIRQ(), port.GetIOBase()) +
                         QString (" (<nobr>%1</nobr>)")
-                        .arg (QDir::convertSeparators (port.GetPath()));
+                        .arg (QDir::toNativeSeparators (port.GetPath()));
 
                     item += QString (sSectionItemTpl)
                         .arg (tr ("Port %1", "details report (parallel ports)")
@@ -1903,7 +2319,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         }
         /* USB */
         {
-            CUSBController ctl = m.GetUSBController();
+            CUSBController ctl = aMachine.GetUSBController();
             if (!ctl.isNull())
             {
                 /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
@@ -1936,7 +2352,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         }
         /* Shared folders */
         {
-            ulong count = m.GetSharedFolders().GetCount();
+            ulong count = aMachine.GetSharedFolders().GetCount();
             if (count > 0)
             {
                 item = QString (sSectionItemTpl)
@@ -1957,7 +2373,7 @@ QString VBoxGlobal::detailsReport (const CMachine &m, bool isNewVM,
         }
         /* VRDP */
         {
-            CVRDPServer srv = m.GetVRDPServer();
+            CVRDPServer srv = aMachine.GetVRDPServer();
             if (!srv.isNull())
             {
                 /* the VRDP server may be unavailable (i.e. in VirtualBox OSE) */
@@ -2275,44 +2691,83 @@ bool VBoxGlobal::startMachine (const QUuid &id)
 }
 
 /**
- *  Appends the disk object and all its children to the media list.
+ * Appends the given list of hard disks and all their children to the media
+ * list. To be called only from VBoxGlobal::startEnumeratingMedia().
  */
 static
-void addMediaToList (VBoxMediaList &aList,
-                     const CUnknown &aDisk,
-                     VBoxDefs::DiskType aType)
+void AddHardDisksToList (const CHardDisk2Vector &aVector,
+                         VBoxMediaList &aList,
+                         VBoxMediaList::iterator aWhere,
+                         VBoxMedium *aParent = 0)
 {
-    VBoxMedia media (aDisk, aType, VBoxMedia::Unknown);
-    aList += media;
-    /* append all vdi children */
-    if (aType == VBoxDefs::HD)
+    VBoxMediaList::iterator first = aWhere;
+
+    /* First pass: Add siblings sorted */
+    for (CHardDisk2Vector::ConstIterator it = aVector.begin();
+         it != aVector.end(); ++ it)
     {
-        CHardDisk hd = aDisk;
-        CHardDiskEnumerator enumerator = hd.GetChildren().Enumerate();
-        while (enumerator.HasMore())
-        {
-            CHardDisk subHd = enumerator.GetNext();
-            addMediaToList (aList, CUnknown (subHd), VBoxDefs::HD);
-        }
+        VBoxMedium medium (CMedium (*it), VBoxDefs::MediaType_HardDisk,
+                           aParent);
+
+        /* Search for a proper alphabetic position */
+        VBoxMediaList::iterator jt = first;
+        for (; jt != aWhere; ++ jt)
+            if ((*jt).name().localeAwareCompare (medium.name()) > 0)
+                break;
+
+        aList.insert (jt, medium);
+
+        /* Adjust the first item if inserted before it */
+        if (jt == first)
+            -- first;
+    }
+
+    /* Second pass: Add children */
+    for (VBoxMediaList::iterator it = first; it != aWhere;)
+    {
+        CHardDisk2Vector children = (*it).hardDisk().GetChildren();
+        VBoxMedium *parent = &(*it);
+
+        ++ it; /* go to the next sibling before inserting children */
+        AddHardDisksToList (children, aList, it, parent);
     }
 }
 
 /**
- *  Starts a thread that asynchronously enumerates all currently registered
- *  media, checks for its accessibility and posts VBoxEnumerateMediaEvent
- *  events to the VBoxGlobal object until all media is enumerated.
+ * Starts a thread that asynchronously enumerates all currently registered
+ * media.
  *
- *  If the enumeration is already in progress, no new thread is started.
+ * Before the enumeration is started, the current media list (a list returned by
+ * #currentMediaList()) is populated with all registered media and the
+ * #mediumEnumStarted() signal is emitted. The enumeration thread then walks this
+ * list, checks for media acessiblity and emits #mediumEnumerated() signals of
+ * each checked medium. When all media are checked, the enumeration thread is
+ * stopped and the #mediumEnumFinished() signal is emitted.
  *
- *  @sa #currentMediaList()
- *  @sa #isMediaEnumerationStarted()
+ * If the enumeration is already in progress, no new thread is started.
+ *
+ * The media list returned by #currentMediaList() is always sorted
+ * alphabetically by the location attribute and comes in the following order:
+ * <ol>
+ *  <li>All hard disks. If a hard disk has children, these children
+ *      (alphabetically sorted) immediately follow their parent and terefore
+ *      appear before its next sibling hard disk.</li>
+ *  <li>All CD/DVD images.</li>
+ *  <li>All Floppy images.</li>
+ * </ol>
+ *
+ * Note that #mediumEnumerated() signals are emitted in the same order as
+ * described above.
+ *
+ * @sa #currentMediaList()
+ * @sa #isMediaEnumerationStarted()
  */
 void VBoxGlobal::startEnumeratingMedia()
 {
-    Assert (mValid);
+    AssertReturnVoid (mValid);
 
     /* check if already started but not yet finished */
-    if (media_enum_thread)
+    if (mMediaEnumThread != NULL)
         return;
 
     /* ignore the request during application termination */
@@ -2320,27 +2775,62 @@ void VBoxGlobal::startEnumeratingMedia()
         return;
 
     /* composes a list of all currently known media & their children */
-    media_list.clear();
+    mMediaList.clear();
     {
-        CHardDiskEnumerator enHD = mVBox.GetHardDisks().Enumerate();
-        while (enHD.HasMore())
-            addMediaToList (media_list, CUnknown (enHD.GetNext()), VBoxDefs::HD);
-
-        CDVDImageEnumerator enCD = mVBox.GetDVDImages().Enumerate();
-        while (enCD.HasMore())
-            addMediaToList (media_list, CUnknown (enCD.GetNext()), VBoxDefs::CD);
-
-        CFloppyImageEnumerator enFD = mVBox.GetFloppyImages().Enumerate();
-        while (enFD.HasMore())
-            addMediaToList (media_list, CUnknown (enFD.GetNext()), VBoxDefs::FD);
+        AddHardDisksToList (mVBox.GetHardDisks2(), mMediaList, mMediaList.end());
     }
+    {
+        VBoxMediaList::iterator first = mMediaList.end();
+
+        CDVDImage2Vector vec = mVBox.GetDVDImages();
+        for (CDVDImage2Vector::ConstIterator it = vec.begin();
+             it != vec.end(); ++ it)
+        {
+            VBoxMedium medium (CMedium (*it), VBoxDefs::MediaType_DVD);
+
+            /* Search for a proper alphabetic position */
+            VBoxMediaList::iterator jt = first;
+            for (; jt != mMediaList.end(); ++ jt)
+                if ((*jt).name().localeAwareCompare (medium.name()) > 0)
+                    break;
+
+            mMediaList.insert (jt, medium);
+
+            /* Adjust the first item if inserted before it */
+            if (jt == first)
+                -- first;
+        }
+    }
+    {
+        VBoxMediaList::iterator first = mMediaList.end();
+
+        CFloppyImage2Vector vec = mVBox.GetFloppyImages();
+        for (CFloppyImage2Vector::ConstIterator it = vec.begin();
+             it != vec.end(); ++ it)
+        {
+            VBoxMedium medium (CMedium (*it), VBoxDefs::MediaType_Floppy);
+
+            /* Search for a proper alphabetic position */
+            VBoxMediaList::iterator jt = first;
+            for (; jt != mMediaList.end(); ++ jt)
+                if ((*jt).name().localeAwareCompare (medium.name()) > 0)
+                    break;
+
+            mMediaList.insert (jt, medium);
+
+            /* Adjust the first item if inserted before it */
+            if (jt == first)
+                -- first;
+        }
+    }
+    mCurrentMediumIterator = mMediaList.begin();
 
     /* enumeration thread class */
-    class Thread : public QThread
+    class MediaEnumThread : public QThread
     {
     public:
 
-        Thread (const VBoxMediaList &aList) : mList (aList) {}
+        MediaEnumThread (const VBoxMediaList &aList) : mList (aList) {}
 
         virtual void run()
         {
@@ -2348,78 +2838,23 @@ void VBoxGlobal::startEnumeratingMedia()
             COMBase::InitializeCOM();
 
             CVirtualBox mVBox = vboxGlobal().virtualBox();
-            QObject *target = &vboxGlobal();
+            QObject *self = &vboxGlobal();
 
-            /* enumerating list */
+            /* Enumerate the list */
             int index = 0;
             VBoxMediaList::const_iterator it;
             for (it = mList.begin();
                  it != mList.end() && !sVBoxGlobalInCleanup;
                  ++ it, ++ index)
             {
-                VBoxMedia media = *it;
-                switch (media.type)
-                {
-                    case VBoxDefs::HD:
-                    {
-                        CHardDisk hd = media.disk;
-                        media.status =
-                            hd.GetAccessible() == TRUE ? VBoxMedia::Ok :
-                            hd.isOk() ? VBoxMedia::Inaccessible :
-                            VBoxMedia::Error;
-                        /* assign back to store error info if any */
-                        media.disk = hd;
-                        if (media.status == VBoxMedia::Inaccessible)
-                        {
-                            QUuid machineId = hd.GetMachineId();
-                            if (!machineId.isNull())
-                            {
-                                CMachine machine = mVBox.GetMachine (machineId);
-                                if (!machine.isNull() && (machine.GetState() >= KMachineState_Running))
-                                    media.status = VBoxMedia::Ok;
-                            }
-                        }
-                        QApplication::postEvent (target,
-                            new VBoxEnumerateMediaEvent (media, index));
-                        break;
-                    }
-                    case VBoxDefs::CD:
-                    {
-                        CDVDImage cd = media.disk;
-                        media.status =
-                            cd.GetAccessible() == TRUE ? VBoxMedia::Ok :
-                            cd.isOk() ? VBoxMedia::Inaccessible :
-                            VBoxMedia::Error;
-                        /* assign back to store error info if any */
-                        media.disk = cd;
-                        QApplication::postEvent (target,
-                            new VBoxEnumerateMediaEvent (media, index));
-                        break;
-                    }
-                    case VBoxDefs::FD:
-                    {
-                        CFloppyImage fd = media.disk;
-                        media.status =
-                            fd.GetAccessible() == TRUE ? VBoxMedia::Ok :
-                            fd.isOk() ? VBoxMedia::Inaccessible :
-                            VBoxMedia::Error;
-                        /* assign back to store error info if any */
-                        media.disk = fd;
-                        QApplication::postEvent (target,
-                            new VBoxEnumerateMediaEvent (media, index));
-                        break;
-                    }
-                    default:
-                    {
-                        AssertMsgFailed (("Invalid aMedia type\n"));
-                        break;
-                    }
-                }
+                VBoxMedium medium = *it;
+                medium.blockAndQueryState();
+                QApplication::postEvent (self, new VBoxMediaEnumEvent (medium));
             }
 
-            /* post the last message to indicate the end of enumeration */
+            /* Post the end-of-enumeration event */
             if (!sVBoxGlobalInCleanup)
-                QApplication::postEvent (target, new VBoxEnumerateMediaEvent());
+                QApplication::postEvent (self, new VBoxMediaEnumEvent());
 
             COMBase::CleanupCOM();
             LogFlow (("MediaEnumThread finished.\n"));
@@ -2430,68 +2865,158 @@ void VBoxGlobal::startEnumeratingMedia()
         const VBoxMediaList &mList;
     };
 
-    media_enum_thread = new Thread (media_list);
-    AssertReturnVoid (media_enum_thread);
+    mMediaEnumThread = new MediaEnumThread (mMediaList);
+    AssertReturnVoid (mMediaEnumThread);
 
-    /* emit mediaEnumStarted() after we set media_enum_thread to != NULL
+    /* emit mediumEnumStarted() after we set mMediaEnumThread to != NULL
      * to cause isMediaEnumerationStarted() to return TRUE from slots */
-    emit mediaEnumStarted();
+    emit mediumEnumStarted();
 
-    media_enum_thread->start();
+    mMediaEnumThread->start();
 }
 
 /**
- *  Adds a new media to the current media list.
- *  @note Currently, this method does nothing but emits the mediaAdded() signal.
- *        Later, it will be used to synchronize the current media list with
- *        the actial media list on the server after a single media opetartion
- *        performed from within one of our UIs.
- *  @sa #currentMediaList()
+ * Adds a new medium to the current media list and emits the #mediumAdded()
+ * signal.
+ *
+ * @sa #currentMediaList()
  */
-void VBoxGlobal::addMedia (const VBoxMedia &aMedia)
+void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
 {
-    emit mediaAdded (aMedia);
+    /* Note that we maitain the same order here as #startEnumeratingMedia() */
+
+    VBoxMediaList::iterator it = mMediaList.begin();
+
+    if (aMedium.type() == VBoxDefs::MediaType_HardDisk)
+    {
+        VBoxMediaList::iterator parent = mMediaList.end();
+
+        for (; it != mMediaList.end(); ++ it)
+        {
+            if ((*it).type() != VBoxDefs::MediaType_HardDisk)
+                break;
+
+            if (aMedium.parent() != NULL && parent == mMediaList.end())
+            {
+                if (&*it == aMedium.parent())
+                    parent = it;
+            }
+            else
+            {
+                /* break if met a parent's sibling (will insert before it) */
+                if (aMedium.parent() != NULL &&
+                    (*it).parent() == (*parent).parent())
+                    break;
+
+                /* compare to aMedium's siblings */
+                if ((*it).parent() == aMedium.parent() &&
+                    (*it).name().localeAwareCompare (aMedium.name()) > 0)
+                    break;
+            }
+        }
+
+        AssertReturnVoid (aMedium.parent() == NULL || parent != mMediaList.end());
+    }
+    else
+    {
+        for (; it != mMediaList.end(); ++ it)
+        {
+            /* skip HardDisks that come first */
+            if ((*it).type() == VBoxDefs::MediaType_HardDisk)
+                continue;
+
+            /* skip DVD when inserting Floppy */
+            if (aMedium.type() == VBoxDefs::MediaType_Floppy &&
+                (*it).type() == VBoxDefs::MediaType_DVD)
+                continue;
+
+            if ((*it).name().localeAwareCompare (aMedium.name()) > 0 ||
+                (aMedium.type() == VBoxDefs::MediaType_DVD &&
+                 (*it).type() == VBoxDefs::MediaType_Floppy))
+                break;
+        }
+    }
+
+    it = mMediaList.insert (it, aMedium);
+
+    emit mediumAdded (*it);
 }
 
 /**
- *  Updates the media in the current media list.
- *  @note Currently, this method does nothing but emits the mediaUpdated() signal.
- *        Later, it will be used to synchronize the current media list with
- *        the actial media list on the server after a single media opetartion
- *        performed from within one of our UIs.
- *  @sa #currentMediaList()
+ * Updates the medium in the current media list and emits the #mediumUpdated()
+ * signal.
+ *
+ * @sa #currentMediaList()
  */
-void VBoxGlobal::updateMedia (const VBoxMedia &aMedia)
+void VBoxGlobal::updateMedium (const VBoxMedium &aMedium)
 {
-    emit mediaUpdated (aMedia);
+    VBoxMediaList::Iterator it;
+    for (it = mMediaList.begin(); it != mMediaList.end(); ++ it)
+        if ((*it).id() == aMedium.id())
+            break;
+
+    AssertReturnVoid (it != mMediaList.end());
+
+    if (&*it != &aMedium)
+        *it = aMedium;
+
+    emit mediumUpdated (*it);
 }
 
 /**
- *  Removes the media from the current media list.
- *  @note Currently, this method does nothing but emits the mediaRemoved() signal.
- *        Later, it will be used to synchronize the current media list with
- *        the actial media list on the server after a single media opetartion
- *        performed from within one of our UIs.
- *  @sa #currentMediaList()
+ * Removes the medium from the current media list and emits the #mediumRemoved()
+ * signal.
+ *
+ * @sa #currentMediaList()
  */
-void VBoxGlobal::removeMedia (VBoxDefs::DiskType aType, const QUuid &aId)
+void VBoxGlobal::removeMedium (VBoxDefs::MediaType aType, const QUuid &aId)
 {
-    emit mediaRemoved (aType, aId);
+    VBoxMediaList::Iterator it;
+    for (it = mMediaList.begin(); it != mMediaList.end(); ++ it)
+        if ((*it).id() == aId)
+            break;
+
+    AssertReturnVoid (it != mMediaList.end());
+
+#if DEBUG
+    /* sanity: must be no children */
+    {
+        VBoxMediaList::Iterator jt = it;
+        ++ jt;
+        AssertReturnVoid (jt == mMediaList.end() || (*jt).parent() != &*it);
+    }
+#endif
+
+    VBoxMedium *parent = (*it).parent();
+
+    /* remove the medium from the list to keep it in sync with the server "for
+     * free" when the medium is deleted from one of our UIs */
+    mMediaList.erase (it);
+
+    emit mediumRemoved (aType, aId);
+
+    /* also emit the parent update signal because some attributes like
+     * isReadOnly() may have been changed after child removal */
+    if (parent != NULL)
+    {
+        parent->refresh();
+        emit mediumUpdated (*parent);
+    }
 }
 
 /**
- *  Searches for a VBoxMedia object representing the given COM media object.
+ *  Searches for a VBoxMedum object representing the given COM medium object.
  *
  *  @return true if found and false otherwise.
  */
-bool VBoxGlobal::findMedia (const CUnknown &aObj, VBoxMedia &aMedia) const
+bool VBoxGlobal::findMedium (const CMedium &aObj, VBoxMedium &aMedium) const
 {
-    for (VBoxMediaList::ConstIterator it = media_list.begin();
-         it != media_list.end(); ++ it)
+    for (VBoxMediaList::ConstIterator it = mMediaList.begin();
+         it != mMediaList.end(); ++ it)
     {
-        if ((*it).disk == aObj)
+        if ((*it).medium() == aObj)
         {
-            aMedia = (*it);
+            aMedium = (*it);
             return true;
         }
     }
@@ -2576,6 +3101,7 @@ void VBoxGlobal::retranslateUi()
     machineStates [KMachineState_Saving] =      tr ("Saving", "MachineState");
     machineStates [KMachineState_Restoring] =   tr ("Restoring", "MachineState");
     machineStates [KMachineState_Discarding] =  tr ("Discarding", "MachineState");
+    machineStates [KMachineState_SettingUp] =   tr ("Setting Up", "MachineState");
 
     sessionStates [KSessionState_Closed] =      tr ("Closed", "SessionState");
     sessionStates [KSessionState_Open] =        tr ("Open", "SessionState");
@@ -2613,17 +3139,8 @@ void VBoxGlobal::retranslateUi()
         tr ("Immutable", "DiskType");
     diskTypes [KHardDiskType_Writethrough] =
         tr ("Writethrough", "DiskType");
-
-    diskStorageTypes [KHardDiskStorageType_VirtualDiskImage] =
-        tr ("Virtual Disk Image", "DiskStorageType");
-    diskStorageTypes [KHardDiskStorageType_ISCSIHardDisk] =
-        tr ("iSCSI", "DiskStorageType");
-    diskStorageTypes [KHardDiskStorageType_VMDKImage] =
-        tr ("VMDK Image", "DiskStorageType");
-    diskStorageTypes [KHardDiskStorageType_CustomHardDisk] =
-        tr ("Custom Hard Disk", "DiskStorageType");
-    diskStorageTypes [KHardDiskStorageType_VHDImage] =
-        tr ("VHD Image", "DiskStorageType");
+    diskTypes_Differencing =
+        tr ("Differencing", "DiskType");
 
     vrdpAuthTypes [KVRDPAuthType_Null] =
         tr ("Null", "VRDPAuthType");
@@ -2712,6 +3229,12 @@ void VBoxGlobal::retranslateUi()
         tr ("Captured", "USBDeviceState");
 
     mUserDefinedPortName = tr ("User-defined", "serial port");
+
+    mWarningIcon = standardIcon (QStyle::SP_MessageBoxWarning, 0).pixmap (16, 16);
+    Assert (!mWarningIcon.isNull());
+
+    mErrorIcon = standardIcon (QStyle::SP_MessageBoxCritical, 0).pixmap (16, 16);
+    Assert (!mErrorIcon.isNull());
 
     detailReportTemplatesReady = false;
 
@@ -3387,6 +3910,26 @@ QString VBoxGlobal::formatSize (quint64 aSize, int aMode /* = 0 */)
 }
 
 /**
+ * Puts soft hyphens after every path component in the given file name.
+ *
+ * @param aFileName File name (must be a full path name).
+ */
+/* static */
+QString VBoxGlobal::locationForHTML (const QString &aFileName)
+{
+/// @todo (dmik) remove?
+//    QString result = QDir::toNativeSeparators (fn);
+//#ifdef Q_OS_LINUX
+//    result.replace ('/', "/<font color=red>&shy;</font>");
+//#else
+//    result.replace ('\\', "\\<font color=red>&shy;</font>");
+//#endif
+//    return result;
+    QFileInfo fi (aFileName);
+    return fi.fileName();
+}
+
+/**
  *  Reformats the input string @a aStr so that:
  *  - strings in single quotes will be put inside <nobr> and marked
  *    with blue color;
@@ -3590,7 +4133,7 @@ QString VBoxGlobal::getExistingDirectory (const QString &aDir,
      * thread */
     QEventLoop loop;
 
-    QString dir = QDir::convertSeparators (aDir);
+    QString dir = QDir::toNativeSeparators (aDir);
     LoopObject loopObject ((QEvent::Type) GetExistDirectoryEvent::TypeId, loop);
 
     Thread openDirThread (aParent, &loopObject, dir, aCaption);
@@ -3648,8 +4191,40 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
                                      const QString &aFilters,
                                      QWidget       *aParent,
                                      const QString &aCaption,
-                                     QString       *aSelectedFilter,
-                                     bool           aResolveSymlinks)
+                                     QString       *aSelectedFilter /* = NULL */,
+                                     bool           aResolveSymlinks /* = true */)
+{
+    return getOpenFileNames (aStartWith,
+                             aFilters,
+                             aParent,
+                             aCaption,
+                             aSelectedFilter,
+                             aResolveSymlinks,
+                             true /* aSingleFile */).value (0, "");
+}
+
+/**
+ *  Reimplementation of QFileDialog::getOpenFileNames() that removes some
+ *  oddities and limitations.
+ *
+ *  On Win32, this function makes sure a file filter is applied automatically
+ *  right after it is selected from the drop-down list, to conform to common
+ *  experience in other applications. Note that currently, @a selectedFilter
+ *  is always set to null on return.
+ *  @todo: implement the multiple file selection on win
+ *  @todo: is this extra handling on win still necessary with Qt4?
+ *
+ *  On all other platforms, this function is equivalent to
+ *  QFileDialog::getOpenFileNames().
+ */
+/* static */
+QStringList VBoxGlobal::getOpenFileNames (const QString &aStartWith,
+                                          const QString &aFilters,
+                                          QWidget       *aParent,
+                                          const QString &aCaption,
+                                          QString       *aSelectedFilter /* = NULL */,
+                                          bool           aResolveSymlinks /* = true */,
+                                          bool           aSingleFile /* = false */)
 {
 #if defined Q_WS_WIN
 
@@ -3697,7 +4272,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
                 initSel = fi.fileName();
             }
 
-            workDir = QDir::convertSeparators (workDir);
+            workDir = QDir::toNativeSeparators (workDir);
             if (!workDir.endsWith ("\\"))
                 workDir += "\\";
 
@@ -3760,7 +4335,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
      * thread */
     QEventLoop loop;
 
-    QString startWith = QDir::convertSeparators (aStartWith);
+    QString startWith = QDir::toNativeSeparators (aStartWith);
     LoopObject loopObject ((QEvent::Type) GetOpenFileNameEvent::TypeId, loop);
 
 //#warning check me!
@@ -3776,7 +4351,7 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
     if (aParent)
         aParent->setWindowModality (Qt::NonModal);
 
-    return loopObject.result();
+    return QStringList() << loopObject.result();
 
 #elif defined (Q_WS_X11) && (QT_VERSION < 0x040400)
 
@@ -3788,6 +4363,10 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
     dlg.setWindowTitle (aCaption);
     dlg.setDirectory (aStartWith);
     dlg.setFilter (aFilters);
+    if (aSingleFile)
+        dlg.setFileMode (QFileDialog::ExistingFile);
+    else
+        dlg.setFileMode (QFileDialog::ExistingFiles);
     if (aSelectedFilter)
         dlg.selectFilter (*aSelectedFilter);
     dlg.setResolveSymlinks (aResolveSymlinks);
@@ -3797,15 +4376,19 @@ QString VBoxGlobal::getOpenFileName (const QString &aStartWith,
         hidden->trigger();
         hidden->setVisible (false);
     }
-    return dlg.exec() ? dlg.selectedFiles() [0] : QString::null;
+    return dlg.exec() == QDialog::Accepted ? dlg.selectedFiles() : QStringList() << QString::null;
 
 #else
 
     QFileDialog::Options o;
     if (!aResolveSymlinks)
         o |= QFileDialog::DontResolveSymlinks;
-    return QFileDialog::getOpenFileName (aParent, aCaption, aStartWith,
-                                         aFilters, aSelectedFilter, o);
+    if (aSingleFile)
+        return QStringList() << QFileDialog::getOpenFileName (aParent, aCaption, aStartWith,
+                                                              aFilters, aSelectedFilter, o);
+    else
+        return QFileDialog::getOpenFileNames (aParent, aCaption, aStartWith,
+                                              aFilters, aSelectedFilter, o);
 #endif
 }
 
@@ -4028,6 +4611,33 @@ QString VBoxGlobal::extractKeyFromActionText (const QString &aText)
     if (re.exactMatch (aText))
         key = re.cap (1);
     return key;
+}
+
+/**
+ * Joins two pixmaps horizontally with 2px space between them and returns the
+ * result.
+ *
+ * @param aPM1 Left pixmap.
+ * @param aPM2 Right pixmap.
+ */
+/* static */
+QPixmap VBoxGlobal::joinPixmaps (const QPixmap &aPM1, const QPixmap &aPM2)
+{
+    if (aPM1.isNull())
+        return aPM2;
+    if (aPM2.isNull())
+        return aPM1;
+
+    QPixmap result (aPM1.width() + aPM2.width() + 2,
+                    qMax (aPM1.height(), aPM2.height()));
+    result.fill (Qt::transparent);
+
+    QPainter painter (&result);
+    painter.drawPixmap (0, 0, aPM1);
+    painter.drawPixmap (aPM1.width() + 2, result.height() - aPM2.height(), aPM2);
+    painter.end();
+
+    return result;
 }
 
 /**
@@ -4336,25 +4946,28 @@ bool VBoxGlobal::event (QEvent *e)
             return true;
         }
 
-        case VBoxDefs::EnumerateMediaEventType:
+        case VBoxDefs::MediaEnumEventType:
         {
-            VBoxEnumerateMediaEvent *ev = (VBoxEnumerateMediaEvent *) e;
+            VBoxMediaEnumEvent *ev = (VBoxMediaEnumEvent*) e;
 
             if (!ev->mLast)
             {
-                if (ev->mMedia.status == VBoxMedia::Error)
-                    vboxProblem().cannotGetMediaAccessibility (ev->mMedia.disk);
-                media_list [ev->mIndex] = ev->mMedia;
-                emit mediaEnumerated (media_list [ev->mIndex], ev->mIndex);
+                if (ev->mMedium.state() == KMediaState_Inaccessible &&
+                    !ev->mMedium.result().isOk())
+                    vboxProblem().cannotGetMediaAccessibility (ev->mMedium);
+                Assert (mCurrentMediumIterator != mMediaList.end());
+                *mCurrentMediumIterator = ev->mMedium;
+                emit mediumEnumerated (*mCurrentMediumIterator);
+                ++ mCurrentMediumIterator;
             }
             else
             {
                 /* the thread has posted the last message, wait for termination */
-                media_enum_thread->wait();
-                delete media_enum_thread;
-                media_enum_thread = 0;
-
-                emit mediaEnumFinished (media_list);
+                mMediaEnumThread->wait();
+                delete mMediaEnumThread;
+                mMediaEnumThread = 0;
+                Assert (mCurrentMediumIterator == mMediaList.end());
+                emit mediumEnumFinished (mMediaList);
             }
 
             return true;
@@ -4536,6 +5149,7 @@ void VBoxGlobal::init()
         {KMachineState_Saving, ":/state_saving_16px.png"},
         {KMachineState_Restoring, ":/state_restoring_16px.png"},
         {KMachineState_Discarding, ":/state_discarding_16px.png"},
+        {KMachineState_SettingUp, ":/settings_16px.png"},
     };
     for (uint n = 0; n < SIZEOF_ARRAY (vmStateIcons); n ++)
     {
@@ -4560,6 +5174,7 @@ void VBoxGlobal::init()
     vm_state_color.insert (KMachineState_Saving,         new QColor(Qt::green));
     vm_state_color.insert (KMachineState_Restoring,      new QColor(Qt::green));
     vm_state_color.insert (KMachineState_Discarding,     new QColor(Qt::green));
+    vm_state_color.insert (KMachineState_SettingUp,      new QColor(Qt::green));
 
     qApp->installEventFilter (this);
 
@@ -4698,12 +5313,12 @@ void VBoxGlobal::cleanup()
         callback.detach();
     }
 
-    if (media_enum_thread)
+    if (mMediaEnumThread)
     {
         /* sVBoxGlobalInCleanup is true here, so just wait for the thread */
-        media_enum_thread->wait();
-        delete media_enum_thread;
-        media_enum_thread = 0;
+        mMediaEnumThread->wait();
+        delete mMediaEnumThread;
+        mMediaEnumThread = 0;
     }
 
 #ifdef VBOX_WITH_REGISTRATION
@@ -4719,11 +5334,12 @@ void VBoxGlobal::cleanup()
     /* ensure CGuestOSType objects are no longer used */
     vm_os_types.clear();
     /* media list contains a lot of CUUnknown, release them */
-    media_list.clear();
+    mMediaList.clear();
+    mCurrentMediumIterator = mMediaList.end();
     /* the last step to ensure we don't use COM any more */
     mVBox.detach();
 
-    /* There may be VBoxEnumerateMediaEvent instances still in the message
+    /* There may be VBoxMediaEnumEvent instances still in the message
      * queue which reference COM objects. Remove them to release those objects
      * before uninitializing the COM subsystem. */
     QApplication::removePostedEvents (this);
@@ -4785,8 +5401,8 @@ void VBoxUSBMenu::processAboutToShow()
         CHostUSBDeviceEnumerator en = host.GetUSBDevices().Enumerate();
         while (en.HasMore())
         {
-            CHostUSBDevice iterator = en.GetNext();
-            CUSBDevice usb = CUnknown (iterator);
+            CHostUSBDevice dev = en.GetNext();
+            CUSBDevice usb (dev);
             QAction *action = addAction (vboxGlobal().details (usb));
             action->setCheckable (true);
             mUSBDevicesMap [action] = usb;
@@ -4796,7 +5412,7 @@ void VBoxUSBMenu::processAboutToShow()
                 CUSBDevice attachedUSB =
                     mConsole.GetUSBDevices().FindById (usb.GetId());
                 action->setChecked (!attachedUSB.isNull());
-                action->setEnabled (iterator.GetState() !=
+                action->setEnabled (dev.GetState() !=
                                     KUSBDeviceState_Unavailable);
             }
         }

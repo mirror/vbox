@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,6 +26,8 @@
 
 #include "VirtualBoxBase.h"
 
+#include "MediumImpl.h"
+
 class Machine;
 
 class ATL_NO_VTABLE FloppyDrive :
@@ -41,21 +43,21 @@ public:
         Data()
         {
             mEnabled    = true;
-            mDriveState = DriveState_NotMounted;
+            mState = DriveState_NotMounted;
         }
 
         bool operator== (const Data &that) const
         {
             return this == &that ||
-                   (mDriveState == that.mDriveState &&
-                    mFloppyImage.equalsTo (that.mFloppyImage) &&
+                   (mState == that.mState &&
+                    mImage.equalsTo (that.mImage) &&
                     mHostDrive.equalsTo (that.mHostDrive));
         }
 
         BOOL mEnabled;
-        ComPtr <IFloppyImage> mFloppyImage;
+        ComObjPtr <FloppyImage2> mImage;
         ComPtr <IHostFloppyDrive> mHostDrive;
-        DriveState_T mDriveState;
+        DriveState_T mState;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (FloppyDrive)
@@ -85,13 +87,13 @@ public:
     // IFloppyDrive properties
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
-    STDMETHOD(COMGETTER(State)) (DriveState_T *aDriveState);
+    STDMETHOD(COMGETTER(State)) (DriveState_T *aState);
 
     // IFloppyDrive methods
     STDMETHOD(MountImage) (INPTR GUIDPARAM aImageId);
     STDMETHOD(CaptureHostDrive) (IHostFloppyDrive *aHostFloppyDrive);
     STDMETHOD(Unmount)();
-    STDMETHOD(GetImage) (IFloppyImage **aFloppyImage);
+    STDMETHOD(GetImage) (IFloppyImage2 **aFloppyImage);
     STDMETHOD(GetHostDrive) (IHostFloppyDrive **aHostFloppyDrive);
 
     // public methods only for internal purposes

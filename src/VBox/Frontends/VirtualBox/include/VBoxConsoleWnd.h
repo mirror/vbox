@@ -177,7 +177,7 @@ private slots:
     void updateAdditionsState (const QString&, bool, bool, bool);
     void updateNetworkAdarptersState();
     void updateUsbState();
-    void updateMediaState (VBoxDefs::DiskType aType);
+    void updateMediaDriveState (VBoxDefs::MediaType aType);
     void updateSharedFoldersState();
 
     void tryClose();
