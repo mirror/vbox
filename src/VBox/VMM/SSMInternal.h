@@ -161,6 +161,8 @@ typedef struct SSMUNIT
 /**
  * SSM VM Instance data.
  * Changes to this must checked against the padding of the cfgm union in VM!
+ *
+ * @todo Move this to UVM.
  */
 typedef struct SSM
 {
