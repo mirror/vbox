@@ -19,13 +19,21 @@
 
 echo "Configuring VirtualBox guest kernel module..."
 
-sync
 vboxadditions_path="/opt/VirtualBoxAdditions"
 vboxadditions64_path=$vboxadditions_path/amd64
 solaris64dir="amd64"
 
 # vboxguest.sh would've been installed, we just need to call it.
 $vboxadditions_path/vboxguest.sh restart silentunload
+
+sed -e '
+/name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
+echo "type=ddi_pseudo;name=vboxguest	\D" >> /etc/devlink.vbox
+mv -f /etc/devlink.vbox /etc/devlink.tab
+
+# create the device link
+/usr/sbin/devfsadm -i vboxguest
+sync
 
 # get what ISA the guest is running 
 cputype=`isainfo -k` 

@@ -70,7 +70,7 @@ typedef RTGCPHYS64 VMMDEVHYPPHYS64;
 
 #elif defined(RT_OS_SOLARIS)
 /** The support device name. */
-# define VBOXGUEST_DEVICE_NAME        "/devices/pci@0,0/pci80ee,cafe@4:vboxguest"
+# define VBOXGUEST_DEVICE_NAME        "/dev/vboxguest"
 
 #elif defined(RT_OS_WINDOWS)
 /** The support service name. */

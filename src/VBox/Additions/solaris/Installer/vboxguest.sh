@@ -135,5 +135,5 @@ status)
     exit 1
 esac
 
-exit
+exit 0
 
