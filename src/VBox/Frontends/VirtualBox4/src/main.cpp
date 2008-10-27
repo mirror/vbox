@@ -340,7 +340,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 #endif
 #endif
 
-            vboxGlobal().checkForAutoConvertedSettings();
+            if (!vboxGlobal().checkForAutoConvertedSettings())
+                break;
 
             VBoxGlobalSettings settings = vboxGlobal().settings();
             /* Process known keys */
