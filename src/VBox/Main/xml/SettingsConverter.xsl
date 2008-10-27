@@ -491,16 +491,16 @@ Sub-element '<xsl:value-of select="name(*[1])"/>' of 'HardDisk' element is inval
         <xsl:value-of select="vb:VirtualDiskImage/@filePath"/>
       </xsl:when>
       <xsl:when test="*[self::vb:VMDKImage][1]">
-        <xsl:value-of select="@filePath"/>
+        <xsl:value-of select="vb:VMDKImage/@filePath"/>
       </xsl:when>
       <xsl:when test="*[self::vb:VHDImage][1]">
-        <xsl:value-of select="@filePath"/>
+        <xsl:value-of select="vb:VHDImage/@filePath"/>
       </xsl:when>
       <xsl:when test="*[self::vb:CustomHardDisk][1]">
-        <xsl:value-of select="@location"/>
+        <xsl:value-of select="vb:CustomHardDisk/@location"/>
       </xsl:when>
-      <!--xsl:when test="*[name()='ISCSIHardDisk'][1]">
-        <xsl:value-of select="concat('iscsi://',@userName,':',@password,'@',@server,':',@port,'/',@target,'/',@lun)"/>
+      <!--xsl:when test="*[self::vb:ISCSIHardDisk][1]">
+        <xsl:value-of select="concat('iscsi://',vb:ISCSIHardDisk/@userName,':',vb:ISCSIHardDisk/@password,'@',vb:ISCSIHardDisk/@server,':',vb:ISCSIHardDisk/@port,'/',vb:ISCSIHardDisk/@target,'/',vb:ISCSIHardDisk/@lun)"/>
       </xsl:when-->
     </xsl:choose>
   </xsl:attribute>
