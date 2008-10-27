@@ -537,11 +537,14 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->tm.s.StatTimerCallbackSetFF,STAMTYPE_COUNTER,       "/TM/CallbackSetFF",    STAMUNIT_OCCURENCES,        "The number of times the timer callback set FF.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatTSCNotFixed,       STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotFixed",         STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCNotTicking,     STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotTicking",       STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchup,        STAMTYPE_COUNTER,       "/TM/TSC/Intercept/Catchup",          STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,           STAMTYPE_COUNTER,       "/TM/TSC/Intercept/Warp",             STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCSyncNotTicking, STAMTYPE_COUNTER,       "/TM/TSC/Intercept/SyncNotTicking",       STAMUNIT_OCCURENCES,        "The number of times TMCpuTickCanUseRealTSC forced rdtsc intercept.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE010,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupLE010",     STAMUNIT_OCCURENCES,        "In catch-up mode, 10% or lower.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE025,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupLE025",     STAMUNIT_OCCURENCES,        "In catch-up mode, 25%-11%.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE100,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupLE100",     STAMUNIT_OCCURENCES,        "In catch-up mode, 100%-26%.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupOther,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupOther",     STAMUNIT_OCCURENCES,        "In catch-up mode, > 100%.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCNotFixed,       STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotFixed",         STAMUNIT_OCCURENCES,        "TSC is not fixed, it may run at variable speed.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCNotTicking,     STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotTicking",       STAMUNIT_OCCURENCES,        "TSC is not ticking.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCSyncNotTicking, STAMTYPE_COUNTER,       "/TM/TSC/Intercept/SyncNotTicking",   STAMUNIT_OCCURENCES,        "VirtualSync isn't ticking.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,           STAMTYPE_COUNTER,       "/TM/TSC/Intercept/Warp",             STAMUNIT_OCCURENCES,        "Warpdrive is active.");
 
 
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,        STAMTYPE_PROFILE_ADV,   "/TM/VirtualSync/CatchUp",              STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
