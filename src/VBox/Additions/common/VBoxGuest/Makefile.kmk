@@ -87,6 +87,8 @@ else if1of ($(KBUILD_TARGET), freebsd solaris)
  vboxguest_LIBS          = \
  	$(VBOX_LIB_VBGL_R0BASE) \
  	$(VBOX_LIB_IPRT_GUEST_R0)
+ vboxguest_DEFS.solaris += VBOX_SVN_REV=$(VBOX_SVN_REV)
+ vboxguest_DEPS.solaris += $(VBOX_SVN_REV_KMK)
  vboxguest_DEPS.freebsd  = \
 	$(PATH_vboxguest)/pci_if.h \
 	$(PATH_vboxguest)/bus_if.h \

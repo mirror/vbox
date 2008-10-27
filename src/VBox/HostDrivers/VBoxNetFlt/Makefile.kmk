@@ -119,6 +119,8 @@ vboxnetflt_TEMPLATE      = VBOXR0DRV
 vboxnetflt_NAME.solaris  = vboxflt
 vboxnetflt_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxnetflt\) KBUILD_BASENAME=KBUILD_STR\(vboxnetflt\) MODULE
 vboxnetflt_DEFS          = IN_RT_R0
+vboxnetflt_DEFS.solaris  += VBOX_SVN_REV=$(VBOX_SVN_REV)
+vboxnetflt_DEPS.solaris  += $(VBOX_SVN_REV_KMK)
 vboxnetflt_INCS.linux   := \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxnetflt_INCS         := \
