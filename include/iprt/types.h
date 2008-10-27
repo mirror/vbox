@@ -505,18 +505,24 @@ typedef const RTFAR64 *PCRTFAR64;
  * @{
  */
 
-/** HC Natural signed integer. */
+/** HC Natural signed integer.
+ * @deprecated silly type. */
 typedef int32_t         RTHCINT;
-/** Pointer to HC Natural signed integer. */
+/** Pointer to HC Natural signed integer.
+ * @deprecated silly type. */
 typedef RTHCINT        *PRTHCINT;
-/** Pointer to const HC Natural signed integer. */
+/** Pointer to const HC Natural signed integer.
+ * @deprecated silly type. */
 typedef const RTHCINT  *PCRTHCINT;
 
-/** HC Natural unsigned integer. */
+/** HC Natural unsigned integer.
+ * @deprecated silly type. */
 typedef uint32_t        RTHCUINT;
-/** Pointer to HC Natural unsigned integer. */
+/** Pointer to HC Natural unsigned integer.
+ * @deprecated silly type. */
 typedef RTHCUINT       *PRTHCUINT;
-/** Pointer to const HC Natural unsigned integer. */
+/** Pointer to const HC Natural unsigned integer.
+ * @deprecated silly type. */
 typedef const RTHCUINT *PCRTHCUINT;
 
 
@@ -707,26 +713,32 @@ typedef const RTR0UINTREG  *PCRTR0UINTREG;
  * @{
  */
 
-/** Natural signed integer in the GC. */
+/** Natural signed integer in the GC.
+ * @deprecated silly type. */
 #if GC_ARCH_BITS == 32
 typedef int32_t         RTGCINT;
-#elif GC_ARCH_BITS == 64
+#elif GC_ARCH_BITS == 64 /** @todo this isn't right, natural int is 32-bit, see RTHCINT. */
 typedef int64_t         RTGCINT;
 #endif
-/** Pointer to natural signed interger in GC. */
+/** Pointer to natural signed interger in GC.
+ * @deprecated silly type. */
 typedef RTGCINT        *PRTGCINT;
-/** Pointer to const natural signed interger in GC. */
+/** Pointer to const natural signed interger in GC.
+ * @deprecated silly type. */
 typedef const RTGCINT  *PCRTGCINT;
 
-/** Natural unsigned integer in the GC. */
+/** Natural unsigned integer in the GC.
+ * @deprecated silly type. */
 #if GC_ARCH_BITS == 32
 typedef uint32_t        RTGCUINT;
-#elif GC_ARCH_BITS == 64
+#elif GC_ARCH_BITS == 64 /** @todo this isn't right, natural int is 32-bit, see RTHCUINT. */
 typedef uint64_t        RTGCUINT;
 #endif
-/** Pointer to natural unsigned integer in GC. */
+/** Pointer to natural unsigned integer in GC.
+ * @deprecated silly type. */
 typedef RTGCUINT       *PRTGCUINT;
-/** Pointer to const natural unsigned integer in GC. */
+/** Pointer to const natural unsigned integer in GC.
+ * @deprecated silly type. */
 typedef const RTGCUINT *PCRTGCUINT;
 
 /** Signed integer which can contain a GC pointer. */
