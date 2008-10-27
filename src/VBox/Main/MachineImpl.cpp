@@ -2561,7 +2561,12 @@ STDMETHODIMP Machine::SaveSettings()
     /* saveSettings() needs mParent lock */
     AutoMultiWriteLock2 alock (mParent, this);
 
-    HRESULT rc = checkStateDependency (MutableStateDep);
+    /* when there was auto-conversion, we want to save the file even if
+     * the VM is saved */
+    StateDependency dep = mData->mSettingsFileVersion != VBOX_XML_VERSION_FULL ?
+        MutableOrSavedStateDep : MutableStateDep;
+
+    HRESULT rc = checkStateDependency (dep);
     CheckComRCReturnRC (rc);
 
     /* the settings file path may never be null */
@@ -2582,7 +2587,12 @@ STDMETHODIMP Machine::SaveSettingsWithBackup (BSTR *aBakFileName)
     /* saveSettings() needs mParent lock */
     AutoMultiWriteLock2 alock (mParent, this);
 
-    HRESULT rc = checkStateDependency (MutableStateDep);
+    /* when there was auto-conversion, we want to save the file even if
+     * the VM is saved */
+    StateDependency dep = mData->mSettingsFileVersion != VBOX_XML_VERSION_FULL ?
+        MutableOrSavedStateDep : MutableStateDep;
+
+    HRESULT rc = checkStateDependency (dep);
     CheckComRCReturnRC (rc);
 
     /* the settings file path may never be null */
