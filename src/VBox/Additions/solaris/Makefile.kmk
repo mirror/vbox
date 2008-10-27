@@ -119,7 +119,6 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
 		$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf \
-		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh \
 		$(PATH_SUB_CURRENT)/solaris/Makefile.kmk
 	$(call MSG_L1,Installing guest additions)
@@ -185,7 +184,6 @@ else
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_70.so                                          $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_71.so                                          $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_71.so
 endif
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxdevlink.sed                  $(SOLARIS_INST_DIR)/etc/devlink.tab
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh                          $(SOLARIS_INST_DIR)/VBox.sh
 	$(call MSG_L1,Creating install package: $@)
 	$(QUIET)$(SOLARIS_INST_DIR)/makepackage.sh $(SOLARIS_INST_DIR) $(PKGFILENAME) $(VBOX_SVN_REV)

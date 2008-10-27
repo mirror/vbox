@@ -30,6 +30,16 @@ pkill -INT VBoxClient
 # vboxguest.sh would've been installed, we just need to call it.
 /opt/VirtualBoxAdditions/vboxguest.sh stop
 
+# remove devlink.tab entry for vboxguest
+sed -e '
+/name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
+mv -f /etc/devlink.vbox /etc/devlink.tab
+
+# remove the link
+if test -h "/dev/vboxguest" || test -f "/dev/vboxguest"; then
+    rm -f /dev/vboxdrv
+fi
+
 # Try and restore xorg.conf!
 echo "Restoring Xorg..."
 /opt/VirtualBoxAdditions/x11restore.pl
