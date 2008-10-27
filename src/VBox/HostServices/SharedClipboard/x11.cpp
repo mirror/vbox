@@ -51,6 +51,10 @@
 #include <X11/Xproto.h>
 #include <X11/StringDefs.h>
 
+#ifdef RT_OS_SOLARIS
+#include <tsol/label.h>
+#endif
+
 /** Do we want to test Utf16 by disabling other text formats? */
 static bool g_testUtf16 = false;
 /** Do we want to test Utf8 by disabling other text formats? */
@@ -1422,7 +1426,19 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
                             CurrentTime);
         /* When the data arrives, the vboxClipboardGetProc callback will be called.  The
            callback will signal the event semaphore when it has processed the data for us. */
+
+#ifdef RT_OS_SOLARIS
+        /*
+         * Trusted Xorg requires a bigger timeout.
+         */
+        unsigned long cTimeoutMillies = CLIPBOARDTIMEOUT;
+        if (is_system_labeled())
+            cTimeoutMillies = 1000 * 120;
+
+        if (RTSemEventWait(g_ctx.waitForData, cTimeoutMillies) != VINF_SUCCESS)
+#else
         if (RTSemEventWait(g_ctx.waitForData, CLIPBOARDTIMEOUT) != VINF_SUCCESS)
+#endif
         {
             /* No need to polute the release log for this. */
             // LogRel(("vboxClipboardReadDataFromClient: XtGetSelectionValue failed to complete within %d milliseconds\n", CLIPBOARDTIMEOUT));
