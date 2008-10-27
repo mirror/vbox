@@ -1826,45 +1826,72 @@ bool VBoxProblemReporter::remindAboutInaccessibleMedia()
 
 /**
  * Shows a list of auto-converted files and asks the user to either Save, Backup
- * or Cancel to leave them as is.
+ * or Cancel to leave them as is and exit VirtualBox.
  *
  * @param aFormatVersion    Recent settings file format version.
  * @param aFileList         List of auto-converted files (may use Qt HTML).
  *
  * @return QIMessageBox::Yes (Save), QIMessageBox::No (Backup),
- *         QIMessageBox::Cancel (Leave)
+ *         QIMessageBox::Cancel (Exit)
  */
 int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatVersion,
                                                          const QString &aFileList)
 {
-    return message (mainWindowShown(), Warning,
+    int rc = message (mainWindowShown(), Info,
+        tr ("<p>Your existing VirtualBox settings files were automatically "
+            "converted from the old format to a new format necessary for the "
+            "new version of VirtualBox.</p>"
+            "<p>Press <b>OK</b> to start VirtualBox now or press <b>More</b> if "
+            "you want to get more information about what files were converted "
+            "and access additional actions.</p>"
+            "<p>Press <b>Exit</b> to terminate the VirtualBox "
+            "application without saving the results of the conversion to "
+            "disk.</p>"),
+        NULL /* aAutoConfirmId */,
+        QIMessageBox::Ok | QIMessageBox::Default,
+        QIMessageBox::No,
+        QIMessageBox::Cancel | QIMessageBox::Escape,
+        0,
+        tr ("&More", "warnAboutAutoConvertedSettings message box"),
+        tr ("E&xit", "warnAboutAutoConvertedSettings message box"));
+
+    /* in the simplest case we backup */
+    if (rc == QIMessageBox::Ok)
+        return QIMessageBox::No;
+
+    if (rc == QIMessageBox::Cancel)
+        return QIMessageBox::Cancel;
+
+    return message (mainWindowShown(), Info,
         tr ("<p>The following VirtualBox settings files have been "
             "automatically converted to the new settings file format "
             "version <b>%1</b>.</p>"
             "<p>However, the results of the conversion were not saved back "
             "to disk yet. Please press:</p>"
             "<ul>"
-            "<li><b>Save</b> to save all auto-converted files now (it will not "
-            "be possible to use these settings files with an older version of "
-            "VirtualBox in the future);</li>"
             "<li><b>Backup</b> to create backup copies of the settings files in "
             "the old format before saving them in the new format;</li>"
-            "<li><b>Cancel</b> to not save the auto-converted settings files "
-            "now.<li>"
+            "<li><b>Overwrite</b> to save all auto-converted files without "
+            "creating backup copies (it will not be possible to use these "
+            "settings files with an older version of VirtualBox "
+            "afterwards);</li>"
+            "<li><b>Exit</b> to terminate VirtualBox without saving the "
+            "results of the conversion to disk.</li>"
             "</ul>"
-            "<p>Note that if you select <b>Cancel</b>, the auto-converted "
-            "settings files will be implicitly saved in the new format anyway "
-            "once you change a setting or start a virtual machine, but "
-            "<b>no</b> backup copies will be created in this case.</p>")
+            "<p>It is recommended to always select <b>Backup</b> because in "
+            "this case it will be possible to go back to the previous "
+            "version of VirtualBox (if necessary) without losing your current "
+            "settings. See the VirtualBox Manual for more information about "
+            "downgrading.</p>")
             .arg (aFormatVersion),
         aFileList,
         NULL /* aAutoConfirmId */,
         QIMessageBox::Yes,
         QIMessageBox::No | QIMessageBox::Default,
         QIMessageBox::Cancel | QIMessageBox::Escape,
-        tr ("&Save", "warnAboutAutoConvertedSettings message box"),
+        tr ("O&verwrite", "warnAboutAutoConvertedSettings message box"),
         tr ("&Backup", "warnAboutAutoConvertedSettings message box"),
-        tr ("Cancel", "warnAboutAutoConvertedSettings message box"));
+        tr ("E&xit", "warnAboutAutoConvertedSettings message box"));
 }
 
 /**

@@ -2552,9 +2552,9 @@ bool VBoxGlobal::showVirtualBoxLicense()
 
 /**
  * Checks if any of the settings files were auto-converted and informs the user
- * if so.
+ * if so. Returns @c false if the user select to exit the application.
  */
-void VBoxGlobal::checkForAutoConvertedSettings()
+bool VBoxGlobal::checkForAutoConvertedSettings()
 {
     QString formatVersion = mVBox.GetSettingsFormatVersion();
 
@@ -2574,7 +2574,8 @@ void VBoxGlobal::checkForAutoConvertedSettings()
         if (version != formatVersion)
         {
             machines.append (*m);
-            fileList += QString ("<nobr>%1&nbsp;&nbsp;&nbsp;(<i>%2</i>)</nobr><br>")
+            fileList += QString ("<tr><td><nobr>%1</nobr></td><td>&nbsp;&nbsp;</td>"
+                                 "</td><td><nobr><i>%2</i></nobr></td></tr>")
                 .arg (m->GetSettingsFilePath())
                 .arg (version);
         }
@@ -2584,51 +2585,58 @@ void VBoxGlobal::checkForAutoConvertedSettings()
     if (version != formatVersion)
     {
         isGlobalConverted = true;
-        fileList += QString ("<nobr>%1&nbsp;&nbsp;&nbsp;(<i>%2</i>)</nobr><br>")
+        fileList += QString ("<tr><td><nobr>%1</nobr></td><td>&nbsp;&nbsp;</td>"
+                             "</td><td><nobr><i>%2</i></nobr></td></tr>")
             .arg (mVBox.GetSettingsFilePath())
             .arg (version);
     }
 
-
     if (!fileList.isNull())
     {
+        fileList = QString ("<table cellspacing=0 cellpadding=0>%1</table>")
+                            .arg (fileList);
+
         int rc = vboxProblem()
             .warnAboutAutoConvertedSettings (formatVersion, fileList);
 
-        if (rc == QIMessageBox::No || rc == QIMessageBox::Yes)
+        if (rc == QIMessageBox::Cancel)
+            return false;
+
+        Assert (rc == QIMessageBox::No || rc == QIMessageBox::Yes);
+
+        /* backup (optionally) and save all settings files
+         * (QIMessageBox::No = Backup, QIMessageBox::Yes = Save) */
+
+        foreach (CMachine m, machines)
         {
-            /* backup (optionally) and save all settings files
-             * (QIMessageBox::No = Backup, QIMessageBox::Yes = Save) */
-
-            foreach (CMachine m, machines)
+            CSession session = openSession (m.GetId());
+            if (!session.isNull())
             {
-                CSession session = openSession (m.GetId());
-                if (!session.isNull())
-                {
-                    CMachine sm = session.GetMachine();
-                    if (rc == QIMessageBox::No)
-                        sm.SaveSettingsWithBackup();
-                    else
-                        sm.SaveSettings();
-
-                    if (!sm.isOk())
-                        vboxProblem().cannotSaveMachineSettings (sm);
-                    session.Close();
-                }
-            }
-
-            if (isGlobalConverted)
-            {
+                CMachine sm = session.GetMachine();
                 if (rc == QIMessageBox::No)
-                    mVBox.SaveSettingsWithBackup();
+                    sm.SaveSettingsWithBackup();
                 else
-                    mVBox.SaveSettings();
+                    sm.SaveSettings();
 
-                if (!mVBox.isOk())
-                    vboxProblem().cannotSaveGlobalSettings (mVBox);
+                if (!sm.isOk())
+                    vboxProblem().cannotSaveMachineSettings (sm);
+                session.Close();
             }
         }
+
+        if (isGlobalConverted)
+        {
+            if (rc == QIMessageBox::No)
+                mVBox.SaveSettingsWithBackup();
+            else
+                mVBox.SaveSettings();
+
+            if (!mVBox.isOk())
+                vboxProblem().cannotSaveGlobalSettings (mVBox);
+        }
     }
+
+    return true;
 }
 
 /**
