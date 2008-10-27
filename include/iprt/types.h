@@ -455,6 +455,8 @@ typedef uint16_t        RTSEL;
 typedef RTSEL          *PRTSEL;
 /** Pointer to const selector. */
 typedef const RTSEL    *PCRTSEL;
+/** Max selector value. */
+#define RTSEL_MAX       UINT16_C(0xffff)
 
 /** Far 16-bit pointer. */
 #pragma pack(1)
