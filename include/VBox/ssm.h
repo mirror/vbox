@@ -406,7 +406,7 @@ typedef FNSSMEXTLOADDONE *PFNSSMEXTLOADDONE;
 /** @} */
 
 
-VMMR3DECL(int) SSMR3Register(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
     PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
     PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone);
 VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
@@ -418,7 +418,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32I
 VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
     PFNSSMEXTSAVEPREP pfnSavePrep, PFNSSMEXTSAVEEXEC pfnSaveExec, PFNSSMEXTSAVEDONE pfnSaveDone,
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser);
-VMMR3DECL(int) SSMR3Deregister(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance);
+VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance);
 VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance);
 VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName);
 VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName);

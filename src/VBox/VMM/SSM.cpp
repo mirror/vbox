@@ -22,20 +22,32 @@
 
 /** @page pg_ssm        SSM - The Saved State Manager
  *
- * The Saved State Manager (SSM) implements facilities for saving and loading
- * a VM state in a structural manner using callbacks for each collection of
- * data which needs saving.
+ * The Saved State Manager (SSM) implements facilities for saving and loading a
+ * VM state in a structural manner using callbacks for each collection of data
+ * which needs saving.
  *
- * At init time each of the VM components will register data entities which
- * they need to save and restore. Each entity have a unique name (ascii) and
- * a set of callbacks associated with it. The name will be used to identify
- * the entity during restore. The callbacks are for the two operations, save
- * and restore. There are three callbacks for each of the two - a prepare,
- * a execute and a what-now.
+ * At init time each of the VMM components, Devices, Drivers and one or two
+ * other things will register data entities which they need to save and restore.
+ * Each entity have a unique name (ascii), instance number, and a set of
+ * callbacks associated with it.  The name will be used to identify the entity
+ * during restore.  The callbacks are for the two operations, save and restore.
+ * There are three callbacks for each of the two - a prepare, a execute and a
+ * complete - giving each component ample opportunity to perform actions both
+ * before and afterwards.
  *
  * The SSM provides a number of APIs for encoding and decoding the data.
  *
  * @see grp_ssm
+ *
+ *
+ * @section sec_ssm_future  Future Changes
+ *
+ * There are plans to extend SSM to make it easier to be both backwards and
+ * (somewhat) forwards compatible.  One of the new features will be being able
+ * to classify units and data items as unimportant, one example where this would
+ * be nice can be seen in with the SSM data unit.  Another potentail feature is
+ * naming data items, perhaps by extending the SSMR3PutStruct API.
+ *
  */
 
 
@@ -62,20 +74,31 @@
 #include <iprt/string.h>
 
 
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** Saved state file magic base string. */
+#define SSMFILEHDR_MAGIC_BASE   "\177VirtualBox SavedState "
+/** Saved state file v1.0 magic. */
+#define SSMFILEHDR_MAGIC_V1_0   "\177VirtualBox SavedState V1.0\n"
+/** Saved state file v1.1 magic. */
+#define SSMFILEHDR_MAGIC_V1_1   "\177VirtualBox SavedState V1.1\n"
+
+/** Data unit magic. */
+#define SSMFILEUNITHDR_MAGIC    "\nUnit\n"
+/** Data end marker magic. */
+#define SSMFILEUNITHDR_END      "\nTheEnd"
+
 /** Start structure magic. (Isacc Asimov) */
-#define SSMR3STRUCT_BEGIN 0x19200102
+#define SSMR3STRUCT_BEGIN       0x19200102
 /** End structure magic. (Isacc Asimov) */
-#define SSMR3STRUCT_END   0x19920406
+#define SSMR3STRUCT_END         0x19920406
 
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-
+/** SSM state. */
 typedef enum SSMSTATE
 {
     SSMSTATE_SAVE_PREP = 1,
@@ -144,19 +167,22 @@ typedef struct SSMHANDLE
  */
 typedef struct SSMFILEHDR
 {
-    /** Magic string which identifies this file as a version of VBox saved state file format. */
-    char        achMagic[32];
+    /** Magic string which identifies this file as a version of VBox saved state
+     *  file format (SSMFILEHDR_MAGIC_V1_1). */
+    char            achMagic[32];
     /** The size of this file. Used to check
      * whether the save completed and that things are fine otherwise. */
-    uint64_t    cbFile;
+    uint64_t        cbFile;
     /** File checksum. The actual calculation skips past the u32CRC field. */
-    uint32_t    u32CRC;
+    uint32_t        u32CRC;
     /** Padding. */
-    uint32_t    u32Reserved;
+    uint32_t        u32Reserved;
     /** The machine UUID. (Ignored if NIL.) */
-    RTUUID      MachineUuid;
-} SSMFILEHDR, *PSSMFILEHDR;
+    RTUUID          MachineUuid;
+} SSMFILEHDR;
 AssertCompileSize(SSMFILEHDR, 64);
+/** Pointer to a saved state file header. */
+typedef SSMFILEHDR *PSSMFILEHDR;
 
 
 /**
@@ -165,31 +191,27 @@ AssertCompileSize(SSMFILEHDR, 64);
 #pragma pack(1) /* darn, MachineUuid got missaligned! */
 typedef struct SSMFILEHDRV10X86
 {
-    /** Magic string which identifies this file as a version of VBox saved state file format. */
-    char        achMagic[32];
+    /** Magic string which identifies this file as a version of VBox saved state
+     * file format (SSMFILEHDR_MAGIC_V1_0). */
+    char            achMagic[32];
     /** The size of this file. Used to check
      * whether the save completed and that things are fine otherwise. */
-    uint64_t    cbFile;
+    uint64_t        cbFile;
     /** File checksum. The actual calculation skips past the u32CRC field. */
-    uint32_t    u32CRC;
+    uint32_t        u32CRC;
     /** The machine UUID. (Ignored if NIL.) */
-    RTUUID      MachineUuid;
-} SSMFILEHDRV10X86, *PSSMFILEHDRV10X86;
+    RTUUID          MachineUuid;
+} SSMFILEHDRV10X86;
 #pragma pack()
+/** Pointer to a SSMFILEHDRV10X86. */
+typedef SSMFILEHDRV10X86 *PSSMFILEHDRV10X86;
 
 /**
  * The amd64 edition of the 1.0 header.
  */
-typedef SSMFILEHDR SSMFILEHDRV10AMD64, *PSSMFILEHDRV10AMD64;
-
-/** Saved state file magic base string. */
-#define SSMFILEHDR_MAGIC_BASE   "\177VirtualBox SavedState "
-/** Saved state file v1.0 magic. */
-#define SSMFILEHDR_MAGIC_V1_0   "\177VirtualBox SavedState V1.0\n"
-/** Saved state file v1.1 magic. */
-#define SSMFILEHDR_MAGIC_V1_1   "\177VirtualBox SavedState V1.1\n"
-
-
+typedef SSMFILEHDR SSMFILEHDRV10AMD64;
+/** Pointer to SSMFILEHDRV10AMD64. */
+typedef SSMFILEHDRV10AMD64 *PSSMFILEHDRV10AMD64;
 
 
 /**
@@ -197,25 +219,21 @@ typedef SSMFILEHDR SSMFILEHDRV10AMD64, *PSSMFILEHDRV10AMD64;
  */
 typedef struct SSMFILEUNITHDR
 {
-    /** Magic. */
-    char        achMagic[8];
+    /** Magic (SSMFILEUNITHDR_MAGIC or SSMFILEUNITHDR_END). */
+    char            achMagic[8];
     /** Number of bytes in this data unit including the header. */
-    uint64_t    cbUnit;
+    uint64_t        cbUnit;
     /** Data version. */
-    uint32_t    u32Version;
+    uint32_t        u32Version;
     /** Instance number. */
-    uint32_t    u32Instance;
+    uint32_t        u32Instance;
     /** Size of the data unit name including the terminator. (bytes) */
-    uint32_t    cchName;
+    uint32_t        cchName;
     /** Data unit name. */
-    char        szName[1];
-} SSMFILEUNITHDR, *PSSMFILEUNITHDR;
-
-/** Data unit magic. */
-#define SSMFILEUNITHDR_MAGIC "\nUnit\n"
-/** Data end marker magic. */
-#define SSMFILEUNITHDR_END   "\nTheEnd"
-
+    char            szName[1];
+} SSMFILEUNITHDR;
+/** Pointer to SSMFILEUNITHDR.  */
+typedef SSMFILEUNITHDR *PSSMFILEUNITHDR;
 
 
 /*******************************************************************************
@@ -224,17 +242,17 @@ typedef struct SSMFILEUNITHDR
 static int                  ssmR3LazyInit(PVM pVM);
 static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit);
-static int ssmr3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
-static void ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
-static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr);
-static PSSMUNIT ssmr3Find(PVM pVM, const char *pszName, uint32_t u32Instance);
-static int ssmr3WriteFinish(PSSMHANDLE pSSM);
-static int ssmr3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf);
-static DECLCALLBACK(int) ssmr3WriteOut(void *pvSSM, const void *pvBuf, size_t cbBuf);
-static void ssmr3ReadFinish(PSSMHANDLE pSSM);
-static int ssmr3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf);
-static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, size_t *pcbRead);
+static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit);
+static int                  ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
+static void                 ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
+static int                  ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr);
+static PSSMUNIT             ssmR3Find(PVM pVM, const char *pszName, uint32_t u32Instance);
+static int                  ssmR3WriteFinish(PSSMHANDLE pSSM);
+static int                  ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf);
+static DECLCALLBACK(int)    ssmR3WriteOut(void *pvSSM, const void *pvBuf, size_t cbBuf);
+static void                 ssmR3ReadFinish(PSSMHANDLE pSSM);
+static int                  ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf);
+static DECLCALLBACK(int)    ssmR3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, size_t *pcbRead);
 
 
 /**
@@ -245,7 +263,6 @@ static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, siz
  */
 static int ssmR3LazyInit(PVM pVM)
 {
-#if 1 /* if we want 2.0.2 to remain forward compatible with 2.0.x, disable this. */
     /*
      * Register a saved state unit which we use to put the VirtualBox version,
      * revision and similar stuff in.
@@ -256,10 +273,6 @@ static int ssmR3LazyInit(PVM pVM)
                                    NULL /*pfnSavePrep*/, ssmR3SelfLoadExec, NULL /*pfnSaveDone*/);
     pVM->ssm.s.fInitialized = RT_SUCCESS(rc);
     return rc;
-#else
-    pVM->ssm.s.fInitialized = true;
-    return VINF_SUCCESS;
-#endif
 }
 
 
@@ -339,7 +352,7 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u3
  * @param   ppUnit          Where to store the insterted unit node.
  *                          Caller must fill in the missing details.
  */
-static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit)
+static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, PSSMUNIT *ppUnit)
 {
     /*
      * Lazy init.
@@ -403,6 +416,7 @@ static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
  * Register a PDM Devices data unit.
  *
  * @returns VBox status.
+ *
  * @param   pVM             The VM handle.
  * @param   pDevIns         Device instance.
  * @param   pszName         Data unit name.
@@ -418,12 +432,12 @@ static int smmr3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uin
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-VMMR3DECL(int) SSMR3Register(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
     PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
     PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = smmr3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
     if (VBOX_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DEV;
@@ -443,6 +457,7 @@ VMMR3DECL(int) SSMR3Register(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, u
  * Register a PDM driver data unit.
  *
  * @returns VBox status.
+ *
  * @param   pVM             The VM handle.
  * @param   pDrvIns         Driver instance.
  * @param   pszName         Data unit name.
@@ -463,7 +478,7 @@ VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszN
     PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = smmr3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
     if (VBOX_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DRV;
@@ -483,6 +498,7 @@ VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszN
  * Register a internal data unit.
  *
  * @returns VBox status.
+ *
  * @param   pVM             The VM handle.
  * @param   pszName         Data unit name.
  * @param   u32Instance     The instance identifier of the data unit.
@@ -502,7 +518,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32I
     PFNSSMINTLOADPREP pfnLoadPrep, PFNSSMINTLOADEXEC pfnLoadExec, PFNSSMINTLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = smmr3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
     if (VBOX_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_INTERNAL;
@@ -521,6 +537,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32I
  * Register an external data unit.
  *
  * @returns VBox status.
+ *
  * @param   pVM             The VM handle.
  * @param   pszName         Data unit name.
  * @param   u32Instance     The instance identifier of the data unit.
@@ -541,7 +558,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32I
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser)
 {
     PSSMUNIT pUnit;
-    int rc = smmr3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
     if (VBOX_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_EXTERNAL;
@@ -561,6 +578,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32I
  * Deregister one or more PDM Device data units.
  *
  * @returns VBox status.
+ *
  * @param   pVM             The VM handle.
  * @param   pDevIns         Device instance.
  * @param   pszName         Data unit name.
@@ -569,7 +587,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32I
  *                          This must together with the name be unique.
  * @remark  Only for dynmaic data units and dynamic unloaded modules.
  */
-VMMR3DECL(int) SSMR3Deregister(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance)
+VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance)
 {
     /*
      * Validate input.
@@ -704,6 +722,7 @@ VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *ps
     return rc;
 }
 
+
 /**
  * Deregister a data unit.
  *
@@ -798,7 +817,7 @@ VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
  * @param   cbFile      Size of the file.
  * @param   pu32CRC     Where to store the calculated checksum.
  */
-static int ssmr3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC)
+static int ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC)
 {
     /*
      * Allocate a buffer.
@@ -810,8 +829,8 @@ static int ssmr3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC)
     /*
      * Loop reading and calculating CRC32.
      */
-    int                 rc = VINF_SUCCESS;
-    uint32_t   u32CRC = RTCrc32Start();
+    int         rc = VINF_SUCCESS;
+    uint32_t    u32CRC = RTCrc32Start();
     while (cbFile)
     {
         /* read chunk */
@@ -863,26 +882,29 @@ static void ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance)
         if (pSSM->pfnProgress)
             pSSM->pfnProgress(pSSM->pVM, pSSM->uPercent, pSSM->pvUser);
         pSSM->uPercent++;
-        pSSM->offEstProgress = (pSSM->uPercent - pSSM->uPercentPrepare) * pSSM->cbEstTotal /
-                                (100-pSSM->uPercentDone-pSSM->uPercentPrepare);
+        pSSM->offEstProgress = (pSSM->uPercent - pSSM->uPercentPrepare) * pSSM->cbEstTotal
+                             / (100 - pSSM->uPercentDone - pSSM->uPercentPrepare);
     }
 }
 
 
 /**
  * Start VM save operation.
- * The caller must be the emulation thread!
  *
  * @returns VBox status.
+ *
  * @param   pVM             The VM handle.
  * @param   pszFilename     Name of the file to save the state in.
  * @param   enmAfter        What is planned after a successful save operation.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ *
+ * @thread  EMT
  */
 VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("SSMR3Save: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
+    VM_ASSERT_EMT(pVM);
 
     /*
      * Validate input.
@@ -895,22 +917,21 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     }
 
     /*
-     * Try open the file.
+     * Create the handle and try open the file.
+     *
+     * Note that there might be quite some work to do after executing the saving,
+     * so we reserve 20% for the 'Done' period.  The checksumming and closing of
+     * the saved state file might take a long time.
      */
-    SSMHANDLE Handle   = {0};
-    Handle.enmAfter    = enmAfter;
-    Handle.pVM         = pVM;
-    Handle.cbFileHdr   = sizeof(SSMFILEHDR);
-    Handle.pfnProgress = pfnProgress;
-    Handle.pvUser      = pvUser;
-    /*
-     * The 'done' part might take much time:
-     *   (1) Call the SaveDone function of each module
-     *   (2) Calculate the Checksum
-     *   (3) RTFileClose() will probably flush the write cache
-     */
+    SSMHANDLE Handle       = {0};
+    Handle.enmAfter        = enmAfter;
+    Handle.pVM             = pVM;
+    Handle.cbFileHdr       = sizeof(SSMFILEHDR);
+    Handle.pfnProgress     = pfnProgress;
+    Handle.pvUser          = pvUser;
     Handle.uPercentPrepare = 2;
-    Handle.uPercentDone    = 20; /* reserve substantial time for crc-checking the image */
+    Handle.uPercentDone    = 20;
+
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (VBOX_FAILURE(rc))
     {
@@ -1057,7 +1078,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                              * Flush buffer / end compression stream.
                              */
                             if (Handle.pZipComp)
-                                rc = ssmr3WriteFinish(&Handle);
+                                rc = ssmR3WriteFinish(&Handle);
                             if (VBOX_SUCCESS(rc))
                             {
                                 /*
@@ -1162,7 +1183,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 /* calc checksum */
                 rc = RTFileSeek(Handle.File, RT_OFFSETOF(SSMFILEHDR, u32CRC) + sizeof(Hdr.u32CRC), RTFILE_SEEK_BEGIN, NULL);
                 if (VBOX_SUCCESS(rc))
-                    rc = ssmr3CalcChecksum(Handle.File, Hdr.cbFile - sizeof(Hdr), &Hdr.u32CRC);
+                    rc = ssmR3CalcChecksum(Handle.File, Hdr.cbFile - sizeof(Hdr), &Hdr.u32CRC);
                 if (VBOX_SUCCESS(rc))
                 {
                     if (pfnProgress)
@@ -1221,7 +1242,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  * @param   pHdr        Where to store the file header.
  * @param   pcbFileHdr  Where to store the file header size.
  */
-static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
+static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
 {
     /*
      * Read the header.
@@ -1260,7 +1281,8 @@ static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
         }
         else
         {
-            /* (It's identical, but this doesn't harm us and will continue working after future changes.) */
+            /* (It's identical to the current, but this doesn't harm us and will
+               continue working after future changes.) */
             SSMFILEHDRV10AMD64 OldHdr;
             memcpy(&OldHdr, pHdr, sizeof(OldHdr));
             pHdr->cbFile = OldHdr.cbFile;
@@ -1304,7 +1326,7 @@ static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
         return rc;
     }
     uint32_t u32CRC;
-    rc = ssmr3CalcChecksum(File, pHdr->cbFile - *pcbFileHdr, &u32CRC);
+    rc = ssmR3CalcChecksum(File, pHdr->cbFile - *pcbFileHdr, &u32CRC);
     if (VBOX_FAILURE(rc))
         return rc;
     if (u32CRC != pHdr->u32CRC)
@@ -1335,11 +1357,12 @@ static int ssmr3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
  *
  * @returns Pointer to the unit.
  * @returns NULL if not found.
+ *
  * @param   pVM             VM handle.
  * @param   pszName         Data unit name.
  * @param   u32Instance     The data unit instance id.
  */
-static PSSMUNIT ssmr3Find(PVM pVM, const char *pszName, uint32_t u32Instance)
+static PSSMUNIT ssmR3Find(PVM pVM, const char *pszName, uint32_t u32Instance)
 {
     size_t   cchName = strlen(pszName);
     PSSMUNIT pUnit = pVM->ssm.s.pHead;
@@ -1354,19 +1377,22 @@ static PSSMUNIT ssmr3Find(PVM pVM, const char *pszName, uint32_t u32Instance)
 
 /**
  * Load VM save operation.
- * The caller must be the emulation thread!
  *
  * @returns VBox status.
+ *
  * @param   pVM             The VM handle.
  * @param   pszFilename     Name of the file to save the state in.
  * @param   enmAfter        What is planned after a successful load operation.
  *                          Only acceptable values are SSMAFTER_RESUME and SSMAFTER_DEBUG_IT.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ *
+ * @thread  EMT
  */
 VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
     LogFlow(("SSMR3Load: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
+    VM_ASSERT_EMT(pVM);
 
     /*
      * Validate input.
@@ -1379,7 +1405,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     }
 
     /*
-     * Open the file.
+     * Create the handle and open the file.
+     * Note that we reserve 20% of the time on validating the image since this might
+     * take a long time.
      */
     SSMHANDLE Handle       = {0};
     Handle.enmAfter        = enmAfter;
@@ -1387,8 +1415,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.cbFileHdr       = sizeof(SSMFILEHDR);
     Handle.pfnProgress     = pfnProgress;
     Handle.pvUser          = pvUser;
-    Handle.uPercentPrepare = 20; /* reserve substantial time for validating the image */
+    Handle.uPercentPrepare = 20;
     Handle.uPercentDone    = 2;
+
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (VBOX_FAILURE(rc))
     {
@@ -1400,7 +1429,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * Read file header and validate it.
      */
     SSMFILEHDR Hdr;
-    rc = ssmr3Validate(Handle.File, &Hdr, &Handle.cbFileHdr);
+    rc = ssmR3Validate(Handle.File, &Hdr, &Handle.cbFileHdr);
     if (VBOX_SUCCESS(rc))
     {
         /*
@@ -1528,7 +1557,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                 /*
                                  * Find the data unit in our internal table.
                                  */
-                                pUnit = ssmr3Find(pVM, pszName, UnitHdr.u32Instance);
+                                pUnit = ssmR3Find(pVM, pszName, UnitHdr.u32Instance);
                                 if (pUnit)
                                 {
                                     /*
@@ -1581,7 +1610,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                          * Close the reader stream.
                                          */
                                         if (Handle.pZipDecomp)
-                                            ssmr3ReadFinish(&Handle);
+                                            ssmR3ReadFinish(&Handle);
 
                                         pUnit->fCalled = true;
                                         if (VBOX_SUCCESS(rc))
@@ -1751,7 +1780,10 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  *
  * @returns VINF_SUCCESS if valid.
  * @returns VBox status code on other failures.
+ *
  * @param   pszFilename     The path to the file to validate.
+ *
+ * @thread  Any.
  */
 VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
 {
@@ -1766,7 +1798,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
     {
         size_t cbFileHdr;
         SSMFILEHDR Hdr;
-        rc = ssmr3Validate(File, &Hdr, &cbFileHdr);
+        rc = ssmR3Validate(File, &Hdr, &cbFileHdr);
         RTFileClose(File);
     }
     else
@@ -1779,9 +1811,12 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
  * Opens a saved state file for reading.
  *
  * @returns VBox status code.
+ *
  * @param   pszFilename     The path to the saved state file.
  * @param   fFlags          Open flags. Reserved, must be 0.
  * @param   ppSSM           Where to store the SSM handle.
+ *
+ * @thread  Any.
  */
 VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM)
 {
@@ -1808,14 +1843,14 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
     {
         SSMFILEHDR Hdr;
         size_t cbFileHdr;
-        rc = ssmr3Validate(pSSM->File, &Hdr, &cbFileHdr);
+        rc = ssmR3Validate(pSSM->File, &Hdr, &cbFileHdr);
         if (VBOX_SUCCESS(rc))
         {
             //pSSM->pVM           = NULL;
             pSSM->cbFileHdr       = cbFileHdr;
             pSSM->enmOp           = SSMSTATE_OPEN_READ;
             pSSM->enmAfter        = SSMAFTER_OPENED;
-            pSSM->uPercentPrepare = 20; /* reserve substantial time for validating the image */
+            pSSM->uPercentPrepare = 20;
             pSSM->uPercentDone    = 2;
             //pSSM->rc            = VINF_SUCCESS;
             //pSSM->pZipComp      = NULL;
@@ -1847,7 +1882,10 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
  * Closes a saved state file opened by SSMR3Open().
  *
  * @returns VBox status code.
+ *
  * @param   pSSM            The SSM handle returned by SSMR3Open().
+ *
+ * @thread  Any, but the caller is responsible for serializing calls per handle.
  */
 VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
 {
@@ -1878,10 +1916,13 @@ VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  * @returns VERR_SSM_UNIT_NOT_FOUND if the unit+instance wasn't found.
+ *
  * @param   pSSM            The SSM handle returned by SSMR3Open().
  * @param   pszUnit         The name of the data unit.
  * @param   iInstance       The instance number.
  * @param   piVersion       Where to store the version number. (Optional)
+ *
+ * @thread  Any, but the caller is responsible for serializing calls per handle.
  */
 VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion)
 {
@@ -2002,9 +2043,9 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
  * @returns VBox status.
  * @param   pSSM            SSM operation handle.
  */
-static int ssmr3WriteFinish(PSSMHANDLE pSSM)
+static int ssmR3WriteFinish(PSSMHANDLE pSSM)
 {
-    //Log2(("ssmr3WriteFinish: %#010llx start\n", RTFileTell(pSSM->File)));
+    //Log2(("ssmR3WriteFinish: %#010llx start\n", RTFileTell(pSSM->File)));
     if (!pSSM->pZipComp)
         return VINF_SUCCESS;
 
@@ -2015,15 +2056,16 @@ static int ssmr3WriteFinish(PSSMHANDLE pSSM)
         if (VBOX_SUCCESS(rc))
         {
             pSSM->pZipComp = NULL;
-            //Log2(("ssmr3WriteFinish: %#010llx done\n", RTFileTell(pSSM->File)));
+            //Log2(("ssmR3WriteFinish: %#010llx done\n", RTFileTell(pSSM->File)));
             return VINF_SUCCESS;
         }
     }
     if (VBOX_SUCCESS(pSSM->rc))
         pSSM->rc = rc;
-    Log2(("ssmr3WriteFinish: failure rc=%Vrc\n", rc));
+    Log2(("ssmR3WriteFinish: failure rc=%Vrc\n", rc));
     return rc;
 }
+
 
 /**
  * Writes something to the current data item in the saved state file.
@@ -2033,9 +2075,9 @@ static int ssmr3WriteFinish(PSSMHANDLE pSSM)
  * @param   pvBuf           The bits to write.
  * @param   cbBuf           The number of bytes to write.
  */
-static int ssmr3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
+static int ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
 {
-    Log2(("ssmr3Write: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
+    Log2(("ssmR3Write: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
 
     /*
      * Check that everything is fine.
@@ -2047,8 +2089,8 @@ static int ssmr3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
          */
         if (!pSSM->pZipComp)
         {
-            //int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmr3WriteOut, RTZIPTYPE_ZLIB, RTZIPLEVEL_FAST);
-            int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmr3WriteOut, RTZIPTYPE_LZF, RTZIPLEVEL_FAST);
+            //int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_ZLIB, RTZIPLEVEL_FAST);
+            int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_LZF, RTZIPLEVEL_FAST);
             if (VBOX_FAILURE(rc))
                 return rc;
         }
@@ -2077,16 +2119,16 @@ static int ssmr3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
  *
  * @returns VBox status.
  * @param   pvSSM           SSM operation handle.
- * @param   pvBuf       Compressed data.
- * @param   cbBuf       Size of the compressed data.
+ * @param   pvBuf           Compressed data.
+ * @param   cbBuf           Size of the compressed data.
  */
-static DECLCALLBACK(int) ssmr3WriteOut(void *pvSSM, const void *pvBuf, size_t cbBuf)
+static DECLCALLBACK(int) ssmR3WriteOut(void *pvSSM, const void *pvBuf, size_t cbBuf)
 {
-    //Log2(("ssmr3WriteOut: %#010llx cbBuf=%#x\n", RTFileTell(((PSSMHANDLE)pvSSM)->File), cbBuf));
+    //Log2(("ssmR3WriteOut: %#010llx cbBuf=%#x\n", RTFileTell(((PSSMHANDLE)pvSSM)->File), cbBuf));
     int rc = RTFileWrite(((PSSMHANDLE)pvSSM)->File, pvBuf, cbBuf, NULL);
     if (VBOX_SUCCESS(rc))
         return rc;
-    Log(("ssmr3WriteOut: RTFileWrite(,,%d) -> %d\n", cbBuf, rc));
+    Log(("ssmR3WriteOut: RTFileWrite(,,%d) -> %d\n", cbBuf, rc));
     return rc;
 }
 
@@ -2112,7 +2154,7 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
          pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
          pCur++)
     {
-        rc = ssmr3Write(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
+        rc = ssmR3Write(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
         if (VBOX_FAILURE(rc))
             return rc;
     }
@@ -2134,11 +2176,12 @@ VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
     {
         uint8_t u8 = fBool; /* enforce 1 byte size */
-        return ssmr3Write(pSSM, &u8, sizeof(u8));
+        return ssmR3Write(pSSM, &u8, sizeof(u8));
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 8-bit unsigned integer item to the current data unit.
@@ -2150,10 +2193,11 @@ VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
 VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u8, sizeof(u8));
+        return ssmR3Write(pSSM, &u8, sizeof(u8));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 8-bit signed integer item to the current data unit.
@@ -2165,10 +2209,11 @@ VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
 VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i8, sizeof(i8));
+        return ssmR3Write(pSSM, &i8, sizeof(i8));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 16-bit unsigned integer item to the current data unit.
@@ -2180,10 +2225,11 @@ VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
 VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u16, sizeof(u16));
+        return ssmR3Write(pSSM, &u16, sizeof(u16));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 16-bit signed integer item to the current data unit.
@@ -2195,10 +2241,11 @@ VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
 VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i16, sizeof(i16));
+        return ssmR3Write(pSSM, &i16, sizeof(i16));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 32-bit unsigned integer item to the current data unit.
@@ -2210,10 +2257,11 @@ VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
 VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u32, sizeof(u32));
+        return ssmR3Write(pSSM, &u32, sizeof(u32));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 32-bit signed integer item to the current data unit.
@@ -2225,10 +2273,11 @@ VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
 VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i32, sizeof(i32));
+        return ssmR3Write(pSSM, &i32, sizeof(i32));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 64-bit unsigned integer item to the current data unit.
@@ -2240,10 +2289,11 @@ VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
 VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u64, sizeof(u64));
+        return ssmR3Write(pSSM, &u64, sizeof(u64));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 64-bit signed integer item to the current data unit.
@@ -2255,10 +2305,11 @@ VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
 VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i64, sizeof(i64));
+        return ssmR3Write(pSSM, &i64, sizeof(i64));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 128-bit unsigned integer item to the current data unit.
@@ -2270,10 +2321,11 @@ VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
 VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u128, sizeof(u128));
+        return ssmR3Write(pSSM, &u128, sizeof(u128));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a 128-bit signed integer item to the current data unit.
@@ -2285,10 +2337,11 @@ VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
 VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i128, sizeof(i128));
+        return ssmR3Write(pSSM, &i128, sizeof(i128));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a VBox unsigned integer item to the current data unit.
@@ -2300,7 +2353,7 @@ VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
 VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u, sizeof(u));
+        return ssmR3Write(pSSM, &u, sizeof(u));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2316,7 +2369,7 @@ VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
 VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i, sizeof(i));
+        return ssmR3Write(pSSM, &i, sizeof(i));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2332,7 +2385,7 @@ VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
 VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u, sizeof(u));
+        return ssmR3Write(pSSM, &u, sizeof(u));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2348,7 +2401,7 @@ VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 VMMR3DECL(int) SSMR3PutGCSInt(PSSMHANDLE pSSM, RTGCINT i)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i, sizeof(i));
+        return ssmR3Write(pSSM, &i, sizeof(i));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2364,7 +2417,7 @@ VMMR3DECL(int) SSMR3PutGCSInt(PSSMHANDLE pSSM, RTGCINT i)
 VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &GCPhys, sizeof(GCPhys));
+        return ssmR3Write(pSSM, &GCPhys, sizeof(GCPhys));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2380,7 +2433,7 @@ VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
 VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &GCPhys, sizeof(GCPhys));
+        return ssmR3Write(pSSM, &GCPhys, sizeof(GCPhys));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2396,7 +2449,7 @@ VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
 VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &GCPhys, sizeof(GCPhys));
+        return ssmR3Write(pSSM, &GCPhys, sizeof(GCPhys));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2412,7 +2465,7 @@ VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
 VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &GCPtr, sizeof(GCPtr));
+        return ssmR3Write(pSSM, &GCPtr, sizeof(GCPtr));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2428,7 +2481,7 @@ VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &RCPtr, sizeof(RCPtr));
+        return ssmR3Write(pSSM, &RCPtr, sizeof(RCPtr));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2444,7 +2497,7 @@ VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
 VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &GCPtr, sizeof(GCPtr));
+        return ssmR3Write(pSSM, &GCPtr, sizeof(GCPtr));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2460,7 +2513,7 @@ VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
 VMMR3DECL(int) SSMR3PutHCUInt(PSSMHANDLE pSSM, RTHCUINT u)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &u, sizeof(u));
+        return ssmR3Write(pSSM, &u, sizeof(u));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2476,7 +2529,7 @@ VMMR3DECL(int) SSMR3PutHCUInt(PSSMHANDLE pSSM, RTHCUINT u)
 VMMR3DECL(int) SSMR3PutHCSInt(PSSMHANDLE pSSM, RTHCINT i)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &i, sizeof(i));
+        return ssmR3Write(pSSM, &i, sizeof(i));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2492,7 +2545,7 @@ VMMR3DECL(int) SSMR3PutHCSInt(PSSMHANDLE pSSM, RTHCINT i)
 VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &IOPort, sizeof(IOPort));
+        return ssmR3Write(pSSM, &IOPort, sizeof(IOPort));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2508,7 +2561,7 @@ VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
 VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, &Sel, sizeof(Sel));
+        return ssmR3Write(pSSM, &Sel, sizeof(Sel));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2525,10 +2578,11 @@ VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
 VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmr3Write(pSSM, pv, cb);
+        return ssmR3Write(pSSM, pv, cb);
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Saves a zero terminated string item to the current data unit.
@@ -2548,10 +2602,10 @@ VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
             return VERR_TOO_MUCH_DATA;
         }
         uint32_t u32 = (uint32_t)cch;
-        int rc = ssmr3Write(pSSM, &u32, sizeof(u32));
+        int rc = ssmR3Write(pSSM, &u32, sizeof(u32));
         if (rc)
             return rc;
-        return ssmr3Write(pSSM, psz, cch);
+        return ssmR3Write(pSSM, psz, cch);
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
@@ -2566,12 +2620,13 @@ VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
  *
  * @param   pSSM            SSM operation handle.
  */
-static void ssmr3ReadFinish(PSSMHANDLE pSSM)
+static void ssmR3ReadFinish(PSSMHANDLE pSSM)
 {
     int rc = RTZipDecompDestroy(pSSM->pZipDecomp);
     AssertRC(rc);
     pSSM->pZipDecomp = NULL;
 }
+
 
 /**
  * Internal read worker.
@@ -2580,7 +2635,7 @@ static void ssmr3ReadFinish(PSSMHANDLE pSSM)
  * @param   pvBuf           Where to store the read data.
  * @param   cbBuf           Number of bytes to read.
  */
-static int ssmr3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
+static int ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 {
     /*
      * Check that everything is fine.
@@ -2592,7 +2647,7 @@ static int ssmr3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
          */
         if (!pSSM->pZipDecomp)
         {
-            pSSM->rc = RTZipDecompCreate(&pSSM->pZipDecomp, pSSM, ssmr3ReadIn);
+            pSSM->rc = RTZipDecompCreate(&pSSM->pZipDecomp, pSSM, ssmR3ReadIn);
             if (VBOX_FAILURE(pSSM->rc))
                 return pSSM->rc;
         }
@@ -2603,13 +2658,14 @@ static int ssmr3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
          */
         pSSM->rc = RTZipDecompress(pSSM->pZipDecomp, pvBuf, cbBuf, NULL);
         if (VBOX_SUCCESS(pSSM->rc))
-            Log2(("ssmr3Read: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
+            Log2(("ssmR3Read: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
         else
             AssertMsgFailed(("rc=%Vrc cbBuf=%#x\n", pSSM->rc, cbBuf));
     }
 
     return pSSM->rc;
 }
+
 
 /**
  * Callback for reading compressed data into the input buffer of the
@@ -2621,7 +2677,7 @@ static int ssmr3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
  * @param   cbBuf       Size of the buffer.
  * @param   pcbRead     Number of bytes actually stored in the buffer.
  */
-static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+static DECLCALLBACK(int) ssmR3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, size_t *pcbRead)
 {
     PSSMHANDLE pSSM = (PSSMHANDLE)pvSSM;
     size_t cbRead = cbBuf;
@@ -2629,7 +2685,7 @@ static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, siz
         cbRead = (size_t)pSSM->cbUnitLeft;
     if (cbRead)
     {
-        //Log2(("ssmr3ReadIn: %#010llx cbBug=%#x cbRead=%#x\n", RTFileTell(pSSM->File), cbBuf, cbRead));
+        //Log2(("ssmR3ReadIn: %#010llx cbBug=%#x cbRead=%#x\n", RTFileTell(pSSM->File), cbBuf, cbRead));
         int rc = RTFileRead(pSSM->File, pvBuf, cbRead, NULL);
         if (VBOX_SUCCESS(rc))
         {
@@ -2639,7 +2695,7 @@ static DECLCALLBACK(int) ssmr3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, siz
             ssmR3Progress(pSSM, cbRead);
             return VINF_SUCCESS;
         }
-        Log(("ssmr3ReadIn: RTFileRead(,,%d) -> %d\n", cbRead, rc));
+        Log(("ssmR3ReadIn: RTFileRead(,,%d) -> %d\n", cbRead, rc));
         return rc;
     }
 
@@ -2674,7 +2730,7 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
          pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
          pCur++)
     {
-        rc = ssmr3Read(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
+        rc = ssmR3Read(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
         if (VBOX_FAILURE(rc))
             return rc;
     }
@@ -2701,7 +2757,7 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
     {
         uint8_t u8; /* see SSMR3PutBool */
-        int rc = ssmr3Read(pSSM, &u8, sizeof(u8));
+        int rc = ssmR3Read(pSSM, &u8, sizeof(u8));
         if (VBOX_SUCCESS(rc))
         {
             Assert(u8 <= 1);
@@ -2713,6 +2769,7 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
     return VERR_SSM_INVALID_STATE;
 }
 
+
 /**
  * Loads a 8-bit unsigned integer item from the current data unit.
  *
@@ -2723,10 +2780,11 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
 VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pu8, sizeof(*pu8));
+        return ssmR3Read(pSSM, pu8, sizeof(*pu8));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 8-bit signed integer item from the current data unit.
@@ -2738,10 +2796,11 @@ VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pi8, sizeof(*pi8));
+        return ssmR3Read(pSSM, pi8, sizeof(*pi8));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 16-bit unsigned integer item from the current data unit.
@@ -2753,10 +2812,11 @@ VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
 VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pu16, sizeof(*pu16));
+        return ssmR3Read(pSSM, pu16, sizeof(*pu16));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 16-bit signed integer item from the current data unit.
@@ -2768,10 +2828,11 @@ VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pi16, sizeof(*pi16));
+        return ssmR3Read(pSSM, pi16, sizeof(*pi16));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 32-bit unsigned integer item from the current data unit.
@@ -2783,10 +2844,11 @@ VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
 VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pu32, sizeof(*pu32));
+        return ssmR3Read(pSSM, pu32, sizeof(*pu32));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 32-bit signed integer item from the current data unit.
@@ -2798,10 +2860,11 @@ VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pi32, sizeof(*pi32));
+        return ssmR3Read(pSSM, pi32, sizeof(*pi32));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 64-bit unsigned integer item from the current data unit.
@@ -2813,10 +2876,11 @@ VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
 VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pu64, sizeof(*pu64));
+        return ssmR3Read(pSSM, pu64, sizeof(*pu64));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 64-bit signed integer item from the current data unit.
@@ -2828,10 +2892,11 @@ VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pi64, sizeof(*pi64));
+        return ssmR3Read(pSSM, pi64, sizeof(*pi64));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a 128-bit unsigned integer item from the current data unit.
@@ -2843,7 +2908,7 @@ VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
 VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pu128, sizeof(*pu128));
+        return ssmR3Read(pSSM, pu128, sizeof(*pu128));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2859,7 +2924,7 @@ VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pi128, sizeof(*pi128));
+        return ssmR3Read(pSSM, pi128, sizeof(*pi128));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2875,7 +2940,7 @@ VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
 VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pu, sizeof(*pu));
+        return ssmR3Read(pSSM, pu, sizeof(*pu));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2891,7 +2956,7 @@ VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pi, sizeof(*pi));
+        return ssmR3Read(pSSM, pi, sizeof(*pi));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2914,11 +2979,11 @@ VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
         {
             uint32_t val;
             Assert(sizeof(*pu) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmr3Read(pSSM, &val, pSSM->cbGCPtr);
+            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
             *pu = val;
             return rc;
         }
-        return ssmr3Read(pSSM, pu, sizeof(*pu));
+        return ssmR3Read(pSSM, pu, sizeof(*pu));
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
@@ -2942,11 +3007,11 @@ VMMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi)
         {
             int32_t val;
             Assert(sizeof(*pi) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmr3Read(pSSM, &val, pSSM->cbGCPtr);
+            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
             *pi = val;
             return rc;
         }
-        return ssmr3Read(pSSM, pi, sizeof(*pi));
+        return ssmR3Read(pSSM, pi, sizeof(*pi));
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
@@ -2963,7 +3028,7 @@ VMMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi)
 VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
+        return ssmR3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2979,7 +3044,7 @@ VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
+        return ssmR3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2995,7 +3060,7 @@ VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
+        return ssmR3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -3004,11 +3069,11 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 /**
  * Loads a GC virtual address item from the current data unit.
  *
- * Note: only applies to:
- * - SSMR3GetGCPtr
- * - SSMR3GetGCUIntPtr
- * - SSMR3GetGCSInt
- * - SSMR3GetGCUInt
+ * Only applies to:
+ *  - SSMR3GetGCPtr
+ *  - SSMR3GetGCUIntPtr
+ *  - SSMR3GetGCSInt
+ *  - SSMR3GetGCUInt
  *
  * Put functions are not affected.
  *
@@ -3023,6 +3088,7 @@ VMMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
     pSSM->cbGCPtr = cbGCPtr;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Loads a GC virtual address item from the current data unit.
@@ -3041,15 +3107,16 @@ VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
         {
             RTGCPTR32 val;
             Assert(sizeof(*pGCPtr) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmr3Read(pSSM, &val, pSSM->cbGCPtr);
+            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
             *pGCPtr = val;
             return rc;
         }
-        return ssmr3Read(pSSM, pGCPtr, pSSM->cbGCPtr);
+        return ssmR3Read(pSSM, pGCPtr, pSSM->cbGCPtr);
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads an RC virtual address item from the current data unit.
@@ -3061,11 +3128,12 @@ VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
 VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pRCPtr, sizeof(*pRCPtr));
+        return ssmR3Read(pSSM, pRCPtr, sizeof(*pRCPtr));
 
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
+
 
 /**
  * Loads a GC virtual address (represented as unsigned integer) item from the current data unit.
@@ -3084,11 +3152,11 @@ VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
         {
             RTGCUINTPTR32 val;
             Assert(sizeof(*pGCPtr) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmr3Read(pSSM, &val, pSSM->cbGCPtr);
+            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
             *pGCPtr = val;
             return rc;
         }
-        return ssmr3Read(pSSM, pGCPtr, pSSM->cbGCPtr);
+        return ssmR3Read(pSSM, pGCPtr, pSSM->cbGCPtr);
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
@@ -3105,7 +3173,7 @@ VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
 VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pIOPort, sizeof(*pIOPort));
+        return ssmR3Read(pSSM, pIOPort, sizeof(*pIOPort));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -3121,7 +3189,7 @@ VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pSel, sizeof(*pSel));
+        return ssmR3Read(pSSM, pSel, sizeof(*pSel));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -3138,7 +3206,7 @@ VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 VMMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmr3Read(pSSM, pv, cb);
+        return ssmR3Read(pSSM, pv, cb);
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -3182,7 +3250,7 @@ VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *
             {
                 /* terminate and read string content. */
                 psz[u32] = '\0';
-                return ssmr3Read(pSSM, psz, u32);
+                return ssmR3Read(pSSM, psz, u32);
             }
             return VERR_TOO_MUCH_DATA;
         }
@@ -3208,6 +3276,7 @@ VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
 {
     return pSSM->rc;
 }
+
 
 /**
  * Fail the load operation.
