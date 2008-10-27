@@ -22,14 +22,28 @@
 /** @page pg_stam       STAM - The Statistics Manager
  *
  * The purpose for the statistics manager is to present the rest of the system
- * with a somewhat uniform way of accessing VMM statistics. STAM sports a couple
- * of different APIs for accessing them: STAMR3EnumU, STAMR3SnapshotU,
- * STAMR3DumpU, STAMR3DumpToReleaseLogU. Main is exposing the XML based one,
- * STAMR3SnapshotU.
+ * with a somewhat uniform way of accessing VMM statistics.  STAM sports a
+ * couple of different APIs for accessing them: STAMR3EnumU, STAMR3SnapshotU,
+ * STAMR3DumpU, STAMR3DumpToReleaseLogU and the debugger.  Main is exposing the
+ * XML based one, STAMR3SnapshotU.
  *
  * The rest of the VMM together with the devices and drivers registers their
- * statistics with STAM giving them a name. The name is like hierarchical, the
- * components separated by slashes ('/').
+ * statistics with STAM giving them a name.  The name is hierarchical, the
+ * components separated by slashes ('/') and must start with a slash.
+ *
+ * Each item registered with STAM - also, half incorrectly, called a sample -
+ * has a type, unit, visibility, data pointer and description associated with it
+ * in addition to the name (described above).  The type tells STAM what kind of
+ * structure the pointer is pointing to.  The visibility allows unused
+ * statistics from cluttering the output or showing up in the GUI.  All the bits
+ * together makes STAM able to present the items in a sensible way to the user.
+ * Some types also allows STAM to reset the data, which is very convenient when
+ * digging into specific operations and such.
+ *
+ * PS. The VirtualBox Debugger GUI has a viewer for inspecting the statistics
+ * STAM provides.  You will also find statistics in the release and debug logs.
+ * And as mentioned in the introduction, the debugger console features a couple
+ * of command: .stats and .statsreset.
  *
  * @see grp_stam
  */
@@ -122,27 +136,27 @@ typedef struct STAMR0SAMPLE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
-                           STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
-static int stamR3ResetOne(PSTAMDESC pDesc, void *pvArg);
-static DECLCALLBACK(void) stamR3EnumLogPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
-static DECLCALLBACK(void) stamR3EnumRelLogPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
-static DECLCALLBACK(void) stamR3EnumPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
-static int stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg);
-static int stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat, ...);
-static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg);
-static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg);
-static bool stamR3MultiMatch(const char * const *papszExpressions, unsigned cExpressions, unsigned *piExpression, const char *pszName);
-static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, char **ppszCopy);
-static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg);
-static void stamR3Ring0StatsRegisterU(PUVM pUVM);
-static void stamR3Ring0StatsUpdateU(PUVM pUVM, const char *pszPat);
-static void stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExpressions, unsigned cExpressions);
+static int                  stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
+                                            STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc);
+static int                  stamR3ResetOne(PSTAMDESC pDesc, void *pvArg);
+static DECLCALLBACK(void)   stamR3EnumLogPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
+static DECLCALLBACK(void)   stamR3EnumRelLogPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
+static DECLCALLBACK(void)   stamR3EnumPrintf(PSTAMR3PRINTONEARGS pvArg, const char *pszFormat, ...);
+static int                  stamR3SnapshotOne(PSTAMDESC pDesc, void *pvArg);
+static int                  stamR3SnapshotPrintf(PSTAMR3SNAPSHOTONE pThis, const char *pszFormat, ...);
+static int                  stamR3PrintOne(PSTAMDESC pDesc, void *pvArg);
+static int                  stamR3EnumOne(PSTAMDESC pDesc, void *pvArg);
+static bool                 stamR3MultiMatch(const char * const *papszExpressions, unsigned cExpressions, unsigned *piExpression, const char *pszName);
+static char **              stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, char **ppszCopy);
+static int                  stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0, int (pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg);
+static void                 stamR3Ring0StatsRegisterU(PUVM pUVM);
+static void                 stamR3Ring0StatsUpdateU(PUVM pUVM, const char *pszPat);
+static void                 stamR3Ring0StatsUpdateMultiU(PUVM pUVM, const char * const *papszExpressions, unsigned cExpressions);
 
 #ifdef VBOX_WITH_DEBUGGER
-static DECLCALLBACK(int)  stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(void) stamR3EnumDbgfPrintf(PSTAMR3PRINTONEARGS pArgs, const char *pszFormat, ...);
-static DECLCALLBACK(int)  stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(int)    stamR3CmdStats(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+static DECLCALLBACK(void)   stamR3EnumDbgfPrintf(PSTAMR3PRINTONEARGS pArgs, const char *pszFormat, ...);
+static DECLCALLBACK(int)    stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 #endif
 
 
@@ -772,7 +786,6 @@ VMMR3DECL(int)  STAMR3Reset(PVM pVM, const char *pszPat)
 {
     return STAMR3ResetU(pVM->pUVM, pszPat);
 }
-
 
 
 /**
@@ -1792,8 +1805,8 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
     }
 }
 
-
 #ifdef VBOX_WITH_DEBUGGER
+
 /**
  * The '.stats' command.
  *
@@ -1880,5 +1893,6 @@ static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
 
     return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Restting statistics.\n");
 }
-#endif
+
+#endif /* VBOX_WITH_DEBUGGER */
 
