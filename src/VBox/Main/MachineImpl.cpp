@@ -2886,7 +2886,7 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
                 if (it->mName == aName)
                 {
                     property = *it;
-                    if (it->mFlags & (GUESTWRITE | READONLY))
+                    if (it->mFlags & (RDONLYHOST))
                         rc = setError (E_ACCESSDENIED, tr ("The property '%ls' cannot be changed by the host"), aName);
                     else
                     {

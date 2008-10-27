@@ -498,9 +498,8 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     if (RT_SUCCESS(rc))
     {
         CFGMR3QueryU32(mpFlagsNode, pszName, &fFlags);  /* Failure is no problem here. */
-        if (   (fFlags & READONLY)
-            || (isGuest && (fFlags & HOSTWRITE))
-            || (!isGuest && (fFlags & GUESTWRITE))
+        if (   (isGuest && (fFlags & RDONLYGUEST))
+            || (!isGuest && (fFlags & RDONLYHOST))
            )
             rc = VERR_PERMISSION_DENIED;
     }
@@ -592,9 +591,8 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     {
         uint32_t fFlags = NILFLAG;
         CFGMR3QueryU32(mpFlagsNode, pszName, &fFlags);  /* Failure is no problem here. */
-        if (   (fFlags & READONLY)
-            || (isGuest && (fFlags & HOSTWRITE))
-            || (!isGuest && (fFlags & GUESTWRITE))
+        if (   (isGuest && (fFlags & RDONLYGUEST))
+            || (!isGuest && (fFlags & RDONLYHOST))
            )
             rc = VERR_PERMISSION_DENIED;
     }
