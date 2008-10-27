@@ -67,7 +67,7 @@
  * @returns Pointer to the VM structure the SELM is part of.
  * @param   pSELM   Pointer to SELM instance data.
  */
-#define SELM2VM(pSELM)  ( (PVM)((char*)pSELM - pSELM->offVM) )
+#define SELM2VM(pSELM)  ( (PVM)((char *)pSELM - pSELM->offVM) )
 
 
 
@@ -80,35 +80,37 @@ typedef struct SELM
      * See SELM2VM(). */
     RTINT                   offVM;
 
-    /* Flat CS, DS, 64 bit mode CS, TSS & trap 8 TSS. */
+    /** Flat CS, DS, 64 bit mode CS, TSS & trap 8 TSS. */
     RTSEL                   aHyperSel[SELM_HYPER_SEL_MAX];
 
-    /** Pointer to the GCs - HC Ptr.
+    /** Pointer to the GCs - R3 Ptr.
      * This size is governed by SELM_GDT_ELEMENTS. */
-    R3R0PTRTYPE(PX86DESC)   paGdtHC;
-    /** Pointer to the GCs - GC Ptr.
+    R3PTRTYPE(PX86DESC)     paGdtR3;
+    /** Pointer to the GCs - RC Ptr.
      * This is not initialized until the first relocation because it's used to
      * check if the shadow GDT virtual handler requires deregistration. */
-    RCPTRTYPE(PX86DESC)     paGdtGC;
-    /** Current (last) Guest's GDTR. */
+    RCPTRTYPE(PX86DESC)     paGdtRC;
+    /** Current (last) Guest's GDTR.
+     * The pGdt member is set to RTRCPTR_MAX if we're not monitoring the guest GDT. */
     VBOXGDTR                GuestGdtr;
     /** The current (last) effective Guest GDT size. */
     RTUINT                  cbEffGuestGdtLimit;
 
     uint32_t                padding0;
 
-    /** HC Pointer to the LDT shadow area placed in Hypervisor memory arena. */
-    R3PTRTYPE(void *)       HCPtrLdt;
-    /** GC Pointer to the LDT shadow area placed in Hypervisor memory arena. */
-    RCPTRTYPE(void *)       GCPtrLdt;
+    /** R3 pointer to the LDT shadow area in HMA. */
+    R3PTRTYPE(void *)       pvLdtR3;
+    /** RC pointer to the LDT shadow area in HMA. */
+    RCPTRTYPE(void *)       pvLdtRC;
 #if GC_ARCH_BITS == 64
     RTRCPTR                 padding1;
 #endif
-    /** GC Pointer to the current Guest's LDT. */
+    /** The address of the guest LDT.
+     * RTRCPTR_MAX if not monitored. */
     RTGCPTR                 GCPtrGuestLdt;
     /** Current LDT limit, both Guest and Shadow. */
     RTUINT                  cbLdtLimit;
-    /** Current LDT offset relative to pvLdt*. */
+    /** Current LDT offset relative to pvLdtR3/pvLdtRC. */
     RTUINT                  offLdtHyper;
 #if HC_ARCH_BITS == 32 && GC_ARCH_BITS == 64
     uint32_t                padding2[2];
@@ -120,12 +122,13 @@ typedef struct SELM
     /** TSS for trap 08 (\#DF). */
     VBOXTSS                 TssTrap08;
 
-    /** GC Pointer to the TSS shadow area (Tss) placed in Hypervisor memory arena. */
-    RCPTRTYPE(void *)       GCPtrTss;
+    /** Monitored shadow TSS address. */
+    RCPTRTYPE(void *)       pvMonShwTssRC;
 #if GC_ARCH_BITS == 64
     RTRCPTR                 padding3;
 #endif
-    /** GC Pointer to the current Guest's TSS. */
+    /** GC Pointer to the current Guest's TSS.
+     * RTRCPTR_MAX if not monitored. */
     RTGCPTR                 GCPtrGuestTss;
     /** The size of the guest TSS. */
     RTUINT                  cbGuestTss;
@@ -133,7 +136,8 @@ typedef struct SELM
     bool                    fGuestTss32Bit;
     /** The size of the Guest's TSS part we're monitoring. */
     RTUINT                  cbMonitoredGuestTss;
-    /** GC shadow TSS selector */
+    /** The guest TSS selector at last sync (part of monitoring).
+     * Contains RTSEL_MAX if not set. */
     RTSEL                   GCSelTss;
 
     /** Indicates that the Guest GDT access handler have been registered. */
@@ -153,19 +157,19 @@ typedef struct SELM
     STAMPROFILE             StatTSSSync;
 
     /** GC: The number of handled writes to the Guest's GDT. */
-    STAMCOUNTER             StatGCWriteGuestGDTHandled;
+    STAMCOUNTER             StatRCWriteGuestGDTHandled;
     /** GC: The number of unhandled write to the Guest's GDT. */
-    STAMCOUNTER             StatGCWriteGuestGDTUnhandled;
+    STAMCOUNTER             StatRCWriteGuestGDTUnhandled;
     /** GC: The number of times writes to Guest's LDT was detected. */
-    STAMCOUNTER             StatGCWriteGuestLDT;
+    STAMCOUNTER             StatRCWriteGuestLDT;
     /** GC: The number of handled writes to the Guest's TSS. */
-    STAMCOUNTER             StatGCWriteGuestTSSHandled;
+    STAMCOUNTER             StatRCWriteGuestTSSHandled;
     /** GC: The number of handled writes to the Guest's TSS where we detected a change. */
-    STAMCOUNTER             StatGCWriteGuestTSSHandledChanged;
+    STAMCOUNTER             StatRCWriteGuestTSSHandledChanged;
     /** GC: The number of handled redir writes to the Guest's TSS where we detected a change. */
-    STAMCOUNTER             StatGCWriteGuestTSSRedir;
+    STAMCOUNTER             StatRCWriteGuestTSSRedir;
     /** GC: The number of unhandled writes to the Guest's TSS. */
-    STAMCOUNTER             StatGCWriteGuestTSSUnhandled;
+    STAMCOUNTER             StatRCWriteGuestTSSUnhandled;
     /** The number of times we had to relocate our hypervisor selectors. */
     STAMCOUNTER             StatHyperSelsChanged;
     /** The number of times we had find free hypervisor selectors. */
@@ -174,13 +178,13 @@ typedef struct SELM
 
 __BEGIN_DECLS
 
-VMMRCDECL(int) selmgcGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-VMMRCDECL(int) selmgcGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-VMMRCDECL(int) selmgcGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) selmRCGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 
-VMMRCDECL(int) selmgcShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-VMMRCDECL(int) selmgcShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-VMMRCDECL(int) selmgcShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) selmRCShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) selmRCShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) selmRCShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 
 __END_DECLS
 
