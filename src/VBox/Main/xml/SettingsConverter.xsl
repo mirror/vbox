@@ -570,9 +570,15 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
                      vb:Global/vb:SystemProperties"
               mode="v1.4">
   <SystemProperties>
-    <!-- note: we don't use the @defaultVDIFolder value for @defaultHardDiskFolder
-         since we want to let VBoxSVC set the default value -->
     <xsl:apply-templates select="@*[not(name()='defaultVDIFolder')]|node()" mode="v1.4"/>
+    <!-- use the @defaultVDIFolder value for @defaultHardDiskFolder only when it
+         differs from the default (VDI) and otherwise simply delete it to let
+         VBoxSVC set the correct new default value -->
+    <xsl:if test="not(translate(@defaultVDIFolder,'vdi','VDI')='VDI')">
+      <xsl:attribute name="defaultHardDiskFolder">
+        <xsl:value-of select="@defaultVDIFolder"/>
+      </xsl:attribute>
+    </xsl:if>
   </SystemProperties>
 </xsl:template>
 
