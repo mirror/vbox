@@ -7922,7 +7922,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                 tcg_gen_helper_1_1(helper_lsl, t0, cpu_T[0]);
             tcg_gen_andi_tl(cpu_tmp0, cpu_cc_src, CC_Z);
             label1 = gen_new_label();
-            tcg_gen_brcond_i32(TCG_COND_EQ, cpu_tmp0, 0, label1);
+            tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_tmp0, 0, label1);
             gen_op_mov_reg_v(ot, reg, t0);
             gen_set_label(label1);
             s->cc_op = CC_OP_EFLAGS;
