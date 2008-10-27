@@ -2201,15 +2201,16 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
                     RTPrintf("Last ended:         %s\n", timestr);
             }
 
+            uint64_t ThroughputSend = 0;
+            uint64_t ThroughputReceive = 0;
+            if (EndTime != BeginTime)
+            {
+                ThroughputSend = (BytesSent * 1000) / (EndTime - BeginTime);
+                ThroughputReceive = (BytesReceived * 1000) / (EndTime - BeginTime);
+            }
+
             if (details == VMINFO_MACHINEREADABLE)
             {
-                uint64_t ThroughputSend = 0;
-                uint64_t ThroughputReceive = 0;
-                if (EndTime != BeginTime)
-                {
-                    ThroughputSend = (BytesSent * 1000) / (EndTime - BeginTime);
-                    ThroughputReceive = (BytesReceived * 1000) / (EndTime - BeginTime);
-                }
                 RTPrintf("VRDPBytesSent=%llu\n", BytesSent);
                 RTPrintf("VRDPThroughputSend=%llu\n", ThroughputSend);
                 RTPrintf("VRDPBytesSentTotal=%llu\n", BytesSentTotal);
@@ -2221,11 +2222,11 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             else
             {
                 RTPrintf("Sent:               %llu Bytes\n", BytesSent);
-                RTPrintf("Average speed:      %llu B/s\n", (BytesSent * 1000) / (EndTime - BeginTime) );
+                RTPrintf("Average speed:      %llu B/s\n", ThroughputSend);
                 RTPrintf("Sent total:         %llu Bytes\n", BytesSentTotal);
 
                 RTPrintf("Received:           %llu Bytes\n", BytesReceived);
-                RTPrintf("Speed:              %llu B/s\n", (BytesReceived * 1000) / (EndTime - BeginTime) );
+                RTPrintf("Speed:              %llu B/s\n", ThroughputReceive);
                 RTPrintf("Received total:     %llu Bytes\n", BytesReceivedTotal);
             }
 
