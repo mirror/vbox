@@ -292,7 +292,7 @@
     <desc>
       Session state. This enumeration represents possible values of
       <link to="IMachine::sessionState"/> and <link to="ISession::state"/>
-      attributes. Idividual value descriptions contain the appropriate
+      attributes. Individual value descriptions contain the appropriate
       meaning for every case.
     </desc>
 
@@ -607,7 +607,7 @@
 
       Extended error information can be set by VirtualBox components after
       unsuccessful or partially successful method invocation. This information
-      can be retrievefd by the calling party as an IVirtualBoxErrorInfo object
+      can be retrieved by the calling party as an IVirtualBoxErrorInfo object
       and then shown to the client in addition to the plain 32-bit result code.
 
       In MS COM, this interface extends the IErrorInfo interface,
@@ -1027,7 +1027,7 @@
         The above feature may be used by interactive front-ends to inform users
         about the settings file format change and offer them to explicitly save
         all converted settings files (the global and VM-specific ones),
-        optionally create bacup copies of the old settings files before saving,
+        optionally create backup copies of the old settings files before saving,
         etc.
 
         <see>settingsFormatVersion, saveSettingsWithBackup()</see>
@@ -1282,7 +1282,7 @@
       </param>
       <note>
         <link to="IMachine::settingsModified"/> will return
-        false for the created machine, until any of machine settigs
+        false for the created machine, until any of machine settings
         are changed.
       </note>
     </method>
@@ -1979,7 +1979,7 @@
         what argument changes the value or until the given timeout interval
         expires.
 
-        The @a what argument is a comma separated list of propertiy masks that
+        The @a what argument is a comma separated list of property masks that
         describe properties the caller is interested in. The property mask is
         a string in the following format:
 
@@ -1989,7 +1989,7 @@
 
         where @c name is the property name and @c group, @c subgroup are zero
         or or more property group specifiers. Each element (group or name) in
-        the property mask may be either a latin string or an asterisk symbol
+        the property mask may be either a Latin string or an asterisk symbol
         (@c "*") which is used to match any string for the given element. A
         property mask that doesn't contain asterisk symbols represents a
         single fully qualified property name.
@@ -1998,7 +1998,7 @@
         left-most part) to more specific (the right-most part). The first
         element is usually a name of the object the property belongs to.  The
         second element may be either a property name, or a child object name,
-        or an index if the preceeding element names an object which is one of
+        or an index if the preceding element names an object which is one of
         many objects of the same type. This way, property names form a
         hierarchy of properties.  Here are some examples of property names:
 
@@ -2021,7 +2021,7 @@
         property directly, as well as there may be object properties that
         don't have a corresponding property name that is understood by this
         method, and therefore changes to such properties cannot be
-        tracked. See individual object's property descrcriptions to get a
+        tracked. See individual object's property descriptions to get a
         fully qualified property name that can be used with this method (if
         any).
 
@@ -2555,12 +2555,12 @@
       machine and provide methods to change various aspects of the virtual
       machine's configuration. For machine objects stored in the
       <link to="IVirtualBox::machines"/> collection, all attributes are
-      read-only unless explicitely stated otherwise in individual attribute
+      read-only unless explicitly stated otherwise in individual attribute
       and method descriptions. In order to change a machine setting, a session
       for this machine must be opened using one of
       <link to="IVirtualBox::openSession"/>,
       <link to="IVirtualBox::openRemoteSession"/> or
-      <link to="IVirtualBox::openExistingSession"/> methdods. After the
+      <link to="IVirtualBox::openExistingSession"/> methods. After the
       session has been successfully opened, a mutable machine object needs to
       be queried from the session object and then the desired settings changes
       can be applied to the returned object using IMachine attributes and
@@ -2785,7 +2785,7 @@
     <attribute name="snapshotFolder" type="wstring">
       <desc>
         Full path to the directory used to store snapshot data
-        (difrerencing hard disks and saved state files) of this machine.
+        (differencing hard disks and saved state files) of this machine.
 
         The initial value of this property is
         <tt>&lt;</tt><link to="#settingsFilePath">
@@ -2840,7 +2840,7 @@
           This method may set a @ref com_warnings "warning result code".
         </note>
         <note>
-          If USB functionality is not avaliable in the given edition of
+          If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
       </desc>
@@ -2892,7 +2892,7 @@
         The above feature may be used by interactive front-ends to inform users
         about the settings file format change and offer them to explicitly save
         all converted settings files (the global and VM-specific ones),
-        optionally create bacup copies of the old settings files before saving,
+        optionally create backup copies of the old settings files before saving,
         etc.
 
         <see>IVirtualBox::settingsFormatVersion, saveSettingsWithBackup()</see>
@@ -2910,7 +2910,7 @@
           by <link to="IVirtualBox::openMachine"/> but not
           yet registered, or on unregistered machines after calling
           <link to="IVirtualBox::unregisterMachine"/>. For all other
-          cases, the settigs can never be modified.
+          cases, the settings can never be modified.
         </note>
         <note>
           For newly created unregistered machines, the value of this
@@ -3222,13 +3222,13 @@
 
       </desc>
       <param name="bus" type="StorageBus" dir="in">
-        <desc>Bus to dettach the hard disk from.</desc>
+        <desc>Bus to detach the hard disk from.</desc>
       </param>
       <param name="channel" type="long" dir="in">
-        <desc>Channel number to dettach the hard disk from.</desc>
+        <desc>Channel number to detach the hard disk from.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>Device slot number to dettach the hard disk from.</desc>
+        <desc>Device slot number to detach the hard disk from.</desc>
       </param>
     </method>
 
@@ -3294,7 +3294,7 @@
       <desc>
         Returns associated machine-specific extra data.
 
-        If the reuqested data @a key does not exist, this function will
+        If the requested data @a key does not exist, this function will
         succeed and return @c NULL in the @a value argument.
       </desc>
       <param name="key" type="wstring" dir="in">
@@ -3309,7 +3309,7 @@
       <desc>
         Sets associated machine-specific extra data.
 
-        If you pass @c NULL as a key @a vaule, the given @a key will be
+        If you pass @c NULL as a key @a value, the given @a key will be
         deleted.
 
         <note>
@@ -3909,7 +3909,7 @@
         already added to (when @a attached is @c true) or removed from
         (when @a attached is @c false) the collection represented by
         <link to="IConsole::USBDevices"/>. On failure, the collection
-        doesn't change and the @a error perameter represents the error
+        doesn't change and the @a error parameter represents the error
         message describing the failure.
 
       </desc>
@@ -3972,7 +3972,7 @@
         @a fatal parameter set to <tt>false</tt>. If the virtual machine
         is in the Paused state by the time the error notification is
         received, it means that the user can <i>try to resume</i> the machine
-        execution after attempting to solve the probem that caused the
+        execution after attempting to solve the problem that caused the
         error. In this case, the notification handler is supposed
         to show an appropriate message to the user (depending on the
         value of the @a id parameter) that offers several actions such
@@ -4190,7 +4190,7 @@
       <desc>
         Public key exchange method used when connection was established.
         Values: 0 - RDP4 public key exchange scheme.
-        1 - X509 sertificates were sent to client.
+        1 - X509 certificates were sent to client.
       </desc>
     </attribute>
 
@@ -4538,7 +4538,7 @@
     <method name="detachUSBDevice">
       <desc>
         Detaches an USB device with the given UUID from the USB controller
-        oif the virtual machine.
+        of the virtual machine.
 
         After this method succeeds, the VirtualBox server reinitiates
         all USB filters as if the device were just physically attached
@@ -4653,7 +4653,7 @@
         such kind can be discarded only when every normal hard disk has either
         no children at all or exactly one child. In the former case, the normal
         hard disk simply becomes unused (i.e. not attached to any VM). In the
-        latter case, it receives all the changes strored in the child hard disk,
+        latter case, it receives all the changes stored in the child hard disk,
         and then it replaces the child hard disk in the configuration of the
         corresponding snapshot or machine.
 
@@ -4697,7 +4697,7 @@
         </note>
         <note>
           Note that discarding the current snapshot
-          will imlicitly call <link to="IMachine::saveSettings()"/> to
+          will implicitly call <link to="IMachine::saveSettings()"/> to
           make all current machine settings permanent.
         </note>
       </desc>
@@ -4751,7 +4751,7 @@
         <link to="#discardCurrentState()"/>.
 
         As a result, the machine will be fully restored from the
-        snapshot preceeding the current snapshot, while both the current
+        snapshot preceding the current snapshot, while both the current
         snapshot and the current machine state will be discarded.
 
         If the current snapshot is the first snapshot of the machine (i.e. it
@@ -5030,7 +5030,7 @@
           This method may set a @ref com_warnings "warning result code".
         </note>
         <note>
-          If USB functionality is not avaliable in the given edition of
+          If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
       </desc>
@@ -5053,7 +5053,7 @@
           This method may set a @ref com_warnings "warning result code".
         </note>
         <note>
-          If USB functionality is not avaliable in the given edition of
+          If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
 
@@ -5206,7 +5206,7 @@
           This method may set a @ref com_warnings "warning result code".
         </note>
         <note>
-          If USB functionality is not avaliable in the given edition of
+          If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
 
@@ -5233,7 +5233,7 @@
           This method may set a @ref com_warnings "warning result code".
         </note>
         <note>
-          If USB functionality is not avaliable in the given edition of
+          If USB functionality is not available in the given edition of
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
 
@@ -5561,7 +5561,7 @@
         by dots) or empty when the Additions are not installed. The
         Additions may also report a version but yet not be active as
         the version might be refused by VirtualBox (incompatible) or
-        other failures occured.
+        other failures occurred.
       </desc>
     </attribute>
 
@@ -5837,8 +5837,8 @@
       fully restore hard disk contents when the machine is later reverted
       to a particular snapshot.
 
-      In the current implelemtation, multiple snapshot branches within one
-      virtual machine are not allowed. Every machine has a signle branch,
+      In the current implementation, multiple snapshot branches within one
+      virtual machine are not allowed. Every machine has a single branch,
       and <link to="IConsole::takeSnapshot()"/> operation adds a new
       snapshot to the top of that branch.
 
@@ -5863,7 +5863,7 @@
 
       <h3>Current machine state</h3>
 
-      The current machine state is what represened by IMachine instances got
+      The current machine state is what represented by IMachine instances got
       directly from IVirtualBox
       using <link
       to="IVirtualBox::getMachine()">getMachine()</link>, <link
@@ -7553,7 +7553,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="dz" type="long" dir="in">
         <desc>
           Amount of mouse wheel moves.
-          Positive values describe clockwize wheel rotations,
+          Positive values describe clockwise wheel rotations,
           negative values describe counterclockwise rotations.
         </desc>
       </param>
@@ -7600,7 +7600,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="dz" type="long" dir="in">
         <desc>
           Amout of mouse wheel moves.
-          Positive values describe clockwize wheel rotations,
+          Positive values describe clockwise wheel rotations,
           negative values describe counterclockwise rotations.
         </desc>
       </param>
@@ -7648,7 +7648,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       to="IFramebuffer::pixelFormat"/>. See also <link
       to="IFramebuffer::requestResize()"/>.
 
-      See also www.fourcc.org for more informantion about FOURCC pixel formats.
+      See also www.fourcc.org for more information about FOURCC pixel formats.
     </desc>
 
     <const name="Opaque"                  value="0xFFFFFFFF">
@@ -7791,7 +7791,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         by the virtual machine. This buffer represents the video memory of the
         emulated video adapter (so called <i>guest VRAM</i>). The direct mode is
         usually faster because the implementation gets a raw pointer to the
-        guest VRAM buffer which it can directly use for visualising the contents
+        guest VRAM buffer which it can directly use for visualizing the contents
         of the virtual display, as opposed to the indirect mode where the
         contents of guest VRAM are copied to the memory buffer provided by
         the implementation every time a display update occurs.
@@ -7807,7 +7807,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the indirect mode (that is always available) should be used as a
         fallback: when the guest VRAM contents are copied to the
         implementation-provided memory buffer, color and format conversion is
-        done authomatically by the underlying code.
+        done automatically by the underlying code.
 
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
@@ -8073,7 +8073,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       The virtual display supports pluggable output targets represented by the
       IFramebuffer interface. Examples of the output target are a window on
-      the host computer or an RDP sessoin's display on a remote computer.
+      the host computer or an RDP session's display on a remote computer.
     </desc>
     <attribute name="width" type="unsigned long" readonly="yes">
       <desc>Current display width.</desc>
@@ -8299,7 +8299,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Name of the Host Network Interface that is currently in use. NULL will be returned
         if no device has been allocated. On Linux, setting this refers to a permanent TAP
         device. However, a file descriptor has precedence over the interface name on Linux.
-        Note that when VBox allocates a TAP device, this property will not be set, i.e. the
+        Note that when VirtualBox allocates a TAP device, this property will not be set, i.e. the
         interface name would have to be determined using the file descriptor and /proc/self/fd.
       </desc>
     </attribute>
@@ -8317,14 +8317,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="TAPSetupApplication" type="wstring">
       <desc>
         Application to start to configure the TAP device.
-        It is being passed two parameters, 1) the file handle (as ascii),
+        It is being passed two parameters, 1) the file handle (as ASCII),
         2) the TAP device name if it is available.
       </desc>
     </attribute>
     <attribute name="TAPTerminateApplication" type="wstring">
       <desc>
         Application to start before closing a TAP device.
-        It is being passed two parameters, 1) the file handle (as ascii),
+        It is being passed two parameters, 1) the file handle (as ASCII),
         2) the TAP device name if it is available.
       </desc>
     </attribute>
@@ -8408,7 +8408,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="b266f43c-2e93-46b3-812b-c20e600e867b"
   >
     <desc>
-      The PortMode enumeration represents possible communicaton modes for
+      The PortMode enumeration represents possible communication modes for
       the virtual serial port device.
     </desc>
 
@@ -8767,7 +8767,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the list, the filter is added to the end of the collection.
 
         <note>
-          Duplicates are not allowed, so an attempt to inster a
+          Duplicates are not allowed, so an attempt to insert a
           filter that is already in the collection, will return an
           error.
         </note>
@@ -8929,7 +8929,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="portVersion" type="unsigned short" readonly="yes">
       <desc>
         The major USB version of the host USB port the device is
-        physically coonected to - 1 or 2. For devices not connected to
+        physically connected to - 1 or 2. For devices not connected to
         anything this will have the same value as the version attribute.
       </desc>
     </attribute>
@@ -8998,9 +8998,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           where <tt>m</tt> and <tt>n</tt> are integer numbers, either in octal
           (starting from <tt>0</tt>), hexadecimal (starting from <tt>0x</tt>)
           or decimal (otherwise) form, so that <tt>m &lt; n</tt>. If <tt>m</tt>
-          is ommitted before a dash (<tt>-</tt>), the minimum possible integer
-          is assumed; if <tt>n</tt> is ommitted after a dash, the maximum
-          possible integer is assummed.
+          is omitted before a dash (<tt>-</tt>), the minimum possible integer
+          is assumed; if <tt>n</tt> is omitted after a dash, the maximum
+          possible integer is assumed.
         </li>
         <li><i>Boolean filters</i>. Used to specify acceptable values for
           boolean device attributes. The format of the string is:
@@ -9037,7 +9037,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="name" type="wstring">
       <desc>
         Visible name for this filter.
-        This name is used to visually distungish one filter from another,
+        This name is used to visually distinguish one filter from another,
         so it can neither be <tt>null</tt> nor an empty string.
       </desc>
     </attribute>
@@ -9071,7 +9071,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         has the form <tt>IIFF</tt>, where <tt>I</tt> is the decimal digit
         of the integer part of the revision, and <tt>F</tt> is the
         decimal digit of its fractional part (including leading and
-        trailing zeroes).
+        trailing zeros).
         Note that for interval filters, it's best to use the hexadecimal
         form, because the revision is stored as a 16 bit packed BCD value;
         so the expression <tt>int:0x0100-0x0199</tt> will match any
@@ -9266,7 +9266,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       to the host computer.
 
       Besides properties inherited from IUSBDevice, this interface adds the
-      <link to="#state"/> property that holds the courrent state of the USB
+      <link to="#state"/> property that holds the current state of the USB
       device.
 
       <see>IHost::USBDevices, IHost::USBDeviceFilters</see>
@@ -9552,7 +9552,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       Logical names of shared folders must be unique within the given scope
       (global, permanent or transient). However, they do not need to be unique
-      across scopes. In this case, the definitioin of the shared folder in a
+      across scopes. In this case, the definition of the shared folder in a
       more specific scope takes precedence over definitions in all other
       scopes. The order of precedence is (more specific to more general):
       <ol>
@@ -9562,14 +9562,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </ol>
 
       For example, if MyMachine has a shared folder named
-      <tt>C_DRIVE</tt> (that points to <tt>C:\\</tt>), then cretaing a
+      <tt>C_DRIVE</tt> (that points to <tt>C:\\</tt>), then creating a
       transient shared folder named <tt>C_DRIVE</tt> (that points
       to <tt>C:\\\\WINDOWS</tt>) will change the definition
       of <tt>C_DRIVE</tt> in the guest OS so
       that <tt>\\\\VBOXSVR\\C_DRIVE</tt> will give access
       to <tt>C:\\WINDOWS</tt> instead of <tt>C:\\</tt> on the host
       PC. Removing the transient shared folder <tt>C_DRIVE</tt> will restore
-      the prevoious (permanent) definition of <tt>C_DRIVE</tt> that points
+      the previous (permanent) definition of <tt>C_DRIVE</tt> that points
       to <tt>C:\\</tt> if it still exists.
 
       Note that permanent and transient shared folders of different machines
@@ -9577,7 +9577,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       have unique logical names.
 
       <note>
-        Global shared folders are not implemented in the current vesion of the
+        Global shared folders are not implemented in the current version of the
         product.
       </note>
     </desc>
@@ -9884,7 +9884,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </li>
       </ul>
 
-      One also can attach to an existing direct session alreay opened by
+      One also can attach to an existing direct session already opened by
       another process (for example, in order to send a control request to the
       virtual machine such as the pause or the reset request). This is done by
       calling <link to="IVirtualBox::openExistingSession"/>.
@@ -9978,7 +9978,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="portCount" type="unsigned long">
       <desc>
-        The number of usable ports on the sata controller.
+        The number of usable ports on the SATA controller.
         It ranges from 1 to 30.
       </desc>
     </attribute>
@@ -10329,7 +10329,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="period" type="unsigned long" dir="in">
         <desc>
-          Time interval in seconds between two consecutive samples of performace
+          Time interval in seconds between two consecutive samples of performance
           data.
         </desc>
       </param>
