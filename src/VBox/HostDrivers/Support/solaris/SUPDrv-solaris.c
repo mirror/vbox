@@ -64,12 +64,14 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define _QUOTE2(x) #x
-#define QUOTE(x) _QUOTE2(x)
+/** @todo this quoting macros probably should be moved to a common place.
+  * The indirection is for expanding macros passed to the first macro. */
+#define VBOXSOLQUOTE2(x)                #x
+#define VBOXSOLQUOTE(x)                 VBOXSOLQUOTE2(x)
 /** The module name. */
 #define DEVICE_NAME              "vboxdrv"
 /** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "VirtualBox Driver"
+#define DEVICE_DESC              "VirtualBox HostDrv"
 /** Maximum number of driver instances. */
 #define DEVICE_MAXINSTANCES      16
 
@@ -140,7 +142,7 @@ static struct dev_ops g_VBoxDrvSolarisDevOps =
 static struct modldrv g_VBoxDrvSolarisModule =
 {
     &mod_driverops,         /* extern from kernel */
-    DEVICE_DESC " " VBOX_VERSION_STRING "r" QUOTE(VBOX_SVN_REV),
+    DEVICE_DESC " " VBOX_VERSION_STRING "r" VBOXSOLQUOTE(VBOX_SVN_REV),
     &g_VBoxDrvSolarisDevOps
 };
 

@@ -20,6 +20,7 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/cdefs.h>
+#include <VBox/version.h>
 #include <iprt/string.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
@@ -66,11 +67,13 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+#define VBOXSOLQUOTE2(x)         #x
+#define VBOXSOLQUOTE(x)          VBOXSOLQUOTE2(x)
 /** The module name. */
 #define DEVICE_NAME              "vboxflt"
 /** The module descriptions as seen in 'modinfo'. */
-#define DEVICE_DESC_DRV          "VirtualBox NetFilter Driver"
-#define DEVICE_DESC_MOD          "VirtualBox NetFilter Module"
+#define DEVICE_DESC_DRV          "VirtualBox NetDrv"
+#define DEVICE_DESC_MOD          "VirtualBox NetMod"
 
 /** @todo Remove the below hackery once done! */
 #if defined(DEBUG_ramshankar) && defined(LOG_ENABLED)
@@ -218,7 +221,7 @@ static struct dev_ops g_VBoxNetFltSolarisDevOps =
 static struct modldrv g_VBoxNetFltSolarisDriver =
 {
     &mod_driverops,                 /* extern from kernel */
-    DEVICE_DESC_DRV,
+    DEVICE_DESC_DRV " " VBOX_VERSION_STRING "r" VBOXSOLQUOTE(VBOX_SVN_REV),
     &g_VBoxNetFltSolarisDevOps
 };
 
@@ -238,7 +241,7 @@ static struct fmodsw g_VBoxNetFltSolarisModOps =
 static struct modlstrmod g_VBoxNetFltSolarisModule =
 {
     &mod_strmodops,                 /* extern from kernel */
-    DEVICE_DESC_MOD,
+    DEVICE_DESC_MOD " " VBOX_VERSION_STRING "r" VBOXSOLQUOTE(VBOX_SVN_REV),
     &g_VBoxNetFltSolarisModOps
 };
 
@@ -1517,6 +1520,7 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     DevId = ldi_ident_from_anon();
     int ret;
 
+    /** @todo support DLPI style 2.*/
     /*
      * Try style-1 open first.
      */
@@ -1526,10 +1530,8 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     if (   rc
         && rc == ENODEV)    /* ENODEV is returned when resolvepath fails, not ENOENT */
     {
-        /** @todo support VLAN PPA hacks and vanity namings? */
-
         /*
-         * Fallback to style-2 open.
+         * Fallback to non-ClearView style-1 open.
          */
         RTStrPrintf(szDev, sizeof(szDev), "/dev/%s", pThis->szName);
         rc = ldi_open_by_name(szDev, FREAD | FWRITE, kcred, &pThis->u.s.hIface, DevId);

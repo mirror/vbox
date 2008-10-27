@@ -36,6 +36,7 @@
 
 #include "VBoxGuestInternal.h"
 #include <VBox/log.h>
+#include <VBox/version.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/process.h>
@@ -45,10 +46,12 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+#define VBOXSOLQUOTE2(x)                #x
+#define VBOXSOLQUOTE(x)                 VBOXSOLQUOTE2(x)
 /** The module name. */
 #define DEVICE_NAME              "vboxguest"
 /** The module description as seen in 'modinfo'. */
-#define DEVICE_DESC              "VirtualBox Guest Driver"
+#define DEVICE_DESC              "VirtualBox GstDrv"
 
 
 /*******************************************************************************
@@ -123,7 +126,7 @@ static struct dev_ops g_VBoxGuestSolarisDevOps =
 static struct modldrv g_VBoxGuestSolarisModule =
 {
     &mod_driverops,         /* extern from kernel */
-    DEVICE_DESC,
+    DEVICE_DESC " " VBOX_VERSION_STRING "r" VBOXSOLQUOTE(VBOX_SVN_REV),
     &g_VBoxGuestSolarisDevOps
 };
 
