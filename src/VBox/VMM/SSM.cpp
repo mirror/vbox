@@ -2381,6 +2381,8 @@ VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
  * @returns VBox status.
  * @param   pSSM            SSM operation handle.
  * @param   u               Item to save.
+ *
+ * @deprecated Silly type, don't use it.
  */
 VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 {
@@ -2392,16 +2394,16 @@ VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 
 
 /**
- * Saves a GC natural signed integer item to the current data unit.
+ * Saves a GC unsigned integer register item to the current data unit.
  *
  * @returns VBox status.
  * @param   pSSM            SSM operation handle.
- * @param   i               Item to save.
+ * @param   u               Item to save.
  */
-VMMR3DECL(int) SSMR3PutGCSInt(PSSMHANDLE pSSM, RTGCINT i)
+VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
 {
     if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3Write(pSSM, &i, sizeof(i));
+        return ssmR3Write(pSSM, &u, sizeof(u));
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -2936,6 +2938,8 @@ VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
  * @returns VBox status.
  * @param   pSSM            SSM operation handle.
  * @param   pu              Where to store the integer.
+ *
+ * @deprecated Silly type, don't use it.
  */
 VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
 {
@@ -2959,27 +2963,27 @@ VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
 
 
 /**
- * Loads a GC natural signed integer item from the current data unit.
+ * Loads a GC unsigned integer register item from the current data unit.
  *
  * @returns VBox status.
  * @param   pSSM            SSM operation handle.
- * @param   pi              Where to store the integer.
+ * @param   pu              Where to store the integer.
  */
-VMMR3DECL(int) SSMR3GetGCSInt(PSSMHANDLE pSSM, PRTGCINT pi)
+VMMR3DECL(int) SSMR3GetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
 {
     Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
 
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
     {
-        if (sizeof(*pi) != pSSM->cbGCPtr)
+        if (sizeof(*pu) != pSSM->cbGCPtr)
         {
-            int32_t val;
-            Assert(sizeof(*pi) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
+            uint32_t val;
+            Assert(sizeof(*pu) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
             int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
-            *pi = val;
+            *pu = val;
             return rc;
         }
-        return ssmR3Read(pSSM, pi, sizeof(*pi));
+        return ssmR3Read(pSSM, pu, sizeof(*pu));
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
@@ -3040,8 +3044,8 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
  * Only applies to:
  *  - SSMR3GetGCPtr
  *  - SSMR3GetGCUIntPtr
- *  - SSMR3GetGCSInt
  *  - SSMR3GetGCUInt
+ *  - SSMR3GetGCUIntReg
  *
  * Put functions are not affected.
  *
