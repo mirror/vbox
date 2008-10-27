@@ -214,7 +214,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 #endif /* Q_WS_MAC */
 
     /* Common */
-    connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
+    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)),
              this, SLOT (onMediaEnumerationDone()));
 
     /* Creating settings pages */
@@ -282,7 +282,7 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
 
     /* Parallel page */
     prefPage = new VBoxVMSettingsParallelPage();
-    addItem (":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png", ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png", 
+    addItem (":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png", ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
              ParallelId, "#parallelPorts",
              prefPage, PortsId);
 

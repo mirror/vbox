@@ -86,6 +86,8 @@ class ATL_NO_VTABLE Machine :
 
 public:
 
+    enum InstanceType { IsMachine, IsSessionMachine, IsSnapshotMachine };
+
     /**
      *  Internal machine data.
      *
@@ -272,7 +274,7 @@ public:
      *  Hard disk data.
      *
      *  The usage policy is the same as for HWData, but a separate structure
-     *  is necessarym because hard disk data requires different procedures when
+     *  is necessary because hard disk data requires different procedures when
      *  taking or discarding snapshots, etc.
      *
      *  The data variable is |mHWData|.
@@ -284,14 +286,8 @@ public:
 
         bool operator== (const HDData &that) const;
 
-        typedef std::list <ComObjPtr <HardDiskAttachment> > HDAttachmentList;
-        HDAttachmentList mHDAttachments;
-
-        /**
-         *  Right after Machine::fixupHardDisks(true): |true| if hard disks
-         *  were actually changed, |false| otherwise
-         */
-        bool mHDAttachmentsChanged;
+        typedef std::list <ComObjPtr <HardDisk2Attachment> > AttachmentList;
+        AttachmentList mAttachments;
     };
 
     enum StateDependency
@@ -496,7 +492,7 @@ public:
     STDMETHOD(COMSETTER(PAEEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
     STDMETHOD(COMSETTER(SnapshotFolder))(INPTR BSTR aSavedStateFolder);
-    STDMETHOD(COMGETTER(HardDiskAttachments))(IHardDiskAttachmentCollection **attachments);
+    STDMETHOD(COMGETTER(HardDisk2Attachments))(ComSafeArrayOut (IHardDisk2Attachment *, aAttachments));
     STDMETHOD(COMGETTER(VRDPServer))(IVRDPServer **vrdpServer);
     STDMETHOD(COMGETTER(DVDDrive))(IDVDDrive **dvdDrive);
     STDMETHOD(COMGETTER(FloppyDrive))(IFloppyDrive **floppyDrive);
@@ -525,9 +521,11 @@ public:
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
     STDMETHOD(GetBootOrder)(ULONG aPosition, DeviceType_T *aDevice);
-    STDMETHOD(AttachHardDisk)(INPTR GUIDPARAM aId, StorageBus_T aBus, LONG aChannel, LONG aDevice);
-    STDMETHOD(GetHardDisk)(StorageBus_T aBus, LONG aChannel, LONG aDevice, IHardDisk **aHardDisk);
-    STDMETHOD(DetachHardDisk) (StorageBus_T aBus, LONG aChannel, LONG aDevice);
+    STDMETHOD(AttachHardDisk2) (INPTR GUIDPARAM aId, StorageBus_T aBus,
+                                LONG aChannel, LONG aDevice);
+    STDMETHOD(GetHardDisk2) (StorageBus_T aBus, LONG aChannel, LONG aDevice,
+                             IHardDisk2 **aHardDisk);
+    STDMETHOD(DetachHardDisk2) (StorageBus_T aBus, LONG aChannel, LONG aDevice);
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
@@ -554,44 +552,59 @@ public:
 
     // public methods only for internal purposes
 
+    InstanceType type() const { return mType; }
+
     /// @todo (dmik) add lock and make non-inlined after revising classes
     //  that use it. Note: they should enter Machine lock to keep the returned
     //  information valid!
     bool isRegistered() { return !!mData->mRegistered; }
 
+    // unsafe inline public methods for internal purposes only (ensure there is
+    // a caller and a read lock before calling them!)
+
     /**
-     *  Returns the VirtualBox object this machine belongs to.
+     * Returns the VirtualBox object this machine belongs to.
      *
-     *  @note This method doesn't check this object's readiness as it is
-     *  intended to be used only by Machine children where it is guaranteed
-     *  that this object still exists in memory.
+     * @note This method doesn't check this object's readiness. Intended to be
+     * used by ready Machine children (whose readiness is bound to the parent's
+     * one) or after doing addCaller() manually.
      */
     const ComObjPtr <VirtualBox, ComWeakRef> &virtualBox() const { return mParent; }
 
     /**
-     *  Returns this machine's name.
+     * Returns this machine ID.
      *
-     *  @note This method doesn't check this object's readiness as it is
-     *  intended to be used only after adding a caller to this object (that
-     *  guarantees that the object is ready or at least limited).
+     * @note This method doesn't check this object's readiness. Intended to be
+     * used by ready Machine children (whose readiness is bound to the parent's
+     * one) or after adding a caller manually.
      */
-    const Guid &uuid() const { return mData->mUuid; }
+    const Guid &id() const { return mData->mUuid; }
 
     /**
-     *  Returns this machine's full settings file path.
+     * Returns the snapshot ID this machine represents or an empty UUID if this
+     * instance is not SnapshotMachine.
      *
-     *  @note This method doesn't lock this object or check its readiness as
-     *  it is intended to be used only after adding a caller to this object
-     *  (that guarantees that the object is ready) and locking it for reading.
+     * @note This method doesn't check this object's readiness. Intended to be
+     * used by ready Machine children (whose readiness is bound to the parent's
+     * one) or after adding a caller manually.
+     */
+    inline const Guid &snapshotId() const;
+
+    /**
+     * Returns this machine's full settings file path.
+     *
+     * @note This method doesn't lock this object or check its readiness.
+     * Intended to be used only after doing addCaller() manually and locking it
+     * for reading.
      */
     const Bstr &settingsFileFull() const { return mData->mConfigFileFull; }
 
     /**
-     *  Returns this machine's name.
+     * Returns this machine name.
      *
-     *  @note This method doesn't lock this object or check its readiness as
-     *  it is intended to be used only after adding a caller to this object
-     *  (that guarantees that the object is ready) and locking it for reading.
+     * @note This method doesn't lock this object or check its readiness.
+     * Intended to be used only after doing addCaller() manually and locking it
+     * for reading.
      */
     const Bstr &name() const { return mUserData->mName; }
 
@@ -612,9 +625,6 @@ public:
     void calculateRelativePath (const char *aPath, Utf8Str &aResult);
 
     void getLogFolder (Utf8Str &aLogFolder);
-
-    bool isDVDImageUsed (const Guid &aId, ResourceUsage_T aUsage);
-    bool isFloppyImageUsed (const Guid &aId, ResourceUsage_T aUsage);
 
     HRESULT openSession (IInternalSessionControl *aControl);
     HRESULT openRemoteSession (IInternalSessionControl *aControl,
@@ -657,8 +667,6 @@ public:
 
 protected:
 
-    enum InstanceType { IsMachine, IsSessionMachine, IsSnapshotMachine };
-
     HRESULT registeredInit();
 
     HRESULT checkStateDependency (StateDependency aDepType);
@@ -668,7 +676,7 @@ protected:
     HRESULT initDataAndChildObjects();
     void uninitDataAndChildObjects();
 
-    void ensureNoStateDependencies (AutoWriteLock &aLock);
+    void ensureNoStateDependencies();
 
     virtual HRESULT setMachineState (MachineState_T aMachineState);
 
@@ -692,29 +700,26 @@ protected:
     HRESULT findSnapshot (const BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
                           bool aSetError = false);
 
-    HRESULT findHardDiskAttachment (const ComObjPtr <HardDisk> &aHd,
-                                    ComObjPtr <Machine> *aMachine,
-                                    ComObjPtr <Snapshot> *aSnapshot,
-                                    ComObjPtr <HardDiskAttachment> *aHda);
-
-    HRESULT prepareSaveSettings (bool &aRenamed, bool &aNew);
-    HRESULT saveSettings (bool aMarkCurStateAsModified = true,
-                          bool aInformCallbacksAnyway = false);
-
     enum
     {
-        // ops for #saveSnapshotSettings()
+        /* flags for #saveSettings() */
+        SaveS_ResetCurStateModified = 0x01,
+        SaveS_InformCallbacksAnyway = 0x02,
+        /* ops for #saveSnapshotSettings() */
         SaveSS_NoOp = 0x00, SaveSS_AddOp = 0x01,
         SaveSS_UpdateAttrsOp = 0x02, SaveSS_UpdateAllOp = 0x03,
         SaveSS_OpMask = 0xF,
-        // flags for #saveSnapshotSettings()
-        SaveSS_UpdateCurStateModified = 0x40,
-        SaveSS_UpdateCurrentId = 0x80,
-        // flags for #saveStateSettings()
+        /* flags for #saveSnapshotSettings() */
+        SaveSS_CurStateModified = 0x40,
+        SaveSS_CurrentId = 0x80,
+        /* flags for #saveStateSettings() */
         SaveSTS_CurStateModified = 0x20,
         SaveSTS_StateFilePath = 0x40,
         SaveSTS_StateTimeStamp = 0x80,
     };
+
+    HRESULT prepareSaveSettings (bool &aRenamed, bool &aNew);
+    HRESULT saveSettings (int aFlags = 0);
 
     HRESULT saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags);
     HRESULT saveSnapshotSettingsWorker (settings::Key &aMachineNode,
@@ -726,15 +731,12 @@ protected:
 
     HRESULT saveStateSettings (int aFlags);
 
-    HRESULT wipeOutImmutableDiffs();
-
-    HRESULT fixupHardDisks (bool aCommit);
-
-    HRESULT createSnapshotDiffs (const Guid *aSnapshotId,
-                                 const Bstr &aFolder,
-                                 const ComObjPtr <Progress> &aProgress,
+    HRESULT createImplicitDiffs (const Bstr &aFolder,
+                                 ComObjPtr <Progress> &aProgress,
                                  bool aOnline);
-    HRESULT deleteSnapshotDiffs (const ComObjPtr <Snapshot> &aSnapshot);
+    HRESULT deleteImplicitDiffs();
+
+    void fixupHardDisks2 (bool aCommit, bool aOnline = false);
 
     HRESULT lockConfig();
     HRESULT unlockConfig();
@@ -750,7 +752,7 @@ protected:
     bool isModified();
     bool isReallyModified (bool aIgnoreUserData = false);
     void rollback (bool aNotify);
-    HRESULT commit();
+    void commit();
     void copyFrom (Machine *aThat);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
@@ -904,7 +906,8 @@ private:
         Bstr mStateFilePath;
     };
 
-    struct Uninit {
+    struct Uninit
+    {
         enum Reason { Unexpected, Abnormal, Normal };
     };
 
@@ -1003,12 +1006,25 @@ public:
 
     HRESULT onSnapshotChange (Snapshot *aSnapshot);
 
+    // unsafe inline public methods for internal purposes only (ensure there is
+    // a caller and a read lock before calling them!)
+
+    const Guid &snapshotId() const { return mSnapshotId; }
+
 private:
 
     Guid mSnapshotId;
 
     friend class Snapshot;
 };
+
+// third party methods that depend on SnapshotMachine definiton
+
+inline const Guid &Machine::snapshotId() const
+{
+    return mType != IsSnapshotMachine ? Guid::Empty :
+                    static_cast <const SnapshotMachine *> (this)->snapshotId();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1026,7 +1042,5 @@ inline Machine *Machine::machine()
         return mPeer;
     return this;
 }
-
-COM_DECL_READONLY_ENUM_AND_COLLECTION (Machine)
 
 #endif // ____H_MACHINEIMPL

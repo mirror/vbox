@@ -249,18 +249,18 @@
 /*
  * Shut up MSVC complaining that auto_ptr[_ref] template instantiations (as a
  * result of private data member declarations of some classes below) need to
- * be exported too to in order to be accessible by clients. I don't
+ * be exported too to in order to be accessible by clients.
  *
  * The alternative is to instantiate a template before the data member
  * declaration with the VBOXSETTINGS_CLASS prefix, but the standard disables
- * explicit instantiations in a foreign namespace. However, a declaration
+ * explicit instantiations in a foreign namespace. In other words, a declaration
  * like:
  *
  *   template class VBOXSETTINGS_CLASS std::auto_ptr <Data>;
  *
  * right before the member declaration makes MSVC happy too, but this is not a
  * valid C++ construct (and G++ spits it out). So, for now we just disable the
- * warning and will come back to this problem one dat later.
+ * warning and will come back to this problem one day later.
  *
  * We also disable another warning (4275) saying that a DLL-exported class
  * inherits form a non-DLL-exported one (e.g. settings::ENoMemory ->

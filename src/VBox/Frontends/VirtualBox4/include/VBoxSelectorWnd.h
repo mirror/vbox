@@ -64,7 +64,7 @@ signals:
 
 public slots:
 
-    void fileDiskMgr();
+    void fileMediaMgr();
     void fileSettings();
     void fileExit();
 
@@ -102,8 +102,8 @@ private slots:
                                    bool aRefreshSnapshots = true,
                                    bool aRefreshDescription = true);
 
-    void mediaEnumStarted();
-    void mediaEnumFinished (const VBoxMediaList &);
+    void mediumEnumStarted();
+    void mediumEnumFinished (const VBoxMediaList &);
 
     /* VirtualBox callback events we're interested in */
 
@@ -124,7 +124,7 @@ private:
     QMenu *mVMCtxtMenu;
 
     /* Actions */
-    QAction *fileDiskMgrAction;
+    QAction *fileMediaMgrAction;
     QAction *fileSettingsAction;
     QAction *fileExitAction;
     QAction *vmNewAction;

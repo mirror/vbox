@@ -43,14 +43,10 @@
 
 class Machine;
 class SessionMachine;
-class HardDisk;
-class HVirtualDiskImage;
-class DVDImage;
-class FloppyImage;
+class HardDisk2;
+class DVDImage2;
+class FloppyImage2;
 class MachineCollection;
-class HardDiskCollection;
-class DVDImageCollection;
-class FloppyImageCollection;
 class GuestOSType;
 class GuestOSTypeCollection;
 class SharedFolder;
@@ -127,11 +123,10 @@ public:
     STDMETHOD(COMGETTER(SettingsFormatVersion)) (BSTR *aSettingsFormatVersion);
     STDMETHOD(COMGETTER(Host)) (IHost **aHost);
     STDMETHOD(COMGETTER(SystemProperties)) (ISystemProperties **aSystemProperties);
-    STDMETHOD(COMGETTER(Machines)) (IMachineCollection **aMachines);
     STDMETHOD(COMGETTER(Machines2)) (ComSafeArrayOut (IMachine *, aMachines));
-    STDMETHOD(COMGETTER(HardDisks)) (IHardDiskCollection **aHardDisks);
-    STDMETHOD(COMGETTER(DVDImages)) (IDVDImageCollection **aDVDImages);
-    STDMETHOD(COMGETTER(FloppyImages)) (IFloppyImageCollection **aFloppyImages);
+    STDMETHOD(COMGETTER(HardDisks2)) (ComSafeArrayOut (IHardDisk2 *, aHardDisks));
+    STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IDVDImage2 *, aDVDImages));
+    STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IFloppyImage2 *, aFloppyImages));
     STDMETHOD(COMGETTER(ProgressOperations)) (IProgressCollection **aOperations);
     STDMETHOD(COMGETTER(GuestOSTypes)) (IGuestOSTypeCollection **aGuestOSTypes);
     STDMETHOD(COMGETTER(SharedFolders)) (ISharedFolderCollection **aSharedFolders);
@@ -149,34 +144,21 @@ public:
     STDMETHOD(FindMachine) (INPTR BSTR aName, IMachine **aMachine);
     STDMETHOD(UnregisterMachine) (INPTR GUIDPARAM aId, IMachine **aMachine);
 
-    STDMETHOD(CreateHardDisk) (HardDiskStorageType_T aStorageType, IHardDisk **aHardDisk);
-    STDMETHOD(OpenHardDisk) (INPTR BSTR aLocation, IHardDisk **aHardDisk);
-    STDMETHOD(OpenVirtualDiskImage) (INPTR BSTR aFilePath, IVirtualDiskImage **aImage);
-    STDMETHOD(RegisterHardDisk) (IHardDisk *aHardDisk);
-    STDMETHOD(GetHardDisk) (INPTR GUIDPARAM aId, IHardDisk **aHardDisk);
-    STDMETHOD(FindHardDisk) (INPTR BSTR aLocation, IHardDisk **aHardDisk);
-    STDMETHOD(FindVirtualDiskImage) (INPTR BSTR aFilePath, IVirtualDiskImage **aImage);
-    STDMETHOD(UnregisterHardDisk) (INPTR GUIDPARAM aId, IHardDisk **aHardDisk);
+    STDMETHOD(CreateHardDisk2) (INPTR BSTR aFormat, INPTR BSTR aLocation,
+                                IHardDisk2 **aHardDisk);
+    STDMETHOD(OpenHardDisk2) (INPTR BSTR aLocation, IHardDisk2 **aHardDisk);
+    STDMETHOD(GetHardDisk2) (INPTR GUIDPARAM aId, IHardDisk2 **aHardDisk);
+    STDMETHOD(FindHardDisk2) (INPTR BSTR aLocation, IHardDisk2 **aHardDisk);
 
-    STDMETHOD(OpenDVDImage) (INPTR BSTR aFilePath, INPTR GUIDPARAM aId,
-                             IDVDImage **aDVDImage);
-    STDMETHOD(RegisterDVDImage) (IDVDImage *aDVDImage);
-    STDMETHOD(GetDVDImage) (INPTR GUIDPARAM aId, IDVDImage **aDVDImage);
-    STDMETHOD(FindDVDImage) (INPTR BSTR aFilePath, IDVDImage **aDVDImage);
-    STDMETHOD(GetDVDImageUsage) (INPTR GUIDPARAM aId,
-                                 ResourceUsage_T aUsage,
-                                 BSTR *aMachineIDs);
-    STDMETHOD(UnregisterDVDImage) (INPTR GUIDPARAM aId, IDVDImage **aDVDImage);
+    STDMETHOD(OpenDVDImage) (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
+                             IDVDImage2 **aDVDImage);
+    STDMETHOD(GetDVDImage) (INPTR GUIDPARAM aId, IDVDImage2 **aDVDImage);
+    STDMETHOD(FindDVDImage) (INPTR BSTR aLocation, IDVDImage2 **aDVDImage);
 
-    STDMETHOD(OpenFloppyImage) (INPTR BSTR aFilePath, INPTR GUIDPARAM aId,
-                                IFloppyImage **aFloppyImage);
-    STDMETHOD(RegisterFloppyImage) (IFloppyImage *aFloppyImage);
-    STDMETHOD(GetFloppyImage) (INPTR GUIDPARAM id, IFloppyImage **aFloppyImage);
-    STDMETHOD(FindFloppyImage) (INPTR BSTR aFilePath, IFloppyImage **aFloppyImage);
-    STDMETHOD(GetFloppyImageUsage) (INPTR GUIDPARAM aId,
-                                    ResourceUsage_T aUsage,
-                                    BSTR *aMachineIDs);
-    STDMETHOD(UnregisterFloppyImage) (INPTR GUIDPARAM aId, IFloppyImage **aFloppyImage);
+    STDMETHOD(OpenFloppyImage) (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
+                                IFloppyImage2 **aFloppyImage);
+    STDMETHOD(GetFloppyImage) (INPTR GUIDPARAM aId, IFloppyImage2 **aFloppyImage);
+    STDMETHOD(FindFloppyImage) (INPTR BSTR aLocation, IFloppyImage2 **aFloppyImage);
 
     STDMETHOD(GetGuestOSType) (INPTR BSTR aId, IGuestOSType **aType);
     STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable);
@@ -240,25 +222,15 @@ public:
         return SUCCEEDED (findMachine (aId, false /* aSetError */, NULL));
     }
 
-    /// @todo (dmik) remove and make findMachine() public instead
-    //  after switching to VirtualBoxBaseNEXT
-    HRESULT getMachine (const Guid &aId, ComObjPtr <Machine> &aMachine,
-                        bool aSetError = false)
-    {
-        return findMachine (aId, aSetError, &aMachine);
-    }
+    HRESULT findMachine (const Guid &aId, bool aSetError,
+                         ComObjPtr <Machine> *machine = NULL);
 
-    /// @todo (dmik) remove and make findHardDisk() public instead
-    //  after switching to VirtualBoxBaseNEXT
-    HRESULT getHardDisk (const Guid &aId, ComObjPtr <HardDisk> &aHardDisk)
-    {
-        return findHardDisk (&aId, NULL, true /* aDoSetError */, &aHardDisk);
-    }
-
-    bool getDVDImageUsage (const Guid &aId, ResourceUsage_T aUsage,
-                           Bstr *aMachineIDs = NULL);
-    bool getFloppyImageUsage (const Guid &aId, ResourceUsage_T aUsage,
-                              Bstr *aMachineIDs = NULL);
+    HRESULT findHardDisk2 (const Guid *aId, const BSTR aLocation,
+                           bool aSetError, ComObjPtr <HardDisk2> *aHardDisk = NULL);
+    HRESULT findDVDImage2 (const Guid *aId, const BSTR aLocation,
+                           bool aSetError, ComObjPtr <DVDImage2> *aImage = NULL);
+    HRESULT findFloppyImage2 (const Guid *aId, const BSTR aLocation,
+                              bool aSetError, ComObjPtr <FloppyImage2> *aImage = NULL);
 
     const ComObjPtr <Host> &host() { return mData.mHost; }
     const ComObjPtr <SystemProperties> &systemProperties()
@@ -272,17 +244,26 @@ public:
     /** Returns the VirtualBox home directory */
     const Utf8Str &homeDir() { return mData.mHomeDir; }
 
+    int calculateFullPath (const char *aPath, Utf8Str &aResult);
     void calculateRelativePath (const char *aPath, Utf8Str &aResult);
 
-    enum RHD_Flags { RHD_Internal, RHD_External, RHD_OnStartUp };
-    HRESULT registerHardDisk (HardDisk *aHardDisk, RHD_Flags aFlags);
-    HRESULT unregisterHardDisk (HardDisk *aHardDisk);
-    HRESULT unregisterDiffHardDisk (HardDisk *aHardDisk);
+    HRESULT registerHardDisk2 (HardDisk2 *aHardDisk, bool aSaveRegistry = true);
+    HRESULT unregisterHardDisk2 (HardDisk2 *aHardDisk, bool aSaveRegistry = true);
+
+    HRESULT registerDVDImage (DVDImage2 *aImage, bool aSaveRegistry = true);
+    HRESULT unregisterDVDImage (DVDImage2 *aImage, bool aSaveRegistry = true);
+
+    HRESULT registerFloppyImage (FloppyImage2 *aImage, bool aSaveRegistry = true);
+    HRESULT unregisterFloppyImage (FloppyImage2 *aImage, bool aSaveRegistry = true);
+
+    HRESULT cast (IHardDisk2 *aFrom, ComObjPtr <HardDisk2> &aTo);
 
     HRESULT saveSettings();
     HRESULT updateSettings (const char *aOldPath, const char *aNewPath);
 
     const Bstr &settingsFileName() { return mData.mCfgFile.mName; }
+
+    static HRESULT ensureFilePathExists (const char *aFileName);
 
     class SettingsTreeHelper : public settings::XmlTreeBackend::InputResolver
                              , public settings::XmlTreeBackend::AutoConverter
@@ -358,6 +339,12 @@ public:
 
     static HRESULT handleUnexpectedExceptions (RT_SRC_POS_DECL);
 
+    /**
+     * Returns a lock handle used to protect changes to the hard disk hierarchy
+     * (e.g. changing HardDisk2::mParent fields and adding/removing children).
+     */
+    RWLockHandle *hardDiskTreeHandle() { return &mHardDiskTreeHandle; }
+
     /* for VirtualBoxSupportErrorInfoImpl */
     static const wchar_t *getComponentName() { return L"VirtualBox"; }
 
@@ -365,41 +352,23 @@ private:
 
     typedef std::list <ComObjPtr <Machine> > MachineList;
     typedef std::list <ComObjPtr <GuestOSType> > GuestOSTypeList;
-    typedef std::list <ComPtr <IProgress> > ProgressList;
 
-    typedef std::list <ComObjPtr <HardDisk> > HardDiskList;
-    typedef std::list <ComObjPtr <DVDImage> > DVDImageList;
-    typedef std::list <ComObjPtr <FloppyImage> > FloppyImageList;
+    typedef std::map <Guid, ComPtr <IProgress> > ProgressMap;
+
+    typedef std::list <ComObjPtr <HardDisk2> > HardDisk2List;
+    typedef std::list <ComObjPtr <DVDImage2> > DVDImage2List;
+    typedef std::list <ComObjPtr <FloppyImage2> > FloppyImage2List;
     typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
 
-    typedef std::map <Guid, ComObjPtr <HardDisk> > HardDiskMap;
+    typedef std::map <Guid, ComObjPtr <HardDisk2> > HardDisk2Map;
 
-    HRESULT findMachine (const Guid &aId, bool aSetError,
-                         ComObjPtr <Machine> *machine = NULL);
-
-    HRESULT findHardDisk (const Guid *aId, const BSTR aLocation,
-                          bool aSetError, ComObjPtr <HardDisk> *aHardDisk = NULL);
-
-    HRESULT findVirtualDiskImage (const Guid *aId, const BSTR aFilePathFull,
-                          bool aSetError, ComObjPtr <HVirtualDiskImage> *aImage = NULL);
-    HRESULT findDVDImage (const Guid *aId, const BSTR aFilePathFull,
-                          bool aSetError, ComObjPtr <DVDImage> *aImage = NULL);
-    HRESULT findFloppyImage (const Guid *aId, const BSTR aFilePathFull,
-                             bool aSetError, ComObjPtr <FloppyImage> *aImage = NULL);
-
-    HRESULT checkMediaForConflicts (HardDisk *aHardDisk,
-                                    const Guid *aId, const BSTR aFilePathFull);
+    HRESULT checkMediaForConflicts2 (const Guid &aId, const Bstr &aLocation,
+                                     Utf8Str &aConflictType);
 
     HRESULT loadMachines (const settings::Key &aGlobal);
-    HRESULT loadDisks (const settings::Key &aGlobal);
-    HRESULT loadHardDisks (const settings::Key &aNode);
-
-    HRESULT saveHardDisks (settings::Key &aNode);
+    HRESULT loadMedia (const settings::Key &aGlobal);
 
     HRESULT registerMachine (Machine *aMachine);
-
-    HRESULT registerDVDImage (DVDImage *aImage, bool aOnStartUp);
-    HRESULT registerFloppyImage (FloppyImage *aImage, bool aOnStartUp);
 
     HRESULT lockConfig();
     HRESULT unlockConfig();
@@ -441,13 +410,16 @@ private:
         MachineList mMachines;
         GuestOSTypeList mGuestOSTypes;
 
-        ProgressList mProgressOperations;
-        HardDiskList mHardDisks;
-        DVDImageList mDVDImages;
-        FloppyImageList mFloppyImages;
+        ProgressMap mProgressOperations;
+
+        HardDisk2List mHardDisks2;
+        DVDImage2List mDVDImages2;
+        FloppyImage2List mFloppyImages2;
         SharedFolderList mSharedFolders;
 
-        HardDiskMap mHardDiskMap;
+        /// @todo NEWMEDIA do we really need this map? Used only in
+        /// find() it seems
+        HardDisk2Map mHardDisk2Map;
 
         CallbackList mCallbacks;
     };
@@ -489,8 +461,17 @@ private:
 
     const RTTHREAD mAsyncEventThread;
     EventQueue * const mAsyncEventQ;
-    /** Lock for calling EventQueue->post() */
-    RWLockHandle mAsyncEventQLock;
+
+    /**
+     * "Safe" lock. May only be used if guaranteed that no other locks are
+     * requested while holding it and no functions that may do so are called.
+     * Currently, protects the following:
+     *
+     * - mProgressOperations
+     */
+    RWLockHandle mSafeLock;
+
+    RWLockHandle mHardDiskTreeHandle;
 
     static Bstr sVersion;
     static ULONG sRevision;

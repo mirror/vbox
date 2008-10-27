@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-#if 1
+#if 0
     // Array test
     ////////////////////////////////////////////////////////////////////////////
     {
@@ -371,6 +371,34 @@ int main(int argc, char *argv[])
             CHECK_ERROR_BREAK (machines [i], COMGETTER(Name) (name.asOutParam()));
             printf ("machines[%u]='%s'\n", i, Utf8Str (name).raw());
         }
+
+#if 0
+        {
+            printf ("Testing [out] arrays...\n");
+            com::SafeGUIDArray uuids;
+            CHECK_ERROR_BREAK (virtualBox,
+                               COMGETTER(Uuids) (ComSafeArrayAsOutParam (uuids)));
+
+            for (size_t i = 0; i < uuids.size(); ++ i)
+                printf ("uuids[%u]=%Vuuid\n", i, &uuids [i]);
+        }
+
+        {
+            printf ("Testing [in] arrays...\n");
+            com::SafeGUIDArray uuids (5);
+            for (size_t i = 0; i < uuids.size(); ++ i)
+            {
+                Guid id;
+                id.create();
+                uuids [i] = id;
+                printf ("uuids[%u]=%Vuuid\n", i, &uuids [i]);
+            }
+
+            CHECK_ERROR_BREAK (virtualBox,
+                               SetUuids (ComSafeArrayAsInParam (uuids)));
+        }
+#endif
+
     }
 #endif
 
@@ -726,66 +754,156 @@ int main(int argc, char *argv[])
 #endif
 
 #if 0
+    // check for available hd backends
+    ///////////////////////////////////////////////////////////////////////////
+    {
+        printf("Supported harddisk backends: --------------------------\n");
+        ComPtr<ISystemProperties> systemProperties;
+        CHECK_ERROR_BREAK (virtualBox,
+                           COMGETTER(SystemProperties) (systemProperties.asOutParam()));
+        com::SafeIfaceArray <IHardDiskFormat> hardDiskFormats;
+        CHECK_ERROR_BREAK (systemProperties,
+                           COMGETTER(HardDiskFormats) (ComSafeArrayAsOutParam (hardDiskFormats)));
+
+        for (size_t i = 0; i < hardDiskFormats.size(); ++ i)
+        {
+            Bstr id;
+            CHECK_ERROR_BREAK (hardDiskFormats [i],
+                               COMGETTER(Id) (id.asOutParam()));
+
+            com::SafeArray <BSTR> fileExtensions;
+            CHECK_ERROR_BREAK (hardDiskFormats [i],
+                               COMGETTER(FileExtensions) (ComSafeArrayAsOutParam (fileExtensions)));
+
+            printf ("%ls:", id.raw());
+            for (size_t a = 0; a < fileExtensions.size(); ++ a)
+                printf (" %ls", Bstr(fileExtensions [a]).raw());
+            printf ("\n");
+        }
+        printf("-------------------------------------------------------\n");
+    }
+#endif
+
+#if 0
     // enumerate hard disks & dvd images
     ///////////////////////////////////////////////////////////////////////////
     do
     {
         {
-            ComPtr <IHardDiskCollection> coll;
-            CHECK_RC_BREAK (virtualBox->COMGETTER(HardDisks) (coll.asOutParam()));
-            ComPtr <IHardDiskEnumerator> enumerator;
-            CHECK_RC_BREAK (coll->Enumerate (enumerator.asOutParam()));
-            BOOL hasmore;
-            while (SUCCEEDED (enumerator->HasMore (&hasmore)) && hasmore)
-            {
-                ComPtr <IHardDisk> disk;
-                CHECK_RC_BREAK (enumerator->GetNext (disk.asOutParam()));
-                Guid id;
-                CHECK_RC_BREAK (disk->COMGETTER(Id) (id.asOutParam()));
-                Bstr path;
-                CHECK_RC_BREAK (disk->COMGETTER(FilePath) (path.asOutParam()));
-                printf ("Hard Disk: id={%s}, path={%ls}\n",
-                        id.toString().raw(), path.raw());
-                Guid mid;
-                CHECK_RC_BREAK (
-                    virtualBox->GetHardDiskUsage (id, ResourceUsage_All,
-                                                  mid.asOutParam())
-                );
-                if (mid.isEmpty())
-                    printf ("  not used\n");
-                else
-                    printf ("  used by VM: {%s}\n", mid.toString().raw());
-            }
-            CHECK_RC_BREAK (rc);
-        }
+            com::SafeIfaceArray <IHardDisk2> disks;
+            CHECK_ERROR_BREAK (virtualBox,
+                               COMGETTER(HardDisks2) (ComSafeArrayAsOutParam (disks)));
 
-        {
-            ComPtr <IDVDImageCollection> coll;
-            CHECK_RC_BREAK (virtualBox->COMGETTER(DVDImages) (coll.asOutParam()));
-            ComPtr <IDVDImageEnumerator> enumerator;
-            CHECK_RC_BREAK (coll->Enumerate (enumerator.asOutParam()));
-            BOOL hasmore;
-            while (SUCCEEDED (enumerator->HasMore (&hasmore)) && hasmore)
+            printf ("%u base hard disks registered (disks.isNull()=%d).\n",
+                    disks.size(), disks.isNull());
+
+            for (size_t i = 0; i < disks.size(); ++ i)
             {
-                ComPtr <IDVDImage> image;
-                CHECK_RC_BREAK (enumerator->GetNext (image.asOutParam()));
+                Bstr loc;
+                CHECK_ERROR_BREAK (disks [i], COMGETTER(Location) (loc.asOutParam()));
                 Guid id;
-                CHECK_RC_BREAK (image->COMGETTER(Id) (id.asOutParam()));
-                Bstr path;
-                CHECK_RC_BREAK (image->COMGETTER(FilePath) (path.asOutParam()));
-                printf ("CD/DVD Image: id={%s}, path={%ls}\n",
-                        id.toString().raw(), path.raw());
-                Bstr mIDs;
-                CHECK_RC_BREAK (
-                    virtualBox->GetDVDImageUsage (id, ResourceUsage_All,
-                                                  mIDs.asOutParam())
-                );
-                if (mIDs.isNull())
-                    printf ("  not used\n");
+                CHECK_ERROR_BREAK (disks [i], COMGETTER(Id) (id.asOutParam()));
+                MediaState_T state;
+                CHECK_ERROR_BREAK (disks [i], COMGETTER(State) (&state));
+                Bstr format;
+                CHECK_ERROR_BREAK (disks [i], COMGETTER(Format) (format.asOutParam()));
+
+                printf (" disks[%u]: '%ls'\n"
+                        "  UUID:         {%Vuuid}\n"
+                        "  State:        %s\n"
+                        "  Format:       %ls\n",
+                        i, loc.raw(), id.raw(),
+                        state == MediaState_NotCreated ? "Not Created" :
+                        state == MediaState_Created ? "Created" :
+                        state == MediaState_Inaccessible ? "Inaccessible" :
+                        state == MediaState_LockedRead ? "Locked Read" :
+                        state == MediaState_LockedWrite ? "Locked Write" :
+                        "???",
+                        format.raw());
+
+                if (state == MediaState_Inaccessible)
+                {
+                    Bstr error;
+                    CHECK_ERROR_BREAK (disks [i],
+                                       COMGETTER(LastAccessError)(error.asOutParam()));
+                    printf ("  Access Error: %ls\n", error.raw());
+                }
+
+                /* get usage */
+
+                printf ("  Used by VMs:\n");
+
+                com::SafeGUIDArray ids;
+                CHECK_ERROR_BREAK (disks [i],
+                                   COMGETTER(MachineIds) (ComSafeArrayAsOutParam (ids)));
+                if (ids.size() == 0)
+                {
+                    printf ("   <not used>\n");
+                }
                 else
-                    printf ("  used by VMs: {%ls}\n", mIDs.raw());
+                {
+                    for (size_t j = 0; j < ids.size(); ++ j)
+                    {
+                        printf ("   {%Vuuid}\n", &ids [i]);
+                    }
+                }
             }
-            CHECK_RC_BREAK (rc);
+        }
+        {
+            com::SafeIfaceArray <IDVDImage2> images;
+            CHECK_ERROR_BREAK (virtualBox,
+                               COMGETTER(DVDImages) (ComSafeArrayAsOutParam (images)));
+
+            printf ("%u DVD images registered (images.isNull()=%d).\n",
+                    images.size(), images.isNull());
+
+            for (size_t i = 0; i < images.size(); ++ i)
+            {
+                Bstr loc;
+                CHECK_ERROR_BREAK (images [i], COMGETTER(Location) (loc.asOutParam()));
+                Guid id;
+                CHECK_ERROR_BREAK (images [i], COMGETTER(Id) (id.asOutParam()));
+                MediaState_T state;
+                CHECK_ERROR_BREAK (images [i], COMGETTER(State) (&state));
+
+                printf (" images[%u]: '%ls'\n"
+                        "  UUID:         {%Vuuid}\n"
+                        "  State:        %s\n",
+                        i, loc.raw(), id.raw(),
+                        state == MediaState_NotCreated ? "Not Created" :
+                        state == MediaState_Created ? "Created" :
+                        state == MediaState_Inaccessible ? "Inaccessible" :
+                        state == MediaState_LockedRead ? "Locked Read" :
+                        state == MediaState_LockedWrite ? "Locked Write" :
+                        "???");
+
+                if (state == MediaState_Inaccessible)
+                {
+                    Bstr error;
+                    CHECK_ERROR_BREAK (images [i],
+                                       COMGETTER(LastAccessError)(error.asOutParam()));
+                    printf ("  Access Error: %ls\n", error.raw());
+                }
+
+                /* get usage */
+
+                printf ("  Used by VMs:\n");
+
+                com::SafeGUIDArray ids;
+                CHECK_ERROR_BREAK (images [i],
+                                   COMGETTER(MachineIds) (ComSafeArrayAsOutParam (ids)));
+                if (ids.size() == 0)
+                {
+                    printf ("   <not used>\n");
+                }
+                else
+                {
+                    for (size_t j = 0; j < ids.size(); ++ j)
+                    {
+                        printf ("   {%Vuuid}\n", &ids [i]);
+                    }
+                }
+            }
         }
     }
     while (FALSE);

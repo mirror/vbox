@@ -90,13 +90,13 @@
 #include <VirtualBoxImpl.h>
 #include <MachineImpl.h>
 #include <SnapshotImpl.h>
-#include <HardDiskImpl.h>
+#include <MediumImpl.h>
+#include <HardDisk2Impl.h>
+#include <HardDiskFormatImpl.h>
 #include <ProgressImpl.h>
 #include <DVDDriveImpl.h>
 #include <FloppyDriveImpl.h>
 #include <VRDPServerImpl.h>
-#include <DVDImageImpl.h>
-#include <FloppyImageImpl.h>
 #include <SharedFolderImpl.h>
 #include <HostImpl.h>
 #include <HostDVDDriveImpl.h>
@@ -116,101 +116,127 @@
 #include <SystemPropertiesImpl.h>
 #include <Collection.h>
 
-// implement nsISupports parts of our objects with support for nsIClassInfo
+/* implement nsISupports parts of our objects with support for nsIClassInfo */
+
 NS_DECL_CLASSINFO(VirtualBox)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBox, IVirtualBox)
+
 NS_DECL_CLASSINFO(Machine)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Machine, IMachine)
+
 NS_DECL_CLASSINFO(SessionMachine)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(SessionMachine, IMachine, IInternalMachineControl)
+
 NS_DECL_CLASSINFO(SnapshotMachine)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SnapshotMachine, IMachine)
+
 NS_DECL_CLASSINFO(Snapshot)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Snapshot, ISnapshot)
-NS_DECL_CLASSINFO(HardDisk)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDisk, IHardDisk)
-NS_DECL_CLASSINFO(HVirtualDiskImage)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HVirtualDiskImage, IHardDisk, IVirtualDiskImage)
-NS_DECL_CLASSINFO(HISCSIHardDisk)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HISCSIHardDisk, IHardDisk, IISCSIHardDisk)
-NS_DECL_CLASSINFO(HVMDKImage)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HVMDKImage, IHardDisk, IVMDKImage)
-NS_DECL_CLASSINFO(HCustomHardDisk)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HCustomHardDisk, IHardDisk, ICustomHardDisk)
-NS_DECL_CLASSINFO(HVHDImage)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HVHDImage, IHardDisk, IVHDImage)
-NS_DECL_CLASSINFO(HardDiskAttachment)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDiskAttachment, IHardDiskAttachment)
+
+NS_DECL_CLASSINFO(DVDImage2)
+NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(DVDImage2,
+                                           IMedium, ImageMediumBase,
+                                           IDVDImage2, DVDImage2)
+NS_DECL_CLASSINFO(FloppyImage2)
+NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(FloppyImage2,
+                                           IMedium, ImageMediumBase,
+                                           IFloppyImage2, FloppyImage2)
+
+NS_DECL_CLASSINFO(HardDisk2)
+NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(HardDisk2,
+                                           IMedium, MediumBase,
+                                           IHardDisk2, HardDisk2)
+
+NS_DECL_CLASSINFO(HardDiskFormat)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDiskFormat, IHardDiskFormat)
+
+NS_DECL_CLASSINFO(HardDisk2Attachment)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDisk2Attachment, IHardDisk2Attachment)
+
 NS_DECL_CLASSINFO(Progress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Progress, IProgress)
+
 NS_DECL_CLASSINFO(CombinedProgress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(CombinedProgress, IProgress)
+
 NS_DECL_CLASSINFO(DVDDrive)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(DVDDrive, IDVDDrive)
+
 NS_DECL_CLASSINFO(FloppyDrive)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(FloppyDrive, IFloppyDrive)
+
 NS_DECL_CLASSINFO(SharedFolder)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)
+
 #ifdef VBOX_WITH_VRDP
 NS_DECL_CLASSINFO(VRDPServer)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDPServer, IVRDPServer)
 #endif
-NS_DECL_CLASSINFO(DVDImage)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(DVDImage, IDVDImage)
-NS_DECL_CLASSINFO(FloppyImage)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(FloppyImage, IFloppyImage)
+
 NS_DECL_CLASSINFO(Host)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Host, IHost)
+
 NS_DECL_CLASSINFO(HostDVDDrive)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostDVDDrive, IHostDVDDrive)
+
 NS_DECL_CLASSINFO(HostFloppyDrive)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostFloppyDrive, IHostFloppyDrive)
+
 NS_DECL_CLASSINFO(HostNetworkInterface)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostNetworkInterface, IHostNetworkInterface)
+
 NS_DECL_CLASSINFO(GuestOSType)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestOSType, IGuestOSType)
+
 NS_DECL_CLASSINFO(NetworkAdapter)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(NetworkAdapter, INetworkAdapter)
+
 NS_DECL_CLASSINFO(SerialPort)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SerialPort, ISerialPort)
+
 NS_DECL_CLASSINFO(ParallelPort)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ParallelPort, IParallelPort)
+
 NS_DECL_CLASSINFO(USBController)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBController, IUSBController)
+
 NS_DECL_CLASSINFO(SATAController)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SATAController, ISATAController)
+
 #ifdef VBOX_WITH_USB
 NS_DECL_CLASSINFO(USBDeviceFilter)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(USBDeviceFilter, IUSBDeviceFilter)
+
 NS_DECL_CLASSINFO(HostUSBDevice)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HostUSBDevice, IUSBDevice, IHostUSBDevice)
+
 NS_DECL_CLASSINFO(HostUSBDeviceFilter)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(HostUSBDeviceFilter, IUSBDeviceFilter, IHostUSBDeviceFilter)
 #endif
+
 NS_DECL_CLASSINFO(AudioAdapter)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(AudioAdapter, IAudioAdapter)
+
 NS_DECL_CLASSINFO(SystemProperties)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SystemProperties, ISystemProperties)
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 NS_DECL_CLASSINFO(PerformanceCollector)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PerformanceCollector, IPerformanceCollector)
 NS_DECL_CLASSINFO(PerformanceMetric)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PerformanceMetric, IPerformanceMetric)
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 NS_DECL_CLASSINFO(BIOSSettings)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(BIOSSettings, IBIOSSettings)
 
-// collections and enumerators
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(Machine)
+/* collections and enumerators */
+
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(Snapshot)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(HardDiskAttachment)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(GuestOSType)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostDVDDrive)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostFloppyDrive)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostNetworkInterface)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(HardDisk)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(DVDImage)
-COM_IMPL_READONLY_ENUM_AND_COLLECTION(FloppyImage)
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(SharedFolder)
 #ifdef VBOX_WITH_USB
 COM_IMPL_READONLY_ENUM_AND_COLLECTION(HostUSBDevice)

@@ -25,6 +25,11 @@
 #define ____H_SYSTEMPROPERTIESIMPL
 
 #include "VirtualBoxBase.h"
+#include "HardDiskFormatImpl.h"
+
+#include <VBox/com/array.h>
+
+#include <list>
 
 class VirtualBox;
 
@@ -65,10 +70,11 @@ public:
     STDMETHOD(COMGETTER(SerialPortCount) (ULONG *count));
     STDMETHOD(COMGETTER(ParallelPortCount) (ULONG *count));
     STDMETHOD(COMGETTER(MaxBootPosition) (ULONG *aMaxBootPosition));
-    STDMETHOD(COMGETTER(DefaultVDIFolder)) (BSTR *aDefaultVDIFolder);
-    STDMETHOD(COMSETTER(DefaultVDIFolder)) (INPTR BSTR aDefaultVDIFolder);
     STDMETHOD(COMGETTER(DefaultMachineFolder)) (BSTR *aDefaultMachineFolder);
     STDMETHOD(COMSETTER(DefaultMachineFolder)) (INPTR BSTR aDefaultMachineFolder);
+    STDMETHOD(COMGETTER(DefaultHardDiskFolder)) (BSTR *aDefaultHardDiskFolder);
+    STDMETHOD(COMSETTER(DefaultHardDiskFolder)) (INPTR BSTR aDefaultHardDiskFolder);
+    STDMETHOD(COMGETTER(HardDiskFormats)) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats));
     STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary)) (BSTR *aRemoteDisplayAuthLibrary);
     STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (INPTR BSTR aRemoteDisplayAuthLibrary);
     STDMETHOD(COMGETTER(WebServiceAuthLibrary)) (BSTR *aWebServiceAuthLibrary);
@@ -83,31 +89,36 @@ public:
     HRESULT loadSettings (const settings::Key &aGlobal);
     HRESULT saveSettings (settings::Key &aGlobal);
 
-    /** Default VDI path (as is, not full). Not thread safe (use object lock). */
-    const Bstr &defaultVDIFolder() { return mDefaultVDIFolder; }
-    /** Default Machine path (full). Not thread safe (use object lock). */
-    const Bstr &defaultVDIFolderFull() { return mDefaultVDIFolderFull; }
     /** Default Machine path (as is, not full). Not thread safe (use object lock). */
     const Bstr &defaultMachineFolder() { return mDefaultMachineFolder; }
     /** Default Machine path (full). Not thread safe (use object lock). */
     const Bstr &defaultMachineFolderFull() { return mDefaultMachineFolderFull; }
+    /** Default hard disk path (as is, not full). Not thread safe (use object lock). */
+    const Bstr &defaultHardDiskFolder() { return mDefaultHardDiskFolder; }
+    /** Default hard disk path (full). Not thread safe (use object lock). */
+    const Bstr &defaultHardDiskFolderFull() { return mDefaultHardDiskFolderFull; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SystemProperties"; }
 
 private:
 
-    HRESULT setDefaultVDIFolder (const BSTR aPath);
+    typedef std::list <ComObjPtr <HardDiskFormat> > HardDiskFormatList;
+
     HRESULT setDefaultMachineFolder (const BSTR aPath);
+    HRESULT setDefaultHardDiskFolder (const BSTR aPath);
     HRESULT setRemoteDisplayAuthLibrary (const BSTR aPath);
     HRESULT setWebServiceAuthLibrary (const BSTR aPath);
 
     ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
-    Bstr mDefaultVDIFolder;
-    Bstr mDefaultVDIFolderFull;
     Bstr mDefaultMachineFolder;
     Bstr mDefaultMachineFolderFull;
+    Bstr mDefaultHardDiskFolder;
+    Bstr mDefaultHardDiskFolderFull;
+
+    HardDiskFormatList mHardDiskFormats;
+
     Bstr mRemoteDisplayAuthLibrary;
     Bstr mWebServiceAuthLibrary;
     BOOL mHWVirtExEnabled;

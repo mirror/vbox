@@ -207,6 +207,30 @@ void COMBase::FromSafeArray (const com::SafeArray <BSTR> &aArr,
         *it = QString::fromUcs2 (aArr [i]);
 }
 
+/* static */
+void COMBase::ToSafeArray (const QValueVector <QUuid> &aVec,
+                           com::SafeGUIDArray &aArr)
+{
+    AssertCompileSize (GUID, sizeof (QUuid));
+    aArr.reset (aVec.size());
+    size_t i = 0;
+    for (QValueVector <QUuid>::const_iterator it = aVec.begin();
+         it != aVec.end(); ++ it, ++ i)
+        aArr [i] = *(GUID *) &(*it);
+}
+
+/* static */
+void COMBase::FromSafeArray (const com::SafeGUIDArray &aArr,
+                             QValueVector <QUuid> &aVec)
+{
+    AssertCompileSize (GUID, sizeof (QUuid));
+    aVec = QValueVector <QUuid> (aArr.size());
+    size_t i = 0;
+    for (QValueVector <QUuid>::iterator it = aVec.begin();
+         it != aVec.end(); ++ it, ++ i)
+        *it = *(QUuid *) &aArr [i];
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void COMErrorInfo::init (const CVirtualBoxErrorInfo &info)

@@ -483,26 +483,27 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_REGISTERIMAGE)
     {
-        RTPrintf("VBoxManage registerimage    disk|dvd|floppy <filename>\n"
+        RTPrintf("VBoxManage openmedium       disk|dvd|floppy <filename>\n"
                  "                            [-type normal|immutable|writethrough] (disk only)\n"
                  "\n");
     }
 
     if (u64Cmd & USAGE_UNREGISTERIMAGE)
     {
-        RTPrintf("VBoxManage unregisterimage  disk|dvd|floppy <uuid>|<filename>\n"
+        RTPrintf("VBoxManage closemedium      disk|dvd|floppy <uuid>|<filename>\n"
                  "\n");
     }
 
-    if (u64Cmd & USAGE_SHOWVDIINFO)
+    if (u64Cmd & USAGE_SHOWHDINFO)
     {
-        RTPrintf("VBoxManage showvdiinfo      <uuid>|<filename>\n"
+        RTPrintf("VBoxManage showhdinfo       <uuid>|<filename>\n"
                  "\n");
     }
 
-    if (u64Cmd & USAGE_CREATEVDI)
+    if (u64Cmd & USAGE_CREATEHD)
     {
-        RTPrintf("VBoxManage createvdi        -filename <filename>\n"
+        /// @todo NEWMEDIA add -format to specify the hard disk backend
+        RTPrintf("VBoxManage createhd         -filename <filename>\n"
                  "                            -size <megabytes>\n"
                  "                            [-static]\n"
                  "                            [-comment <comment>]\n"
@@ -511,19 +512,17 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
-    if (u64Cmd & USAGE_MODIFYVDI)
+    if (u64Cmd & USAGE_MODIFYHD)
     {
-        RTPrintf("VBoxManage modifyvdi        <uuid>|<filename>\n"
-#if 0 /* doesn't currently work */
+        RTPrintf("VBoxManage modifyhd         <uuid>|<filename>\n"
                  "                            settype normal|writethrough|immutable |\n"
-#endif
                  "                            compact\n"
                  "\n");
     }
 
-    if (u64Cmd & USAGE_CLONEVDI)
+    if (u64Cmd & USAGE_CLONEHD)
     {
-        RTPrintf("VBoxManage clonevdi         <uuid>|<filename> <outputfile>\n"
+        RTPrintf("VBoxManage clonehd          <uuid>|<filename> <outputfile>\n"
                  "\n");
     }
 
@@ -576,7 +575,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd & USAGE_SETPROPERTY)
     {
-        RTPrintf("VBoxManage setproperty      vdifolder default|<folder> |\n"
+        RTPrintf("VBoxManage setproperty      hdfolder default|<folder> |\n"
                  "                            machinefolder default|<folder> |\n"
                  "                            vrdpauthlibrary default|<library> |\n"
                  "                            websrvauthlibrary default|null|<library> |\n"
@@ -1081,12 +1080,12 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
             {
                 case DriveState_ImageMounted:
                 {
-                    ComPtr<IFloppyImage> floppyImage;
+                    ComPtr<IFloppyImage2> floppyImage;
                     rc = floppyDrive->GetImage(floppyImage.asOutParam());
                     if (SUCCEEDED(rc) && floppyImage)
                     {
                         Bstr imagePath;
-                        floppyImage->COMGETTER(FilePath)(imagePath.asOutParam());
+                        floppyImage->COMGETTER(Location)(imagePath.asOutParam());
                         Guid imageGuid;
                         floppyImage->COMGETTER(Id)(imageGuid.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
@@ -1153,16 +1152,11 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     /*
      * Hard disks
      */
-    ComPtr<IHardDisk> hardDisk;
+    ComPtr<IHardDisk2> hardDisk;
     Bstr filePath;
-    rc = machine->GetHardDisk(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
+    rc = machine->GetHardDisk2(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
-        /// @todo (dmik) we temporarily use the location property to
-        //  determine the image file name. This is subject to change
-        //  when iSCSI disks are here (we should either query a
-        //  storage-specific interface from IHardDisk, or "standardize"
-        //  the location property)
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         if (details == VMINFO_MACHINEREADABLE)
@@ -1178,14 +1172,9 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hda=\"none\"\n");
     }
-    rc = machine->GetHardDisk(StorageBus_IDE, 0, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk2(StorageBus_IDE, 0, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
-        /// @todo (dmik) we temporarily use the location property to
-        //  determine the image file name. This is subject to change
-        //  when iSCSI disks are here (we should either query a
-        //  storage-specific interface from IHardDisk, or "standardize"
-        //  the location property)
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         if (details == VMINFO_MACHINEREADABLE)
@@ -1201,14 +1190,9 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdb=\"none\"\n");
     }
-    rc = machine->GetHardDisk(StorageBus_IDE, 1, 1, hardDisk.asOutParam());
+    rc = machine->GetHardDisk2(StorageBus_IDE, 1, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
-        /// @todo (dmik) we temporarily use the location property to
-        //  determine the image file name. This is subject to change
-        //  when iSCSI disks are here (we should either query a
-        //  storage-specific interface from IHardDisk, or "standardize"
-        //  the location property)
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         if (details == VMINFO_MACHINEREADABLE)
@@ -1228,11 +1212,11 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     rc = machine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
     if (SUCCEEDED(rc) && dvdDrive)
     {
-        ComPtr<IDVDImage> dvdImage;
+        ComPtr<IDVDImage2> dvdImage;
         rc = dvdDrive->GetImage(dvdImage.asOutParam());
         if (SUCCEEDED(rc) && dvdImage)
         {
-            rc = dvdImage->COMGETTER(FilePath)(filePath.asOutParam());
+            rc = dvdImage->COMGETTER(Location)(filePath.asOutParam());
             if (SUCCEEDED(rc) && filePath)
             {
                 rc = dvdImage->COMGETTER(Id)(uuid.asOutParam());
@@ -2596,25 +2580,17 @@ static int handleList(int argc, char *argv[],
         /*
          * Get the list of all registered VMs
          */
-        ComPtr<IMachineCollection> collection;
-        rc = virtualBox->COMGETTER(Machines)(collection.asOutParam());
-        ComPtr<IMachineEnumerator> enumerator;
-        if (SUCCEEDED(rc))
-            rc = collection->Enumerate(enumerator.asOutParam());
+        com::SafeIfaceArray <IMachine> machines;
+        rc = virtualBox->COMGETTER(Machines2)(ComSafeArrayAsOutParam (machines));
         if (SUCCEEDED(rc))
         {
             /*
              * Iterate through the collection
              */
-            BOOL hasMore = FALSE;
-            while (enumerator->HasMore(&hasMore), hasMore)
+            for (size_t i = 0; i < machines.size(); ++ i)
             {
-                ComPtr<IMachine> machine;
-                rc = enumerator->GetNext(machine.asOutParam());
-                if ((SUCCEEDED(rc)) && machine)
-                {
-                    rc = showVMInfo(virtualBox, machine);
-                }
+                if (machines [i])
+                    rc = showVMInfo(virtualBox, machines [i]);
             }
         }
     }
@@ -2624,25 +2600,19 @@ static int handleList(int argc, char *argv[],
         /*
          * Get the list of all _running_ VMs
          */
-        ComPtr<IMachineCollection> collection;
-        rc = virtualBox->COMGETTER(Machines)(collection.asOutParam());
-        ComPtr<IMachineEnumerator> enumerator;
-        if (SUCCEEDED(rc))
-            rc = collection->Enumerate(enumerator.asOutParam());
+        com::SafeIfaceArray <IMachine> machines;
+        rc = virtualBox->COMGETTER(Machines2)(ComSafeArrayAsOutParam (machines));
         if (SUCCEEDED(rc))
         {
             /*
              * Iterate through the collection
              */
-            BOOL hasMore = FALSE;
-            while (enumerator->HasMore(&hasMore), hasMore)
+            for (size_t i = 0; i < machines.size(); ++ i)
             {
-                ComPtr<IMachine> machine;
-                rc = enumerator->GetNext(machine.asOutParam());
-                if ((SUCCEEDED(rc)) && machine)
+                if (machines [i])
                 {
                     MachineState_T machineState;
-                    rc = machine->COMGETTER(State)(&machineState);
+                    rc = machines [i]->COMGETTER(State)(&machineState);
                     if (SUCCEEDED(rc))
                     {
                         switch (machineState)
@@ -2651,7 +2621,7 @@ static int handleList(int argc, char *argv[],
                             case MachineState_Paused:
                                 {
                                     Guid uuid;
-                                    rc = machine->COMGETTER(Id) (uuid.asOutParam());
+                                    rc = machines [i]->COMGETTER(Id) (uuid.asOutParam());
                                     if (SUCCEEDED(rc))
                                         RTPrintf ("%s\n", uuid.toString().raw());
                                     break;
@@ -2812,80 +2782,62 @@ static int handleList(int argc, char *argv[],
     else
     if (strcmp(argv[0], "hdds") == 0)
     {
-        ComPtr<IHardDiskCollection> hddColl;
-        CHECK_ERROR(virtualBox, COMGETTER(HardDisks)(hddColl.asOutParam()));
-        ComPtr<IHardDiskEnumerator> enumerator;
-        CHECK_ERROR(hddColl, Enumerate(enumerator.asOutParam()));
-        BOOL hasMore;
-        while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
+        com::SafeIfaceArray <IHardDisk2> hdds;
+        CHECK_ERROR(virtualBox, COMGETTER(HardDisks2)(ComSafeArrayAsOutParam (hdds)));
+        for (size_t i = 0; i < hdds.size(); ++ i)
         {
-            ComPtr<IHardDisk> hdd;
-            CHECK_RC_BREAK(enumerator->GetNext(hdd.asOutParam()));
+            ComPtr<IHardDisk2> hdd = hdds[i];
             Guid uuid;
             hdd->COMGETTER(Id)(uuid.asOutParam());
             RTPrintf("UUID:         %s\n", uuid.toString().raw());
-            HardDiskStorageType_T storageType;
-            hdd->COMGETTER(StorageType)(&storageType);
-            const char *storageTypeString = "unknown";
-            switch (storageType)
-            {
-                case HardDiskStorageType_VirtualDiskImage:
-                    storageTypeString = "Virtual Disk Image";
-                    break;
-                case HardDiskStorageType_ISCSIHardDisk:
-                    storageTypeString = "iSCSI hard disk";
-                    break;
-            }
-            RTPrintf("Storage type: %s\n", storageTypeString);
+            Bstr format;
+            hdd->COMGETTER(Format)(format.asOutParam());
+            RTPrintf("Format:       %lS\n", format.raw());
             Bstr filepath;
-            /// @todo (dmik) we temporarily use the location property to
-            //  determine the image file name. This is subject to change
-            //  when iSCSI disks are here (we should either query a
-            //  storage-specific interface from IHardDisk, or "standardize"
-            //  the location property)
             hdd->COMGETTER(Location)(filepath.asOutParam());
-            RTPrintf("Path:         %lS\n", filepath.raw());
-            BOOL fAccessible;
-            hdd->COMGETTER(AllAccessible)(&fAccessible);
-            RTPrintf("Accessible:   %s\n", fAccessible ? "yes" : "no");
-            Guid machineUUID;
-            hdd->COMGETTER(MachineId)(machineUUID.asOutParam());
-            if (!machineUUID.isEmpty())
+            RTPrintf("Location:     %lS\n", filepath.raw());
+            MediaState_T enmState;
+            /// @todo NEWMEDIA check accessibility of all parents
+            /// @todo NEWMEDIA print the full state value
+            hdd->COMGETTER(State)(&enmState);
+            RTPrintf("Accessible:   %s\n", enmState != MediaState_Inaccessible ? "yes" : "no");
+            com::SafeGUIDArray machineIds;
+            hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
+            for (size_t j = 0; j < machineIds.size(); ++ j)
             {
                 ComPtr<IMachine> machine;
-                CHECK_ERROR(virtualBox, GetMachine(machineUUID, machine.asOutParam()));
+                CHECK_ERROR(virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
                 ASSERT(machine);
                 Bstr name;
                 machine->COMGETTER(Name)(name.asOutParam());
                 machine->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("Usage:        %lS (UUID: %s)\n", name.raw(), uuid.toString().raw());
+                RTPrintf("%s%lS (UUID: %Vuuid)\n",
+                         j == 0 ? "Usage:        " : "              ",
+                         name.raw(), &machineIds[j]);
             }
+            /// @todo NEWMEDIA check usage in snapshots too
+            /// @todo NEWMEDIA also list children and say 'differencing' for
+            /// hard disks with the parent or 'base' otherwise.
             RTPrintf("\n");
         }
     }
     else
     if (strcmp(argv[0], "dvds") == 0)
     {
-        ComPtr<IDVDImageCollection> dvdColl;
-        CHECK_ERROR(virtualBox, COMGETTER(DVDImages)(dvdColl.asOutParam()));
-        ComPtr<IDVDImageEnumerator> enumerator;
-        CHECK_ERROR(dvdColl, Enumerate(enumerator.asOutParam()));
-        BOOL hasMore;
-        while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
+        com::SafeIfaceArray<IDVDImage2> dvds;
+        CHECK_ERROR(virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
+        for (size_t i = 0; i < dvds.size(); ++ i)
         {
-            ComPtr<IDVDImage> dvdImage;
-            CHECK_RC_BREAK(enumerator->GetNext(dvdImage.asOutParam()));
+            ComPtr<IDVDImage2> dvdImage = dvds[i];
             Guid uuid;
             dvdImage->COMGETTER(Id)(uuid.asOutParam());
             RTPrintf("UUID:       %s\n", uuid.toString().raw());
             Bstr filePath;
-            dvdImage->COMGETTER(FilePath)(filePath.asOutParam());
+            dvdImage->COMGETTER(Location)(filePath.asOutParam());
             RTPrintf("Path:       %lS\n", filePath.raw());
-            BOOL fAccessible;
-            dvdImage->COMGETTER(Accessible)(&fAccessible);
-            RTPrintf("Accessible: %s\n", fAccessible ? "yes" : "no");
-            Bstr machineUUIDs;
-            CHECK_ERROR(virtualBox, GetDVDImageUsage(uuid, ResourceUsage_All, machineUUIDs.asOutParam()));
+            MediaState_T enmState;
+            dvdImage->COMGETTER(State)(&enmState);
+            RTPrintf("Accessible: %s\n", enmState != MediaState_Inaccessible ? "yes" : "no");
             /** @todo usage */
             RTPrintf("\n");
         }
@@ -2893,26 +2845,20 @@ static int handleList(int argc, char *argv[],
     else
     if (strcmp(argv[0], "floppies") == 0)
     {
-        ComPtr<IFloppyImageCollection> floppyColl;
-        CHECK_ERROR(virtualBox, COMGETTER(FloppyImages)(floppyColl.asOutParam()));
-        ComPtr<IFloppyImageEnumerator> enumerator;
-        CHECK_ERROR(floppyColl, Enumerate(enumerator.asOutParam()));
-        BOOL hasMore;
-        while (SUCCEEDED(enumerator->HasMore(&hasMore)) && hasMore)
+        com::SafeIfaceArray<IFloppyImage2> floppies;
+        CHECK_ERROR(virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
+        for (size_t i = 0; i < floppies.size(); ++ i)
         {
-            ComPtr<IFloppyImage> floppyImage;
-            CHECK_RC_BREAK(enumerator->GetNext(floppyImage.asOutParam()));
+            ComPtr<IFloppyImage2> floppyImage = floppies[i];
             Guid uuid;
             floppyImage->COMGETTER(Id)(uuid.asOutParam());
             RTPrintf("UUID:       %s\n", uuid.toString().raw());
             Bstr filePath;
-            floppyImage->COMGETTER(FilePath)(filePath.asOutParam());
+            floppyImage->COMGETTER(Location)(filePath.asOutParam());
             RTPrintf("Path:       %lS\n", filePath.raw());
-            BOOL fAccessible;
-            floppyImage->COMGETTER(Accessible)(&fAccessible);
-            RTPrintf("Accessible: %s\n", fAccessible ? "yes" : "no");
-            Bstr machineUUIDs;
-            CHECK_ERROR(virtualBox, GetFloppyImageUsage(uuid, ResourceUsage_All, machineUUIDs.asOutParam()));
+            MediaState_T enmState;
+            floppyImage->COMGETTER(State)(&enmState);
+            RTPrintf("Accessible: %s\n", enmState != MediaState_Inaccessible ? "yes" : "no");
             /** @todo usage */
             RTPrintf("\n");
         }
@@ -3102,8 +3048,8 @@ static int handleList(int argc, char *argv[],
         RTPrintf("Maximum video RAM size:      %u Megabytes\n", ulValue);
         systemProperties->COMGETTER(MaxVDISize)(&ul64Value);
         RTPrintf("Maximum VDI size:            %lu Megabytes\n", ul64Value);
-        systemProperties->COMGETTER(DefaultVDIFolder)(str.asOutParam());
-        RTPrintf("Default VDI folder:          %lS\n", str.raw());
+        systemProperties->COMGETTER(DefaultHardDiskFolder)(str.asOutParam());
+        RTPrintf("Default hard disk filder:    %lS\n", str.raw());
         systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
         RTPrintf("Default machine folder:      %lS\n", str.raw());
         systemProperties->COMGETTER(RemoteDisplayAuthLibrary)(str.asOutParam());
@@ -3174,8 +3120,8 @@ static int handleUnregisterVM(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleCreateVDI(int argc, char *argv[],
-                           ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleCreateHardDisk(int argc, char *argv[],
+                                ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     HRESULT rc;
     Bstr filename;
@@ -3225,30 +3171,32 @@ static int handleCreateVDI(int argc, char *argv[],
             type = argv[i];
         }
         else
-            return errorSyntax(USAGE_CREATEVDI, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+            return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
     }
     /* check the outcome */
     if (!filename || (sizeMB == 0))
-        return errorSyntax(USAGE_CREATEVDI, "Parameters -filename and -size are required");
+        return errorSyntax(USAGE_CREATEHD, "Parameters -filename and -size are required");
 
     if (strcmp(type, "normal") && strcmp(type, "writethrough"))
-        return errorArgument("Invalid VDI type '%s' specified", Utf8Str(type).raw());
+        return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(type).raw());
 
-    ComPtr<IHardDisk> hardDisk;
-    CHECK_ERROR(virtualBox, CreateHardDisk(HardDiskStorageType_VirtualDiskImage, hardDisk.asOutParam()));
+    ComPtr<IHardDisk2> hardDisk;
+    CHECK_ERROR(virtualBox, CreateHardDisk2(Bstr("VDI"), filename, hardDisk.asOutParam()));
     if (SUCCEEDED(rc) && hardDisk)
     {
+        /* we will close the hard disk after the storage has been successfully
+         * created unless fRegister is set */
+        bool doClose = false;
+
         CHECK_ERROR(hardDisk,COMSETTER(Description)(comment));
-        ComPtr<IVirtualDiskImage> vdi = hardDisk;
-        CHECK_ERROR(vdi, COMSETTER(FilePath)(filename));
         ComPtr<IProgress> progress;
         if (fStatic)
         {
-            CHECK_ERROR(vdi, CreateFixedImage(sizeMB, progress.asOutParam()));
+            CHECK_ERROR(hardDisk, CreateFixedStorage(sizeMB, progress.asOutParam()));
         }
         else
         {
-            CHECK_ERROR(vdi, CreateDynamicImage(sizeMB, progress.asOutParam()));
+            CHECK_ERROR(hardDisk, CreateDynamicStorage(sizeMB, progress.asOutParam()));
         }
         if (SUCCEEDED(rc) && progress)
         {
@@ -3263,12 +3211,14 @@ static int handleCreateVDI(int argc, char *argv[],
                 {
                     com::ProgressErrorInfo info(progress);
                     if (info.isBasicAvailable())
-                        RTPrintf("Error: failed to create disk image. Error message: %lS\n", info.getText().raw());
+                        RTPrintf("Error: failed to create hard disk. Error message: %lS\n", info.getText().raw());
                     else
-                        RTPrintf("Error: failed to create disk image. No error message available!\n");
+                        RTPrintf("Error: failed to create hard disk. No error message available!\n");
                 }
                 else
                 {
+                    doClose = !fRegister;
+
                     Guid uuid;
                     CHECK_ERROR(hardDisk, COMGETTER(Id)(uuid.asOutParam()));
 
@@ -3285,15 +3235,15 @@ static int handleCreateVDI(int argc, char *argv[],
                 }
             }
         }
-        if (SUCCEEDED(rc) && fRegister)
+        if (doClose)
         {
-            CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
+            CHECK_ERROR(hardDisk, Close());
         }
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static DECLCALLBACK(int) vdiProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
+static DECLCALLBACK(int) hardDiskProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
 {
     unsigned *pPercent = (unsigned *)pvUser;
 
@@ -3310,40 +3260,33 @@ static DECLCALLBACK(int) vdiProgressCallback(PVM pVM, unsigned uPercent, void *p
 }
 
 
-static int handleModifyVDI(int argc, char *argv[],
-                           ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleModifyHardDisk(int argc, char *argv[],
+                                ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     HRESULT rc;
 
     /* The uuid/filename and a command */
     if (argc < 2)
-        return errorSyntax(USAGE_MODIFYVDI, "Incorrect number of parameters");
+        return errorSyntax(USAGE_MODIFYHD, "Incorrect number of parameters");
 
-    ComPtr<IHardDisk> hardDisk;
-    ComPtr<IVirtualDiskImage> vdi;
+    ComPtr<IHardDisk2> hardDisk;
     Bstr filepath;
 
     /* first guess is that it's a UUID */
     Guid uuid(argv[0]);
-    rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (!hardDisk)
     {
         filepath = argv[0];
-        CHECK_ERROR(virtualBox, FindVirtualDiskImage(filepath, vdi.asOutParam()));
-        hardDisk = vdi;
-    }
-    else
-    {
-        vdi = hardDisk;
+        CHECK_ERROR(virtualBox, FindHardDisk2(filepath, hardDisk.asOutParam()));
     }
 
     /* let's find out which command */
-// doesn't currently work    if (strcmp(argv[1], "settype") == 0)
-    if (0)
+    if (strcmp(argv[1], "settype") == 0)
     {
         /* hard disk must be registered */
-        if (SUCCEEDED(rc) && hardDisk && vdi)
+        if (SUCCEEDED(rc) && hardDisk)
         {
             char *type = NULL;
 
@@ -3373,7 +3316,7 @@ static int handleModifyVDI(int argc, char *argv[],
             }
             else
             {
-                return errorArgument("Invalid VDI type '%s' specified", Utf8Str(type).raw());
+                return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(type).raw());
             }
         }
         else
@@ -3381,32 +3324,29 @@ static int handleModifyVDI(int argc, char *argv[],
     }
     else if (strcmp(argv[1], "compact") == 0)
     {
-        ComPtr<IVirtualDiskImage> vdi;
-
         /* the hard disk image might not be registered */
         if (!hardDisk)
         {
-            virtualBox->OpenVirtualDiskImage(Bstr(argv[0]), vdi.asOutParam());
-            if (!vdi)
+            virtualBox->OpenHardDisk2(Bstr(argv[0]), hardDisk.asOutParam());
+            if (!hardDisk)
                 return errorArgument("Hard disk image not found");
         }
-        else
-            vdi = hardDisk;
 
-        if (!vdi)
+        Bstr format;
+        hardDisk->COMGETTER(Format)(format.asOutParam());
+        if (format != "VDI")
             return errorArgument("Invalid hard disk type. The command only works on VDI files\n");
 
         Bstr fileName;
-        vdi->COMGETTER(FilePath)(fileName.asOutParam());
+        hardDisk->COMGETTER(Location)(fileName.asOutParam());
 
-        /* close the file */
+        /* make sure the object reference is released */
         hardDisk = NULL;
-        vdi = NULL;
 
         unsigned uProcent;
 
         RTPrintf("Shrinking '%lS': 0%%", fileName.raw());
-        int vrc = VDIShrinkImage(Utf8Str(fileName).raw(), vdiProgressCallback, &uProcent);
+        int vrc = VDIShrinkImage(Utf8Str(fileName).raw(), hardDiskProgressCallback, &uProcent);
         if (VBOX_FAILURE(vrc))
         {
             RTPrintf("Error while shrinking hard disk image: %Vrc\n", vrc);
@@ -3414,36 +3354,38 @@ static int handleModifyVDI(int argc, char *argv[],
         }
     }
     else
-        return errorSyntax(USAGE_MODIFYVDI, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
+        return errorSyntax(USAGE_MODIFYHD, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleCloneVDI(int argc, char *argv[],
-                          ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleCloneHardDisk(int argc, char *argv[],
+                               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
+#if 1
+    RTPrintf("Error: Clone hard disk operation is temporarily unavailable!\n");
+    return 1;
+#else
+    /// @todo NEWMEDIA use IHardDisk2::cloneTo/flattenTo (not yet implemented)
     HRESULT rc;
 
-    /* source VDI and target path */
+    /* source hard disk and target path */
     if (argc != 2)
-        return errorSyntax(USAGE_CLONEVDI, "Incorrect number of parameters");
+        return errorSyntax(USAGE_CLONEHD, "Incorrect number of parameters");
 
     /* first guess is that it's a UUID */
     Guid uuid(argv[0]);
-    ComPtr<IHardDisk> hardDisk;
-    rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+    ComPtr<IHardDisk2> hardDisk;
+    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
     if (!hardDisk)
     {
         /* not successful? Then it must be a filename */
-        ComPtr<IVirtualDiskImage> vdi;
-        CHECK_ERROR(virtualBox, OpenVirtualDiskImage(Bstr(argv[0]), vdi.asOutParam()));
-        hardDisk = vdi;
+        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(argv[0]), hardDisk.asOutParam()));
     }
     if (hardDisk)
     {
-        ComPtr<IVirtualDiskImage> vdiOut;
         ComPtr<IProgress> progress;
-        CHECK_ERROR(hardDisk, CloneToImage(Bstr(argv[1]), vdiOut.asOutParam(), progress.asOutParam()));
+        CHECK_ERROR(hardDisk, CloneToImage(Bstr(argv[1]), hardDisk.asOutParam(), progress.asOutParam()));
         if (SUCCEEDED(rc))
         {
             showProgress(progress);
@@ -3463,6 +3405,7 @@ static int handleCloneVDI(int argc, char *argv[],
         }
     }
     return SUCCEEDED(rc) ? 0 : 1;
+#endif
 }
 
 static int handleConvertDDImage(int argc, char *argv[])
@@ -3567,6 +3510,10 @@ static int handleConvertDDImage(int argc, char *argv[])
 static int handleAddiSCSIDisk(int argc, char *argv[],
                               ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
+#if 1
+    RTPrintf("Error: Create iSCSI hard disk operation is temporarily unavailable!\n");
+    return 1;
+#else
     HRESULT rc;
     Bstr server;
     Bstr target;
@@ -3693,6 +3640,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
     }
 
     return SUCCEEDED(rc) ? 0 : 1;
+#endif
 }
 
 static int handleCreateVM(int argc, char *argv[],
@@ -4730,40 +4678,28 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[0], "none") == 0)
             {
-                machine->DetachHardDisk(StorageBus_IDE, 0, 0);
+                machine->DetachHardDisk2(StorageBus_IDE, 0, 0);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[0]);
-                ComPtr<IHardDisk> hardDisk;
-                rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+                ComPtr<IHardDisk2> hardDisk;
+                rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[0]), hardDisk.asOutParam()));
-                    if (SUCCEEDED(rc) && hardDisk)
+                    CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
+                    if (FAILED(rc))
                     {
-                        /* first check if it's already registered */
-                        Guid hddUUID;
-                        hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
-                        ComPtr<IHardDisk> registeredHDD;
-                        rc = virtualBox->GetHardDisk(hddUUID, registeredHDD.asOutParam());
-                        if (SUCCEEDED(rc) && registeredHDD)
-                            hardDisk = registeredHDD;
-                        else
-                        {
-                            /* it has to be registered */
-                            CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
-                            if (FAILED(rc))
-                                break;
-                        }
+                        /* open the new hard disk object */
+                        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[0]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 0));
+                    CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_IDE, 0, 0));
                 }
                 else
                     rc = E_FAIL;
@@ -4775,40 +4711,28 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[1], "none") == 0)
             {
-                machine->DetachHardDisk(StorageBus_IDE, 0, 1);
+                machine->DetachHardDisk2(StorageBus_IDE, 0, 1);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[1]);
-                ComPtr<IHardDisk> hardDisk;
-                rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+                ComPtr<IHardDisk2> hardDisk;
+                rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[1]), hardDisk.asOutParam()));
-                    if (SUCCEEDED(rc) && hardDisk)
+                    CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
+                    if (FAILED(rc))
                     {
-                        /* first check if it's already registered */
-                        Guid hddUUID;
-                        hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
-                        ComPtr<IHardDisk> registeredHDD;
-                        rc = virtualBox->GetHardDisk(hddUUID, registeredHDD.asOutParam());
-                        if (SUCCEEDED(rc) && registeredHDD)
-                            hardDisk = registeredHDD;
-                        else
-                        {
-                            /* it has to be registered */
-                            CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
-                            if (FAILED(rc))
-                                break;
-                        }
+                        /* open the new hard disk object */
+                        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[1]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 0, 1));
+                    CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_IDE, 0, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -4820,40 +4744,28 @@ static int handleModifyVM(int argc, char *argv[],
         {
             if (strcmp(hdds[2], "none") == 0)
             {
-                machine->DetachHardDisk(StorageBus_IDE, 1, 1);
+                machine->DetachHardDisk2(StorageBus_IDE, 1, 1);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Guid uuid(hdds[2]);
-                ComPtr<IHardDisk> hardDisk;
-                rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+                ComPtr<IHardDisk2> hardDisk;
+                rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
                 {
-                    CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[2]), hardDisk.asOutParam()));
-                    if (SUCCEEDED(rc) && hardDisk)
+                    CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
+                    if (FAILED(rc))
                     {
-                        /* first check if it's already registered */
-                        Guid hddUUID;
-                        hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
-                        ComPtr<IHardDisk> registeredHDD;
-                        rc = virtualBox->GetHardDisk(hddUUID, registeredHDD.asOutParam());
-                        if (SUCCEEDED(rc) && registeredHDD)
-                            hardDisk = registeredHDD;
-                        else
-                        {
-                            /* it has to be registered */
-                            CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
-                            if (FAILED(rc))
-                                break;
-                        }
+                        /* open the new hard disk object */
+                        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[2]), hardDisk.asOutParam()));
                     }
                 }
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_IDE, 1, 1));
+                    CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_IDE, 1, 1));
                 }
                 else
                     rc = E_FAIL;
@@ -4905,24 +4817,17 @@ static int handleModifyVM(int argc, char *argv[],
             {
                 /* first assume it's a UUID */
                 Guid uuid(dvd);
-                ComPtr<IDVDImage> dvdImage;
+                ComPtr<IDVDImage2> dvdImage;
                 rc = virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
                 if (FAILED(rc) || !dvdImage)
                 {
                     /* must be a filename, check if it's in the collection */
-                    ComPtr<IDVDImageCollection> dvdImages;
-                    virtualBox->COMGETTER(DVDImages)(dvdImages.asOutParam());
-                    rc = dvdImages->FindByPath(Bstr(dvd), dvdImage.asOutParam());
+                    rc = virtualBox->FindDVDImage(Bstr(dvd), dvdImage.asOutParam());
                     /* not registered, do that on the fly */
                     if (!dvdImage)
                     {
                         Guid emptyUUID;
                         CHECK_ERROR(virtualBox, OpenDVDImage(Bstr(dvd), emptyUUID, dvdImage.asOutParam()));
-                        if (SUCCEEDED(rc) && dvdImage)
-                        {
-                            /* time to register the image */
-                            CHECK_ERROR(virtualBox, RegisterDVDImage(dvdImage));
-                        }
                     }
                 }
                 if (!dvdImage)
@@ -5003,18 +4908,17 @@ static int handleModifyVM(int argc, char *argv[],
                 {
                     /* first assume it's a UUID */
                     Guid uuid(floppy);
-                    ComPtr<IFloppyImage> floppyImage;
+                    ComPtr<IFloppyImage2> floppyImage;
                     rc = virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                     if (FAILED(rc) || !floppyImage)
                     {
-                        /* must be a filename */
-                        Guid emptyUUID;
-                        CHECK_ERROR(virtualBox, OpenFloppyImage(Bstr(floppy), emptyUUID, floppyImage.asOutParam()));
-                        if (SUCCEEDED(rc) && floppyImage)
+                        /* must be a filename, check if it's in the collection */
+                        rc = virtualBox->FindFloppyImage(Bstr(floppy), floppyImage.asOutParam());
+                        /* not registered, do that on the fly */
+                        if (!floppyImage)
                         {
-                            /** @todo first iterate through the collection and try to find the image */
-                            /* time to register the image */
-                            CHECK_ERROR(virtualBox, RegisterFloppyImage(floppyImage));
+                            Guid emptyUUID;
+                            CHECK_ERROR(virtualBox, OpenFloppyImage(Bstr(floppy), emptyUUID, floppyImage.asOutParam()));
                         }
                     }
                     if (!floppyImage)
@@ -5564,40 +5468,28 @@ static int handleModifyVM(int argc, char *argv[],
             {
                 if (strcmp(hdds[i], "none") == 0)
                 {
-                    machine->DetachHardDisk(StorageBus_SATA, i-4, 0);
+                    machine->DetachHardDisk2(StorageBus_SATA, i-4, 0);
                 }
                 else
                 {
                     /* first guess is that it's a UUID */
                     Guid uuid(hdds[i]);
-                    ComPtr<IHardDisk> hardDisk;
-                    rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+                    ComPtr<IHardDisk2> hardDisk;
+                    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
                     /* not successful? Then it must be a filename */
                     if (!hardDisk)
                     {
-                        CHECK_ERROR(virtualBox, OpenHardDisk(Bstr(hdds[i]), hardDisk.asOutParam()));
-                        if (SUCCEEDED(rc) && hardDisk)
+                        CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
+                        if (FAILED(rc))
                         {
-                            /* first check if it's already registered */
-                            Guid hddUUID;
-                            hardDisk->COMGETTER(Id)(hddUUID.asOutParam());
-                            ComPtr<IHardDisk> registeredHDD;
-                            rc = virtualBox->GetHardDisk(hddUUID, registeredHDD.asOutParam());
-                            if (SUCCEEDED(rc) && registeredHDD)
-                                hardDisk = registeredHDD;
-                            else
-                            {
-                                /* it has to be registered */
-                                CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
-                                if (FAILED(rc))
-                                    break;
-                            }
+                            /* open the new hard disk object */
+                            CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(hdds[i]), hardDisk.asOutParam()));
                         }
                     }
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachHardDisk(uuid, StorageBus_SATA, i-4, 0));
+                        CHECK_ERROR(machine, AttachHardDisk2(uuid, StorageBus_SATA, i-4, 0));
                     }
                     else
                         rc = E_FAIL;
@@ -6035,24 +5927,17 @@ static int handleControlVM(int argc, char *argv[],
             {
                 /* first assume it's a UUID */
                 Guid uuid(argv[2]);
-                ComPtr<IDVDImage> dvdImage;
+                ComPtr<IDVDImage2> dvdImage;
                 rc = virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
                 if (FAILED(rc) || !dvdImage)
                 {
                     /* must be a filename, check if it's in the collection */
-                    ComPtr<IDVDImageCollection> dvdImages;
-                    virtualBox->COMGETTER(DVDImages)(dvdImages.asOutParam());
-                    rc = dvdImages->FindByPath(Bstr(argv[2]), dvdImage.asOutParam());
+                    rc = virtualBox->FindDVDImage(Bstr(argv[2]), dvdImage.asOutParam());
                     /* not registered, do that on the fly */
                     if (!dvdImage)
                     {
                         Guid emptyUUID;
                         CHECK_ERROR(virtualBox, OpenDVDImage(Bstr(argv[2]), emptyUUID, dvdImage.asOutParam()));
-                        if (SUCCEEDED(rc) && dvdImage)
-                        {
-                            /* time to register the image */
-                            CHECK_ERROR(virtualBox, RegisterDVDImage(dvdImage));
-                        }
                     }
                 }
                 if (!dvdImage)
@@ -6103,24 +5988,17 @@ static int handleControlVM(int argc, char *argv[],
             {
                 /* first assume it's a UUID */
                 Guid uuid(argv[2]);
-                ComPtr<IFloppyImage> floppyImage;
+                ComPtr<IFloppyImage2> floppyImage;
                 rc = virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
                 if (FAILED(rc) || !floppyImage)
                 {
                     /* must be a filename, check if it's in the collection */
-                    ComPtr<IFloppyImageCollection> floppyImages;
-                    virtualBox->COMGETTER(FloppyImages)(floppyImages.asOutParam());
-                    rc = floppyImages->FindByPath(Bstr(argv[2]), floppyImage.asOutParam());
+                    rc = virtualBox->FindFloppyImage(Bstr(argv[2]), floppyImage.asOutParam());
                     /* not registered, do that on the fly */
                     if (!floppyImage)
                     {
                         Guid emptyUUID;
                         CHECK_ERROR(virtualBox, OpenFloppyImage(Bstr(argv[2]), emptyUUID, floppyImage.asOutParam()));
-                        if (SUCCEEDED(rc) && floppyImage)
-                        {
-                            /* time to register the image */
-                            CHECK_ERROR(virtualBox, RegisterFloppyImage(floppyImage));
-                        }
                     }
                 }
                 if (!floppyImage)
@@ -6523,53 +6401,56 @@ static int handleSnapshot(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleShowVDIInfo(int argc, char *argv[],
-                             ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleShowHardDiskInfo(int argc, char *argv[],
+                                  ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     HRESULT rc;
 
     if (argc != 1)
-        return errorSyntax(USAGE_SHOWVDIINFO, "Incorrect number of parameters");
+        return errorSyntax(USAGE_SHOWHDINFO, "Incorrect number of parameters");
 
-    ComPtr<IHardDisk> hardDisk;
+    ComPtr<IHardDisk2> hardDisk;
     Bstr filepath;
 
-    bool registered = true;
+    bool unknown = false;
 
     /* first guess is that it's a UUID */
     Guid uuid(argv[0]);
-    rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
     /* no? then it must be a filename */
     if (FAILED (rc))
     {
         filepath = argv[0];
-        rc = virtualBox->FindHardDisk(filepath, hardDisk.asOutParam());
-        /* no? well, then it's an unregistered image */
+        rc = virtualBox->FindHardDisk2(filepath, hardDisk.asOutParam());
+        /* no? well, then it's an unkwnown image */
         if (FAILED (rc))
         {
-            registered = false;
-            CHECK_ERROR(virtualBox, OpenHardDisk(filepath, hardDisk.asOutParam()));
+            CHECK_ERROR(virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
+            if (SUCCEEDED (rc))
+            {
+                unknown = true;
+            }
         }
     }
-    if (SUCCEEDED(rc) && hardDisk)
+    do
     {
-        /* query a VDI object (will remain null if it's not VDI) */
-        ComPtr<IVirtualDiskImage> vdi = hardDisk;
+        if (!SUCCEEDED(rc))
+            break;
 
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         RTPrintf("UUID:                 %s\n", uuid.toString().raw());
 
-        RTPrintf("Registered:           %s\n", registered ? "yes" : "no");
-
         /* check for accessibility */
-        BOOL accessible = FALSE;
-        CHECK_ERROR_RET (hardDisk, COMGETTER(Accessible)(&accessible), 1);
-        RTPrintf("Accessible:           %s\n", accessible ? "yes" : "no");
+        /// @todo NEWMEDIA check accessibility of all parents
+        /// @todo NEWMEDIA print the full state value
+        MediaState_T state;
+        CHECK_ERROR_BREAK (hardDisk, COMGETTER(State)(&state));
+        RTPrintf("Accessible:           %s\n", state != MediaState_Inaccessible ? "yes" : "no");
 
-        if (!accessible)
+        if (state == MediaState_Inaccessible)
         {
             Bstr err;
-            CHECK_ERROR_RET (hardDisk, COMGETTER(LastAccessError)(err.asOutParam()), 1);
+            CHECK_ERROR_BREAK (hardDisk, COMGETTER(LastAccessError)(err.asOutParam()));
             RTPrintf("Access Error:         %lS\n", err.raw());
         }
 
@@ -6580,11 +6461,11 @@ static int handleShowVDIInfo(int argc, char *argv[],
             RTPrintf("Description:          %lS\n", description.raw());
         }
 
-        ULONG64 size;
-        hardDisk->COMGETTER(Size)(&size);
-        RTPrintf("Size:                 %llu MBytes\n", size);
+        ULONG64 logicalSize;
+        hardDisk->COMGETTER(LogicalSize)(&logicalSize);
+        RTPrintf("Logical size:         %llu MBytes\n", logicalSize);
         ULONG64 actualSize;
-        hardDisk->COMGETTER(ActualSize)(&actualSize);
+        hardDisk->COMGETTER(Size)(&actualSize);
         RTPrintf("Current size on disk: %llu MBytes\n", actualSize >> 20);
 
         HardDiskType_T type;
@@ -6593,7 +6474,7 @@ static int handleShowVDIInfo(int argc, char *argv[],
         switch (type)
         {
             case HardDiskType_Normal:
-                typeStr = "standard";
+                typeStr = "normal";
                 break;
             case HardDiskType_Immutable:
                 typeStr = "immutable";
@@ -6604,52 +6485,48 @@ static int handleShowVDIInfo(int argc, char *argv[],
         }
         RTPrintf("Type:                 %s\n", typeStr);
 
-        HardDiskStorageType_T storageType;
-        const char *storageTypeStr = "unknown";
-        hardDisk->COMGETTER(StorageType)(&storageType);
-        switch (storageType)
-        {
-            case HardDiskStorageType_VirtualDiskImage:
-                storageTypeStr = "Virtual Disk Image (VDI)";
-                break;
-            case HardDiskStorageType_VMDKImage:
-                storageTypeStr = "VMDK Image";
-                break;
-            case HardDiskStorageType_ISCSIHardDisk:
-                storageTypeStr = "iSCSI target";
-                break;
-            case HardDiskStorageType_VHDImage:
-                storageTypeStr = "VHD Image";
-                break;
-        }
-        RTPrintf("Storage type:         %s\n", storageTypeStr);
+        Bstr format;
+        hardDisk->COMGETTER(Format)(format.asOutParam());
+        RTPrintf("Storage format:       %lS\n", format.raw());
 
-        if (registered)
+        if (!unknown)
         {
-            hardDisk->COMGETTER(MachineId)(uuid.asOutParam());
-            RTPrintf("In use by VM:         %s\n", uuid ? uuid.toString().raw() : "<none>");
+            com::SafeGUIDArray machineIds;
+            hardDisk->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
+            for (size_t j = 0; j < machineIds.size(); ++ j)
+            {
+                ComPtr<IMachine> machine;
+                CHECK_ERROR(virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
+                ASSERT(machine);
+                Bstr name;
+                machine->COMGETTER(Name)(name.asOutParam());
+                machine->COMGETTER(Id)(uuid.asOutParam());
+                RTPrintf("%s%lS (UUID: %Vuuid)\n",
+                         j == 0 ? "In use by VMs:        " : "                      ",
+                         name.raw(), &machineIds[j]);
+            }
+            /// @todo NEWMEDIA check usage in snapshots too
+            /// @todo NEWMEDIA also list children and say 'differencing' for
+            /// hard disks with the parent or 'base' otherwise.
         }
 
-        if (vdi)
-        {
-            /* VDI specific information */
-            vdi->COMGETTER(FilePath)(filepath.asOutParam());
-            RTPrintf("Path:                 %lS\n", filepath.raw());
-
-        }
-        else
-        {
-            /* Generic location information */
-            Bstr loc;
-            hardDisk->COMGETTER(Location)(loc.asOutParam());
-            RTPrintf("Location:             %lS\n", loc.raw());
-        }
+        Bstr loc;
+        hardDisk->COMGETTER(Location)(loc.asOutParam());
+        RTPrintf("Location:             %lS\n", loc.raw());
     }
+    while (0);
+
+    if (unknown)
+    {
+        /* close the unknown hard disk to forget it again */
+        hardDisk->Close();
+    }
+
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleRegisterImage(int argc, char *argv[],
-                               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleOpenMedium(int argc, char *argv[],
+                            ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     HRESULT rc;
 
@@ -6671,12 +6548,12 @@ static int handleRegisterImage(int argc, char *argv[],
             if (   (strcmp(argv[3], "normal") != 0)
                 && (strcmp(argv[3], "immutable") != 0)
                 && (strcmp(argv[3], "writethrough") != 0))
-                return errorArgument("Invalid VDI type '%s' specified", Utf8Str(argv[3]).raw());
+                return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(argv[3]).raw());
             type = argv[3];
         }
 
-        ComPtr<IHardDisk> hardDisk;
-        CHECK_ERROR(virtualBox, OpenHardDisk(filepath, hardDisk.asOutParam()));
+        ComPtr<IHardDisk2> hardDisk;
+        CHECK_ERROR(virtualBox, OpenHardDisk2(filepath, hardDisk.asOutParam()));
         if (SUCCEEDED(rc) && hardDisk)
         {
             /* change the type if requested */
@@ -6689,27 +6566,17 @@ static int handleRegisterImage(int argc, char *argv[],
                 else if (strcmp(type, "writethrough") == 0)
                     CHECK_ERROR(hardDisk, COMSETTER(Type)(HardDiskType_Writethrough));
             }
-            if (SUCCEEDED(rc))
-                CHECK_ERROR(virtualBox, RegisterHardDisk(hardDisk));
         }
     }
     else if (strcmp(argv[0], "dvd") == 0)
     {
-        ComPtr<IDVDImage> dvdImage;
+        ComPtr<IDVDImage2> dvdImage;
         CHECK_ERROR(virtualBox, OpenDVDImage(filepath, Guid(), dvdImage.asOutParam()));
-        if (SUCCEEDED(rc) && dvdImage)
-        {
-            CHECK_ERROR(virtualBox, RegisterDVDImage(dvdImage));
-        }
     }
     else if (strcmp(argv[0], "floppy") == 0)
     {
-        ComPtr<IFloppyImage> floppyImage;
+        ComPtr<IFloppyImage2> floppyImage;
         CHECK_ERROR(virtualBox, OpenFloppyImage(filepath, Guid(), floppyImage.asOutParam()));
-        if (SUCCEEDED(rc) && floppyImage)
-        {
-            CHECK_ERROR(virtualBox, RegisterFloppyImage(floppyImage));
-        }
     }
     else
         return errorSyntax(USAGE_REGISTERIMAGE, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
@@ -6717,8 +6584,8 @@ static int handleRegisterImage(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-static int handleUnregisterImage(int argc, char *argv[],
-                                 ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
+static int handleCloseMedium(int argc, char *argv[],
+                             ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     HRESULT rc;
 
@@ -6730,55 +6597,46 @@ static int handleUnregisterImage(int argc, char *argv[],
 
     if (strcmp(argv[0], "disk") == 0)
     {
-        ComPtr<IHardDisk> hardDisk;
-        rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
+        ComPtr<IHardDisk2> hardDisk;
+        rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!hardDisk)
         {
-            ComPtr<IVirtualDiskImage> vdi;
-            CHECK_ERROR(virtualBox, FindVirtualDiskImage(Bstr(argv[1]), vdi.asOutParam()));
-            hardDisk = vdi;
+            CHECK_ERROR(virtualBox, FindHardDisk2(Bstr(argv[1]), hardDisk.asOutParam()));
         }
         if (SUCCEEDED(rc) && hardDisk)
         {
-            hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR(virtualBox, UnregisterHardDisk(uuid, hardDisk.asOutParam()));
+            CHECK_ERROR(hardDisk, Close());
         }
     }
     else
     if (strcmp(argv[0], "dvd") == 0)
     {
-        ComPtr<IDVDImage> dvdImage;
+        ComPtr<IDVDImage2> dvdImage;
         rc = virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!dvdImage)
         {
-            ComPtr<IDVDImageCollection> dvdColl;
-            virtualBox->COMGETTER(DVDImages)(dvdColl.asOutParam());
-            CHECK_ERROR(dvdColl, FindByPath(Bstr(argv[1]), dvdImage.asOutParam()));
+            CHECK_ERROR(virtualBox, FindDVDImage(Bstr(argv[1]), dvdImage.asOutParam()));
         }
         if (SUCCEEDED(rc) && dvdImage)
         {
-            dvdImage->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR(virtualBox, UnregisterDVDImage(uuid, dvdImage.asOutParam()));
+            CHECK_ERROR(dvdImage, Close());
         }
     }
     else
     if (strcmp(argv[0], "floppy") == 0)
     {
-        ComPtr<IFloppyImage> floppyImage;
+        ComPtr<IFloppyImage2> floppyImage;
         rc = virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
         /* not a UUID or not registered? Then it must be a filename */
         if (!floppyImage)
         {
-            ComPtr<IFloppyImageCollection> floppyColl;
-            virtualBox->COMGETTER(FloppyImages)(floppyColl.asOutParam());
-            CHECK_ERROR(floppyColl, FindByPath(Bstr(argv[1]), floppyImage.asOutParam()));
+            CHECK_ERROR(virtualBox, FindFloppyImage(Bstr(argv[1]), floppyImage.asOutParam()));
         }
         if (SUCCEEDED(rc) && floppyImage)
         {
-            floppyImage->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR(virtualBox, UnregisterFloppyImage(uuid, floppyImage.asOutParam()));
+            CHECK_ERROR(floppyImage, Close());
         }
     }
     else
@@ -7007,13 +6865,13 @@ static int handleSetProperty(int argc, char *argv[],
     ComPtr<ISystemProperties> systemProperties;
     virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
 
-    if (strcmp(argv[0], "vdifolder") == 0)
+    if (strcmp(argv[0], "hdfolder") == 0)
     {
         /* reset to default? */
         if (strcmp(argv[1], "default") == 0)
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultVDIFolder)(NULL));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultVDIFolder)(Bstr(argv[1])));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(Bstr(argv[1])));
     }
     else if (strcmp(argv[0], "machinefolder") == 0)
     {
@@ -8521,20 +8379,26 @@ int main(int argc, char *argv[])
         { "showvminfo",       handleShowVMInfo },
         { "registervm",       handleRegisterVM },
         { "unregistervm",     handleUnregisterVM },
-        { "createvdi",        handleCreateVDI },
-        { "modifyvdi",        handleModifyVDI },
+        { "createhd",         handleCreateHardDisk },
+        { "createvdi",        handleCreateHardDisk }, /* backward compatiblity */
+        { "modifyhd",         handleModifyHardDisk },
+        { "modifyvdi",        handleModifyHardDisk }, /* backward compatiblity */
         { "addiscsidisk",     handleAddiSCSIDisk },
         { "createvm",         handleCreateVM },
         { "modifyvm",         handleModifyVM },
-        { "clonevdi",         handleCloneVDI },
+        { "clonehd",          handleCloneHardDisk },
+        { "clonevdi",         handleCloneHardDisk }, /* backward compatiblity */
         { "startvm",          handleStartVM },
         { "controlvm",        handleControlVM },
         { "discardstate",     handleDiscardState },
         { "adoptstate",       handleAdoptdState },
         { "snapshot",         handleSnapshot },
-        { "registerimage",    handleRegisterImage },
-        { "unregisterimage",  handleUnregisterImage },
-        { "showvdiinfo",      handleShowVDIInfo },
+        { "openmedium",       handleOpenMedium },
+        { "registerimage",    handleOpenMedium }, /* backward compatiblity */
+        { "closemedium",      handleCloseMedium },
+        { "unregisterimage",  handleCloseMedium }, /* backward compatiblity */
+        { "showhdinfo",       handleShowHardDiskInfo },
+        { "showvdiinfo",      handleShowHardDiskInfo }, /* backward compatiblity */
 #ifdef RT_OS_WINDOWS
         { "createhostif",     handleCreateHostIF },
         { "removehostif",     handleRemoveHostIF },

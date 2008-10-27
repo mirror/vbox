@@ -53,11 +53,16 @@ public:
 
     void addTopBottomMarginToItems (int aMargin);
 
+signals:
+
+    void resized (const QSize &aSize, const QSize &aOldSize);
+
 protected:
 
     virtual Qt::DropActions supportedDropActions () const;
 
     void paintEvent (QPaintEvent *);
+    void resizeEvent (QResizeEvent *);
 
     /* Protected member vars */
     Qt::DropActions mSupportedDropActions;

@@ -48,7 +48,7 @@ private slots:
     void revalidate (QIWidgetValidator *aWval);
     void mediaTypeChanged();
     void mediaSourceChanged();
-    void openVdm();
+    void openMediaManager();
     void enableNext (const QIWidgetValidator *aWval);
     void onPageShow();
 

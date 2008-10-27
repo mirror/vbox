@@ -118,7 +118,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page.&lt;/p></string>
+              <string>&lt;p>This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p>&lt;p>Use the &lt;b>Next&lt;/b> button to go to the next page of the wizard and the &lt;b>Back&lt;/b> button to return to the previous page.&lt;/p></string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -224,7 +224,7 @@
           </font>
          </property>
          <property name="text" >
-          <string>Virtual Disk Image Type</string>
+          <string>Hard Disk Storage Type</string>
          </property>
         </widget>
        </item>
@@ -282,7 +282,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>Select the type of virtual hard disk image you want to create.&lt;/p>&lt;p>A &lt;b>dynamically expanding image&lt;/b> initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p>&lt;p>A &lt;b>fixed-size image&lt;/b> does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p></string>
+              <string>&lt;p>Select the type of virtual hard disk you want to create.&lt;/p>&lt;p>A &lt;b>dynamically expanding storage&lt;/b> initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p>&lt;p>A &lt;b>fixed-size storage&lt;/b> does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p></string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -301,7 +301,7 @@
               </sizepolicy>
              </property>
              <property name="title" >
-              <string>Image Type</string>
+              <string>Storage Type</string>
              </property>
              <layout class="QVBoxLayout" >
               <property name="topMargin" >
@@ -316,7 +316,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text" >
-                 <string>&amp;Dynamically expanding image</string>
+                 <string>&amp;Dynamically expanding storage</string>
                 </property>
                 <property name="checked" >
                  <bool>true</bool>
@@ -332,7 +332,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text" >
-                 <string>&amp;Fixed-size image</string>
+                 <string>&amp;Fixed-size storage</string>
                 </property>
                </widget>
               </item>
@@ -490,7 +490,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>Press the &lt;b>Select&lt;/b> button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p></string>
+              <string>&lt;p>Press the &lt;b>Select&lt;/b> button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p></string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -509,7 +509,7 @@
               </sizepolicy>
              </property>
              <property name="title" >
-              <string>&amp;Image File Name</string>
+              <string>&amp;Location</string>
              </property>
              <layout class="QHBoxLayout" >
               <property name="topMargin" >
@@ -546,7 +546,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;p>Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p></string>
+              <string>&lt;p>Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p></string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -565,7 +565,7 @@
               </sizepolicy>
              </property>
              <property name="title" >
-              <string>Image &amp;Size</string>
+              <string>&amp;Size</string>
              </property>
              <layout class="QGridLayout" >
               <item row="0" column="0" colspan="3" >
@@ -796,7 +796,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>You are going to create a new virtual hard disk image with the following parameters:</string>
+              <string>You are going to create a new virtual hard disk with the following parameters:</string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -846,7 +846,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>If the above settings are correct, press the &lt;b>Finish&lt;/b> button. Once you press it, a new hard disk image will be created.</string>
+              <string>If the above settings are correct, press the &lt;b>Finish&lt;/b> button. Once you press it, a new hard disk will be created.</string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

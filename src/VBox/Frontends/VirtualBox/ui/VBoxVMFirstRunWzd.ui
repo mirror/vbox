@@ -5,7 +5,7 @@
 :mode=html:tabSize=4:indentSize=4:noTabs=true:
 :folding=explicit:collapseFolds=1:
 
-     Copyright (C) 2007 Sun Microsystems, Inc.
+     Copyright (C) 2007-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -646,7 +646,7 @@
         <sender>tbVdm</sender>
         <signal>clicked()</signal>
         <receiver>VBoxVMFirstRunWzd</receiver>
-        <slot>openVdm()</slot>
+        <slot>openMediaManager()</slot>
     </connection>
 </connections>
 <includes>
@@ -656,7 +656,7 @@
     <include location="local" impldecl="in declaration">VBoxUtils.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
     <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
-    <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+    <include location="local" impldecl="in implementation">VBoxMediaManagerDlg.h</include>
 </includes>
 <forwards>
     <forward>class VBoxMediaComboBox</forward>
@@ -675,7 +675,7 @@
     <slot>revalidate( QIWidgetValidator* )</slot>
     <slot>mediaTypeChanged()</slot>
     <slot>mediaSourceChanged()</slot>
-    <slot>openVdm()</slot>
+    <slot>openMediaManager()</slot>
 </slots>
 <functions>
     <function access="private">init()</function>

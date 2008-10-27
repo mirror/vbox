@@ -99,9 +99,9 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     /* Setup handlers */
     connect (mInfoStack, SIGNAL (currentChanged (int)),
              this, SLOT (onPageChanged (int)));
-    connect (&vboxGlobal(), SIGNAL (mediaEnumFinished (const VBoxMediaList &)),
+    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)),
              this, SLOT (updateDetails()));
-    connect (mConsole, SIGNAL (mediaChanged (VBoxDefs::DiskType)),
+    connect (mConsole, SIGNAL (mediumChanged (VBoxDefs::MediaType)),
              this, SLOT (updateDetails()));
     connect (mConsole, SIGNAL (sharedFoldersChanged()),
              this, SLOT (updateDetails()));
@@ -327,8 +327,8 @@ void VBoxVMInformationDlg::updateDetails()
 {
     /* Details page update */
     mDetailsText->setText (
-        vboxGlobal().detailsReport (mSession.GetMachine(), false /* isNewVM */,
-                                    false /* withLinks */, false /* refresh */));
+        vboxGlobal().detailsReport (mSession.GetMachine(), false /* aIsNewVM */,
+                                    false /* aWithLinks */));
 }
 
 void VBoxVMInformationDlg::processStatistics()
@@ -465,21 +465,21 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disk Statistics"));
 
         /* IDE Hard Disk (Primary Master) */
-        if (!m.GetHardDisk (KStorageBus_IDE, 0, 0).isNull())
+        if (!m.GetHardDisk2 (KStorageBus_IDE, 0, 0).isNull())
         {
             hdStat += formatHardDisk (KStorageBus_IDE, 0, 0, "IDE00");
             hdStat += paragraph;
         }
 
         /* IDE Hard Disk (Primary Slave) */
-        if (!m.GetHardDisk (KStorageBus_IDE, 0, 1).isNull())
+        if (!m.GetHardDisk2 (KStorageBus_IDE, 0, 1).isNull())
         {
             hdStat += formatHardDisk (KStorageBus_IDE, 0, 1, "IDE01");
             hdStat += paragraph;
         }
 
         /* IDE Hard Disk (Secondary Slave) */
-        if (!m.GetHardDisk (KStorageBus_IDE, 1, 1).isNull())
+        if (!m.GetHardDisk2 (KStorageBus_IDE, 1, 1).isNull())
         {
             hdStat += formatHardDisk (KStorageBus_IDE, 1, 1, "IDE11");
             hdStat += paragraph;
@@ -488,7 +488,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         /* SATA Hard Disks */
         for (int i = 0; i < 30; ++ i)
         {
-            if (!m.GetHardDisk (KStorageBus_SATA, i, 0).isNull())
+            if (!m.GetHardDisk2 (KStorageBus_SATA, i, 0).isNull())
             {
                 hdStat += formatHardDisk (KStorageBus_SATA, i, 0,
                                           QString ("SATA%1").arg (i));
@@ -572,7 +572,7 @@ QString VBoxVMInformationDlg::formatHardDisk (KStorageBus aBus,
     if (mSession.isNull())
         return QString::null;
 
-    CHardDisk hd = mSession.GetMachine().GetHardDisk (aBus, aChannel, aDevice);
+    CHardDisk2 hd = mSession.GetMachine().GetHardDisk2 (aBus, aChannel, aDevice);
     QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
     QString name = vboxGlobal().toFullString (aBus, aChannel, aDevice);
     QString result = hd.isNull() ? QString::null : header.arg (name);

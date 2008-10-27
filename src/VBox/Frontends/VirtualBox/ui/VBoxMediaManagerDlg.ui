@@ -1,5 +1,5 @@
 <!DOCTYPE UI><UI version="3.3" stdsetdef="1">
-<class>VBoxDiskImageManagerDlg</class>
+<class>VBoxMediaManagerDlg</class>
 <comment>
 :mode=html:tabSize=4:indentSize=4:noTabs=true:
 :folding=explicit:collapseFolds=1:
@@ -20,7 +20,7 @@
 </comment>
 <widget class="QMainWindow">
     <property name="name">
-        <cstring>VBoxDiskImageManagerDlg</cstring>
+        <cstring>VBoxMediaManagerDlg</cstring>
     </property>
     <property name="geometry">
         <rect>
@@ -37,7 +37,7 @@
         </size>
     </property>
     <property name="caption">
-        <string>Virtual Disk Manager</string>
+        <string>Virtual Media Manager</string>
     </property>
     <vbox>
         <property name="name">
@@ -62,7 +62,7 @@
                 </property>
                 <widget class="QTabWidget">
                     <property name="name">
-                        <cstring>twImages</cstring>
+                        <cstring>mMediaTabs</cstring>
                     </property>
                     <property name="sizePolicy">
                         <sizepolicy>
@@ -97,7 +97,7 @@
                                 </column>
                                 <column>
                                     <property name="text">
-                                        <string>Virtual Size</string>
+                                        <string>Logical Size</string>
                                     </property>
                                     <property name="clickable">
                                         <bool>true</bool>
@@ -118,7 +118,7 @@
                                     </property>
                                 </column>
                                 <property name="name">
-                                    <cstring>hdsView</cstring>
+                                    <cstring>mHardDiskView</cstring>
                                 </property>
                                 <property name="acceptDrops">
                                     <bool>true</bool>
@@ -144,7 +144,7 @@
                             </widget>
                             <widget class="QFrame">
                                 <property name="name">
-                                    <cstring>hdsContainer</cstring>
+                                    <cstring>mHDInfoPane</cstring>
                                 </property>
                                 <property name="frameShape">
                                     <enum>Box</enum>
@@ -190,7 +190,7 @@
                                     </property>
                                 </column>
                                 <property name="name">
-                                    <cstring>cdsView</cstring>
+                                    <cstring>mDVDView</cstring>
                                 </property>
                                 <property name="acceptDrops">
                                     <bool>true</bool>
@@ -216,7 +216,7 @@
                             </widget>
                             <widget class="QFrame">
                                 <property name="name">
-                                    <cstring>cdsContainer</cstring>
+                                    <cstring>mDVDInfoPane</cstring>
                                 </property>
                                 <property name="frameShape">
                                     <enum>Box</enum>
@@ -262,7 +262,7 @@
                                     </property>
                                 </column>
                                 <property name="name">
-                                    <cstring>fdsView</cstring>
+                                    <cstring>mFloppyView</cstring>
                                 </property>
                                 <property name="acceptDrops">
                                     <bool>true</bool>
@@ -288,7 +288,7 @@
                             </widget>
                             <widget class="QFrame">
                                 <property name="name">
-                                    <cstring>fdsContainer</cstring>
+                                    <cstring>mFloppyInfoPane</cstring>
                                 </property>
                                 <property name="frameShape">
                                     <enum>Box</enum>
@@ -402,91 +402,91 @@
     <connection>
         <sender>buttonOk</sender>
         <signal>clicked()</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>accept()</slot>
     </connection>
     <connection>
         <sender>buttonCancel</sender>
         <signal>clicked()</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>reject()</slot>
     </connection>
     <connection>
-        <sender>hdsView</sender>
+        <sender>mHardDiskView</sender>
         <signal>currentChanged(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processCurrentChanged(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>cdsView</sender>
+        <sender>mDVDView</sender>
         <signal>currentChanged(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processCurrentChanged(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>fdsView</sender>
+        <sender>mFloppyView</sender>
         <signal>currentChanged(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processCurrentChanged(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>hdsView</sender>
+        <sender>mHardDiskView</sender>
         <signal>pressed(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processPressed(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>cdsView</sender>
+        <sender>mDVDView</sender>
         <signal>pressed(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processPressed(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>fdsView</sender>
+        <sender>mFloppyView</sender>
         <signal>pressed(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processPressed(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>hdsView</sender>
+        <sender>mHardDiskView</sender>
         <signal>doubleClicked(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processDoubleClick(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>cdsView</sender>
+        <sender>mDVDView</sender>
         <signal>doubleClicked(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processDoubleClick(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>fdsView</sender>
+        <sender>mFloppyView</sender>
         <signal>doubleClicked(QListViewItem*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processDoubleClick(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>hdsView</sender>
+        <sender>mHardDiskView</sender>
         <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>invokePopup(QListViewItem*,const QPoint&amp;,int)</slot>
     </connection>
     <connection>
-        <sender>cdsView</sender>
+        <sender>mDVDView</sender>
         <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>invokePopup(QListViewItem*,const QPoint&amp;,int)</slot>
     </connection>
     <connection>
-        <sender>fdsView</sender>
+        <sender>mFloppyView</sender>
         <signal>contextMenuRequested(QListViewItem*,const QPoint&amp;,int)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>invokePopup(QListViewItem*,const QPoint&amp;,int)</slot>
     </connection>
     <connection>
-        <sender>twImages</sender>
+        <sender>mMediaTabs</sender>
         <signal>currentChanged(QWidget*)</signal>
-        <receiver>VBoxDiskImageManagerDlg</receiver>
+        <receiver>VBoxMediaManagerDlg</receiver>
         <slot>processCurrentChanged()</slot>
     </connection>
     <connection>
@@ -521,7 +521,7 @@
     <include location="local" impldecl="in implementation">QIRichLabel.h</include>
 </includes>
 <forwards>
-    <forward>class DiskImageItem</forward>
+    <forward>class MediaItem</forward>
     <forward>class VBoxToolBar</forward>
     <forward>class QSizeGrip</forward>
     <forward>class InfoPaneLabel</forward>
@@ -529,63 +529,63 @@
 </forwards>
 <variables>
     <variable access="public">enum ResultCode { Rejected, Accepted };</variable>
-    <variable access="private">bool polished;</variable>
-    <variable access="private">CVirtualBox vbox;</variable>
-    <variable access="private">int type;</variable>
-    <variable access="private">bool doSelect;</variable>
-    <variable access="private">QUuid targetVMId;</variable>
-    <variable access="private">QPixmap pxInaccessible;</variable>
-    <variable access="private">QPixmap pxErroneous;</variable>
-    <variable access="private">QIconSet pxHD;</variable>
-    <variable access="private">QIconSet pxCD;</variable>
-    <variable access="private">QIconSet pxFD;</variable>
-    <variable access="private">CMachine cmachine;</variable>
-    <variable access="private">QPopupMenu *itemMenu;</variable>
-    <variable access="private">VBoxToolBar *toolBar;</variable>
+    <variable access="public">enum ItemAction { ItemAction_Added, ItemAction_Updated, ItemAction_Removed };</variable>
+    <variable access="public">enum Action { Action_Select, Action_Edit, Action_Remove, Action_Release };</variable>
+    <variable access="private">bool mIsPolished;</variable>
+    <variable access="private">CVirtualBox mVBox;</variable>
+    <variable access="private">int mType;</variable>
+    <variable access="private">bool mDoSelect;</variable>
+    <variable access="private">CMachine mSessionMachine;</variable>
+    <variable access="private">QUuid mSessionMachineId;</variable>
+    <variable access="private">QIconSet mHardDiskIconSet;</variable>
+    <variable access="private">QIconSet mDVDImageIconSet;</variable>
+    <variable access="private">QIconSet mFloppyImageIconSet;</variable>
+    <variable access="private">bool mHardDisksInaccessible;</variable>
+    <variable access="private">bool mDVDImagesInaccessible;</variable>
+    <variable access="private">bool mFloppyImagesInaccessible;</variable>
+    <variable access="private">QPopupMenu *mItemMenu;</variable>
+    <variable access="private">VBoxToolBar *mToolBar;</variable>
     <variable access="private">int mRescode;</variable>
     <variable access="private">bool mInLoop;</variable>
-    <variable access="private">QAction *imNewAction;</variable>
-    <variable access="private">QAction *imAddAction;</variable>
-    <variable access="private">QAction *imEditAction;</variable>
-    <variable access="private">QAction *imRemoveAction;</variable>
-    <variable access="private">QAction *imReleaseAction;</variable>
-    <variable access="private">QAction *imRefreshAction;</variable>
-    <variable access="private">InfoPaneLabel *hdsPane1;</variable>
-    <variable access="private">InfoPaneLabel *hdsPane2;</variable>
-    <variable access="private">InfoPaneLabel *hdsPane3;</variable>
-    <variable access="private">InfoPaneLabel *hdsPane4;</variable>
-    <variable access="private">InfoPaneLabel *hdsPane5;</variable>
-    <variable access="private">InfoPaneLabel *hdsPane6;</variable>
-    <variable access="private">InfoPaneLabel *hdsPane7;</variable>
-    <variable access="private">InfoPaneLabel *cdsPane1;</variable>
-    <variable access="private">InfoPaneLabel *cdsPane2;</variable>
-    <variable access="private">InfoPaneLabel *fdsPane1;</variable>
-    <variable access="private">InfoPaneLabel *fdsPane2;</variable>
+    <variable access="private">QAction *mNewAction;</variable>
+    <variable access="private">QAction *mAddAction;</variable>
+    <variable access="private">QAction *mEditAction;</variable>
+    <variable access="private">QAction *mRemoveAction;</variable>
+    <variable access="private">QAction *mReleaseAction;</variable>
+    <variable access="private">QAction *mRefreshAction;</variable>
+    <variable access="private">InfoPaneLabel *mHDLocationLabel;</variable>
+    <variable access="private">InfoPaneLabel *mHDTypeLabel;</variable>
+    <variable access="private">InfoPaneLabel *mHDUsageLabel;</variable>
+    <variable access="private">InfoPaneLabel *mDVDLocationLabel;</variable>
+    <variable access="private">InfoPaneLabel *mDVDUsageLabel;</variable>
+    <variable access="private">InfoPaneLabel *mFloppyLocationLabel;</variable>
+    <variable access="private">InfoPaneLabel *mFloppyUsageLabel;</variable>
     <variable>QSizeGrip *sizeGrip;</variable>
     <variable>QPushButton *defaultButton;</variable>
-    <variable access="private">static VBoxDiskImageManagerDlg *mModelessDialog;</variable>
+    <variable access="private">static VBoxMediaManagerDlg *mModelessDialog;</variable>
     <variable access="private">QProgressBar *mProgressBar;</variable>
     <variable access="private">QLabel *mProgressText;</variable>
-    <variable access="private">QUuid hdSelectedId;</variable>
-    <variable access="private">QUuid cdSelectedId;</variable>
-    <variable access="private">QUuid fdSelectedId;</variable>
+    <variable access="private">QUuid mHDSelectedId;</variable>
+    <variable access="private">QUuid mDVDSelectedId;</variable>
+    <variable access="private">QUuid mFloppySelectedId;</variable>
+    <variable access="private">bool mShowDiffs : 1;</variable>
 </variables>
 <slots>
     <slot access="protected">mediaEnumStarted()</slot>
-    <slot access="protected">mediaEnumerated( const VBoxMedia &amp;, int )</slot>
+    <slot access="protected">mediumEnumerated( const VBoxMedium &amp;, int )</slot>
     <slot access="protected">mediaEnumFinished( const VBoxMediaList &amp; )</slot>
-    <slot access="protected">mediaAdded( const VBoxMedia &amp; )</slot>
-    <slot access="protected">mediaUpdated( const VBoxMedia &amp; )</slot>
-    <slot access="protected">mediaRemoved( VBoxDefs::DiskType, const QUuid &amp; )</slot>
+    <slot access="protected">mediumAdded( const VBoxMedium &amp; )</slot>
+    <slot access="protected">mediumUpdated( const VBoxMedium &amp; )</slot>
+    <slot access="protected">mediumRemoved( VBoxDefs::MediaType, const QUuid &amp; )</slot>
     <slot access="protected">machineStateChanged( const VBoxMachineStateChangeEvent &amp; )</slot>
     <slot>refreshAll()</slot>
     <slot access="protected">processCurrentChanged( QListViewItem * item )</slot>
     <slot access="protected">processPressed( QListViewItem * item )</slot>
-    <slot access="protected">newImage()</slot>
-    <slot access="protected">addImage()</slot>
-    <slot access="protected">removeImage()</slot>
+    <slot access="protected">doNewMedium()</slot>
+    <slot access="protected">doAddMedium()</slot>
+    <slot access="protected">doRemoveMedium()</slot>
+    <slot access="protected">doReleaseMedium()</slot>
     <slot access="protected">processDoubleClick( QListViewItem * item )</slot>
-    <slot access="protected">releaseImage()</slot>
     <slot access="protected">invokePopup( QListViewItem * item, const QPoint &amp; pos, int col )</slot>
     <slot access="protected">processCurrentChanged()</slot>
     <slot access="protected">accept()</slot>
@@ -598,45 +598,33 @@
     <function access="private">setResult( int )</function>
     <function returnType="int">exec()</function>
     <function access="private">done( int )</function>
-    <function access="private" returnType="DiskImageItem*">searchItem( QListView*, const QUuid &amp; )</function>
-    <function access="private" returnType="DiskImageItem*">searchItem( QListView*, VBoxMedia::Status )</function>
-    <function specifier="static" access="private" returnType="QString">getDVDImageUsage( const QUuid &amp; aId, QString &amp; aSnapshotUsage )</function>
-    <function specifier="static" access="private" returnType="QString">getFloppyImageUsage( const QUuid &amp; aId, QString &amp; aSnapshotUsage )</function>
-    <function specifier="static" access="private">getDVDImageSnapshotUsage( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
-    <function specifier="static" access="private">getFloppyImageSnapshotUsage( const QUuid &amp; aImageId, const CSnapshot &amp; aSnapshot, QString &amp; aUsage )</function>
-    <function access="private" returnType="bool">checkImage( DiskImageItem* item )</function>
-    <function access="private">releaseDisk( QUuid machineId, QUuid itemId, VBoxDefs::DiskType diskType )</function>
-    <function returnType="QUuid">getSelectedUuid()</function>
-    <function returnType="QString">getSelectedPath()</function>
-    <function>setup( int aType, bool aDoSelect, const QUuid *aTargetVMId = NULL, bool aRefresh = true, CMachine machine = NULL, const QUuid &amp; aHdId = QUuid(), const QUuid &amp; aCdId = QUuid(), const QUuid &amp; aFdId = QUuid() )</function>
-    <function access="private" returnType="QListView*">getCurrentListView()</function>
-    <function access="private" returnType="QListView*">getListView( VBoxDefs::DiskType )</function>
+    <function access="private" returnType="MediaItem *">findMediaItem( QListView *, const QUuid &amp; )</function>
+    <function access="private" returnType="bool">checkMediumFor( MediaItem *aItem, Action )</function>
+    <function access="private" returnType="bool">releaseMediumFrom( const VBoxMedium &amp;, const QUuid &amp; )</function>
+    <function returnType="QUuid">selectedId()</function>
+    <function returnType="QString">selectedLocation()</function>
+    <function>setup( VBoxDefs::MediaType, bool, bool = true, const CMachine &amp; = CMachine(), const QUuid &amp; = QUuid(), bool = false )</function>
+    <function access="private" returnType="QListView *">currentListView()</function>
+    <function access="private" returnType="QListView *">listView( VBoxDefs::MediaType )</function>
     <function returnType="bool">eventFilter( QObject *, QEvent * )</function>
     <function access="private">addDroppedImages( QStringList* )</function>
-    <function access="private">addImageToList( const QString &amp; aSource, VBoxDefs::DiskType aDiskType )</function>
-    <function access="private" returnType="DiskImageItem*">createImageNode( QListView *aList, DiskImageItem *aRoot, const VBoxMedia &amp; )</function>
-    <function access="private">updateHdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
-    <function access="private">updateCdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
-    <function access="private">updateFdItem( DiskImageItem*, const VBoxMedia &amp; )</function>
-    <function access="private" returnType="DiskImageItem*">createHdItem( QListView*, const VBoxMedia &amp; )</function>
-    <function access="private" returnType="DiskImageItem*">createCdItem( QListView*, const VBoxMedia &amp; )</function>
-    <function access="private" returnType="DiskImageItem*">createFdItem( QListView*, const VBoxMedia &amp; )</function>
+    <function access="private">addMediumToList( const QString &amp; aLocation, VBoxDefs::MediaType aType )</function>
+    <function access="private" returnType="MediaItem *">createHardDiskItem( QListView *, const VBoxMedium &amp; )</function>
     <function access="protected" returnType="bool">event( QEvent* )</function>
     <function access="protected">showEvent( QShowEvent * )</function>
     <function access="protected">resizeEvent( QResizeEvent* )</function>
     <function access="protected">keyPressEvent( QKeyEvent* )</function>
     <function access="protected">closeEvent( QCloseEvent* )</function>
     <function access="protected">createInfoString( InfoPaneLabel *&amp;, QWidget*, int, int )</function>
-    <function access="protected" returnType="QPushButton*">searchDefaultButton()</function>
+    <function access="protected" returnType="QPushButton *">searchDefaultButton()</function>
     <function access="protected">setCurrentItem( QListView*, QListViewItem* )</function>
     <function specifier="static"> showModeless( bool aRefresh = true )</function>
-    <function specifier="static" returnType="QString">composeHdToolTip( CHardDisk &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
-    <function specifier="static" returnType="QString">composeCdToolTip( CDVDImage &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
-    <function specifier="static" returnType="QString">composeFdToolTip( CFloppyImage &amp;, VBoxMedia::Status = VBoxMedia::Ok, DiskImageItem *aItem = NULL )</function>
     <function access="protected">clearInfoPanes()</function>
     <function access="protected">prepareToRefresh( int aTotal = 0 )</function>
-    <function access="protected">makeWarningMark( DiskImageItem*, VBoxMedia::Status, VBoxDefs::DiskType )</function>
+    <function access="protected">updateTabIcons( MediaItem *, ItemAction )</function>
     <function access="pritave">languageChangeImp()</function>
+    <function returnType="bool">inAttachMode() { return !mSessionMachine.isNull(); }</function>
+    <function returnType="bool">showDiffs() { return mShowDiffs; }</function>
 </functions>
 <layoutdefaults spacing="10" margin="10"/>
 </UI>

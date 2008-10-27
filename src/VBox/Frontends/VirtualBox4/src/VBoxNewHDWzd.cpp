@@ -23,6 +23,7 @@
 #include "VBoxNewHDWzd.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "iprt/path.h"
 
 /* Qt includes */
 #include <QFileDialog>
@@ -35,28 +36,33 @@ static const quint64 MinVDISize = 4;
 static const quint64 InitialVDISize = 2 * _1K;
 
 /**
- *  Composes a file name from the given relative or full file name
- *  based on the home directory and the default VDI directory.
+ * Composes a file name from the given relative or full file name based on the
+ * home directory and the default VDI directory. See IMedum::location for
+ * details.
  */
-static QString composeFullFileName (const QString file)
+static QString composeFullFileName (const QString &aName)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QString homeFolder = vbox.GetHomeFolder();
-    QString defaultFolder = vbox.GetSystemProperties().GetDefaultVDIFolder();
+    QString defaultFolder = vbox.GetSystemProperties().GetDefaultHardDiskFolder();
 
-    QFileInfo fi = QFileInfo (file);
-    if (fi.fileName() == file)
+    /* Note: the logic below must match the logic of the IMedum::location
+     * setter, otherwise the returned path may differ from the path actually
+     * set for the hard disk by the VirtualBox API */
+
+    QFileInfo fi (aName);
+    if (fi.fileName() == aName)
     {
         /* no path info at all, use defaultFolder */
-        fi = QFileInfo (defaultFolder, file);
+        fi = QFileInfo (defaultFolder, aName);
     }
     else if (fi.isRelative())
     {
         /* resolve relatively to homeFolder */
-        fi = QFileInfo (homeFolder, file);
+        fi = QFileInfo (homeFolder, aName);
     }
 
-    return QDir::convertSeparators (fi.absoluteFilePath());
+    return QDir::toNativeSeparators (fi.absoluteFilePath());
 }
 
 static inline int log2i (quint64 val)
@@ -90,6 +96,9 @@ static inline quint64 sliderToSizeMB (int val, int aSliderScale)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
 VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
     : QIWithRetranslateUI<QIAbstractWizard> (aParent)
 {
@@ -99,7 +108,7 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
     /* Initialize wizard hdr */
     initializeWizardHdr();
 
-    /* Image type page */
+    /* Storage type page */
 
     /* Name and Size page */
     CSystemProperties sysProps = vboxGlobal().virtualBox().GetSystemProperties();
@@ -121,13 +130,13 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
     mLeName->setValidator (new QRegExpValidator (QRegExp( ".+" ), this));
     mLeSize->setValidator (new QRegExpValidator (QRegExp(vboxGlobal().sizeRegexp()), this));
     mLeSize->setAlignment (Qt::AlignRight);
-    mWvalNameAndSize = new QIWidgetValidator (mPageNameAndSize, this);
-    connect (mWvalNameAndSize, SIGNAL (validityChanged (const QIWidgetValidator *)),
+    mWValNameAndSize = new QIWidgetValidator (mPageNameAndSize, this);
+    connect (mWValNameAndSize, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableNext (const QIWidgetValidator *)));
-    connect (mWvalNameAndSize, SIGNAL (isValidRequested (QIWidgetValidator *)),
+    connect (mWValNameAndSize, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
     connect (mLeSize, SIGNAL (textChanged (const QString &)),
-             mWvalNameAndSize, SLOT (revalidate()));
+             mWValNameAndSize, SLOT (revalidate()));
     connect (mTbNameSelect, SIGNAL (clicked()), this, SLOT (tbNameSelectClicked()));
     connect (mSlSize, SIGNAL (valueChanged (int)), this, SLOT (slSizeValueChanged (int)));
     connect (mLeSize, SIGNAL (textChanged (const QString&)),
@@ -135,10 +144,10 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
 
     /* Summary page */
 
-
     /* Image type page */
 
     /* Name and Size page */
+    /// @todo NEWMEDIA use extension as reported by CHardDiskFormat
     static ulong HDNumber = 0;
     mLeName->setText (QString ("NewHardDisk%1.vdi").arg (++ HDNumber));
     mSlSize->setFocusPolicy (Qt::StrongFocus);
@@ -156,7 +165,7 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
     /* Summary page */
     /* Update the next button state for pages with validation
      * (validityChanged() connected to enableNext() will do the job) */
-    mWvalNameAndSize->revalidate();
+    mWValNameAndSize->revalidate();
 
     /* Initialize wizard ftr */
     initializeWizardFtr();
@@ -191,7 +200,7 @@ void VBoxNewHDWzd::retranslateUi()
                                                    : mRbFixedType->text();
         type = VBoxGlobal::removeAccelMark (type);
 
-        quint64 sizeB = imageSize() * _1M;
+        quint64 sizeB = mCurrentSize * _1M;
 
         /* compose summary */
         QString summary = QString (
@@ -202,7 +211,7 @@ void VBoxNewHDWzd::retranslateUi()
             "</table>"
         )
             .arg (tr ("Type", "summary")).arg (type)
-            .arg (tr ("Location", "summary")).arg (composeFullFileName (imageFileName()))
+            .arg (tr ("Location", "summary")).arg (composeFullFileName (location()))
             .arg (tr ("Size", "summary")).arg (VBoxGlobal::formatSize (sizeB))
             .arg (sizeB).arg (tr ("Bytes", "summary"));
 
@@ -253,7 +262,7 @@ void VBoxNewHDWzd::tbNameSelectClicked()
     if (!fld.exists())
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        fld = QFileInfo (vbox.GetSystemProperties().GetDefaultVDIFolder());
+        fld = QFileInfo (vbox.GetSystemProperties().GetDefaultHardDiskFolder());
         if (!fld.exists())
             fld = vbox.GetHomeFolder();
     }
@@ -268,7 +277,7 @@ void VBoxNewHDWzd::tbNameSelectClicked()
     {
         if (QFileInfo (selected).completeSuffix().isEmpty())
             selected += ".vdi";
-        mLeName->setText (QDir::convertSeparators (selected));
+        mLeName->setText (QDir::toNativeSeparators (selected));
         mLeName->selectAll();
         mLeName->setFocus();
     }
@@ -279,7 +288,7 @@ void VBoxNewHDWzd::revalidate (QIWidgetValidator *aWval)
     /* do individual validations for pages */
     bool valid = aWval->isOtherValid();
 
-    if (aWval == mWvalNameAndSize)
+    if (aWval == mWValNameAndSize)
         valid = mCurrentSize >= MinVDISize && mCurrentSize <= mMaxVDISize;
 
     aWval->setOtherValid (valid);
@@ -317,9 +326,9 @@ void VBoxNewHDWzd::showNextPage()
 {
     /* Warn user about already present hard-disk */
     if (sender() == mBtnNext3 &&
-        QFileInfo (imageFileName()).exists())
+        QFileInfo (location()).exists())
     {
-        vboxProblem().sayCannotOverwriteHardDiskImage (this, imageFileName());
+        vboxProblem().sayCannotOverwriteHardDiskStorage (this, location());
         return;
     }
 
@@ -328,9 +337,9 @@ void VBoxNewHDWzd::showNextPage()
 }
 
 
-QString VBoxNewHDWzd::imageFileName()
+QString VBoxNewHDWzd::location()
 {
-    QString name = QDir::convertSeparators (mLeName->text());
+    QString name = QDir::toNativeSeparators (mLeName->text());
 
     /* remove all trailing dots to avoid multiple dots before .vdi */
     int len;
@@ -338,25 +347,14 @@ QString VBoxNewHDWzd::imageFileName()
         name.truncate (len - 1);
 
     QString ext = QFileInfo (name).completeSuffix();
-    /* compare against the proper case */
-#if defined (Q_OS_FREEBSD) || defined (Q_OS_LINUX) || defined (Q_OS_NETBSD) || defined (Q_OS_OPENBSD) || defined (Q_OS_SOLARIS)
-#elif defined (Q_OS_WIN) || defined (Q_OS_OS2) || defined (Q_OS_MACX)
-    ext = ext.toLower();
-#else
-#endif
 
-    if (ext != "vdi")
+    if (RTPathCompare (ext.toUtf8(), "vdi") != 0)
         name += ".vdi";
 
     return name;
 }
 
-quint64 VBoxNewHDWzd::imageSize()
-{
-    return mCurrentSize;
-}
-
-bool VBoxNewHDWzd::isDynamicImage()
+bool VBoxNewHDWzd::isDynamicStorage()
 {
     return mRbDynamicType->isChecked();
 }
@@ -368,64 +366,59 @@ void VBoxNewHDWzd::updateSizeToolTip (quint64 aSizeB)
     mLeSize->setToolTip (tip);
 }
 
+/**
+ * Performs steps necessary to create a hard disk. This method handles all
+ * errors and shows the corresponding messages when appropriate.
+ *
+ * @return Wheter the creation was successful or not.
+ */
 bool VBoxNewHDWzd::createHardDisk()
 {
-    QString src = imageFileName();
-    quint64 size = imageSize();
+    QString loc = location();
 
-    AssertReturn (!src.isEmpty(), false);
-    AssertReturn (size > 0, false);
+    AssertReturn (!loc.isEmpty(), false);
+    AssertReturn (mCurrentSize > 0, false);
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     CProgress progress;
-    CHardDisk hd = vbox.CreateHardDisk (KHardDiskStorageType_VirtualDiskImage);
 
-    /// @todo (dmik) later, change wrappers so that converting
-    //  to CUnknown is not necessary for cross-assignments
-    CVirtualDiskImage vdi = CUnknown (hd);
+    CHardDisk2 hd = vbox.CreateHardDisk2 (QString ("VDI"), loc);
 
     if (!vbox.isOk())
     {
-        vboxProblem().cannotCreateHardDiskImage (this,
-                                                 vbox, src, vdi, progress);
+        vboxProblem().cannotCreateHardDiskStorage (this, vbox, loc, hd,
+                                                   progress);
         return false;
     }
 
-    vdi.SetFilePath (src);
-
-    if (isDynamicImage())
-        progress = vdi.CreateDynamicImage (size);
+    if (isDynamicStorage())
+        progress = hd.CreateDynamicStorage (mCurrentSize);
     else
-        progress = vdi.CreateFixedImage (size);
+        progress = hd.CreateFixedStorage (mCurrentSize);
 
-    if (!vdi.isOk())
+    if (!hd.isOk())
     {
-        vboxProblem().cannotCreateHardDiskImage (this,
-                                                 vbox, src, vdi, progress);
+        vboxProblem().cannotCreateHardDiskStorage (this, vbox, loc, hd,
+                                                   progress);
         return false;
     }
 
     vboxProblem().showModalProgressDialog (progress, windowTitle(), parentWidget());
 
-    if (progress.GetResultCode() != 0)
+    if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        vboxProblem().cannotCreateHardDiskImage (this,
-                                                 vbox, src, vdi, progress);
+        vboxProblem().cannotCreateHardDiskStorage (this, vbox, loc, hd,
+                                                   progress);
         return false;
     }
 
-    vbox.RegisterHardDisk (hd);
-    if (!vbox.isOk())
-    {
-        vboxProblem().cannotRegisterMedia (this, vbox, VBoxDefs::HD,
-                                           vdi.GetFilePath());
-        /* delete the image file on failure */
-        vdi.DeleteImage();
-        return false;
-    }
+    /* Inform everybody there is a new medium */
+    vboxGlobal().addMedium (VBoxMedium (CMedium (hd),
+                                        VBoxDefs::MediaType_HardDisk,
+                                        KMediaState_Created));
 
-    mChd = hd;
+    mHD = hd;
     return true;
 }
 

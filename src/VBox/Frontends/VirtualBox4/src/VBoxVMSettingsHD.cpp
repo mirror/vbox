@@ -25,25 +25,77 @@
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxToolBar.h"
-#include "VBoxDiskImageManagerDlg.h"
+#include "VBoxMediaManagerDlg.h"
 #include "VBoxNewHDWzd.h"
 
+/* Qt includes */
 #include <QHeaderView>
 #include <QItemEditorFactory>
 #include <QMetaProperty>
 #include <QScrollBar>
+#include <QStylePainter>
 
 /** SATA Ports count */
 static const ULONG SATAPortsCount = 30;
 
-Qt::ItemFlags HDItemsModel::flags (const QModelIndex &aIndex) const
+/**
+ * Clear the focus from the current focus owner on guard creation.
+ * And put it into the desired object on guard deletion.
+ *
+ * Here this is used to temporary remove the focus from the attachments
+ * table to close the temporary editor of this table to prevent
+ * any side-process (enumeration) influencing model's data.
+ */
+class FocusGuardBlock
+{
+public:
+    FocusGuardBlock (QWidget *aReturnTo) : mReturnTo (aReturnTo)
+    {
+        if (QApplication::focusWidget())
+        {
+            QApplication::focusWidget()->clearFocus();
+            qApp->processEvents();
+        }
+    }
+   ~FocusGuardBlock()
+    {
+        mReturnTo->setFocus();
+        qApp->processEvents();
+    }
+
+private:
+    QWidget *mReturnTo;
+};
+
+/** Type to store disk data */
+DiskValue::DiskValue (const QUuid &aId)
+    : id (aId)
+    , name (QString::null), tip (QString::null), pix (QPixmap())
+{
+    if (aId.isNull())
+        return;
+
+    VBoxMedium medium = vboxGlobal().getMedium (
+        CMedium (vboxGlobal().virtualBox().GetHardDisk2 (aId)));
+    medium.refresh();
+    bool noDiffs = !HDSettings::instance()->showDiffs();
+    name = medium.details (noDiffs);
+    tip = medium.toolTipCheckRO (noDiffs);
+    pix = medium.iconCheckRO (noDiffs);
+}
+
+/**
+ * QAbstractTableModel class reimplementation.
+ * Used to feat slot/disk selection mechanism.
+ */
+Qt::ItemFlags AttachmentsModel::flags (const QModelIndex &aIndex) const
 {
     return aIndex.row() == rowCount() - 1 ?
         QAbstractItemModel::flags (aIndex) ^ Qt::ItemIsSelectable :
         QAbstractItemModel::flags (aIndex) | Qt::ItemIsEditable;
 }
 
-QVariant HDItemsModel::data (const QModelIndex &aIndex, int aRole) const
+QVariant AttachmentsModel::data (const QModelIndex &aIndex, int aRole) const
 {
     if (!aIndex.isValid())
         return QVariant();
@@ -56,62 +108,50 @@ QVariant HDItemsModel::data (const QModelIndex &aIndex, int aRole) const
         case Qt::DisplayRole:
         {
             if (aIndex.row() == rowCount() - 1)
-            {
                 return QVariant();
-            } else
-            if (aIndex.column() == 0)
-            {
-                return QVariant (mSltList [aIndex.row()].name);
-            } else
-            if (aIndex.column() == 1)
-            {
-                return QVariant (mVdiList [aIndex.row()].name);
-            } else
-            {
-                Assert (0);
-                return QVariant();
-            }
-            break;
+            else if (aIndex.column() == 0)
+                return QVariant (mUsedSlotsList [aIndex.row()].name);
+            else if (aIndex.column() == 1)
+                return QVariant (mUsedDisksList [aIndex.row()].name);
+
+            Assert (0);
+            return QVariant();
+        }
+        case Qt::DecorationRole:
+        {
+            return aIndex.row() != rowCount() - 1 &&
+                   aIndex.column() == 1 &&
+                   (aIndex != mParent->currentIndex() ||
+                    !DiskEditor::activeEditor())
+                   ? QVariant (mUsedDisksList [aIndex.row()].pix) : QVariant();
         }
         case Qt::EditRole:
         {
             if (aIndex.column() == 0)
-            {
-                QVariant val (mSltId, &mSltList [aIndex.row()]);
-                return val;
-            } else
-            if (aIndex.column() == 1)
-            {
-                QVariant val (mVdiId, &mVdiList [aIndex.row()]);
-                return val;
-            } else
-            {
-                Assert (0);
-                return QVariant();
-            }
-            break;
+                return QVariant (mSlotId, &mUsedSlotsList [aIndex.row()]);
+            else if (aIndex.column() == 1)
+                return QVariant (mDiskId, &mUsedDisksList [aIndex.row()]);
+
+            Assert (0);
+            return QVariant();
         }
         case Qt::ToolTipRole:
         {
             if (aIndex.row() == rowCount() - 1)
                 return QVariant (tr ("Double-click to add a new attachment"));
 
-            CHardDisk hd = vboxGlobal().virtualBox()
-                           .GetHardDisk (mVdiList [aIndex.row()].id);
-            return QVariant (VBoxDiskImageManagerDlg::composeHdToolTip (
-                             hd, VBoxMedia::Ok));
+            return QVariant (mUsedDisksList [aIndex.row()].tip);
         }
         default:
         {
             return QVariant();
-            break;
         }
     }
 }
 
-bool HDItemsModel::setData (const QModelIndex &aIndex,
-                            const QVariant &aValue,
-                            int /* aRole = Qt::EditRole */)
+bool AttachmentsModel::setData (const QModelIndex &aIndex,
+                                const QVariant &aValue,
+                                int /* aRole = Qt::EditRole */)
 {
     if (!aIndex.isValid())
         return false;
@@ -121,39 +161,35 @@ bool HDItemsModel::setData (const QModelIndex &aIndex,
 
     if (aIndex.column() == 0)
     {
-        HDSltValue newSlt = aValue.isValid() ?
-            aValue.value<HDSltValue>() : HDSltValue();
-        if (mSltList [aIndex.row()] != newSlt)
+        SlotValue newSlot = aValue.isValid() ?
+            aValue.value <SlotValue>() : SlotValue();
+        if (mUsedSlotsList [aIndex.row()] != newSlot)
         {
-            mSltList [aIndex.row()] = newSlt;
+            mUsedSlotsList [aIndex.row()] = newSlot;
             emit dataChanged (aIndex, aIndex);
             return true;
         }
-        else
-            return false;
+        return false;
     } else
     if (aIndex.column() == 1)
     {
-        HDVdiValue newVdi = aValue.isValid() ?
-            aValue.value<HDVdiValue>() : HDVdiValue();
-        if (mVdiList [aIndex.row()] != newVdi)
+        DiskValue newDisk = aValue.isValid() ?
+            aValue.value <DiskValue>() : DiskValue();
+        if (mUsedDisksList [aIndex.row()] != newDisk)
         {
-            mVdiList [aIndex.row()] = newVdi;
+            mUsedDisksList [aIndex.row()] = newDisk;
             emit dataChanged (aIndex, aIndex);
             return true;
         }
-        else
-            return false;
-    } else
-    {
-        Assert (0);
         return false;
     }
+    Assert (0);
+    return false;
 }
 
-QVariant HDItemsModel::headerData (int aSection,
-                                   Qt::Orientation aOrientation,
-                                   int aRole) const
+QVariant AttachmentsModel::headerData (int aSection,
+                                       Qt::Orientation aOrientation,
+                                       int aRole) const
 {
     if (aRole != Qt::DisplayRole)
         return QVariant();
@@ -164,86 +200,103 @@ QVariant HDItemsModel::headerData (int aSection,
         return QVariant();
 }
 
-void HDItemsModel::addItem (const HDSltValue &aSlt, const HDVdiValue &aVdi)
+void AttachmentsModel::addItem (const SlotValue &aSlot, const DiskValue &aDisk)
 {
     beginInsertRows (QModelIndex(), rowCount() - 1, rowCount() - 1);
-    mSltList.append (aSlt);
-    mVdiList.append (aVdi);
+    mUsedSlotsList.append (aSlot);
+    mUsedDisksList.append (aDisk);
     endInsertRows();
 }
 
-void HDItemsModel::delItem (int aIndex)
+void AttachmentsModel::delItem (int aIndex)
 {
     beginRemoveRows (QModelIndex(), aIndex, aIndex);
-    mSltList.removeAt (aIndex);
-    mVdiList.removeAt (aIndex);
+    mUsedSlotsList.removeAt (aIndex);
+    mUsedDisksList.removeAt (aIndex);
     endRemoveRows();
 }
 
-QList<HDValue> HDItemsModel::fullList (bool aSorted /* = true */)
+QList <Attachment> AttachmentsModel::fullUsedList()
 {
-    QList<HDValue> list;
-    QList<HDSltValue> slts = slotsList();
-    QList<HDVdiValue> vdis = vdiList();
+    QList <Attachment> list;
+    QList <SlotValue> slts = usedSlotsList();
+    QList <DiskValue> dsks = usedDisksList();
     for (int i = 0; i < slts.size(); ++ i)
-        list << HDValue (slts [i], vdis [i]);
-    if (aSorted)
-        qSort (list.begin(), list.end());
+        list << Attachment (slts [i], dsks [i]);
+    qSort (list.begin(), list.end());
     return list;
 }
 
-void HDItemsModel::removeSata()
+void AttachmentsModel::removeSata()
 {
-    QList<HDSltValue>::iterator sltIt = mSltList.begin();
-    QList<HDVdiValue>::iterator vdiIt = mVdiList.begin();
-    while (sltIt != mSltList.end())
+    QList <SlotValue>::iterator slotIt = mUsedSlotsList.begin();
+    QList <DiskValue>::iterator diskIt = mUsedDisksList.begin();
+    while (slotIt != mUsedSlotsList.end())
     {
-        if ((*sltIt).bus == KStorageBus_SATA)
+        if ((*slotIt).bus == KStorageBus_SATA)
         {
-            sltIt = mSltList.erase (sltIt);
-            vdiIt = mVdiList.erase (vdiIt);
+            slotIt = mUsedSlotsList.erase (slotIt);
+            diskIt = mUsedDisksList.erase (diskIt);
         }
         else
         {
-            ++ sltIt;
-            ++ vdiIt;
+            ++ slotIt;
+            ++ diskIt;
         }
     }
 }
 
-/** QComboBox class reimplementation used as editor for hd slot */
-HDSltEditor::HDSltEditor (QWidget *aParent)
+void AttachmentsModel::updateDisks()
+{
+    QList <DiskValue> newDisks (HDSettings::instance()->disksList());
+    for (int i = 0; i < mUsedDisksList.size(); ++ i)
+    {
+        if (newDisks.isEmpty())
+            mUsedDisksList [i] = DiskValue();
+        else if (newDisks.contains (mUsedDisksList [i]))
+            mUsedDisksList [i] = DiskValue (mUsedDisksList [i].id);
+        else
+            mUsedDisksList [i] = DiskValue (newDisks [0].id);
+    }
+    emit dataChanged (index (0, 1), index (rowCount() - 1, 1));
+}
+
+/**
+ * QComboBox class reimplementation.
+ * Used as editor for HD Attachment SLOT field.
+ */
+SlotEditor::SlotEditor (QWidget *aParent)
     : QComboBox (aParent)
 {
     connect (this, SIGNAL (currentIndexChanged (int)), this, SLOT (onActivate()));
-    connect (this, SIGNAL (readyToCommit (QWidget *)),
-             parent()->parent(), SLOT (commitData (QWidget *)));
+    connect (this, SIGNAL (readyToCommit (QWidget*)),
+             parent()->parent(), SLOT (commitData (QWidget*)));
 }
 
-QVariant HDSltEditor::slot() const
+QVariant SlotEditor::slot() const
 {
     int current = currentIndex();
     QVariant result;
     if (current >= 0 && current < mList.size())
-        result.setValue (mList [currentIndex()]);
+        result.setValue (mList [current]);
     return result;
 }
 
-void HDSltEditor::setSlot (QVariant aSlot)
+void SlotEditor::setSlot (QVariant aSlot)
 {
-    HDSltValue val (aSlot.value<HDSltValue>());
+    SlotValue val (aSlot.value <SlotValue>());
     populate (val);
-    int cur = findText (val.name);
-    setCurrentIndex (cur == -1 ? 0 : cur);
+    int current = findText (val.name);
+    setCurrentIndex (current == -1 ? 0 : current);
 }
 
-void HDSltEditor::onActivate()
+void SlotEditor::onActivate()
 {
     emit readyToCommit (this);
 }
 
-#if 0
-void HDSltEditor::keyPressEvent (QKeyEvent *aEvent)
+#if 0 /* F2 key binding left for future releases... */
+void SlotEditor::keyPressEvent (QKeyEvent *aEvent)
 {
     /* Make F2 key to show the popup. */
     if (aEvent->key() == Qt::Key_F2)
@@ -257,11 +310,10 @@ void HDSltEditor::keyPressEvent (QKeyEvent *aEvent)
 }
 #endif
 
-void HDSltEditor::populate (const HDSltValue &aIncluding)
+void SlotEditor::populate (const SlotValue &aIncluding)
 {
-    clear();
-    mList.clear();
-    QList<HDSltValue> list = HDSlotUniquizer::instance()->list (aIncluding);
+    clear(), mList.clear();
+    QList <SlotValue> list (HDSettings::instance()->slotsList (aIncluding, true));
     for (int i = 0; i < list.size() ; ++ i)
     {
         insertItem (i, list [i].name);
@@ -269,68 +321,86 @@ void HDSltEditor::populate (const HDSltValue &aIncluding)
     }
 }
 
-/** QComboBox class reimplementation used as editor for hd vdi */
-HDVdiEditor* HDVdiEditor::mInstance = 0;
-HDVdiEditor::HDVdiEditor (QWidget *aParent)
-    : VBoxMediaComboBox (aParent, VBoxDefs::HD)
+/**
+ * VBoxMediaComboBox class reimplementation.
+ * Used as editor for HD Attachment DISK field.
+ */
+DiskEditor* DiskEditor::mInstance = 0;
+DiskEditor* DiskEditor::activeEditor()
+{
+    return mInstance;
+}
+
+DiskEditor::DiskEditor (QWidget *aParent)
+    : VBoxMediaComboBox (aParent)
 {
     mInstance = this;
-    setBelongsTo (HDSlotUniquizer::instance()->machine().GetId());
+    setIconSize (QSize (iconSize().width() * 2 + 2, iconSize().height()));
+    Assert (!HDSettings::instance()->machine().isNull());
+    setType (VBoxDefs::MediaType_HardDisk);
+    setMachineId (HDSettings::instance()->machine().GetId());
+    setShowDiffs (HDSettings::instance()->showDiffs());
     connect (this, SIGNAL (currentIndexChanged (int)), this, SLOT (onActivate()));
     connect (this, SIGNAL (readyToCommit (QWidget *)),
              parent()->parent(), SLOT (commitData (QWidget *)));
     refresh();
 }
-HDVdiEditor::~HDVdiEditor()
+DiskEditor::~DiskEditor()
 {
     if (mInstance == this)
         mInstance = 0;
 }
 
-QVariant HDVdiEditor::vdi() const
+QVariant DiskEditor::disk() const
 {
     int current = currentIndex();
     QVariant result;
     if (current >= 0 && current < count())
-    {
-        HDVdiValue val (currentText().isEmpty() ? QString::null : currentText(),
-                        getId (current));
-        result.setValue (val);
-    }
+        result.setValue (DiskValue (id (current)));
     return result;
 }
 
-void HDVdiEditor::setVdi (QVariant aVdi)
+void DiskEditor::setDisk (QVariant aDisk)
 {
-    HDVdiValue val (aVdi.value<HDVdiValue>());
-    setCurrentItem (val.id);
+    setCurrentItem (DiskValue (aDisk.value <DiskValue>()).id);
 }
 
-void HDVdiEditor::tryToChooseUniqueVdi (QList<HDVdiValue> &aList)
+void DiskEditor::paintEvent (QPaintEvent*)
 {
-    for (int i = 0; i < count(); ++ i)
-    {
-        HDVdiValue val (itemText (i), getId (i));
-        if (!aList.contains (val))
-        {
-            setCurrentItem (getId (i));
-            break;
-        }
-    }
+    /* Create the style painter to paint the elements. */
+    QStylePainter painter (this);
+    painter.setPen (palette().color (QPalette::Text));
+    /* Initialize combo-box options and draw the elements. */
+    QStyleOptionComboBox options;
+    initStyleOption (&options);
+    painter.drawComplexControl (QStyle::CC_ComboBox, options);
+    painter.drawControl (QStyle::CE_ComboBoxLabel, options);
 }
 
-HDVdiEditor* HDVdiEditor::activeEditor()
+void DiskEditor::initStyleOption (QStyleOptionComboBox *aOption) const
 {
-    return mInstance;
+    /* The base version of Qt4::QComboBox ignores the fact what each
+     * combo-box item can have the icon of different size and uses the
+     * maximum possible icon-size to draw the icon then performing
+     * paintEvent(). As a result, stand-alone icons are painted using
+     * the same huge region as the merged paired icons, so we have to
+     * perform the size calculation ourself... */
+
+    /* Init all style option by default... */
+    VBoxMediaComboBox::initStyleOption (aOption);
+    /* But calculate the icon size ourself. */
+    QIcon currentItemIcon (itemIcon (currentIndex()));
+    QPixmap realPixmap (currentItemIcon.pixmap (iconSize()));
+    aOption->iconSize = realPixmap.size();
 }
 
-void HDVdiEditor::onActivate()
+void DiskEditor::onActivate()
 {
     emit readyToCommit (this);
 }
 
-#if 0
-void HDVdiEditor::keyPressEvent (QKeyEvent *aEvent)
+#if 0 /* F2 key binding left for future releases... */
+void DiskEditor::keyPressEvent (QKeyEvent *aEvent)
 {
     /* Make F2 key to show the popup. */
     if (aEvent->key() == Qt::Key_F2)
@@ -344,107 +414,167 @@ void HDVdiEditor::keyPressEvent (QKeyEvent *aEvent)
 }
 #endif
 
-/** Singleton QObject class reimplementation to use for making selected IDE &
- * SATA slots unique */
-HDSlotUniquizer* HDSlotUniquizer::mInstance = 0;
-HDSlotUniquizer* HDSlotUniquizer::instance (QWidget *aParent,
-                                            HDItemsModel *aWatched,
-                                            const CMachine &aMachine)
+/**
+ * Singleton QObject class reimplementation.
+ * Used to make selected HD Attachments slots unique &
+ * stores some local data used for HD Settings.
+ */
+HDSettings* HDSettings::mInstance = 0;
+HDSettings* HDSettings::instance (QWidget *aParent,
+                                  AttachmentsModel *aWatched)
 {
     if (!mInstance)
     {
-        Assert (aParent && aWatched && !aMachine.isNull());
-        mInstance = new HDSlotUniquizer (aParent, aWatched, aMachine);
+        Assert (aParent && aWatched);
+        mInstance = new HDSettings (aParent, aWatched);
     }
     return mInstance;
 }
 
-HDSlotUniquizer::HDSlotUniquizer (QWidget *aParent, HDItemsModel *aWatched,
-                                  const CMachine &aMachine)
+HDSettings::HDSettings (QWidget *aParent, AttachmentsModel *aWatched)
     : QObject (aParent)
-    , mSataCount (SATAPortsCount)
     , mModel (aWatched)
-    , mMachine (aMachine)
+    , mSataCount (SATAPortsCount)
+    , mShowDiffs (false)
 {
     makeIDEList();
     makeSATAList();
 }
 
-HDSlotUniquizer::~HDSlotUniquizer()
+HDSettings::~HDSettings()
 {
     mInstance = 0;
 }
 
-QList<HDSltValue> HDSlotUniquizer::list (const HDSltValue &aIncluding,
-                                         bool aFilter /* = true */)
+QList <SlotValue> HDSettings::slotsList (const SlotValue &aIncluding,
+                                         bool aFilter /* = false */) const
 {
-    QList<HDSltValue> list = mIDEList + mSATAList;
+    /* Compose the full slots list */
+    QList <SlotValue> list (mIDEList + mSATAList);
     if (!aFilter)
         return list;
 
     /* Current used list */
-    QList<HDSltValue> current (mModel->slotsList());
+    QList <SlotValue> usedList (mModel->usedSlotsList());
 
     /* Filter the list */
-    QList<HDSltValue>::iterator it = current.begin();
-    while (it != current.end())
-    {
-        if (*it != aIncluding)
-            list.removeAll (*it);
-        ++ it;
-    }
+    foreach (SlotValue value, usedList)
+        if (value != aIncluding)
+            list.removeAll (value);
 
     return list;
 }
 
-void HDSlotUniquizer::makeIDEList()
+QList <DiskValue> HDSettings::disksList() const
+{
+    return mDisksList;
+}
+
+bool HDSettings::tryToChooseUniqueDisk (DiskValue &aResult) const
+{
+    bool status = false;
+
+    /* Current used list */
+    QList <DiskValue> usedList (mModel->usedDisksList());
+
+    /* Select the first available disk initially */
+    aResult = mDisksList.isEmpty() ? DiskValue() : mDisksList [0];
+
+    /* Search for first not busy disk */
+    for (int i = 0; i < mDisksList.size(); ++ i)
+        if (!usedList.contains (mDisksList [i]))
+        {
+            aResult = mDisksList [i];
+            status = true;
+            break;
+        }
+
+    return status;
+}
+
+void HDSettings::makeIDEList()
 {
     mIDEList.clear();
 
     /* IDE Primary Master */
-    mIDEList << HDSltValue (vboxGlobal().toFullString (KStorageBus_IDE, 0, 0),
-                            KStorageBus_IDE, 0, 0);
+    mIDEList << SlotValue (KStorageBus_IDE, 0, 0);
     /* IDE Primary Slave */
-    mIDEList << HDSltValue (vboxGlobal().toFullString (KStorageBus_IDE, 0, 1),
-                            KStorageBus_IDE, 0, 1);
+    mIDEList << SlotValue (KStorageBus_IDE, 0, 1);
     /* IDE Secondary Slave */
-    mIDEList << HDSltValue (vboxGlobal().toFullString (KStorageBus_IDE, 1, 1),
-                            KStorageBus_IDE, 1, 1);
+    mIDEList << SlotValue (KStorageBus_IDE, 1, 1);
 }
 
-void HDSlotUniquizer::makeSATAList()
+void HDSettings::makeSATAList()
 {
     mSATAList.clear();
 
     for (int i = 0; i < mSataCount; ++ i)
-        mSATAList << HDSltValue (vboxGlobal().toFullString (KStorageBus_SATA, i, 0),
-                                 KStorageBus_SATA, i, 0);
+        mSATAList << SlotValue (KStorageBus_SATA, i, 0);
 }
 
+void HDSettings::makeMediumList()
+{
+    mDisksList.clear();
+    VBoxMediaList list (vboxGlobal().currentMediaList());
+    foreach (VBoxMedium medium, list)
+    {
+        /* Filter out unnecessary mediums */
+        if (medium.type() != VBoxDefs::MediaType_HardDisk)
+            continue;
 
+        /* If !mShowDiffs we ignore all diffs except ones that are
+         * directly attached to the related VM in the current state */
+        if (!mShowDiffs && medium.parent() &&
+            !medium.isAttachedInCurStateTo (mMachine.GetId()))
+            continue;
+
+        /* If !mShowDiffs we have to replace the root medium with his
+         * differencing child which is directly used if the parent is found. */
+        if (!mShowDiffs && medium.parent())
+        {
+            int index = mDisksList.indexOf (DiskValue (medium.root().id()));
+            if (index != -1)
+            {
+                mDisksList.replace (index, DiskValue (medium.id()));
+                continue;
+            }
+        }
+
+        mDisksList.append (DiskValue (medium.id()));
+    }
+}
+
+/**
+ * QWidget class reimplementation.
+ * Used as HD Settings widget.
+ */
 VBoxVMSettingsHD::VBoxVMSettingsHD()
     : mValidator (0)
     , mWasTableSelected (false)
+    , mPolished (false)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsHD::setupUi (this);
 
     /* Setup model/view factory */
-    int idHDSlt = qRegisterMetaType<HDSltValue>();
-    int idHDVdi = qRegisterMetaType<HDVdiValue>();
+    int idHDSlot = qRegisterMetaType <SlotValue>();
+    int idHDDisk = qRegisterMetaType <DiskValue>();
     QItemEditorFactory *factory = new QItemEditorFactory;
-    QItemEditorCreatorBase *sltCreator =
-        new QStandardItemEditorCreator<HDSltEditor>();
-    QItemEditorCreatorBase *vdiCreator =
-        new QStandardItemEditorCreator<HDVdiEditor>();
-    factory->registerEditor ((QVariant::Type)idHDSlt, sltCreator);
-    factory->registerEditor ((QVariant::Type)idHDVdi, vdiCreator);
+    QItemEditorCreatorBase *slotCreator =
+        new QStandardItemEditorCreator <SlotEditor>();
+    QItemEditorCreatorBase *diskCreator =
+        new QStandardItemEditorCreator <DiskEditor>();
+    factory->registerEditor ((QVariant::Type)idHDSlot, slotCreator);
+    factory->registerEditor ((QVariant::Type)idHDDisk, diskCreator);
     QItemEditorFactory::setDefaultFactory (factory);
 
     /* Setup view-model */
-    mModel = new HDItemsModel (this, idHDSlt, idHDVdi);
+    mModel = new AttachmentsModel (mTwAts, idHDSlot, idHDDisk);
     connect (mModel, SIGNAL (dataChanged (const QModelIndex&, const QModelIndex&)),
              this, SIGNAL (hdChanged()));
+
+    /* Initialize HD Settings */
+    HDSettings::instance (mTwAts, mModel);
 
     /* Setup table-view */
     mTwAts->verticalHeader()->setDefaultSectionSize (
@@ -487,18 +617,26 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 
     /* Setup connections */
     connect (mNewAction, SIGNAL (triggered (bool)),
-             this, SLOT (newClicked()));
+             this, SLOT (addAttachment()));
     connect (mDelAction, SIGNAL (triggered (bool)),
-             this, SLOT (delClicked()));
+             this, SLOT (delAttachment()));
     connect (mVdmAction, SIGNAL (triggered (bool)),
-             this, SLOT (vdmClicked()));
-    connect (mCbSATA, SIGNAL (stateChanged (int)),
-             this, SLOT (cbSATAToggled (int)));
+             this, SLOT (showMediaManager()));
+
+    connect (mSATACheck, SIGNAL (stateChanged (int)),
+             this, SLOT (onSATACheckToggled (int)));
+    connect (mShowDiffsCheck, SIGNAL (stateChanged (int)),
+             this, SLOT (onShowDiffsCheckToggled (int)));
+
     connect (mTwAts, SIGNAL (currentChanged (const QModelIndex &)),
-             this, SLOT (onCurrentChanged (const QModelIndex &)));
-    connect (&vboxGlobal(),
-             SIGNAL (mediaRemoved (VBoxDefs::DiskType, const QUuid &)),
-             this, SLOT (onMediaRemoved (VBoxDefs::DiskType, const QUuid &)));
+             this, SLOT (updateActions (const QModelIndex &)));
+
+    connect (&vboxGlobal(), SIGNAL (mediumAdded (const VBoxMedium &)),
+             HDSettings::instance(), SLOT (update()));
+    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
+             HDSettings::instance(), SLOT (update()));
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediaType, const QUuid &)),
+             HDSettings::instance(), SLOT (update()));
 
     /* Install global event filter */
     qApp->installEventFilter (this);
@@ -510,37 +648,33 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
-
-    /* Setup slot uniquizer */
-    HDSlotUniquizer::instance (mTwAts, mModel, mMachine);
+    HDSettings::instance()->setMachine (mMachine);
 
     CSATAController ctl = mMachine.GetSATAController();
     /* Hide the SATA check box if the SATA controller is not available
      * (i.e. in VirtualBox OSE) */
     if (ctl.isNull())
-        mCbSATA->setHidden (true);
+        mSATACheck->setHidden (true);
     else
-        mCbSATA->setChecked (ctl.GetEnabled());
-    cbSATAToggled (mCbSATA->checkState());
+        mSATACheck->setChecked (ctl.GetEnabled());
+    onSATACheckToggled (mSATACheck->checkState());
+    onShowDiffsCheckToggled (mShowDiffsCheck->checkState());
 
-    CHardDiskAttachmentEnumerator en =
-        mMachine.GetHardDiskAttachments().Enumerate();
-    while (en.HasMore())
+    /* Load attachments list */
+    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    for (int i = 0; i < vec.size(); ++ i)
     {
-        CHardDiskAttachment hda = en.GetNext();
-        HDSltValue slt (vboxGlobal().toFullString (hda.GetBus(),
-                                                   hda.GetChannel(),
-                                                   hda.GetDevice()),
-                        hda.GetBus(), hda.GetChannel(), hda.GetDevice());
-        HDVdiValue vdi (VBoxMediaComboBox::fullItemName (hda.GetHardDisk()
-                                                         .GetLocation()),
-                        hda.GetHardDisk().GetRoot().GetId());
-        mModel->addItem (slt, vdi);
+        CHardDisk2Attachment hda = vec [i];
+        SlotValue slot (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+        DiskValue disk (hda.GetHardDisk().GetId());
+        mModel->addItem (slot, disk);
     }
 
+    /* Initially select the first table item & update the actions */
     mTwAts->setCurrentIndex (mModel->index (0, 1));
-    onCurrentChanged (mTwAts->currentIndex());
+    updateActions (mTwAts->currentIndex());
 
+    /* Validate if possible */
     if (mValidator)
         mValidator->revalidate();
 }
@@ -549,41 +683,43 @@ void VBoxVMSettingsHD::putBackTo()
 {
     CSATAController ctl = mMachine.GetSATAController();
     if (!ctl.isNull())
-    {
-        ctl.SetEnabled (mCbSATA->isChecked());
-    }
+        ctl.SetEnabled (mSATACheck->isChecked());
 
     /* Detach all attached Hard Disks */
-    CHardDiskAttachmentEnumerator en =
-        mMachine.GetHardDiskAttachments().Enumerate();
-    while (en.HasMore())
+    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    for (int i = 0; i < vec.size(); ++ i)
     {
-        CHardDiskAttachment hda = en.GetNext();
-        mMachine.DetachHardDisk (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+        CHardDisk2Attachment hda = vec [i];
+        mMachine.DetachHardDisk2 (hda.GetBus(), hda.GetChannel(), hda.GetDevice());
+
+        /* [dsen] check this */
         if (!mMachine.isOk())
             vboxProblem().cannotDetachHardDisk (this, mMachine,
+                vboxGlobal().getMedium (CMedium (hda.GetHardDisk())).location(),
                 hda.GetBus(), hda.GetChannel(), hda.GetDevice());
     }
 
     /* Attach all listed Hard Disks */
     LONG maxSATAPort = 1;
-    QList<HDValue> list (mModel->fullList());
+    QList <Attachment> list (mModel->fullUsedList());
     for (int i = 0; i < list.size(); ++ i)
     {
-        if (list [i].slt.bus == KStorageBus_SATA)
-            maxSATAPort = maxSATAPort < (list [i].slt.channel + 1) ?
-                          (list [i].slt.channel + 1) : maxSATAPort;
-        mMachine.AttachHardDisk (list [i].vdi.id,
-            list [i].slt.bus, list [i].slt.channel, list [i].slt.device);
+        if (list [i].slot.bus == KStorageBus_SATA)
+            maxSATAPort = maxSATAPort < (list [i].slot.channel + 1) ?
+                          (list [i].slot.channel + 1) : maxSATAPort;
+        mMachine.AttachHardDisk2 (list [i].disk.id,
+            list [i].slot.bus, list [i].slot.channel, list [i].slot.device);
+
+        /* [dsen] check this */
         if (!mMachine.isOk())
-            vboxProblem().cannotAttachHardDisk (this, mMachine, list [i].vdi.id,
-                list [i].slt.bus, list [i].slt.channel, list [i].slt.device);
+            vboxProblem().cannotAttachHardDisk (this, mMachine,
+                vboxGlobal().getMedium (CMedium (vboxGlobal().virtualBox()
+                .GetHardDisk2 (list [i].disk.id))).location(),
+                list [i].slot.bus, list [i].slot.channel, list [i].slot.device);
     }
 
     if (!ctl.isNull())
-    {
-        mMachine.GetSATAController().SetPortCount (maxSATAPort);
-    }
+        ctl.SetPortCount (maxSATAPort);
 }
 
 void VBoxVMSettingsHD::setValidator (QIWidgetValidator *aVal)
@@ -595,28 +731,28 @@ void VBoxVMSettingsHD::setValidator (QIWidgetValidator *aVal)
 
 bool VBoxVMSettingsHD::revalidate (QString &aWarning, QString &)
 {
-    QList<HDSltValue> sltList (mModel->slotsList());
-    QList<HDVdiValue> vdiList (mModel->vdiList());
-    for (int i = 0; i < vdiList.size(); ++ i)
+    QList <SlotValue> slotList (mModel->usedSlotsList());
+    QList <DiskValue> diskList (mModel->usedDisksList());
+    for (int i = 0; i < diskList.size(); ++ i)
     {
         /* Check for emptiness */
-        if (vdiList [i].name.isNull())
+        if (diskList [i].id.isNull())
         {
             aWarning = tr ("No hard disk is selected for <i>%1</i>")
-                           .arg (sltList [i].name);
+                           .arg (slotList [i].name);
             break;
         }
 
         /* Check for coincidence */
-        if (vdiList.count (vdiList [i]) > 1)
+        if (diskList.count (diskList [i]) > 1)
         {
-            int first = vdiList.indexOf (vdiList [i]);
-            int second = vdiList.indexOf (vdiList [i], first + 1);
+            int first = diskList.indexOf (diskList [i]);
+            int second = diskList.indexOf (diskList [i], first + 1);
             Assert (first != -1 && second != -1);
             aWarning = tr ("<i>%1</i> uses the hard disk that is "
                            "already attached to <i>%2</i>")
-                           .arg (sltList [second].name,
-                                 sltList [first].name);
+                           .arg (slotList [second].name,
+                                 slotList [first].name);
             break;
         }
     }
@@ -626,8 +762,9 @@ bool VBoxVMSettingsHD::revalidate (QString &aWarning, QString &)
 
 void VBoxVMSettingsHD::setOrderAfter (QWidget *aWidget)
 {
-    setTabOrder (aWidget, mCbSATA);
-    setTabOrder (mCbSATA, mTwAts);
+    setTabOrder (aWidget, mSATACheck);
+    setTabOrder (mSATACheck, mTwAts);
+    setTabOrder (mTwAts, mShowDiffsCheck);
 }
 
 void VBoxVMSettingsHD::retranslateUi()
@@ -648,147 +785,133 @@ void VBoxVMSettingsHD::retranslateUi()
 
     mNewAction->setWhatsThis (tr ("Adds a new hard disk attachment."));
     mDelAction->setWhatsThis (tr ("Removes the highlighted hard disk attachment."));
-    mVdmAction->setWhatsThis (tr ("Invokes the Virtual Disk Manager to select "
+    mVdmAction->setWhatsThis (tr ("Invokes the Virtual Media Manager to select "
                                   "a hard disk to attach to the currently "
                                   "highlighted slot."));
 }
 
-void VBoxVMSettingsHD::newClicked()
+void VBoxVMSettingsHD::addAttachment()
 {
-    /* Remember the current vdis list */
-    QList<HDVdiValue> vdis (mModel->vdiList());
+    /* Temporary disable corresponding action now to prevent calling it again
+     * before it will be disabled by current-changed processing. This can
+     * happens if the user just pressed & hold the shortcut combination. */
+    mNewAction->setEnabled (false);
 
-    /* Add new index */
-    mModel->addItem();
+    QUuid newId;
 
-    /* Set the default data into the new index for column #1 */
-    mTwAts->setCurrentIndex (mModel->index (mModel->rowCount() - 2, 1));
-    /* Set the default data into the new index for column #0 */
-    mTwAts->setCurrentIndex (mModel->index (mModel->rowCount() - 2, 0));
+    {   /* Clear the focus */
+        FocusGuardBlock guard (mTwAts);
 
-    /* Set column #1 of new index to be the current */
-    mTwAts->setCurrentIndex (mModel->index (mModel->rowCount() - 2, 1));
+        bool uniqueDiskSelected = false;
+        HDSettings *hds = HDSettings::instance();
 
-    HDVdiEditor *editor = HDVdiEditor::activeEditor();
-    if (editor)
-    {
-        /* Try to select unique vdi */
-        editor->tryToChooseUniqueVdi (vdis);
+        {   /* Add new item with default values */
+            SlotValue slot (hds->slotsList (SlotValue(), true) [0]);
+            DiskValue disk;
+            uniqueDiskSelected = hds->tryToChooseUniqueDisk (disk);
+            mModel->addItem (slot, disk);
+        }   /* Add new item with default values */
 
-        /* Ask the user for method to add new vdi */
-        int result = mModel->rowCount() - 1 > editor->count() ?
-            vboxProblem().confirmRunNewHDWzdOrVDM (this) :
-            QIMessageBox::Cancel;
-
-        /* Move the focus to the other than attachment table location.
-         * This will close the temporary editor of this table to prevent
-         * influencing the media enumeration mechanism to model data. */
-        mCbSATA->setFocus();
-        qApp->processEvents();
-
-        if (result == QIMessageBox::Yes)
+        /* If there are not enough unique disks */
+        if (!uniqueDiskSelected)
         {
-            /* Run new HD wizard */
-            VBoxNewHDWzd dlg (this);
-            if (dlg.exec() == QDialog::Accepted)
-            {
-                CHardDisk hd = dlg.hardDisk();
-                QVariant result;
-                HDVdiValue val (VBoxMediaComboBox::fullItemName (hd.GetLocation()),
-                                hd.GetId());
-                result.setValue (val);
-                mModel->setData (mTwAts->currentIndex(), result);
-                vboxGlobal().startEnumeratingMedia();
-            }
+            /* Ask the user for method to add new disk */
+            int confirm = vboxProblem().confirmRunNewHDWzdOrVDM (this);
+            newId = confirm == QIMessageBox::Yes ? getWithNewHDWizard() :
+                    confirm == QIMessageBox::No ? getWithMediaManager() : QUuid();
         }
-        else if (result == QIMessageBox::No)
-            vdmClicked();
+    }   /* Clear the focus */
 
-        /* Move the focus to the attachment table location again. */
-        mTwAts->setFocus();
-    }
-}
+    /* Set the right column of new index to be the current */
+    mTwAts->setCurrentIndex (mModel->index (mModel->rowCount() - 2, 1));
 
-void VBoxVMSettingsHD::delClicked()
-{
-    QModelIndex current = mTwAts->currentIndex();
-    if (current.isValid())
+    if (!newId.isNull())
     {
-        /* Storing current attributes */
-        int row = current.row();
-        int col = current.column();
-
-        /* Erase current index */
-        mTwAts->setCurrentIndex (QModelIndex());
-
-        /* Calculate new current index */
-        int newRow = row < mModel->rowCount() - 2 ? row :
-                     row > 0 ? row - 1 : -1;
-        QModelIndex next = newRow == -1 ? mModel->index (0, col) :
-                                          mModel->index (newRow, col);
-
-        /* Delete current index */
-        mModel->delItem (current.row());
-
-        /* Set the new index to be the current */
-        mTwAts->setCurrentIndex (next);
-        onCurrentChanged (next);
-
-        if (mValidator)
-            mValidator->revalidate();
-        emit hdChanged();
+        /* Compose & apply resulting disk */
+        QVariant newValue;
+        newValue.setValue (DiskValue (newId));
+        mModel->setData (mTwAts->currentIndex(), newValue);
     }
+
+    /* Validate if possible */
+    if (mValidator)
+        mValidator->revalidate();
+    emit hdChanged();
 }
 
-void VBoxVMSettingsHD::vdmClicked()
+void VBoxVMSettingsHD::delAttachment()
 {
     Assert (mTwAts->currentIndex().isValid());
 
-    /* Move the focus to the other than attachment table location.
-     * This will close the temporary editor of this table to prevent
-     * influencing the media enumeration mechanism to model data. */
-    mCbSATA->setFocus();
-    qApp->processEvents();
+    /* Temporary disable corresponding action now to prevent calling it again
+     * before it will be disabled by current-changed processing. This can
+     * happens if the user just pressed & hold the shortcut combination. */
+    mDelAction->setEnabled (false);
 
-    HDVdiValue oldVdi (mModel->data (mTwAts->currentIndex(), Qt::EditRole)
-                       .value<HDVdiValue>());
+    /* Clear the focus */
+    FocusGuardBlock guard (mTwAts);
 
-    VBoxDiskImageManagerDlg dlg (this);
-    dlg.setup (VBoxDefs::HD, true, mMachine.GetId(), true, mMachine, oldVdi.id);
+    /* Storing current attributes */
+    int row = mTwAts->currentIndex().row();
+    int col = mTwAts->currentIndex().column();
 
-    if (dlg.exec() == QDialog::Accepted)
-    {
-        /* Compose resulting vdi */
-        QVariant result;
-        HDVdiValue newVdi (VBoxMediaComboBox::fullItemName (dlg.selectedPath()),
-                           dlg.selectedUuid());
-        result.setValue (newVdi);
+    /* Erase current index */
+    mTwAts->setCurrentIndex (QModelIndex());
 
-        /* Set the model's data */
-        mModel->setData (mTwAts->currentIndex(), result);
-    }
+    /* Calculate new current index */
+    int newRow = row < mModel->rowCount() - 2 ? row :
+                 row > 0 ? row - 1 : -1;
+    QModelIndex next = newRow == -1 ? mModel->index (0, col) :
+                                      mModel->index (newRow, col);
 
-    vboxGlobal().startEnumeratingMedia();
+    /* Delete current index */
+    mModel->delItem (row);
 
-    /* Move the focus to the attachment table location again. */
-    mTwAts->setFocus();
+    /* Set the new index to be the current */
+    mTwAts->setCurrentIndex (next);
+    updateActions (next);
+
+    if (mValidator)
+        mValidator->revalidate();
+    emit hdChanged();
 }
 
-void VBoxVMSettingsHD::onCurrentChanged (const QModelIndex& /* aIndex */)
+void VBoxVMSettingsHD::showMediaManager()
+{
+    Assert (mTwAts->currentIndex().isValid());
+
+    /* Clear the focus */
+    FocusGuardBlock guard (mTwAts);
+
+    DiskValue current (mModel->data (mTwAts->currentIndex(), Qt::EditRole)
+                       .value <DiskValue>());
+
+    QUuid id = getWithMediaManager (current.id);
+
+    if (!id.isNull())
+    {
+        /* Compose & apply resulting disk */
+        QVariant newValue;
+        newValue.setValue (DiskValue (id));
+        mModel->setData (mTwAts->currentIndex(), newValue);
+    }
+}
+
+void VBoxVMSettingsHD::updateActions (const QModelIndex& /* aIndex */)
 {
     mNewAction->setEnabled (mModel->rowCount() - 1 <
-        HDSlotUniquizer::instance()->list (HDSltValue(), false).count());
+        HDSettings::instance()->slotsList().count());
     mDelAction->setEnabled (mTwAts->currentIndex().row() != mModel->rowCount() - 1);
     mVdmAction->setEnabled (mTwAts->currentIndex().row() != mModel->rowCount() - 1 &&
                             mTwAts->currentIndex().column() == 1);
 }
 
-void VBoxVMSettingsHD::cbSATAToggled (int aState)
+void VBoxVMSettingsHD::onSATACheckToggled (int aState)
 {
     if (aState == Qt::Unchecked)
     {
         /* Search the list for at least one SATA port in */
-        QList<HDSltValue> list (mModel->slotsList());
+        QList <SlotValue> list (mModel->usedSlotsList());
         int firstSataPort = 0;
         for (; firstSataPort < list.size(); ++ firstSataPort)
             if (list [firstSataPort].bus == KStorageBus_SATA)
@@ -800,9 +923,9 @@ void VBoxVMSettingsHD::cbSATAToggled (int aState)
             if (vboxProblem().confirmDetachSATASlots (this) != QIMessageBox::Ok)
             {
                 /* Switch check-box back to "Qt::Checked" */
-                mCbSATA->blockSignals (true);
-                mCbSATA->setCheckState (Qt::Checked);
-                mCbSATA->blockSignals (false);
+                mSATACheck->blockSignals (true);
+                mSATACheck->setCheckState (Qt::Checked);
+                mSATACheck->blockSignals (false);
                 return;
             }
             else
@@ -819,29 +942,14 @@ void VBoxVMSettingsHD::cbSATAToggled (int aState)
         }
     }
 
-    int newSataCount = aState == Qt::Checked ? SATAPortsCount : 0;
-    if (HDSlotUniquizer::instance()->sataCount() != newSataCount)
-        HDSlotUniquizer::instance()->setSataCount (newSataCount);
-    onCurrentChanged (mTwAts->currentIndex());
+    HDSettings::instance()->setSataCount (aState == Qt::Checked ?
+                                          SATAPortsCount : 0);
+    updateActions (mTwAts->currentIndex());
 }
 
-void VBoxVMSettingsHD::onMediaRemoved (VBoxDefs::DiskType aType, const QUuid &aId)
+void VBoxVMSettingsHD::onShowDiffsCheckToggled (int aState)
 {
-    /* Check if it is necessary to update data-model if
-     * some media was removed */
-    if (aType == VBoxDefs::HD)
-    {
-        QList<HDVdiValue> vdis (mModel->vdiList());
-        for (int i = 0; i < vdis.size(); ++ i)
-        {
-            if (vdis [i].id == aId)
-            {
-                QVariant emptyVal;
-                emptyVal.setValue (HDVdiValue());
-                mModel->setData (mModel->index (i, 1), emptyVal);
-            }
-        }
-    }
+    HDSettings::instance()->setShowDiffs (aState == Qt::Checked);
 }
 
 bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
@@ -849,13 +957,13 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
     if (!aObject->isWidgetType())
         return QWidget::eventFilter (aObject, aEvent);
 
-    QWidget *widget = static_cast<QWidget*> (aObject);
-    if (widget->inherits ("HDSltEditor") ||
-        widget->inherits ("HDVdiEditor"))
+    QWidget *widget = static_cast <QWidget*> (aObject);
+    if (widget->inherits ("SlotEditor") ||
+        widget->inherits ("DiskEditor"))
     {
         if (aEvent->type() == QEvent::KeyPress)
         {
-            QKeyEvent *e = static_cast<QKeyEvent*> (aEvent);
+            QKeyEvent *e = static_cast <QKeyEvent*> (aEvent);
             QModelIndex cur = mTwAts->currentIndex();
             switch (e->key())
             {
@@ -893,9 +1001,9 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
                 case Qt::Key_Backtab:
                 {
                     /* Due to table on getting focus back from the child
-                     * put it instantly to its child again, make a hack
-                     * to put focus to the real owner. */
-                    mCbSATA->setFocus();
+                     * put it instantly to this child again, make a hack
+                     * to put focus to the real previous owner. */
+                    mSATACheck->setFocus();
                     return true;
                 }
                 default:
@@ -912,11 +1020,11 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
     if (widget == mTwAts->viewport() &&
         aEvent->type() == QEvent::MouseButtonDblClick)
     {
-        QMouseEvent *e = static_cast<QMouseEvent*> (aEvent);
+        QMouseEvent *e = static_cast <QMouseEvent*> (aEvent);
         QModelIndex index = mTwAts->indexAt (e->pos());
         if (mNewAction->isEnabled() &&
             (index.row() == mModel->rowCount() - 1 || !index.isValid()))
-            newClicked();
+            addAttachment();
     } else
     if (aEvent->type() == QEvent::WindowActivate)
     {
@@ -931,39 +1039,63 @@ bool VBoxVMSettingsHD::eventFilter (QObject *aObject, QEvent *aEvent)
     return QWidget::eventFilter (aObject, aEvent);
 }
 
-int VBoxVMSettingsHD::maxNameLength() const
-{
-    QList<HDSltValue> fullList (HDSlotUniquizer::instance()
-                                ->list (HDSltValue(), false));
-    int maxLength = 0;
-    for (int i = 0; i < fullList.size(); ++ i)
-    {
-        int length = mTwAts->fontMetrics().width (fullList [i].name);
-        maxLength = length > maxLength ? length : maxLength;
-    }
-    return maxLength;
-}
-
 void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
 {
-    /* Activate edit triggers now to restrict them during data loading */
+    QWidget::showEvent (aEvent);
+
+    if (mPolished)
+        return;
+    mPolished = true;
+
+    /* Some delayed polishing */
+    mTwAts->horizontalHeader()->resizeSection (0,
+        style()->pixelMetric (QStyle::PM_ScrollBarExtent, 0, this) +
+        maxNameLength() + 9 * 2 /* 2 margins */);
+
+    /* Activate edit triggers only now to avoid influencing
+     * HD Attachments table during data loading. */
     mTwAts->setEditTriggers (QAbstractItemView::CurrentChanged |
                              QAbstractItemView::SelectedClicked |
-                             QAbstractItemView::EditKeyPressed |
-                             QAbstractItemView::DoubleClicked);
-
-    /* Temporary activating vertical scrollbar to calculate it's width */
-    mTwAts->setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOn);
-    int width = mTwAts->verticalScrollBar()->width();
-    mTwAts->setVerticalScrollBarPolicy (Qt::ScrollBarAsNeeded);
-    QWidget::showEvent (aEvent);
-    mTwAts->horizontalHeader()->resizeSection (0,
-        width + maxNameLength() + 9 * 2 /* 2 margins */);
+                             QAbstractItemView::EditKeyPressed);
 
     /* That little hack allows avoid one of qt4 children focusing bug */
     QWidget *current = QApplication::focusWidget();
     mTwAts->setFocus (Qt::TabFocusReason);
     if (current)
         current->setFocus (Qt::TabFocusReason);
+}
+
+QUuid VBoxVMSettingsHD::getWithMediaManager (const QUuid &aInitialId)
+{
+    /* Run Media Manager */
+    VBoxMediaManagerDlg dlg (this);
+    dlg.setup (VBoxDefs::MediaType_HardDisk,
+               true /* do select? */,
+               false /* do refresh? */,
+               mMachine,
+               aInitialId,
+               HDSettings::instance()->showDiffs());
+
+    return dlg.exec() == QDialog::Accepted ? dlg.selectedId() : QUuid();
+}
+
+QUuid VBoxVMSettingsHD::getWithNewHDWizard()
+{
+    /* Run New HD Wizard */
+    VBoxNewHDWzd dlg (this);
+
+    return dlg.exec() == QDialog::Accepted ? dlg.hardDisk().GetId() : QUuid();
+}
+
+int VBoxVMSettingsHD::maxNameLength() const
+{
+    QList <SlotValue> slts (HDSettings::instance()->slotsList());
+    int nameLength = 0;
+    for (int i = 0; i < slts.size(); ++ i)
+    {
+        int length = mTwAts->fontMetrics().width (slts [i].name);
+        nameLength = length > nameLength ? length : nameLength;
+    }
+    return nameLength;
 }
 

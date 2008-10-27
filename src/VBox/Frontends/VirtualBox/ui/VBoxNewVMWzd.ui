@@ -5,7 +5,7 @@
 :mode=html:tabSize=4:indentSize=4:noTabs=true:
 :folding=explicit:collapseFolds=1:
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -756,7 +756,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string>
                         </property>
@@ -788,7 +788,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
                             <cstring>grbHDA</cstring>
                         </property>
                         <property name="title">
-                            <string>B&amp;oot Hard Disk (Primary Master)</string>
+                            <string>Boot Hard &amp;Disk (Primary Master)</string>
+                        </property>
+                        <property name="checkable">
+                            <bool>true</bool>
                         </property>
                         <grid>
                             <property name="name">
@@ -990,13 +993,13 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
         <sender>pbNewHD</sender>
         <signal>clicked()</signal>
         <receiver>VBoxNewVMWzd</receiver>
-        <slot>showNewVDIWizard()</slot>
+        <slot>showNewHardDiskWizard()</slot>
     </connection>
     <connection>
         <sender>pbExistingHD</sender>
         <signal>clicked()</signal>
         <receiver>VBoxNewVMWzd</receiver>
-        <slot>showVDIManager()</slot>
+        <slot>showHardDiskManager()</slot>
     </connection>
     <connection>
         <sender>leRAM</sender>
@@ -1032,7 +1035,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
     <include location="local" impldecl="in declaration">COMDefs.h</include>
     <include location="local" impldecl="in implementation">VBoxUtils.h</include>
     <include location="local" impldecl="in implementation">VBoxGlobal.h</include>
-    <include location="local" impldecl="in implementation">VBoxDiskImageManagerDlg.h</include>
+    <include location="local" impldecl="in implementation">VBoxMediaManagerDlg.h</include>
     <include location="local" impldecl="in implementation">VBoxNewHDWzd.h</include>
     <include location="local" impldecl="in implementation">VBoxMediaComboBox.h</include>
 </includes>
@@ -1044,21 +1047,19 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string
     <variable access="private">QIWidgetValidator *wvalNameAndOS;</variable>
     <variable access="private">QIWidgetValidator *wvalMemory;</variable>
     <variable access="private">QIWidgetValidator *wvalHDD;</variable>
-    <variable access="private">QUuid uuidHD;</variable>
-    <variable access="private">CHardDisk chd;</variable>
-    <variable access="private">CMachine cmachine;</variable>
-    <variable access="private">VBoxMediaComboBox *mediaCombo;</variable>
+    <variable access="private">CHardDisk2 mHardDisk;</variable>
+    <variable access="private">CMachine mMachine;</variable>
+    <variable access="private">VBoxMediaComboBox *mHDCombo;</variable>
     <variable access="private">QITextEdit *teSummary;</variable>
 </variables>
 <slots>
     <slot>enableNext( const QIWidgetValidator * wval )</slot>
     <slot>revalidate( QIWidgetValidator * wval )</slot>
-    <slot>showVDIManager()</slot>
-    <slot>showNewVDIWizard()</slot>
+    <slot>showHardDiskManager()</slot>
+    <slot>showNewHardDiskWizard()</slot>
     <slot>slRAM_valueChanged( int val )</slot>
     <slot>leRAM_textChanged( const QString &amp; text )</slot>
     <slot>cbOS_activated( int item )</slot>
-    <slot>currentMediaChanged( int item )</slot>
 </slots>
 <functions>
     <function access="private">init()</function>

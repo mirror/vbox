@@ -23,6 +23,7 @@
 #include "QITreeWidget.h"
 
 #include <QPainter>
+#include <QResizeEvent>
 
 QITreeWidget::QITreeWidget (QWidget *aParent)
     : QTreeWidget (aParent)
@@ -75,6 +76,12 @@ void QITreeWidget::paintEvent (QPaintEvent *aEvent)
     QTreeWidget::paintEvent (aEvent);
 }
 
+void QITreeWidget::resizeEvent (QResizeEvent *aEvent)
+{
+    QTreeWidget::resizeEvent (aEvent);
+    emit resized (aEvent->size(), aEvent->oldSize());
+}
+
 void QITreeWidget::addTopBottomMarginToItems (int aMargin)
 {
     for (int i=0; i < topLevelItemCount(); ++i)
@@ -84,4 +91,3 @@ void QITreeWidget::addTopBottomMarginToItems (int aMargin)
         item->setSizeHint (0, QSize (s.width(), s.height() + 2 * aMargin));
     }
 }
-

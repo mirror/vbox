@@ -635,6 +635,10 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 
     AutoWriteLock alock (this);
 
+    /* we treat empty as null when e.g. saving to XML, do the same here */
+    if (aPath && *aPath == '\0')
+        aPath = NULL;
+
     if (mData->mPath != aPath)
     {
         HRESULT rc = checkSetPath (aPath);
@@ -669,8 +673,6 @@ STDMETHODIMP SerialPort::COMGETTER(Server) (BOOL *aServer)
 
 STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
 {
-    LogFlowThisFunc (("aServer=%RTbool\n", aServer));
-
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 

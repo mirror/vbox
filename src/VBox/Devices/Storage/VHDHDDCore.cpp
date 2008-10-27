@@ -774,9 +774,9 @@ static int vhdSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    /* Image must be opened and the new flags must be valid. Just readonly flag
-     * is supported. */
-    if (!pImage || uOpenFlags & ~VD_OPEN_FLAGS_READONLY)
+    /* Image must be opened and the new flags must be valid. Just readonly and
+     * info flags are supported. */
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;

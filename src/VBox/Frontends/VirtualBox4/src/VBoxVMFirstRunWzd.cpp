@@ -22,7 +22,7 @@
 
 #include "VBoxVMFirstRunWzd.h"
 #include "VBoxGlobal.h"
-#include "VBoxDiskImageManagerDlg.h"
+#include "VBoxMediaManagerDlg.h"
 
 VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent)
     : QIWithRetranslateUI<QIAbstractWizard> (aParent)
@@ -35,8 +35,8 @@ VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent
     initializeWizardHdr();
 
     /* Hide unnecessary text labels */
-    CHardDiskAttachmentEnumerator en = mMachine.GetHardDiskAttachments().Enumerate();
-    if (en.HasMore())
+    CHardDisk2AttachmentVector vec = mMachine.GetHardDisk2Attachments();
+    if (vec.size() != 0)
     {
         mTextWelcome2->setHidden (true);
         mTextType2->setHidden (true);
@@ -54,7 +54,8 @@ VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent
     }
 
     /* Media page */
-    mTbVdm->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
+    mCbImage->setMachineId (mMachine.GetId());
+    mTbVmm->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
                                           ":/select_file_dis_16px.png"));
     mWvalType = new QIWidgetValidator (mPageMedia, this);
     connect (mWvalType, SIGNAL (validityChanged (const QIWidgetValidator *)),
@@ -65,7 +66,7 @@ VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent
     connect (mRbFdType, SIGNAL (clicked()), this, SLOT (mediaTypeChanged()));
     connect (mRbHost, SIGNAL (clicked()), this, SLOT (mediaSourceChanged()));
     connect (mRbImage, SIGNAL (clicked()), this, SLOT (mediaSourceChanged()));
-    connect (mTbVdm, SIGNAL (clicked()), this, SLOT (openVdm()));
+    connect (mTbVmm, SIGNAL (clicked()), this, SLOT (openMediaManager()));
     mRbCdType->animateClick();
     mRbHost->animateClick();
 
@@ -127,7 +128,7 @@ void VBoxVMFirstRunWzd::accept()
         else if (mRbImage->isChecked())
         {
             CDVDDrive virtualDrive = mMachine.GetDVDDrive();
-            virtualDrive.MountImage (mCbImage->getId());
+            virtualDrive.MountImage (mCbImage->id());
         }
     }
     /* Floppy Media selected */
@@ -145,7 +146,7 @@ void VBoxVMFirstRunWzd::accept()
         else if (mRbImage->isChecked())
         {
             CFloppyDrive virtualDrive = mMachine.GetFloppyDrive();
-            virtualDrive.MountImage (mCbImage->getId());
+            virtualDrive.MountImage (mCbImage->id());
         }
     }
 
@@ -191,8 +192,8 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
             ++ id;
         }
 
-        /* Switch media images type to CD */
-        mCbImage->setType (VBoxDefs::CD);
+        /* Switch media images type to DVD */
+        mCbImage->setType (VBoxDefs::MediaType_DVD);
     }
     /* Floppy media type selected */
     else if (sender() == mRbFdType)
@@ -216,13 +217,11 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
         }
 
         /* Switch media images type to FD */
-        mCbImage->setType (VBoxDefs::FD);
+        mCbImage->setType (VBoxDefs::MediaType_Floppy);
     }
-    /* Update media images list */
-    if (!vboxGlobal().isMediaEnumerationStarted())
-        vboxGlobal().startEnumeratingMedia();
-    else
-        mCbImage->refresh();
+
+    /* Repopulate the media list */
+        mCbImage->repopulate();
 
     /* Revalidate updated page */
     mWvalType->revalidate();
@@ -232,21 +231,26 @@ void VBoxVMFirstRunWzd::mediaSourceChanged()
 {
     mCbHost->setEnabled (sender() == mRbHost);
     mCbImage->setEnabled (sender() == mRbImage);
-    mTbVdm->setEnabled (sender() == mRbImage);
+    mTbVmm->setEnabled (sender() == mRbImage);
 
     /* Revalidate updated page */
     mWvalType->revalidate();
 }
 
-void VBoxVMFirstRunWzd::openVdm()
+void VBoxVMFirstRunWzd::openMediaManager()
 {
-    VBoxDiskImageManagerDlg vdm (this);
-    VBoxDefs::DiskType type = mRbCdType->isChecked() ? VBoxDefs::CD :
-        mRbFdType->isChecked() ? VBoxDefs::FD : VBoxDefs::InvalidType;
-    vdm.setup (type, true, mMachine.GetId());
-    if (vdm.exec() == QDialog::Accepted)
+    VBoxDefs::MediaType type =
+        mRbCdType->isChecked() ? VBoxDefs::MediaType_DVD :
+        mRbFdType->isChecked() ? VBoxDefs::MediaType_Floppy :
+        VBoxDefs::MediaType_Invalid;
+
+    AssertReturnVoid (type != VBoxDefs::MediaType_Invalid);
+
+    VBoxMediaManagerDlg dlg (this);
+    dlg.setup (type, true /* aDoSelect */);
+    if (dlg.exec() == QDialog::Accepted)
     {
-        mCbImage->setCurrentItem (vdm.selectedUuid());
+        mCbImage->setCurrentItem (dlg.selectedId());
 
         /* Revalidate updated page */
         mWvalType->revalidate();

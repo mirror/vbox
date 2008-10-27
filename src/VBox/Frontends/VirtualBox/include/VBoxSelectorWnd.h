@@ -61,7 +61,7 @@ public:
 
 public slots:
 
-    void fileDiskMgr();
+    void fileMediaMgr();
     void fileSettings();
     void fileExit();
 
@@ -116,7 +116,7 @@ private:
     QPopupMenu *mVMCtxtMenu;
 
     /* actions */
-    QAction *fileDiskMgrAction;
+    QAction *fileMediaMgrAction;
     QAction *fileSettingsAction;
     QAction *fileExitAction;
     QAction *vmNewAction;

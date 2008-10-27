@@ -80,7 +80,7 @@ void VBoxVMSettingsParallel::putBackToPort()
     mPort.SetEnabled (mGbParallel->isChecked());
     mPort.SetIRQ (mLeIRQ->text().toULong (NULL, 0));
     mPort.SetIOBase (mLeIOPort->text().toULong (NULL, 0));
-    mPort.SetPath (QDir::convertSeparators (mLePath->text()));
+    mPort.SetPath (QDir::toNativeSeparators (mLePath->text()));
 }
 
 void VBoxVMSettingsParallel::setValidator (QIWidgetValidator *aVal)

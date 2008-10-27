@@ -452,9 +452,9 @@ int VBoxVMListBoxItem::width (const QListBox *) const
 
     const VBoxVMListBox *lb = vmListBox();
 
-    QFontMetrics fmName = QFontMetrics (lb->nameFont());
-    QFontMetrics fmShot = QFontMetrics (lb->shotFont());
-    QFontMetrics fmState = QFontMetrics (lb->stateFont (mSessionState));
+    QFontMetrics fmName (lb->nameFont());
+    QFontMetrics fmShot (lb->shotFont());
+    QFontMetrics fmState (lb->stateFont (mSessionState));
     const int marg = lb->margin();
 
     QPixmap pmOSType;
@@ -491,8 +491,8 @@ int VBoxVMListBoxItem::height (const QListBox *) const
 
     const VBoxVMListBox *lb = vmListBox();
 
-    QFontMetrics fmName = QFontMetrics (lb->nameFont());
-    QFontMetrics fmState = QFontMetrics (lb->stateFont (mSessionState));
+    QFontMetrics fmName (lb->nameFont());
+    QFontMetrics fmState (lb->stateFont (mSessionState));
     const int marg = lb->margin();
 
     QPixmap pmOSType;
@@ -670,9 +670,9 @@ void VBoxVMListBoxItem::paint (QPainter *aP)
 {
     const VBoxVMListBox *lb = vmListBox();
 
-    QFontMetrics fmName = QFontMetrics (lb->nameFont());
-    QFontMetrics fmShot = QFontMetrics (lb->shotFont());
-    QFontMetrics fmState = QFontMetrics (lb->stateFont (mSessionState));
+    QFontMetrics fmName (lb->nameFont());
+    QFontMetrics fmShot (lb->shotFont());
+    QFontMetrics fmState (lb->stateFont (mSessionState));
     const int marg = lb->margin();
 
     QPixmap pmOSType;

@@ -23,7 +23,7 @@
 #include "VBoxVMSettingsCD.h"
 #include "VBoxGlobal.h"
 #include "QIWidgetValidator.h"
-#include "VBoxDiskImageManagerDlg.h"
+#include "VBoxMediaManagerDlg.h"
 
 #include <QFileInfo>
 
@@ -39,14 +39,14 @@ VBoxVMSettingsCD::VBoxVMSettingsCD()
     connect (mRbHostCD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
     connect (mRbIsoCD, SIGNAL (toggled (bool)), this, SLOT (onRbChange()));
     connect (mCbIsoCD, SIGNAL (activated (int)), this, SLOT (onCbChange()));
-    connect (mTbIsoCD, SIGNAL (clicked()), this, SLOT (showImageManager()));
+    connect (mTbIsoCD, SIGNAL (clicked()), this, SLOT (showMediaManager()));
 
     /* Setup iconsets */
     mTbIsoCD->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
                                             ":/select_file_dis_16px.png"));
 
     /* Setup dialog */
-    mCbIsoCD->setType (VBoxDefs::CD);
+    mCbIsoCD->setType (VBoxDefs::MediaType_DVD);
     mLastSelected = mRbHostCD;
 
     /* Applying language settings */
@@ -108,8 +108,8 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
         }
         case KDriveState_ImageMounted:
         {
-            CDVDImage img = dvd.GetImage();
-            QString src = img.GetFilePath();
+            CDVDImage2 img = dvd.GetImage();
+            QString src = img.GetLocation();
             AssertMsg (!src.isNull(), ("Image file must not be null"));
             QFileInfo fi (src);
             mRbIsoCD->setChecked (true);
@@ -129,6 +129,7 @@ void VBoxVMSettingsCD::getFrom (const CMachine &aMachine)
             AssertMsgFailed (("invalid DVD state: %d\n", dvd.GetState()));
     }
 
+    mCbIsoCD->setMachineId (mMachine.GetId());
     mCbIsoCD->setCurrentItem (mUuidIsoCD);
     if (!vboxGlobal().isMediaEnumerationStarted())
         vboxGlobal().startEnumeratingMedia();
@@ -243,21 +244,22 @@ void VBoxVMSettingsCD::onRbChange()
 
 void VBoxVMSettingsCD::onCbChange()
 {
-    mUuidIsoCD = mGbCD->isChecked() ? mCbIsoCD->getId() : QUuid();
+    mUuidIsoCD = mGbCD->isChecked() ? mCbIsoCD->id() : QUuid();
     emit cdChanged();
     if (mValidator)
         mValidator->revalidate();
 }
 
-void VBoxVMSettingsCD::showImageManager()
+void VBoxVMSettingsCD::showMediaManager()
 {
     QUuid oldId = mUuidIsoCD;
-    VBoxDiskImageManagerDlg dlg (this);
-    dlg.setup (VBoxDefs::CD, true, mMachine.GetId(), true /* aRefresh */,
-               mMachine, QUuid(), mCbIsoCD->getId(), QUuid());
+    VBoxMediaManagerDlg dlg (this);
+
+    dlg.setup (VBoxDefs::MediaType_DVD, true /* aDoSelect */,
+               true /* aRefresh */, mMachine, mCbIsoCD->id());
 
     QUuid newId = dlg.exec() == QDialog::Accepted ?
-                  dlg.selectedUuid() : mCbIsoCD->getId();
+                  dlg.selectedId() : mCbIsoCD->id();
     if (oldId != newId)
     {
         mUuidIsoCD = newId;

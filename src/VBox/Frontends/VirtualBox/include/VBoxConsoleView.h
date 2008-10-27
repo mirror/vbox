@@ -111,7 +111,7 @@ signals:
     void mouseStateChanged (int state);
     void machineStateChanged (KMachineState state);
     void additionsStateChanged (const QString &, bool, bool, bool);
-    void mediaChanged (VBoxDefs::DiskType aType);
+    void mediaDriveChanged (VBoxDefs::MediaType aType);
     void networkStateChange();
     void usbStateChange();
     void sharedFoldersChanged();
@@ -240,7 +240,7 @@ private:
     bool mIgnoreMainwndResize : 1;
     bool mAutoresizeGuest : 1;
 
-    /** 
+    /**
      * This flag indicates whether the last console resize should trigger
      * a size hint to the guest.  This is important particularly when
      * enabling the autoresize feature to know whether to send a hint.

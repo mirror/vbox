@@ -274,7 +274,7 @@
                             </property>
                             <widget class="QLineEdit" row="0" column="1">
                                 <property name="name">
-                                    <cstring>leVDIFolder</cstring>
+                                    <cstring>leHardDiskFolder</cstring>
                                 </property>
                                 <property name="frameShape">
                                     <enum>LineEditPanel</enum>
@@ -283,7 +283,7 @@
                                     <enum>Sunken</enum>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</string>
+                                    <string>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</string>
                                 </property>
                             </widget>
                             <widget class="QLabel" row="1" column="0">
@@ -299,7 +299,7 @@
                                     <cstring>textLabel1_2</cstring>
                                 </property>
                                 <property name="text">
-                                    <string>VDI files</string>
+                                    <string>Hard Disks</string>
                                 </property>
                             </widget>
                             <widget class="QToolButton" row="1" column="3">
@@ -324,7 +324,7 @@
                             </widget>
                             <widget class="QToolButton" row="0" column="3">
                                 <property name="name">
-                                    <cstring>tbResetVDIFolder</cstring>
+                                    <cstring>tbResetHardDiskFolder</cstring>
                                 </property>
                                 <property name="focusPolicy">
                                     <enum>TabFocus</enum>
@@ -339,7 +339,7 @@
                                     <bool>true</bool>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
+                                    <string>Resets the hard disk folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</string>
                                 </property>
                             </widget>
                             <widget class="QLineEdit" row="1" column="1">
@@ -352,7 +352,7 @@
                             </widget>
                             <widget class="QToolButton" row="0" column="2">
                                 <property name="name">
-                                    <cstring>tbSelectVDIFolder</cstring>
+                                    <cstring>tbSelectHardDiskFolder</cstring>
                                 </property>
                                 <property name="focusPolicy">
                                     <enum>TabFocus</enum>
@@ -370,7 +370,7 @@
                                     <bool>true</bool>
                                 </property>
                                 <property name="whatsThis" stdset="0">
-                                    <string>Opens a dialog to select the default VDI folder.</string>
+                                    <string>Opens a dialog to select the default hard disk folder.</string>
                                 </property>
                             </widget>
                             <widget class="QToolButton" row="1" column="2">
@@ -1162,13 +1162,13 @@ to the system default language.&lt;/qt&gt;
         <slot>listView_currentChanged(QListViewItem*)</slot>
     </connection>
     <connection>
-        <sender>tbResetVDIFolder</sender>
+        <sender>tbResetHardDiskFolder</sender>
         <signal>clicked()</signal>
         <receiver>VBoxGlobalSettingsDlg</receiver>
         <slot>tbResetFolder_clicked()</slot>
     </connection>
     <connection>
-        <sender>tbSelectVDIFolder</sender>
+        <sender>tbSelectHardDiskFolder</sender>
         <signal>clicked()</signal>
         <receiver>VBoxGlobalSettingsDlg</receiver>
         <slot>tbSelectFolder_clicked()</slot>
@@ -1255,9 +1255,9 @@ to the system default language.&lt;/qt&gt;
 <tabstops>
     <tabstop>listView</tabstop>
     <tabstop>chbAutoCapture</tabstop>
-    <tabstop>leVDIFolder</tabstop>
-    <tabstop>tbSelectVDIFolder</tabstop>
-    <tabstop>tbResetVDIFolder</tabstop>
+    <tabstop>leHardDiskFolder</tabstop>
+    <tabstop>tbSelectHardDiskFolder</tabstop>
+    <tabstop>tbResetHardDiskFolder</tabstop>
     <tabstop>leMachineFolder</tabstop>
     <tabstop>tbSelectMachineFolder</tabstop>
     <tabstop>tbResetMachineFolder</tabstop>

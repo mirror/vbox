@@ -646,6 +646,28 @@ public:
     }
 
     /**
+     * Same as #leave() but checks if the current thread actally owns the lock
+     * and only proceeds in this case. As a result, as opposed to #leave(),
+     * doesn't assert when called with no lock being held.
+     */
+    void maybeLeave()
+    {
+        if (isWriteLockOnCurrentThread())
+            leave();
+    }
+
+    /**
+     * Same as #enter() but checks if the current thread actally owns the lock
+     * and only proceeds if not. As a result, as opposed to #enter(), doesn't
+     * assert when called with the lock already being held.
+     */
+    void maybeEnter()
+    {
+        if (!isWriteLockOnCurrentThread())
+            enter();
+    }
+
+    /**
      * Causes the current thread to restore the write lock level after the
      * #leave() call. This call will indefinitely block if another thread has
      * successfully acquired a write or a read lock on the same semaphore in
@@ -662,6 +684,61 @@ public:
                 mHandle->lockWrite();
         }
     }
+
+    /**
+     * Attaches another handle to this auto lock instance.
+     *
+     * The previous object's lock is completely released before the new one is
+     * acquired. The lock level of the new handle will be the same. This
+     * also means that if the lock was not acquired at all before #attach(), it
+     * will not be acquired on the new handle too.
+     *
+     * @param aHandle   New handle to attach.
+     */
+    void attach (LockHandle *aHandle)
+    {
+        /* detect simple self-reattachment */
+        if (mHandle != aHandle)
+        {
+            uint32_t lockLevel = mLockLevel;
+
+            /* perform the destructor part */
+            if (mHandle)
+            {
+                if (mGlobalLockLevel)
+                {
+                    mGlobalLockLevel -= mLockLevel;
+                    mLockLevel = 0;
+                    for (; mGlobalLockLevel; -- mGlobalLockLevel)
+                        mHandle->lockWrite();
+                }
+
+                AssertMsg (mLockLevel <= 1, ("Lock level > 1: %d\n", mLockLevel));
+                for (; mLockLevel; -- mLockLevel)
+                    mHandle->unlockWrite();
+            }
+
+            mHandle = aHandle;
+            mLockLevel = lockLevel;
+
+            if (mHandle)
+                for (; lockLevel; -- lockLevel)
+                    mHandle->lockWrite();
+        }
+    }
+
+    /** @see attach (LockHandle *) */
+    void attach (LockHandle &aHandle) { attach (&aHandle); }
+
+    /** @see attach (LockHandle *) */
+    void attach (const Lockable &aLockable) { attach (aLockable.lockHandle()); }
+
+    /** @see attach (LockHandle *) */
+    void attach (const Lockable *aLockable)
+    { attach (aLockable ? aLockable->lockHandle() : NULL); }
+
+    /** Verbose equivalent to <tt>attach (NULL)</tt>. */
+    void detach() { attach ((LockHandle *) NULL); }
 
     /** Returns @c true if this instance manages a null semaphore handle. */
     bool isNull() const { return mHandle == NULL; }
@@ -916,6 +993,46 @@ public:
         }
     }
 
+    /**
+     * Attaches another handle to this auto lock instance.
+     *
+     * The previous object's lock is completely released before the new one is
+     * acquired. The lock level of the new handle will be the same. This also
+     * means that if the lock was not acquired at all before #attach(), it will
+     * not be acquired on the new handle too.
+     *
+     * @param aHandle   New handle to attach.
+     */
+    void attach (LockHandle *aHandle)
+    {
+        /* detect simple self-reattachment */
+        if (mHandle != aHandle)
+        {
+            uint32_t lockLevel = mLockLevel;
+            if (mHandle)
+                for (; mLockLevel; -- mLockLevel)
+                    mHandle->unlockRead();
+            mHandle = aHandle;
+            mLockLevel = lockLevel;
+            if (mHandle)
+                for (; lockLevel; -- lockLevel)
+                    mHandle->lockRead();
+        }
+    }
+
+    /** @see attach (LockHandle *) */
+    void attach (LockHandle &aHandle) { attach (&aHandle); }
+
+    /** @see attach (LockHandle *) */
+    void attach (const Lockable &aLockable) { attach (aLockable.lockHandle()); }
+
+    /** @see attach (LockHandle *) */
+    void attach (const Lockable *aLockable)
+    { attach (aLockable ? aLockable->lockHandle() : NULL); }
+
+    /** Verbose equivalent to <tt>attach (NULL)</tt>. */
+    void detach() { attach ((LockHandle *) NULL); }
+
     /** Returns @c true if this instance manages a null semaphore handle. */
     bool isNull() const { return mHandle == NULL; }
     bool operator !() const { return isNull(); }
@@ -1157,6 +1274,30 @@ public:
         do
             mLocks [-- i].leave();
         while (i != 0);
+    }
+
+    /**
+    * Calls AutoWriteLock::maybeLeave() methods for all managed semaphore
+    * handles in reverse to the order they were passed to the constructor.
+     */
+    void maybeLeave()
+    {
+        AssertReturnVoid (ELEMENTS (mLocks) > 0);
+        size_t i = ELEMENTS (mLocks);
+        do
+            mLocks [-- i].maybeLeave();
+        while (i != 0);
+    }
+
+    /**
+     * Calls AutoWriteLock::maybeEnter() methods for all managed semaphore
+     * handles in order they were passed to the constructor.
+     */
+    void maybeEnter()
+    {
+        size_t i = 0;
+        while (i < ELEMENTS (mLocks))
+            mLocks [i ++].maybeEnter();
     }
 
     /**

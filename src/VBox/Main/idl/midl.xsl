@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
+<!-- $Id$ -->
 
 <!--
  *  A template to generate a MS IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -105,6 +106,14 @@
     <xsl:apply-templates mode="forward"/>
   </xsl:if>
 </xsl:template>
+<xsl:template match="if" mode="forwarder">
+  <xsl:param name="nameOnly"/>
+  <xsl:if test="@target='midl'">
+    <xsl:apply-templates mode="forwarder">
+      <xsl:with-param name="nameOnly" select="$nameOnly"/>
+    </xsl:apply-templates>
+  </xsl:if>
+</xsl:template>
 
 
 <!--
@@ -194,6 +203,40 @@
   <xsl:text>}; /* interface </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text> */&#x0A;&#x0A;</xsl:text>
+  <!-- Interface implementation forwarder macro -->
+  <xsl:text>/* Interface implementation forwarder macro */&#x0A;</xsl:text>
+  <!-- 1) indivudual methods -->
+  <xsl:apply-templates select="attribute" mode="forwarder"/>
+  <xsl:apply-templates select="method" mode="forwarder"/>
+  <xsl:apply-templates select="if" mode="forwarder"/>
+  <!-- 2) COM_FORWARD_Interface_TO(smth) -->
+  <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO(smth) </xsl:text>
+  <xsl:apply-templates select="attribute" mode="forwarder">
+    <xsl:with-param name="nameOnly" select="'yes'"/>
+  </xsl:apply-templates>
+  <xsl:apply-templates select="method" mode="forwarder">
+    <xsl:with-param name="nameOnly" select="'yes'"/>
+  </xsl:apply-templates>
+  <xsl:apply-templates select="if" mode="forwarder">
+    <xsl:with-param name="nameOnly" select="'yes'"/>
+  </xsl:apply-templates>
+  <xsl:text>")&#x0A;</xsl:text>
+  <!-- 3) COM_FORWARD_Interface_TO_OBJ(obj) -->
+  <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO ((obj)->)")&#x0A;</xsl:text>
+  <!-- 4) COM_FORWARD_Interface_TO_BASE(base) -->
+  <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text>_TO (base::)")&#x0A;</xsl:text>
+  <!-- end -->
+  <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 
 
@@ -255,6 +298,170 @@
   <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 
+<xsl:template match="interface//attribute | collection//attribute" mode="forwarder">
+
+  <!-- if nameOnly='yes' then only the macro name is composed
+       followed by a space -->
+  <xsl:param name="nameOnly"/>
+
+  <xsl:variable name="parent" select="ancestor::interface | ancestor::collection"/>
+
+  <xsl:apply-templates select="@if" mode="begin"/>
+
+  <xsl:choose>
+    <xsl:when test="$nameOnly='yes'">
+      <!-- getter: COM_FORWARD_Interface_GETTER_Name_TO(smth) -->
+      <xsl:text>COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_GETTER_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO (smth) </xsl:text>
+      <!-- setter: COM_FORWARD_Interface_SETTER_Name_TO(smth) -->
+      <xsl:if test="not(@readonly='yes')">
+        <xsl:text>COM_FORWARD_</xsl:text>
+        <xsl:value-of select="$parent/@name"/>
+        <xsl:text>_SETTER_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>_TO (smth) </xsl:text>
+      </xsl:if>
+    </xsl:when>
+    <xsl:otherwise>
+      <!-- getter: COM_FORWARD_Interface_GETTER_Name_TO(smth) -->
+      <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_GETTER_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO(smth) HRESULT STDMETHODCALLTYPE get_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text> (</xsl:text>
+      <xsl:choose>
+        <xsl:when test="@safearray='yes'">
+          <xsl:text>SAFEARRAY *</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates select="@type"/>
+        </xsl:otherwise>
+      </xsl:choose>
+      <xsl:text> * a</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>) { return smth get_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text> (a</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>); }")&#x0A;</xsl:text>
+      <!-- getter: COM_FORWARD_Interface_GETTER_Name_TO_OBJ(obj) -->
+      <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_GETTER_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_GETTER_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO ((obj)->)")&#x0A;</xsl:text>
+      <!-- getter: COM_FORWARD_Interface_GETTER_Name_TO_BASE(base) -->
+      <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_GETTER_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_GETTER_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO (base::)")&#x0A;</xsl:text>
+      <!-- -->
+      <xsl:if test="not(@readonly='yes')">
+        <!-- setter: COM_FORWARD_Interface_SETTER_Name_TO(smth) -->
+        <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+        <xsl:value-of select="$parent/@name"/>
+        <xsl:text>_SETTER_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>_TO(smth) HRESULT STDMETHODCALLTYPE put_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text> (</xsl:text>
+        <xsl:choose>
+          <xsl:when test="@safearray='yes'">
+            <xsl:text>SAFEARRAY *</xsl:text>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:apply-templates select="@type"/>
+          </xsl:otherwise>
+        </xsl:choose>
+        <xsl:text> a</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>) { return smth put_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text> (a</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>); }")&#x0A;</xsl:text>
+        <!-- setter: COM_FORWARD_Interface_SETTER_Name_TO_OBJ(obj) -->
+        <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+        <xsl:value-of select="$parent/@name"/>
+        <xsl:text>_SETTER_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+        <xsl:value-of select="$parent/@name"/>
+        <xsl:text>_SETTER_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>_TO ((obj)->)")&#x0A;</xsl:text>
+        <!-- setter: COM_FORWARD_Interface_SETTER_Name_TO_BASE(base) -->
+        <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+        <xsl:value-of select="$parent/@name"/>
+        <xsl:text>_SETTER_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+        <xsl:value-of select="$parent/@name"/>
+        <xsl:text>_SETTER_</xsl:text>
+        <xsl:call-template name="capitalize">
+          <xsl:with-param name="str" select="@name"/>
+        </xsl:call-template>
+        <xsl:text>_TO (base::)")&#x0A;</xsl:text>
+      </xsl:if>
+    </xsl:otherwise>
+  </xsl:choose>
+
+  <xsl:apply-templates select="@if" mode="end"/>
+
+</xsl:template>
+
 
 <!--
  *  methods
@@ -265,22 +472,125 @@
   <xsl:call-template name="capitalize">
     <xsl:with-param name="str" select="@name"/>
   </xsl:call-template>
-  <xsl:if test="param">
-    <xsl:text> (&#x0A;</xsl:text>
-    <xsl:for-each select="param [position() != last()]">
+  <xsl:choose>
+    <xsl:when test="param">
+      <xsl:text> (&#x0A;</xsl:text>
+      <xsl:for-each select="param [position() != last()]">
+        <xsl:text>        </xsl:text>
+        <xsl:apply-templates select="."/>
+        <xsl:text>,&#x0A;</xsl:text>
+      </xsl:for-each>
       <xsl:text>        </xsl:text>
-      <xsl:apply-templates select="."/>
-      <xsl:text>,&#x0A;</xsl:text>
-    </xsl:for-each>
-    <xsl:text>        </xsl:text>
-    <xsl:apply-templates select="param [last()]"/>
-    <xsl:text>&#x0A;    );&#x0A;</xsl:text>
-  </xsl:if>
-  <xsl:if test="not(param)">
-    <xsl:text>();&#x0A;</xsl:text>
-  </xsl:if>
+      <xsl:apply-templates select="param [last()]"/>
+      <xsl:text>&#x0A;    );&#x0A;</xsl:text>
+    </xsl:when>
+    <xsl:otherwise test="not(param)">
+      <xsl:text>();&#x0A;</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
   <xsl:apply-templates select="@if" mode="end"/>
   <xsl:text>&#x0A;</xsl:text>
+</xsl:template>
+
+<xsl:template match="interface//method | collection//method" mode="forwarder">
+
+  <!-- if nameOnly='yes' then only the macro name is composed followed by \ -->
+  <xsl:param name="nameOnly"/>
+
+  <xsl:variable name="parent" select="ancestor::interface | ancestor::collection"/>
+
+  <xsl:apply-templates select="@if" mode="begin"/>
+
+  <xsl:choose>
+    <xsl:when test="$nameOnly='yes'">
+      <!-- COM_FORWARD_Interface_Method_TO(smth) -->
+      <xsl:text>COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO (smth) </xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO(smth) HRESULT STDMETHODCALLTYPE </xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:choose>
+        <xsl:when test="param">
+          <xsl:text> (</xsl:text>
+          <xsl:for-each select="param [position() != last()]">
+            <xsl:apply-templates select="." mode="forwarder"/>
+            <xsl:text>, </xsl:text>
+          </xsl:for-each>
+          <xsl:apply-templates select="param [last()]" mode="forwarder"/>
+          <xsl:text>) { return smth </xsl:text>
+          <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="@name"/>
+          </xsl:call-template>
+          <xsl:text> (</xsl:text>
+          <xsl:for-each select="param [position() != last()]">
+            <xsl:text>a</xsl:text>
+            <xsl:call-template name="capitalize">
+              <xsl:with-param name="str" select="@name"/>
+            </xsl:call-template>
+            <xsl:text>, </xsl:text>
+          </xsl:for-each>
+          <xsl:text>a</xsl:text>
+          <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="param [last()]/@name"/>
+          </xsl:call-template>
+          <xsl:text>); }</xsl:text>
+        </xsl:when>
+        <xsl:otherwise test="not(param)">
+          <xsl:text>() { return smth </xsl:text>
+          <xsl:call-template name="capitalize">
+            <xsl:with-param name="str" select="@name"/>
+          </xsl:call-template>
+          <xsl:text>(); }</xsl:text>
+        </xsl:otherwise>
+      </xsl:choose>
+      <xsl:text>")&#x0A;</xsl:text>
+      <!-- COM_FORWARD_Interface_Method_TO_OBJ(obj) -->
+      <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO ((obj)->)")&#x0A;</xsl:text>
+      <!-- COM_FORWARD_Interface_Method_TO_BASE(base) -->
+      <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
+      <xsl:value-of select="$parent/@name"/>
+      <xsl:text>_</xsl:text>
+      <xsl:call-template name="capitalize">
+        <xsl:with-param name="str" select="@name"/>
+      </xsl:call-template>
+      <xsl:text>_TO (base::)")&#x0A;</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+
+  <xsl:apply-templates select="@if" mode="end"/>
+
 </xsl:template>
 
 
@@ -457,6 +767,27 @@
   <xsl:if test="@safearray='yes'">
     <xsl:text>)</xsl:text>
   </xsl:if>
+  <xsl:if test="@array">
+    <xsl:text> *</xsl:text>
+  </xsl:if>
+  <xsl:if test="@dir='out' or @dir='return' or @safearray='yes'">
+    <xsl:text> *</xsl:text>
+  </xsl:if>
+  <xsl:text> a</xsl:text>
+  <xsl:call-template name="capitalize">
+    <xsl:with-param name="str" select="@name"/>
+  </xsl:call-template>
+</xsl:template>
+
+<xsl:template match="method/param" mode="forwarder">
+  <xsl:choose>
+    <xsl:when test="@safearray='yes'">
+      <xsl:text>SAFEARRAY *</xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:apply-templates select="@type"/>
+    </xsl:otherwise>
+  </xsl:choose>
   <xsl:if test="@array">
     <xsl:text> *</xsl:text>
   </xsl:if>

@@ -24,7 +24,7 @@
 #include "VBoxConsoleView.h"
 #include "VBoxCloseVMDlg.h"
 #include "VBoxTakeSnapshotDlg.h"
-#include "VBoxDiskImageManagerDlg.h"
+#include "VBoxMediaManagerDlg.h"
 #include "VBoxVMFirstRunWzd.h"
 #include "VBoxVMSettingsSF.h"
 #include "VBoxVMInformationDlg.h"
@@ -807,8 +807,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateMachineState (KMachineState)));
     connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool, bool)),
              this, SLOT (updateAdditionsState (const QString &, bool, bool, bool)));
-    connect (console, SIGNAL (mediaChanged (VBoxDefs::DiskType)),
-             this, SLOT (updateMediaState (VBoxDefs::DiskType)));
+    connect (console, SIGNAL (mediaDriveChanged (VBoxDefs::MediaType)),
+             this, SLOT (updateMediaDriveState (VBoxDefs::MediaType)));
     connect (console, SIGNAL (usbStateChange()),
              this, SLOT (updateUsbState()));
     connect (console, SIGNAL (networkStateChange()),
@@ -1704,7 +1704,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             {
                 name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
                            "Floppy tooltip")
-                    .arg (QDir::convertSeparators (floppy.GetImage().GetFilePath()));
+                    .arg (QDir::toNativeSeparators (floppy.GetImage().GetLocation()));
                 break;
             }
             case KDriveState_NotMounted:
@@ -1748,7 +1748,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             {
                 name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
                            "DVD-ROM tooltip")
-                    .arg (QDir::convertSeparators (dvd.GetImage().GetFilePath()));
+                    .arg (QDir::toNativeSeparators (dvd.GetImage().GetLocation()));
                 break;
             }
             case KDriveState_NotMounted:
@@ -1769,15 +1769,15 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                           "HDD tooltip");
         QString data;
         bool hasDisks = false;
-        CHardDiskAttachmentEnumerator aen = cmachine.GetHardDiskAttachments().Enumerate();
-        while (aen.HasMore())
+        CHardDisk2AttachmentVector vec = cmachine.GetHardDisk2Attachments();
+        for (CHardDisk2AttachmentVector::ConstIterator hda = vec.begin();
+             hda != vec.end(); ++ hda)
         {
-            CHardDiskAttachment hda = aen.GetNext();
-            CHardDisk hd = hda.GetHardDisk();
+            CHardDisk2 hd = hda->GetHardDisk();
             data += QString ("<br><nobr><b>%1 %2</b>: %3</nobr>")
-                .arg (vboxGlobal().toString (hda.GetBus(), hda.GetChannel()))
-                .arg (vboxGlobal().toString (hda.GetBus(), hda.GetChannel(),
-                                             hda.GetDevice()))
+                .arg (vboxGlobal().toString (hda->GetBus(), hda->GetChannel()))
+                .arg (vboxGlobal().toString (hda->GetBus(), hda->GetChannel(),
+                                             hda->GetDevice()))
                 .arg (QDir::convertSeparators (hd.GetLocation()));
             hasDisks = true;
         }
@@ -2562,13 +2562,17 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
 {
     if (!console) return;
 
-    VBoxDiskImageManagerDlg dlg (this);
-    dlg.setup (VBoxDefs::FD, true, csession.GetMachine().GetId());
+    VBoxMediaManagerDlg dlg (this);
+
+    dlg.setup (VBoxDefs::MediaType_Floppy, true /* aDoSelect */,
+               true /* aRefresh */, csession.GetMachine());
 
     if (dlg.exec() == QDialog::Accepted)
     {
         CFloppyDrive drv = csession.GetMachine().GetFloppyDrive();
-        drv.MountImage (dlg.selectedUuid());
+
+        drv.MountImage (dlg.selectedId());
+
         AssertWrapperOk (drv);
         if (drv.isOk())
         {
@@ -2605,13 +2609,17 @@ void VBoxConsoleWnd::devicesMountDVDImage()
 {
     if (!console) return;
 
-    VBoxDiskImageManagerDlg dlg (this);
-    dlg.setup (VBoxDefs::CD, true, csession.GetMachine().GetId());
+    VBoxMediaManagerDlg dlg (this);
+
+    dlg.setup (VBoxDefs::MediaType_DVD, true /* aDoSelect */,
+               true /* aRefresh */, csession.GetMachine());
 
     if (dlg.exec() == QDialog::Accepted)
     {
         CDVDDrive drv = csession.GetMachine().GetDVDDrive();
-        drv.MountImage (dlg.selectedUuid());
+
+        drv.MountImage (dlg.selectedId());
+
         AssertWrapperOk (drv);
         if (drv.isOk())
         {
@@ -2688,22 +2696,25 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
         installGuestAdditionsFrom (src2);
     else
     {
-        /* Check for the already registered required image: */
+        /* Check for the already registered required image */
         CVirtualBox vbox = vboxGlobal().virtualBox();
         QString name = QString ("VBoxGuestAdditions_%1.iso")
                                  .arg (vbox.GetVersion().remove ("_OSE"));
-        CDVDImageEnumerator en = vbox.GetDVDImages().Enumerate();
-        while (en.HasMore())
+
+        CDVDImage2Vector vec = vbox.GetDVDImages();
+        for (CDVDImage2Vector::ConstIterator it = vec.begin();
+             it != vec.end(); ++ it)
         {
-            QString path = en.GetNext().GetFilePath();
-            /* compare the name part ignoring the file case*/
+            QString path = it->GetLocation();
+            /* Compare the name part ignoring the file case */
             QString fn = QFileInfo (path).fileName();
             if (RTPathCompare (name.toUtf8().constData(), fn.toUtf8().constData()) == 0)
                 return installGuestAdditionsFrom (path);
         }
-        /* Download required image: */
+
+        /* Download the required image: */
         int rc = vboxProblem().cannotFindGuestAdditions (
-            QDir::convertSeparators (src1), QDir::convertSeparators (src2));
+            QDir::toNativeSeparators (src1), QDir::toNativeSeparators (src2));
         if (rc == QIMessageBox::Yes)
         {
             QString url = QString ("http://download.virtualbox.org/virtualbox/%1/")
@@ -2722,12 +2733,10 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QUuid uuid;
 
-    CDVDImage image = vbox.FindDVDImage (aSource);
+    CDVDImage2 image = vbox.FindDVDImage (aSource);
     if (image.isNull())
     {
         image = vbox.OpenDVDImage (aSource, uuid);
-        if (vbox.isOk())
-            vbox.RegisterDVDImage (image);
         if (vbox.isOk())
             uuid = image.GetId();
     }
@@ -2736,14 +2745,15 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 
     if (!vbox.isOk())
     {
-        vboxProblem().cannotRegisterMedia (this, vbox, VBoxDefs::CD, aSource);
+        vboxProblem().cannotOpenMedium (this, vbox,
+                                        VBoxDefs::MediaType_DVD, aSource);
         return;
     }
 
     Assert (!uuid.isNull());
     CDVDDrive drv = csession.GetMachine().GetDVDDrive();
     drv.MountImage (uuid);
-    /// @todo (r=dmik) use VBoxProblemReporter::cannotMountMedia...
+    /// @todo NEWMEDIA use VBoxProblemReporter::cannotMountMedia
     AssertWrapperOk (drv);
 }
 
@@ -3272,7 +3282,7 @@ void VBoxConsoleWnd::updateMachineState (KMachineState state)
         shot.save (QFile::encodeName (fname), "PNG");
 
         if (vboxProblem().remindAboutGuruMeditation (
-                cconsole, QDir::convertSeparators (logFolder)))
+                cconsole, QDir::toNativeSeparators (logFolder)))
         {
             qApp->processEvents();
             cconsole.PowerDown();
@@ -3358,11 +3368,12 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     }
 }
 
-void VBoxConsoleWnd::updateMediaState (VBoxDefs::DiskType aType)
+void VBoxConsoleWnd::updateMediaDriveState (VBoxDefs::MediaType aType)
 {
-    Assert (aType == VBoxDefs::CD || aType == VBoxDefs::FD);
-    updateAppearanceOf (aType == VBoxDefs::CD ? DVDStuff :
-                        aType == VBoxDefs::FD ? FloppyStuff : AllStuff);
+    Assert (aType == VBoxDefs::MediaType_DVD || aType == VBoxDefs::MediaType_Floppy);
+    updateAppearanceOf (aType == VBoxDefs::MediaType_DVD ? DVDStuff :
+                        aType == VBoxDefs::MediaType_Floppy ? FloppyStuff :
+                        AllStuff);
 }
 
 void VBoxConsoleWnd::updateSharedFoldersState()
@@ -3513,7 +3524,7 @@ bool VBoxConsoleWnd::dbgCreated()
     int rc = RTLdrGetSymbol (hLdrMod, "DBGGuiCreate", (void **)&pfnGuiCreate);
     if (RT_SUCCESS (rc))
     {
-        ISession *pISession = csession.iface();
+        ISession *pISession = csession.raw();
         rc = pfnGuiCreate (pISession, &mDbgGui, &mDbgGuiVT);
         if (RT_SUCCESS (rc))
         {

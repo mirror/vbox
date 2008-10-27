@@ -1,10 +1,12 @@
+/* $Id$ */
+
 /** @file
  *
  * VBox Console COM Class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,6 +60,8 @@
 #include "SchemaDefs.h"
 
 #include "Logging.h"
+
+#include <VBox/com/array.h>
 
 #include <iprt/string.h>
 #include <iprt/asm.h>
@@ -186,11 +190,39 @@ struct VMPowerUpTask : public VMProgressTask
         : VMProgressTask (aConsole, aProgress, false /* aUsesVMPtr */)
         , mSetVMErrorCallback (NULL), mConfigConstructor (NULL), mStartPaused (false) {}
 
+    ~VMPowerUpTask()
+    {
+        /* No null output parameters in IPC*/
+        MediaState_T dummy;
+
+        /* if the locked media list is not empty, treat as a failure and
+         * unlock all */
+        for (LockedMedia::const_iterator it = lockedMedia.begin();
+             it != lockedMedia.end(); ++ it)
+        {
+            if (it->second)
+                it->first->UnlockWrite (&dummy);
+            else
+                it->first->UnlockRead (&dummy);
+        }
+    }
+
     PFNVMATERROR mSetVMErrorCallback;
     PFNCFGMCONSTRUCTOR mConfigConstructor;
     Utf8Str mSavedStateFile;
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
+
+    /**
+     * Successfully locked media list. The 2nd value in the pair is true if the
+     * medium is locked for writing and false if locked for reading.
+     */
+    typedef std::list <std::pair <ComPtr <IMedium>, bool > > LockedMedia;
+    LockedMedia lockedMedia;
+
+    /** Media that need an accessibility check */
+    typedef std::list <ComPtr <IMedium> > Media;
+    Media mediaToCheck;
 };
 
 struct VMSaveTask : public VMProgressTask
@@ -2480,10 +2512,10 @@ HRESULT Console::onDVDDriveChange()
     {
         case DriveState_ImageMounted:
         {
-            ComPtr <IDVDImage> ImagePtr;
+            ComPtr <IDVDImage2> ImagePtr;
             rc = mDVDDrive->GetImage (ImagePtr.asOutParam());
             if (SUCCEEDED (rc))
-                rc = ImagePtr->COMGETTER(FilePath) (Path.asOutParam());
+                rc = ImagePtr->COMGETTER(Location) (Path.asOutParam());
             break;
         }
 
@@ -2587,10 +2619,10 @@ HRESULT Console::onFloppyDriveChange()
     {
         case DriveState_ImageMounted:
         {
-            ComPtr <IFloppyImage> ImagePtr;
+            ComPtr <IFloppyImage2> ImagePtr;
             rc = mFloppyDrive->GetImage (ImagePtr.asOutParam());
             if (SUCCEEDED (rc))
-                rc = ImagePtr->COMGETTER(FilePath) (Path.asOutParam());
+                rc = ImagePtr->COMGETTER(Location) (Path.asOutParam());
             break;
         }
 
@@ -4234,86 +4266,9 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
                                     "(machine state: %d)"),
                         mMachineState);
 
-    /*
-     * First check whether all disks are accessible. This is not a 100%
-     * bulletproof approach (race condition, it might become inaccessible
-     * right after the check) but it's convenient as it will cover 99.9%
-     * of the cases and here, we're able to provide meaningful error
-     * information.
-     */
-    ComPtr<IHardDiskAttachmentCollection> coll;
-    mMachine->COMGETTER(HardDiskAttachments)(coll.asOutParam());
-    ComPtr<IHardDiskAttachmentEnumerator> enumerator;
-    coll->Enumerate(enumerator.asOutParam());
-    BOOL fHasMore;
-    while (SUCCEEDED(enumerator->HasMore(&fHasMore)) && fHasMore)
-    {
-        ComPtr<IHardDiskAttachment> attach;
-        enumerator->GetNext(attach.asOutParam());
-        ComPtr<IHardDisk> hdd;
-        attach->COMGETTER(HardDisk)(hdd.asOutParam());
-        Assert(hdd);
-        BOOL fAccessible;
-        HRESULT rc = hdd->COMGETTER(AllAccessible)(&fAccessible);
-        CheckComRCReturnRC (rc);
-        if (!fAccessible)
-        {
-            Bstr loc;
-            hdd->COMGETTER(Location) (loc.asOutParam());
-            Bstr errMsg;
-            hdd->COMGETTER(LastAccessError) (errMsg.asOutParam());
-            return setError (E_FAIL,
-                tr ("VM cannot start because the hard disk '%ls' is not accessible "
-                    "(%ls)"),
-                loc.raw(), errMsg.raw());
-        }
-    }
+    HRESULT rc = S_OK;
 
-    /* now perform the same check if a ISO is mounted */
-    ComPtr<IDVDDrive> dvdDrive;
-    mMachine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
-    ComPtr<IDVDImage> dvdImage;
-    dvdDrive->GetImage(dvdImage.asOutParam());
-    if (dvdImage)
-    {
-        BOOL fAccessible;
-        HRESULT rc = dvdImage->COMGETTER(Accessible)(&fAccessible);
-        CheckComRCReturnRC (rc);
-        if (!fAccessible)
-        {
-            Bstr filePath;
-            dvdImage->COMGETTER(FilePath)(filePath.asOutParam());
-            /// @todo (r=dmik) grab the last access error once
-            //  IDVDImage::lastAccessError is there
-            return setError (E_FAIL,
-                tr ("The virtual machine could not be started because the DVD image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
-                filePath.raw());
-        }
-    }
-
-    /* now perform the same check if a floppy is mounted */
-    ComPtr<IFloppyDrive> floppyDrive;
-    mMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-    ComPtr<IFloppyImage> floppyImage;
-    floppyDrive->GetImage(floppyImage.asOutParam());
-    if (floppyImage)
-    {
-        BOOL fAccessible;
-        HRESULT rc = floppyImage->COMGETTER(Accessible)(&fAccessible);
-        CheckComRCReturnRC (rc);
-        if (!fAccessible)
-        {
-            Bstr filePath;
-            floppyImage->COMGETTER(FilePath)(filePath.asOutParam());
-            /// @todo (r=dmik) grab the last access error once
-            //  IDVDImage::lastAccessError is there
-            return setError (E_FAIL,
-                tr ("The virtual machine could not be started because the floppy image '%ls' which is attached to it could not be found or could not be opened.  Please detach the image and try again"),
-                filePath.raw());
-        }
-    }
-
-    /* now the network cards will undergo a quick consistency check */
+    /* the network cards will undergo a quick consistency check */
     for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; slot ++)
     {
         ComPtr<INetworkAdapter> adapter;
@@ -4362,10 +4317,8 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     }
 
     /* Read console data stored in the saved state file (if not yet done) */
-    {
-        HRESULT rc = loadDataFromSavedState();
-        CheckComRCReturnRC (rc);
-    }
+    rc = loadDataFromSavedState();
+    CheckComRCReturnRC (rc);
 
     /* Check all types of shared folders and compose a single list */
     SharedFolderDataMap sharedFolders;
@@ -4393,7 +4346,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
      */
     if (mMachineState == MachineState_Saved)
     {
-        HRESULT rc = mMachine->COMGETTER(StateFilePath) (savedStateFile.asOutParam());
+        rc = mMachine->COMGETTER(StateFilePath) (savedStateFile.asOutParam());
         CheckComRCReturnRC (rc);
         ComAssertRet (!!savedStateFile, E_FAIL);
         int vrc = SSMR3ValidateFile (Utf8Str (savedStateFile));
@@ -4412,14 +4365,17 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
         progressDesc = tr ("Restoring virtual machine");
     else
         progressDesc = tr ("Starting virtual machine");
-    progress->init (static_cast <IConsole *> (this),
-                    progressDesc, FALSE /* aCancelable */);
+    rc = progress->init (static_cast <IConsole *> (this),
+                         progressDesc, FALSE /* aCancelable */);
+    CheckComRCReturnRC (rc);
 
     /* pass reference to caller if requested */
     if (aProgress)
         progress.queryInterfaceTo (aProgress);
 
-    /* setup task object and thread to carry out the operation asynchronously */
+    /* setup task object and thread to carry out the operation
+     * asynchronously */
+
     std::auto_ptr <VMPowerUpTask> task (new VMPowerUpTask (this, progress));
     ComAssertComRCRetRC (task->rc());
 
@@ -4430,9 +4386,117 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
 
-    HRESULT hrc = consoleInitReleaseLog (mMachine);
-    if (FAILED (hrc))
-        return hrc;
+    /* Lock all attached media in necessary mode. Note that until
+     * setMachineState() is called below, it is OUR responsibility to unlock
+     * media on failure (and VMPowerUpTask::lockedMedia is used for that). After
+     * the setMachineState() call, VBoxSVC (SessionMachine::setMachineState())
+     * will unlock all the media upon the appropriate state change. Note that
+     * media accessibility checks are performed on the powerup thread because
+     * they may block. */
+
+    MediaState_T mediaState;
+
+    /* lock all hard disks for writing and their parents for reading */
+    {
+        com::SafeIfaceArray <IHardDisk2Attachment> atts;
+        rc = mMachine->
+            COMGETTER(HardDisk2Attachments) (ComSafeArrayAsOutParam (atts));
+        CheckComRCReturnRC (rc);
+
+        for (size_t i = 0; i < atts.size(); ++ i)
+        {
+            ComPtr <IHardDisk2> hardDisk;
+            rc = atts [i]->COMGETTER(HardDisk) (hardDisk.asOutParam());
+            CheckComRCReturnRC (rc);
+
+            bool first = true;
+
+            while (!hardDisk.isNull())
+            {
+                if (first)
+                {
+                    rc = hardDisk->LockWrite (&mediaState);
+                    CheckComRCReturnRC (rc);
+
+                    task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
+                                                 value_type (hardDisk, true));
+                    first = false;
+                }
+                else
+                {
+                    rc = hardDisk->LockRead (&mediaState);
+                    CheckComRCReturnRC (rc);
+
+                    task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
+                                                 value_type (hardDisk, false));
+                }
+
+                if (mediaState == MediaState_Inaccessible)
+                    task->mediaToCheck.push_back (hardDisk);
+
+                ComPtr <IHardDisk2> parent;
+                rc = hardDisk->COMGETTER(Parent) (parent.asOutParam());
+                CheckComRCReturnRC (rc);
+                hardDisk = parent;
+            }
+        }
+    }
+    /* lock the DVD image for reading if mounted */
+    {
+        ComPtr <IDVDDrive> drive;
+        rc = mMachine->COMGETTER(DVDDrive) (drive.asOutParam());
+        CheckComRCReturnRC (rc);
+
+        DriveState_T driveState;
+        rc = drive->COMGETTER(State) (&driveState);
+        CheckComRCReturnRC (rc);
+
+        if (driveState == DriveState_ImageMounted)
+        {
+            ComPtr <IDVDImage2> image;
+            rc = drive->GetImage (image.asOutParam());
+            CheckComRCReturnRC (rc);
+
+            rc = image->LockRead (&mediaState);
+            CheckComRCReturnRC (rc);
+
+            task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
+                                         value_type (image, false));
+
+            if (mediaState == MediaState_Inaccessible)
+                task->mediaToCheck.push_back (image);
+        }
+    }
+    /* lock the floppy image for reading if mounted */
+    {
+        ComPtr <IFloppyDrive> drive;
+        rc = mMachine->COMGETTER(FloppyDrive) (drive.asOutParam());
+        CheckComRCReturnRC (rc);
+
+        DriveState_T driveState;
+        rc = drive->COMGETTER(State) (&driveState);
+        CheckComRCReturnRC (rc);
+
+        if (driveState == DriveState_ImageMounted)
+        {
+            ComPtr <IFloppyImage2> image;
+            rc = drive->GetImage (image.asOutParam());
+            CheckComRCReturnRC (rc);
+
+            rc = image->LockRead (&mediaState);
+            CheckComRCReturnRC (rc);
+
+            task->lockedMedia.push_back (VMPowerUpTask::LockedMedia::
+                                         value_type (image, false));
+
+            if (mediaState == MediaState_Inaccessible)
+                task->mediaToCheck.push_back (image);
+        }
+    }
+    /* SUCCEEDED locking all media */
+
+    rc = consoleInitReleaseLog (mMachine);
+    CheckComRCReturnRC (rc);
 
     int vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
@@ -4440,8 +4504,14 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Vrc)\n", vrc),
                        E_FAIL);
 
+    /* clear the locked media list to prevent unlocking on task destruction as
+     * we are not going to fail after this point */
+    task->lockedMedia.clear();
+
     /* task is now owned by powerUpThread(), so release it */
     task.release();
+
+    /* finally, set the state: no right to fail in this method afterwards! */
 
     if (mMachineState == MachineState_Saved)
         setMachineState (MachineState_Restoring);
@@ -6120,23 +6190,17 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
 
     /* we ignore RT_SRC_POS_DECL arguments to avoid confusion of end-users */
     va_list va2;
-    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
-    Utf8Str errorMsg = Utf8StrFmt (tr ("%N.\n"
-                                       "VBox status code: %d (%Vrc)"),
-                                   pszFormat, &va2, rc, rc);
-    va_end(va2);
+    va_copy (va2, args); /* Have to make a copy here or GCC will break. */
 
-    /* For now, this may be called only once. Ignore subsequent calls. */
-    if (!task->mErrorMsg.isNull())
-    {
-#if !defined(DEBUG_bird)
-        AssertMsgFailed (("Cannot set error to '%s': it is already set to '%s'",
-                          errorMsg.raw(), task->mErrorMsg.raw()));
-#endif
-        return;
-    }
+    /* append to the existing error message if any */
+    if (!task->mErrorMsg.isEmpty())
+        task->mErrorMsg = Utf8StrFmt ("%s.\n%N (%Vrc)", task->mErrorMsg.raw(),
+                                      pszFormat, &va2, rc, rc);
+    else
+        task->mErrorMsg = Utf8StrFmt ("%N (%Vrc)",
+                                      pszFormat, &va2, rc, rc);
 
-    task->mErrorMsg = errorMsg;
+    va_end (va2);
 }
 
 /**
@@ -6431,7 +6495,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     }
 #endif
 
-    HRESULT hrc = S_OK;
+    HRESULT rc = S_OK;
     int vrc = VINF_SUCCESS;
 
     /* Set up a build identifier so that it can be seen from core dumps what
@@ -6444,25 +6508,76 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
     /* Note: no need to use addCaller() because VMPowerUpTask does that */
 
+    /* The lock is also used as a signal from the task initiator (which
+     * releases it only after RTThreadCreate()) that we can start the job */
     AutoWriteLock alock (console);
 
     /* sanity */
     Assert (console->mpVM == NULL);
 
-    do
+    try
     {
+        {
+            ErrorInfoKeeper eik (true /* aIsNull */);
+            MultiResult mrc (S_OK);
+
+            /* perform a check of inaccessible media deferred in PowerUp() */
+            for (VMPowerUpTask::Media::const_iterator
+                 it = task->mediaToCheck.begin();
+                 it != task->mediaToCheck.end(); ++ it)
+            {
+                MediaState_T mediaState;
+                rc = (*it)->COMGETTER(State) (&mediaState);
+                CheckComRCThrowRC (rc);
+
+                Assert (mediaState == MediaState_LockedRead ||
+                        mediaState == MediaState_LockedWrite);
+
+                /* Note that we locked the medium already, so use the error
+                 * value to see if there was an accessibility failure */
+
+                Bstr error;
+                rc = (*it)->COMGETTER(LastAccessError) (error.asOutParam());
+                CheckComRCThrowRC (rc);
+
+                if (!error.isNull())
+                {
+                    Bstr loc;
+                    rc = (*it)->COMGETTER(Location) (loc.asOutParam());
+                    CheckComRCThrowRC (rc);
+
+                    /* collect multiple errors */
+                    eik.restore();
+
+                    /* be in sync with MediumBase::setStateError() */
+                    Assert (!error.isEmpty());
+                    mrc = setError (E_FAIL,
+                        tr ("Medium '%ls' is not accessible. %ls"),
+                        loc.raw(), error.raw());
+
+                    eik.fetch();
+                }
+            }
+
+            eik.restore();
+            CheckComRCThrowRC ((HRESULT) mrc);
+        }
+
 #ifdef VBOX_WITH_VRDP
+
         /* Create the VRDP server. In case of headless operation, this will
          * also create the framebuffer, required at VM creation.
          */
         ConsoleVRDPServer *server = console->consoleVRDPServer();
         Assert (server);
+
         /// @todo (dmik)
         //      does VRDP server call Console from the other thread?
         //      Not sure, so leave the lock just in case
         alock.leave();
         vrc = server->Launch();
         alock.enter();
+
         if (VBOX_FAILURE (vrc))
         {
             Utf8Str errMsg;
@@ -6487,9 +6602,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             }
             LogRel (("Failed to launch VRDP server (%Vrc), error message: '%s'\n",
                      vrc, errMsg.raw()));
-            hrc = setError (E_FAIL, errMsg);
-            break;
+            throw setError (E_FAIL, errMsg);
         }
+
 #endif /* VBOX_WITH_VRDP */
 
         /*
@@ -6553,21 +6668,21 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                          it != task->mSharedFolders.end();
                          ++ it)
                     {
-                        hrc = console->createSharedFolder ((*it).first, (*it).second);
-                        CheckComRCBreakRC (hrc);
+                        rc = console->createSharedFolder ((*it).first, (*it).second);
+                        CheckComRCBreakRC (rc);
                     }
 
                     /* enter the lock again */
                     alock.enter();
 
-                    CheckComRCBreakRC (hrc);
+                    CheckComRCBreakRC (rc);
                 }
 
                 /*
                  * Capture USB devices.
                  */
-                hrc = console->captureUSBDevices (pVM);
-                CheckComRCBreakRC (hrc);
+                rc = console->captureUSBDevices (pVM);
+                CheckComRCBreakRC (rc);
 
                 /* leave the lock before a lengthy operation */
                 alock.leave();
@@ -6618,15 +6733,15 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             while (0);
 
             /*  On failure, destroy the VM */
-            if (FAILED (hrc) || VBOX_FAILURE (vrc))
+            if (FAILED (rc) || VBOX_FAILURE (vrc))
             {
                 /* preserve existing error info */
                 ErrorInfoKeeper eik;
 
                 /* powerDown() will call VMR3Destroy() and do all necessary
                  * cleanup (VRDP, USB devices) */
-                HRESULT hrc2 = console->powerDown();
-                AssertComRC (hrc2);
+                HRESULT rc2 = console->powerDown();
+                AssertComRC (rc2);
             }
         }
         else
@@ -6637,11 +6752,11 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             console->mpVM = NULL;
         }
 
-        if (SUCCEEDED (hrc) && VBOX_FAILURE (vrc))
+        if (SUCCEEDED (rc) && VBOX_FAILURE (vrc))
         {
             /* If VMR3Create() or one of the other calls in this function fail,
              * an appropriate error message has been set in task->mErrorMsg.
-             * However since that happens via a callback, the hrc status code in
+             * However since that happens via a callback, the rc status code in
              * this function is not updated.
              */
             if (task->mErrorMsg.isNull())
@@ -6659,11 +6774,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
             /* Set the error message as the COM error.
              * Progress::notifyComplete() will pick it up later. */
-            hrc = setError (E_FAIL, task->mErrorMsg);
-            break;
+            throw setError (E_FAIL, task->mErrorMsg);
         }
     }
-    while (0);
+    catch (HRESULT aRC) { rc = aRC; }
 
     if (console->mMachineState == MachineState_Starting ||
         console->mMachineState == MachineState_Restoring)
@@ -6694,7 +6808,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     /* leave the lock, don't need it any more */
     alock.leave();
 
-    if (SUCCEEDED (hrc))
+    if (SUCCEEDED (rc))
     {
         /* Notify the progress object of the success */
         task->mProgress->notifyComplete (S_OK);
@@ -6702,9 +6816,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     else
     {
         /* The progress object will fetch the current error info */
-        task->mProgress->notifyComplete (hrc);
+        task->mProgress->notifyComplete (rc);
 
-        LogRel (("Power up failed (vrc=%Vrc, hrc=%Rhrc (%#08X))\n", vrc, hrc, hrc));
+        LogRel (("Power up failed (vrc=%Vrc, rc=%Rhrc (%#08X))\n", vrc, rc, rc));
     }
 
 #if defined(RT_OS_WINDOWS)
@@ -6726,24 +6840,22 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
  *  @param   phrc    Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
  *  @return  VBox status code.
  */
-static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESULT *phrc)
+static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda,
+                                              HRESULT *phrc)
 {
     LogFlowFunc (("pVM=%p hda=%p phrc=%p\n", pVM, hda, phrc));
 
     int             rc;
     HRESULT         hrc;
-    char           *psz = NULL;
-    BSTR            str = NULL;
+    Bstr            bstr;
     *phrc = S_OK;
-#define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
-#define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
-#define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); STR_FREE(); return rc; } } while (0)
-#define H() do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%Rhrc (%#x)\n", hrc, hrc)); STR_FREE(); *phrc = hrc; return VERR_GENERAL_FAILURE; } } while (0)
+#define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); return rc; } } while (0)
+#define H() do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%Rhrc (%#x)\n", hrc, hrc)); *phrc = hrc; return VERR_GENERAL_FAILURE; } } while (0)
 
     /*
      * Figure out which IDE device this is.
      */
-    ComPtr<IHardDisk> hardDisk;
+    ComPtr<IHardDisk2> hardDisk;
     hrc = hda->COMGETTER(HardDisk)(hardDisk.asOutParam());                      H();
     StorageBus_T enmBus;
     hrc = hda->COMGETTER(Bus)(&enmBus);                                         H();
@@ -6757,26 +6869,31 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
     {
         case StorageBus_IDE:
         {
-            if (lChannel >= 2)
+            if (lChannel >= 2 || lChannel < 0)
             {
                 AssertMsgFailed(("invalid controller channel number: %d\n", lChannel));
                 return VERR_GENERAL_FAILURE;
             }
 
-            if (lDev >= 2)
+            if (lDev >= 2 || lDev < 0)
             {
                 AssertMsgFailed(("invalid controller device number: %d\n", lDev));
                 return VERR_GENERAL_FAILURE;
             }
+
             iLUN = 2*lChannel + lDev;
+            break;
         }
-        break;
         case StorageBus_SATA:
+        {
             iLUN = lChannel;
             break;
+        }
         default:
+        {
             AssertMsgFailed(("invalid disk controller type: %d\n", enmBus));
             return VERR_GENERAL_FAILURE;
+        }
     }
 
     /*
@@ -6798,7 +6915,7 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
         rc = CFGMR3InsertInteger(pCfg,  "Mountable",            0);                 RC_CHECK();
 
         rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1, "Driver",              "VBoxHDD");          RC_CHECK();
+        rc = CFGMR3InsertString(pLunL1, "Driver",              "VD");               RC_CHECK();
         rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
     }
     else
@@ -6806,7 +6923,7 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
 #ifdef VBOX_STRICT
         char *pszDriver;
         rc = CFGMR3QueryStringAlloc(pLunL1, "Driver", &pszDriver);                  RC_CHECK();
-        Assert(!strcmp(pszDriver, "VBoxHDD"));
+        Assert(!strcmp(pszDriver, "VD"));
         MMR3HeapFree(pszDriver);
 #endif
 
@@ -6816,63 +6933,69 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
         pCfg = CFGMR3GetChild(pLunL1, "Config");
         AssertReturn(pCfg, VERR_INTERNAL_ERROR);
 
-        /* the image */
-        /// @todo (dmik) we temporarily use the location property to
-        //  determine the image file name. This is subject to change
-        //  when iSCSI disks are here (we should either query a
-        //  storage-specific interface from IHardDisk, or "standardize"
-        //  the location property)
-        hrc = hardDisk->COMGETTER(Location)(&str);                                  H();
-        STR_CONV();
-        char *pszPath;
-        rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pszPath);                        RC_CHECK();
-        if (!strcmp(psz, pszPath))
+        /* the format */
+        hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                       H();
+        char *pszFormat;
+        rc = CFGMR3QueryStringAlloc(pCfg, "Format", &pszFormat);                    RC_CHECK();
+        if (bstr == pszFormat)
         {
-            /* parent images. */
-            ComPtr<IHardDisk> parentHardDisk = hardDisk;
-            for (PCFGMNODE pParent = pCfg;;)
+            /* the image */
+            hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                     H();
+            char *pszPath;
+            rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pszPath);                        RC_CHECK();
+            if (bstr == pszPath)
             {
-                MMR3HeapFree(pszPath);
-                pszPath = NULL;
-                STR_FREE();
-
-                /* get parent */
-                ComPtr<IHardDisk> curHardDisk;
-                hrc = parentHardDisk->COMGETTER(Parent)(curHardDisk.asOutParam());  H();
-                PCFGMNODE pCur;
-                pCur = CFGMR3GetChild(pParent, "Parent");
-                if (!pCur && !curHardDisk)
+                /* parent images. */
+                ComPtr<IHardDisk2> parentHardDisk = hardDisk;
+                for (PCFGMNODE pParent = pCfg;;)
                 {
-                    /* no change */
-                    LogFlowFunc (("No change!\n"));
-                    return VINF_SUCCESS;
+                    MMR3HeapFree(pszPath);
+                    pszPath = NULL;
+
+                    MMR3HeapFree(pszFormat);
+                    pszFormat = NULL;
+
+                    /* get parent */
+                    ComPtr<IHardDisk2> curHardDisk;
+                    hrc = parentHardDisk->COMGETTER(Parent)(curHardDisk.asOutParam());  H();
+                    PCFGMNODE pCur;
+                    pCur = CFGMR3GetChild(pParent, "Parent");
+                    if (!pCur && !curHardDisk)
+                    {
+                        /* no change */
+                        LogFlowFunc (("No change!\n"));
+                        return VINF_SUCCESS;
+                    }
+                    if (!pCur || !curHardDisk)
+                        break;
+
+                    /* compare formats. */
+                    hrc = curHardDisk->COMGETTER(Format)(bstr.asOutParam());            H();
+                    rc = CFGMR3QueryStringAlloc(pCfg, "Format", &pszPath);              RC_CHECK();
+                    if (bstr != pszFormat)
+                        break;
+
+                    /* compare paths. */
+                    hrc = curHardDisk->COMGETTER(Location)(bstr.asOutParam());          H();
+                    rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pszPath);                RC_CHECK();
+                    if (bstr != pszPath)
+                        break;
+
+                    /* next */
+                    pParent = pCur;
+                    parentHardDisk = curHardDisk;
                 }
-                if (!pCur || !curHardDisk)
-                    break;
 
-                /* compare paths. */
-                /// @todo (dmik) we temporarily use the location property to
-                //  determine the image file name. This is subject to change
-                //  when iSCSI disks are here (we should either query a
-                //  storage-specific interface from IHardDisk, or "standardize"
-                //  the location property)
-                hrc = curHardDisk->COMGETTER(Location)(&str);                       H();
-                STR_CONV();
-                rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pszPath);                RC_CHECK();
-                if (strcmp(psz, pszPath))
-                    break;
-
-                /* next */
-                pParent = pCur;
-                parentHardDisk = curHardDisk;
             }
+            else
+                LogFlowFunc (("LUN#%d: old leaf location '%s'\n", iLUN, pszPath));
 
+            MMR3HeapFree(pszPath);
         }
         else
-            LogFlowFunc (("LUN#%d: old leaf image '%s'\n", iLUN, pszPath));
+            LogFlowFunc (("LUN#%d: old leaf format '%s'\n", iLUN, pszFormat));
 
-        MMR3HeapFree(pszPath);
-        STR_FREE();
+        MMR3HeapFree(pszFormat);
 
         /*
          * Detach the driver and replace the config node.
@@ -6885,36 +7008,27 @@ static DECLCALLBACK(int) reconfigureVDI(PVM pVM, IHardDiskAttachment *hda, HRESU
     /*
      * Create the driver configuration.
      */
-    /// @todo (dmik) we temporarily use the location property to
-    //  determine the image file name. This is subject to change
-    //  when iSCSI disks are here (we should either query a
-    //  storage-specific interface from IHardDisk, or "standardize"
-    //  the location property)
-    hrc = hardDisk->COMGETTER(Location)(&str);                                  H();
-    STR_CONV();
-    LogFlowFunc (("LUN#%d: leaf image '%s'\n", iLUN, psz));
-    rc = CFGMR3InsertString(pCfg, "Path", psz);                                 RC_CHECK();
-    STR_FREE();
+    hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                       H();
+    LogFlowFunc (("LUN#%d: leaf format '%ls'\n", iLUN, bstr.raw()));
+    rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr));                     RC_CHECK();
+    hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                     H();
+    LogFlowFunc (("LUN#%d: leaf location '%ls'\n", iLUN, bstr.raw()));
+    rc = CFGMR3InsertString(pCfg, "Path", Utf8Str(bstr));                       RC_CHECK();
     /* Create an inversed tree of parents. */
-    ComPtr<IHardDisk> parentHardDisk = hardDisk;
+    ComPtr<IHardDisk2> parentHardDisk = hardDisk;
     for (PCFGMNODE pParent = pCfg;;)
     {
-        ComPtr<IHardDisk> curHardDisk;
+        ComPtr<IHardDisk2> curHardDisk;
         hrc = parentHardDisk->COMGETTER(Parent)(curHardDisk.asOutParam());      H();
         if (!curHardDisk)
             break;
 
         PCFGMNODE pCur;
         rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
-        /// @todo (dmik) we temporarily use the location property to
-        //  determine the image file name. This is subject to change
-        //  when iSCSI disks are here (we should either query a
-        //  storage-specific interface from IHardDisk, or "standardize"
-        //  the location property)
-        hrc = curHardDisk->COMGETTER(Location)(&str);                           H();
-        STR_CONV();
-        rc = CFGMR3InsertString(pCur,  "Path", psz);                            RC_CHECK();
-        STR_FREE();
+        hrc = curHardDisk->COMGETTER(Format)(bstr.asOutParam());                H();
+        rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr));                RC_CHECK();
+        hrc = curHardDisk->COMGETTER(Location)(bstr.asOutParam());              H();
+        rc = CFGMR3InsertString(pCur,  "Path", Utf8Str(bstr));                  RC_CHECK();
 
         /* next */
         pParent = pCur;
@@ -7000,33 +7114,23 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
         if (task->mIsSnapshot)
         do
         {
-            LogFlowFunc (("Reattaching new differencing VDIs...\n"));
+            LogFlowFunc (("Reattaching new differencing hard disks...\n"));
 
-            ComPtr <IHardDiskAttachmentCollection> hdaColl;
-            rc = that->mMachine->COMGETTER(HardDiskAttachments) (hdaColl.asOutParam());
+            com::SafeIfaceArray <IHardDisk2Attachment> atts;
+            rc = that->mMachine->
+                COMGETTER(HardDisk2Attachments) (ComSafeArrayAsOutParam (atts));
             if (FAILED (rc))
                 break;
-            ComPtr <IHardDiskAttachmentEnumerator> hdaEn;
-            rc = hdaColl->Enumerate (hdaEn.asOutParam());
-            if (FAILED (rc))
-                break;
-            BOOL more = FALSE;
-            while (SUCCEEDED (rc = hdaEn->HasMore (&more)) && more)
+            for (size_t i = 0; i < atts.size(); ++ i)
             {
-                ComPtr <IHardDiskAttachment> hda;
-                rc = hdaEn->GetNext (hda.asOutParam());
-                if (FAILED (rc))
-                    break;
-
                 PVMREQ pReq;
-                IHardDiskAttachment *pHda = hda;
                 /*
-                 *  don't leave the lock since reconfigureVDI isn't going to
-                 *  access Console.
+                 *  don't leave the lock since reconfigureHardDisks isn't going
+                 *  to access Console.
                  */
                 int vrc = VMR3ReqCall (that->mpVM, &pReq, RT_INDEFINITE_WAIT,
-                                       (PFNRT)reconfigureVDI, 3, that->mpVM,
-                                       pHda, &rc);
+                                       (PFNRT)reconfigureHardDisks, 3, that->mpVM,
+                                       atts [i], &rc);
                 if (VBOX_SUCCESS (rc))
                     rc = pReq->iStatus;
                 VMR3ReqFree (pReq);

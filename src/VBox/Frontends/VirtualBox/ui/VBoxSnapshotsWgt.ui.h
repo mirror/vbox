@@ -555,6 +555,8 @@ void VBoxSnapshotsWgt::discardSnapshot()
     if (session.isNull())
         return;
 
+    QString snapName = mMachine.GetSnapshot (snapId).GetName();
+
     CConsole console = session.GetConsole();
     CProgress progress = console.DiscardSnapshot (snapId);
     if (console.isOk())
@@ -564,10 +566,10 @@ void VBoxSnapshotsWgt::discardSnapshot()
                                                vboxProblem().mainWindowShown());
 
         if (progress.GetResultCode() != 0)
-            vboxProblem().cannotDiscardSnapshot (progress, mMachine.GetSnapshot (snapId));
+            vboxProblem().cannotDiscardSnapshot (progress, snapName);
     }
     else
-        vboxProblem().cannotDiscardSnapshot (console, mMachine.GetSnapshot (snapId));
+        vboxProblem().cannotDiscardSnapshot (console, snapName);
 
     session.Close();
 }

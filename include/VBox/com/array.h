@@ -152,10 +152,13 @@
  * However, 'pointer-to-...' types (e.g. 'long *', 'wstring *') are not
  * supported and therefore cannot be used as element types.
  *
- * In order to pass input BSTR array parameters delcared using the
- * ComSafeArrayIn (INPTR BSTR, aParam) macro to the SafeArray<> constructor
- * using the ComSafeArrayInArg() macro, you should use INPTR BSTR as the
- * SafeArray<> template argument, not just BSTR.
+ * Note that for GUID arrays you should use SafeGUIDArray and
+ * SafeConstGUIDArray, customized SafeArray<> specializations.
+ *
+ * Also note that in order to pass input BSTR array parameters delcared
+ * using the ComSafeArrayIn (INPTR BSTR, aParam) macro to the SafeArray<>
+ * constructor using the ComSafeArrayInArg() macro, you should use INPTR BSTR
+ * as the SafeArray<> template argument, not just BSTR.
  *
  * Arrays of interface pointers are also supported but they require to use a
  * special SafeArray implementation, com::SafeIfacePointer, which takes the
@@ -182,7 +185,7 @@
  * @param aArray    com::SafeArray instance to pass as an input parameter.
  */
 #define ComSafeArrayAsInParam(aArray)   \
-    (aArray).size(), (aArray).__asInParam_Arr (aArray.raw())
+    (aArray).size(), (aArray).__asInParam_Arr ((aArray).raw())
 
 /**
  * Wraps the given com::SafeArray instance to generate an expression that is
@@ -213,15 +216,22 @@ namespace com
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Contains various helper constants for SafeArray.
+ * Provides various helpers for SafeArray.
+ *
+ * @param T Type of array elements.
  */
 template <typename T>
 struct SafeArrayTraits
 {
 protected:
 
+    /** Initializes memory for aElem. */
     static void Init (T &aElem) { aElem = 0; }
+
+    /** Initializes memory occupied by aElem. */
     static void Uninit (T &aElem) { aElem = 0; }
+
+    /** Creates a deep copy of aFrom and stores it in aTo. */
     static void Copy (const T &aFrom, T &aTo) { aTo = aFrom; }
 
 public:
@@ -247,6 +257,7 @@ struct SafeArrayTraits <PRUnichar *>
 protected:
 
     static void Init (PRUnichar * &aElem) { aElem = NULL; }
+
     static void Uninit (PRUnichar * &aElem)
     {
         if (aElem)
@@ -299,17 +310,80 @@ public:
     static const PRUnichar **__asInParam_Arr (const PRUnichar **aArr) { return aArr; }
 };
 
+template<>
+struct SafeArrayTraits <nsID *>
+{
+protected:
+
+    static void Init (nsID * &aElem) { aElem = NULL; }
+
+    static void Uninit (nsID * &aElem)
+    {
+        if (aElem)
+        {
+            ::nsMemory::Free (aElem);
+            aElem = NULL;
+        }
+    }
+
+    static void Copy (const nsID * aFrom, nsID * &aTo)
+    {
+        if (aFrom)
+        {
+            aTo = (nsID *) ::nsMemory::Alloc (sizeof (nsID));
+            if (aTo)
+                *aTo = *aFrom;
+        }
+        else
+            aTo = NULL;
+    }
+
+    /* This specification is also reused for SafeConstGUIDArray, so provide a
+     * no-op Init() and Uninit() which are necessary for SafeArray<> but should
+     * be never called in context of SafeConstGUIDArray. */
+
+    static void Init (const nsID * &aElem) { NOREF (aElem); AssertFailed(); }
+    static void Uninit (const nsID * &aElem) { NOREF (aElem); AssertFailed(); }
+
+public:
+
+    /** Magic to workaround strict rules of par. 4.4.4 of the C++ standard. */
+    static const nsID **__asInParam_Arr (nsID **aArr)
+    {
+        return const_cast <const nsID **> (aArr);
+    }
+    static const nsID **__asInParam_Arr (const nsID **aArr) { return aArr; }
+};
+
 #else /* defined (VBOX_WITH_XPCOM) */
 
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Contains various helper constants for SafeArray.
+ * Provides various helpers for SafeArray.
+ *
+ * @param T Type of array elements.
+ *
+ * Specializations of this template must provide the following methods:
+ *
+    // Returns the VARTYPE of COM SafeArray elements to be used for T
+    static VARTYPE VarType();
+
+    // Returns the number of VarType() elements necessary for aSize
+    // elements of T
+    static ULONG VarCount (size_t aSize);
+
+    // Returns the number of elements of T that occupy the given number of
+    // VarType() elements (opposite to VarCount (size_t aSize)).
+    static size_t Size (ULONG aVarCount);
+
+    // Creates a deep copy of aFrom and stores it in aTo
+    static void Copy (ULONG aFrom, ULONG &aTo);
  */
 template <typename T>
 struct SafeArrayTraits
 {
-    // Arbitrary types are not supported
+    // Arbitrary types are not supported -- no helpers
 };
 
 template<>
@@ -318,6 +392,9 @@ struct SafeArrayTraits <LONG>
 protected:
 
     static VARTYPE VarType() { return VT_I4; }
+    static ULONG VarCount (size_t aSize) { return (ULONG) aSize; }
+    static size_t Size (ULONG aVarCount) { return (size_t) aVarCount; }
+
     static void Copy (LONG aFrom, LONG &aTo) { aTo = aFrom; }
 };
 
@@ -327,6 +404,9 @@ struct SafeArrayTraits <ULONG>
 protected:
 
     static VARTYPE VarType() { return VT_UI4; }
+    static ULONG VarCount (size_t aSize) { return (ULONG) aSize; }
+    static size_t Size (ULONG aVarCount) { return (size_t) aVarCount; }
+
     static void Copy (ULONG aFrom, ULONG &aTo) { aTo = aFrom; }
 };
 
@@ -336,6 +416,9 @@ struct SafeArrayTraits <LONG64>
 protected:
 
     static VARTYPE VarType() { return VT_I8; }
+    static ULONG VarCount (size_t aSize) { return (ULONG) aSize; }
+    static size_t Size (ULONG aVarCount) { return (size_t) aVarCount; }
+
     static void Copy (LONG64 aFrom, LONG64 &aTo) { aTo = aFrom; }
 };
 
@@ -345,6 +428,9 @@ struct SafeArrayTraits <ULONG64>
 protected:
 
     static VARTYPE VarType() { return VT_UI8; }
+    static ULONG VarCount (size_t aSize) { return (ULONG) aSize; }
+    static size_t Size (ULONG aVarCount) { return (size_t) aVarCount; }
+
     static void Copy (ULONG64 aFrom, ULONG64 &aTo) { aTo = aFrom; }
 };
 
@@ -354,11 +440,33 @@ struct SafeArrayTraits <BSTR>
 protected:
 
     static VARTYPE VarType() { return VT_BSTR; }
+    static ULONG VarCount (size_t aSize) { return (ULONG) aSize; }
+    static size_t Size (ULONG aVarCount) { return (size_t) aVarCount; }
 
     static void Copy (BSTR aFrom, BSTR &aTo)
     {
         aTo = aFrom ? ::SysAllocString ((const OLECHAR *) aFrom) : NULL;
     }
+};
+
+template<>
+struct SafeArrayTraits <GUID>
+{
+protected:
+
+    /* Use the 64-bit unsigned integer type for GUID */
+    static VARTYPE VarType() { return VT_UI8; }
+
+    /* GUID is 128 bit, so we need two VT_UI8 */
+    static ULONG VarCount (size_t aSize)
+    {
+        AssertCompileSize (GUID, 16);
+        return (ULONG) (aSize * 2);
+    }
+
+    static size_t Size (ULONG aVarCount) { return (size_t) aVarCount / 2; }
+
+    static void Copy (GUID aFrom, GUID &aTo) { aTo = aFrom; }
 };
 
 #endif /* defined (VBOX_WITH_XPCOM) */
@@ -417,7 +525,7 @@ public:
     /**
      * Weakly attaches this instance to the existing array passed in a method
      * parameter declared using the ComSafeArrayIn macro. When using this call,
-     * always wrap the parameter name in the ComSafeArrayOutArg macro call like
+     * always wrap the parameter name in the ComSafeArrayInArg macro call like
      * this:
      * <pre>
      *  SafeArray safeArray (ComSafeArrayInArg (aArg));
@@ -459,13 +567,13 @@ public:
         m.arr = arg;
         m.isWeak = true;
 
-        AssertReturnVoid (accessRaw() != NULL);
+        AssertReturnVoid (m.arr == NULL || accessRaw() != NULL);
 
 #endif /* defined (VBOX_WITH_XPCOM) */
     }
 
     /**
-     * Creates a deep copy of the goven standard C++ container.
+     * Creates a deep copy of the given standard C++ container.
      *
      * @param aCntr Container object to copy.
      *
@@ -478,7 +586,7 @@ public:
         reset (aCntr.size());
         AssertReturnVoid (!isNull());
 
-        int i = 0;
+        size_t i = 0;
         for (typename C <T>::const_iterator it = aCntr.begin();
              it != aCntr.end(); ++ it, ++ i)
 #if defined (VBOX_WITH_XPCOM)
@@ -525,7 +633,7 @@ public:
         return 0;
 #else
         if (m.arr)
-            return m.arr->rgsabound [0].cElements;
+            return Size (m.arr->rgsabound [0].cElements);
         return 0;
 #endif
     }
@@ -575,7 +683,7 @@ public:
 
 #else
 
-        SAFEARRAYBOUND bound = { (ULONG)aNewSize, 0 };
+        SAFEARRAYBOUND bound = { VarCount (aNewSize), 0 };
         m.arr = SafeArrayCreate (VarType(), 1, &bound);
         AssertReturn (m.arr != NULL, false);
 
@@ -677,7 +785,7 @@ public:
     }
 
     /**
-     * Transfers the ownership of this array's data to a method parameter
+     * Transfers the ownership of this array's data to the specified location
      * declared using the ComSafeArrayOut macro and makes this array a null
      * array. When using this call, always wrap the parameter name in the
      * ComSafeArrayOutArg macro call like this:
@@ -685,11 +793,14 @@ public:
      *  safeArray.detachTo (ComSafeArrayOutArg (aArg));
      * </pre>
      *
+     * Detaching the null array is also possible in which case the location will
+     * receive NULL.
+     *
      * @note Since the ownership of the array data is transferred to the
      * caller of the method, he is responsible to free the array data when it is
      * no more necessary.
      *
-     * @param aArg  Output method parameter to detach to.
+     * @param aArg  Location to detach to.
      */
     virtual SafeArray &detachTo (ComSafeArrayOut (T, aArg))
     {
@@ -841,6 +952,152 @@ protected:
 
 #if defined (VBOX_WITH_XPCOM)
 
+/**
+ * Version of com::SafeArray for arrays of GUID.
+ *
+ * In MS COM, GUID arrays store GUIDs by value and therefore input arrays are
+ * represented using |GUID *| and out arrays -- using |GUID **|. In XPCOM,
+ * GUID arrays store pointers to nsID so that input arrays are |const nsID **|
+ * and out arrays are |nsID ***|. Due to this difference, it is impossible to
+ * work with arrays of GUID on both platforms by simply using com::SafeArray
+ * <GUID>. This class is intended to provide some leve of cross-platform
+ * behavior.
+ *
+ * The basic usage pattern is basically similar to com::SafeArray<> except that
+ * you use ComSafeGUIDArrayIn* and ComSafeGUIDArrayOut* macros instead of
+ * ComSafeArrayIn* and ComSafeArrayOut*. Another important nuance is that the
+ * raw() array type is different (nsID **, or GUID ** on XPCOM and GUID * on MS
+ * COM) so it is recommended to use operator[] instead that always returns a
+ * GUID by value.
+ *
+ * Note that due to const modifiers, you cannot use SafeGUIDArray for input GUID
+ * arrays. Please use SafeConstGUIDArray for this instead.
+ *
+ * Other than mentioned above, the functionality of this class is equivalent to
+ * com::SafeArray<>. See the description of that template and its methods for
+ * more information.
+ *
+ * Output GUID arrays are handled by a separate class, SafeGUIDArrayOut, since
+ * this class cannot handle them because of const modifiers.
+ */
+class SafeGUIDArray : public SafeArray <nsID *>
+{
+public:
+
+    typedef SafeArray <nsID *> Base;
+
+    class nsIDRef
+    {
+    public:
+
+        nsIDRef (nsID * &aVal) : mVal (aVal) {}
+
+        operator const nsID &() const { return mVal ? *mVal : *Empty; }
+        operator nsID() const { return mVal ? *mVal : *Empty; }
+
+        const nsID *operator&() const { return mVal ? mVal : Empty; }
+
+        nsIDRef &operator= (const nsID &aThat)
+        {
+            if (mVal == NULL)
+                Copy (&aThat, mVal);
+            else
+                *mVal = aThat;
+            return *this;
+        }
+
+    private:
+
+        nsID * &mVal;
+
+        static const nsID *Empty;
+
+        friend class SafeGUIDArray;
+    };
+
+    /** See SafeArray<>::SafeArray(). */
+    SafeGUIDArray() {}
+
+    /** See SafeArray<>::SafeArray (size_t). */
+    SafeGUIDArray (size_t aSize) : Base (aSize) {}
+
+    /**
+     * Array access operator that returns an array element by reference. As a
+     * special case, the return value of this operator on XPCOM is a nsID (GUID)
+     * reference, instead of a nsID pointer (the actual SafeArray template
+     * argument), for compatibility with the MS COM version.
+     *
+     * The rest is equivalent to SafeArray<>::operator[].
+     */
+    nsIDRef operator[] (size_t aIdx)
+    {
+        Assert (m.arr != NULL);
+        Assert (aIdx < size());
+        return nsIDRef (m.arr [aIdx]);
+    }
+
+    /**
+    * Const version of #operator[] that returns an array element by value.
+    */
+    const nsID &operator[] (size_t aIdx) const
+    {
+        Assert (m.arr != NULL);
+        Assert (aIdx < size());
+        return m.arr [aIdx] ? *m.arr [aIdx] : *nsIDRef::Empty;
+    }
+};
+
+/**
+ * Version of com::SafeArray for const arrays of GUID.
+ *
+ * This class is used to work with input GUID array parameters in method
+ * implementaitons. See SafeGUIDArray for more details.
+ */
+class SafeConstGUIDArray : public SafeArray <const nsID *,
+                                            SafeArrayTraits <nsID *> >
+{
+public:
+
+    typedef SafeArray <const nsID *, SafeArrayTraits <nsID *> > Base;
+
+    /** See SafeArray<>::SafeArray(). */
+    SafeConstGUIDArray() {}
+
+    /* See SafeArray<>::SafeArray (ComSafeArrayIn (T, aArg)). */
+    SafeConstGUIDArray (ComSafeGUIDArrayIn (aArg))
+        : Base (ComSafeGUIDArrayInArg (aArg)) {}
+
+    /**
+     * Array access operator that returns an array element by reference. As a
+     * special case, the return value of this operator on XPCOM is nsID (GUID)
+     * instead of nsID *, for compatibility with the MS COM version.
+     *
+     * The rest is equivalent to SafeArray<>::operator[].
+     */
+    const nsID &operator[] (size_t aIdx) const
+    {
+        AssertReturn (m.arr != NULL,  **((const nsID * *) NULL));
+        AssertReturn (aIdx < size(), **((const nsID * *) NULL));
+        return *m.arr [aIdx];
+    }
+
+private:
+
+    /* These are disabled because of const */
+    bool reset (size_t aNewSize) { NOREF (aNewSize); return false; }
+};
+
+#else /* defined (VBOX_WITH_XPCOM) */
+
+typedef SafeArray <GUID> SafeGUIDArray;
+typedef SafeArray <const GUID, SafeArrayTraits <GUID> > SafeConstGUIDArray;
+
+#endif /* defined (VBOX_WITH_XPCOM) */
+
+////////////////////////////////////////////////////////////////////////////////
+
+#if defined (VBOX_WITH_XPCOM)
+
 template <class I>
 struct SafeIfaceArrayTraits
 {
@@ -882,6 +1139,8 @@ struct SafeIfaceArrayTraits
 protected:
 
     static VARTYPE VarType() { return VT_UNKNOWN; }
+    static ULONG VarCount (size_t aSize) { return (ULONG) aSize; }
+    static size_t Size (ULONG aVarCount) { return (size_t) aVarCount; }
 
     static void Copy (I * aFrom, I * &aTo)
     {

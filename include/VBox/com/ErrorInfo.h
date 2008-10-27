@@ -361,7 +361,7 @@ public:
      *                  the instance uninitialized.
      */
     ErrorInfoKeeper (bool aIsNull = false)
-        : ErrorInfo (false), mForgot (false)
+        : ErrorInfo (false), mForgot (aIsNull)
     {
         if (!aIsNull)
             init (true /* aKeepObj */);
@@ -370,7 +370,8 @@ public:
     /**
      *  Destroys this instance and automatically calls #restore() which will
      *  either restore error info fetched by the constructor or do nothing
-     *  if #forget() was called before destruction. */
+     *  if #forget() was called before destruction.
+     */
     ~ErrorInfoKeeper() { if (!mForgot) restore(); }
 
     /**
@@ -382,12 +383,13 @@ public:
     void fetch()
     {
         setNull();
+        mForgot = false;
         init (true /* aKeepObj */);
     }
 
     /**
      *  Restores error info fetched by the constructor and forgets it
-     *  afterwards.
+     *  afterwards. Does nothing if the error info was forgotten by #forget().
      *
      *  @return COM result of the restore operation.
      */

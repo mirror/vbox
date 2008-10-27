@@ -139,7 +139,7 @@ void VBoxVMSettingsUSB::getFrom (const CSystemProperties &, const VBoxGlobalSett
     while (en.HasMore())
     {
         CHostUSBDeviceFilter hostFilter = en.GetNext();
-        CUSBDeviceFilter filter = CUnknown (hostFilter);
+        CUSBDeviceFilter filter (hostFilter);
         addUSBFilter (filter, false /* isNew */);
     }
 
@@ -163,7 +163,7 @@ void VBoxVMSettingsUSB::putBackTo (CSystemProperties &, VBoxGlobalSettings &)
             CUSBDeviceFilter filter = mFilters [i];
             filter.SetActive (mTwFilters->topLevelItem (i)->
                 checkState (0) == Qt::Checked);
-            CHostUSBDeviceFilter insertedFilter = CUnknown (filter);
+            CHostUSBDeviceFilter insertedFilter (filter);
             host.InsertUSBDeviceFilter (host.GetUSBDeviceFilters().GetCount(),
                                         insertedFilter);
         }
@@ -194,7 +194,7 @@ void VBoxVMSettingsUSB::getFrom (const CMachine &aMachine)
 
 void VBoxVMSettingsUSB::putBackTo()
 {
-    CUSBController ctl = mMachine.GetUSBController(); 
+    CUSBController ctl = mMachine.GetUSBController();
     if (!ctl.isNull())
     {
         ctl.SetEnabled (mGbUSB->isChecked());
@@ -322,7 +322,7 @@ void VBoxVMSettingsUSB::newClicked()
         CHostUSBDeviceFilter hostFilter = host
             .CreateUSBDeviceFilter (mUSBFilterName.arg (maxFilterIndex + 1));
         hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
-        filter = CUnknown (hostFilter);
+        filter = hostFilter;
     }
     else if (mType == MachineType)
     {
@@ -363,7 +363,7 @@ void VBoxVMSettingsUSB::addConfirmed (QAction *aAction)
         CHostUSBDeviceFilter hostFilter = host
             .CreateUSBDeviceFilter (vboxGlobal().details (usb));
         hostFilter.SetAction (KUSBDeviceFilterAction_Hold);
-        filter = CUnknown (hostFilter);
+        filter = hostFilter;
     }
     else if (mType == MachineType)
     {
@@ -433,7 +433,7 @@ void VBoxVMSettingsUSB::edtClicked()
         }
         case HostType:
         {
-            CHostUSBDeviceFilter hostFilter = CUnknown (filter);
+            CHostUSBDeviceFilter hostFilter (filter);
             KUSBDeviceFilterAction action = hostFilter.isNull() ?
                 KUSBDeviceFilterAction_Ignore : hostFilter.GetAction();
             if (action == KUSBDeviceFilterAction_Ignore)
@@ -475,7 +475,7 @@ void VBoxVMSettingsUSB::edtClicked()
         else
         if (mType == HostType)
         {
-            CHostUSBDeviceFilter hostFilter = CUnknown (filter);
+            CHostUSBDeviceFilter hostFilter (filter);
             hostFilter.SetAction (vboxGlobal().toUSBDevFilterAction (fd.mCbAction->currentText()));
         }
         item->setToolTip (0, vboxGlobal().toolTip (filter));

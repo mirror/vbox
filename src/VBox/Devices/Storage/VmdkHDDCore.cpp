@@ -4665,9 +4665,9 @@ static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    /* Image must be opened and the new flags must be valid. Just readonly flag
-     * is supported. */
-    if (!pImage || uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_ASYNC_IO))
+    /* Image must be opened and the new flags must be valid. Just readonly and
+     * info flags are supported. */
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;

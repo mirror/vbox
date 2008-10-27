@@ -1689,15 +1689,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * it to the VM.
          */
         Bstr hdaFileBstr = hdaFile;
-        ComPtr<IHardDisk> hardDisk;
-        virtualBox->FindHardDisk(hdaFileBstr, hardDisk.asOutParam());
+        ComPtr<IHardDisk2> hardDisk;
+        virtualBox->FindHardDisk2(hdaFileBstr, hardDisk.asOutParam());
         if (!hardDisk)
         {
             /* we've not found the image */
-            RTPrintf("Registering hard disk image '%S'...\n", hdaFile);
-            virtualBox->OpenHardDisk (hdaFileBstr, hardDisk.asOutParam());
-            if (hardDisk)
-                virtualBox->RegisterHardDisk (hardDisk);
+            RTPrintf("Adding hard disk '%S'...\n", hdaFile);
+            virtualBox->OpenHardDisk2 (hdaFileBstr, hardDisk.asOutParam());
         }
         /* do we have the right image now? */
         if (hardDisk)
@@ -1707,8 +1705,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             Guid uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachHardDisk(StorageBus_IDE, 0, 0);
-            gMachine->AttachHardDisk(uuid, StorageBus_IDE, 0, 0);
+            gMachine->DetachHardDisk2(StorageBus_IDE, 0, 0);
+            gMachine->AttachHardDisk2(uuid, StorageBus_IDE, 0, 0);
             /// @todo why is this attachment saved?
         }
         else
@@ -1736,7 +1734,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 
-        Bstr media = fdaFile;
+        Bstr medium = fdaFile;
         bool done = false;
 
         /* Assume it's a host drive name */
@@ -1746,7 +1744,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             ComPtr <IHostFloppyDriveCollection> coll;
             CHECK_ERROR_BREAK (host, COMGETTER(FloppyDrives)(coll.asOutParam()));
             ComPtr <IHostFloppyDrive> hostDrive;
-            rc = coll->FindByName (media, hostDrive.asOutParam());
+            rc = coll->FindByName (medium, hostDrive.asOutParam());
             if (SUCCEEDED (rc))
             {
                 done = true;
@@ -1758,16 +1756,15 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (!done)
         {
             /* try to find an existing one */
-            ComPtr <IFloppyImage> image;
-            rc = virtualBox->FindFloppyImage (media, image.asOutParam());
+            ComPtr <IFloppyImage2> image;
+            rc = virtualBox->FindFloppyImage (medium, image.asOutParam());
             if (FAILED (rc))
             {
-                /* try to register */
-                RTPrintf ("Registering floppy image '%S'...\n", fdaFile);
+                /* try to add to the list */
+                RTPrintf ("Adding floppy image '%S'...\n", fdaFile);
                 Guid uuid;
-                CHECK_ERROR_BREAK (virtualBox, OpenFloppyImage (media, uuid,
+                CHECK_ERROR_BREAK (virtualBox, OpenFloppyImage (medium, uuid,
                                                                 image.asOutParam()));
-                CHECK_ERROR_BREAK (virtualBox, RegisterFloppyImage (image));
             }
 
             /* attach */
@@ -1798,7 +1795,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 
-        Bstr media = cdromFile;
+        Bstr medium = cdromFile;
         bool done = false;
 
         /* Assume it's a host drive name */
@@ -1808,7 +1805,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             ComPtr <IHostDVDDriveCollection> coll;
             CHECK_ERROR_BREAK (host, COMGETTER(DVDDrives)(coll.asOutParam()));
             ComPtr <IHostDVDDrive> hostDrive;
-            rc = coll->FindByName (media, hostDrive.asOutParam());
+            rc = coll->FindByName (medium, hostDrive.asOutParam());
             if (SUCCEEDED (rc))
             {
                 done = true;
@@ -1820,16 +1817,15 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (!done)
         {
             /* try to find an existing one */
-            ComPtr <IDVDImage> image;
-            rc = virtualBox->FindDVDImage (media, image.asOutParam());
+            ComPtr <IDVDImage2> image;
+            rc = virtualBox->FindDVDImage (medium, image.asOutParam());
             if (FAILED (rc))
             {
-                /* try to register */
-                RTPrintf ("Registering ISO image '%S'...\n", cdromFile);
+                /* try to add to the list */
+                RTPrintf ("Adding ISO image '%S'...\n", cdromFile);
                 Guid uuid;
-                CHECK_ERROR_BREAK (virtualBox, OpenDVDImage (media, uuid,
+                CHECK_ERROR_BREAK (virtualBox, OpenDVDImage (medium, uuid,
                                                              image.asOutParam()));
-                CHECK_ERROR_BREAK (virtualBox, RegisterDVDImage (image));
             }
 
             /* attach */

@@ -30,7 +30,7 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     /* Apply UI decorations */
     Ui::VBoxGLSettingsGeneral::setupUi (this);
 
-    mPsVdi->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
+    mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsVRDP->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsVRDP->setMode (VBoxFilePathSelectorWidget::Mode_File);
@@ -42,7 +42,7 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
                                          const VBoxGlobalSettings &)
 {
-    mPsVdi->setPath (aProps.GetDefaultVDIFolder());
+    mPsHardDisk->setPath (aProps.GetDefaultHardDiskFolder());
     mPsMach->setPath (aProps.GetDefaultMachineFolder());
     mPsVRDP->setPath (aProps.GetRemoteDisplayAuthLibrary());
 }
@@ -50,8 +50,8 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
 void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
                                        VBoxGlobalSettings &)
 {
-    if (mPsVdi->isModified())
-        aProps.SetDefaultVDIFolder (mPsVdi->path());
+    if (mPsHardDisk->isModified())
+        aProps.SetDefaultHardDiskFolder (mPsHardDisk->path());
     if (aProps.isOk() && mPsMach->isModified())
         aProps.SetDefaultMachineFolder (mPsMach->path());
     if (aProps.isOk() && mPsVRDP->isModified())
@@ -60,8 +60,8 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
 
 void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
 {
-    setTabOrder (aWidget, mPsVdi);
-    setTabOrder (mPsVdi, mPsMach);
+    setTabOrder (aWidget, mPsHardDisk);
+    setTabOrder (mPsHardDisk, mPsMach);
     setTabOrder (mPsMach, mPsVRDP);
 }
 
@@ -70,10 +70,10 @@ void VBoxGLSettingsGeneral::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxGLSettingsGeneral::retranslateUi (this);
 
-    mPsVdi->setWhatsThis (tr ("Displays the path to the default VDI folder. "
-                              "This folder is used, if not explicitly "
-                              "specified otherwise, when adding existing or "
-                              "creating new virtual hard disks."));
+    mPsHardDisk->setWhatsThis (tr ("Displays the path to the default hard disk "
+                                   "folder. This folder is used, if not explicitly "
+                                   "specified otherwise, when adding existing or "
+                                   "creating new virtual hard disks."));
     mPsMach->setWhatsThis (tr ("Displays the path to the default virtual "
                                "machine folder. This folder is used, if not "
                                "explicitly specified otherwise, when creating "

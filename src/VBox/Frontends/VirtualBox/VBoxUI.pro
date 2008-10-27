@@ -24,7 +24,7 @@
 TEMPLATE	= app
 LANGUAGE	= C++
 
-FORMS	= ui/VBoxDiskImageManagerDlg.ui \
+FORMS	= ui/VBoxMediaManagerDlg.ui \
 	ui/VBoxVMNetworkSettings.ui \
 	ui/VBoxVMSerialPortSettings.ui \
 	ui/VBoxVMParallelPortSettings.ui \

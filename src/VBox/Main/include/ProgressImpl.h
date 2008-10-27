@@ -1,10 +1,11 @@
+/* $Id$ */
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +26,8 @@
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 
+#include <VBox/com/SupportErrorInfo.h>
+
 #include <iprt/semaphore.h>
 
 #include <vector>
@@ -33,30 +36,32 @@ class VirtualBox;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Base component class for progress objects.
+ */
 class ATL_NO_VTABLE ProgressBase :
-    public VirtualBoxSupportErrorInfoImpl <ProgressBase, IProgress>,
+    public VirtualBoxBaseNEXT,
+    public com::SupportErrorInfoBase,
     public VirtualBoxSupportTranslation <ProgressBase>,
-    public VirtualBoxBase,
     public IProgress
 {
 protected:
 
-    BEGIN_COM_MAP(ProgressBase)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IProgress)
-    END_COM_MAP()
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (ProgressBase)
+
+    DECLARE_EMPTY_CTOR_DTOR (ProgressBase)
 
     HRESULT FinalConstruct();
 
-    // public initializer/uninitializer for internal purposes only
-    HRESULT protectedInit (
+    // protected initializer/uninitializer for internal purposes only
+    HRESULT protectedInit (AutoInitSpan &aAutoInitSpan,
 #if !defined (VBOX_COM_INPROC)
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
                   const BSTR aDescription, GUIDPARAMOUT aId = NULL);
-    HRESULT protectedInit();
-    void protectedUninit (AutoWriteLock &alock);
+    HRESULT protectedInit (AutoInitSpan &aAutoInitSpan);
+    void protectedUninit (AutoUninitSpan &aAutoUninitSpan);
 
 public:
 
@@ -79,25 +84,27 @@ public:
 
     // public methods only for internal purposes
 
-    Guid id() { AutoWriteLock alock (this); return mId; }
-    BOOL completed() { AutoWriteLock alock (this); return mCompleted; }
-    HRESULT resultCode() { AutoWriteLock alock (this); return mResultCode; }
+    static HRESULT setErrorInfoOnThread (IProgress *aProgress);
 
-    // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"Progress"; }
+    // unsafe inline public methods for internal purposes only (ensure there is
+    // a caller and a read lock before calling them!)
+
+    BOOL completed() const { return mCompleted; }
+    HRESULT resultCode() const { return mResultCode; }
 
 protected:
 
 #if !defined (VBOX_COM_INPROC)
-    /** weak parent */
-    ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    /** Weak parent. */
+    const ComObjPtr <VirtualBox, ComWeakRef> mParent;
 #endif
-    ComPtr <IUnknown> mInitiator;
 
-    Guid mId;
-    Bstr mDescription;
+    const ComPtr <IUnknown> mInitiator;
 
-    // the fields below are to be initalized by subclasses
+    const Guid mId;
+    const Bstr mDescription;
+
+    /* The fields below are to be properly initalized by subclasses */
 
     BOOL mCompleted;
     BOOL mCancelable;
@@ -113,22 +120,25 @@ protected:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Normal progress object.
+ */
 class ATL_NO_VTABLE Progress :
-    public VirtualBoxSupportTranslation <Progress>,
-    public ProgressBase
+    public com::SupportErrorInfoDerived <ProgressBase, Progress, IProgress>,
+    public VirtualBoxSupportTranslation <Progress>
 {
 
 public:
 
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(Progress)
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (Progress)
 
-    DECLARE_NOT_AGGREGATABLE(Progress)
+    DECLARE_NOT_AGGREGATABLE (Progress)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(Progress)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IProgress)
+    BEGIN_COM_MAP (Progress)
+        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY (IProgress)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -184,6 +194,9 @@ public:
     HRESULT notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
                                 const Bstr &aComponent, const Bstr &aText);
 
+    /** For com::SupportErrorInfoImpl. */
+    static const char *ComponentName() { return "Progress"; }
+
 private:
 
     RTSEMEVENTMULTI mCompletedSem;
@@ -193,14 +206,14 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  The CombinedProgress class allows to combine several progress objects
- *  to a single progress component. This single progress component will treat
- *  all operations of individual progress objects as a single sequence of
- *  operations, that follow each other in the same order as progress objects are
- *  passed to the #init() method.
+ * The CombinedProgress class allows to combine several progress objects to a
+ * single progress component. This single progress component will treat all
+ * operations of individual progress objects as a single sequence of operations
+ * that follow each other in the same order as progress objects are passed to
+ * the #init() method.
  *
- *  Individual progress objects are sequentially combined so that this progress
- *  object:
+ * Individual progress objects are sequentially combined so that this progress
+ * object:
  *
  *  -   is cancelable only if all progresses are cancelable.
  *  -   is canceled once a progress that follows next to successfully completed
@@ -221,29 +234,28 @@ private:
  *      first one plus the percent value of the next (not yet complete)
  *      progress, normalized to 100%.
  *
- *  @note
- *      It's the respoisibility of the combined progress object creator
- *      to complete individual progresses in the right order: if, let's say,
- *      the last progress is completed before all previous ones,
- *      #WaitForCompletion(-1) will most likely give 100% CPU load because it
- *      will be in a loop calling a method that returns immediately.
+ * @note It's the respoisibility of the combined progress object creator to
+ *       complete individual progresses in the right order: if, let's say, the
+ *       last progress is completed before all previous ones,
+ *       #WaitForCompletion(-1) will most likely give 100% CPU load because it
+ *       will be in a loop calling a method that returns immediately.
  */
 class ATL_NO_VTABLE CombinedProgress :
-    public VirtualBoxSupportTranslation <CombinedProgress>,
-    public ProgressBase
+    public com::SupportErrorInfoDerived <ProgressBase, CombinedProgress, IProgress>,
+    public VirtualBoxSupportTranslation <CombinedProgress>
 {
 
 public:
 
-    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(CombinedProgress)
+    VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE (CombinedProgress)
 
-    DECLARE_NOT_AGGREGATABLE(CombinedProgress)
+    DECLARE_NOT_AGGREGATABLE (CombinedProgress)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(CombinedProgress)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IProgress)
+    BEGIN_COM_MAP (CombinedProgress)
+        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY (IProgress)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -260,22 +272,19 @@ public:
                   IUnknown *aInitiator,
                   const BSTR aDescription,
                   IProgress *aProgress1, IProgress *aProgress2,
-                  GUIDPARAMOUT aId = NULL)
-    {
-        AutoWriteLock alock (this);
-        ComAssertRet (!isReady(), E_UNEXPECTED);
+                  GUIDPARAMOUT aId = NULL);
 
-        mProgresses.resize (2);
-        mProgresses [0] = aProgress1;
-        mProgresses [1] = aProgress2;
-
-        return protectedInit (
-#if !defined (VBOX_COM_INPROC)
-                              aParent,
-#endif
-                              aInitiator, aDescription, aId);
-    }
-
+    /**
+     * Initializes the combined progress object given the first and the last
+     * normal progress object from the list.
+     *
+     * @param aParent       See ProgressBase::init().
+     * @param aInitiator    See ProgressBase::init().
+     * @param aDescription  See ProgressBase::init().
+     * @param aFirstProgress Iterator of the first normal progress object.
+     * @param aSecondProgress Iterator of the last normal progress object.
+     * @param aId           See ProgressBase::init().
+     */
     template <typename InputIterator>
     HRESULT init (
 #if !defined (VBOX_COM_INPROC)
@@ -286,21 +295,28 @@ public:
                   InputIterator aFirstProgress, InputIterator aLastProgress,
                   GUIDPARAMOUT aId = NULL)
     {
-        AutoWriteLock alock (this);
-        ComAssertRet (!isReady(), E_UNEXPECTED);
+        /* Enclose the state transition NotReady->InInit->Ready */
+        AutoInitSpan autoInitSpan (this);
+        AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
         mProgresses = ProgressVector (aFirstProgress, aLastProgress);
 
-        return protectedInit (
+        HRESULT rc = protectedInit (autoInitSpan,
 #if !defined (VBOX_COM_INPROC)
-                              aParent,
+                                    aParent,
 #endif
-                              aInitiator, aDescription, aId);
+                                    aInitiator, aDescription, aId);
+
+        /* Confirm a successful initialization when it's the case */
+        if (SUCCEEDED (rc))
+            autoInitSpan.setSucceeded();
+
+        return rc;
     }
 
 protected:
 
-    HRESULT protectedInit (
+    HRESULT protectedInit (AutoInitSpan &aAutoInitSpan,
 #if !defined (VBOX_COM_INPROC)
                            VirtualBox *aParent,
 #endif
@@ -328,6 +344,9 @@ public:
 
     // public methods only for internal purposes
 
+    /** For com::SupportErrorInfoImpl. */
+    static const char *ComponentName() { return "CombinedProgress"; }
+
 private:
 
     HRESULT checkProgress();
@@ -341,4 +360,4 @@ private:
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_AS (Progress, IProgress)
 
-#endif // ____H_PROGRESSIMPL
+#endif /* ____H_PROGRESSIMPL */

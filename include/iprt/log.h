@@ -620,10 +620,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogTraceMsg(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, ">>>>> %s (%d): %M" LOG_FN_FMT, __FILE__, __LINE__, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, ">>>>> %s (%d): " LOG_FN_FMT ": %M", __FILE__, __LINE__, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogTraceMsg(a) \
-    do {  LogFlow((">>>>> %s (%d): " LOG_FN_FMT, __FILE__, __LINE__, __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
+    do {  LogFlow((">>>>> %s (%d): " LOG_FN_FMT ": ", __FILE__, __LINE__, __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
 #endif
 
 /** @def LogFunc

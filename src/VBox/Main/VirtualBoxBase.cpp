@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <dbghelp.h>
 #else /* !defined (VBOX_WITH_XPCOM) */
+/// @todo remove when VirtualBoxErrorInfo goes away from here
 #include <nsIServiceManager.h>
 #include <nsIExceptionService.h>
 #endif /* !defined (VBOX_WITH_XPCOM) */
@@ -36,26 +37,26 @@
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
 
-// VirtualBoxBaseNEXT_base methods
+// VirtualBoxBaseProto methods
 ////////////////////////////////////////////////////////////////////////////////
 
-VirtualBoxBaseNEXT_base::VirtualBoxBaseNEXT_base()
+VirtualBoxBaseProto::VirtualBoxBaseProto()
 {
     mState = NotReady;
     mStateChangeThread = NIL_RTTHREAD;
     mCallers = 0;
     mZeroCallersSem = NIL_RTSEMEVENT;
-    mInitDoneSem = NIL_RTSEMEVENTMULTI;
-    mInitDoneSemUsers = 0;
+    mInitUninitSem = NIL_RTSEMEVENTMULTI;
+    mInitUninitWaiters = 0;
     mObjectLock = NULL;
 }
 
-VirtualBoxBaseNEXT_base::~VirtualBoxBaseNEXT_base()
+VirtualBoxBaseProto::~VirtualBoxBaseProto()
 {
     if (mObjectLock)
         delete mObjectLock;
-    Assert (mInitDoneSemUsers == 0);
-    Assert (mInitDoneSem == NIL_RTSEMEVENTMULTI);
+    Assert (mInitUninitWaiters == 0);
+    Assert (mInitUninitSem == NIL_RTSEMEVENTMULTI);
     if (mZeroCallersSem != NIL_RTSEMEVENT)
         RTSemEventDestroy (mZeroCallersSem);
     mCallers = 0;
@@ -64,7 +65,8 @@ VirtualBoxBaseNEXT_base::~VirtualBoxBaseNEXT_base()
 }
 
 // util::Lockable interface
-RWLockHandle *VirtualBoxBaseNEXT_base::lockHandle() const
+
+RWLockHandle *VirtualBoxBaseProto::lockHandle() const
 {
     /* lazy initialization */
     if (RT_UNLIKELY(!mObjectLock))
@@ -82,63 +84,73 @@ RWLockHandle *VirtualBoxBaseNEXT_base::lockHandle() const
 }
 
 /**
- *  Increments the number of calls to this object by one.
+ * Increments the number of calls to this object by one.
  *
- *  After this method succeeds, it is guaranted that the object will remain in
- *  the Ready (or in the Limited) state at least until #releaseCaller() is
- *  called.
+ * After this method succeeds, it is guaranted that the object will remain
+ * in the Ready (or in the Limited) state at least until #releaseCaller() is
+ * called.
  *
- *  This method is intended to mark the beginning of sections of code within
- *  methods of COM objects that depend on the readiness (Ready) state. The
- *  Ready state is a primary "ready to serve" state. Usually all code that
- *  works with component's data depends on it. On practice, this means that
- *  almost every public method, setter or getter of the object should add
- *  itself as an object's caller at the very beginning, to protect from an
- *  unexpected uninitialization that may happen on a different thread.
+ * This method is intended to mark the beginning of sections of code within
+ * methods of COM objects that depend on the readiness (Ready) state. The
+ * Ready state is a primary "ready to serve" state. Usually all code that
+ * works with component's data depends on it. On practice, this means that
+ * almost every public method, setter or getter of the object should add
+ * itself as an object's caller at the very beginning, to protect from an
+ * unexpected uninitialization that may happen on a different thread.
  *
- *  Besides the Ready state denoting that the object is fully functional,
- *  there is a special Limited state. The Limited state means that the object
- *  is still functional, but its functionality is limited to some degree, so
- *  not all operations are possible. The @a aLimited argument to this method
- *  determines whether the caller represents this limited functionality or not.
+ * Besides the Ready state denoting that the object is fully functional,
+ * there is a special Limited state. The Limited state means that the object
+ * is still functional, but its functionality is limited to some degree, so
+ * not all operations are possible. The @a aLimited argument to this method
+ * determines whether the caller represents this limited functionality or
+ * not.
  *
- *  This method succeeeds (and increments the number of callers) only if the
- *  current object's state is Ready. Otherwise, it will return E_UNEXPECTED to
- *  indicate that the object is not operational. There are two exceptions from
- *  this rule:
- *  <ol>
- *    <li>If the @a aLimited argument is |true|, then this method will also
- *        succeeed if the object's state is Limited (or Ready, of course).</li>
- *    <li>If this method is called from the same thread that placed the object
- *        to InInit or InUninit state (i.e. either from within the AutoInitSpan
- *        or AutoUninitSpan scope), it will succeed as well (but will not
- *        increase the number of callers).</li>
- *  </ol>
+ * This method succeeeds (and increments the number of callers) only if the
+ * current object's state is Ready. Otherwise, it will return E_UNEXPECTED
+ * to indicate that the object is not operational. There are two exceptions
+ * from this rule:
+ * <ol>
+ *   <li>If the @a aLimited argument is |true|, then this method will also
+ *       succeeed if the object's state is Limited (or Ready, of course).
+ *   </li>
+ *   <li>If this method is called from the same thread that placed
+ *       the object to InInit or InUninit state (i.e. either from within the
+ *       AutoInitSpan or AutoUninitSpan scope), it will succeed as well (but
+ *       will not increase the number of callers).
+ *   </li>
+ * </ol>
  *
- *  Normally, calling addCaller() never blocks. However, if this method is
- *  called by a thread created from within the AutoInitSpan scope and this
- *  scope is still active (i.e. the object state is InInit), it will block
- *  until the AutoInitSpan destructor signals that it has finished
- *  initialization.
+ * Normally, calling addCaller() never blocks. However, if this method is
+ * called by a thread created from within the AutoInitSpan scope and this
+ * scope is still active (i.e. the object state is InInit), it will block
+ * until the AutoInitSpan destructor signals that it has finished
+ * initialization.
  *
- *  When this method returns a failure, the caller must not use the object
- *  and can return the failed result code to his caller.
+ * Also, addCaller() will block if the object is probing uninitialization on
+ * another thread with AutoMayUninitSpan (i.e. the object state is MayUninit).
+ * And again, the block will last until the AutoMayUninitSpan destructor signals
+ * that it has finished probing and the object is either ready again or will
+ * uninitialize shortly (so that addCaller() will fail).
  *
- *  @param aState       where to store the current object's state
- *                      (can be used in overriden methods to determine the
- *                      cause of the failure)
- *  @param aLimited     |true| to add a limited caller.
- *  @return             S_OK on success or E_UNEXPECTED on failure
+ * When this method returns a failure, the caller must not use the object
+ * and should return the failed result code to its own caller.
  *
- *  @note It is preferrable to use the #addLimitedCaller() rather than calling
- *        this method with @a aLimited = |true|, for better
- *        self-descriptiveness.
+ * @param aState        Where to store the current object's state (can be
+ *                      used in overriden methods to determine the cause of
+ *                      the failure).
+ * @param aLimited      |true| to add a limited caller.
  *
- *  @sa #addLimitedCaller()
- *  @sa #releaseCaller()
+ * @return              S_OK on success or E_UNEXPECTED on failure.
+ *
+ * @note It is preferrable to use the #addLimitedCaller() rather than
+ *       calling this method with @a aLimited = |true|, for better
+ *       self-descriptiveness.
+ *
+ * @sa #addLimitedCaller()
+ * @sa #releaseCaller()
  */
-HRESULT VirtualBoxBaseNEXT_base::addCaller (State *aState /* = NULL */,
-                                            bool aLimited /* = false */)
+HRESULT VirtualBoxBaseProto::addCaller (State *aState /* = NULL */,
+                                        bool aLimited /* = false */)
 {
     AutoWriteLock stateLock (mStateLock);
 
@@ -151,49 +163,64 @@ HRESULT VirtualBoxBaseNEXT_base::addCaller (State *aState /* = NULL */,
         rc = S_OK;
     }
     else
-    if ((mState == InInit || mState == InUninit))
+    if (mState == InInit || mState == MayUninit || mState == InUninit)
     {
         if (mStateChangeThread == RTThreadSelf())
         {
-            /*
-             *  Called from the same thread that is doing AutoInitSpan or
-             *  AutoUninitSpan, just succeed
-             */
+            /* Called from the same thread that is doing AutoInitSpan or
+             * AutoUninitSpan or AutoMayUninitSpan, just succeed */
             rc = S_OK;
         }
-        else if (mState == InInit)
+        else if (mState == InInit || mState == MayUninit)
         {
-            /* addCaller() is called by a "child" thread while the "parent"
-             * thread is still doing AutoInitSpan/AutoReadySpan. Wait for the
-             * state to become either Ready/Limited or InitFailed/InInit/NotReady
-             * (in case of init failure). Note that we increase the number of
-             * callers anyway to prevent AutoUninitSpan from early completion.
+            /* One of the two:
+             *
+             * 1) addCaller() is called by a "child" thread while the "parent"
+             *    thread is still doing AutoInitSpan/AutoReinitSpan, so wait for
+             *    the state to become either Ready/Limited or InitFailed (in
+             *    case of init failure).
+             *
+             * 2) addCaller() is called while another thread is in
+             *    AutoMayUninitSpan, so wait for the state to become either
+             *    Ready or WillUninit.
+             *
+             * Note that in either case we increase the number of callers anyway
+             * -- to prevent AutoUninitSpan from early completion if we are
+             * still not scheduled to pick up the posted semaphore when uninit()
+             * is called.
              */
             ++ mCallers;
 
-            /* lazy creation */
-            if (mInitDoneSem == NIL_RTSEMEVENTMULTI)
-                RTSemEventMultiCreate (&mInitDoneSem);
-            ++ mInitDoneSemUsers;
+            /* lazy semaphore creation */
+            if (mInitUninitSem == NIL_RTSEMEVENTMULTI)
+            {
+                RTSemEventMultiCreate (&mInitUninitSem);
+                Assert (mInitUninitWaiters == 0);
+            }
 
-            LogFlowThisFunc (("Waiting for AutoInitSpan/AutoReadySpan to finish...\n"));
+            ++ mInitUninitWaiters;
+
+            LogFlowThisFunc ((mState == InInit ?
+                              "Waiting for AutoInitSpan/AutoReinitSpan to "
+                              "finish...\n" :
+                              "Waiting for AutoMayUninitSpan to finish...\n"));
 
             stateLock.leave();
-            RTSemEventMultiWait (mInitDoneSem, RT_INDEFINITE_WAIT);
+            RTSemEventMultiWait (mInitUninitSem, RT_INDEFINITE_WAIT);
             stateLock.enter();
 
-            if (-- mInitDoneSemUsers == 0)
+            if (-- mInitUninitWaiters == 0)
             {
                 /* destroy the semaphore since no more necessary */
-                RTSemEventMultiDestroy (mInitDoneSem);
-                mInitDoneSem = NIL_RTSEMEVENTMULTI;
+                RTSemEventMultiDestroy (mInitUninitSem);
+                mInitUninitSem = NIL_RTSEMEVENTMULTI;
             }
 
             if (mState == Ready)
                 rc = S_OK;
             else
             {
-                AssertMsg (mCallers != 0, ("mCallers is ZERO!"));
+                Assert (mCallers != 0);
                 -- mCallers;
                 if (mCallers == 0 && mState == InUninit)
                 {
@@ -211,11 +238,12 @@ HRESULT VirtualBoxBaseNEXT_base::addCaller (State *aState /* = NULL */,
 }
 
 /**
- *  Decrements the number of calls to this object by one.
- *  Must be called after every #addCaller() or #addLimitedCaller() when the
- *  object is no more necessary.
+ * Decreases the number of calls to this object by one.
+ *
+ * Must be called after every #addCaller() or #addLimitedCaller() when
+ * protecting the object from uninitialization is no more necessary.
  */
-void VirtualBoxBaseNEXT_base::releaseCaller()
+void VirtualBoxBaseProto::releaseCaller()
 {
     AutoWriteLock stateLock (mStateLock);
 
@@ -228,14 +256,12 @@ void VirtualBoxBaseNEXT_base::releaseCaller()
         return;
     }
 
-    if ((mState == InInit || mState == InUninit))
+    if (mState == InInit || mState == MayUninit || mState == InUninit)
     {
         if (mStateChangeThread == RTThreadSelf())
         {
-            /*
-             *  Called from the same thread that is doing AutoInitSpan or
-             *  AutoUninitSpan, just succeed
-             */
+            /* Called from the same thread that is doing AutoInitSpan or
+             * AutoUninitSpan, just succeed */
             return;
         }
 
@@ -258,41 +284,41 @@ void VirtualBoxBaseNEXT_base::releaseCaller()
     AssertMsgFailed (("mState = %d!", mState));
 }
 
-// VirtualBoxBaseNEXT_base::AutoInitSpan methods
+// VirtualBoxBaseProto::AutoInitSpan methods
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Creates a smart initialization span object and places the object to
- *  InInit state.
+ * Creates a smart initialization span object that places the object to
+ * InInit state.
  *
- *  @param aObj     |this| pointer of the managed VirtualBoxBase object whose
- *                  init() method is being called
- *  @param aStatus  initial initialization status for this span
+ * Please see the AutoInitSpan class description for more info.
+ *
+ * @param aObj      |this| pointer of the managed VirtualBoxBase object whose
+ *                  init() method is being called.
+ * @param aResult   Default initialization result.
  */
-VirtualBoxBaseNEXT_base::AutoInitSpan::
-AutoInitSpan (VirtualBoxBaseNEXT_base *aObj,  Status aStatus /* = Failed */)
-    : mObj (aObj), mStatus (aStatus), mOk (false)
+VirtualBoxBaseProto::AutoInitSpan::
+AutoInitSpan (VirtualBoxBaseProto *aObj,  Result aResult /* = Failed */)
+    : mObj (aObj), mResult (aResult), mOk (false)
 {
     Assert (aObj);
 
     AutoWriteLock stateLock (mObj->mStateLock);
 
-    Assert (mObj->mState != InInit && mObj->mState != InUninit &&
-            mObj->mState != InitFailed);
-
     mOk = mObj->mState == NotReady;
-    if (!mOk)
-        return;
+    AssertReturnVoid (mOk);
 
     mObj->setState (InInit);
 }
 
 /**
- *  Places the managed VirtualBoxBase object to Ready/Limited state if the
- *  initialization succeeded or partly succeeded, or places it to InitFailed
- *  state and calls the object's uninit() method otherwise.
+ * Places the managed VirtualBoxBase object to  Ready/Limited state if the
+ * initialization succeeded or partly succeeded, or places it to InitFailed
+ * state and calls the object's uninit() method.
+ *
+ * Please see the AutoInitSpan class description for more info.
  */
-VirtualBoxBaseNEXT_base::AutoInitSpan::~AutoInitSpan()
+VirtualBoxBaseProto::AutoInitSpan::~AutoInitSpan()
 {
     /* if the state was other than NotReady, do nothing */
     if (!mOk)
@@ -304,21 +330,21 @@ VirtualBoxBaseNEXT_base::AutoInitSpan::~AutoInitSpan()
 
     if (mObj->mCallers > 0)
     {
-        Assert (mObj->mInitDoneSemUsers > 0);
+        Assert (mObj->mInitUninitWaiters > 0);
 
         /* We have some pending addCaller() calls on other threads (created
-         * during InInit), signal that InInit is finished. */
-        RTSemEventMultiSignal (mObj->mInitDoneSem);
+         * during InInit), signal that InInit is finished and they may go on. */
+        RTSemEventMultiSignal (mObj->mInitUninitSem);
     }
 
-    if (mStatus == Succeeded)
+    if (mResult == Succeeded)
     {
         mObj->setState (Ready);
     }
     else
-    if (mStatus == Limited)
+    if (mResult == Limited)
     {
-        mObj->setState (VirtualBoxBaseNEXT_base::Limited);
+        mObj->setState (VirtualBoxBaseProto::Limited);
     }
     else
     {
@@ -332,40 +358,40 @@ VirtualBoxBaseNEXT_base::AutoInitSpan::~AutoInitSpan()
     }
 }
 
-// VirtualBoxBaseNEXT_base::AutoReadySpan methods
+// VirtualBoxBaseProto::AutoReinitSpan methods
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Creates a smart re-initialization span object and places the object to
- *  InInit state.
+ * Creates a smart re-initialization span object and places the object to
+ * InInit state.
  *
- *  @param aObj     |this| pointer of the managed VirtualBoxBase object whose
- *                  re-initialization method is being called
+ * Please see the AutoInitSpan class description for more info.
+ *
+ * @param aObj      |this| pointer of the managed VirtualBoxBase object whose
+ *                  re-initialization method is being called.
  */
-VirtualBoxBaseNEXT_base::AutoReadySpan::
-AutoReadySpan (VirtualBoxBaseNEXT_base *aObj)
+VirtualBoxBaseProto::AutoReinitSpan::
+AutoReinitSpan (VirtualBoxBaseProto *aObj)
     : mObj (aObj), mSucceeded (false), mOk (false)
 {
     Assert (aObj);
 
     AutoWriteLock stateLock (mObj->mStateLock);
 
-    Assert (mObj->mState != InInit && mObj->mState != InUninit &&
-            mObj->mState != InitFailed);
-
     mOk = mObj->mState == Limited;
-    if (!mOk)
-        return;
+    AssertReturnVoid (mOk);
 
     mObj->setState (InInit);
 }
 
 /**
- *  Places the managed VirtualBoxBase object to Ready state if the
- *  re-initialization succeeded (i.e. #setSucceeded() has been called) or
- *  back to Limited state otherwise.
+ * Places the managed VirtualBoxBase object to Ready state if the
+ * re-initialization succeeded (i.e. #setSucceeded() has been called) or back to
+ * Limited state otherwise.
+ *
+ * Please see the AutoInitSpan class description for more info.
  */
-VirtualBoxBaseNEXT_base::AutoReadySpan::~AutoReadySpan()
+VirtualBoxBaseProto::AutoReinitSpan::~AutoReinitSpan()
 {
     /* if the state was other than Limited, do nothing */
     if (!mOk)
@@ -375,11 +401,11 @@ VirtualBoxBaseNEXT_base::AutoReadySpan::~AutoReadySpan()
 
     Assert (mObj->mState == InInit);
 
-    if (mObj->mCallers > 0 && mObj->mInitDoneSemUsers > 0)
+    if (mObj->mCallers > 0 && mObj->mInitUninitWaiters > 0)
     {
-        /* We have some pending addCaller() calls on other threads,
-         * signal that InInit is finished. */
-        RTSemEventMultiSignal (mObj->mInitDoneSem);
+        /* We have some pending addCaller() calls on other threads (created
+         * during InInit), signal that InInit is finished and they may go on. */
+        RTSemEventMultiSignal (mObj->mInitUninitSem);
     }
 
     if (mSucceeded)
@@ -392,20 +418,22 @@ VirtualBoxBaseNEXT_base::AutoReadySpan::~AutoReadySpan()
     }
 }
 
-// VirtualBoxBaseNEXT_base::AutoUninitSpan methods
+// VirtualBoxBaseProto::AutoUninitSpan methods
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Creates a smart uninitialization span object and places this object to
- *  InUninit state.
+ * Creates a smart uninitialization span object and places this object to
+ * InUninit state.
  *
- *  @note This method blocks the current thread execution until the number of
- *  callers of the managed VirtualBoxBase object drops to zero!
+ * Please see the AutoInitSpan class description for more info.
  *
- *  @param aObj |this| pointer of the VirtualBoxBase object whose uninit()
- *              method is being called
+ * @note This method blocks the current thread execution until the number of
+ *       callers of the managed VirtualBoxBase object drops to zero!
+ *
+ * @param aObj  |this| pointer of the VirtualBoxBase object whose uninit()
+ *              method is being called.
  */
-VirtualBoxBaseNEXT_base::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseNEXT_base *aObj)
+VirtualBoxBaseProto::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseProto *aObj)
     : mObj (aObj), mInitFailed (false), mUninitDone (false)
 {
     Assert (aObj);
@@ -414,11 +442,9 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseNEXT_base
 
     Assert (mObj->mState != InInit);
 
-    /*
-     *  Set mUninitDone to |true| if this object is already uninitialized
-     *  (NotReady) or if another AutoUninitSpan is currently active on some
-     *  other thread (InUninit).
-     */
+    /* Set mUninitDone to |true| if this object is already uninitialized
+     * (NotReady) or if another AutoUninitSpan is currently active on some
+     *  other thread (InUninit). */
     mUninitDone = mObj->mState == NotReady ||
                   mObj->mState == InUninit;
 
@@ -429,14 +455,48 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseNEXT_base
     }
     else
     {
-        /* do nothing if already uninitialized */
         if (mUninitDone)
+        {
+            /* do nothing if already uninitialized */
+            if (mObj->mState == NotReady)
+                return;
+
+            /* otherwise, wait until another thread finishes uninitialization.
+             * This is necessary to make sure that when this method returns, the
+             * object is NotReady and therefore can be deleted (for example).
+             * In particular, this is used by
+             * VirtualBoxBaseWithTypedChildrenNEXT::uninitDependentChildren(). */
+
+            /* lazy semaphore creation */
+            if (mObj->mInitUninitSem == NIL_RTSEMEVENTMULTI)
+            {
+                RTSemEventMultiCreate (&mObj->mInitUninitSem);
+                Assert (mObj->mInitUninitWaiters == 0);
+            }
+            ++ mObj->mInitUninitWaiters;
+
+            LogFlowFunc (("{%p}: Waiting for AutoUninitSpan to finish...\n",
+                          mObj));
+
+            stateLock.leave();
+            RTSemEventMultiWait (mObj->mInitUninitSem, RT_INDEFINITE_WAIT);
+            stateLock.enter();
+
+            if (-- mObj->mInitUninitWaiters == 0)
+            {
+                /* destroy the semaphore since no more necessary */
+                RTSemEventMultiDestroy (mObj->mInitUninitSem);
+                mObj->mInitUninitSem = NIL_RTSEMEVENTMULTI;
+            }
+
             return;
+        }
     }
 
     /* go to InUninit to prevent from adding new callers */
     mObj->setState (InUninit);
 
+    /* wait for already existing callers to drop to zero */
     if (mObj->mCallers > 0)
     {
         /* lazy creation */
@@ -444,8 +504,8 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseNEXT_base
         RTSemEventCreate (&mObj->mZeroCallersSem);
 
         /* wait until remaining callers release the object */
-        LogFlowThisFunc (("Waiting for callers (%d) to drop to zero...\n",
-                          mObj->mCallers));
+        LogFlowFunc (("{%p}: Waiting for callers (%d) to drop to zero...\n",
+                      mObj, mObj->mCallers));
 
         stateLock.leave();
         RTSemEventWait (mObj->mZeroCallersSem, RT_INDEFINITE_WAIT);
@@ -455,7 +515,7 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::AutoUninitSpan (VirtualBoxBaseNEXT_base
 /**
  *  Places the managed VirtualBoxBase object to the NotReady state.
  */
-VirtualBoxBaseNEXT_base::AutoUninitSpan::~AutoUninitSpan()
+VirtualBoxBaseProto::AutoUninitSpan::~AutoUninitSpan()
 {
     /* do nothing if already uninitialized */
     if (mUninitDone)
@@ -466,6 +526,113 @@ VirtualBoxBaseNEXT_base::AutoUninitSpan::~AutoUninitSpan()
     Assert (mObj->mState == InUninit);
 
     mObj->setState (NotReady);
+}
+
+// VirtualBoxBaseProto::AutoMayUninitSpan methods
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Creates a smart initialization span object that places the object to
+ * MayUninit state.
+ *
+ * Please see the AutoMayUninitSpan class description for more info.
+ *
+ * @param aObj      |this| pointer of the managed VirtualBoxBase object whose
+ *                  uninit() method to be probably called.
+ */
+VirtualBoxBaseProto::AutoMayUninitSpan::
+AutoMayUninitSpan (VirtualBoxBaseProto *aObj)
+    : mObj (aObj), mRC (E_UNEXPECTED), mAlreadyInProgress (false)
+    , mAcceptUninit (false)
+{
+    Assert (aObj);
+
+    AutoWriteLock stateLock (mObj->mStateLock);
+
+    AssertReturnVoid (mObj->mState != InInit &&
+                      mObj->mState != InUninit);
+
+    switch (mObj->mState)
+    {
+        case Ready:
+            break;
+        case MayUninit:
+            /* Nothing to be done if already in MayUninit. */
+            mAlreadyInProgress = true;
+            mRC = S_OK;
+            return;
+        default:
+            /* Abuse mObj->addCaller() to get the extended error info possibly
+             * set by reimplementations of addCaller() and return it to the
+             * caller. Note that this abuse is supposed to be safe because we
+             * should've filtered out all states where addCaller() would do
+             * something else but set error info. */
+            mRC = mObj->addCaller();
+            Assert (FAILED (mRC));
+            return;
+    }
+
+    /* go to MayUninit to cause new callers to wait until we finish */
+    mObj->setState (MayUninit);
+    mRC = S_OK;
+
+    /* wait for already existing callers to drop to zero */
+    if (mObj->mCallers > 0)
+    {
+        /* lazy creation */
+        Assert (mObj->mZeroCallersSem == NIL_RTSEMEVENT);
+        RTSemEventCreate (&mObj->mZeroCallersSem);
+
+        /* wait until remaining callers release the object */
+        LogFlowFunc (("{%p}: Waiting for callers (%d) to drop to zero...\n",
+                      mObj, mObj->mCallers));
+
+        stateLock.leave();
+        RTSemEventWait (mObj->mZeroCallersSem, RT_INDEFINITE_WAIT);
+    }
+}
+
+/**
+ * Places the managed VirtualBoxBase object back to Ready state if
+ * #acceptUninit() was not called, or places it to WillUninit state and calls
+ * the object's uninit() method.
+ *
+ * Please see the AutoMayUninitSpan class description for more info.
+ */
+VirtualBoxBaseProto::AutoMayUninitSpan::~AutoMayUninitSpan()
+{
+    /* if we did nothing in the constructor, do nothing here */
+    if (mAlreadyInProgress || FAILED (mRC))
+        return;
+
+    AutoWriteLock stateLock (mObj->mStateLock);
+
+    Assert (mObj->mState == MayUninit);
+
+    if (mObj->mCallers > 0)
+    {
+        Assert (mObj->mInitUninitWaiters > 0);
+
+        /* We have some pending addCaller() calls on other threads made after
+         * going to during MayUnit, signal that MayUnit is finished and they may
+         * go on. */
+        RTSemEventMultiSignal (mObj->mInitUninitSem);
+    }
+
+    if (!mAcceptUninit)
+    {
+        mObj->setState (Ready);
+    }
+    else
+    {
+        mObj->setState (WillUninit);
+        /* leave the lock to prevent nesting when uninit() is called */
+        stateLock.leave();
+        /* call uninit() to let the object uninit itself */
+        mObj->uninit();
+        /* Note: the object may no longer exist here (for example, it can call
+         * the destructor in uninit()) */
+    }
 }
 
 // VirtualBoxBase methods
@@ -1039,50 +1206,6 @@ void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
     AssertMsg (result == 1, ("Failed to remove the child %p from the map\n",
                              aUnk));
     NOREF (result);
-}
-
-// VirtualBoxBaseWithTypedChildrenNEXT methods
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Uninitializes all dependent children registered with
- * #addDependentChild().
- *
- * @note This method will call uninit() methods of children. If these
- *       methods access the parent object, uninitDependentChildren() must be
- *       called either at the beginning of the parent uninitialization
- *       sequence (when it is still operational) or after setReady(false) is
- *       called to indicate the parent is out of action.
- */
-template <class C>
-void VirtualBoxBaseWithTypedChildrenNEXT <C>::uninitDependentChildren()
-{
-    AutoWriteLock mapLock (mMapLock);
-
-    if (mDependentChildren.size())
-    {
-        /* set flag to ignore #removeDependentChild() called from
-         * child->uninit() */
-        mInUninit = true;
-
-        /* leave the locks to let children waiting for
-         * #removeDependentChild() run */
-        mapLock.leave();
-
-        for (typename DependentChildren::iterator it = mDependentChildren.begin();
-            it != mDependentChildren.end(); ++ it)
-        {
-            C *child = (*it);
-            Assert (child);
-            if (child)
-                child->uninit();
-        }
-        mDependentChildren.clear();
-
-        mapLock.enter();
-
-        mInUninit = false;
-    }
 }
 
 // Settings API additions

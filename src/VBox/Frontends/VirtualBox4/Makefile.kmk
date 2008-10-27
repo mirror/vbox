@@ -255,7 +255,7 @@ VirtualBox4_QT_MOCHDRS = \
 	include/VBoxTakeSnapshotDlg.h \
 	include/VBoxSnapshotsWgt.h \
 	include/VBoxVMLogViewer.h \
-	include/VBoxDiskImageManagerDlg.h \
+	include/VBoxMediaManagerDlg.h \
 	include/VBoxSettingsUtils.h \
 	include/VBoxVMSettingsGeneral.h \
 	include/VBoxVMSettingsHD.h \
@@ -282,7 +282,7 @@ VirtualBox4_QT_MOCHDRS = \
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox4_QT_MOCSRCS = \
 	src/VBoxSelectorWnd.cpp \
-	src/VBoxDiskImageManagerDlg.cpp
+	src/VBoxMediaManagerDlg.cpp
 ifdef VBOX_WITH_XPCOM
  VirtualBox4_QT_MOCSRCS += \
 	src/COMDefs.cpp
@@ -332,7 +332,6 @@ VirtualBox4_SOURCES = \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxSnapshotsWgt.cpp \
 	src/VBoxVMLogViewer.cpp \
-	src/VBoxDiskImageManagerDlg.cpp \
 	src/VBoxVMSettingsGeneral.cpp \
 	src/VBoxVMSettingsHD.cpp \
 	src/VBoxVMSettingsCD.cpp \
@@ -352,7 +351,8 @@ VirtualBox4_SOURCES = \
 	src/VBoxGLSettingsLanguage.cpp \
 	src/VBoxSettingsDialog.cpp \
 	src/VBoxSettingsDialogSpecific.cpp \
-	src/VBoxSettingsSelector.cpp
+	src/VBoxSettingsSelector.cpp \
+	src/VBoxMediaManagerDlg.cpp
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  ifndef VBOX_OSE
