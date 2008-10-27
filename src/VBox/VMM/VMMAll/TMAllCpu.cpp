@@ -147,26 +147,6 @@ VMMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
      *          b) the virtual sync clock hasn't been halted by an expired timer, and
      *          c) we're not using warp drive (accelerated virtual guest time).
      */
-#ifdef VBOX_WITH_STATISTICS
-    if (!pVM->tm.s.fMaybeUseOffsettedHostTSC)
-       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotFixed);
-    else
-    if (!pVM->tm.s.fTSCTicking)
-       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotTicking);
-    else
-    if (!pVM->tm.s.fTSCUseRealTSC)
-    {
-        if (pVM->tm.s.fVirtualSyncCatchUp)
-           STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchup);
-        else
-        if (!pVM->tm.s.fVirtualSyncTicking)
-           STAM_COUNTER_INC(&pVM->tm.s.StatTSCSyncNotTicking);
-        else
-        if (!pVM->tm.s.fVirtualWarpDrive)
-           STAM_COUNTER_INC(&pVM->tm.s.StatTSCWarp);
-    }
-#endif
-
     if (    pVM->tm.s.fMaybeUseOffsettedHostTSC
         &&  RT_LIKELY(pVM->tm.s.fTSCTicking)
         &&  (   pVM->tm.s.fTSCUseRealTSC
@@ -199,9 +179,35 @@ VMMDECL(bool) TMCpuTickCanUseRealTSC(PVM pVM, uint64_t *poffRealTSC)
             else
                 *poffRealTSC = 0;
         }
+        /** @todo count this? */
         return true;
     }
 
+#ifdef VBOX_WITH_STATISTICS
+    /* Sample the reason for refusing. */
+    if (!pVM->tm.s.fMaybeUseOffsettedHostTSC)
+       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotFixed);
+    else if (!pVM->tm.s.fTSCTicking)
+       STAM_COUNTER_INC(&pVM->tm.s.StatTSCNotTicking);
+    else if (!pVM->tm.s.fTSCUseRealTSC)
+    {
+        if (pVM->tm.s.fVirtualSyncCatchUp)
+        {
+           if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 10)
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE010);
+           else if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 25)
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE025);
+           else if (pVM->tm.s.u32VirtualSyncCatchUpPercentage <= 100)
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupLE100);
+           else
+               STAM_COUNTER_INC(&pVM->tm.s.StatTSCCatchupOther);
+        }
+        else if (!pVM->tm.s.fVirtualSyncTicking)
+           STAM_COUNTER_INC(&pVM->tm.s.StatTSCSyncNotTicking);
+        else if (pVM->tm.s.fVirtualWarpDrive)
+           STAM_COUNTER_INC(&pVM->tm.s.StatTSCWarp);
+    }
+#endif
     return false;
 }
 

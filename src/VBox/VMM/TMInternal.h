@@ -487,12 +487,17 @@ typedef struct TM
     /** The timer callback. */
     STAMCOUNTER                 StatTimerCallbackSetFF;
 
-
+    /** @name Reasons for refusing TSC offsetting in TMCpuTickCanUseRealTSC.
+     * @{ */
     STAMCOUNTER                 StatTSCNotFixed;
     STAMCOUNTER                 StatTSCNotTicking;
-    STAMCOUNTER                 StatTSCCatchup;
+    STAMCOUNTER                 StatTSCCatchupLE010;
+    STAMCOUNTER                 StatTSCCatchupLE025;
+    STAMCOUNTER                 StatTSCCatchupLE100;
+    STAMCOUNTER                 StatTSCCatchupOther;
     STAMCOUNTER                 StatTSCWarp;
     STAMCOUNTER                 StatTSCSyncNotTicking;
+    /** @} */
 } TM;
 /** Pointer to TM VM instance data. */
 typedef TM *PTM;
