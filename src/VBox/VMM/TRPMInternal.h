@@ -161,7 +161,6 @@ typedef struct TRPM
     /** Checked trap & interrupt handler array */
     RCPTRTYPE(void *)       aGuestTrapHandler[256];
 
-#ifdef VBOX_WITH_STATISTICS
     /** RC: The number of times writes to the Guest IDT were detected. */
     STAMCOUNTER             StatRCWriteGuestIDTFault;
     STAMCOUNTER             StatRCWriteGuestIDTHandled;
@@ -187,7 +186,6 @@ typedef struct TRPM
     R0PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR0;
     /* RC: Statistics for interrupt handlers (allocated on the hypervisor heap). */
     RCPTRTYPE(PSTAMCOUNTER) paStatForwardedIRQRC;
-#endif /* VBOX_WITH_STATISTICS */
 } TRPM;
 #pragma pack()
 
