@@ -280,7 +280,6 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 }
 
 
-
 /**
  * NMI handler, for when we are using NMIs to debug things.
  *
@@ -913,6 +912,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         }
     return rc;
 }
+
 
 /**
  * \#PF (Page Fault) handler.

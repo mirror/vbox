@@ -342,6 +342,7 @@ VMMDECL(void) TRPMRestoreTrap(PVM pVM)
     pVM->trpm.s.uActiveCR2          = pVM->trpm.s.uSavedCR2;
 }
 
+
 #ifndef IN_RING0
 /**
  * Forward trap or interrupt to the guest's handler
@@ -364,7 +365,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
     X86EFLAGS eflags;
 
-    STAM_PROFILE_ADV_START(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+    STAM_PROFILE_ADV_START(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
 
 #ifdef DEBUG
     if (pRegFrame->eflags.Bits.u1VM)
@@ -688,8 +689,8 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 
                     Assert(eflags.Bits.u1IF);
                     Assert(eflags.Bits.u2IOPL == 0);
-                    STAM_COUNTER_INC(&pVM->trpm.s.CTXALLSUFF(paStatForwardedIRQ)[iGate]);
-                    STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+                    STAM_COUNTER_INC(&pVM->trpm.s.CTX_SUFF(paStatForwardedIRQ)[iGate]);
+                    STAM_PROFILE_ADV_STOP(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
                     if (iOrgTrap >= 0 && iOrgTrap < (int)RT_ELEMENTS(pVM->trpm.s.aStatGCTraps))
                         STAM_PROFILE_ADV_STOP(&pVM->trpm.s.aStatGCTraps[iOrgTrap], o);
 
@@ -706,7 +707,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     pRegFrame->cs         = GuestIdte.Gen.u16SegSel;
                     pRegFrame->esp        = esp_r0;
                     pRegFrame->ss         = ss_r0 & ~X86_SEL_RPL;     /* set rpl to ring 0 */
-                    STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+                    STAM_PROFILE_ADV_STOP(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
                     PGMPhysReleasePageMappingLock(pVM, &PageMappingLock);
                     return VINF_SUCCESS;
 #endif
@@ -726,20 +727,20 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #ifdef VBOX_WITH_STATISTICS
         if (pVM->trpm.s.aGuestTrapHandler[iGate] == TRPM_INVALID_HANDLER)
             STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailNoHandler);
-        else
-        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+        else if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
             STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailPatchAddr);
 #endif
     }
 failure:
-    STAM_COUNTER_INC(&CTXSUFF(pVM->trpm.s.StatForwardFail));
-    STAM_PROFILE_ADV_STOP(CTXSUFF(&pVM->trpm.s.StatForwardProf), a);
+    STAM_COUNTER_INC(&pVM->trpm.s.CTX_SUFF_Z(StatForwardFail));
+    STAM_PROFILE_ADV_STOP(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
 
     Log(("TRAP%02X: forwarding to REM (ss rpl=%d eflags=%08X VMIF=%d handler=%08X\n", iGate, pRegFrame->ss & X86_SEL_RPL, pRegFrame->eflags.u32, PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame), pVM->trpm.s.aGuestTrapHandler[iGate]));
 #endif
     return VINF_EM_RAW_GUEST_TRAP;
 }
 #endif /* !IN_RING0 */
+
 
 /**
  * Raises a cpu exception which doesn't take an error code.
@@ -850,5 +851,4 @@ VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap)
     pVM->trpm.s.aGuestTrapHandler[iTrap] = TRPM_INVALID_HANDLER;
     return VINF_SUCCESS;
 }
-
 

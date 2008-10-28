@@ -71,7 +71,7 @@ __BEGIN_DECLS
  * @returns Pointer to the VM structure the TRPM is part of.
  * @param   pTRPM   Pointer to TRPM instance data.
  */
-#define TRPM2VM(pTRPM)  ( (PVM)((char*)pTRPM - pTRPM->offVM) )
+#define TRPM2VM(pTRPM)          ( (PVM)((char*)pTRPM - pTRPM->offVM) )
 
 
 /**
@@ -84,41 +84,41 @@ typedef struct TRPM
 {
     /** Offset to the VM structure.
      * See TRPM2VM(). */
-    RTINT           offVM;
+    RTINT                   offVM;
 
     /** Active Interrupt or trap vector number.
      * If not ~0U this indicates that we're currently processing
      * a interrupt, trap, fault, abort, whatever which have arrived
      * at that vector number.
      */
-    RTUINT          uActiveVector;
+    RTUINT                  uActiveVector;
 
     /** Active trap type. */
-    TRPMEVENT       enmActiveType;
+    TRPMEVENT               enmActiveType;
 
     /** Errorcode for the active interrupt/trap. */
-    RTGCUINT        uActiveErrorCode; /**< @todo don't use RTGCUINT */
+    RTGCUINT                uActiveErrorCode; /**< @todo don't use RTGCUINT */
 
     /** CR2 at the time of the active exception. */
-    RTGCUINTPTR     uActiveCR2;
+    RTGCUINTPTR             uActiveCR2;
 
     /** Saved trap vector number. */
-    RTGCUINT        uSavedVector; /**< @todo don't use RTGCUINT */
+    RTGCUINT                uSavedVector; /**< @todo don't use RTGCUINT */
 
     /** Saved trap type. */
-    TRPMEVENT       enmSavedType;
+    TRPMEVENT               enmSavedType;
 
     /** Saved errorcode. */
-    RTGCUINT        uSavedErrorCode;
+    RTGCUINT                uSavedErrorCode;
 
     /** Saved cr2. */
-    RTGCUINTPTR     uSavedCR2;
+    RTGCUINTPTR             uSavedCR2;
 
     /** Previous trap vector # - for debugging. */
-    RTGCUINT        uPrevVector;
+    RTGCUINT                uPrevVector;
 
     /** IDT monitoring and sync flag (HWACC). */
-    bool            fDisableMonitoring; /** @todo r=bird: bool and 7 byte achPadding1. */
+    bool                    fDisableMonitoring; /** @todo r=bird: bool and 7 byte achPadding1. */
 
     /** Whether monitoring of the guest IDT is enabled or not.
      *
@@ -132,68 +132,70 @@ typedef struct TRPM
      *
      * @cfgm    /TRPM/SafeToDropGuestIDTMonitoring   boolean     defaults to false.
      */
-    bool            fSafeToDropGuestIDTMonitoring;
+    bool                    fSafeToDropGuestIDTMonitoring;
 
     /** Padding to get the IDTs at a 16 byte alignement. */
 #if GC_ARCH_BITS == 32
-    uint8_t         abPadding1[6];
+    uint8_t                 abPadding1[6];
 #else
-    uint8_t         abPadding1[14];
+    uint8_t                 abPadding1[14];
 #endif
     /** IDTs. Aligned at 16 byte offset for speed. */
-    VBOXIDTE        aIdt[256];
+    VBOXIDTE                aIdt[256];
 
     /** Bitmap for IDTEs that contain PATM handlers. (needed for relocation) */
-    uint32_t        au32IdtPatched[8];
+    uint32_t                au32IdtPatched[8];
 
     /** Temporary Hypervisor trap handlers.
      * NULL means default action. */
-    RCPTRTYPE(void *) aTmpTrapHandlers[256];
+    RCPTRTYPE(void *)       aTmpTrapHandlers[256];
 
-    /** GC Pointer to the IDT shadow area (aIdt) placed in Hypervisor memory arena. */
-    RCPTRTYPE(void *) GCPtrIdt;
+    /** RC Pointer to the IDT shadow area (aIdt) in HMA. */
+    RCPTRTYPE(void *)       pvMonShwIdtRC;
     /** Current (last) Guest's IDTR. */
-    VBOXIDTR        GuestIdtr;
+    VBOXIDTR                GuestIdtr;
 
     /** padding. */
-    uint8_t         au8Padding[2];
+    uint8_t                 au8Padding[2];
 
     /** Checked trap & interrupt handler array */
-    RCPTRTYPE(void *) aGuestTrapHandler[256];
+    RCPTRTYPE(void *)       aGuestTrapHandler[256];
 
-    /** GC: The number of times writes to the Guest IDT were detected. */
-    STAMCOUNTER     StatGCWriteGuestIDTFault;
-    STAMCOUNTER     StatGCWriteGuestIDTHandled;
+#ifdef VBOX_WITH_STATISTICS
+    /** RC: The number of times writes to the Guest IDT were detected. */
+    STAMCOUNTER             StatRCWriteGuestIDTFault;
+    STAMCOUNTER             StatRCWriteGuestIDTHandled;
 
     /** HC: Profiling of the TRPMR3SyncIDT() method. */
-    STAMPROFILE     StatSyncIDT;
+    STAMPROFILE             StatSyncIDT;
     /** GC: Statistics for the trap handlers. */
-    STAMPROFILEADV  aStatGCTraps[0x14];
+    STAMPROFILEADV          aStatGCTraps[0x14];
 
-    STAMCOUNTER     StatForwardFailNoHandler;
-    STAMCOUNTER     StatForwardFailPatchAddr;
-    STAMCOUNTER     StatForwardFailGC;
-    STAMCOUNTER     StatForwardFailHC;
+    STAMPROFILEADV          StatForwardProfR3;
+    STAMPROFILEADV          StatForwardProfRZ;
+    STAMCOUNTER             StatForwardFailNoHandler;
+    STAMCOUNTER             StatForwardFailPatchAddr;
+    STAMCOUNTER             StatForwardFailR3;
+    STAMCOUNTER             StatForwardFailRZ;
 
-    STAMPROFILEADV  StatForwardProfGC;
-    STAMPROFILEADV  StatForwardProfHC;
-    STAMPROFILE     StatTrap0dDisasm;
-    STAMCOUNTER     StatTrap0dRdTsc;        /**< Number of RDTSC #GPs. */
+    STAMPROFILE             StatTrap0dDisasm;
+    STAMCOUNTER             StatTrap0dRdTsc;    /**< Number of RDTSC #GPs. */
 
     /* R3: Statistics for interrupt handlers (allocated on the hypervisor heap). */
     R3PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR3;
     /* R0: Statistics for interrupt handlers (allocated on the hypervisor heap). */
     R0PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR0;
-    /* GC: Statistics for interrupt handlers (allocated on the hypervisor heap). */
-    RCPTRTYPE(PSTAMCOUNTER) paStatForwardedIRQGC;
+    /* RC: Statistics for interrupt handlers (allocated on the hypervisor heap). */
+    RCPTRTYPE(PSTAMCOUNTER) paStatForwardedIRQRC;
+#endif /* VBOX_WITH_STATISTICS */
 } TRPM;
 #pragma pack()
 
 /** Pointer to TRPM Data. */
 typedef TRPM *PTRPM;
 
-VMMRCDECL(int) trpmgcGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-VMMRCDECL(int) trpmgcShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 
 /**
  * Clear guest trap/interrupt gate handler
@@ -239,13 +241,13 @@ DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
 
 # ifdef VBOX_WITH_IDT_PATCHING
 /**
- * Code used for the dispatching of interrupts in HC.
+ * Code used for the dispatching of interrupts in R0 upon return from RC.
  * @internal
  */
 DECLASM(int) trpmR0InterruptDispatcher(void);
 # endif /* VBOX_WITH_IDT_PATCHING */
 
-#endif
+#endif /* IN_RING0 */
 
 /** @} */
 

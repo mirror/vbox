@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * TRPM - The Trap Monitor
+ * TRPM - The Trap Monitor.
  */
 
 /*
@@ -19,33 +19,59 @@
  * additional information or have any questions.
  */
 
-
 /** @page pg_trpm   TRPM - The Trap Monitor
  *
- * The Trap Monitor (TRPM) is responsible for all trap and interrupt
- * handling in the VMM.
+ * The Trap Monitor (TRPM) is responsible for all trap and interrupt handling in
+ * the VMM.  It plays a major role in raw-mode execution and a lesser one in the
+ * hardware assisted mode.
  *
- * Interrupts occuring in GC will be routed to the HC and reassert there. TRPM
- * makes the assumption that the VMM or Guest will not cause hardware
- * interrupts to occur.
+ * Note first, the following will use trap as a collective term for faults,
+ * aborts and traps.
  *
- * Traps will be passed to a list of registered trap handlers which will
- * check and see if they are the responsible part for the trap. If no handler
- * was found the default action is to pass the trap on the Guest OS. Trap
- * handlers may raise a Guest OS trap as a result of the trap handling.
- * Statistics will be maintained so the trap handler list can be resorted
- * every now and then to examin handlers in the optimal order.
+ * @see grp_trpm
  *
- * If a trap happens inside the VMM (Guest Context) the TRPM will take the
- * shortest path back to Ring-3 Host Context and brutally destroy the VM.
  *
- * The TRPM will have interfaces to enable devices to assert interrupts
- * in the guest, these interfaces are multithreaded and availble from
- * all contexts. This is to allow devices to have use worker threads.
+ * @section sec_trpm_rc     Raw-Mode Context
+ *
+ * When executing in the raw-mode context, TRPM will be managing the IDT and
+ * processing all traps and interrupts.  It will also monitor the guest IDT
+ * because CSAM wishes to know about changes to it (trap/interrupt/syscall
+ * handler patching) and TRPM needs to keep the #\BP gate in sync (ring-3
+ * considerations).  See TRPMR3SyncIDT and CSAMR3CheckGates.
+ *
+ * External interrupts will be forwarded to the host context by the quickest
+ * possible route where they will be reasserted.  The other events will be
+ * categorized into virtualization traps, genuine guest traps and hypervisor
+ * traps.  The latter group may be recoverable depending on when they happen and
+ * whether there is a handler for it, otherwise it will cause a guru meditation.
+ *
+ * TRPM disgishishes the between the first two (virt and guest traps) and the
+ * latter (hyper) by checking the CPL of the trapping code, if CPL == 0 then
+ * it's a hyper trap otherwise it's a virt/guest trap.  There are three trap
+ * dispatcher tables, one ad-hoc for one time traps registered via
+ * TRPMGCSetTempHandler(), one for hyper traps and one for virt/guest traps.
+ * The latter two live in TRPMGCHandlersA.asm, the former in the VM structure.
+ *
+ * The raw-mode context trap handlers found in TRPMGCHandlers.cpp (for the most
+ * part), will call up the other VMM sub-systems depending on what it things
+ * happens.  The two most busy traps are page faults (\#PF) and general
+ * protection fault/trap (\#GP).
+ *
+ * Before resuming guest code after having taken a virtualization trap or
+ * injected a guest trap, TRPM will check for pending forced action and
+ * every now and again let TM check for timed out timers.  This allows code that
+ * is being executed as part of virtualization traps to signal ring-3 exits,
+ * page table resyncs and similar without necessarily using the status code.  It
+ * also make sure we're more responsive to timers and requests from other
+ * threads (necessarily running on some different core/cpu in most cases).
+ *
+ *
+ * @section sec_trpm_all    All Contexts
+ *
+ * TRPM will also dispatch / inject interrupts and traps to the guest, both when
+ * in raw-mode and when in hardware assisted mode.  See TRPMInject().
  *
  */
-
-
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -412,7 +438,7 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 *******************************************************************************/
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 
 
 /**
@@ -424,6 +450,7 @@ static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
 VMMR3DECL(int) TRPMR3Init(PVM pVM)
 {
     LogFlow(("TRPMR3Init\n"));
+
     /*
      * Assert sizes and alignments.
      */
@@ -438,7 +465,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     pVM->trpm.s.offVM              = RT_OFFSETOF(VM, trpm);
     pVM->trpm.s.uActiveVector      = ~0;
     pVM->trpm.s.GuestIdtr.pIdt     = RTRCPTR_MAX;
-    pVM->trpm.s.GCPtrIdt           = RTRCPTR_MAX;
+    pVM->trpm.s.pvMonShwIdtRC            = RTRCPTR_MAX;
     pVM->trpm.s.fDisableMonitoring = false;
     pVM->trpm.s.fSafeToDropGuestIDTMonitoring = false;
 
@@ -477,52 +504,51 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     /*
      * Statistics.
      */
-    STAM_REG(pVM, &pVM->trpm.s.StatGCWriteGuestIDTFault,   STAMTYPE_COUNTER, "/TRPM/GC/Write/IDT/Fault",   STAMUNIT_OCCURENCES,     "The number of writes to the Guest IDT.");
-    STAM_REG(pVM, &pVM->trpm.s.StatGCWriteGuestIDTHandled, STAMTYPE_COUNTER, "/TRPM/GC/Write/IDT/Handled", STAMUNIT_OCCURENCES,     "The number of writes to the Guest IDT.");
-
-    STAM_REG(pVM, &pVM->trpm.s.StatSyncIDT,             STAMTYPE_PROFILE, "/PROF/TRPM/SyncIDT",         STAMUNIT_TICKS_PER_CALL, "Profiling of TRPMR3SyncIDT().");
+    STAM_REG(pVM, &pVM->trpm.s.StatRCWriteGuestIDTFault,    STAMTYPE_COUNTER, "/TRPM/RC/IDTWritesFault",    STAMUNIT_OCCURENCES,     "Guest IDT writes the we returned to R3 to handle.");
+    STAM_REG(pVM, &pVM->trpm.s.StatRCWriteGuestIDTHandled,  STAMTYPE_COUNTER, "/TRPM/RC/IDTWritesHandled",  STAMUNIT_OCCURENCES,     "Guest IDT writes that we handled successfully.");
+    STAM_REG(pVM, &pVM->trpm.s.StatSyncIDT,                 STAMTYPE_PROFILE, "/PROF/TRPM/SyncIDT",         STAMUNIT_TICKS_PER_CALL, "Profiling of TRPMR3SyncIDT().");
 
     /* traps */
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x00],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/00",      STAMUNIT_TICKS_PER_CALL, "#DE - Divide error.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x01],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/01",      STAMUNIT_TICKS_PER_CALL, "#DB - Debug (single step and more).");
-    //STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x02],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/02",      STAMUNIT_TICKS_PER_CALL, "NMI");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x03],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/03",      STAMUNIT_TICKS_PER_CALL, "#BP - Breakpoint.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x04],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/04",      STAMUNIT_TICKS_PER_CALL, "#OF - Overflow.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x05],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/05",      STAMUNIT_TICKS_PER_CALL, "#BR - Bound range exceeded.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x06],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/06",      STAMUNIT_TICKS_PER_CALL, "#UD - Undefined opcode.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x07],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/07",      STAMUNIT_TICKS_PER_CALL, "#NM - Device not available (FPU).");
-    //STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x08],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/08",      STAMUNIT_TICKS_PER_CALL, "#DF - Double fault.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x09],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/09",      STAMUNIT_TICKS_PER_CALL, "#?? - Coprocessor segment overrun (obsolete).");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0a],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0a",      STAMUNIT_TICKS_PER_CALL, "#TS - Task switch fault.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0b],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0b",      STAMUNIT_TICKS_PER_CALL, "#NP - Segemnt not present.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0c],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0c",      STAMUNIT_TICKS_PER_CALL, "#SS - Stack segment fault.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0d],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0d",      STAMUNIT_TICKS_PER_CALL, "#GP - General protection fault.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0e],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0e",      STAMUNIT_TICKS_PER_CALL, "#PF - Page fault.");
-    //STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0f],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0f",      STAMUNIT_TICKS_PER_CALL, "Reserved.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x10],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/10",      STAMUNIT_TICKS_PER_CALL, "#MF - Math fault..");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x11],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/11",      STAMUNIT_TICKS_PER_CALL, "#AC - Alignment check.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x12],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/12",      STAMUNIT_TICKS_PER_CALL, "#MC - Machine check.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x13],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/13",      STAMUNIT_TICKS_PER_CALL, "#XF - SIMD Floating-Point Exception.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x00],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/00",          STAMUNIT_TICKS_PER_CALL, "#DE - Divide error.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x01],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/01",          STAMUNIT_TICKS_PER_CALL, "#DB - Debug (single step and more).");
+    //STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x02],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/02",          STAMUNIT_TICKS_PER_CALL, "NMI");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x03],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/03",          STAMUNIT_TICKS_PER_CALL, "#BP - Breakpoint.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x04],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/04",          STAMUNIT_TICKS_PER_CALL, "#OF - Overflow.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x05],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/05",          STAMUNIT_TICKS_PER_CALL, "#BR - Bound range exceeded.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x06],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/06",          STAMUNIT_TICKS_PER_CALL, "#UD - Undefined opcode.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x07],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/07",          STAMUNIT_TICKS_PER_CALL, "#NM - Device not available (FPU).");
+    //STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x08],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/08",          STAMUNIT_TICKS_PER_CALL, "#DF - Double fault.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x09],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/09",          STAMUNIT_TICKS_PER_CALL, "#?? - Coprocessor segment overrun (obsolete).");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0a],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0a",          STAMUNIT_TICKS_PER_CALL, "#TS - Task switch fault.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0b],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0b",          STAMUNIT_TICKS_PER_CALL, "#NP - Segemnt not present.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0c],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0c",          STAMUNIT_TICKS_PER_CALL, "#SS - Stack segment fault.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0d],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0d",          STAMUNIT_TICKS_PER_CALL, "#GP - General protection fault.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0e],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0e",          STAMUNIT_TICKS_PER_CALL, "#PF - Page fault.");
+    //STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0f],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0f",          STAMUNIT_TICKS_PER_CALL, "Reserved.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x10],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/10",          STAMUNIT_TICKS_PER_CALL, "#MF - Math fault..");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x11],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/11",          STAMUNIT_TICKS_PER_CALL, "#AC - Alignment check.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x12],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/12",          STAMUNIT_TICKS_PER_CALL, "#MC - Machine check.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x13],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/13",          STAMUNIT_TICKS_PER_CALL, "#XF - SIMD Floating-Point Exception.");
 
 #ifdef VBOX_WITH_STATISTICS
     rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 255, 8, MM_TAG_STAM, (void **)&pVM->trpm.s.paStatForwardedIRQR3);
     AssertRCReturn(rc, rc);
-    pVM->trpm.s.paStatForwardedIRQGC = MMHyperR3ToRC(pVM, pVM->trpm.s.paStatForwardedIRQR3);
+    pVM->trpm.s.paStatForwardedIRQRC = MMHyperR3ToRC(pVM, pVM->trpm.s.paStatForwardedIRQR3);
     pVM->trpm.s.paStatForwardedIRQR0 = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatForwardedIRQR3);
     for (unsigned i = 0; i < 255; i++)
         STAMR3RegisterF(pVM, &pVM->trpm.s.paStatForwardedIRQR3[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Forwarded interrupts.",
                         i < 0x20 ? "/TRPM/ForwardRaw/TRAP/%02X" : "/TRPM/ForwardRaw/IRQ/%02X", i);
 #endif
-    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailNoHandler,    STAMTYPE_COUNTER, "/TRPM/ForwardRaw/Fail/NoHandler",      STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
-    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailPatchAddr,    STAMTYPE_COUNTER, "/TRPM/ForwardRaw/Fail/PatchAddr",      STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
 
-    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailGC,           STAMTYPE_COUNTER, "/TRPM/ForwardRaw/Fail/GC",             STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
-    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailHC,           STAMTYPE_COUNTER, "/TRPM/ForwardRaw/Fail/HC",             STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
-    STAM_REG(pVM, &pVM->trpm.s.StatForwardProfGC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/GC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
-    STAM_REG(pVM, &pVM->trpm.s.StatForwardProfHC,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/Prof/HC",         STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardProfR3,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/ProfR3",   STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardProfRZ,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/ProfRZ",   STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailNoHandler,    STAMTYPE_COUNTER, "/TRPM/ForwardRaw/FailNoHandler", STAMUNIT_OCCURENCES,"Failure to forward interrupt in raw mode.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailPatchAddr,    STAMTYPE_COUNTER, "/TRPM/ForwardRaw/FailPatchAddr", STAMUNIT_OCCURENCES,"Failure to forward interrupt in raw mode.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailR3,           STAMTYPE_COUNTER, "/TRPM/ForwardRaw/FailR3",       STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
+    STAM_REG(pVM, &pVM->trpm.s.StatForwardFailRZ,           STAMTYPE_COUNTER, "/TRPM/ForwardRaw/FailRZ",       STAMUNIT_OCCURENCES, "Failure to forward interrupt in raw mode.");
 
-    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dDisasm,        STAMTYPE_PROFILE, "/TRPM/GC/Traps/0d/Disasm",              STAMUNIT_TICKS_PER_CALL, "Profiling disassembly part of trpmGCTrap0dHandler.");
-    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dRdTsc,         STAMTYPE_COUNTER, "/TRPM/GC/Traps/0d/RdTsc",                   STAMUNIT_OCCURENCES, "Number of RDTSC #GPs.");
+    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dDisasm,            STAMTYPE_PROFILE, "/TRPM/RC/Traps/0d/Disasm",   STAMUNIT_TICKS_PER_CALL, "Profiling disassembly part of trpmGCTrap0dHandler.");
+    STAM_REG(pVM, &pVM->trpm.s.StatTrap0dRdTsc,             STAMTYPE_COUNTER, "/TRPM/RC/Traps/0d/RdTsc",        STAMUNIT_OCCURENCES, "Number of RDTSC #GPs.");
 
     /*
      * Default action when entering raw mode for the first time
@@ -551,18 +577,18 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * would make init order impossible if we should assert the presence of these
      * exports in TRPMR3Init().
      */
-    RTGCPTR32 aGCPtrs[TRPM_HANDLER_MAX] = {0};
+    RTRCPTR aRCPtrs[TRPM_HANDLER_MAX] = {0};
     int rc;
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerInterupt", &aGCPtrs[TRPM_HANDLER_INT]);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerInterupt", &aRCPtrs[TRPM_HANDLER_INT]);
     AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerInterupt in VMMGC.gc!\n"));
 
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerGeneric",  &aGCPtrs[TRPM_HANDLER_TRAP]);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerGeneric",  &aRCPtrs[TRPM_HANDLER_TRAP]);
     AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerGeneric in VMMGC.gc!\n"));
 
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerTrap08",   &aGCPtrs[TRPM_HANDLER_TRAP_08]);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerTrap08",   &aRCPtrs[TRPM_HANDLER_TRAP_08]);
     AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerTrap08 in VMMGC.gc!\n"));
 
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerTrap12",   &aGCPtrs[TRPM_HANDLER_TRAP_12]);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "TRPMGCHandlerTrap12",   &aRCPtrs[TRPM_HANDLER_TRAP_12]);
     AssertReleaseMsgRC(rc, ("Couldn't find TRPMGCHandlerTrap12 in VMMGC.gc!\n"));
 
     RTSEL SelCS = CPUMGetHyperCS(pVM);
@@ -579,7 +605,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
            )
         {
             Assert(pIdteTemplate->u16OffsetLow < TRPM_HANDLER_MAX);
-            RTGCPTR Offset = aGCPtrs[pIdteTemplate->u16OffsetLow];
+            RTGCPTR Offset = aRCPtrs[pIdteTemplate->u16OffsetLow];
             switch (pIdteTemplate->u16OffsetLow)
             {
                 /*
@@ -617,14 +643,14 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     if (!pVM->trpm.s.fDisableMonitoring)
     {
 #ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
-        if (pVM->trpm.s.GCPtrIdt != RTRCPTR_MAX)
+        if (pVM->trpm.s.pvMonShwIdtRC != RTRCPTR_MAX)
         {
-            rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GCPtrIdt);
+            rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.pvMonShwIdtRC);
             AssertRC(rc);
         }
-        pVM->trpm.s.GCPtrIdt = VM_GUEST_ADDR(pVM, &pVM->trpm.s.aIdt[0]);
-        rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_HYPERVISOR, pVM->trpm.s.GCPtrIdt, pVM->trpm.s.GCPtrIdt + sizeof(pVM->trpm.s.aIdt) - 1,
-                                         0, 0, "trpmgcShadowIDTWriteHandler", 0, "Shadow IDT write access handler");
+        pVM->trpm.s.pvMonShwIdtRC = VM_GUEST_ADDR(pVM, &pVM->trpm.s.aIdt[0]);
+        rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_HYPERVISOR, pVM->trpm.s.pvMonShwIdtRC, pVM->trpm.s.pvMonShwIdtRC + sizeof(pVM->trpm.s.aIdt) - 1,
+                                         0, 0, "trpmRCShadowIDTWriteHandler", 0, "Shadow IDT write access handler");
         AssertRC(rc);
 #endif
     }
@@ -652,7 +678,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         }
     }
 
-    pVM->trpm.s.paStatForwardedIRQGC += offDelta;
+    pVM->trpm.s.paStatForwardedIRQRC += offDelta;
     pVM->trpm.s.paStatForwardedIRQR0 = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatForwardedIRQR3);
 }
 
@@ -930,7 +956,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
             }
             /* limit is including */
             rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
-                                             0, trpmGuestIDTWriteHandler, "trpmgcGuestIDTWriteHandler", 0, "Guest IDT write access handler");
+                                             0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
 
             if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
             {
@@ -940,7 +966,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
                     CSAMR3RemovePage(pVM, IDTR.pIdt + IDTR.cbIdt);
 
                 rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
-                                                 0, trpmGuestIDTWriteHandler, "trpmgcGuestIDTWriteHandler", 0, "Guest IDT write access handler");
+                                                 0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
             }
 
             AssertRCReturn(rc, rc);
@@ -1001,11 +1027,11 @@ VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
 #endif
 
 #ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
-    if (pVM->trpm.s.GCPtrIdt != RTRCPTR_MAX)
+    if (pVM->trpm.s.pvMonShwIdtRC != RTRCPTR_MAX)
     {
-        int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GCPtrIdt);
+        int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.pvMonShwIdtRC);
         AssertRC(rc);
-        pVM->trpm.s.GCPtrIdt = RTRCPTR_MAX;
+        pVM->trpm.s.pvMonShwIdtRC = RTRCPTR_MAX;
     }
 #endif
 
@@ -1031,10 +1057,10 @@ VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) trpmGuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("trpmGuestIDTWriteHandler: write to %VGv size %d\n", GCPtr, cbBuf));
+    Log(("trpmR3GuestIDTWriteHandler: write to %VGv size %d\n", GCPtr, cbBuf));
     VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
