@@ -415,13 +415,13 @@ if_start(PNATState pData)
 
 	/* Update so_queued */
 	if (ifm->ifq_so) {
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifdef VBOX_WITH_SYNC_SLIRP
             RTSemMutexRequest(ifm->ifq_so->so_mutex, RT_INDEFINITE_WAIT);
 #endif
 		if (--ifm->ifq_so->so_queued == 0)
 		   /* If there's no more queued, reset nqueued */
 		   ifm->ifq_so->so_nqueued = 0;
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifdef VBOX_WITH_SYNC_SLIRP
             RTSemMutexRelease(ifm->ifq_so->so_mutex);
 #endif
 	}
