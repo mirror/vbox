@@ -297,7 +297,9 @@ diddit:
                     RTSemMutexRelease(pData->if_batchq_mutex);
 #endif
 		}
+#ifdef VBOX_WITH_SYNC_SLIRP
                 RTSemMutexRelease(so->so_mutex);
+#endif
 	}
 #ifdef VBOX_WITH_SYNC_SLIRP
         RTSemMutexRelease(ifq->m_mutex);
@@ -392,7 +394,6 @@ if_start(PNATState pData)
         RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
 #endif
 	/* Remove it from the queue */
-	ifqt = ifm->ifq_prev;
 	ifqt = ifm->ifq_prev;
 	remque(pData, ifm);
 
