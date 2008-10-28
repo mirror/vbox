@@ -350,6 +350,9 @@ udp_attach(PNATState pData, struct socket *so)
       insque(pData, so,&udb);
     }
   }
+#ifdef VBOX_WITH_SYNC_SLIRP
+  so->so_type = IPPROTO_UDP;
+#endif
   return(so->s);
 }
 

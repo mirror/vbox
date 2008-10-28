@@ -20,6 +20,9 @@
 
 #ifndef _slirp_state_h_
 #define _slirp_state_h_
+#ifndef VBOX_WITH_SYNC_SLIRP
+#include <iprt/semaphore.h>
+#endif
 
 /** Number of DHCP clients supported by NAT. */
 #define NB_ADDR     16
@@ -60,10 +63,22 @@ typedef struct NATState
     int if_comp;
     int if_maxlinkhdr;
     int if_queued;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSEMMUTEX  if_queued_mutex;
+#endif
     int if_thresh;
     struct mbuf if_fastq;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSEMMUTEX  if_fastq_mutex;
+#endif
     struct mbuf if_batchq;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSEMMUTEX  if_batchq_mutex;
+#endif
     struct mbuf *next_m;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSEMMUTEX  next_m_mutex;
+#endif
     /* Stuff from icmp.c */
     struct icmpstat_t icmpstat;
     /* Stuff from ip_input.c */
@@ -72,8 +87,15 @@ typedef struct NATState
     uint16_t ip_currid;
     /* Stuff from mbuf.c */
     int mbuf_alloced, mbuf_max;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSEMMUTEX  mbuf_alloced_mutex;
+#endif
     int msize;
     struct mbuf m_freelist, m_usedlist;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSEMMUTEX  m_freelist_mutex;
+    RTSEMMUTEX  m_usedlist_mutex;
+#endif
     /* Stuff from slirp.c */
     void *pvUser;
     uint32_t curtime;
@@ -97,6 +119,7 @@ typedef struct NATState
     struct socket tcb;
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
+    RTSEMMUTEX tcb_mutex;
 #if ARCH_BITS == 64
     /* Stuff from tcp_subr.c */
     void *apvHash[16384];
@@ -115,6 +138,7 @@ typedef struct NATState
     struct udpstat_t udpstat;
     struct socket udb;
     struct socket *udp_last_so;
+    RTSEMMUTEX udb_mutex;
 } NATState;
 
 

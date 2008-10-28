@@ -45,12 +45,28 @@ tcp_fasttimo(PNATState pData)
 {
 	register struct socket *so;
 	register struct tcpcb *tp;
+#ifdef VBOX_WITH_SYNC_SLIRP
+        struct socket *so_next;
+#endif
 
 	DEBUG_CALL("tcp_fasttimo");
 
+#ifndef VBOX_WITH_SYNC_SLIRP
 	so = tcb.so_next;
 	if (so)
 	for (; so != &tcb; so = so->so_next)
+#else
+        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        so = tcb.so_next;
+        while(1) {
+            if ( so == &tcb) {
+                RTSemMutexRelease(pData->tcb_mutex);
+                break;
+            }
+            so_next = so->so_next;
+            RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+            RTSemMutexRelease(pData->tcb_mutex);
+#endif
 		if ((tp = (struct tcpcb *)so->so_tcpcb) &&
 		    (tp->t_flags & TF_DELACK)) {
 			tp->t_flags &= ~TF_DELACK;
@@ -58,6 +74,13 @@ tcp_fasttimo(PNATState pData)
 			tcpstat.tcps_delack++;
 			(void) tcp_output(pData, tp);
 		}
+#ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+                RTSemMutexRelease(so->so_mutex);
+                so = so_next;
+        }
+#endif
+
 }
 
 /*
@@ -77,14 +100,35 @@ tcp_slowtimo(PNATState pData)
 	/*
 	 * Search through tcb's and update active timers.
 	 */
+#ifndef VBOX_WITH_SYNC_SLIRP
 	ip = tcb.so_next;
 	if (ip == 0)
 	   return;
 	for (; ip != &tcb; ip = ipnxt) {
+#else
+        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        ip = tcb.so_next;
+        if (ip == NULL) {
+            RTSemMutexRelease(pData->tcb_mutex);
+            return;
+        }
+        while (1) {
+                if (ip == &tcb) {
+                    RTSemMutexRelease(pData->tcb_mutex);
+                    break;
+                }
+                ipnxt = ip->so_next;
+                RTSemMutexRequest(ip->so_mutex, RT_INDEFINITE_WAIT);
+                RTSemMutexRelease(pData->tcb_mutex);
+#endif
 		ipnxt = ip->so_next;
 		tp = sototcpcb(ip);
 		if (tp == 0)
+#ifndef VBOX_WITH_SYNC_SLIRP
 			continue;
+#else
+                        goto before_loop_ends;
+#endif
 		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (tp->t_timer[i] && --tp->t_timer[i] == 0) {
 				tcp_timers(pData, tp,i);
@@ -97,6 +141,12 @@ tcp_slowtimo(PNATState pData)
 		   tp->t_rtt++;
 tpgone:
 		;
+#ifdef VBOX_WITH_SYNC_SLIRP
+before_loop_ends:
+                RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+                RTSemMutexRelease(ip->so_mutex);
+                ip=ipnxt;
+#endif
 	}
 	tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */
 #ifdef TCP_COMPAT_42

@@ -261,6 +261,10 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 
 	DEBUG_CALL("tcp_close");
 	DEBUG_ARG("tp = %lx", (long )tp);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        /*sofree destrys so_mutex*/
+        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+#endif
 
 	/* free the reassembly queue, if any */
 	t = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
@@ -527,8 +531,11 @@ tcp_attach(PNATState pData, struct socket *so)
 {
 	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
 	   return -1;
+        so->so_type = IPPROTO_TCP;
 
+        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
 	insque(pData, so, &tcb);
+        RTSemMutexRelease(pData->tcb_mutex);
 
 	return 0;
 }

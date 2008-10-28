@@ -47,7 +47,16 @@ if_init(PNATState pData)
 	if_mru = 1500;
 	if_comp = IF_AUTOCOMP;
 	if_fastq.ifq_next = if_fastq.ifq_prev = &if_fastq;
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexCreate(&pData->if_fastq_mutex);
+        RTSemMutexCreate(&if_fastq.m_mutex);
+#endif
+
 	if_batchq.ifq_next = if_batchq.ifq_prev = &if_batchq;
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexCreate(&pData->if_batchq_mutex);
+        RTSemMutexCreate(&if_batchq.m_mutex);
+#endif
         /*	sl_compress_init(&comp_s); */
 	next_m = &if_batchq;
 }
@@ -148,21 +157,35 @@ void
 if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 {
 	struct mbuf *ifq;
+#ifdef VBOX_WITH_SYNC_SLIRP
+	struct mbuf *ifqprev;
+#endif
 	int on_fastq = 1;
 
 	DEBUG_CALL("if_output");
 	DEBUG_ARG("so = %lx", (long)so);
 	DEBUG_ARG("ifm = %lx", (long)ifm);
+#ifdef VBOX_WITH_SYNC_SLIRP
+    if (so != NULL)
+        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+#endif
 
 	/*
 	 * First remove the mbuf from m_usedlist,
 	 * since we're gonna use m_next and m_prev ourselves
 	 * XXX Shouldn't need this, gotta change dtom() etc.
 	 */
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
+        RTSemMutexRequest(ifm->m_mutex, RT_INDEFINITE_WAIT);
+#endif
 	if (ifm->m_flags & M_USEDLIST) {
 		remque(pData, ifm);
 		ifm->m_flags &= ~M_USEDLIST;
 	}
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRelease(pData->m_usedlist_mutex);
+#endif
 
 	/*
 	 * See if there's already a batchq list for this session.
@@ -171,18 +194,43 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 	 * We mustn't put this packet back on the fastq (or we'll send it out of order)
 	 * XXX add cache here?
 	 */
+#ifndef VBOX_WITH_SYNC_SLIRP
 	for (ifq = if_batchq.ifq_prev; ifq != &if_batchq; ifq = ifq->ifq_prev) {
+#else
+        RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
+        ifq = if_batchq.ifq_prev;
+        while(1){
+            if (ifq == &if_batchq) {
+                RTSemMutexRelease(pData->if_batchq_mutex);
+                break;
+            }
+            ifqprev = ifq->ifq_prev;
+            RTSemMutexRequest(ifq->m_mutex, RT_INDEFINITE_WAIT);
+            RTSemMutexRelease(pData->if_batchq_mutex);
+#endif
 		if (so == ifq->ifq_so) {
 			/* A match! */
 			ifm->ifq_so = so;
 			ifs_insque(ifm, ifq->ifs_prev);
 			goto diddit;
 		}
+#ifdef VBOX_WITH_SYNC_SLIRP
+            RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
+            RTSemMutexRelease(ifq->m_mutex);
+            ifq = ifqprev;
+#endif
 	}
 
 	/* No match, check which queue to put it on */
 	if (so && (so->so_iptos & IPTOS_LOWDELAY)) {
+#ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexRequest(pData->if_fastq_mutex, RT_INDEFINITE_WAIT);
+#endif
 		ifq = if_fastq.ifq_prev;
+#ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexRequest(ifq->m_mutex, RT_INDEFINITE_WAIT);
+                RTSemMutexRelease(pData->if_fastq_mutex);
+#endif
 		on_fastq = 1;
 		/*
 		 * Check if this packet is a part of the last
@@ -193,8 +241,17 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 			ifs_insque(ifm, ifq->ifs_prev);
 			goto diddit;
 		}
-	} else
+	}
+        else {
+#ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
+#endif
 		ifq = if_batchq.ifq_prev;
+#ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexRequest(ifq->m_mutex, RT_INDEFINITE_WAIT);
+                RTSemMutexRelease(pData->if_batchq_mutex);
+#endif
+        }
 
 	/* Create a new doubly linked list for this session */
 	ifm->ifq_so = so;
@@ -202,7 +259,13 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 	insque(pData, ifm, ifq);
 
 diddit:
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
+#endif
 	++if_queued;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    RTSemMutexRelease(pData->if_queued_mutex);
+#endif
 
 	if (so) {
 		/* Update *_queued */
@@ -218,13 +281,28 @@ diddit:
 		if (on_fastq && ((so->so_nqueued >= 6) &&
 				 (so->so_nqueued - so->so_queued) >= 3)) {
 
+#ifdef VBOX_WITH_SYNC_SLIRP
+                        RTSemMutexRequest(pData->if_fastq_mutex, RT_INDEFINITE_WAIT);
+#endif
 			/* Remove from current queue... */
 			remque(pData, ifm->ifs_next);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                        RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
+#endif
 
 			/* ...And insert in the new.  That'll teach ya! */
 			insque(pData, ifm->ifs_next, &if_batchq);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                    RTSemMutexRelease(pData->if_fastq_mutex);
+                    RTSemMutexRelease(pData->if_batchq_mutex);
+#endif
 		}
+                RTSemMutexRelease(so->so_mutex);
 	}
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRelease(ifq->m_mutex);
+        RTSemMutexRelease(ifm->m_mutex);
+#endif
 
 #ifndef FULL_BOLT
 	/*
@@ -253,13 +331,27 @@ void
 if_start(PNATState pData)
 {
 	struct mbuf *ifm, *ifqt;
+#ifdef VBOX_WITH_SYNC_SLIRP
+        int on_fast = 0; /*required for correctness */
+	struct mbuf *ifm_prev;
+#endif
 
 	DEBUG_CALL("if_start");
 
-	if (if_queued == 0)
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
+#endif
+	if (if_queued <= 0) {
+#ifdef VBOX_WITH_SYNC_SLIRP
+            RTSemMutexRelease(pData->if_queued_mutex);
+#endif
 	   return; /* Nothing to do */
+        }
 
  again:
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRelease(pData->if_queued_mutex);
+#endif
         /* check if we can really output */
         if (!slirp_can_output(pData->pvUser))
             return;
@@ -268,9 +360,21 @@ if_start(PNATState pData)
 	 * See which queue to get next packet from
 	 * If there's something in the fastq, select it immediately
 	 */
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRequest(pData->if_fastq_mutex, RT_INDEFINITE_WAIT);
+#endif
 	if (if_fastq.ifq_next != &if_fastq) {
 		ifm = if_fastq.ifq_next;
+#ifdef VBOX_WITH_SYNC_SLIRP
+                on_fast = 1;
+                RTSemMutexRequest(ifm->m_mutex, RT_INDEFINITE_WAIT);
+#endif
 	} else {
+#ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexRelease(pData->if_fastq_mutex);
+                RTSemMutexRequest(pData->next_m_mutex, RT_INDEFINITE_WAIT);
+                RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
+#endif
 		/* Nothing on fastq, see if next_m is valid */
 		if (next_m != &if_batchq)
 		   ifm = next_m;
@@ -279,11 +383,29 @@ if_start(PNATState pData)
 
 		/* Set which packet to send on next iteration */
 		next_m = ifm->ifq_next;
+#ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexRelease(pData->next_m_mutex);
+#endif
 	}
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRequest(ifm->m_mutex, RT_INDEFINITE_WAIT);
+        RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
+#endif
 	/* Remove it from the queue */
 	ifqt = ifm->ifq_prev;
+	ifqt = ifm->ifq_prev;
 	remque(pData, ifm);
+
 	--if_queued;
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRelease(pData->if_queued_mutex);
+        if (on_fast == 1) {
+            RTSemMutexRelease(pData->if_fastq_mutex);
+        }
+        else {
+            RTSemMutexRelease(pData->if_batchq_mutex);
+        }
+#endif
 
 	/* If there are more packets for this session, re-queue them */
 	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm) {
@@ -293,16 +415,32 @@ if_start(PNATState pData)
 
 	/* Update so_queued */
 	if (ifm->ifq_so) {
+#ifndef VBOX_WITH_SYNC_SLIRP
+            RTSemMutexRequest(ifm->ifq_so->so_mutex, RT_INDEFINITE_WAIT);
+#endif
 		if (--ifm->ifq_so->so_queued == 0)
 		   /* If there's no more queued, reset nqueued */
 		   ifm->ifq_so->so_nqueued = 0;
+#ifndef VBOX_WITH_SYNC_SLIRP
+            RTSemMutexRelease(ifm->ifq_so->so_mutex);
+#endif
 	}
 
 	/* Encapsulate the packet for sending */
         if_encap(pData, (const uint8_t *)ifm->m_data, ifm->m_len);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRelease(ifm->m_mutex);
+#endif
 
         m_free(pData, ifm);
 
-	if (if_queued)
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
+        /*We release if_queued_mutex after again label and before return*/
+#endif
+	if (if_queued > 0)
 	   goto again;
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRelease(pData->if_queued_mutex);
+#endif
 }

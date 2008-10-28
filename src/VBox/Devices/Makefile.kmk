@@ -531,6 +531,9 @@ Drivers_DEFS       = IN_IDE_R3
 ifdef VBOX_WITH_NETFLT
 Drivers_DEFS       = VBOX_WITH_NETFLT
 endif
+ifdef VBOX_WITH_SYNC_SLIRP
+Drivers_DEFS       = VBOX_WITH_SYNC_SLIRP
+endif
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	Network/slirp
