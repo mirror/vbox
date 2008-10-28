@@ -329,6 +329,7 @@ static int vboxNetFltSolarisSetRawMode(vboxnetflt_promisc_stream_t *pPromiscStre
 static int vboxNetFltSolarisPhysAddrReq(queue_t *pQueue);
 static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pPhysAddrAckMsg);
 static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP);
+static int vboxNetFltSolarisNotifyReq(queue_t *pQueue);
 
 static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mblk_t **ppRawMsg);
 static int vboxNetFltSolarisRawToUnitData(mblk_t *pMsg, mblk_t **ppDlpiMsg);
@@ -734,6 +735,11 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
             if (RT_LIKELY(RT_SUCCESS(rc)))
             {
                 /*
+                 * Ask for DLPI link notifications, don't bother check for errors here.
+                 */
+                vboxNetFltSolarisNotifyReq(pStream->pReadQueue);
+
+                /*
                  * Enable raw mode.
                  */
                 rc = vboxNetFltSolarisSetRawMode(pPromiscStream);
@@ -916,6 +922,68 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO %d\n", Prim));
                     switch (Prim)
                     {
+                        case DL_NOTIFY_IND:
+                        {
+                            if (MBLKL(pMsg) < DL_NOTIFY_IND_SIZE)
+                            {
+                                LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Invalid notification size; expected>=%d got=%d\n",
+                                            DL_NOTIFY_IND_SIZE, MBLKL(pMsg)));
+                                fSendUpstream = false;
+                                break;
+                            }
+
+                            dl_notify_ind_t *pNotifyInd = (dl_notify_ind_t *)pMsg->b_rptr;
+                            switch (pNotifyInd->dl_notification)
+                            {
+                                case DL_NOTE_PHYS_ADDR:
+                                {
+                                    if (pNotifyInd->dl_data != DL_CURR_PHYS_ADDR)
+                                        break;
+                                    
+                                    size_t cOffset = pNotifyInd->dl_addr_offset;
+                                    size_t cbAddr = pNotifyInd->dl_addr_length;
+                                    
+                                    if (!cOffset || !cbAddr)
+                                    {
+                                        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_PHYS_ADDR. Invalid offset/addr.\n"));
+                                        fSendUpstream = false;
+                                        break;
+                                    }
+
+                                    bcopy(pMsg->b_rptr + cOffset, &pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
+                                    fSendUpstream = false;
+                                    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_PHYS_ADDR. New Mac=%.*Rhxs\n",
+                                        sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+                                    break;
+                                }
+                                
+                                case DL_NOTE_LINK_UP:
+                                {
+                                    const bool fDisconnected = ASMAtomicUoReadBool(&pThis->fActive);
+                                    if (fDisconnected)
+                                    {
+                                        ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+                                        LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_LINK_UP.\n"));
+                                    }
+                                    fSendUpstream = false;
+                                    break;
+                                }
+
+                                case DL_NOTE_LINK_DOWN:
+                                {
+                                    const bool fDisconnected = ASMAtomicUoReadBool(&pThis->fActive);
+                                    if (!fDisconnected)
+                                    {
+                                        ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
+                                        LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_LINK_DOWN.\n"));
+                                    }
+                                    fSendUpstream = false;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        
                         case DL_BIND_ACK:
                         {
                             /*
@@ -1247,6 +1315,11 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: DL_PHYS_ADDR_ACK: Mac=%.*Rhxs\n", sizeof(pThis->u.s.Mac),
                     &pThis->u.s.Mac));
     }
+    else
+    {
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: Invalid address size. expected=%d got=%d\n", ETHERADDRL,
+                pPhysAddrAck->dl_addr_length));
+    }
 }
 
 
@@ -1259,7 +1332,7 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
  */
 static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisBindReq SAP=%u\n", SAP));
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisBindReq SAP=%d\n", SAP));
 
     mblk_t *pBindMsg = mexchange(NULL, NULL, DL_BIND_REQ_SIZE, M_PROTO, DL_BIND_REQ);
     if (RT_UNLIKELY(!pBindMsg))
@@ -1273,6 +1346,28 @@ static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP)
     pBindReq->dl_service_mode = DL_CLDLS;
 
     qreply(pQueue, pBindMsg);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Prepare DLPI notifications request.
+ *
+ * @returns VBox status code.
+ * @param   pQueue          Pointer to the queue.
+ */
+static int vboxNetFltSolarisNotifyReq(queue_t *pQueue)
+{
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisNotifyReq\n"));
+
+    mblk_t *pNotifyMsg = mexchange(NULL, NULL, DL_NOTIFY_REQ_SIZE, M_PROTO, DL_NOTIFY_REQ);
+    if (RT_UNLIKELY(!pNotifyMsg))
+        return VERR_NO_MEMORY;
+
+    dl_notify_req_t *pNotifyReq = (dl_notify_req_t *)pNotifyMsg->b_rptr;
+    pNotifyReq->dl_notifications = DL_NOTE_LINK_UP | DL_NOTE_LINK_DOWN | DL_NOTE_PHYS_ADDR;
+
+    qreply(pQueue, pNotifyMsg);
     return VINF_SUCCESS;
 }
 
