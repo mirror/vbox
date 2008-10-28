@@ -69,7 +69,7 @@ if defined(VBOX_WITH_MAIN) && !defined(VBOX_ONLY_DOCS)
 
  # FFmpeg for test videos.
  if defined(VBOX_WITH_FFMPEG) && !defined(VBOX_OSE) && !defined(VBOX_WITH_SDK)
-  if1of ($(KBUILD_TARGET), darwin)
+  if1of ($(KBUILD_TARGET), darwin linux)
    include $(PATH_SUB_CURRENT)/ffmpeg-20060710/Makefile.kmk
   endif
  endif
