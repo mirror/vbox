@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,16 +22,21 @@
  */
 
 #include "HostNetworkInterfaceImpl.h"
+#include "Logging.h"
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-HostNetworkInterface::HostNetworkInterface()
+DEFINE_EMPTY_CTOR_DTOR (HostNetworkInterface)
+
+HRESULT HostNetworkInterface::FinalConstruct()
 {
+    return S_OK;
 }
 
-HostNetworkInterface::~HostNetworkInterface()
+void HostNetworkInterface::FinalRelease()
 {
+    uninit ();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -39,17 +46,27 @@ HostNetworkInterface::~HostNetworkInterface()
  * Initializes the host object.
  *
  * @returns COM result indicator
- * @param   interfaceName name of the network interface
+ * @param   aInterfaceName name of the network interface
+ * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr interfaceName, Guid guid)
+HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid)
 {
-    ComAssertRet (interfaceName, E_INVALIDARG);
-    ComAssertRet (!guid.isEmpty(), E_INVALIDARG);
+    LogFlowThisFunc (("aInterfaceName={%ls}, aGuid={%s}\n",
+                      aInterfaceName.raw(), aGuid.toString().raw()));
 
-    AutoWriteLock alock (this);
-    mInterfaceName = interfaceName;
-    mGuid = guid;
-    setReady(true);
+    ComAssertRet (aInterfaceName, E_INVALIDARG);
+    ComAssertRet (!aGuid.isEmpty(), E_INVALIDARG);
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+
+    unconst (mInterfaceName) = aInterfaceName;
+    unconst (mGuid) = aGuid;
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -60,15 +77,18 @@ HRESULT HostNetworkInterface::init (Bstr interfaceName, Guid guid)
  * Returns the name of the host network interface.
  *
  * @returns COM status code
- * @param   interfaceName address of result pointer
+ * @param   aInterfaceName address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *interfaceName)
+STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *aInterfaceName)
 {
-    if (!interfaceName)
+    if (!aInterfaceName)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
-    mInterfaceName.cloneTo(interfaceName);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    mInterfaceName.cloneTo (aInterfaceName);
+
     return S_OK;
 }
 
@@ -76,14 +96,18 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *interfaceName)
  * Returns the GUID of the host network interface.
  *
  * @returns COM status code
- * @param   guid address of result pointer
+ * @param   aGuid address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (GUIDPARAMOUT guid)
+STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (GUIDPARAMOUT aGuid)
 {
-    if (!guid)
+    if (!aGuid)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
-    mGuid.cloneTo(guid);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    mGuid.cloneTo (aGuid);
+
     return S_OK;
 }
+

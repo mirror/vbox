@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VBox Console VRDP Helper class and implementation of IRemoteDisplayInfo
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,7 +50,7 @@ typedef struct _VRDPInputSynch
     bool fClientCapsLock;
     bool fClientScrollLock;
 } VRDPInputSynch;
-#endif /* VBOX_WITH_VRDP */        
+#endif /* VBOX_WITH_VRDP */
 
 /* Member of Console. Helper class for VRDP server management. Not a COM class. */
 class ConsoleVRDPServer
@@ -65,7 +67,7 @@ public:
         m_fGuestWantsAbsolute = fGuestWantsAbsolute;
 #else
         NOREF(fGuestWantsAbsolute);
-#endif /* VBOX_WITH_VRDP */        
+#endif /* VBOX_WITH_VRDP */
     }
 
     void NotifyKeyboardLedsChange (BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
@@ -93,7 +95,7 @@ public:
         NOREF(fNumLock);
         NOREF(fCapsLock);
         NOREF(fScrollLock);
-#endif /* VBOX_WITH_VRDP */        
+#endif /* VBOX_WITH_VRDP */
     }
 
     void EnableConnections (void);
@@ -111,20 +113,20 @@ public:
 
     void USBBackendCreate (uint32_t u32ClientId, void **ppvIntercept);
     void USBBackendDelete (uint32_t u32ClientId);
-    
+
     void *USBBackendRequestPointer (uint32_t u32ClientId, const Guid *pGuid);
     void USBBackendReleasePointer (const Guid *pGuid);
-    
+
     /* Private interface for the RemoteUSBBackend destructor. */
     void usbBackendRemoveFromList (RemoteUSBBackend *pRemoteUSBBackend);
-    
+
     /* Private methods for the Remote USB thread. */
     RemoteUSBBackend *usbBackendGetNext (RemoteUSBBackend *pRemoteUSBBackend);
-    
+
     void notifyRemoteUSBThreadRunning (RTTHREAD thread);
     bool isRemoteUSBThreadRunning (void);
     void waitRemoteUSBThreadEvent (unsigned cMillies);
-    
+
     void ClipboardCreate (uint32_t u32ClientId);
     void ClipboardDelete (uint32_t u32ClientId);
 
@@ -156,7 +158,7 @@ private:
     static RTLDRMOD mVRDPLibrary;
 
     static PFNVRDPCREATESERVER mpfnVRDPCreateServer;
-    
+
     static VRDPENTRYPOINTS_1 *mpEntryPoints;
     static VRDPCALLBACKS_1 mCallbacks;
 
@@ -172,13 +174,13 @@ private:
     static DECLCALLBACK(void) VRDPCallbackFramebufferUnlock (void *pvCallback, unsigned uScreenId);
     static DECLCALLBACK(void) VRDPCallbackInput             (void *pvCallback, int type, const void *pvInput, unsigned cbInput);
     static DECLCALLBACK(void) VRDPCallbackVideoModeHint     (void *pvCallback, unsigned cWidth, unsigned cHeight,  unsigned cBitsPerPixel, unsigned uScreenId);
-    
+
     bool m_fGuestWantsAbsolute;
     int m_mousex;
     int m_mousey;
-    
+
     IFramebuffer *maFramebuffers[SchemaDefs::MaxGuestMonitors];
-    
+
     IConsoleCallback *mConsoleCallback;
 
     VRDPInputSynch m_InputSynch;
@@ -188,14 +190,14 @@ private:
 
     int lockConsoleVRDPServer (void);
     void unlockConsoleVRDPServer (void);
-    
+
     int mcClipboardRefs;
     HGCMSVCEXTHANDLE mhClipboard;
     PFNVRDPCLIPBOARDEXTCALLBACK mpfnClipboardCallback;
 
     static DECLCALLBACK(int) ClipboardCallback (void *pvCallback, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
     static DECLCALLBACK(int) ClipboardServiceExtension (void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms);
-    
+
 #ifdef VBOX_WITH_USB
     RemoteUSBBackend *usbBackendFindByUUID (const Guid *pGuid);
     RemoteUSBBackend *usbBackendFind (uint32_t u32ClientId);
@@ -204,11 +206,11 @@ private:
     {
         RemoteUSBBackend *pHead;
         RemoteUSBBackend *pTail;
-        
+
         RTTHREAD thread;
-        
+
         bool fThreadRunning;
-        
+
         RTSEMEVENT event;
     } USBBackends;
 
@@ -230,12 +232,14 @@ private:
 class Console;
 
 class ATL_NO_VTABLE RemoteDisplayInfo :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <RemoteDisplayInfo, IRemoteDisplayInfo>,
     public VirtualBoxSupportTranslation <RemoteDisplayInfo>,
-    public VirtualBoxBase,
     public IRemoteDisplayInfo
 {
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (RemoteDisplayInfo)
 
     DECLARE_NOT_AGGREGATABLE(RemoteDisplayInfo)
 
@@ -247,6 +251,8 @@ public:
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (RemoteDisplayInfo)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -278,7 +284,7 @@ public:
 
 private:
 
-    ComObjPtr <Console, ComWeakRef> mParent;
+    const ComObjPtr <Console, ComWeakRef> mParent;
 };
 
 #endif // ____H_CONSOLEVRDPSERVER

@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VBox Console VRDP Helper class
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2008,6 +2010,8 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
+DEFINE_EMPTY_CTOR_DTOR (RemoteDisplayInfo)
+
 HRESULT RemoteDisplayInfo::FinalConstruct()
 {
     return S_OK;
@@ -2015,8 +2019,7 @@ HRESULT RemoteDisplayInfo::FinalConstruct()
 
 void RemoteDisplayInfo::FinalRelease()
 {
-    if (isReady())
-        uninit ();
+    uninit ();
 }
 
 // public methods only for internal purposes
@@ -2027,16 +2030,16 @@ void RemoteDisplayInfo::FinalRelease()
  */
 HRESULT RemoteDisplayInfo::init (Console *aParent)
 {
-    LogFlowMember (("RemoteDisplayInfo::init (%p)\n", aParent));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
-    AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
+    unconst (mParent) = aParent;
 
-    setReady (true);
     return S_OK;
 }
 
@@ -2046,14 +2049,14 @@ HRESULT RemoteDisplayInfo::init (Console *aParent)
  */
 void RemoteDisplayInfo::uninit()
 {
-    LogFlowMember (("RemoteDisplayInfo::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
-    mParent.setNull();
-
-    setReady (false);
+    unconst (mParent).setNull();
 }
 
 // IRemoteDisplayInfo properties
@@ -2065,8 +2068,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoWriteLock alock (this);                                            \
-        CHECK_READY();                                                    \
+        AutoCaller autoCaller (this);                                     \
+        CheckComRCReturnRC (autoCaller.rc());                             \
+                                                                          \
+        /* todo: Not sure if a AutoReadLock would be sufficient. */       \
+        AutoWriteLock alock (this);                                       \
                                                                           \
         uint32_t value;                                                   \
         uint32_t cbOut = 0;                                               \
@@ -2085,8 +2091,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoWriteLock alock (this);                                            \
-        CHECK_READY();                                                    \
+        AutoCaller autoCaller (this);                                     \
+        CheckComRCReturnRC (autoCaller.rc());                             \
+                                                                          \
+        /* todo: Not sure if a AutoReadLock would be sufficient. */       \
+        AutoWriteLock alock (this);                                       \
                                                                           \
         _aType value;                                                     \
         uint32_t cbOut = 0;                                               \
@@ -2105,8 +2114,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoWriteLock alock (this);                                            \
-        CHECK_READY();                                                    \
+        AutoCaller autoCaller (this);                                     \
+        CheckComRCReturnRC (autoCaller.rc());                             \
+                                                                          \
+        /* todo: Not sure if a AutoReadLock would be sufficient. */       \
+        AutoWriteLock alock (this);                                       \
                                                                           \
         uint32_t cbOut = 0;                                               \
                                                                           \

@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,39 +28,44 @@
 #include "Collection.h"
 
 class ATL_NO_VTABLE HostNetworkInterface :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HostNetworkInterface, IHostNetworkInterface>,
     public VirtualBoxSupportTranslation <HostNetworkInterface>,
-    public VirtualBoxBase,
     public IHostNetworkInterface
 {
 public:
-    HostNetworkInterface();
-    virtual ~HostNetworkInterface();
 
-    DECLARE_NOT_AGGREGATABLE(HostNetworkInterface)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HostNetworkInterface)
+
+    DECLARE_NOT_AGGREGATABLE (HostNetworkInterface)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(HostNetworkInterface)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IHostNetworkInterface)
+    BEGIN_COM_MAP (HostNetworkInterface)
+        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY (IHostNetworkInterface)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (HostNetworkInterface)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init (Bstr interfaceName, Guid guid);
 
     // IHostNetworkInterface properties
-    STDMETHOD(COMGETTER(Name)) (BSTR *interfaceName);
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT guid);
+    STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
+    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aGuid);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostNetworkInterface"; }
 
 private:
-    Bstr mInterfaceName;
-    Guid mGuid;
+    const Bstr mInterfaceName;
+    const Guid mGuid;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostNetworkInterface)

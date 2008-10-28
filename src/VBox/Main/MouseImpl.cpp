@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,17 +53,17 @@ typedef struct DRVMAINMOUSE
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
+DEFINE_EMPTY_CTOR_DTOR (Mouse)
+
 HRESULT Mouse::FinalConstruct()
 {
-    mParent = NULL;
     mpDrv = NULL;
     return S_OK;
 }
 
 void Mouse::FinalRelease()
 {
-    if (isReady())
-        uninit();
+    uninit();
 }
 
 // public methods only for internal purposes
@@ -75,14 +77,15 @@ void Mouse::FinalRelease()
  */
 HRESULT Mouse::init (Console *parent)
 {
-    LogFlow(("Mouse::init(): isReady=%d\n", isReady()));
+    LogFlow(("Mouse::init()\n"));
 
     ComAssertRet (parent, E_INVALIDARG);
 
-    AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
+    unconst(mParent) = parent;
 
 #ifdef RT_OS_L4
     /* L4 console has no own mouse cursor */
@@ -91,7 +94,9 @@ HRESULT Mouse::init (Console *parent)
     uHostCaps = 0;
 #endif
 
-    setReady (true);
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -101,16 +106,18 @@ HRESULT Mouse::init (Console *parent)
  */
 void Mouse::uninit()
 {
-    LogFlow(("Mouse::uninit(): isReady=%d\n", isReady()));
+    LogFlowThisFunc (("\n"));
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
     if (mpDrv)
         mpDrv->pMouse = NULL;
     mpDrv = NULL;
 
-    setReady (false);
+    unconst (mParent).setNull();
 }
 
 // IMouse properties
@@ -128,8 +135,10 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
     if (!absoluteSupported)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -140,6 +149,7 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
     uint32_t mouseCaps;
     mParent->getVMMDev()->getVMMDevPort()->pfnQueryMouseCapabilities(mParent->getVMMDev()->getVMMDevPort(), &mouseCaps);
     *absoluteSupported = mouseCaps & VMMDEV_MOUSEGUESTWANTSABS;
+
     return S_OK;
 }
 
@@ -155,8 +165,10 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
     if (!needsHostCursor)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -167,6 +179,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
     uint32_t mouseCaps;
     mParent->getVMMDev()->getVMMDevPort()->pfnQueryMouseCapabilities(mParent->getVMMDev()->getVMMDevPort(), &mouseCaps);
     *needsHostCursor = mouseCaps & VMMDEV_MOUSEGUESTNEEDSHOSTCUR;
+
     return S_OK;
 }
 
@@ -184,8 +197,12 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
  */
 STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 {
+    HRESULT rc = S_OK;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -217,11 +234,10 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 
     int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, fButtons);
     if (VBOX_FAILURE (vrc))
-        return setError (E_FAIL,
-            tr ("Could not send the mouse event to the virtual mouse (%Vrc)"),
-            vrc);
+        rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Vrc)"),
+                       vrc);
 
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -237,8 +253,12 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
                                           LONG buttonState)
 {
+    HRESULT rc = S_OK;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -266,7 +286,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
 
     ULONG displayWidth;
     ULONG displayHeight;
-    HRESULT rc = pDisplay->COMGETTER(Width)(&displayWidth);
+    rc = pDisplay->COMGETTER(Width)(&displayWidth);
     ComAssertComRCRet (rc, rc);
     rc = pDisplay->COMGETTER(Height)(&displayHeight);
     ComAssertComRCRet (rc, rc);
@@ -296,12 +316,11 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
         vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz,
                                           fButtons);
         if (VBOX_FAILURE (vrc))
-            return setError (E_FAIL,
-                tr ("Could not send the mouse event to the virtual mouse (%Vrc)"),
-                vrc);
+            rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Vrc)"),
+                           vrc);
     }
 
-    return S_OK;
+    return rc;
 }
 
 // private methods

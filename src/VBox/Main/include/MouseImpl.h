@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,12 +49,14 @@ public:
 typedef ConsoleEventBuffer<MouseEvent> MouseEventBuffer;
 
 class ATL_NO_VTABLE Mouse :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <Mouse, IMouse>,
     public VirtualBoxSupportTranslation <Mouse>,
-    public VirtualBoxBase,
     public IMouse
 {
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Mouse)
 
     DECLARE_NOT_AGGREGATABLE(Mouse)
 
@@ -65,10 +69,12 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (Mouse)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    // public methods only for internal purposes
+    // public initializer/uninitializer for internal purposes only
     HRESULT init(Console *parent);
     void uninit();
 
@@ -93,7 +99,7 @@ private:
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
-    ComObjPtr <Console, ComWeakRef> mParent;
+    const ComObjPtr <Console, ComWeakRef> mParent;
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv;
 

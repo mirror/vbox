@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,12 +34,14 @@
 class VirtualBox;
 
 class ATL_NO_VTABLE SystemProperties :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <SystemProperties, ISystemProperties>,
     public VirtualBoxSupportTranslation <SystemProperties>,
-    public VirtualBoxBase,
     public ISystemProperties
 {
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (SystemProperties)
 
     DECLARE_NOT_AGGREGATABLE(SystemProperties)
 
@@ -51,6 +53,8 @@ public:
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (SystemProperties)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -90,13 +94,13 @@ public:
     HRESULT saveSettings (settings::Key &aGlobal);
 
     /** Default Machine path (as is, not full). Not thread safe (use object lock). */
-    const Bstr &defaultMachineFolder() { return mDefaultMachineFolder; }
+    const Bstr &defaultMachineFolder() const { return mDefaultMachineFolder; }
     /** Default Machine path (full). Not thread safe (use object lock). */
-    const Bstr &defaultMachineFolderFull() { return mDefaultMachineFolderFull; }
+    const Bstr &defaultMachineFolderFull() const { return mDefaultMachineFolderFull; }
     /** Default hard disk path (as is, not full). Not thread safe (use object lock). */
-    const Bstr &defaultHardDiskFolder() { return mDefaultHardDiskFolder; }
+    const Bstr &defaultHardDiskFolder() const { return mDefaultHardDiskFolder; }
     /** Default hard disk path (full). Not thread safe (use object lock). */
-    const Bstr &defaultHardDiskFolderFull() { return mDefaultHardDiskFolderFull; }
+    const Bstr &defaultHardDiskFolderFull() const { return mDefaultHardDiskFolderFull; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SystemProperties"; }
@@ -110,7 +114,7 @@ private:
     HRESULT setRemoteDisplayAuthLibrary (const BSTR aPath);
     HRESULT setWebServiceAuthLibrary (const BSTR aPath);
 
-    ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    const ComObjPtr <VirtualBox, ComWeakRef> mParent;
 
     Bstr mDefaultMachineFolder;
     Bstr mDefaultMachineFolderFull;
