@@ -733,7 +733,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
     /*
      * Sync the state and enable single instruction / single stepping.
      */
-    rc = REMR3State(pVM, false /* no need to flush the TBs; we always compile. */);
+    rc = REMR3State(pVM);
     if (VBOX_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
@@ -1627,7 +1627,7 @@ void remR3RecordCall(CPUState *env)
  *          no do this since the majority of the callers don't want any unnecessary of events
  *          pending that would immediatly interrupt execution.
  */
-REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
+REMR3DECL(int)  REMR3State(PVM pVM)
 {
     register const CPUMCTX *pCtx;
     register unsigned       fFlags;
@@ -1646,10 +1646,14 @@ REMR3DECL(int)  REMR3State(PVM pVM, bool fFlushTBs)
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
 
-    if (fFlushTBs)
+    /*
+     * If we have to flush TBs, do that immediately.
+     */
+    if (pVM->rem.s.fFlushTBs)
     {
         STAM_COUNTER_INC(&gStatFlushTBs);
         tb_flush(&pVM->rem.s.Env);
+        pVM->rem.s.fFlushTBs = false;
     }
 
     /*
