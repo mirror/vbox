@@ -74,7 +74,7 @@ if defined(VBOX_WITH_MAIN) && !defined(VBOX_ONLY_DOCS)
   endif
  endif
 
-endif # VBOX_WITH_MAIN && !VBOX_ONLY_DOCS
+endif # VBOX_WITH_MAIN && !VBOX_ONLY_DOCS 
 
 include $(KBUILD_PATH)/subfooter.kmk
 
@@ -118,7 +118,7 @@ ifdef VBOX_WITH_MAIN
  # FFmpeg for test videos
  ifndef VBOX_OSE
   ifdef VBOX_WITH_FFMPEG
-   if1of ($(KBUILD_TARGET), darwin linux)
+   if1of ($(KBUILD_TARGET), darwin)
     subdirs += ffmpeg-20060710
    endif
   endif
