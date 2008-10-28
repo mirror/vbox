@@ -54,7 +54,7 @@ namespace com
 {
 
 /**
- *  Helper class that represents the UUID type and hides platform-siecific
+ *  Helper class that represents the UUID type and hides platform-specific
  *  implementation details.
  */
 class Guid
