@@ -1241,6 +1241,7 @@ void VBoxSelectorWnd::retranslateUi()
         tr ("Refresh the accessibility state of the selected virtual machine"));
 
     vmShowLogsAction->setText (tr ("Show &Log..."));
+    vmShowLogsAction->setIconText (tr ("Log", "icon text"));
     vmShowLogsAction->setShortcut (QKeySequence ("Ctrl+L"));
     vmShowLogsAction->setStatusTip (
         tr ("Show the log files of the selected virtual machine"));
