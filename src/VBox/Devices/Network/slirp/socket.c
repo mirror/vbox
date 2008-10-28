@@ -136,7 +136,9 @@ sofree(PNATState pData, struct socket *so)
 #endif
 
   free(so);
+#ifdef VBOX_WITH_SYNC_SLIRP
   so = NULL;
+#endif
 }
 
 /*
