@@ -531,11 +531,15 @@ tcp_attach(PNATState pData, struct socket *so)
 {
 	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
 	   return -1;
+#ifdef VBOX_WITH_SYNC_SLIRP
         so->so_type = IPPROTO_TCP;
 
         RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
 	insque(pData, so, &tcb);
         RTSemMutexRelease(pData->tcb_mutex);
+#else
+	insque(pData, so, &tcb);
+#endif
 
 	return 0;
 }
