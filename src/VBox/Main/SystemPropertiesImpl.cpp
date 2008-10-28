@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,6 +40,8 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
+DEFINE_EMPTY_CTOR_DTOR (SystemProperties)
+
 HRESULT SystemProperties::FinalConstruct()
 {
     return S_OK;
@@ -45,8 +49,7 @@ HRESULT SystemProperties::FinalConstruct()
 
 void SystemProperties::FinalRelease()
 {
-    if (isReady())
-        uninit ();
+    uninit ();
 }
 
 // public methods only for internal purposes
@@ -59,14 +62,15 @@ void SystemProperties::FinalRelease()
  */
 HRESULT SystemProperties::init (VirtualBox *aParent)
 {
-    LogFlowMember (("SystemProperties::init()\n"));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_FAIL);
 
-    AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = aParent;
+    unconst (mParent) = aParent;
 
     setDefaultMachineFolder (NULL);
     setDefaultHardDiskFolder (NULL);
@@ -104,7 +108,9 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
         }
     }
 
-    setReady (SUCCEEDED (rc));
+    /* Confirm a successful initialization */
+    if (SUCCEEDED (rc))
+        autoInitSpan.setSucceeded();
 
     return rc;
 }
@@ -115,12 +121,14 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
  */
 void SystemProperties::uninit()
 {
-    LogFlowMember (("SystemProperties::uninit()\n"));
+    LogFlowThisFunc (("\n"));
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
-    setReady (false);
+    unconst (mParent).setNull();
 }
 
 // ISystemProperties properties
@@ -131,9 +139,11 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestRAM)(ULONG *minRAM)
 {
     if (!minRAM)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *minRAM = SchemaDefs::MinGuestRAM;
 
     return S_OK;
@@ -143,9 +153,11 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestRAM)(ULONG *maxRAM)
 {
     if (!maxRAM)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *maxRAM = SchemaDefs::MaxGuestRAM;
 
     return S_OK;
@@ -155,9 +167,11 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestVRAM)(ULONG *minVRAM)
 {
     if (!minVRAM)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *minVRAM = SchemaDefs::MinGuestVRAM;
 
     return S_OK;
@@ -167,9 +181,11 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM)
 {
     if (!maxVRAM)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *maxVRAM = SchemaDefs::MaxGuestVRAM;
 
     return S_OK;
@@ -179,9 +195,11 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
 {
     if (!maxMonitors)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *maxMonitors = SchemaDefs::MaxGuestMonitors;
 
     return S_OK;
@@ -191,8 +209,9 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
 {
     if (!maxVDISize)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
     /** The BIOS supports currently 32 bit LBA numbers (implementing the full
      * 48 bit range is in theory trivial, but the crappy compiler makes things
@@ -203,6 +222,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
      * example iSCSI is also currently limited to 32 bit LBA), so the
      * theoretical maximum disk size is 128 PiByte. The user interface cannot
      * cope with this in a reasonable way yet. */
+    /* no need to lock, this is const */
     *maxVDISize = 2048 * 1024 - 1;
 
     return S_OK;
@@ -212,9 +232,11 @@ STDMETHODIMP SystemProperties::COMGETTER(NetworkAdapterCount)(ULONG *count)
 {
     if (!count)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *count = SchemaDefs::NetworkAdapterCount;
 
     return S_OK;
@@ -224,9 +246,11 @@ STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
 {
     if (!count)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *count = SchemaDefs::SerialPortCount;
 
     return S_OK;
@@ -236,9 +260,11 @@ STDMETHODIMP SystemProperties::COMGETTER(ParallelPortCount)(ULONG *count)
 {
     if (!count)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *count = SchemaDefs::ParallelPortCount;
 
     return S_OK;
@@ -248,9 +274,11 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
 {
     if (!aMaxBootPosition)
         return E_POINTER;
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* no need to lock, this is const */
     *aMaxBootPosition = SchemaDefs::MaxBootPosition;
 
     return S_OK;
@@ -261,8 +289,10 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
     if (!aDefaultMachineFolder)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mDefaultMachineFolderFull.cloneTo (aDefaultMachineFolder);
 
@@ -271,15 +301,17 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
 
 STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (INPTR BSTR aDefaultMachineFolder)
 {
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = setDefaultMachineFolder (aDefaultMachineFolder);
-    if (FAILED (rc))
-        return rc;
+    if (SUCCEEDED (rc))
+        rc = mParent->saveSettings();
 
-    alock.unlock();
-    return mParent->saveSettings();
+    return rc;
 }
 
 STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultHardDiskFolder)
@@ -287,8 +319,10 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
     if (!aDefaultHardDiskFolder)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mDefaultHardDiskFolderFull.cloneTo (aDefaultHardDiskFolder);
 
@@ -297,15 +331,17 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
 
 STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (INPTR BSTR aDefaultHardDiskFolder)
 {
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = setDefaultHardDiskFolder (aDefaultHardDiskFolder);
-    if (FAILED (rc))
-        return rc;
+    if (SUCCEEDED (rc))
+        rc = mParent->saveSettings();
 
-    alock.unlock();
-    return mParent->saveSettings();
+    return rc;
 }
 
 STDMETHODIMP SystemProperties::
@@ -314,8 +350,10 @@ COMGETTER(HardDiskFormats) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats
     if (ComSafeArrayOutIsNull (aHardDiskFormats))
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     SafeIfaceArray <IHardDiskFormat> hardDiskFormats (mHardDiskFormats);
     hardDiskFormats.detachTo (ComSafeArrayOutArg (aHardDiskFormats));
@@ -328,8 +366,10 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
     if (!aRemoteDisplayAuthLibrary)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mRemoteDisplayAuthLibrary.cloneTo (aRemoteDisplayAuthLibrary);
 
@@ -338,15 +378,17 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
 
 STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (INPTR BSTR aRemoteDisplayAuthLibrary)
 {
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = setRemoteDisplayAuthLibrary (aRemoteDisplayAuthLibrary);
-    if (FAILED (rc))
-        return rc;
+    if (SUCCEEDED (rc))
+        rc = mParent->saveSettings();
 
-    alock.unlock();
-    return mParent->saveSettings();
+    return rc;
 }
 
 STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServiceAuthLibrary)
@@ -354,8 +396,10 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
     if (!aWebServiceAuthLibrary)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mWebServiceAuthLibrary.cloneTo (aWebServiceAuthLibrary);
 
@@ -364,15 +408,17 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
 
 STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (INPTR BSTR aWebServiceAuthLibrary)
 {
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
 
     HRESULT rc = setWebServiceAuthLibrary (aWebServiceAuthLibrary);
-    if (FAILED (rc))
-        return rc;
+    if (SUCCEEDED (rc))
+        rc = mParent->saveSettings();
 
-    alock.unlock();
-    return mParent->saveSettings();
+    return rc;
 }
 
 STDMETHODIMP SystemProperties::COMGETTER(HWVirtExEnabled) (BOOL *enabled)
@@ -380,8 +426,10 @@ STDMETHODIMP SystemProperties::COMGETTER(HWVirtExEnabled) (BOOL *enabled)
     if (!enabled)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     *enabled = mHWVirtExEnabled;
 
@@ -390,13 +438,17 @@ STDMETHODIMP SystemProperties::COMGETTER(HWVirtExEnabled) (BOOL *enabled)
 
 STDMETHODIMP SystemProperties::COMSETTER(HWVirtExEnabled) (BOOL enabled)
 {
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
 
     mHWVirtExEnabled = enabled;
 
-    alock.unlock();
-    return mParent->saveSettings();
+    HRESULT rc = mParent->saveSettings();
+
+    return rc;
 }
 
 STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
@@ -404,8 +456,10 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
     if (!count)
         return E_POINTER;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     *count = mLogHistoryCount;
 
@@ -414,13 +468,17 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
 
 STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
 {
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
 
     mLogHistoryCount = count;
 
-    alock.unlock();
-    return mParent->saveSettings();
+    HRESULT rc = mParent->saveSettings();
+
+    return rc;
 }
 
 // public methods only for internal purposes
@@ -430,8 +488,10 @@ HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
 {
     using namespace settings;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     AssertReturn (!aGlobal.isNull(), E_FAIL);
 
@@ -469,8 +529,10 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     ComAssertRet (!aGlobal.isNull(), E_FAIL);
 

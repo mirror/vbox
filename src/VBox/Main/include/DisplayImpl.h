@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +26,7 @@
 
 #include "VirtualBoxBase.h"
 #include "SchemaDefs.h"
+
 #include <iprt/semaphore.h>
 #include <VBox/pdmdrv.h>
 #include <VBox/VBoxGuest.h>
@@ -54,10 +57,10 @@ typedef struct _DISPLAYFBINFO
     VBOXVIDEOINFOHOSTEVENTS *pHostEvents;
 
     volatile uint32_t u32ResizeStatus;
-    
+
     /* The Framebuffer has default format and must be updates immediately. */
     bool fDefaultFormat;
-    
+
     struct {
         /* The rectangle that includes all dirty rectangles. */
         int32_t xLeft;
@@ -69,14 +72,16 @@ typedef struct _DISPLAYFBINFO
 } DISPLAYFBINFO;
 
 class ATL_NO_VTABLE Display :
+    public VirtualBoxBaseNEXT,
     public IConsoleCallback,
     public VirtualBoxSupportErrorInfoImpl <Display, IDisplay>,
     public VirtualBoxSupportTranslation <Display>,
-    public VirtualBoxBase,
     public IDisplay
 {
 
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Display)
 
     DECLARE_NOT_AGGREGATABLE(Display)
 
@@ -89,11 +94,13 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (Display)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Console *parent);
+    HRESULT init (Console *aParent);
     void uninit();
 
     // public methods only for internal purposes
@@ -246,7 +253,7 @@ private:
     static DECLCALLBACK(void)  displayProcessAdapterDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, uint32_t u32VRAMSize);
     static DECLCALLBACK(void)  displayProcessDisplayDataCallback(PPDMIDISPLAYCONNECTOR pInterface, void *pvVRAM, unsigned uScreenId);
 
-    ComObjPtr <Console, ComWeakRef> mParent;
+    const ComObjPtr <Console, ComWeakRef> mParent;
     /** Pointer to the associated display driver. */
     struct DRVMAINDISPLAY  *mpDrv;
     /** Pointer to the device instance for the VMM Device. */
@@ -274,7 +281,7 @@ private:
     bool        mfVideoAccelEnabled;
     bool        mfVideoAccelVRDP;
     uint32_t    mfu32SupportedOrders;
-    
+
     int32_t volatile mcVideoAccelVRDPRefs;
 
     VBVAMEMORY *mpPendingVbvaMemory;

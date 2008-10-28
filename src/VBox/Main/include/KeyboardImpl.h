@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +26,7 @@
 
 #include "VirtualBoxBase.h"
 #include "ConsoleEvents.h"
+
 #include <VBox/pdmdrv.h>
 
 /** Simple keyboard event class. */
@@ -44,13 +47,15 @@ typedef ConsoleEventBuffer<KeyboardEvent> KeyboardEventBuffer;
 class Console;
 
 class ATL_NO_VTABLE Keyboard :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <Keyboard, IKeyboard>,
     public VirtualBoxSupportTranslation <Keyboard>,
-    public VirtualBoxBase,
     public IKeyboard
 {
 
 public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Keyboard)
 
     DECLARE_NOT_AGGREGATABLE(Keyboard)
 
@@ -63,11 +68,13 @@ public:
 
     NS_DECL_ISUPPORTS
 
+    DECLARE_EMPTY_CTOR_DTOR (Keyboard)
+
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    // public methods only for internal purposes
-    HRESULT init (Console *parent);
+    // public initializer/uninitializer for internal purposes only
+    HRESULT init (Console *aParent);
     void uninit();
 
     STDMETHOD(PutScancode)(LONG scancode);
@@ -80,7 +87,7 @@ public:
 
     static const PDMDRVREG  DrvReg;
 
-    Console *getParent()
+    Console *getParent() const
     {
         return mParent;
     }
@@ -91,7 +98,7 @@ private:
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
-    ComObjPtr <Console, ComWeakRef> mParent;
+    const ComObjPtr <Console, ComWeakRef> mParent;
     /** Pointer to the associated keyboard driver. */
     struct DRVMAINKEYBOARD *mpDrv;
     /** Pointer to the device instance for the VMM Device. */

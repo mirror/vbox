@@ -1,10 +1,12 @@
+/* $Id $ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,6 +64,8 @@ static int stam = 0;
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
+DEFINE_EMPTY_CTOR_DTOR (Display)
+
 HRESULT Display::FinalConstruct()
 {
     mpVbvaMemory = NULL;
@@ -78,7 +82,6 @@ HRESULT Display::FinalConstruct()
     mpu8VbvaPartial = NULL;
     mcbVbvaPartial = 0;
 
-    mParent = NULL;
     mpDrv = NULL;
     mpVMMDev = NULL;
     mfVMMDevInited = false;
@@ -95,8 +98,7 @@ HRESULT Display::FinalConstruct()
 
 void Display::FinalRelease()
 {
-    if (isReady())
-        uninit();
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -109,19 +111,20 @@ void Display::FinalRelease()
  * @param parent          handle of our parent object
  * @param qemuConsoleData address of common console data structure
  */
-HRESULT Display::init (Console *parent)
+HRESULT Display::init (Console *aParent)
 {
-    LogFlowFunc (("isReady=%d", isReady()));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
-    ComAssertRet (parent, E_INVALIDARG);
+    ComAssertRet (aParent, E_INVALIDARG);
 
-    AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
-    mParent = parent;
+    unconst (mParent) = aParent;
 
     /* reset the event sems */
-    RTSemEventMultiReset(mUpdateSem);
+    RTSemEventMultiReset (mUpdateSem);
 
     // by default, we have an internal framebuffer which is
     // NULL, i.e. a black hole for no display output
@@ -156,9 +159,11 @@ HRESULT Display::init (Console *parent)
         memset (&maFramebuffers[ul].dirtyRect, 0 , sizeof (maFramebuffers[ul].dirtyRect));
     }
 
-    mParent->RegisterCallback(this);
+    mParent->RegisterCallback (this);
 
-    setReady (true);
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -168,31 +173,30 @@ HRESULT Display::init (Console *parent)
  */
 void Display::uninit()
 {
-    LogFlowFunc (("isReady=%d\n", isReady()));
+    LogFlowThisFunc (("\n"));
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
     ULONG ul;
     for (ul = 0; ul < mcMonitors; ul++)
-    {
         maFramebuffers[ul].pFramebuffer = NULL;
-    }
 
-    RTSemEventMultiDestroy(mUpdateSem);
+    RTSemEventMultiDestroy (mUpdateSem);
 
     if (mParent)
-    {
-        mParent->UnregisterCallback(this);
-    }
+        mParent->UnregisterCallback (this);
+
+    unconst (mParent).setNull();
 
     if (mpDrv)
         mpDrv->pDisplay = NULL;
+
     mpDrv = NULL;
     mpVMMDev = NULL;
     mfVMMDevInited = true;
-
-    setReady (false);
 }
 
 // IConsoleCallback method
@@ -205,9 +209,8 @@ STDMETHODIMP Display::OnStateChange(MachineState_T machineState)
         mfMachineRunning = true;
     }
     else
-    {
         mfMachineRunning = false;
-    }
+
     return S_OK;
 }
 
@@ -1249,12 +1252,15 @@ STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
     if (!width)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
     *width = mpDrv->Connector.cx;
+
     return S_OK;
 }
 
@@ -1269,12 +1275,15 @@ STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
     if (!height)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
     *height = mpDrv->Connector.cy;
+
     return S_OK;
 }
 
@@ -1289,8 +1298,10 @@ STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
     if (!bitsPerPixel)
         return E_INVALIDARG;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1298,6 +1309,7 @@ STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
     int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &cBits);
     AssertRC(rc);
     *bitsPerPixel = cBits;
+
     return S_OK;
 }
 
@@ -1309,8 +1321,10 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
 {
     LogFlowFunc (("\n"));
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     /*
      *  Create an internal framebuffer only if depth is not zero. Otherwise, we
@@ -1360,8 +1374,10 @@ STDMETHODIMP Display::LockFramebuffer (BYTE **address)
     if (!address)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     /* only allowed for internal framebuffers */
     if (mInternalFramebuffer && !mFramebufferOpened && !maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer.isNull())
@@ -1375,13 +1391,15 @@ STDMETHODIMP Display::LockFramebuffer (BYTE **address)
     }
 
     return setError (E_FAIL,
-        tr ("Framebuffer locking is allowed only for the internal framebuffer"));
+                     tr ("Framebuffer locking is allowed only for the internal framebuffer"));
 }
 
 STDMETHODIMP Display::UnlockFramebuffer()
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     if (mFramebufferOpened)
     {
@@ -1393,7 +1411,7 @@ STDMETHODIMP Display::UnlockFramebuffer()
     }
 
     return setError (E_FAIL,
-        tr ("Framebuffer locking is allowed only for the internal framebuffer"));
+                     tr ("Framebuffer locking is allowed only for the internal framebuffer"));
 }
 
 STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
@@ -1403,8 +1421,10 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
     if (!frameBuf)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -1442,8 +1462,10 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
     if (!aFramebuffer)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -1481,8 +1503,10 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuff
     if (!aFramebuffer)
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     /* @todo this should be actually done on EMT. */
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
@@ -1500,8 +1524,10 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId, IFramebuffer **aFramebuff
 
 STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel, ULONG aDisplay)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1547,8 +1573,10 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight, ULONG aBitsP
 
 STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     /* Have to leave the lock because the pfnRequestSeamlessChange will call EMT.  */
     alock.leave ();
@@ -1576,8 +1604,10 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     if (!width || !height)
         return E_INVALIDARG;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1590,7 +1620,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 
     /*
      * First try use the graphics device features for making a snapshot.
-     * This does not support streatching, is an optional feature (returns not supported).
+     * This does not support stretching, is an optional feature (returns not supported).
      *
      * Note: It may cause a display resize. Watch out for deadlocks.
      */
@@ -1611,12 +1641,12 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     }
 
     /*
-     * If the function returns not supported, or if streaching is requested,
+     * If the function returns not supported, or if stretching is requested,
      * we'll have to do all the work ourselves using the framebuffer data.
      */
     if (rcVBox == VERR_NOT_SUPPORTED || rcVBox == VERR_NOT_IMPLEMENTED)
     {
-        /** @todo implement snapshot streching and generic snapshot fallback. */
+        /** @todo implement snapshot stretching and generic snapshot fallback. */
         rc = setError (E_NOTIMPL, tr ("This feature is not implemented"));
     }
     else if (VBOX_FAILURE(rcVBox))
@@ -1646,8 +1676,10 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     if (!width || !height)
         return E_INVALIDARG;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1656,7 +1688,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
 
     /*
      * Again we're lazy and make the graphics device do all the
-     * dirty convertion work.
+     * dirty conversion work.
      */
     PVMREQ pReq;
     int rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
@@ -1703,8 +1735,10 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 {
     LogFlowFuncEnter();
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1749,7 +1783,8 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
     //  sure this method is not called from more than one thread at a time
     //  (and therefore don't use Display lock at all here to save some
     //  milliseconds).
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
     /* this is only valid for external framebuffers */
     if (mInternalFramebuffer)
@@ -1782,7 +1817,8 @@ STDMETHODIMP Display::UpdateCompleted()
     //  sure this method is not called from more than one thread at a time
     //  (and therefore don't use Display lock at all here to save some
     //  milliseconds).
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
     /* this is only valid for external framebuffers */
     if (mInternalFramebuffer)
@@ -1906,7 +1942,8 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
     AssertReturn (aFB || aInternal, VERR_INVALID_PARAMETER);
     AssertReturn (uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
 
-    /// @todo (r=dmik) AutoCaller
+    AutoCaller autoCaller (that);
+    CheckComRCReturnRC (autoCaller.rc());
 
     AutoWriteLock alock (that);
 
@@ -2263,7 +2300,7 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
         return;
     }
 
-    /* Get the display information strcuture. */
+    /* Get the display information structure. */
     DISPLAYFBINFO *pFBInfo = &pDrv->pDisplay->maFramebuffers[uScreenId];
 
     uint8_t *pu8 = (uint8_t *)pvVRAM;

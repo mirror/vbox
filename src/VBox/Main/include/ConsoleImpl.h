@@ -163,18 +163,18 @@ public:
      *  called only by the VM execution thread.
      */
 
-    Guest *getGuest() { return mGuest; }
-    Keyboard *getKeyboard() { return mKeyboard; }
-    Mouse *getMouse() { return mMouse; }
-    Display *getDisplay() { return mDisplay; }
-    MachineDebugger *getMachineDebugger() { return mDebugger; }
+    Guest *getGuest() const { return mGuest; }
+    Keyboard *getKeyboard() const { return mKeyboard; }
+    Mouse *getMouse() const { return mMouse; }
+    Display *getDisplay() const { return mDisplay; }
+    MachineDebugger *getMachineDebugger() const { return mDebugger; }
 
-    const ComPtr <IMachine> &machine() { return mMachine; }
+    const ComPtr <IMachine> &machine() const { return mMachine; }
 
     /** Method is called only from ConsoleVRDPServer */
-    IVRDPServer *getVRDPServer() { return mVRDPServer; }
+    IVRDPServer *getVRDPServer() const { return mVRDPServer; }
 
-    ConsoleVRDPServer *consoleVRDPServer() { return mConsoleVRDPServer; }
+    ConsoleVRDPServer *consoleVRDPServer() const { return mConsoleVRDPServer; }
 
     HRESULT updateMachineState (MachineState_T aMachineState);
 
