@@ -74,9 +74,13 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINT
     }
     else
     {
-        if (    (   pAddress->FlatPtr >= _4G
+        if (
+#if GC_ARCH_BITS > 32
+                (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cbRange > _4G)
-            &&  enmMode != PGMMODE_AMD64
+            &&
+#endif
+                enmMode != PGMMODE_AMD64
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_DBGF_MEM_NOT_FOUND;
         RTGCUINTPTR GCPtrHit;
@@ -152,9 +156,13 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pv
         rc = PGMPhysSimpleReadGCPhys(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     else
     {
-        if (    (   pAddress->FlatPtr >= _4G
+        if (
+#if GC_ARCH_BITS > 32
+                (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cbRead > _4G)
-            &&  enmMode != PGMMODE_AMD64
+            &&
+#endif
+                enmMode != PGMMODE_AMD64
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_PAGE_TABLE_NOT_PRESENT;
         rc = PGMPhysSimpleReadGCPtr(pVM, pvBuf, pAddress->FlatPtr, cbRead);
@@ -217,9 +225,13 @@ static DECLCALLBACK(int) dbgfR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, ch
         rc = PGMPhysSimpleReadGCPhys(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
     else
     {
-        if (    (   pAddress->FlatPtr >= _4G
+        if (
+#if GC_ARCH_BITS > 32
+                (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cchBuf > _4G)
-            &&  enmMode != PGMMODE_AMD64
+            &&
+#endif
+                enmMode != PGMMODE_AMD64
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_PAGE_TABLE_NOT_PRESENT;
         rc = PGMPhysSimpleReadGCPtr(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
