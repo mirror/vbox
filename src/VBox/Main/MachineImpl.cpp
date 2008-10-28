@@ -6805,9 +6805,9 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
 
     if (FAILED (rc))
     {
-        MultiResultRef rc (rc);
+        MultiResultRef mrc (rc);
 
-        rc = deleteImplicitDiffs();
+        mrc = deleteImplicitDiffs();
     }
 
     return rc;
