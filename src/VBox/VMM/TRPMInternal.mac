@@ -53,30 +53,30 @@ struc TRPM
     .au32IdtPatched     resd 8
     .aTmpTrapHandlers   RTRCPTR_RES 256
 
-    .GCPtrIdt           RTRCPTR_RES 1
+    .pvMonShwIdtRC            RTRCPTR_RES 1
     .GuestIdtr          resb 10
     .au8Padding         resb 2
 
     .aGuestTrapHandler  RTRCPTR_RES 256
 
-    .StatGCWriteGuestIDTFault  resb STAMCOUNTER_size
-    .StatGCWriteGuestIDTHandled  resb STAMCOUNTER_size
+    .StatRCWriteGuestIDTFault  resb STAMCOUNTER_size
+    .StatRCWriteGuestIDTHandled  resb STAMCOUNTER_size
     .StatSyncIDT        resb STAMPROFILE_size
     .aStatGCTraps       resb STAMPROFILEADV_size * 0x14
 
+    .StatForwardProfR3        resb STAMPROFILEADV_size
+    .StatForwardProfRZ        resb STAMPROFILEADV_size
     .StatForwardFailNoHandler resb STAMCOUNTER_size
     .StatForwardFailPatchAddr resb STAMCOUNTER_size
-    .StatForwardFailGC        resb STAMCOUNTER_size
-    .StatForwardFailHC        resb STAMCOUNTER_size
+    .StatForwardFailR3        resb STAMCOUNTER_size
+    .StatForwardFailRZ        resb STAMCOUNTER_size
 
-    .StatForwardProfGC        resb STAMPROFILEADV_size
-    .StatForwardProfHC        resb STAMPROFILEADV_size
     .StatTrap0dDisasm         resb STAMPROFILE_size
     .StatTrap0dRdTsc          resb STAMCOUNTER_size
 
     .paStatForwardedIRQR3  RTR3PTR_RES 1
     .paStatForwardedIRQR0  RTR0PTR_RES 1
-    .paStatForwardedIRQGC  RTGCPTR32_RES 1
+    .paStatForwardedIRQRC  RTRCPTR_RES 1
 endstruc
 
 struc VBOXTSS
