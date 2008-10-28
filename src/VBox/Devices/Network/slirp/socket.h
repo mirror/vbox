@@ -9,7 +9,7 @@
 
 #ifndef _SLIRP_SOCKET_H_
 #define _SLIRP_SOCKET_H_
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifdef VBOX_WITH_SYNC_SLIRP
 #include <iprt/semaphore.h>
 #endif
 
