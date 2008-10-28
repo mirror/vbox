@@ -51,30 +51,30 @@ validFlagStrings[] =
 int testConvertFlags()
 {
     int rc = VINF_SUCCESS;
-    RTPrintf("Testing conversion of valid flags strings.\n");
+    RTPrintf("tstGuestPropSvc: Testing conversion of valid flags strings.\n");
     for (unsigned i = 0; i < RT_ELEMENTS(validFlagStrings) && RT_SUCCESS(rc); ++i)
     {
         char szFlagBuffer[MAX_FLAGS_LEN];
         uint32_t fFlags;
         rc = validateFlags(validFlagStrings[i].pcszIn, &fFlags);
         if (RT_FAILURE(rc))
-            RTPrintf("Failed to validate flag string %s.\n", validFlagStrings[i].pcszIn);
+            RTPrintf("tstGuestPropSvc: FAILURE - Failed to validate flag string %s.\n", validFlagStrings[i].pcszIn);
         if (RT_SUCCESS(rc))
         {
             rc = writeFlags(fFlags, szFlagBuffer);
             if (RT_FAILURE(rc))
-                RTPrintf("Failed to convert flag string %s back to a string.\n",
+                RTPrintf("tstGuestPropSvc: FAILURE - Failed to convert flag string %s back to a string.\n",
                             validFlagStrings[i].pcszIn);
         }
         if (RT_SUCCESS(rc) && (strlen(szFlagBuffer) > MAX_FLAGS_LEN - 1))
         {
-            RTPrintf("String %s converts back to a flag string which is too long.\n",
+            RTPrintf("tstGuestPropSvc: FAILURE - String %s converts back to a flag string which is too long.\n",
                         validFlagStrings[i].pcszIn);
             rc = VERR_TOO_MUCH_DATA;
         }
         if (RT_SUCCESS(rc) && (strcmp(szFlagBuffer, validFlagStrings[i].pcszOut) != 0))
         {
-            RTPrintf("String %s converts back to %s instead of to %s\n",
+            RTPrintf("tstGuestPropSvc: FAILURE - String %s converts back to %s instead of to %s\n",
                         validFlagStrings[i].pcszIn, szFlagBuffer,
                         validFlagStrings[i].pcszOut);
             rc = VERR_PARSE_ERROR;
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     RTR3Init();
     if (RT_FAILURE(testConvertFlags()))
         return 1;
-    RTPrintf("SUCCEEDED.\n");
+    RTPrintf("tstGuestPropSvc: SUCCEEDED.\n");
     return 0;
 }
 
