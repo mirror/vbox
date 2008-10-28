@@ -1685,7 +1685,7 @@ if1of ($(KBUILD_TARGET), linux solaris)
 endif
 
 SDK_VBOX_FFMPEG       = .
-if1of ($(KBUILD_TARGET), win os2 darwin)
+if1of ($(KBUILD_TARGET), win os2 darwin linux)
  SDK_VBOX_FFMPEG_INCS ?= \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavutil \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
