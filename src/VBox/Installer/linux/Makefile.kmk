@@ -104,7 +104,7 @@ endif
 VBOX_LNX_STRIP_BIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
-	$(if $(VBOX_WITH_FFMPEG),VBoxFFmpegFB.so,) \
+	$(if $(VBOX_WITH_FFMPEG),VBoxFFmpegFB.so VBoxFFmpeg.so,) \
 	VBoxManage \
 	VBoxREM.so \
 	VBoxRT.so \
