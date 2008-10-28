@@ -91,9 +91,9 @@ DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
 #ifdef IN_RING3
     return CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData));
 # else  /* !IN_RING3 */
-    uint32_t cPrevSteps = pVM->tm.s.CTXALLSUFF(VirtualGetRawData).c1nsSteps;
-    uint64_t u64 = CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData));
-    if (cPrevSteps != pVM->tm.s.CTXALLSUFF(VirtualGetRawData).c1nsSteps)
+    uint32_t cPrevSteps = pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps;
+    uint64_t u64 = pVM->tm.s.CTX_SUFF(pfnVirtualGetRaw)(&pVM->tm.s.CTX_SUFF(VirtualGetRawData));
+    if (cPrevSteps != pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps)
         VM_FF_SET(pVM, VM_FF_TO_R3); /* S10 hack */
     return u64;
 # endif /* !IN_RING3 */
@@ -225,7 +225,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
              && (int64_t)u64DeltaPrev + u32NanoTSFactor0 * 2 > 0)
     {
         /* occasional - u64NanoTS is in the 'past' relative to previous returns. */
-        ASMAtomicIncU32(&pVM->tm.s.CTXALLSUFF(VirtualGetRawData).c1nsSteps);
+        ASMAtomicIncU32(&pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps);
         u64NanoTS = u64PrevNanoTS + 1;
 #ifndef IN_RING3
         VM_FF_SET(pVM, VM_FF_TO_R3); /* S10 hack */
@@ -234,7 +234,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
     else if (u64PrevNanoTS)
     {
         /* Something has gone bust, if negative offset it's real bad. */
-        ASMAtomicIncU32(&pVM->tm.s.CTXALLSUFF(VirtualGetRawData).cBadPrev);
+        ASMAtomicIncU32(&pVM->tm.s.CTX_SUFF(VirtualGetRawData).cBadPrev);
         if ((int64_t)u64DeltaPrev < 0)
             LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
                     u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
@@ -335,9 +335,9 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
          */
         if (    fCheckTimers
             &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
-            &&  (   pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
+            &&  (   pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
                  || (   pVM->tm.s.fVirtualSyncTicking
-                     && pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
+                     && pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64 - pVM->tm.s.offVirtualSync
                     )
                 )
            )
@@ -415,7 +415,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         u64 = tmVirtualGetRaw(pVM);
         if (    fCheckTimers
             &&  !VM_FF_ISSET(pVM, VM_FF_TIMER)
-            &&  pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
+            &&  pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
         {
             VM_FF_SET(pVM, VM_FF_TIMER);
 #ifdef IN_RING3
@@ -485,7 +485,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
          * set the the timer pending flag.
          */
         u64 -= off;
-        const uint64_t u64Expire = pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
+        const uint64_t u64Expire = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;
         if (u64 >= u64Expire)
         {
             u64 = u64Expire;
