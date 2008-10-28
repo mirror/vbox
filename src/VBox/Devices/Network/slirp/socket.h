@@ -9,6 +9,9 @@
 
 #ifndef _SLIRP_SOCKET_H_
 #define _SLIRP_SOCKET_H_
+#ifndef VBOX_WITH_SYNC_SLIRP
+#include <iprt/semaphore.h>
+#endif
 
 #define SO_EXPIRE 240000
 #define SO_EXPIREFAST 10000
@@ -51,6 +54,7 @@ struct socket {
   struct sbuf so_rcv;		/* Receive buffer */
   struct sbuf so_snd;		/* Send buffer */
   void * extra;			/* Extra pointer */
+  RTSEMMUTEX so_mutex;          /*per socket mutex*/
 };
 
 
