@@ -156,6 +156,8 @@ m_free(PNATState pData, struct mbuf *m)
                 RTSemMutexRequest(pData->mbuf_alloced_mutex, RT_INDEFINITE_WAIT);
 		mbuf_alloced--;
                 RTSemMutexRelease(pData->mbuf_alloced_mutex);
+#else
+		mbuf_alloced--;
 #endif
 	} else if ((m->m_flags & M_FREELIST) == 0) {
 #ifdef VBOX_WITH_SYNC_SLIRP
