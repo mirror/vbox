@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the Shared Folders Host Service testcases.
+# Sub-Makefile for the Guest Properties Host Service testcases.
 #
 
 #
