@@ -20,7 +20,7 @@
 
 #ifndef _slirp_state_h_
 #define _slirp_state_h_
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifdef VBOX_WITH_SYNC_SLIRP
 #include <iprt/semaphore.h>
 #endif
 
