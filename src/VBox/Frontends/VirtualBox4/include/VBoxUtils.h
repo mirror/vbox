@@ -26,7 +26,7 @@
 /* Qt includes */
 #include <QMouseEvent>
 #include <QWidget>
-#include <QTextEdit>
+#include <QTextBrowser>
 
 /**
  *  Simple class that filters out all key presses and releases
@@ -104,6 +104,23 @@ public:
     void setViewportMargins (int aLeft, int aTop, int aRight, int aBottom)
     {
         QTextEdit::setViewportMargins (aLeft, aTop, aRight, aBottom);
+    }
+};
+
+/**
+ *  QTextBrowser reimplementation to feat some extended requirements.
+ */
+class QRichTextBrowser : public QTextBrowser
+{
+    Q_OBJECT;
+
+public:
+
+    QRichTextBrowser (QWidget *aParent) : QTextBrowser (aParent) {}
+
+    void setViewportMargins (int aLeft, int aTop, int aRight, int aBottom)
+    {
+        QTextBrowser::setViewportMargins (aLeft, aTop, aRight, aBottom);
     }
 };
 

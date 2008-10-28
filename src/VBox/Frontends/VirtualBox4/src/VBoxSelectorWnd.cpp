@@ -32,6 +32,7 @@
 #include "VBoxSettingsDialogSpecific.h"
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
+#include "VBoxUtils.h"
 
 #ifdef Q_WS_X11
 #include <iprt/env.h>
@@ -100,7 +101,7 @@ private:
 
     void createErrPage();
 
-    QTextBrowser *mDetailsText;
+    QRichTextBrowser *mDetailsText;
 
     QWidget *mErrBox;
     QLabel *mErrLabel;
@@ -120,7 +121,8 @@ VBoxVMDetailsView::VBoxVMDetailsView (QWidget *aParent,
 
     /* create normal details page */
 
-    mDetailsText = new QTextBrowser (mErrBox);
+    mDetailsText = new QRichTextBrowser (mErrBox);
+    mDetailsText->setViewportMargins (10, 10, 10, 10);
     mDetailsText->setFocusPolicy (Qt::StrongFocus);
     mDetailsText->document()->setDefaultStyleSheet ("a { text-decoration: none; }");
     /* make "transparent" */
@@ -453,57 +455,64 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mHelpActions.setup (this);
 
-    /* subwidgets */
+    /* Subwidgets */
 
-    /* central widget & horizontal layout */
+    /* Central widget @ vertical layout */
     setCentralWidget (new QWidget (this));
-    QHBoxLayout *centralLayout =
-        new QHBoxLayout (centralWidget());
+    QVBoxLayout *centralLayout = new QVBoxLayout (centralWidget());
 
-    /* left vertical box */
-    QVBoxLayout *leftVLayout = new QVBoxLayout ();
-    /* right vertical box */
-    QVBoxLayout *rightVLayout = new QVBoxLayout ();
-    centralLayout->addLayout (leftVLayout, 1);
-    centralLayout->addLayout (rightVLayout, 2);
+    /* Pane horizontal layout */
+    QHBoxLayout *paneLayout = new QHBoxLayout();
 
     /* VM list toolbar */
     VBoxToolBar *vmTools = new VBoxToolBar (this);
+
+    /* Left vertical box */
+    QVBoxLayout *leftVLayout = new QVBoxLayout();
+    paneLayout->addLayout (leftVLayout, 1);
+
+    /* Right vertical box */
+    QVBoxLayout *rightVLayout = new QVBoxLayout();
+    paneLayout->addLayout (rightVLayout, 2);
+
 #if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
     addToolBar (vmTools);
     vmTools->setMacToolbar();
     /* No spacing/margin on the mac */
     VBoxGlobal::setLayoutMargin (centralLayout, 0);
+    VBoxGlobal::setLayoutMargin (paneLayout, 0); /* Dsen to NaN: Is it necessary? */
     leftVLayout->setSpacing (0);
     rightVLayout->setSpacing (0);
-    rightVLayout->insertSpacing (0, 10);
+    // rightVLayout->insertSpacing (0, 10); /* Dsen to NaN: Is it necessary anymore? */
 #else /* MAC_LEOPARD_STYLE */
-    leftVLayout->addWidget(vmTools);
-    centralLayout->setSpacing (9);
+    centralLayout->addWidget (vmTools);
+    centralLayout->setSpacing (5);
+    paneLayout->setSpacing (9);
     VBoxGlobal::setLayoutMargin (centralLayout, 5);
     leftVLayout->setSpacing (5);
     rightVLayout->setSpacing (5);
 #endif /* MAC_LEOPARD_STYLE */
 
+    /* Inserting pane layout */
+    centralLayout->addLayout (paneLayout);
+
     /* VM list view */
     mVMListView = new VBoxVMListView();
-    mVMModel = new VBoxVMModel(mVMListView);
+    mVMModel = new VBoxVMModel (mVMListView);
     mVMListView->setModel (mVMModel);
 
     leftVLayout->addWidget (mVMListView);
 
     /* VM tab widget containing details and snapshots tabs */
-    vmTabWidget = new QTabWidget ();
+    vmTabWidget = new QTabWidget();
     rightVLayout->addWidget (vmTabWidget);
 
     /* VM details view */
-    vmDetailsView = new VBoxVMDetailsView (NULL,
-                                           vmRefreshAction);
+    vmDetailsView = new VBoxVMDetailsView (NULL, vmRefreshAction);
     vmTabWidget->addTab (vmDetailsView,
                          VBoxGlobal::iconSet (":/settings_16px.png"),
                          QString::null);
-    vmDetailsView->setContentsMargins (10, 10, 10, 10);
 
     /* VM snapshots list */
     vmSnapshotsWgt = new VBoxSnapshotsWgt (NULL);
@@ -534,6 +543,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     vmTools->addSeparator();
     vmTools->addAction (vmStartAction);
     vmTools->addAction (vmDiscardAction);
+    vmTools->addSeparator();
+    vmTools->addAction (vmPauseAction);
+    vmTools->addSeparator();
+    vmTools->addAction (vmRefreshAction);
+    vmTools->addSeparator();
+    vmTools->addAction (vmShowLogsAction);
 
     /* add actions to menubar */
 
