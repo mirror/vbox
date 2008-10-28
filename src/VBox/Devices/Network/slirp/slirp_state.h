@@ -119,7 +119,9 @@ typedef struct NATState
     struct socket tcb;
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
+#ifdef VBOX_WITH_SYNC_SLIRP
     RTSEMMUTEX tcb_mutex;
+#endif
 #if ARCH_BITS == 64
     /* Stuff from tcp_subr.c */
     void *apvHash[16384];
@@ -138,7 +140,9 @@ typedef struct NATState
     struct udpstat_t udpstat;
     struct socket udb;
     struct socket *udp_last_so;
+#ifdef VBOX_WITH_SYNC_SLIRP
     RTSEMMUTEX udb_mutex;
+#endif
 } NATState;
 
 
