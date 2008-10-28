@@ -690,7 +690,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
             int rrc = VINF_SUCCESS, rcc = S_OK;
 
             Log2(("VBoxHeadless: loading VBoxFFmpegFB shared library\n"));
-            rrc = SUPR3HardenedLdrLoad("VBoxFFmpegFB", &hLdrFFmpegFB);
+            rrc = SUPR3HardenedLdrLoadAppPriv("VBoxFFmpegFB", &hLdrFFmpegFB);
 
             if (RT_SUCCESS(rrc))
             {
