@@ -19,7 +19,6 @@
  * additional information or have any questions.
  */
 
-
 /** @page pg_tm        TM - The Time Manager
  *
  * The Time Manager abstracts the CPU clocks and manages timers used by the VMM,
@@ -33,50 +32,75 @@
  * There are currently 4 clocks:
  *   - Virtual (guest).
  *   - Synchronous virtual (guest).
- *   - CPU Tick (TSC) (guest). Only current use is rdtsc emulation. Usually a
+ *   - CPU Tick (TSC) (guest).  Only current use is rdtsc emulation. Usually a
  *     function of the virtual clock.
- *   - Real (host). The only current use is display updates for not real
- *     good reason...
+ *   - Real (host).  This is only used for display updates atm.
  *
- * The interesting clocks are two first ones, the virtual and synchronous virtual
- * clock. The synchronous virtual clock is tied to the virtual clock except that
- * it will take into account timer delivery lag caused by host scheduling. It will
- * normally never advance beyond the header timer, and when lagging too far behind
- * it will gradually speed up to catch up with the virtual clock.
+ * The most important clocks are the three first ones and of these the second is
+ * the most interesting.
  *
- * The CPU tick (TSC) is normally virtualized as a function of the virtual time,
- * where the frequency defaults to the host cpu frequency (as we measure it). It
- * can also use the host TSC as source and either present it with an offset or
- * unmodified. It is of course possible to configure the TSC frequency and mode
- * of operation.
+ *
+ * The synchronous virtual clock is tied to the virtual clock except that it
+ * will take into account timer delivery lag caused by host scheduling.  It will
+ * normally never advance beyond the head timer, and when lagging too far behind
+ * it will gradually speed up to catch up with the virtual clock.  All devices
+ * implementing time sources accessible to and used by the guest is using this
+ * clock (for timers and other things).  This ensures consistency between the
+ * time sources.
+ *
+ * The virtual clock is implemented as an offset to a monotonic, high
+ * resolution, wall clock.  The current time source is using the RTTimeNanoTS()
+ * machinery based upon the Global Info Pages (GIP), that is, we're using TSC
+ * deltas (usually 10 ms) to fill the gaps between GIP updates.  The result is
+ * a fairly high res clock that works in all contexts and on all hosts.  The
+ * virtual clock is paused when the VM isn't in the running state.
+ *
+ * The CPU tick (TSC) is normally virtualized as a function of the synchronous
+ * virtual clock, where the frequency defaults to the host cpu frequency (as we
+ * measure it). In this mode it is possible to configure the frequency. Another
+ * (non-default) option is to use the raw unmodified host TSC values. And yet
+ * another, to tie it to time spent executing guest code.  All these things are
+ * configurable should non-default behavior be desirable.
+ *
+ * The real clock is a monotonic clock (when available) with relatively low
+ * resolution, though this a bit host specific.  Note that we're currently not
+ * servicing timers using the real clock when the VM is not running, this is
+ * simply because it has not been needed yet therefore not implemented.
+ *
  *
  * @subsection subsec_tm_timesync Guest Time Sync / UTC time
  *
- * Guest time syncing is primarily taken care of by the VMM device. The principle
- * is very simple, the guest additions periodically asks the VMM device what the
- * current UTC time is and makes adjustments accordingly. Now, because the
- * synchronous virtual clock might be doing catchups and we would therefore
- * deliver more than the normal rate for a little while, some adjusting of the
- * UTC time is required before passing it on to the guest. This is why TM provides
- * an API for query the current UTC time.
+ * Guest time syncing is primarily taken care of by the VMM device.  The
+ * principle is very simple, the guest additions periodically asks the VMM
+ * device what the current UTC time is and makes adjustments accordingly.
+ *
+ * A complicating factor is that the synchronous virtual clock might be doing
+ * catchups and the guest perception is currently a little bit behind the world
+ * but it will (hopefully) be catching up soon as we're feeding timer interrupts
+ * at a slightly higher rate.  Adjusting the guest clock to the current wall
+ * time in the real world would be a bad idea then because the guest will be
+ * advancing too fast and run ahead of world time (if the catchup works out).
+ * To solve this problem TM provides the VMM device with an UTC time source that
+ * gets adjusted with the current lag, so that when the guest eventually catches
+ * up the lag it will be showing correct real world time.
  *
  *
  * @section sec_tm_timers   Timers
  *
- * The timers can use any of the TM clocks described in the previous section. Each
- * clock has its own scheduling facility, or timer queue if you like. There are
- * a few factors which makes it a bit complex. First there is the usual R0 vs R3
- * vs. GC thing. Then there is multiple threads, and then there is the timer thread
- * that periodically checks whether any timers has expired without EMT noticing. On
- * the API level, all but the create and save APIs must be mulithreaded. EMT will
- * always run the timers.
+ * The timers can use any of the TM clocks described in the previous section.
+ * Each clock has its own scheduling facility, or timer queue if you like.
+ * There are a few factors which makes it a bit complex.  First, there is the
+ * usual R0 vs R3 vs. RC thing.  Then there is multiple threads, and then there
+ * is the timer thread that periodically checks whether any timers has expired
+ * without EMT noticing.  On the API level, all but the create and save APIs
+ * must be mulithreaded.  EMT will always run the timers.
  *
  * The design is using a doubly linked list of active timers which is ordered
- * by expire date. This list is only modified by the EMT thread. Updates to the
- * list are are batched in a singly linked list, which is then process by the EMT
- * thread at the first opportunity (immediately, next time EMT modifies a timer
- * on that clock, or next timer timeout). Both lists are offset based and all
- * the elements therefore allocated from the hyper heap.
+ * by expire date.  This list is only modified by the EMT thread.  Updates to
+ * the list are batched in a singly linked list, which is then process by the
+ * EMT thread at the first opportunity (immediately, next time EMT modifies a
+ * timer on that clock, or next timer timeout).  Both lists are offset based and
+ * all the elements are therefore allocated from the hyper heap.
  *
  * For figuring out when there is need to schedule and run timers TM will:
  *    - Poll whenever somebody queries the virtual clock.
@@ -93,9 +117,6 @@
  * Level 4: Logs TMCLOCK_VIRTUAL_SYNC catch-up events.
  *
  */
-
-
-
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -148,28 +169,6 @@ static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const ch
 
 
 /**
- * Internal function for getting the clock time.
- *
- * @returns clock time.
- * @param   pVM         The VM handle.
- * @param   enmClock    The clock.
- */
-DECLINLINE(uint64_t) tmClock(PVM pVM, TMCLOCK enmClock)
-{
-    switch (enmClock)
-    {
-        case TMCLOCK_VIRTUAL:       return TMVirtualGet(pVM);
-        case TMCLOCK_VIRTUAL_SYNC:  return TMVirtualSyncGet(pVM);
-        case TMCLOCK_REAL:          return TMRealGet(pVM);
-        case TMCLOCK_TSC:           return TMCpuTickGet(pVM);
-        default:
-            AssertMsgFailed(("enmClock=%d\n", enmClock));
-            return ~(uint64_t)0;
-    }
-}
-
-
-/**
  * Initializes the TM.
  *
  * @returns VBox status code.
@@ -192,6 +191,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     int rc = MMHyperAlloc(pVM, sizeof(pVM->tm.s.paTimerQueuesR3[0]) * TMCLOCK_MAX, 0, MM_TAG_TM, &pv);
     AssertRCReturn(rc, rc);
     pVM->tm.s.paTimerQueuesR3 = (PTMTIMERQUEUE)pv;
+    pVM->tm.s.paTimerQueuesR0 = MMHyperR3ToR0(pVM, pv);
+    pVM->tm.s.paTimerQueuesRC = MMHyperR3ToRC(pVM, pv);
 
     pVM->tm.s.offVM = RT_OFFSETOF(VM, tm.s);
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].enmClock        = TMCLOCK_VIRTUAL;
@@ -221,8 +222,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         AssertMsgFailed(("Failed to map GIP into GC, rc=%Vrc!\n", rc));
         return rc;
     }
-    pVM->tm.s.pvGIPGC = GCPtr;
-    LogFlow(("TMR3Init: HCPhysGIP=%RHp at %VGv\n", HCPhysGIP, pVM->tm.s.pvGIPGC));
+    pVM->tm.s.pvGIPRC = GCPtr;
+    LogFlow(("TMR3Init: HCPhysGIP=%RHp at %RRv\n", HCPhysGIP, pVM->tm.s.pvGIPRC));
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
     /* Check assumptions made in TMAllVirtual.cpp about the GIP update interval. */
@@ -253,7 +254,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
             pVM->tm.s.pfnVirtualGetRawR3 = RTTimeNanoTSLegacyAsync;
     }
 
-    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    pVM->tm.s.VirtualGetRawDataRC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     pVM->tm.s.VirtualGetRawDataR0.pu64Prev = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     AssertReturn(pVM->tm.s.VirtualGetRawDataR0.pu64Prev, VERR_INTERNAL_ERROR);
     /* The rest is done in TMR3InitFinalize since it's too early to call PDM. */
@@ -273,6 +274,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
      * Determin the TSC configuration and frequency.
      */
     /* mode */
+    /** @cfgm{/TM/TSCVirtualized,bool,true}
+     * Use a virtualize TSC, i.e. trap all TSC access. */
     rc = CFGMR3QueryBool(pCfgHandle, "TSCVirtualized", &pVM->tm.s.fTSCVirtualized);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.fTSCVirtualized = true; /* trap rdtsc */
@@ -281,6 +284,9 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
                           N_("Configuration error: Failed to querying bool value \"UseRealTSC\""));
 
     /* source */
+    /** @cfgm{/TM/UseRealTSC,bool,false}
+     * Use the real TSC as time source for the TSC instead of the synchronous
+     * virtual clock (false, default). */
     rc = CFGMR3QueryBool(pCfgHandle, "UseRealTSC", &pVM->tm.s.fTSCUseRealTSC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.fTSCUseRealTSC = false; /* use virtual time */
@@ -291,6 +297,10 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         pVM->tm.s.fTSCVirtualized = true;
 
     /* TSC reliability */
+    /** @cfgm{/TM/MaybeUseOffsettedHostTSC,bool,detect}
+     * Whether the CPU has a fixed TSC rate and may be used in offsetted mode with
+     * VT-x/AMD-V execution.  This is autodetected in a very restrictive way by
+     * default. */
     rc = CFGMR3QueryBool(pCfgHandle, "MaybeUseOffsettedHostTSC", &pVM->tm.s.fMaybeUseOffsettedHostTSC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
@@ -369,6 +379,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Configure the timer synchronous virtual time.
      */
+    /** @cfgm{TM/ScheduleSlack, uint32_t, ns, 0, UINT32_MAX, 100000}
+     * Scheduling slack when processing timers. */
     rc = CFGMR3QueryU32(pCfgHandle, "ScheduleSlack", &pVM->tm.s.u32VirtualSyncScheduleSlack);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u32VirtualSyncScheduleSlack           =   100000; /* 0.100ms (ASSUMES virtual time is nanoseconds) */
@@ -376,6 +388,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 32-bit integer value \"ScheduleSlack\""));
 
+    /** @cfgm{TM/CatchUpStopThreshold, uint64_t, ns, 0, UINT64_MAX, 500000}
+     * When to stop a catch-up, considering it successful. */
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpStopThreshold", &pVM->tm.s.u64VirtualSyncCatchUpStopThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpStopThreshold    =   500000; /* 0.5ms */
@@ -383,6 +397,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpStopThreshold\""));
 
+    /** @cfgm{TM/CatchUpGiveUpThreshold, uint64_t, ns, 0, UINT64_MAX, 60000000000}
+     * When to give up a catch-up attempt. */
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpGiveUpThreshold", &pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold  = UINT64_C(60000000000); /* 60 sec */
@@ -391,6 +407,10 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
                           N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpGiveUpThreshold\""));
 
 
+    /** @cfgm{TM/CatchUpPrecentage[0..9], uint32_t, %, 1, 2000, various}
+     * The catch-up percent for a given period.  */
+    /** @cfgm{TM/CatchUpStartThreshold[0..9], uint64_t, ns, 0, UINT64_MAX,
+     * The catch-up period threshold, or if you like, when a period starts.  */
 #define TM_CFG_PERIOD(iPeriod, DefStart, DefPct) \
     do \
     { \
@@ -427,6 +447,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Configure real world time (UTC).
      */
+    /** @cfgm{TM/UTCOffset, int64_t, ns, INT64_MIN, INT64_MAX, 0}
+     * The UTC offset. This is used to put the guest back or forwards in time.  */
     rc = CFGMR3QueryS64(pCfgHandle, "UTCOffset", &pVM->tm.s.offUTC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.offUTC = 0; /* ns */
@@ -437,6 +459,10 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Setup the warp drive.
      */
+    /** @cfgm{TM/WarpDrivePercentage, uint32_t, %, 0, 20000, 100}
+     * The warp drive percentage, 100% is normal speed.  This is used to speed up
+     * or slow down the virtual clock, which can be useful for fast forwarding
+     * borring periods during tests. */
     rc = CFGMR3QueryU32(pCfgHandle, "WarpDrivePercentage", &pVM->tm.s.u32VirtualWarpDrivePercentage);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         rc = CFGMR3QueryU32(CFGMR3GetRoot(pVM), "WarpDrivePercentage", &pVM->tm.s.u32VirtualWarpDrivePercentage); /* legacy */
@@ -457,6 +483,8 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Start the timer (guard against REM not yielding).
      */
+    /** @cfgm{TM/TimerMillies, uint32_t, ms, 1, 1000, 10}
+     * The watchdog timer interval.  */
     uint32_t u32Millies;
     rc = CFGMR3QueryU32(pCfgHandle, "TimerMillies", &u32Millies);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -485,84 +513,79 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     /*
      * Register statistics.
      */
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.c1nsSteps,   STAMTYPE_U32, "/TM/R3/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.cBadPrev,    STAMTYPE_U32, "/TM/R3/cBadPrev",                  STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.c1nsSteps,   STAMTYPE_U32, "/TM/R0/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.cBadPrev,    STAMTYPE_U32, "/TM/R0/cBadPrev",                  STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.c1nsSteps,   STAMTYPE_U32, "/TM/GC/1nsSteps",                  STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.cBadPrev,    STAMTYPE_U32, "/TM/GC/cBadPrev",                  STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
-    STAM_REL_REG(     pVM, (void *)&pVM->tm.s.offVirtualSync,                  STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",   STAMUNIT_NS,          "The current offset. (subtract GivenUp to get the lag)");
-    STAM_REL_REG_USED(pVM, (void *)&pVM->tm.s.offVirtualSyncGivenUp,           STAMTYPE_U64, "/TM/VirtualSync/GivenUp",         STAMUNIT_NS,          "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR3.c1nsSteps,STAMTYPE_U32, "/TM/R3/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR3.cBadPrev, STAMTYPE_U32, "/TM/R3/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.c1nsSteps,STAMTYPE_U32, "/TM/R0/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.cBadPrev, STAMTYPE_U32, "/TM/R0/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.c1nsSteps,STAMTYPE_U32, "/TM/GC/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.cBadPrev, STAMTYPE_U32, "/TM/GC/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG(     pVM,(void*)&pVM->tm.s.offVirtualSync,               STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",               STAMUNIT_NS, "The current offset. (subtract GivenUp to get the lag)");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
 
 #ifdef VBOX_WITH_STATISTICS
-    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.cExpired,    STAMTYPE_U32, "/TM/R3/cExpired",                  STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
-    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR3.cUpdateRaces,STAMTYPE_U32, "/TM/R3/cUpdateRaces",              STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
-    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.cExpired,    STAMTYPE_U32, "/TM/R0/cExpired",                  STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
-    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataR0.cUpdateRaces,STAMTYPE_U32, "/TM/R0/cUpdateRaces",              STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
-    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.cExpired,    STAMTYPE_U32, "/TM/GC/cExpired",                  STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
-    STAM_REG_USED(    pVM, (void *)&pVM->tm.s.VirtualGetRawDataGC.cUpdateRaces,STAMTYPE_U32, "/TM/GC/cUpdateRaces",              STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cExpired,    STAMTYPE_U32, "/TM/R3/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cUpdateRaces,STAMTYPE_U32, "/TM/R3/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cExpired,    STAMTYPE_U32, "/TM/R0/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cUpdateRaces,STAMTYPE_U32, "/TM/R0/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cExpired,    STAMTYPE_U32, "/TM/GC/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataRC.cUpdateRaces,STAMTYPE_U32, "/TM/GC/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG(pVM, &pVM->tm.s.StatDoQueues,                            STAMTYPE_PROFILE, "/TM/DoQueues",                    STAMUNIT_TICKS_PER_CALL, "Profiling timer TMR3TimerQueuesDo.");
+    STAM_REG(pVM, &pVM->tm.s.StatDoQueuesSchedule,                STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Schedule",           STAMUNIT_TICKS_PER_CALL, "The scheduling part.");
+    STAM_REG(pVM, &pVM->tm.s.StatDoQueuesRun,                     STAMTYPE_PROFILE_ADV, "/TM/DoQueues/Run",                STAMUNIT_TICKS_PER_CALL, "The run part.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatDoQueues,          STAMTYPE_PROFILE,       "/TM/DoQueues",         STAMUNIT_TICKS_PER_CALL,    "Profiling timer TMR3TimerQueuesDo.");
-    STAM_REG(pVM, &pVM->tm.s.StatDoQueuesSchedule,  STAMTYPE_PROFILE_ADV,   "/TM/DoQueues/Schedule",STAMUNIT_TICKS_PER_CALL,    "The scheduling part.");
-    STAM_REG(pVM, &pVM->tm.s.StatDoQueuesRun,       STAMTYPE_PROFILE_ADV,   "/TM/DoQueues/Run",     STAMUNIT_TICKS_PER_CALL,    "The run part.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollAlreadySet,                      STAMTYPE_COUNTER, "/TM/PollAlreadySet",                  STAMUNIT_OCCURENCES, "TMTimerPoll calls where the FF was already set.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollVirtual,                         STAMTYPE_COUNTER, "/TM/PollHitsVirtual",                 STAMUNIT_OCCURENCES, "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL queue.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollVirtualSync,                     STAMTYPE_COUNTER, "/TM/PollHitsVirtualSync",             STAMUNIT_OCCURENCES, "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL_SYNC queue.");
+    STAM_REG(pVM, &pVM->tm.s.StatPollMiss,                            STAMTYPE_COUNTER, "/TM/PollMiss",                        STAMUNIT_OCCURENCES, "TMTimerPoll calls where nothing had expired.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatPollAlreadySet,    STAMTYPE_COUNTER,       "/TM/PollAlreadySet",   STAMUNIT_OCCURENCES,        "TMTimerPoll calls where the FF was already set.");
-    STAM_REG(pVM, &pVM->tm.s.StatPollVirtual,       STAMTYPE_COUNTER,       "/TM/PollHitsVirtual",  STAMUNIT_OCCURENCES,        "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL queue.");
-    STAM_REG(pVM, &pVM->tm.s.StatPollVirtualSync,   STAMTYPE_COUNTER,       "/TM/PollHitsVirtualSync",STAMUNIT_OCCURENCES,      "The number of times TMTimerPoll found an expired TMCLOCK_VIRTUAL_SYNC queue.");
-    STAM_REG(pVM, &pVM->tm.s.StatPollMiss,          STAMTYPE_COUNTER,       "/TM/PollMiss",         STAMUNIT_OCCURENCES,        "TMTimerPoll calls where nothing had expired.");
+    STAM_REG(pVM, &pVM->tm.s.StatPostponedR3,                         STAMTYPE_COUNTER, "/TM/PostponedR3",                     STAMUNIT_OCCURENCES, "Postponed due to unschedulable state, in ring-3.");
+    STAM_REG(pVM, &pVM->tm.s.StatPostponedRZ,                         STAMTYPE_COUNTER, "/TM/PostponedRZ",                     STAMUNIT_OCCURENCES, "Postponed due to unschedulable state, in ring-0 / RC.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatPostponedR3,       STAMTYPE_COUNTER,       "/TM/PostponedR3",      STAMUNIT_OCCURENCES,        "Postponed due to unschedulable state, in ring-3.");
-    STAM_REG(pVM, &pVM->tm.s.StatPostponedR0,       STAMTYPE_COUNTER,       "/TM/PostponedR0",      STAMUNIT_OCCURENCES,        "Postponed due to unschedulable state, in ring-0.");
-    STAM_REG(pVM, &pVM->tm.s.StatPostponedGC,       STAMTYPE_COUNTER,       "/TM/PostponedGC",      STAMUNIT_OCCURENCES,        "Postponed due to unschedulable state, in GC.");
+    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneR3,                       STAMTYPE_PROFILE, "/TM/ScheduleOneR3",               STAMUNIT_TICKS_PER_CALL, "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
+    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneRZ,                       STAMTYPE_PROFILE, "/TM/ScheduleOneRZ",               STAMUNIT_TICKS_PER_CALL, "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
+    STAM_REG(pVM, &pVM->tm.s.StatScheduleSetFF,                       STAMTYPE_COUNTER, "/TM/ScheduleSetFF",                   STAMUNIT_OCCURENCES, "The number of times the timer FF was set instead of doing scheduling.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneGC,     STAMTYPE_PROFILE,       "/TM/ScheduleOneGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
-    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneR0,     STAMTYPE_PROFILE,       "/TM/ScheduleOneR0",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
-    STAM_REG(pVM, &pVM->tm.s.StatScheduleOneR3,     STAMTYPE_PROFILE,       "/TM/ScheduleOneR3",    STAMUNIT_TICKS_PER_CALL,    "Profiling the scheduling of one queue during a TMTimer* call in EMT.");
-    STAM_REG(pVM, &pVM->tm.s.StatScheduleSetFF,     STAMTYPE_COUNTER,       "/TM/ScheduleSetFF",    STAMUNIT_OCCURENCES,        "The number of times the timer FF was set instead of doing scheduling.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetR3,                          STAMTYPE_PROFILE, "/TM/TimerSetR3",                  STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-3.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerSetRZ,                          STAMTYPE_PROFILE, "/TM/TimerSetRZ",                  STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerSet calls made in ring-0 / RC.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatTimerSetGC,        STAMTYPE_PROFILE,       "/TM/TimerSetGC",       STAMUNIT_TICKS_PER_CALL,    "Profiling TMTimerSet calls made in GC.");
-    STAM_REG(pVM, &pVM->tm.s.StatTimerSetR0,        STAMTYPE_PROFILE,       "/TM/TimerSetR0",       STAMUNIT_TICKS_PER_CALL,    "Profiling TMTimerSet calls made in ring-0.");
-    STAM_REG(pVM, &pVM->tm.s.StatTimerSetR3,        STAMTYPE_PROFILE,       "/TM/TimerSetR3",       STAMUNIT_TICKS_PER_CALL,    "Profiling TMTimerSet calls made in ring-3.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerStopR3,                         STAMTYPE_PROFILE, "/TM/TimerStopR3",                 STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerStop calls made in ring-3.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerStopRZ,                         STAMTYPE_PROFILE, "/TM/TimerStopRZ",                 STAMUNIT_TICKS_PER_CALL, "Profiling TMTimerStop calls made in ring-0 / RC.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatTimerStopGC,       STAMTYPE_PROFILE,       "/TM/TimerStopGC",      STAMUNIT_TICKS_PER_CALL,    "Profiling TMTimerStop calls made in GC.");
-    STAM_REG(pVM, &pVM->tm.s.StatTimerStopR0,       STAMTYPE_PROFILE,       "/TM/TimerStopR0",      STAMUNIT_TICKS_PER_CALL,    "Profiling TMTimerStop calls made in ring-0.");
-    STAM_REG(pVM, &pVM->tm.s.StatTimerStopR3,       STAMTYPE_PROFILE,       "/TM/TimerStopR3",      STAMUNIT_TICKS_PER_CALL,    "Profiling TMTimerStop calls made in ring-3.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualGet,                          STAMTYPE_COUNTER, "/TM/VirtualGet",                      STAMUNIT_OCCURENCES, "The number of times TMTimerGet was called when the clock was running.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSetFF,                     STAMTYPE_COUNTER, "/TM/VirtualGetSetFF",                 STAMUNIT_OCCURENCES, "Times we set the FF when calling TMTimerGet.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSync,                      STAMTYPE_COUNTER, "/TM/VirtualGetSync",                  STAMUNIT_OCCURENCES, "The number of times TMTimerGetSync was called when the clock was running.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSyncSetFF,                 STAMTYPE_COUNTER, "/TM/VirtualGetSyncSetFF",             STAMUNIT_OCCURENCES, "Times we set the FF when calling TMTimerGetSync.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualPause,                        STAMTYPE_COUNTER, "/TM/VirtualPause",                    STAMUNIT_OCCURENCES, "The number of times TMR3TimerPause was called.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualResume,                       STAMTYPE_COUNTER, "/TM/VirtualResume",                   STAMUNIT_OCCURENCES, "The number of times TMR3TimerResume was called.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualGet,        STAMTYPE_COUNTER,       "/TM/VirtualGet",       STAMUNIT_OCCURENCES,        "The number of times TMTimerGet was called when the clock was running.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSetFF,   STAMTYPE_COUNTER,       "/TM/VirtualGetSetFF",  STAMUNIT_OCCURENCES,        "Times we set the FF when calling TMTimerGet.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSync,    STAMTYPE_COUNTER,       "/TM/VirtualGetSync",   STAMUNIT_OCCURENCES,        "The number of times TMTimerGetSync was called when the clock was running.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualGetSyncSetFF,STAMTYPE_COUNTER,      "/TM/VirtualGetSyncSetFF",STAMUNIT_OCCURENCES,      "Times we set the FF when calling TMTimerGetSync.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualPause,      STAMTYPE_COUNTER,       "/TM/VirtualPause",     STAMUNIT_OCCURENCES,        "The number of times TMR3TimerPause was called.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualResume,     STAMTYPE_COUNTER,       "/TM/VirtualResume",    STAMUNIT_OCCURENCES,        "The number of times TMR3TimerResume was called.");
+    STAM_REG(pVM, &pVM->tm.s.StatTimerCallbackSetFF,                  STAMTYPE_COUNTER, "/TM/CallbackSetFF",                   STAMUNIT_OCCURENCES, "The number of times the timer callback set FF.");
 
-    STAM_REG(pVM, &pVM->tm.s.StatTimerCallbackSetFF,STAMTYPE_COUNTER,       "/TM/CallbackSetFF",    STAMUNIT_OCCURENCES,        "The number of times the timer callback set FF.");
-
-    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE010,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupLE010",     STAMUNIT_OCCURENCES,        "In catch-up mode, 10% or lower.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE025,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupLE025",     STAMUNIT_OCCURENCES,        "In catch-up mode, 25%-11%.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE100,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupLE100",     STAMUNIT_OCCURENCES,        "In catch-up mode, 100%-26%.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupOther,   STAMTYPE_COUNTER,       "/TM/TSC/Intercept/CatchupOther",     STAMUNIT_OCCURENCES,        "In catch-up mode, > 100%.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCNotFixed,       STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotFixed",         STAMUNIT_OCCURENCES,        "TSC is not fixed, it may run at variable speed.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCNotTicking,     STAMTYPE_COUNTER,       "/TM/TSC/Intercept/NotTicking",       STAMUNIT_OCCURENCES,        "TSC is not ticking.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCSyncNotTicking, STAMTYPE_COUNTER,       "/TM/TSC/Intercept/SyncNotTicking",   STAMUNIT_OCCURENCES,        "VirtualSync isn't ticking.");
-    STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,           STAMTYPE_COUNTER,       "/TM/TSC/Intercept/Warp",             STAMUNIT_OCCURENCES,        "Warpdrive is active.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE010,                     STAMTYPE_COUNTER, "/TM/TSC/Intercept/CatchupLE010",      STAMUNIT_OCCURENCES, "In catch-up mode, 10% or lower.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE025,                     STAMTYPE_COUNTER, "/TM/TSC/Intercept/CatchupLE025",      STAMUNIT_OCCURENCES, "In catch-up mode, 25%-11%.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupLE100,                     STAMTYPE_COUNTER, "/TM/TSC/Intercept/CatchupLE100",      STAMUNIT_OCCURENCES, "In catch-up mode, 100%-26%.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCCatchupOther,                     STAMTYPE_COUNTER, "/TM/TSC/Intercept/CatchupOther",      STAMUNIT_OCCURENCES, "In catch-up mode, > 100%.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCNotFixed,                         STAMTYPE_COUNTER, "/TM/TSC/Intercept/NotFixed",          STAMUNIT_OCCURENCES, "TSC is not fixed, it may run at variable speed.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCNotTicking,                       STAMTYPE_COUNTER, "/TM/TSC/Intercept/NotTicking",        STAMUNIT_OCCURENCES, "TSC is not ticking.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCSyncNotTicking,                   STAMTYPE_COUNTER, "/TM/TSC/Intercept/SyncNotTicking",    STAMUNIT_OCCURENCES, "VirtualSync isn't ticking.");
+    STAM_REG(pVM, &pVM->tm.s.StatTSCWarp,                             STAMTYPE_COUNTER, "/TM/TSC/Intercept/Warp",              STAMUNIT_OCCURENCES, "Warpdrive is active.");
 
 
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,        STAMTYPE_PROFILE_ADV,   "/TM/VirtualSync/CatchUp",              STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
-    STAM_REG(pVM, (void *)&pVM->tm.s.fVirtualSyncCatchUp,       STAMTYPE_U8,        "/TM/VirtualSync/CatchUpActive",        STAMUNIT_NONE,           "Catch-Up active indicator.");
-    STAM_REG(pVM, (void *)&pVM->tm.s.u32VirtualSyncCatchUpPercentage, STAMTYPE_U32, "/TM/VirtualSync/CatchUpPercentage",    STAMUNIT_PCT,           "The catch-up percentage. (+100/100 to get clock multiplier)");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUp,             STAMTYPE_COUNTER,   "/TM/VirtualSync/GiveUp",               STAMUNIT_OCCURENCES,    "Times the catch-up was abandoned.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting,STAMTYPE_COUNTER,  "/TM/VirtualSync/GiveUpBeforeStarting", STAMUNIT_OCCURENCES,    "Times the catch-up was abandoned before even starting. (Typically debugging++.)");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRun,                STAMTYPE_COUNTER,   "/TM/VirtualSync/Run",                  STAMUNIT_OCCURENCES,    "Times the virtual sync timer queue was considered.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunRestart,         STAMTYPE_COUNTER,   "/TM/VirtualSync/Run/Restarts",         STAMUNIT_OCCURENCES,    "Times the clock was restarted after a run.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunStop,            STAMTYPE_COUNTER,   "/TM/VirtualSync/Run/Stop",             STAMUNIT_OCCURENCES,    "Times the clock was stopped when calculating the current time before examining the timers.");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunStoppedAlready,  STAMTYPE_COUNTER,   "/TM/VirtualSync/Run/StoppedAlready",   STAMUNIT_OCCURENCES,    "Times the clock was already stopped elsewhere (TMVirtualSyncGet).");
-    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunSlack,           STAMTYPE_PROFILE,   "/TM/VirtualSync/Run/Slack",            STAMUNIT_NS_PER_OCCURENCE, "The scheduling slack. (Catch-up handed out when running timers.)");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,              STAMTYPE_PROFILE_ADV, "/TM/VirtualSync/CatchUp",    STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
+    STAM_REG(pVM, (void *)&pVM->tm.s.fVirtualSyncCatchUp,                  STAMTYPE_U8, "/TM/VirtualSync/CatchUpActive",             STAMUNIT_NONE, "Catch-Up active indicator.");
+    STAM_REG(pVM, (void *)&pVM->tm.s.u32VirtualSyncCatchUpPercentage,     STAMTYPE_U32, "/TM/VirtualSync/CatchUpPercentage",          STAMUNIT_PCT, "The catch-up percentage. (+100/100 to get clock multiplier)");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUp,                   STAMTYPE_COUNTER, "/TM/VirtualSync/GiveUp",              STAMUNIT_OCCURENCES, "Times the catch-up was abandoned.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncGiveUpBeforeStarting,     STAMTYPE_COUNTER, "/TM/VirtualSync/GiveUpBeforeStarting",STAMUNIT_OCCURENCES, "Times the catch-up was abandoned before even starting. (Typically debugging++.)");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRun,                      STAMTYPE_COUNTER, "/TM/VirtualSync/Run",                 STAMUNIT_OCCURENCES, "Times the virtual sync timer queue was considered.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunRestart,               STAMTYPE_COUNTER, "/TM/VirtualSync/Run/Restarts",        STAMUNIT_OCCURENCES, "Times the clock was restarted after a run.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunStop,                  STAMTYPE_COUNTER, "/TM/VirtualSync/Run/Stop",            STAMUNIT_OCCURENCES, "Times the clock was stopped when calculating the current time before examining the timers.");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunStoppedAlready,        STAMTYPE_COUNTER, "/TM/VirtualSync/Run/StoppedAlready",  STAMUNIT_OCCURENCES, "Times the clock was already stopped elsewhere (TMVirtualSyncGet).");
+    STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncRunSlack,                 STAMTYPE_PROFILE, "/TM/VirtualSync/Run/Slack",     STAMUNIT_NS_PER_OCCURENCE, "The scheduling slack. (Catch-up handed out when running timers.)");
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->tm.s.aVirtualSyncCatchUpPeriods); i++)
     {
-        STAMR3RegisterF(pVM, &pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage,    STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,          "The catch-up percentage.",         "/TM/VirtualSync/Periods/%u", i);
-        STAMR3RegisterF(pVM, &pVM->tm.s.aStatVirtualSyncCatchupAdjust[i],           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,   "Times adjusted to this period.",   "/TM/VirtualSync/Periods/%u/Adjust", i);
-        STAMR3RegisterF(pVM, &pVM->tm.s.aStatVirtualSyncCatchupInitial[i],          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,   "Times started in this period.",    "/TM/VirtualSync/Periods/%u/Initial", i);
-        STAMR3RegisterF(pVM, &pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u64Start,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,           "Start of this period (lag).",      "/TM/VirtualSync/Periods/%u/Start", i);
+        STAMR3RegisterF(pVM, &pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage,    STAMTYPE_U32, STAMVISIBILITY_ALWAYS,          STAMUNIT_PCT, "The catch-up percentage.",         "/TM/VirtualSync/Periods/%u", i);
+        STAMR3RegisterF(pVM, &pVM->tm.s.aStatVirtualSyncCatchupAdjust[i],           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,   STAMUNIT_OCCURENCES, "Times adjusted to this period.",   "/TM/VirtualSync/Periods/%u/Adjust", i);
+        STAMR3RegisterF(pVM, &pVM->tm.s.aStatVirtualSyncCatchupInitial[i],          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,   STAMUNIT_OCCURENCES, "Times started in this period.",    "/TM/VirtualSync/Periods/%u/Initial", i);
+        STAMR3RegisterF(pVM, &pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u64Start,         STAMTYPE_U64, STAMVISIBILITY_ALWAYS,           STAMUNIT_NS, "Start of this period (lag).",      "/TM/VirtualSync/Periods/%u/Start", i);
     }
 
 #endif /* VBOX_WITH_STATISTICS */
@@ -744,18 +767,18 @@ VMMR3DECL(int) TMR3InitFinalize(PVM pVM)
 {
     int rc;
 
-    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
     AssertRCReturn(rc, rc);
-    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
     AssertRCReturn(rc, rc);
     if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawRC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawRC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawRC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawRC);
     else
         AssertFatalFailed();
     AssertRCReturn(rc, rc);
@@ -793,25 +816,25 @@ VMMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     int rc;
     LogFlow(("TMR3Relocate\n"));
 
-    pVM->tm.s.pvGIPGC = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
-    pVM->tm.s.paTimerQueuesGC = MMHyperR3ToRC(pVM, pVM->tm.s.paTimerQueuesR3);
+    pVM->tm.s.pvGIPRC = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
+    pVM->tm.s.paTimerQueuesRC = MMHyperR3ToRC(pVM, pVM->tm.s.paTimerQueuesR3);
     pVM->tm.s.paTimerQueuesR0 = MMHyperR3ToR0(pVM, pVM->tm.s.paTimerQueuesR3);
 
-    pVM->tm.s.VirtualGetRawDataGC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
-    AssertFatal(pVM->tm.s.VirtualGetRawDataGC.pu64Prev);
-    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataGC.pfnBad);
+    pVM->tm.s.VirtualGetRawDataRC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+    AssertFatal(pVM->tm.s.VirtualGetRawDataRC.pu64Prev);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
     AssertFatalRC(rc);
-    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataGC.pfnRediscover);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
     AssertFatalRC(rc);
 
     if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawRC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawRC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawRC);
     else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
-        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawGC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawRC);
     else
         AssertFatalFailed();
     AssertFatalRC(rc);
@@ -821,7 +844,7 @@ VMMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     for (PTMTIMER pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {
-        pTimer->pVMGC = pVM->pVMGC;
+        pTimer->pVMRC = pVM->pVMRC;
         pTimer->pVMR0 = pVM->pVMR0;
     }
 }
@@ -899,19 +922,19 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
 
 
 /**
- * Resolve a builtin GC symbol.
+ * Resolve a builtin RC symbol.
  * Called by PDM when loading or relocating GC modules.
  *
  * @returns VBox status
- * @param   pVM         VM Handle.
- * @param   pszSymbol   Symbol to resolv
- * @param   pGCPtrValue Where to store the symbol value.
- * @remark  This has to work before TMR3Relocate() is called.
+ * @param   pVM             VM Handle.
+ * @param   pszSymbol       Symbol to resolve.
+ * @param   pRCPtrValue     Where to store the symbol value.
+ * @remark  This has to     work before TMR3Relocate() is called.
  */
-VMMR3DECL(int) TMR3GetImportGC(PVM pVM, const char *pszSymbol, PRTGCPTR pGCPtrValue)
+VMMR3DECL(int) TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
     if (!strcmp(pszSymbol, "g_pSUPGlobalInfoPage"))
-        *pGCPtrValue = MMHyperHC2GC(pVM, &pVM->tm.s.pvGIPGC);
+        *pRCPtrValue = MMHyperR3ToRC(pVM, &pVM->tm.s.pvGIPRC);
     //else if (..)
     else
         return VERR_SYMBOL_NOT_FOUND;
@@ -1085,7 +1108,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     pTimer->enmClock        = enmClock;
     pTimer->pVMR3           = pVM;
     pTimer->pVMR0           = pVM->pVMR0;
-    pTimer->pVMGC           = pVM->pVMGC;
+    pTimer->pVMRC           = pVM->pVMRC;
     pTimer->enmState        = TMTIMERSTATE_STOPPED;
     pTimer->offScheduleNext = 0;
     pTimer->offNext         = 0;
@@ -1291,6 +1314,28 @@ VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
 
 
 /**
+ * Internal function for getting the clock time.
+ *
+ * @returns clock time.
+ * @param   pVM         The VM handle.
+ * @param   enmClock    The clock.
+ */
+DECLINLINE(uint64_t) tmClock(PVM pVM, TMCLOCK enmClock)
+{
+    switch (enmClock)
+    {
+        case TMCLOCK_VIRTUAL:       return TMVirtualGet(pVM);
+        case TMCLOCK_VIRTUAL_SYNC:  return TMVirtualSyncGet(pVM);
+        case TMCLOCK_REAL:          return TMRealGet(pVM);
+        case TMCLOCK_TSC:           return TMCpuTickGet(pVM);
+        default:
+            AssertMsgFailed(("enmClock=%d\n", enmClock));
+            return ~(uint64_t)0;
+    }
+}
+
+
+/**
  * Checks if the sync queue has one or more expired timers.
  *
  * @returns true / false.
@@ -1300,7 +1345,7 @@ VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
  */
 DECLINLINE(bool) tmR3HasExpiredTimer(PVM pVM, TMCLOCK enmClock)
 {
-    const uint64_t u64Expire = pVM->tm.s.CTXALLSUFF(paTimerQueues)[enmClock].u64Expire;
+    const uint64_t u64Expire = pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock].u64Expire;
     return u64Expire != INT64_MAX && u64Expire <= tmClock(pVM, enmClock);
 }
 
@@ -1318,12 +1363,12 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
      * TMVirtualSyncGet only permits EMT.
      */
     uint64_t u64Now = TMVirtualGet(pVM);
-    if (pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64Now)
+    if (pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64Now)
         return true;
     u64Now = pVM->tm.s.fVirtualSyncTicking
            ? u64Now - pVM->tm.s.offVirtualSync
            : pVM->tm.s.u64VirtualSync;
-    if (pVM->tm.s.CTXALLSUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64Now)
+    if (pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire <= u64Now)
         return true;
 
     /*

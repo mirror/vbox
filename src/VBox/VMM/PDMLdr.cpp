@@ -347,10 +347,10 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
         else if (   !strncmp(pszSymbol, "TM", 2)
                  || !strcmp(pszSymbol, "g_pSUPGlobalInfoPage"))
         {
-            RTGCPTR GCPtr = 0;
-            rc = TMR3GetImportGC(pVM, pszSymbol, &GCPtr);
+            RTRCPTR RCPtr = 0;
+            rc = TMR3GetImportRC(pVM, pszSymbol, &RCPtr);
             if (VBOX_SUCCESS(rc))
-                *pValue = GCPtr;
+                *pValue = RCPtr;
         }
         else
         {

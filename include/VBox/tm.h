@@ -212,7 +212,7 @@ VMMR3DECL(int)    TMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)   TMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(int)    TMR3Term(PVM pVM);
 VMMR3DECL(void)   TMR3Reset(PVM pVM);
-VMMR3DECL(int)    TMR3GetImportGC(PVM pVM, const char *pszSymbol, PRTGCPTR pGCPtrValue);
+VMMR3DECL(int)    TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMMR3DECL(int)    TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(int)    TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(int)    TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer);

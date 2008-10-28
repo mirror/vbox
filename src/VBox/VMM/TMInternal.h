@@ -130,7 +130,7 @@ typedef struct TMTIMER
             /** Callback. */
             R3PTRTYPE(PFNTMTIMERDEV)    pfnTimer;
             /** Device instance. */
-            R3PTRTYPE(PPDMDEVINS)       pDevIns;
+            PPDMDEVINSR3                pDevIns;
         } Dev;
 
         /** TMTIMERTYPE_DRV. */
@@ -148,7 +148,7 @@ typedef struct TMTIMER
             /** Callback. */
             R3PTRTYPE(PFNTMTIMERINT)    pfnTimer;
             /** User argument. */
-            R3PTRTYPE(void *)           pvUser;
+            RTR3PTR                     pvUser;
         } Internal;
 
         /** TMTIMERTYPE_EXTERNAL. */
@@ -157,7 +157,7 @@ typedef struct TMTIMER
             /** Callback. */
             R3PTRTYPE(PFNTMTIMEREXT)    pfnTimer;
             /** User data. */
-            R3PTRTYPE(void *)           pvUser;
+            RTR3PTR                     pvUser;
         } External;
     } u;
 
@@ -182,7 +182,7 @@ typedef struct TMTIMER
     /** Pointer to the VM the timer belongs to - R0 Ptr. */
     PVMR0                   pVMR0;
     /** Pointer to the VM the timer belongs to - RC Ptr. */
-    PVMRC                   pVMGC;
+    PVMRC                   pVMRC;
 #if HC_ARCH_BITS == 64
     RTRCPTR                 padding0; /**< pad structure to multiple of 8 bytes. */
 #endif
@@ -347,15 +347,15 @@ typedef struct TM
     /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
     RTTIMENANOTSDATAR0          VirtualGetRawDataR0;
     /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
-    RTTIMENANOTSDATAGC          VirtualGetRawDataGC;
+    RTTIMENANOTSDATARC          VirtualGetRawDataRC;
     /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
     R3PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR3;
     /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
     R0PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR0;
     /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
-    RCPTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawGC;
+    RCPTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawRC;
     /** Alignment. */
-    RTGCPTR32                   AlignmentGCPtr;
+    RTRCPTR                     AlignmentRCPtr;
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
     uint64_t volatile           u64VirtualSync;
     /** The offset of the timer synchronous virtual clock (TMCLOCK_VIRTUAL_SYNC) relative
@@ -398,11 +398,11 @@ typedef struct TM
     R3PTRTYPE(PTMTIMERQUEUE)    paTimerQueuesR3;
     /** Timer queues for the different clock types - R0 Ptr */
     R0PTRTYPE(PTMTIMERQUEUE)    paTimerQueuesR0;
-    /** Timer queues for the different clock types - GC Ptr */
-    RCPTRTYPE(PTMTIMERQUEUE)    paTimerQueuesGC;
+    /** Timer queues for the different clock types - RC Ptr */
+    RCPTRTYPE(PTMTIMERQUEUE)    paTimerQueuesRC;
 
-    /** Pointer to our GC mapping of the GIP. */
-    RCPTRTYPE(void *)           pvGIPGC;
+    /** Pointer to our RC mapping of the GIP. */
+    RCPTRTYPE(void *)           pvGIPRC;
     /** Pointer to our R3 mapping of the GIP. */
     R3PTRTYPE(void *)           pvGIPR3;
 
@@ -435,13 +435,11 @@ typedef struct TM
     /** @} */
     /** tmSchedule
      * @{ */
-    STAMPROFILE                 StatScheduleOneGC;
-    STAMPROFILE                 StatScheduleOneR0;
+    STAMPROFILE                 StatScheduleOneRZ;
     STAMPROFILE                 StatScheduleOneR3;
     STAMCOUNTER                 StatScheduleSetFF;
     STAMCOUNTER                 StatPostponedR3;
-    STAMCOUNTER                 StatPostponedR0;
-    STAMCOUNTER                 StatPostponedGC;
+    STAMCOUNTER                 StatPostponedRZ;
     /** @} */
     /** Read the time
      * @{ */
@@ -461,14 +459,12 @@ typedef struct TM
     /** @} */
     /** TMTimerSet
      * @{ */
-    STAMPROFILE                 StatTimerSetGC;
-    STAMPROFILE                 StatTimerSetR0;
+    STAMPROFILE                 StatTimerSetRZ;
     STAMPROFILE                 StatTimerSetR3;
     /** @} */
     /** TMTimerStop
      * @{ */
-    STAMPROFILE                 StatTimerStopGC;
-    STAMPROFILE                 StatTimerStopR0;
+    STAMPROFILE                 StatTimerStopRZ;
     STAMPROFILE                 StatTimerStopR3;
     /** @} */
     /** VirtualSync - Running and Catching Up
@@ -503,17 +499,17 @@ typedef struct TM
 typedef TM *PTM;
 
 
-const char *tmTimerState(TMTIMERSTATE enmState);
-void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
+const char             *tmTimerState(TMTIMERSTATE enmState);
+void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
 #ifdef VBOX_STRICT
-void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
+void                    tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
 #endif
 
-int tmCpuTickPause(PVM pVM);
-int tmCpuTickResume(PVM pVM);
+int                     tmCpuTickPause(PVM pVM);
+int                     tmCpuTickResume(PVM pVM);
 
-DECLEXPORT(void) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
-DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
+DECLEXPORT(void)        tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
+DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
 
 
 /** @} */

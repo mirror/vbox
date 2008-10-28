@@ -837,9 +837,9 @@ typedef RTTIMENANOTSDATA RTTIMENANOTSDATAR0;
 
 #ifndef IN_GC
 /**
- * The GC layout of the RTTIMENANOTSDATA structure.
+ * The RC layout of the RTTIMENANOTSDATA structure.
  */
-typedef struct RTTIMENANOTSDATAGC
+typedef struct RTTIMENANOTSDATARC
 {
     RCPTRTYPE(uint64_t volatile  *) pu64Prev;
     DECLRCCALLBACKMEMBER(void, pfnBad,(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS));
@@ -849,9 +849,9 @@ typedef struct RTTIMENANOTSDATAGC
     uint32_t            cExpired;
     uint32_t            cBadPrev;
     uint32_t            cUpdateRaces;
-} RTTIMENANOTSDATAGC;
+} RTTIMENANOTSDATARC;
 #else
-typedef RTTIMENANOTSDATA RTTIMENANOTSDATAGC;
+typedef RTTIMENANOTSDATA RTTIMENANOTSDATARC;
 #endif
 
 /** Internal RTTimeNanoTS worker (assembly). */
