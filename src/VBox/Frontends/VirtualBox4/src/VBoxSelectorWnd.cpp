@@ -457,45 +457,35 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* Subwidgets */
 
-    /* Central widget @ vertical layout */
+    /* Central widget @ horizontal layout */
     setCentralWidget (new QWidget (this));
-    QVBoxLayout *centralLayout = new QVBoxLayout (centralWidget());
-
-    /* Pane horizontal layout */
-    QHBoxLayout *paneLayout = new QHBoxLayout();
-
-    /* VM list toolbar */
-    VBoxToolBar *vmTools = new VBoxToolBar (this);
+    QHBoxLayout *centralLayout = new QHBoxLayout (centralWidget());
 
     /* Left vertical box */
     QVBoxLayout *leftVLayout = new QVBoxLayout();
-    paneLayout->addLayout (leftVLayout, 1);
-
     /* Right vertical box */
     QVBoxLayout *rightVLayout = new QVBoxLayout();
-    paneLayout->addLayout (rightVLayout, 2);
+    centralLayout->addLayout (leftVLayout, 1);
+    centralLayout->addLayout (rightVLayout, 2);
 
+    /* VM list toolbar */
+    VBoxToolBar *vmTools = new VBoxToolBar (this);
 #if MAC_LEOPARD_STYLE
     /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
     addToolBar (vmTools);
     vmTools->setMacToolbar();
     /* No spacing/margin on the mac */
     VBoxGlobal::setLayoutMargin (centralLayout, 0);
-    VBoxGlobal::setLayoutMargin (paneLayout, 0); /* Dsen to NaN: Is it necessary? */
     leftVLayout->setSpacing (0);
     rightVLayout->setSpacing (0);
-    // rightVLayout->insertSpacing (0, 10); /* Dsen to NaN: Is it necessary anymore? */
+    rightVLayout->insertSpacing (0, 10);
 #else /* MAC_LEOPARD_STYLE */
-    centralLayout->addWidget (vmTools);
-    centralLayout->setSpacing (5);
-    paneLayout->setSpacing (9);
+    leftVLayout->addWidget (vmTools);
+    centralLayout->setSpacing (9);
     VBoxGlobal::setLayoutMargin (centralLayout, 5);
     leftVLayout->setSpacing (5);
     rightVLayout->setSpacing (5);
 #endif /* MAC_LEOPARD_STYLE */
-
-    /* Inserting pane layout */
-    centralLayout->addLayout (paneLayout);
 
     /* VM list view */
     mVMListView = new VBoxVMListView();
@@ -543,12 +533,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     vmTools->addSeparator();
     vmTools->addAction (vmStartAction);
     vmTools->addAction (vmDiscardAction);
-    vmTools->addSeparator();
-    vmTools->addAction (vmPauseAction);
-    vmTools->addSeparator();
-    vmTools->addAction (vmRefreshAction);
-    vmTools->addSeparator();
-    vmTools->addAction (vmShowLogsAction);
 
     /* add actions to menubar */
 
