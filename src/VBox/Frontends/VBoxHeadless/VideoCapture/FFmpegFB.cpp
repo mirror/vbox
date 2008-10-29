@@ -157,7 +157,7 @@ FFmpegFB::~FFmpegFB()
             avcodec_close(mpStream->codec);
             av_write_trailer(mpFormatContext);
             /* free the streams */
-            for(unsigned i = 0; i < mpFormatContext->nb_streams; i++) {
+            for(int i = 0; i < mpFormatContext->nb_streams; i++) {
                 av_freep(&mpFormatContext->streams[i]->codec);
                 av_freep(&mpFormatContext->streams[i]);
             }
