@@ -265,7 +265,8 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
      * Note that we have a global setting for VT-x/AMD-V usage. VMX root mode changes the way the CPU operates. Our 64 bits switcher will trap
      * because it turns off paging, which is not allowed in VMX root mode.
      *
-     * To simplify matters we'll just force all running VMs to either use raw or hwaccm mode. No mixing allowed.
+     * To simplify matters we'll just force all running VMs to either use raw or VT-x mode. No mixing allowed in the VT-x case. 
+     * There's no such problem with AMD-V. (@todo)
      *
      */
     /* If we enabled or disabled hwaccm mode, then it can't be changed until all the VMs are shutdown. */
