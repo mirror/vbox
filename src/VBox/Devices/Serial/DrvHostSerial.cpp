@@ -33,7 +33,6 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/stream.h>
 #include <iprt/semaphore.h>
 #include <iprt/file.h>
 #include <iprt/alloc.h>
@@ -52,7 +51,6 @@
 # endif
 # include <sys/ioctl.h>
 # include <pthread.h>
-# include <sys/signal.h>
 
 # ifdef RT_OS_LINUX
 /*
@@ -1010,16 +1008,6 @@ ioctl_error:
     return VINF_SUCCESS;
 }
 
-# ifdef RT_OS_LINUX
-/** Signal handler for SIGUSR2.
- * Used to interrupt ioctl(TIOCMIWAIT). */
-static void drvHostSerialSignalHandler(int iSignal)
-{
-    /* Do nothing. */
-    return;
-}
-# endif /* RT_OS_LINUX */
-
 /**
  * Unblock the monitor thread so it can respond to a state change.
  * We need to execute this code exactly once during initialization.
@@ -1055,7 +1043,6 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
      *
      * 3. The second approach doesn't work too, the ioctl doesn't return.
      *    But it seems that the ioctl is interruptible (return code in errno is EINTR).
-     *    We get the native thread id of the PDM thread and send a signal with pthread_kill().
      */
 
 #  if 0 /* Disabled because it does not work for all. */
@@ -1114,30 +1101,14 @@ ioctl_error:
                                     pData->pszDevicePath, rc);
 #  endif
 
-    pthread_t        ThreadId = (pthread_t)RTThreadGetNative(pThread->Thread);
-    struct sigaction SigactionThread;
-    struct sigaction SigactionThreadOld;
-
-    memset(&SigactionThread, 0, sizeof(struct sigaction));
-    sigemptyset(&SigactionThread.sa_mask);
-    SigactionThread.sa_flags = 0;
-    SigactionThread.sa_handler = drvHostSerialSignalHandler;
-    rc = sigaction(SIGUSR2, &SigactionThread, &SigactionThreadOld);
-    if (rc < 0)
+    rc = RTThreadPoke(pThread->Thread);
+    if (RT_FAILURE(rc))
         PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long"),
-                                    pThis->pszDevicePath, RTErrConvertFromErrno(errno));
-
-    rc = pthread_kill(ThreadId, SIGUSR2);
-    if (rc < 0)
-        PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take extremly long"),
+                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take longer than expected"),
                                     pThis->pszDevicePath, RTErrConvertFromErrno(rc));
 
-    /* Restore old action handler. */
-    sigaction(SIGUSR2, &SigactionThreadOld, NULL);
-
 # else  /* !RT_OS_LINUX*/
+
     /* In polling mode there is nobody to wake up (PDMThread will cancel the sleep). */
     NOREF(pDrvIns);
     NOREF(pThread);
