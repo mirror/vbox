@@ -70,6 +70,7 @@ static void *rtThreadNativeMain(void *pvArgs);
 static void rtThreadKeyDestruct(void *pvValue);
 static void rtThreadPosixPokeSignal(int iSignal);
 
+
 int rtThreadNativeInit(void)
 {
     /*
