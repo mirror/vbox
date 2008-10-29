@@ -64,19 +64,38 @@ typedef struct NATState
     int if_maxlinkhdr;
     int if_queued;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /* mutex for accessing if_queued flag which used in if_start function and
+     * and understanding that we need call if_start to send anything we have to
+     * send.
+     */
     RTSEMMUTEX  if_queued_mutex;
 #endif
     int if_thresh;
     struct mbuf if_fastq;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /*
+     * if_fastq_mutex prevent concurrent adding/removing mbufs on
+     * fast queue (mbufs) from this queue are processed in first order
+     */
     RTSEMMUTEX  if_fastq_mutex;
 #endif
     struct mbuf if_batchq;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /*
+     * if_batchq_mutex prevent concurent adding/removing mbufs on
+     * batch queue mbufs from this queue used if no mbufs on fast queue
+     * and next_m doesn't point on mbuf scheduled to be processesed
+     */
     RTSEMMUTEX  if_batchq_mutex;
 #endif
     struct mbuf *next_m;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /*
+     * next_m_mutex prevent concurrent assigning/reading
+     * from pointer next_m, used for pointing next mbuf to be processed
+     * it readed if no messages are not in fast queue, usually it assigned with
+     * mbuf from batch queue
+     */
     RTSEMMUTEX  next_m_mutex;
 #endif
     /* Stuff from icmp.c */
@@ -88,11 +107,19 @@ typedef struct NATState
     /* Stuff from mbuf.c */
     int mbuf_alloced, mbuf_max;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /*
+     * mbuf_alloced_mutex used to prevent concurent access to mbuf_alloced counter
+     * which ticks on every allocation and readed to check it against limits
+     */
     RTSEMMUTEX  mbuf_alloced_mutex;
 #endif
     int msize;
     struct mbuf m_freelist, m_usedlist;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /*
+     * m_freelist_mutex and m_usedlist_mutex are used to prevent concurrent access and modifications
+     * of corresponded queues controlling allocation/utilization of mbufs
+     */
     RTSEMMUTEX  m_freelist_mutex;
     RTSEMMUTEX  m_usedlist_mutex;
 #endif
@@ -120,6 +147,10 @@ typedef struct NATState
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /*
+     * tcb_mutex used for control access to tcb queue of sockets
+     * servising TCP connections and tcp_last_so field
+     */
     RTSEMMUTEX tcb_mutex;
 #endif
 #if ARCH_BITS == 64
@@ -141,6 +172,9 @@ typedef struct NATState
     struct socket udb;
     struct socket *udp_last_so;
 #ifdef VBOX_WITH_SYNC_SLIRP
+    /*
+     * udb_mutex used in similar to tcb_mutex way, but for handling udp connections
+     */
     RTSEMMUTEX udb_mutex;
 #endif
 } NATState;
