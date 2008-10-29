@@ -580,8 +580,8 @@ public:
      * @param C     Standard C++ container template class (normally deduced from
      *              @c aCntr).
      */
-    template <template <class> class C>
-    SafeArray (const C <T> & aCntr)
+    template <template <typename, typename> class C, class A>
+    SafeArray (const C <T, A> & aCntr)
     {
         reset (aCntr.size());
         AssertReturnVoid (!isNull());
