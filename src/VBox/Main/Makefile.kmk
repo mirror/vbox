@@ -285,6 +285,7 @@ VBoxSVC_SOURCES = \
 	SystemPropertiesImpl.cpp \
 	BIOSSettingsImpl.cpp \
 	Version.cpp \
+        HostPower.cpp \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
@@ -295,6 +296,7 @@ VBoxSVC_SOURCES.darwin = \
 VBoxSVC_SOURCES.win = \
 	win/svcmain.cpp \
 	win/svchlp.cpp \
+        win/HostPowerWin.cpp \
 	win/VBoxSVC.rc
 
 VBoxSVC_SOURCES.linux = \

@@ -31,6 +31,7 @@
 #else
 class USBProxyService;
 #endif
+#include "HostPower.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
@@ -123,6 +124,8 @@ public:
     static int networkInterfaceHelperServer (SVCHlpClient *aClient,
                                              SVCHlpMsg::Code aMsgCode);
 #endif
+
+    HostPowerService *mHostPowerService;
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Host"; }
