@@ -54,7 +54,7 @@ HostPowerServiceWin::~HostPowerServiceWin()
 
         /* Is this allowed from another thread? */
         SetWindowLongPtr(mHwnd, 0, 0);
-        PostMessage(mHwnd, WM_CLOSE, 0, 0);
+        PostMessage(mHwnd, WM_QUIT, 0, 0);
     }
 }
 
