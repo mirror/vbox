@@ -28,7 +28,7 @@
 #include "HostPower.h"
 #include "Logging.h"
 
-static char gachWindowClassName[] = "VBoxPowerNotifyClass";
+static WCHAR gachWindowClassName[] = L"VBoxPowerNotifyClass";
 
 HostPowerServiceWin::HostPowerServiceWin(VirtualBox *aVirtualBox) : HostPowerService(aVirtualBox)
 {
@@ -71,7 +71,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread (RTTHREAD ThreadSelf, 
     HINSTANCE hInstance = (HINSTANCE)GetModuleHandle (NULL);
 
     /* Register the Window Class. */
-    WNDCLASSA wc;
+    WNDCLASS wc;
 
     wc.style         = CS_NOCLOSE;
     wc.lpfnWndProc   = HostPowerServiceWin::WndProc;
@@ -84,7 +84,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread (RTTHREAD ThreadSelf, 
     wc.lpszMenuName  = NULL;
     wc.lpszClassName = gachWindowClassName;
 
-    ATOM atomWindowClass = RegisterClassA(&wc);
+    ATOM atomWindowClass = RegisterClass(&wc);
 
     if (atomWindowClass == 0)
     {
@@ -94,7 +94,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread (RTTHREAD ThreadSelf, 
     else
     {
         /* Create the window. */
-        hwnd = pPowerObj->mHwnd = CreateWindowExA (WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+        hwnd = pPowerObj->mHwnd = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
                                                   gachWindowClassName, gachWindowClassName,
                                                   WS_POPUPWINDOW,
                                                  -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
@@ -127,7 +127,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread (RTTHREAD ThreadSelf, 
 
     if (atomWindowClass != 0)
     {
-        UnregisterClassA (gachWindowClassName, hInstance);
+        UnregisterClass (gachWindowClassName, hInstance);
         atomWindowClass = 0;
     }
 
