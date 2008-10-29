@@ -29,12 +29,14 @@
 #if !defined(__DYNGEN_EXEC_H__)
 #define __DYNGEN_EXEC_H__
 
+#ifndef VBOX
 /* prevent Solaris from trying to typedef FILE in gcc's
    include/floatingpoint.h which will conflict with the
    definition down below */
 #ifdef __sun__
 #define _FILEDEFED
 #endif
+#endif /* !VBOX */
 
 /* NOTE: standard headers should be used with special care at this
    point because host CPU registers are used as global variables. Some

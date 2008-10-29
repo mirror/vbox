@@ -24,7 +24,8 @@ include $(KBUILD_PATH)/subheader.kmk
 
 
 REM_MOD              += VBoxREM
-DLLS                 += VBoxREM
+#DLLS                 += VBoxREM
+IMPORT_LIBS          += VBoxREM
 
 DEFS                 += VBOX_WITH_NEW_RECOMPILER
 $(REM_MOD)_TEMPLATE  = VBOXR3NP
@@ -105,13 +106,12 @@ $(REM_MOD)_LDFLAGS.os2     = -Zomf
 $(REM_MOD)_LDFLAGS.debug   = -g
 $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
-$(REM_MOD)_LIBS           = 	\
+#$(REM_MOD)_LIBS           = 	\
 	$(LIB_VMM) 		\
-	$(LIB_RUNTIME)
+ 	$(LIB_RUNTIME)
 
 
 if1of ($(KBUILD_TARGET), linux darwin solaris)
-$(REM_MOD)_DEFS.solaris += 
 # Extra flags for these source modules.
 target-i386/op-helper.c_CFLAGS.x86 = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
 cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
@@ -132,5 +132,3 @@ testmath_SOURCES        = Sun/testmath.c
 
 
 include $(KBUILD_PATH)/subfooter.kmk
-
-importlib: $(LIB_REM)
