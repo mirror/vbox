@@ -58,13 +58,13 @@ typedef struct VMATRESET *PVMATRESET;
 typedef struct VMATRESET
 {
     /** Pointer to the next one in the list. */
-    PVMATRESET      pNext;
+    PVMATRESET                      pNext;
     /** Callback type. */
-    VMATRESETTYPE   enmType;
+    VMATRESETTYPE                   enmType;
     /** User argument for the callback. */
-    void           *pvUser;
+    void                           *pvUser;
     /** Description. */
-    const char     *pszDesc;
+    const char                     *pszDesc;
     /** Type specific data. */
     union
     {
@@ -72,23 +72,23 @@ typedef struct VMATRESET
         struct
         {
             /** Callback. */
-            PFNVMATRESET    pfnCallback;
+            PFNVMATRESET            pfnCallback;
             /** Device instance. */
-            PPDMDEVINS      pDevIns;
+            PPDMDEVINS              pDevIns;
         } Dev;
 
         /** VMATRESETTYPE_INTERNAL. */
         struct
         {
             /** Callback. */
-            PFNVMATRESETINT pfnCallback;
+            PFNVMATRESETINT         pfnCallback;
         } Internal;
 
         /** VMATRESETTYPE_EXTERNAL. */
         struct
         {
             /** Callback. */
-            PFNVMATRESETEXT pfnCallback;
+            PFNVMATRESETEXT         pfnCallback;
         } External;
     } u;
 } VMATRESET;
@@ -100,11 +100,11 @@ typedef struct VMATRESET
 typedef struct VMATSTATE
 {
     /** Pointer to the next one. */
-    struct VMATSTATE   *pNext;
+    struct VMATSTATE               *pNext;
     /** Pointer to the callback. */
-    PFNVMATSTATE        pfnAtState;
+    PFNVMATSTATE                    pfnAtState;
     /** The user argument. */
-    void               *pvUser;
+    void                           *pvUser;
 } VMATSTATE;
 /** Pointer to a VM state change callback. */
 typedef VMATSTATE *PVMATSTATE;
@@ -116,11 +116,11 @@ typedef VMATSTATE *PVMATSTATE;
 typedef struct VMATERROR
 {
     /** Pointer to the next one. */
-    struct VMATERROR   *pNext;
+    struct VMATERROR               *pNext;
     /** Pointer to the callback. */
-    PFNVMATERROR        pfnAtError;
+    PFNVMATERROR                    pfnAtError;
     /** The user argument. */
-    void               *pvUser;
+    void                           *pvUser;
 } VMATERROR;
 /** Pointer to a VM error callback. */
 typedef VMATERROR *PVMATERROR;
@@ -133,21 +133,21 @@ typedef VMATERROR *PVMATERROR;
 typedef struct VMERROR
 {
     /** The size of the chunk. */
-    uint32_t                cbAllocated;
+    uint32_t                        cbAllocated;
     /** The current offset into the chunk.
      * We start by putting the filename and function immediatly
      * after the end of the buffer. */
-    uint32_t                off;
+    uint32_t                        off;
     /** Offset from the start of this structure to the file name. */
-    uint32_t                offFile;
+    uint32_t                        offFile;
     /** The line number. */
-    uint32_t                iLine;
+    uint32_t                        iLine;
     /** Offset from the start of this structure to the function name. */
-    uint32_t                offFunction;
+    uint32_t                        offFunction;
     /** Offset from the start of this structure to the formatted message text. */
-    uint32_t                offMessage;
+    uint32_t                        offMessage;
     /** The VBox status code. */
-    int32_t                 rc;
+    int32_t                         rc;
 } VMERROR, *PVMERROR;
 
 
@@ -157,11 +157,11 @@ typedef struct VMERROR
 typedef struct VMATRUNTIMEERROR
 {
     /** Pointer to the next one. */
-    struct VMATRUNTIMEERROR *pNext;
+    struct VMATRUNTIMEERROR         *pNext;
     /** Pointer to the callback. */
-    PFNVMATRUNTIMEERROR      pfnAtRuntimeError;
+    PFNVMATRUNTIMEERROR              pfnAtRuntimeError;
     /** The user argument. */
-    void                    *pvUser;
+    void                            *pvUser;
 } VMATRUNTIMEERROR;
 /** Pointer to a VM error callback. */
 typedef VMATRUNTIMEERROR *PVMATRUNTIMEERROR;
@@ -174,17 +174,17 @@ typedef VMATRUNTIMEERROR *PVMATRUNTIMEERROR;
 typedef struct VMRUNTIMEERROR
 {
     /** The size of the chunk. */
-    uint32_t                cbAllocated;
+    uint32_t                        cbAllocated;
     /** The current offset into the chunk.
      * We start by putting the error ID immediatly
      * after the end of the buffer. */
-    uint32_t                off;
+    uint32_t                        off;
     /** Offset from the start of this structure to the error ID. */
-    uint32_t                offErrorID;
+    uint32_t                        offErrorID;
     /** Offset from the start of this structure to the formatted message text. */
-    uint32_t                offMessage;
+    uint32_t                        offMessage;
     /** Whether the error is fatal or not */
-    bool                    fFatal;
+    bool                            fFatal;
 } VMRUNTIMEERROR, *PVMRUNTIMEERROR;
 
 /** The halt method. */
@@ -210,28 +210,24 @@ typedef enum
 
 
 /**
- * Converts a VMM pointer into a VM pointer.
- * @returns Pointer to the VM structure the VMM is part of.
- * @param   pVMM   Pointer to VMM instance data.
- */
-#define VMINT2VM(pVMM)  ( (PVM)((char*)pVMM - pVMM->offVM) )
-
-
-/**
- * VM Internal Data (part of VM)
+ * VM Internal Data (part of the VM structure).
+ *
+ * @todo Move this and all related things to VMM. The VM component was, to some
+ *       extent at least, a bad ad hoc design which should all have been put in
+ *       VMM. @see pg_vm.
  */
 typedef struct VMINT
 {
-    /** Offset to the VM structure.
-     * See VMINT2VM(). */
-    RTINT                           offVM;
     /** VM Error Message. */
     R3PTRTYPE(PVMERROR)             pErrorR3;
     /** VM Runtime Error Message. */
     R3PTRTYPE(PVMRUNTIMEERROR)      pRuntimeErrorR3;
-    /** Set by VMR3SuspendNoSave; cleared by VMR3Resume; signals the VM is in an inconsistent state and saving is not allowed. */
+    /** Set by VMR3SuspendNoSave; cleared by VMR3Resume; signals the VM is in an
+     * inconsistent state and saving is not allowed. */
     bool                            fPreventSaveState;
-} VMINT, *PVMINT;
+} VMINT;
+/** Pointer to the VM Internal Data (part of the VM structure). */
+typedef VMINT *PVMINT;
 
 
 /**
@@ -416,15 +412,15 @@ typedef struct VMINTUSERPERVM
 typedef VMINTUSERPERVM *PVMINTUSERPERVM;
 
 
-DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArg);
-int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod);
-DECLCALLBACK(int) vmR3Destroy(PVM pVM);
-DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *args);
-void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
-DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list *args);
-void vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list args);
-void vmR3DestroyFinalBitFromEMT(PUVM pUVM);
-void vmR3SetState(PVM pVM, VMSTATE enmStateNew);
+DECLCALLBACK(int)   vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArg);
+int                 vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod);
+DECLCALLBACK(int)   vmR3Destroy(PVM pVM);
+DECLCALLBACK(void)  vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list *args);
+void                vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args);
+DECLCALLBACK(void)  vmR3SetRuntimeErrorV(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list *args);
+void                vmSetRuntimeErrorCopy(PVM pVM, bool fFatal, const char *pszErrorID, const char *pszFormat, va_list args);
+void                vmR3DestroyFinalBitFromEMT(PUVM pUVM);
+void                vmR3SetState(PVM pVM, VMSTATE enmStateNew);
 
 
 /** @} */
