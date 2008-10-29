@@ -376,7 +376,7 @@ RTDECL(int) RTThreadUserReset(RTTHREAD Thread);
  *
  * This will signal the thread, attempting to interrupt whatever it's currently
  * doing.  This is *NOT* implemented on all platforms and may cause unresolved
- * symbols during or VERR_NOT_IMPLEMENTED at runtime.
+ * symbols during linking or VERR_NOT_IMPLEMENTED at runtime.
  *
  * @returns IPRT status code.
  *
