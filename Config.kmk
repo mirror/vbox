@@ -2584,8 +2584,9 @@ TEMPLATE_VBOXMAINEXE_LIBS.kprofile       = $(LIB_KPROFILE)
 ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXMAINEXE_SDKS              = WINPSDK W2K3DDK
  ifdef VBOX_USE_VCC80
+  # Note: 4250 is the dominance warning, see r32789.
   TEMPLATE_VBOXMAINEXE_TOOL              = $(VBOX_VCC_TOOL)
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS          = -Zi -Zl -GR -GF- -MD -EHsc -W3 -wd4065 -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
+  TEMPLATE_VBOXMAINEXE_CXXFLAGS          = -Zi -Zl -GR -GF- -MD -EHsc -W3 -wd4065 -wd4996 -wd4250 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
   TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug    = -RTCsu
  else
   # Note: 4250 is the dominance warning, see r32789.
