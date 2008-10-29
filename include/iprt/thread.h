@@ -371,6 +371,20 @@ RTDECL(int) RTThreadUserWaitNoResume(RTTHREAD Thread, unsigned cMillies);
  */
 RTDECL(int) RTThreadUserReset(RTTHREAD Thread);
 
+/**
+ * Pokes the thread.
+ *
+ * This will signal the thread, attempting to interrupt whatever it's currently
+ * doing.  This is *NOT* implemented on all platforms and may cause unresolved
+ * symbols during or VERR_NOT_IMPLEMENTED at runtime.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hThread             The thread to poke.  This must not be the
+ *                              calling thread.
+ */
+RTDECL(int) RTThreadPoke(RTTHREAD hThread);
+
 #ifdef IN_RING0
 
 /**
