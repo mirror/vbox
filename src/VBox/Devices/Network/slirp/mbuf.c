@@ -74,6 +74,7 @@ m_get(PNATState pData)
                     goto end_error;
                 }
 #ifdef VBOX_WITH_SYNC_SLIRP
+                RTSemMutexCreate(&m->m_mutex);
                 RTSemMutexRequest(pData->mbuf_alloced_mutex, RT_INDEFINITE_WAIT);
 #endif
 		mbuf_alloced++;
@@ -96,7 +97,6 @@ m_get(PNATState pData)
 	insque(pData, m,&m_usedlist);
 	m->m_flags = (flags | M_USEDLIST);
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexCreate(&m->m_mutex);
         RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
         RTSemMutexRelease(pData->m_usedlist_mutex);
         RTSemMutexRelease(pData->m_freelist_mutex);
