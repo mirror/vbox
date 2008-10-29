@@ -3571,7 +3571,6 @@ void stq_phys(target_phys_addr_t addr, uint64_t val)
 
 #endif
 
-#ifndef VBOX
 /* virtual memory access for debug */
 int cpu_memory_rw_debug(CPUState *env, target_ulong addr,
                         uint8_t *buf, int len, int is_write)
@@ -3656,6 +3655,7 @@ void cpu_io_recompile(CPUState *env, void *retaddr)
     cpu_resume_from_signal(env, NULL);
 }
 
+#ifndef VBOX
 void dump_exec_info(FILE *f,
                     int (*cpu_fprintf)(FILE *f, const char *fmt, ...))
 {

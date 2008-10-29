@@ -699,7 +699,7 @@ typedef struct VM
 /** @def VM_REM_SIZE
  * Must be multiple of 32 and coherent with REM_ENV_SIZE from REMInternal.h. */
 #if GC_ARCH_BITS == 32
-# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0xff00 : 0xff00)
+# define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0x10800 : 0x10800)
 #else
 # define VM_REM_SIZE        (HC_ARCH_BITS == 32 ? 0x10900 : 0x10900)
 #endif
