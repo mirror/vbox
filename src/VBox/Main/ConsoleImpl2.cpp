@@ -1190,11 +1190,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                     const char *pszTrunk = szTrunk;
 
-                    /* Zone access controls*/
-                    zoneid_t ZoneId = getzoneid();
-                    if (ZoneId != GLOBAL_ZONEID)
-                        rc = CFGMR3InsertInteger(pCfg, "QuietlyIgnoreAllPromisc", true);   RC_CHECK();
-
 # elif defined(RT_OS_WINDOWS)
                     ComPtr<IHostNetworkInterfaceCollection> coll;
                     hrc = host->COMGETTER(NetworkInterfaces)(coll.asOutParam());    H();
@@ -1234,6 +1229,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
 # else
                     /** @todo PORTME: wireless detection */
+# endif
+
+# if defined(RT_OS_SOLARIS)
+#  if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */
+                    /* Zone access restriction, don't allow snopping the global zone. */
+                    zoneid_t ZoneId = getzoneid();
+                    if (ZoneId != GLOBAL_ZONEID)
+                    {
+                        rc = CFGMR3InsertInteger(pCfg, "IgnoreAllPromisc", true);   RC_CHECK();
+                    }
+#  endif
 # endif
 
 #elif defined(RT_OS_WINDOWS)
