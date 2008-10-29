@@ -19,6 +19,27 @@
  * additional information or have any questions.
  */
 
+/** @page pg_vm     VM API
+ *
+ * This is the encapsulating bit.  It provides the APIs that Main and VBoxBFE
+ * use to create a VMM instance for running a guest in.  It also provides
+ * facilities for queuing request for execution in EMT (serialization purposes
+ * mostly) and for reporting error back to the VMM user (Main/VBoxBFE).
+ *
+ *
+ * @section sec_vm_design   Design Critique / Things To Do
+ *
+ * In hindsight this component is a big design mistake, all this stuff really
+ * belongs in the VMM component.  It just seemed like a kind of ok idea at a
+ * time when the VMM bit was a bit vague.  'VM' also happend to be the name of
+ * the per-VM instance structure (see vm.h), so it kind of made sense.  However
+ * as it turned out, VMM(.cpp) is almost empty all it provides in ring-3 is some
+ * minor functionally and some "routing" services.
+ *
+ * Fixing this is just a matter of some more or less straight forward
+ * refactoring, the question is just when someone will get to it.
+ *
+ */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -102,21 +123,21 @@ static PVMATDTOR    g_pVMAtDtorHead = NULL;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int  vmR3CreateUVM(PUVM *ppUVM);
-static int  vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
-static int  vmR3InitRing3(PVM pVM, PUVM pUVM);
-static int  vmR3InitRing0(PVM pVM);
-static int  vmR3InitGC(PVM pVM);
-static int  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
+static int               vmR3CreateUVM(PUVM *ppUVM);
+static int               vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static int               vmR3InitRing3(PVM pVM, PUVM pUVM);
+static int               vmR3InitRing0(PVM pVM);
+static int               vmR3InitGC(PVM pVM);
+static int               vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 static DECLCALLBACK(int) vmR3PowerOn(PVM pVM);
 static DECLCALLBACK(int) vmR3Suspend(PVM pVM);
 static DECLCALLBACK(int) vmR3Resume(PVM pVM);
 static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
-static void vmR3DestroyUVM(PUVM pUVM);
-static void vmR3AtDtor(PVM pVM);
-static int  vmR3AtResetU(PUVM pUVM);
+static void              vmR3DestroyUVM(PUVM pUVM);
+static void              vmR3AtDtor(PVM pVM);
+static int               vmR3AtResetU(PUVM pUVM);
 static DECLCALLBACK(int) vmR3Reset(PVM pVM);
 static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
 static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
@@ -443,8 +464,6 @@ static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *p
         pVM->ThreadEMT = pVM->aCpus[0].hThreadR3 = pUVM->vm.s.ThreadEMT;
         pVM->NativeThreadEMT = pVM->aCpus[0].hNativeThreadR3 = pUVM->vm.s.NativeThreadEMT;
 
-        pVM->vm.s.offVM = RT_OFFSETOF(VM, vm.s);
-
         /*
          * Init the configuration.
          */
@@ -541,7 +560,6 @@ static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *p
     LogFlow(("vmR3Create: returns %Rrc\n", rc));
     return rc;
 }
-
 
 
 /**
@@ -825,7 +843,6 @@ VMMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     DBGFR3Relocate(pVM, offDelta);
     PDMR3Relocate(pVM, offDelta);
 }
-
 
 
 /**

@@ -44,8 +44,6 @@
 #include <iprt/time.h>
 
 
-
-
 /**
  * The emulation thread.
  *
@@ -849,7 +847,6 @@ static DECLCALLBACK(void) vmR3BootstrapNotifyFF(PUVM pUVM, bool fNotifiedREM)
         AssertRC(rc);
     }
 }
-
 
 
 /**
