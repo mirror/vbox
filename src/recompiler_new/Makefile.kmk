@@ -64,6 +64,7 @@ $(REM_MOD)_SOURCES          = 	\
 	exec.c 			\
 	translate-all.c 	\
 	host-utils.c            \
+	cutils.c                \
 	tcg/tcg.c               \
         tcg/tcg-dyngen.c        \
 	tcg/tcg-runtime.c       \

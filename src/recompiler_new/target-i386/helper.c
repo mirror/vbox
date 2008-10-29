@@ -517,12 +517,12 @@ void cpu_reset(CPUX86State *env)
     env->mxcsr = 0x1f80;
 }
 
-#ifndef VBOX
 void cpu_x86_close(CPUX86State *env)
 {
+#ifndef VBOX
     qemu_free(env);
-}
 #endif
+}
 
 /***********************************************************/
 /* x86 debug */

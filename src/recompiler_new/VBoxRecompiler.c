@@ -5044,3 +5044,6 @@ void *memcpy(void *dst, const void *src, size_t size)
 
 #endif
 
+void cpu_smm_update(CPUState* env)
+{
+}
