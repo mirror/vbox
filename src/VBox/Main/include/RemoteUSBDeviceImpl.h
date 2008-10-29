@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox IHostUSBDevice COM interface implementation
@@ -5,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,24 +27,28 @@
 
 #include "VirtualBoxBase.h"
 #include "Collection.h"
-#include <VBox/vrdpapi.h>
+
+struct _VRDPUSBDEVICEDESC;
+typedef _VRDPUSBDEVICEDESC VRDPUSBDEVICEDESC;
 
 class ATL_NO_VTABLE RemoteUSBDevice :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <RemoteUSBDevice, IHostUSBDevice>,
     public VirtualBoxSupportTranslation <RemoteUSBDevice>,
-    public VirtualBoxBase,
     public IHostUSBDevice
 {
 public:
 
-    DECLARE_NOT_AGGREGATABLE(RemoteUSBDevice)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (OUSBDevice)
+
+    DECLARE_NOT_AGGREGATABLE (RemoteUSBDevice)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(RemoteUSBDevice)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IHostUSBDevice)
-        COM_INTERFACE_ENTRY(IUSBDevice)
+    BEGIN_COM_MAP (RemoteUSBDevice)
+        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY (IHostUSBDevice)
+        COM_INTERFACE_ENTRY (IUSBDevice)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -74,24 +80,24 @@ public:
     STDMETHOD(COMGETTER(State)) (USBDeviceState_T *aState);
 
     // public methods only for internal purposes
-    bool dirty (void) { return mDirty; }
-    void dirty (bool aDirty) { mDirty = aDirty; }
+    bool dirty (void) const { return mData.dirty; }
+    void dirty (bool aDirty) { mData.dirty = aDirty; }
 
-    uint16_t devId (void) { return mDevId; }
-    uint32_t clientId (void) { return mClientId; }
+    uint16_t devId (void) const { return mData.devId; }
+    uint32_t clientId (void) { return mData.clientId; }
 
-    bool captured (void) { return mState == USBDeviceState_Captured; }
+    bool captured (void) const { return mData.state == USBDeviceState_Captured; }
     void captured (bool aCaptured)
     {
         if (aCaptured)
         {
-            Assert(mState == USBDeviceState_Available);
-            mState = USBDeviceState_Captured;
+            Assert(mData.state == USBDeviceState_Available);
+            mData.state = USBDeviceState_Captured;
         }
         else
         {
-            Assert(mState == USBDeviceState_Captured);
-            mState = USBDeviceState_Available;
+            Assert(mData.state == USBDeviceState_Captured);
+            mData.state = USBDeviceState_Available;
         }
     }
 
@@ -100,27 +106,35 @@ public:
 
 private:
 
-    Guid mId;
+    struct Data
+    {
+        Data() : vendorId (0), productId (0), revision (0), port (0), version (1),
+                 portVersion (1), dirty (FALSE), devId (0), clientId (0) {}
 
-    uint16_t mVendorId;
-    uint16_t mProductId;
-    uint16_t mRevision;
+        const Guid id;
 
-    Bstr mManufacturer;
-    Bstr mProduct;
-    Bstr mSerialNumber;
+        const uint16_t vendorId;
+        const uint16_t productId;
+        const uint16_t revision;
 
-    Bstr mAddress;
+        const Bstr manufacturer;
+        const Bstr product;
+        const Bstr serialNumber;
 
-    uint16_t mPort;
-    uint16_t mVersion;
-    uint16_t mPortVersion;
+        const Bstr address;
 
-    USBDeviceState_T mState;
+        const uint16_t port;
+        const uint16_t version;
+        const uint16_t portVersion;
 
-    bool mDirty;
-    uint16_t mDevId;
-    uint32_t mClientId;
+        USBDeviceState_T state;
+        bool dirty;
+
+        const uint16_t devId;
+        const uint32_t clientId;
+    };
+
+    Data mData;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
