@@ -130,8 +130,10 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
             fFlags |= RTMEMHDR_FLAG_EXEC_HEAP;
         }
         else
-# endif
-            pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, MY_PAGE_KERNEL_EXEC);
+            pHdr = NULL;
+# else  /* !RTMEMALLOC_EXEC_HEAP */
+        pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, MY_PAGE_KERNEL_EXEC);
+# endif /* !RTMEMALLOC_EXEC_HEAP */
 
 #elif defined(PAGE_KERNEL_EXEC) && defined(CONFIG_X86_PAE)
         pHdr = (PRTMEMHDR)__vmalloc(cb + sizeof(*pHdr), GFP_KERNEL | __GFP_HIGHMEM, MY_PAGE_KERNEL_EXEC);
