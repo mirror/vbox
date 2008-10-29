@@ -25,6 +25,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QAbstractItemView>
+#include <QUuid>
 
 VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     : QComboBox (aParent)
@@ -101,9 +102,10 @@ void VBoxMediaComboBox::repopulate()
 
 QUuid VBoxMediaComboBox::id (int aIndex /*= -1*/) const
 {
+    QUuid uuidNull; /* gcc-3.3 hack */
     AssertReturn (aIndex == -1 ||
                   (aIndex >= 0 && aIndex < mMedia.size()),
-                  QUuid());
+                  uuidNull);
 
     return mMedia [aIndex == -1 ? currentIndex() : aIndex].id;
 }
