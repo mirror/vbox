@@ -60,7 +60,7 @@ static pthread_key_t    g_SelfKey;
 *******************************************************************************/
 static void *rtThreadNativeMain(void *pvArgs);
 static void rtThreadKeyDestruct(void *pvValue);
-
+static void rtThreadPosixPokeSignal(int iSignal);
 
 int rtThreadNativeInit(void)
 {
@@ -68,11 +68,17 @@ int rtThreadNativeInit(void)
      * Allocate the TLS (key in posix terms) where we store the pointer to
      * a threads RTTHREADINT structure.
      */
-
     int rc = pthread_key_create(&g_SelfKey, rtThreadKeyDestruct);
-    if (!rc)
-        return VINF_SUCCESS;
-    return VERR_NO_TLS_FOR_SELF;
+    if (rc)
+        return VERR_NO_TLS_FOR_SELF;
+
+    /*
+     * Register the dummy signal handler for RTThreadPoke.
+     */
+    void (*pfnOld)(int);
+    pfnOld = signal(SIGUSR2, rtThreadPosixPokeSignal);
+    Assert(pfnOld == SIG_DFL);
+    return rc;
 }
 
 
@@ -92,6 +98,18 @@ static void rtThreadKeyDestruct(void *pvValue)
         rtThreadTerminate(pThread, 0);
         pthread_setspecific(g_SelfKey, NULL);
     }
+}
+
+
+/**
+ * Dummy signal handler for the poke signal.
+ *
+ * @param   iSignal     The signal number.
+ */
+static void rtThreadPosixPokeSignal(int iSignal)
+{
+    Assert(iSignal == SIGUSR2);
+    NOREF(iSignal);
 }
 
 
@@ -276,3 +294,15 @@ RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask)
     return VINF_SUCCESS;
 }
 
+
+RTDECL(int) RTThreadPoke(RTTHREAD hThread)
+{
+    AssertReturn(hThread != RTThreadSelf(), VERR_INVALID_PARAMETER);
+    PRTTHREADINT pThread = rtThreadGet(hThread);
+    AssertReturn(pThread, VERR_INVALID_HANDLE);
+
+    int rc = pthread_kill((pthread_t)(uintptr_t)pThread->Core.Key, SIGUSR2);
+
+    rtThreadRelease(pThread);
+    return RTErrConvertFromErrno(rc);
+}
