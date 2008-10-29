@@ -587,7 +587,7 @@ public:
         AssertReturnVoid (!isNull());
 
         size_t i = 0;
-        for (typename C <T>::const_iterator it = aCntr.begin();
+        for (typename C <T, A>::const_iterator it = aCntr.begin();
              it != aCntr.end(); ++ it, ++ i)
 #if defined (VBOX_WITH_XPCOM)
             Copy (*it, m.arr [i]);
