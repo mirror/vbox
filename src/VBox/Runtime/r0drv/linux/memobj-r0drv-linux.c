@@ -1063,8 +1063,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
 
 #if   defined(VBOX_USE_INSERT_PAGE) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
                     rc = vm_insert_page(vma, ulAddrCur, pMemLnxToMap->apPages[iPage]);
-                    /** @todo nike: not sure if really needed to have this flag */
-                    vma->vm_flags |= VM_RESERVED;
+                    vma->vm_flags |= VM_RESERVED; /* This flag helps making 100% sure some bad stuff wont happen (swap, core, ++). */
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
                     rc = remap_pfn_range(vma, ulAddrCur, page_to_pfn(pMemLnxToMap->apPages[iPage]), PAGE_SIZE, fPg);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
@@ -1097,11 +1096,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                         AssertBreakStmt(vma, rc = VERR_INTERNAL_ERROR);
 #endif
 
-#if   defined(VBOX_USE_INSERT_PAGE) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
-                        rc = vm_insert_page(vma, ulAddrCur, pMemLnxToMap->apPages[iPage]);
-                        /** @todo nike: not sure if really needed to have this flag */
-                        vma->vm_flags |= VM_RESERVED;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+#if   LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
                         rc = remap_pfn_range(vma, ulAddrCur, Phys, PAGE_SIZE, fPg);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
                         rc = remap_page_range(vma, ulAddrCur, Phys, PAGE_SIZE, fPg);
