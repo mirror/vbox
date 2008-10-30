@@ -73,35 +73,42 @@ HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent e
 
     if (state == MachineState_Running)
     {
-#if 0
-        ComPtr<ISession> session;
+        ComPtr <ISession> session;
 
-        /* get the IInternalSessionControl interface */
-        ComPtr <IInternalSessionControl> control = session;
-        ComAssertMsgRet (!!control, ("No IInternalSessionControl interface"),
-                        E_INVALIDARG);
-
-        rc = machine->openExistingSession (control);
+        rc = session.createInprocObject (CLSID_Session);
         if (FAILED (rc))
             return rc;
 
-        /* get the associated console */
-        ComPtr<IConsole> console;
-        rc = session->COMGETTER(Console)(console.asOutParam());
+        /* get the IInternalSessionControl interface */
+        ComPtr <IInternalSessionControl> control = session;
+        if (!control)
+        {
+            rc = E_INVALIDARG;
+            goto fail;
+        }
+
+        rc = machine->openExistingSession (control);
         if (SUCCEEDED (rc))
         {
-            switch (event)
+            /* get the associated console */
+            ComPtr<IConsole> console;
+            rc = session->COMGETTER(Console)(console.asOutParam());
+            if (SUCCEEDED (rc))
             {
-            case HostPowerEvent_Suspend:
-                rc = console->Pause();
-                break;
-            case HostPowerEvent_Resume:
-            case HostPowerEvent_BatteryLow:
-                break;
+                switch (event)
+                {
+                case HostPowerEvent_Suspend:
+                    rc = console->Pause();
+                    break;
+                case HostPowerEvent_Resume:
+                case HostPowerEvent_BatteryLow:
+                    break;
+                }
             }
         }
+fail:
         session->Close();
-#endif
+
     }
     return rc;
 }
