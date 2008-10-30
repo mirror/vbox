@@ -7207,44 +7207,44 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
        Harddisk format capability flags.
     </desc>
 
-    <const name="CapilityUuid" value="0x00">
+    <const name="CapabilityUuid" value="0x00">
       <desc>
         Supports UUIDs as expected by VirtualBox code.
       </desc>
     </const>
 
-    <const name="CapilityCreateFixed" value="0x01">
+    <const name="CapabilityCreateFixed" value="0x01">
       <desc>
         Supports creating fixed size images, allocating all space instantly.
       </desc>
     </const>
 
-    <const name="CapilityCreateDynamic" value="0x02">
+    <const name="CapabilityCreateDynamic" value="0x02">
       <desc>
         Supports creating dynamically growing images, allocating space on
         demand.
       </desc>
     </const>
 
-    <const name="CapilityCreateSplit2G" value="0x04">
+    <const name="CapabilityCreateSplit2G" value="0x04">
       <desc>
         Supports creating images split in chunks of a bit less than 2GBytes.
       </desc>
     </const>
 
-    <const name="CapilityDiff" value="0x08">
+    <const name="CapabilityDiff" value="0x08">
       <desc>
         Supports being used as differencing image format backend.
       </desc>
     </const>
 
-    <const name="CapilityASync" value="0x10">
+    <const name="CapabilityASync" value="0x10">
       <desc>
         Supports asynchronous I/O operations for at least some configurations.
       </desc>
     </const>
 
-    <const name="CapilityFile" value="0x20">
+    <const name="CapabilityFile" value="0x20">
       <desc>
         The backend operates on files. The caller needs to know to handle the
         location appropriately. For a list of supported file extentions see
@@ -7252,7 +7252,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="CapilityConfig" value="0x40">
+    <const name="CapabilityConfig" value="0x40">
       <desc>
         The backend uses the config interface. The caller needs to know how to
         provide the mandatory configuration parts this way.
@@ -7261,7 +7261,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="CapilityMask" value="0x7F"/>
+    <const name="CapabilityMask" value="0x7F"/>
   </enum>
 
   <interface
