@@ -1208,6 +1208,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     char szDriverGUID[RTUUID_STR_LENGTH];
                     strcpy(szDriverGUID , hostIFGuid.toString().raw());
                     const char *pszTrunk = szDriverGUID;
+# elif defined(RT_OS_LINUX)
+                    /* @todo Check for malformed names. */
+                    const char *pszTrunk = pszHifName;
+
 # else
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
@@ -1283,6 +1287,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         strcat(szDriverGUID, "}");
                         rc = CFGMR3InsertBytes(pCfg, "GUID", szDriverGUID, sizeof(szDriverGUID));       RC_CHECK();
                     }
+#elif defined(RT_OS_LINUX)
+/// @todo aleksey: is there anything to be done here?
 #else
 # error "Port me"
 #endif
