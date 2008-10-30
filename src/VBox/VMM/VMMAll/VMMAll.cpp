@@ -31,32 +31,19 @@
 
 
 #ifndef IN_RING0
-
 /**
- * Gets the bottom of the hypervisor stack - GC Ptr.
- * I.e. the returned address is not actually writable.
+ * Gets the bottom of the hypervisor stack - RC Ptr.
+ *
+ * (The returned address is not actually writable, only after it's decremented
+ * by a push/ret/whatever does it become writable.)
  *
  * @returns bottom of the stack.
  * @param   pVM         The VM handle.
  */
-RTGCPTR VMMGetStackGC(PVM pVM)
+RTRCPTR VMMGetStackRC(PVM pVM)
 {
-    return (RTGCPTR)pVM->vmm.s.pbGCStackBottom;
+    return (RTRCPTR)pVM->vmm.s.pbEMTStackBottomRC;
 }
-
-
-/**
- * Gets the bottom of the hypervisor stack - HC Ptr.
- * I.e. the returned address is not actually writable.
- *
- * @returns bottom of the stack.
- * @param   pVM         The VM handle.
- */
-RTHCPTR VMMGetHCStack(PVM pVM)
-{
-    return pVM->vmm.s.pbHCStack + VMM_STACK_SIZE;
-}
-
 #endif /* !IN_RING0 */
 
 /**

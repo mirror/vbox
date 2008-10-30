@@ -61,8 +61,8 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
         return rc;
 
     CPUMHyperSetCtxCore(pVM, NULL);
-    memset(pVM->vmm.s.pbHCStack, 0xaa, VMM_STACK_SIZE);
-    CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
+    memset(pVM->vmm.s.pbEMTStackR3, 0xaa, VMM_STACK_SIZE);
+    CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
     CPUMPushHyper(pVM, uVariation);
     CPUMPushHyper(pVM, enmTestcase);
     CPUMPushHyper(pVM, pVM->pVMGC);
@@ -98,8 +98,8 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
         return rc;
 
     CPUMHyperSetCtxCore(pVM, NULL);
-    memset(pVM->vmm.s.pbHCStack, 0xaa, VMM_STACK_SIZE);
-    CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
+    memset(pVM->vmm.s.pbEMTStackR3, 0xaa, VMM_STACK_SIZE);
+    CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
     CPUMPushHyper(pVM, uVariation);
     CPUMPushHyper(pVM, u8Trap + VMMGC_DO_TESTCASE_TRAP_FIRST);
     CPUMPushHyper(pVM, pVM->pVMGC);
@@ -333,7 +333,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
          * Interrupt forwarding.
          */
         CPUMHyperSetCtxCore(pVM, NULL);
-        CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
+        CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
         CPUMPushHyper(pVM, 0);
         CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HYPER_INTERRUPT);
         CPUMPushHyper(pVM, pVM->pVMGC);
@@ -395,7 +395,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         for (i = 0; i < 1000000; i++)
         {
             CPUMHyperSetCtxCore(pVM, NULL);
-            CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
+            CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
             CPUMPushHyper(pVM, 0);
             CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_NOP);
             CPUMPushHyper(pVM, pVM->pVMGC);
@@ -522,7 +522,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
         {
             CPUMHyperSetCtxCore(pVM, NULL);
 
-            CPUMSetHyperESP(pVM, pVM->vmm.s.pbGCStackBottom); /* Clear the stack. */
+            CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
             CPUMPushHyper(pVM, 0);
             CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HWACCM_NOP);
             CPUMPushHyper(pVM, pVM->pVMGC);
