@@ -816,9 +816,6 @@ static inline void gen_jmp_im(target_ulong pc)
 DECLINLINE(void) gen_jmp_im(target_ulong pc)
 #endif /* VBOX */
 {
-#ifdef VBOX
-    gen_check_external_event();
-#endif /* VBOX */
     tcg_gen_movi_tl(cpu_tmp0, pc);
     tcg_gen_st_tl(cpu_tmp0, cpu_env, offsetof(CPUState, eip));
 }
@@ -826,15 +823,12 @@ DECLINLINE(void) gen_jmp_im(target_ulong pc)
 #ifdef VBOX
 static void gen_check_external_event()
 {
-#if 0
-    /** @todo: nike make it work */
-    /* This code is more effective, but for whatever reason TCG fails to compile it */
     int skip_label;
     TCGv t0;
     
     skip_label = gen_new_label();
-    t0 = tcg_temp_local_new(TCG_TYPE_TL);
-    /* t0 = cpu_tmp0; */
+    /* t0 = tcg_temp_local_new(TCG_TYPE_TL); */
+    t0 = cpu_tmp0; 
 
     tcg_gen_ld32u_tl(t0, cpu_env, offsetof(CPUState, interrupt_request));
     /* Keep in sync with helper_check_external_event() */
@@ -843,15 +837,13 @@ static void gen_check_external_event()
                     | CPU_INTERRUPT_EXTERNAL_TIMER
                     | CPU_INTERRUPT_EXTERNAL_DMA
                     | CPU_INTERRUPT_EXTERNAL_HARD);
-    tcg_gen_brcond_i32(TCG_COND_EQ, t0, 0, skip_label);
-    tcg_temp_free(t0);
+    /** @todo: predict branch as taken */
+    tcg_gen_brcondi_i32(TCG_COND_EQ, t0, 0, skip_label);
+    /* tcg_temp_free(t0); */
 
     tcg_gen_helper_0_0(helper_check_external_event);
 
    gen_set_label(skip_label);
-#else
-    tcg_gen_helper_0_0(helper_check_external_event);
-#endif
 }
 
 #ifndef VBOX
@@ -7866,10 +7858,6 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             reg = (modrm >> 3) & 7;
             mod = (modrm >> 6) & 3;
             rm = modrm & 7;
-#ifdef VBOX /* Fix for obvious bug - T1 needs to be loaded */
-            /** @todo: how to do that right? */
-            //gen_op_mov_TN_reg[ot][1][reg]();
-#endif
             if (mod != 3) {
                 gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
                 gen_op_ld_v(ot + s->mem_index, t0, cpu_A0);
