@@ -17,13 +17,36 @@
 # additional information or have any questions.
 #
 
-echo "Configuring VirtualBox guest kernel module..."
+uncompress_files()
+{
+    uncompress -f "$1/VBoxClient.Z" > /dev/null 2>&1
+    uncompress -f "$1/VBoxService.Z" > /dev/null 2>&1
+    uncompress -f "$1/VBoxControl.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxvideo_drv_13.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxvideo_drv_14.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxvideo_drv_71.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxmouse_drv_14.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxmouse_drv_70.so.Z" > /dev/null 2>&1
+    uncompress -f "$1/vboxmouse_drv_71.so.Z" > /dev/null 2>&1
+}
 
 vboxadditions_path="/opt/VirtualBoxAdditions"
 vboxadditions64_path=$vboxadditions_path/amd64
 solaris64dir="amd64"
 
+# uncompress if necessary
+if test -f "$vboxadditions_path/VBoxClient.Z" || test -f "$vboxadditions64_path/VBoxClient.Z"; then
+    echo "Uncompressing files..."
+    if test -f "$vboxadditions_path/VBoxClient.Z"; then
+        uncompress_files "$vboxadditions_path"
+    fi
+    if test -f "$vboxadditions64_path/VBoxClient.Z"; then
+        uncompress_files "$vboxadditions64_path"
+    fi
+fi
+
 # vboxguest.sh would've been installed, we just need to call it.
+echo "Configuring VirtualBox guest kernel module..."
 $vboxadditions_path/vboxguest.sh restart silentunload
 
 sed -e '
