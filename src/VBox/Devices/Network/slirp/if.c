@@ -215,8 +215,8 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 			goto diddit;
 		}
 #ifdef VBOX_WITH_SYNC_SLIRP
-            RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
             RTSemMutexRelease(ifq->m_mutex);
+            RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
             ifq = ifqprev;
 #endif
 	}
@@ -287,14 +287,14 @@ diddit:
 			/* Remove from current queue... */
 			remque(pData, ifm->ifs_next);
 #ifdef VBOX_WITH_SYNC_SLIRP
+                        RTSemMutexRelease(pData->if_fastq_mutex);
                         RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
 #endif
 
 			/* ...And insert in the new.  That'll teach ya! */
 			insque(pData, ifm->ifs_next, &if_batchq);
 #ifdef VBOX_WITH_SYNC_SLIRP
-                    RTSemMutexRelease(pData->if_fastq_mutex);
-                    RTSemMutexRelease(pData->if_batchq_mutex);
+                        RTSemMutexRelease(pData->if_batchq_mutex);
 #endif
 		}
 #ifdef VBOX_WITH_SYNC_SLIRP
@@ -374,8 +374,9 @@ if_start(PNATState pData)
 	} else {
 #ifdef VBOX_WITH_SYNC_SLIRP
                 RTSemMutexRelease(pData->if_fastq_mutex);
-                RTSemMutexRequest(pData->next_m_mutex, RT_INDEFINITE_WAIT);
+
                 RTSemMutexRequest(pData->if_batchq_mutex, RT_INDEFINITE_WAIT);
+                RTSemMutexRequest(pData->next_m_mutex, RT_INDEFINITE_WAIT);
 #endif
 		/* Nothing on fastq, see if next_m is valid */
 		if (next_m != &if_batchq)
@@ -392,6 +393,14 @@ if_start(PNATState pData)
 #ifdef VBOX_WITH_SYNC_SLIRP
         RTSemMutexRequest(ifm->m_mutex, RT_INDEFINITE_WAIT);
         RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
+        if (if_queued == 0) {
+            if (on_fast) {
+                RTSemMutexRelease(pData->if_fastq_mutex);
+            }else {
+                RTSemMutexRelease(pData->if_batchq_mutex);
+            }
+            goto done;
+        }
 #endif
 	/* Remove it from the queue */
 	ifqt = ifm->ifq_prev;
@@ -429,19 +438,18 @@ if_start(PNATState pData)
 
 	/* Encapsulate the packet for sending */
         if_encap(pData, (const uint8_t *)ifm->m_data, ifm->m_len);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(ifm->m_mutex);
-#endif
 
         m_free(pData, ifm);
 
 #ifdef VBOX_WITH_SYNC_SLIRP
+        if (ifm != NULL) RTSemMutexRelease(ifm->m_mutex);
         RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
         /*We release if_queued_mutex after again label and before return*/
 #endif
 	if (if_queued > 0)
 	   goto again;
 #ifdef VBOX_WITH_SYNC_SLIRP
+        done:
         RTSemMutexRelease(pData->if_queued_mutex);
 #endif
 }

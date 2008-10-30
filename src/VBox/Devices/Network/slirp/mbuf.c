@@ -90,17 +90,17 @@ m_get(PNATState pData)
 		remque(pData, m);
 	}
 #ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
+        RTSemMutexRelease(pData->m_freelist_mutex);
         RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
 #endif
 
 	/* Insert it in the used list */
 	insque(pData, m,&m_usedlist);
-	m->m_flags = (flags | M_USEDLIST);
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
         RTSemMutexRelease(pData->m_usedlist_mutex);
-        RTSemMutexRelease(pData->m_freelist_mutex);
 #endif
+	m->m_flags = (flags | M_USEDLIST);
 
 	/* Initialise it */
 	m->m_size = msize - sizeof(struct m_hdr);
@@ -153,6 +153,7 @@ m_free(PNATState pData, struct mbuf *m)
 #endif
 		free(m);
 #ifdef VBOX_WITH_SYNC_SLIRP
+                m = NULL;
                 RTSemMutexRequest(pData->mbuf_alloced_mutex, RT_INDEFINITE_WAIT);
 		mbuf_alloced--;
                 RTSemMutexRelease(pData->mbuf_alloced_mutex);
@@ -167,9 +168,11 @@ m_free(PNATState pData, struct mbuf *m)
 		m->m_flags = M_FREELIST; /* Clobber other flags */
 #ifdef VBOX_WITH_SYNC_SLIRP
                 RTSemMutexRelease(pData->m_freelist_mutex);
-                RTSemMutexRelease(m->m_mutex);
 #endif
 	}
+#ifdef VBOX_WITH_SYNC_SLIRP
+        if (m != NULL) RTSemMutexRelease(m->m_mutex);
+#endif
   } /* if(m) */
 }
 
@@ -194,11 +197,11 @@ m_cat(PNATState pData, register struct mbuf *m, register struct mbuf *n)
 	memcpy(m->m_data+m->m_len, n->m_data, n->m_len);
 	m->m_len += n->m_len;
 
+	m_free(pData, n);
 #ifdef VBOX_WITH_SYNC_SLIRP
         RTSemMutexRelease(m->m_mutex);
-        RTSemMutexRelease(n->m_mutex);
+        if (n != NULL) RTSemMutexRelease(n->m_mutex);
 #endif
-	m_free(pData, n);
 }
 
 
@@ -322,10 +325,12 @@ dtom(PNATState pData, void *dat)
 #ifndef VBOX_WITH_SYNC_SLIRP
 	for (m = m_usedlist.m_next; m != &m_usedlist; m = m->m_next) {
 #else
+	struct mbuf *mnext;
         RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
         m = m_usedlist.m_next;
         while(1) {
             RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
+            mnext = m->m_next;
             RTSemMutexRelease(pData->m_usedlist_mutex);
 #endif
 	  if (m->m_flags & M_EXT) {
@@ -346,7 +351,7 @@ dtom(PNATState pData, void *dat)
 #ifdef VBOX_WITH_SYNC_SLIRP
           RTSemMutexRelease(m->m_mutex);
           RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
-          m = m->m_next;
+          m = mnext;
 #endif
 	}
 

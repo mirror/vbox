@@ -73,10 +73,20 @@ ip_input(PNATState pData, struct mbuf *m)
 	DEBUG_ARG("m = %lx", (long)m);
 	DEBUG_ARG("m_len = %d", m->m_len);
 
+#ifdef VBOX_WITH_SYNC_SLIRP
+        int rc;
+        rc = RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
+        AssertReleaseRC(rc);
+#endif
+
 	ipstat.ips_total++;
 
 	if (m->m_len < sizeof (struct ip)) {
 		ipstat.ips_toosmall++;
+#ifdef VBOX_WITH_SYNC_SLIRP
+                rc = RTSemMutexRelease(m->m_mutex);
+                AssertReleaseRC(rc);
+#endif
 		return;
 	}
 
@@ -207,20 +217,44 @@ ip_input(PNATState pData, struct mbuf *m)
 	switch (ip->ip_p) {
 	 case IPPROTO_TCP:
 		tcp_input(pData, m, hlen, (struct socket *)NULL);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                rc = RTSemMutexRelease(m->m_mutex);
+                AssertReleaseRC(rc);
+#endif
 		break;
 	 case IPPROTO_UDP:
 		udp_input(pData, m, hlen);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                rc = RTSemMutexRelease(m->m_mutex);
+                AssertReleaseRC(rc);
+#endif
 		break;
 	 case IPPROTO_ICMP:
 		icmp_input(pData, m, hlen);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                rc = RTSemMutexRelease(m->m_mutex);
+                AssertReleaseRC(rc);
+#endif
 		break;
 	 default:
 		ipstat.ips_noproto++;
 		m_free(pData, m);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                if (m != NULL) {
+                        rc = RTSemMutexRelease(m->m_mutex);
+                        AssertReleaseRC(rc);
+                }
+#endif
 	}
 	return;
 bad:
 	m_freem(pData, m);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        if (m != NULL) {
+                rc = RTSemMutexRelease(m->m_mutex);
+                AssertReleaseRC(rc);
+        }
+#endif
 	return;
 }
 

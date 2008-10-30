@@ -315,6 +315,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 #endif
     }
 
+    return VINF_SUCCESS;
 }
  /**
  *  Unblock the send thread so it can respond to a state change.
