@@ -148,6 +148,15 @@ typedef struct VBOXNETFLTINS
              * @{ */
             /** Pointer to the device. */
             struct net_device volatile *pDev;
+            struct packet_type volatile *pPacketType;
+            struct notifier_block *pNotifier;
+            /** Whether we've need to set promiscuous mode when the interface comes up. */
+            bool volatile fNeedSetPromiscuous;
+            /** Whether we've successfully put the interface into to promiscuous mode.
+             * This is for dealing with the ENETDOWN case. */
+            bool volatile fSetPromiscuous;
+            /** The MAC address of the interface. */
+            RTMAC Mac;
             /** @} */
 # elif defined(RT_OS_SOLARIS)
             /** @name Solaris instance data.
