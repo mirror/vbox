@@ -3833,12 +3833,15 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
  */
 #if defined (RT_OS_WINDOWS)
 bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                             HANDLE *aIPCSem /*= NULL*/)
+                             HANDLE *aIPCSem /*= NULL*/,
+                             bool aAllowClosing /*= false*/)
 #elif defined (RT_OS_OS2)
 bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                             HMTX *aIPCSem /*= NULL*/);
+                             HMTX *aIPCSem /*= NULL*/,
+                             bool aAllowClosing /*= false*/);
 #else
-bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine)
+bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                             bool aAllowClosing /*= false*/)
 #endif
 {
     AutoLimitedCaller autoCaller (this);
@@ -3850,7 +3853,8 @@ bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine)
 
     AutoReadLock alock (this);
 
-    if (mData->mSession.mState == SessionState_Open)
+    if (mData->mSession.mState == SessionState_Open ||
+        (aAllowClosing && mData->mSession.mState == SessionState_Closing))
     {
         AssertReturn (!mData->mSession.mMachine.isNull(), false);
 
