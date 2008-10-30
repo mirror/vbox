@@ -7328,7 +7328,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="configNames" type="wstring" safearray="yes" readonly="yes">
+    <attribute name="propertyNames" type="wstring" safearray="yes" readonly="yes">
       <desc>
         Array of strings containing the supported configuration keys.
       </desc>
