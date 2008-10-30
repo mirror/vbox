@@ -43,6 +43,7 @@ ifeq ($(KBUILD_TYPE),debug)
 else
  BIN_COPY         := /usr/sfw/bin/gobjcopy -S -R .comment
  BIN_COPY_SYMBOLS := /usr/sfw/bin/gobjcopy -g -R .comment
+ COMPRESS         := compress -f
 endif
 
 PACKING     += $(PATH_BIN)/additions/$(PKGFILENAME)
@@ -171,6 +172,29 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_14.so                                       $(SOLARIS_INST_DIR_32)/vboxmouse_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_70.so                                       $(SOLARIS_INST_DIR_32)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN_32)/vboxmouse_drv_71.so                                       $(SOLARIS_INST_DIR_32)/vboxmouse_drv_71.so
+ifdef COMPRESS
+	@# Compress binaries as we distribute uncompressed pkgs
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/VBoxClient
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/VBoxService
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/VBoxControl
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/vboxvideo_drv_13.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/vboxvideo_drv_14.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/vboxvideo_drv_70.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/vboxvideo_drv_71.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/vboxmouse_drv_14.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/vboxmouse_drv_70.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_64)/vboxmouse_drv_71.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/VBoxClient
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/VBoxService
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/VBoxControl
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/vboxvideo_drv_13.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/vboxvideo_drv_14.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/vboxvideo_drv_70.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/vboxvideo_drv_71.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/vboxmouse_drv_14.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/vboxmouse_drv_70.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_32)/vboxmouse_drv_71.so
+endif
 else
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADD_BIN)/vboxguest                                             $(SOLARIS_INST_DIR_ISA)/vboxguest
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN)/VBoxClient                                         $(SOLARIS_INST_DIR_ISA)/VBoxClient
@@ -183,6 +207,18 @@ else
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_14.so                                          $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_14.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_70.so                                          $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_70.so
 	$(QUIET)$(BIN_COPY) $(SOLARIS_ADD_BIN)/vboxmouse_drv_71.so                                          $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_71.so
+ifdef COMPRESS
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/VBoxClient
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/VBoxService
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/VBoxControl
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/vboxvideo_drv_13.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/vboxvideo_drv_14.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/vboxvideo_drv_70.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/vboxvideo_drv_71.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_14.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_70.so
+	$(QUIET)$(COMPRESS) $(SOLARIS_INST_DIR_ISA)/vboxmouse_drv_71.so
+endif
 endif
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh                          $(SOLARIS_INST_DIR)/VBox.sh
 	$(call MSG_L1,Creating install package: $@)
