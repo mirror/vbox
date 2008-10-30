@@ -48,7 +48,7 @@
  *
  * Ring-0 logging isn't 100% safe yet (thread id reuse / process exit cleanup),
  * so you have to sign up here by adding your defined(DEBUG_<userid>) to the
- * #if.
+ * #if, or by adding VBOX_WITH_R0_LOGGING to your LocalConfig.kmk.
  *
  * You might also wish to enable the AssertMsg1/2 overrides in VMMR0.cpp when
  * enabling this.
