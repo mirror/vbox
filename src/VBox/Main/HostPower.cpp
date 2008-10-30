@@ -73,6 +73,7 @@ HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent e
 
     if (state == MachineState_Running)
     {
+#if 0
         ComPtr<ISession> session;
 
         /* get the IInternalSessionControl interface */
@@ -100,6 +101,7 @@ HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent e
             }
         }
         session->Close();
+#endif
     }
     return rc;
 }
