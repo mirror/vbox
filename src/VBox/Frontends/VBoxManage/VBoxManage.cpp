@@ -1003,7 +1003,7 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("vtxvpid=\"%s\"\n", HWVirtExVPIDEnabled ? "on" : "off");
     else
-        RTPrintf("VT-x VPID:   %s\n", HWVirtExVPIDEnabled ? "on" : "off");
+        RTPrintf("VT-x VPID:       %s\n", HWVirtExVPIDEnabled ? "on" : "off");
 
     MachineState_T machineState;
     const char *pszState = NULL;
