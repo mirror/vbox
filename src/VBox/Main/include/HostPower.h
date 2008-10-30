@@ -66,4 +66,4 @@ private:
 };
 # endif /* RT_OS_WINDOWS */
 
-#endif /* ____H_HOSTPOWER */
+#endif /* !____H_HOSTPOWER */
