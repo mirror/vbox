@@ -76,6 +76,7 @@
 #include "VMMInternal.h"
 #include "VMMSwitcher/VMMSwitcher.h"
 #include <VBox/vm.h>
+
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/version.h>
@@ -128,7 +129,7 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
 # endif
     NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
-#else
+#else  /* RT_ARCH_AMD64 */
     NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
     NULL,   //&vmmR3Switcher32BitToPAE_Def,
     NULL,   //&vmmR3Switcher32BitToAMD64_Def,
@@ -137,7 +138,7 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     NULL,   //&vmmR3SwitcherPAEToAMD64_Def,
     &vmmR3SwitcherAMD64ToPAE_Def,
     NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
-#endif
+#endif /* RT_ARCH_AMD64 */
 };
 
 
@@ -180,8 +181,8 @@ static int vmmR3InitCoreCode(PVM pVM)
         rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
         if (rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT)
         {
-            /* try more allocations - Solaris  */
-            const unsigned cTries = 4112;
+            /* try more allocations - Solaris, Linux.  */
+            const unsigned cTries = 8234;
             struct VMMInitBadTry
             {
                 RTR0PTR  pvR0;
