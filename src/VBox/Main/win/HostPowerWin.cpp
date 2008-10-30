@@ -159,9 +159,8 @@ LRESULT CALLBACK HostPowerServiceWin::WndProc(HWND hwnd, UINT msg, WPARAM wParam
                     if (GetSystemPowerStatus(&SystemPowerStatus) == TRUE)
                     {
                         /* If the machine has less than 5% battery left (and is not connected to the AC), then we should save the state. */
-                        if (    SystemPowerStatus.ACLineStatus == 0     /* offline */
-                            &&  SystemPowerStatus.BatteryFlag != 255    /* unknown */
-                            && (SystemPowerStatus.BatteryFlag & 4       /* critical battery status; less than 5% */))
+                        if (   SystemPowerStatus.ACLineStatus == 0      /* offline */
+                            && SystemPowerStatus.BatteryFlag  == 4      /* critical battery status; less than 5% */)
                         {
                             pPowerObj->notify(HostPowerEvent_BatteryLow);
                         }
