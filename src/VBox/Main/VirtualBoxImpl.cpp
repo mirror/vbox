@@ -4070,7 +4070,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
                     ComObjPtr <SessionMachine> sm;
                     HANDLE ipcSem;
-                    if ((*it)->isSessionOpen (sm, &ipcSem))
+                    if ((*it)->isSessionOpenOrClosing (sm, &ipcSem))
                     {
                         machines.push_back (sm);
                         handles [1 + cnt] = ipcSem;
@@ -4262,7 +4262,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
                         ComObjPtr <SessionMachine> sm;
                         HMTX ipcSem;
-                        if ((*it)->isSessionOpen (sm, &ipcSem))
+                        if ((*it)->isSessionOpenOrClosing (sm, &ipcSem))
                         {
                             machines.push_back (sm);
                             handles [cnt].hsemCur = (HSEM) ipcSem;
@@ -4355,7 +4355,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                          it != that->mData.mMachines.end(); ++ it)
                     {
                         ComObjPtr <SessionMachine> sm;
-                        if ((*it)->isSessionOpen (sm))
+                        if ((*it)->isSessionOpenOrClosing (sm))
                             machines.push_back (sm);
                     }
 

@@ -633,16 +633,35 @@ public:
     HRESULT openExistingSession (IInternalSessionControl *aControl);
 
 #if defined (RT_OS_WINDOWS)
+
     bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                        HANDLE *aIPCSem = NULL);
+                        HANDLE *aIPCSem = NULL, bool aAllowClosing = false);
     bool isSessionSpawning (RTPROCESS *aPID = NULL);
+
+    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
+                                 HANDLE *aIPCSem = NULL)
+    { return isSessionOpen (aMachine, aIPCSem, true /* aAllowClosing */); }
+
 #elif defined (RT_OS_OS2)
+
     bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                        HMTX *aIPCSem = NULL);
+                        HMTX *aIPCSem = NULL, bool aAllowClosing = false);
+
     bool isSessionSpawning (RTPROCESS *aPID = NULL);
+
+    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
+                                 HMTX *aIPCSem = NULL)
+    { return isSessionOpen (aMachine, aIPCSem, true /* aAllowClosing */); }
+
 #else
-    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine);
+
+    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                        bool aAllowClosing = false);
     bool isSessionSpawning();
+
+    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine)
+    { return isSessionOpen (aMachine, true /* aAllowClosing */); }
+
 #endif
 
     bool checkForSpawnFailure();
@@ -941,12 +960,12 @@ private:
     HANDLE mIPCSem;
     Bstr mIPCSemName;
     friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                                        HANDLE *aIPCSem);
+                                        HANDLE *aIPCSem, bool aAllowClosing);
 #elif defined (RT_OS_OS2)
     HMTX mIPCSem;
     Bstr mIPCSemName;
     friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                                        HMTX *aIPCSem);
+                                        HMTX *aIPCSem, bool aAllowClosing);
 #elif defined (VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
 #else
