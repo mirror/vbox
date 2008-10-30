@@ -1101,7 +1101,7 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
          * Check that there is still some stack left, if not we'll flag
          * a guru meditation (the alternative is a triple fault).
          */
-        RTGCUINTPTR cbStackUsed = (RTGCUINTPTR)VMMGetStackGC(pVM) - pRegFrame->esp;
+        RTRCUINTPTR cbStackUsed = (RTRCUINTPTR)VMMGetStackRC(pVM) - pRegFrame->esp;
         if (cbStackUsed > VMM_STACK_SIZE - _1K)
         {
             LogRel(("trpmGCTrapInGeneric: ran out of stack: esp=#x cbStackUsed=%#x\n", pRegFrame->esp, cbStackUsed));

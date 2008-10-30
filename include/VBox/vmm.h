@@ -109,8 +109,7 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;
 
-RTGCPTR             VMMGetStackGC(PVM pVM);
-RTHCPTR             VMMGetHCStack(PVM pVM);
+RTRCPTR             VMMGetStackRC(PVM pVM);
 VMCPUID             VMMGetCpuId(PVM pVM);
 VMMDECL(uint32_t)   VMMGetSvnRev(void);
 

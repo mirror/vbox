@@ -205,14 +205,14 @@ typedef struct VMM
     uint32_t                    u32Padding0; /**< Alignment padding. */
 #endif
 
-    /** VMM stack, pointer to the top of the stack in HC.
+    /** VMM stack, pointer to the top of the stack in R3.
      * Stack is allocated from the hypervisor heap and is page aligned
-     * and always writable in GC. */
-    R3PTRTYPE(uint8_t *)        pbHCStack;
+     * and always writable in RC. */
+    R3PTRTYPE(uint8_t *)        pbEMTStackR3;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
-    RCPTRTYPE(uint8_t *)        pbGCStack;
+    RCPTRTYPE(uint8_t *)        pbEMTStackRC;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
-    RCPTRTYPE(uint8_t *)        pbGCStackBottom;
+    RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
 
     /** Pointer to the GC logger instance - GC Ptr.
      * This is NULL if logging is disabled. */

@@ -837,9 +837,9 @@ int main()
     GEN_CHECK_OFF(VMM, pfnCPUMGCResumeGuest);
     GEN_CHECK_OFF(VMM, pfnCPUMGCResumeGuestV86);
     GEN_CHECK_OFF(VMM, iLastGCRc);
-    GEN_CHECK_OFF(VMM, pbHCStack);
-    GEN_CHECK_OFF(VMM, pbGCStack);
-    GEN_CHECK_OFF(VMM, pbGCStackBottom);
+    GEN_CHECK_OFF(VMM, pbEMTStackR3);
+    GEN_CHECK_OFF(VMM, pbEMTStackRC);
+    GEN_CHECK_OFF(VMM, pbEMTStackBottomRC);
     GEN_CHECK_OFF(VMM, pLoggerGC);
     GEN_CHECK_OFF(VMM, pLoggerHC);
     GEN_CHECK_OFF(VMM, cbLoggerGC);
