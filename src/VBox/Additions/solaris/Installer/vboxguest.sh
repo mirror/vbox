@@ -24,7 +24,7 @@ MODDIR64=$MODDIR32/amd64
 
 abort()
 {
-    echo 1>&2 "$1"
+    echo 1>&2 "## $1"
     exit 1
 }
 
@@ -73,7 +73,7 @@ start_module()
     else
         /usr/sbin/add_drv -i'pci80ee,cafe' -m'* 0666 root sys' $MODNAME
         if test ! module_loaded; then
-            abort "## Failed to load VirtualBox guest kernel module."
+            abort "Failed to load VirtualBox guest kernel module."
         elif test -c "/devices/pci@0,0/pci80ee,cafe@4:$MODNAME"; then
             info "VirtualBox guest kernel module loaded."
         else
