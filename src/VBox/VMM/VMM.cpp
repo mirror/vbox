@@ -34,11 +34,10 @@
  *
  * @section sec_vmmstate        VMM State
  *
+ * @image html VM_Statechart_Diagram.gif
+ *
  * To be written.
  *
- * Lets see which of these links that works...
- * @image "VM Statechart Diagram.gif"
- * @image VM\ Statechart\ Diagram.gif
  *
  * @subsection  subsec_vmm_init     VMM Initialization
  *
