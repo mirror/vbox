@@ -77,7 +77,7 @@ void Mouse::FinalRelease()
  */
 HRESULT Mouse::init (Console *parent)
 {
-    LogFlow(("Mouse::init()\n"));
+    LogFlowThisFunc (("\n"));
 
     ComAssertRet (parent, E_INVALIDARG);
 
