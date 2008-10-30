@@ -74,15 +74,13 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINT
     }
     else
     {
-        if (
 #if GC_ARCH_BITS > 32
-                (   pAddress->FlatPtr >= _4G
+        if (    (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cbRange > _4G)
-            &&
-#endif
-                enmMode != PGMMODE_AMD64
+            &&  enmMode != PGMMODE_AMD64
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_DBGF_MEM_NOT_FOUND;
+#endif
         RTGCUINTPTR GCPtrHit;
         rc = PGMR3DbgScanVirtual(pVM, pAddress->FlatPtr, cbRange, pabNeedle, cbNeedle, &GCPtrHit);
         if (RT_SUCCESS(rc))
@@ -156,15 +154,13 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pv
         rc = PGMPhysSimpleReadGCPhys(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     else
     {
-        if (
 #if GC_ARCH_BITS > 32
-                (   pAddress->FlatPtr >= _4G
+        if (    (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cbRead > _4G)
-            &&
-#endif
-                enmMode != PGMMODE_AMD64
+            &&  enmMode != PGMMODE_AMD64
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_PAGE_TABLE_NOT_PRESENT;
+#endif
         rc = PGMPhysSimpleReadGCPtr(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     }
     return rc;
@@ -225,15 +221,13 @@ static DECLCALLBACK(int) dbgfR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, ch
         rc = PGMPhysSimpleReadGCPhys(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
     else
     {
-        if (
 #if GC_ARCH_BITS > 32
-                (   pAddress->FlatPtr >= _4G
+        if (    (   pAddress->FlatPtr >= _4G
                  || pAddress->FlatPtr + cchBuf > _4G)
-            &&
-#endif
-                enmMode != PGMMODE_AMD64
+            &&  enmMode != PGMMODE_AMD64
             &&  enmMode != PGMMODE_AMD64_NX)
             return VERR_PAGE_TABLE_NOT_PRESENT;
+#endif
         rc = PGMPhysSimpleReadGCPtr(pVM, pszBuf, pAddress->FlatPtr, cchBuf);
     }
 
