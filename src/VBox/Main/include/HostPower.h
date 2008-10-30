@@ -23,6 +23,7 @@
 #define ____H_HOSTPOWER
 
 #include "VirtualBoxBase.h"
+#include "MachineImpl.h"
 
 class VirtualBox;
 
@@ -39,7 +40,8 @@ public:
     HostPowerService(VirtualBox *aVirtualBox);
     virtual ~HostPowerService();
 
-    void notify(HostPowerEvent event);
+    void    notify(HostPowerEvent event);
+    HRESULT processEvent(SessionMachine *machine, HostPowerEvent event);
 
 protected:
     ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
