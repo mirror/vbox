@@ -109,29 +109,10 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;
 
-
-
-/**
- * Gets the bottom of the hypervisor stack - GC Ptr.
- * I.e. the returned address is not actually writable.
- *
- * @returns bottom of the stack.
- * @param   pVM         The VM handle.
- */
-RTGCPTR VMMGetStackGC(PVM pVM);
-
-/**
- * Gets the bottom of the hypervisor stack - HC Ptr.
- * I.e. the returned address is not actually writable.
- *
- * @returns bottom of the stack.
- * @param   pVM         The VM handle.
- */
-RTHCPTR VMMGetHCStack(PVM pVM);
-
-VMCPUID VMMGetCpuId(PVM pVM);
-
-VMMDECL(uint32_t) VMMGetSvnRev(void);
+RTGCPTR             VMMGetStackGC(PVM pVM);
+RTHCPTR             VMMGetHCStack(PVM pVM);
+VMCPUID             VMMGetCpuId(PVM pVM);
+VMMDECL(uint32_t)   VMMGetSvnRev(void);
 
 
 #ifdef IN_RING3
@@ -139,220 +120,34 @@ VMMDECL(uint32_t) VMMGetSvnRev(void);
  * @ingroup grp_vmm
  * @{
  */
-
-/**
- * Initializes the VMM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) VMMR3Init(PVM pVM);
-
-/**
- * Ring-3 init finalizing.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- */
-VMMR3DECL(int) VMMR3InitFinalize(PVM pVM);
-
-/**
- * Initializes the R0 VMM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) VMMR3InitR0(PVM pVM);
-
-/**
- * Initializes the GC VMM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) VMMR3InitGC(PVM pVM);
-
-/**
- * Destroy the VMM bits.
- *
- * @returns VINF_SUCCESS.
- * @param   pVM         The VM handle.
- */
-VMMR3DECL(int) VMMR3Term(PVM pVM);
-
-/**
- * Applies relocations to data and code managed by this
- * component. This function will be called at init and
- * whenever the VMM need to relocate it self inside the GC.
- *
- * The VMM will need to apply relocations to the core code.
- *
- * @param   pVM         The VM handle.
- * @param   offDelta    The relocation delta.
- */
-VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-
-/**
- * Updates the settings for the GC (and R0?) loggers.
- *
- * @returns VBox status code.
- * @param   pVM     The VM handle.
- */
-VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM);
-
-/**
- * Gets the pointer to g_szRTAssertMsg1 in GC.
- * @returns Pointer to VMMGC::g_szRTAssertMsg1.
- *          Returns NULL if not present.
- * @param   pVM         The VM handle.
- */
+VMMR3DECL(int)      VMMR3Init(PVM pVM);
+VMMR3DECL(int)      VMMR3InitFinalize(PVM pVM);
+VMMR3DECL(int)      VMMR3InitR0(PVM pVM);
+VMMR3DECL(int)      VMMR3InitRC(PVM pVM);
+VMMR3DECL(int)      VMMR3Term(PVM pVM);
+VMMR3DECL(void)     VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3DECL(int)      VMMR3UpdateLoggers(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg1(PVM pVM);
-
-/**
- * Gets the pointer to g_szRTAssertMsg2 in GC.
- * @returns Pointer to VMMGC::g_szRTAssertMsg2.
- *          Returns NULL if not present.
- * @param   pVM         The VM handle.
- */
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg2(PVM pVM);
-
-/**
- * Resolve a builtin GC symbol.
- * Called by PDM when loading or relocating GC modules.
- *
- * @returns VBox status.
- * @param   pVM         VM Handle.
- * @param   pszSymbol   Symbol to resolv
- * @param   pGCPtrValue Where to store the symbol value.
- * @remark  This has to work before VMMR3Relocate() is called.
- */
-VMMR3DECL(int) VMMR3GetImportGC(PVM pVM, const char *pszSymbol, PRTGCPTR pGCPtrValue);
-
-/**
- * Selects the switcher to be used for switching to GC.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   enmSwitcher     The new switcher.
- * @remark  This function may be called before the VMM is initialized.
- */
-VMMR3DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
-
-/**
- * Disable the switcher logic permanently.
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- */
-VMMR3DECL(int) VMMR3DisableSwitcher(PVM pVM);
-
-/**
- * Executes guest code.
- *
- * @param   pVM         VM handle.
- */
-VMMR3DECL(int) VMMR3RawRunGC(PVM pVM);
-
-/**
- * Executes guest code (Intel VMX and AMD SVM).
- *
- * @param   pVM         VM handle.
- */
-VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM);
-
-/**
- * Calls GC a function.
- *
- * @param   pVM         The VM handle.
- * @param   GCPtrEntry  The GC function address.
- * @param   cArgs       The number of arguments in the ....
- * @param   ...         Arguments to the function.
- */
-VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, ...);
-
-/**
- * Calls GC a function.
- *
- * @param   pVM         The VM handle.
- * @param   GCPtrEntry  The GC function address.
- * @param   cArgs       The number of arguments in the ....
- * @param   args        Arguments to the function.
- */
-VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list args);
-
-/**
- * Resumes executing hypervisor code when interrupted
- * by a queue flush or a debug event.
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- */
-VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM);
-
-/**
- * Dumps the VM state on a fatal error.
- *
- * @param   pVM         VM Handle.
- * @param   rcErr       VBox status code.
- */
-VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr);
-
-/**
- * Acquire global VM lock
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) VMMR3Lock(PVM pVM);
-
-/**
- * Release global VM lock
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) VMMR3Unlock(PVM pVM);
-
-/**
- * Return global VM lock owner
- *
- * @returns NIL_RTNATIVETHREAD -> no owner, otherwise thread id of owner
- * @param   pVM         The VM to operate on.
- */
+VMMR3DECL(int)      VMMR3GetImportGC(PVM pVM, const char *pszSymbol, PRTGCPTR pGCPtrValue);
+VMMR3DECL(int)      VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
+VMMR3DECL(int)      VMMR3DisableSwitcher(PVM pVM);
+VMMR3DECL(int)      VMMR3RawRunGC(PVM pVM);
+VMMR3DECL(int)      VMMR3HwAccRunGC(PVM pVM);
+VMMR3DECL(int)      VMMR3CallGC(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, ...);
+VMMR3DECL(int)      VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list args);
+VMMR3DECL(int)      VMMR3ResumeHyper(PVM pVM);
+VMMR3DECL(void)     VMMR3FatalDump(PVM pVM, int rcErr);
+VMMR3DECL(int)      VMMR3Lock(PVM pVM);
+VMMR3DECL(int)      VMMR3Unlock(PVM pVM);
 VMMR3DECL(RTNATIVETHREAD) VMMR3LockGetOwner(PVM pVM);
-
-/**
- * Checks if the current thread is the owner of the global VM lock.
- *
- * @returns true if owner.
- * @returns false if not owner.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(bool) VMMR3LockIsOwner(PVM pVM);
-
-/**
- * Suspends the the CPU yielder.
- *
- * @param   pVM             The VM handle.
- */
-VMMR3DECL(void) VMMR3YieldSuspend(PVM pVM);
-
-/**
- * Stops the the CPU yielder.
- *
- * @param   pVM             The VM handle.
- */
-VMMR3DECL(void) VMMR3YieldStop(PVM pVM);
-
-/**
- * Resumes the CPU yielder when it has been a suspended or stopped.
- *
- * @param   pVM             The VM handle.
- */
-VMMR3DECL(void) VMMR3YieldResume(PVM pVM);
-
+VMMR3DECL(bool)     VMMR3LockIsOwner(PVM pVM);
+VMMR3DECL(void)     VMMR3YieldSuspend(PVM pVM);
+VMMR3DECL(void)     VMMR3YieldStop(PVM pVM);
+VMMR3DECL(void)     VMMR3YieldResume(PVM pVM);
 /** @} */
-#endif
+#endif /* IN_RING3 */
+
 
 /** @defgroup grp_vmm_r0    The VMM Host Context Ring 0 API
  * @ingroup grp_vmm
@@ -479,95 +274,28 @@ typedef struct GCFGMVALUEREQ
  */
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
-
-/**
- * The Ring 0 entry point, called by the interrupt gate.
- *
- * @returns VBox status code.
- * @param   pVM             The VM to operate on.
- * @param   enmOperation    Which operation to execute.
- * @param   pvArg           Argument to the operation.
- * @remarks Assume called with interrupts or preemption disabled.
- */
-VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
-
-/**
- * The Ring 0 entry point, called by the fast-ioctl path.
- *
- * @returns VBox status code.
- * @param   pVM             The VM to operate on.
- * @param   enmOperation    Which operation to execute.
- * @remarks Assume called with interrupts _enabled_.
- */
-VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
-
-/**
- * The Ring 0 entry point, called by the support library (SUP).
- *
- * @returns VBox status code.
- * @param   pVM             The VM to operate on.
- * @param   enmOperation    Which operation to execute.
- * @param   pReq            This points to a SUPVMMR0REQHDR packet. Optional.
- * @param   u64Arg          Some simple constant argument.
- * @param   pSession        The session of the caller.
- * @remarks Assume called with interrupts _enabled_.
- */
-VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
-
-/**
- * Calls the ring-3 host code.
- *
- * @returns VBox status code of the ring-3 call.
- * @param   pVM             The VM handle.
- * @param   enmOperation    The operation.
- * @param   uArg            The argument to the operation.
- */
-VMMR0DECL(int) VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
+VMMR0DECL(int)      VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
+VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
+VMMR0DECL(int)      VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
+VMMR0DECL(int)      VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 
 /** @} */
 
 
 #ifdef IN_GC
-/** @defgroup grp_vmm_gc    The VMM Guest Context API
+/** @defgroup grp_vmm_rc    The VMM Raw-Mode Context API
  * @ingroup grp_vmm
  * @{
  */
-
-/**
- * The GC entry point.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   uOperation  Which operation to execute (VMMGCOPERATION).
- * @param   uArg        Argument to that operation.
- * @param   ...         Additional arguments.
- */
-VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
-
-/**
- * Switches from guest context to host context.
- *
- * @param   pVM         The VM handle.
- * @param   rc          The status code.
- */
-VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc);
-
-/**
- * Calls the ring-3 host code.
- *
- * @returns VBox status code of the ring-3 call.
- * @param   pVM             The VM handle.
- * @param   enmOperation    The operation.
- * @param   uArg            The argument to the operation.
- */
-VMMRCDECL(int) VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
-
+VMMRCDECL(int)      VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
+VMMRCDECL(void)     VMMGCGuestToHost(PVM pVM, int rc);
+VMMRCDECL(int)      VMMGCCallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 /** @} */
-#endif
+#endif /* IN_RC */
 
 
 /** @} */
 __END_DECLS
 
-
 #endif
+

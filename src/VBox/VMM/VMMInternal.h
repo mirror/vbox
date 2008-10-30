@@ -39,9 +39,23 @@
  * @{
  */
 
-/** @def VBOX_WITH_GC_AND_R0_RELEASE_LOG
- * Enabled GC and R0 release logging (the latter is not implemented yet). */
-#define VBOX_WITH_GC_AND_R0_RELEASE_LOG
+/** @def VBOX_WITH_RC_RELEASE_LOGGING
+ * Enables RC release logging. */
+#define VBOX_WITH_RC_RELEASE_LOGGING
+
+/** @def VBOX_WITH_R0_LOGGING
+ * Enables Ring-0 logging (non-release).
+ *
+ * Ring-0 logging isn't 100% safe yet (thread id reuse / process exit cleanup),
+ * so you have to sign up here by adding your defined(DEBUG_<userid>) to the
+ * #if.
+ *
+ * You might also wish to enable the AssertMsg1/2 overrides in VMMR0.cpp when
+ * enabling this.
+ */
+#if defined(DEBUG_sandervl) || defined(DEBUG_frank) || defined(DOXYGEN_RUNNING)
+# define VBOX_WITH_R0_LOGGING
+#endif
 
 
 /**
@@ -53,7 +67,7 @@
 
 
 /**
- * Switcher function, HC to GC.
+ * Switcher function, HC to RC.
  *
  * @param   pVM         The VM handle.
  * @returns Return code indicating the action to take.
@@ -213,7 +227,7 @@ typedef struct VMM
      * This is NULL if logging is disabled. */
     R3R0PTRTYPE(PVMMR0LOGGER)   pR0Logger;
 
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
     /** Pointer to the GC release logger instance - GC Ptr. */
     RCPTRTYPE(PRTLOGGERRC)      pRelLoggerGC;
     /** Size of the allocated release logger instance (pRelLoggerGC/pRelLoggerHC).
@@ -221,7 +235,7 @@ typedef struct VMM
     RTUINT                      cbRelLoggerGC;
     /** Pointer to the GC release logger instance - HC Ptr. */
     R3PTRTYPE(PRTLOGGERRC)      pRelLoggerHC;
-#endif /* VBOX_WITH_GC_AND_R0_RELEASE_LOG */
+#endif /* VBOX_WITH_RC_RELEASE_LOGGING */
 
     /** Global VM critical section. */
     RTCRITSECT                  CritSectVMLock;
@@ -260,6 +274,7 @@ typedef struct VMM
 
     /** Number of VMMR0_DO_RUN_GC calls. */
     STAMCOUNTER                 StatRunGC;
+
     /** Statistics for each of the GC return codes.
      * @{ */
     STAMCOUNTER                 StatGCRetNormal;
@@ -312,7 +327,6 @@ typedef struct VMM
     STAMCOUNTER                 StatGCRetVMSetError;
     STAMCOUNTER                 StatGCRetVMSetRuntimeError;
     STAMCOUNTER                 StatGCRetPGMLock;
-
     /** @} */
 
 

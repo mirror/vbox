@@ -98,16 +98,6 @@
 
 
 /*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser);
-static int vmmR3ServiceCallHostRequest(PVM pVM);
-static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-
-
-/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Array of switcher defininitions.
@@ -142,138 +132,15 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
 };
 
 
-
-/**
- * Initiates the core code.
- *
- * This is core per VM code which might need fixups and/or for ease of use
- * are put on linear contiguous backing.
- *
- * @returns VBox status code.
- * @param   pVM     Pointer to VM structure.
- */
-static int vmmR3InitCoreCode(PVM pVM)
-{
-    /*
-     * Calc the size.
-     */
-    unsigned cbCoreCode = 0;
-    for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
-    {
-        pVM->vmm.s.aoffSwitchers[iSwitcher] = cbCoreCode;
-        PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
-        if (pSwitcher)
-        {
-            AssertRelease((unsigned)pSwitcher->enmType == iSwitcher);
-            cbCoreCode += RT_ALIGN_32(pSwitcher->cbCode + 1, 32);
-        }
-    }
-
-    /*
-     * Allocate continguous pages for switchers and deal with
-     * conflicts in the intermediate mapping of the code.
-     */
-    pVM->vmm.s.cbCoreCode = RT_ALIGN_32(cbCoreCode, PAGE_SIZE);
-    pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
-    int rc = VERR_NO_MEMORY;
-    if (pVM->vmm.s.pvHCCoreCodeR3)
-    {
-        rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
-        if (rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT)
-        {
-            /* try more allocations - Solaris, Linux.  */
-            const unsigned cTries = 8234;
-            struct VMMInitBadTry
-            {
-                RTR0PTR  pvR0;
-                void    *pvR3;
-                RTHCPHYS HCPhys;
-                RTUINT   cb;
-            } *paBadTries = (struct VMMInitBadTry *)RTMemTmpAlloc(sizeof(*paBadTries) * cTries);
-            AssertReturn(paBadTries, VERR_NO_TMP_MEMORY);
-            unsigned i = 0;
-            do
-            {
-                paBadTries[i].pvR3 = pVM->vmm.s.pvHCCoreCodeR3;
-                paBadTries[i].pvR0 = pVM->vmm.s.pvHCCoreCodeR0;
-                paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
-                i++;
-                pVM->vmm.s.pvHCCoreCodeR0 = NIL_RTR0PTR;
-                pVM->vmm.s.HCPhysCoreCode = NIL_RTHCPHYS;
-                pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
-                if (!pVM->vmm.s.pvHCCoreCodeR3)
-                    break;
-                rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
-            } while (   rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT
-                     && i < cTries - 1);
-
-            /* cleanup */
-            if (VBOX_FAILURE(rc))
-            {
-                paBadTries[i].pvR3   = pVM->vmm.s.pvHCCoreCodeR3;
-                paBadTries[i].pvR0   = pVM->vmm.s.pvHCCoreCodeR0;
-                paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
-                paBadTries[i].cb     = pVM->vmm.s.cbCoreCode;
-                i++;
-                LogRel(("Failed to allocated and map core code: rc=%Vrc\n", rc));
-            }
-            while (i-- > 0)
-            {
-                LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%VHp\n",
-                        i, paBadTries[i].pvR3, paBadTries[i].pvR0, paBadTries[i].HCPhys));
-                SUPContFree(paBadTries[i].pvR3, paBadTries[i].cb >> PAGE_SHIFT);
-            }
-            RTMemTmpFree(paBadTries);
-        }
-    }
-    if (VBOX_SUCCESS(rc))
-    {
-        /*
-         * copy the code.
-         */
-        for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
-        {
-            PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
-            if (pSwitcher)
-                memcpy((uint8_t *)pVM->vmm.s.pvHCCoreCodeR3 + pVM->vmm.s.aoffSwitchers[iSwitcher],
-                       pSwitcher->pvCode, pSwitcher->cbCode);
-        }
-
-        /*
-         * Map the code into the GC address space.
-         */
-        RTGCPTR GCPtr;
-        rc = MMR3HyperMapHCPhys(pVM, pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, "Core Code", &GCPtr);
-        if (VBOX_SUCCESS(rc))
-        {
-            pVM->vmm.s.pvGCCoreCode = GCPtr;
-            MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-            LogRel(("CoreCode: R3=%VHv R0=%VHv GC=%VRv Phys=%VHp cb=%#x\n",
-                    pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.pvGCCoreCode, pVM->vmm.s.HCPhysCoreCode, pVM->vmm.s.cbCoreCode));
-
-            /*
-             * Finally, PGM probably have selected a switcher already but we need
-             * to do get the addresses so we'll reselect it.
-             * This may legally fail so, we're ignoring the rc.
-             */
-            VMMR3SelectSwitcher(pVM, pVM->vmm.s.enmSwitcher);
-            return rc;
-        }
-
-        /* shit */
-        AssertMsgFailed(("PGMR3Map(,%VRv, %VGp, %#x, 0) failed with rc=%Vrc\n", pVM->vmm.s.pvGCCoreCode, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
-        SUPContFree(pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.cbCoreCode >> PAGE_SHIFT);
-    }
-    else
-        VMSetError(pVM, rc, RT_SRC_POS,
-                   N_("Failed to allocate %d bytes of contiguous memory for the world switcher code"),
-                   cbCoreCode);
-
-    pVM->vmm.s.pvHCCoreCodeR3 = NULL;
-    pVM->vmm.s.pvHCCoreCodeR0 = NIL_RTR0PTR;
-    pVM->vmm.s.pvGCCoreCode = 0;
-    return rc;
-}
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int                  vmmR3InitCoreCode(PVM pVM);
+static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser);
+static int                  vmmR3ServiceCallHostRequest(PVM pVM);
+static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
 /**
@@ -379,16 +246,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                 {
                     pVM->vmm.s.pLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pLoggerHC);
 
-/*
- * Ring-0 logging isn't 100% safe yet (thread id reuse / process exit cleanup), so
- * you have to sign up here by adding your defined(DEBUG_<userid>) to the #if.
- *
- * If you want to log in non-debug modes, you'll have to remember to change SUPDRvShared.c
- * to not stub all the log functions.
- *
- * You might also wish to enable the AssertMsg1/2 overrides in VMMR0.cpp when enabling this.
- */
-# if defined(DEBUG_sandervl) || defined(DEBUG_frank)
+# ifdef VBOX_WITH_R0_LOGGING
                     rc = MMHyperAlloc(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
                                       0, MM_TAG_VMM, (void **)&pVM->vmm.s.pR0Logger);
                     if (VBOX_SUCCESS(rc))
@@ -402,9 +260,9 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
             }
 #endif /* LOG_ENABLED */
 
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
             /*
-             * Allocate GC Release Logger instances (finalized in the relocator).
+             * Allocate RC release logger instances (finalized in the relocator).
              */
             if (VBOX_SUCCESS(rc))
             {
@@ -417,7 +275,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                         pVM->vmm.s.pRelLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pRelLoggerHC);
                 }
             }
-#endif /* VBOX_WITH_GC_AND_R0_RELEASE_LOG */
+#endif /* VBOX_WITH_RC_RELEASE_LOGGING */
 
 #ifdef VBOX_WITH_NMI
             /*
@@ -513,6 +371,139 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
 
 
 /**
+ * VMMR3Init worker that initiates the core code.
+ *
+ * This is core per VM code which might need fixups and/or for ease of use are
+ * put on linear contiguous backing.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ */
+static int vmmR3InitCoreCode(PVM pVM)
+{
+    /*
+     * Calc the size.
+     */
+    unsigned cbCoreCode = 0;
+    for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
+    {
+        pVM->vmm.s.aoffSwitchers[iSwitcher] = cbCoreCode;
+        PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
+        if (pSwitcher)
+        {
+            AssertRelease((unsigned)pSwitcher->enmType == iSwitcher);
+            cbCoreCode += RT_ALIGN_32(pSwitcher->cbCode + 1, 32);
+        }
+    }
+
+    /*
+     * Allocate continguous pages for switchers and deal with
+     * conflicts in the intermediate mapping of the code.
+     */
+    pVM->vmm.s.cbCoreCode = RT_ALIGN_32(cbCoreCode, PAGE_SIZE);
+    pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
+    int rc = VERR_NO_MEMORY;
+    if (pVM->vmm.s.pvHCCoreCodeR3)
+    {
+        rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
+        if (rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT)
+        {
+            /* try more allocations - Solaris, Linux.  */
+            const unsigned cTries = 8234;
+            struct VMMInitBadTry
+            {
+                RTR0PTR  pvR0;
+                void    *pvR3;
+                RTHCPHYS HCPhys;
+                RTUINT   cb;
+            } *paBadTries = (struct VMMInitBadTry *)RTMemTmpAlloc(sizeof(*paBadTries) * cTries);
+            AssertReturn(paBadTries, VERR_NO_TMP_MEMORY);
+            unsigned i = 0;
+            do
+            {
+                paBadTries[i].pvR3 = pVM->vmm.s.pvHCCoreCodeR3;
+                paBadTries[i].pvR0 = pVM->vmm.s.pvHCCoreCodeR0;
+                paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
+                i++;
+                pVM->vmm.s.pvHCCoreCodeR0 = NIL_RTR0PTR;
+                pVM->vmm.s.HCPhysCoreCode = NIL_RTHCPHYS;
+                pVM->vmm.s.pvHCCoreCodeR3 = SUPContAlloc2(pVM->vmm.s.cbCoreCode >> PAGE_SHIFT, &pVM->vmm.s.pvHCCoreCodeR0, &pVM->vmm.s.HCPhysCoreCode);
+                if (!pVM->vmm.s.pvHCCoreCodeR3)
+                    break;
+                rc = PGMR3MapIntermediate(pVM, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.HCPhysCoreCode, cbCoreCode);
+            } while (   rc == VERR_PGM_INTERMEDIATE_PAGING_CONFLICT
+                     && i < cTries - 1);
+
+            /* cleanup */
+            if (VBOX_FAILURE(rc))
+            {
+                paBadTries[i].pvR3   = pVM->vmm.s.pvHCCoreCodeR3;
+                paBadTries[i].pvR0   = pVM->vmm.s.pvHCCoreCodeR0;
+                paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
+                paBadTries[i].cb     = pVM->vmm.s.cbCoreCode;
+                i++;
+                LogRel(("Failed to allocated and map core code: rc=%Vrc\n", rc));
+            }
+            while (i-- > 0)
+            {
+                LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%VHp\n",
+                        i, paBadTries[i].pvR3, paBadTries[i].pvR0, paBadTries[i].HCPhys));
+                SUPContFree(paBadTries[i].pvR3, paBadTries[i].cb >> PAGE_SHIFT);
+            }
+            RTMemTmpFree(paBadTries);
+        }
+    }
+    if (VBOX_SUCCESS(rc))
+    {
+        /*
+         * copy the code.
+         */
+        for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
+        {
+            PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
+            if (pSwitcher)
+                memcpy((uint8_t *)pVM->vmm.s.pvHCCoreCodeR3 + pVM->vmm.s.aoffSwitchers[iSwitcher],
+                       pSwitcher->pvCode, pSwitcher->cbCode);
+        }
+
+        /*
+         * Map the code into the GC address space.
+         */
+        RTGCPTR GCPtr;
+        rc = MMR3HyperMapHCPhys(pVM, pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, "Core Code", &GCPtr);
+        if (VBOX_SUCCESS(rc))
+        {
+            pVM->vmm.s.pvGCCoreCode = GCPtr;
+            MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+            LogRel(("CoreCode: R3=%VHv R0=%VHv GC=%VRv Phys=%VHp cb=%#x\n",
+                    pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.pvHCCoreCodeR0, pVM->vmm.s.pvGCCoreCode, pVM->vmm.s.HCPhysCoreCode, pVM->vmm.s.cbCoreCode));
+
+            /*
+             * Finally, PGM probably have selected a switcher already but we need
+             * to get the routine addresses, so we'll reselect it.
+             * This may legally fail so, we're ignoring the rc.
+             */
+            VMMR3SelectSwitcher(pVM, pVM->vmm.s.enmSwitcher);
+            return rc;
+        }
+
+        /* shit */
+        AssertMsgFailed(("PGMR3Map(,%VRv, %VGp, %#x, 0) failed with rc=%Vrc\n", pVM->vmm.s.pvGCCoreCode, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
+        SUPContFree(pVM->vmm.s.pvHCCoreCodeR3, pVM->vmm.s.cbCoreCode >> PAGE_SHIFT);
+    }
+    else
+        VMSetError(pVM, rc, RT_SRC_POS,
+                   N_("Failed to allocate %d bytes of contiguous memory for the world switcher code"),
+                   cbCoreCode);
+
+    pVM->vmm.s.pvHCCoreCodeR3 = NULL;
+    pVM->vmm.s.pvHCCoreCodeR0 = NIL_RTR0PTR;
+    pVM->vmm.s.pvGCCoreCode = 0;
+    return rc;
+}
+
+
+/**
  * Ring-3 init finalizing.
  *
  * @returns VBox status code.
@@ -547,6 +538,7 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
         if (VBOX_SUCCESS(rc))
            rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
     }
+
 #ifdef VBOX_WITH_NMI
     /*
      * Map the host APIC into GC - This may be host os specific!
@@ -613,12 +605,12 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
 
 
 /**
- * Initializes the GC VMM.
+ * Initializes the RC VMM.
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) VMMR3InitGC(PVM pVM)
+VMMR3DECL(int) VMMR3InitRC(PVM pVM)
 {
     /* In VMX mode, there's no need to init GC. */
     if (pVM->vmm.s.fSwitcherDisabled)
@@ -660,7 +652,7 @@ VMMR3DECL(int) VMMR3InitGC(PVM pVM)
                 &&  pLogger->offScratch > 0)
                 RTLogFlushGC(NULL, pLogger);
 #endif
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
             PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
             if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
                 RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
@@ -818,7 +810,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
     RTGCPTR32 GCPtrLoggerFlush = 0;
 
     if (pVM->vmm.s.pLoggerHC
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
         || pVM->vmm.s.pRelLoggerHC
 #endif
        )
@@ -838,7 +830,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
         AssertReleaseMsgRC(rc, ("RTLogCloneGC failed! rc=%Vra\n", rc));
     }
 
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
     if (pVM->vmm.s.pRelLoggerHC)
     {
         RTGCPTR32 GCPtrLoggerWrapper = 0;
@@ -849,7 +841,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
                           GCPtrLoggerWrapper,  GCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
         AssertReleaseMsgRC(rc, ("RTLogCloneGC failed! rc=%Vra\n", rc));
     }
-#endif /* VBOX_WITH_GC_AND_R0_RELEASE_LOG */
+#endif /* VBOX_WITH_RC_RELEASE_LOGGING */
 
     /*
      * For the ring-0 EMT logger, we use a per-thread logger
@@ -1701,7 +1693,7 @@ VMMR3DECL(int) VMMR3GetImportGC(PVM pVM, const char *pszSymbol, PRTGCPTR pGCPtrV
     }
     else if (!strcmp(pszSymbol, "g_RelLogger"))
     {
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
         if (pVM->vmm.s.pRelLoggerHC)
             pVM->vmm.s.pRelLoggerGC = MMHyperHC2GC(pVM, pVM->vmm.s.pRelLoggerHC);
         *pGCPtrValue = pVM->vmm.s.pRelLoggerGC;
@@ -1898,7 +1890,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
 #endif
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
             RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
@@ -2031,7 +2023,7 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
 #endif
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
             RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
@@ -2087,7 +2079,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
             &&  pLogger->offScratch > 0)
             RTLogFlushGC(NULL, pLogger);
 #endif
-#ifdef VBOX_WITH_GC_AND_R0_RELEASE_LOG
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRelLoggerHC;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
             RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
