@@ -7199,9 +7199,74 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+    name="HardDiskFormatCaps"
+    uuid="80aa4ab9-8abe-42f0-a270-225b8f9882fb"
+  >
+    <desc>
+       Harddisk format capability flags.
+    </desc>
+
+    <const name="CapilityUuid" value="0x00">
+      <desc>
+        Supports UUIDs as expected by VirtualBox code.
+      </desc>
+    </const>
+
+    <const name="CapilityCreateFixed" value="0x01">
+      <desc>
+        Supports creating fixed size images, allocating all space instantly.
+      </desc>
+    </const>
+
+    <const name="CapilityCreateDynamic" value="0x02">
+      <desc>
+        Supports creating dynamically growing images, allocating space on
+        demand.
+      </desc>
+    </const>
+
+    <const name="CapilityCreateSplit2G" value="0x04">
+      <desc>
+        Supports creating images split in chunks of a bit less than 2GBytes.
+      </desc>
+    </const>
+
+    <const name="CapilityDiff" value="0x08">
+      <desc>
+        Supports being used as differencing image format backend.
+      </desc>
+    </const>
+
+    <const name="CapilityASync" value="0x10">
+      <desc>
+        Supports asynchronous I/O operations for at least some configurations.
+      </desc>
+    </const>
+
+    <const name="CapilityFile" value="0x20">
+      <desc>
+        The backend operates on files. The caller needs to know to handle the
+        location appropriately. For a list of supported file extentions see
+        <link to="IHardDiskFormat::fileExtensions"/>.
+      </desc>
+    </const>
+
+    <const name="CapilityConfig" value="0x40">
+      <desc>
+        The backend uses the config interface. The caller needs to know how to
+        provide the mandatory configuration parts this way.
+
+        <see>IHardDiskFormat::configNames</see>
+      </desc>
+    </const>
+
+    <const name="CapilityMask" value="0x7F"/>
+  </enum>
+
   <interface
      name="IHardDiskFormat" extends="$unknown"
-     uuid="e4d3c3af-bcff-4b6a-a50f-854298864cb4"
+     uuid="3753099d-9c92-494f-ae2d-bd6faa857d95"
      wsmap="managed"
      >
     <desc>
@@ -7232,55 +7297,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="supportUuid" type="boolean" readonly="yes">
+    <attribute name="name" type="wstring" readonly="yes">
       <desc>
-        Supports UUIDs as expected by VirtualBox code.
-      </desc>
-    </attribute>
+        Human readable description of this format.
 
-    <attribute name="supportCreateFixed" type="boolean" readonly="yes">
-      <desc>
-        Supports creating fixed size images, allocating all space instantly.
-      </desc>
-    </attribute>
-
-    <attribute name="supportCreateDynamic" type="boolean" readonly="yes">
-      <desc>
-        Supports creating dynamically growing images, allocating space on
-        demand.
-      </desc>
-    </attribute>
-
-    <attribute name="supportCreateSplit2G" type="boolean" readonly="yes">
-      <desc>
-        Supports creating images split in chunks of a bit less than 2GBytes.
-      </desc>
-    </attribute>
-
-    <attribute name="supportDiff" type="boolean" readonly="yes">
-      <desc>
-        Supports being used as differencing image format backend.
-      </desc>
-    </attribute>
-
-    <attribute name="supportASync" type="boolean" readonly="yes">
-      <desc>
-        Supports asynchronous I/O operations for at least some configurations.
-      </desc>
-    </attribute>
-
-    <attribute name="supportFile" type="boolean" readonly="yes">
-      <desc>
-        The backend operates on files. The caller needs to know to handle the
-        location appropriately. For a list of supported file extentions see
-        <link to="IHardDiskFormat::fileExtensions"/>.
-      </desc>
-    </attribute>
-
-    <attribute name="supportConfig" type="boolean" readonly="yes">
-      <desc>
-        The backend uses the config interface. The caller needs to know how to
-        provide the mandatory configuration parts this way.
+        Mainly for use in file open dialogs.
       </desc>
     </attribute>
 
@@ -7296,6 +7317,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         empty.
 
         <see>IHardDiskFormat::supportFile</see>
+      </desc>
+    </attribute>
+
+    <attribute name="capabilities" type="unsigned long" readonly="yes">
+      <desc>
+        The backend uses the config interface. The caller needs to know how to
+        provide the mandatory configuration parts this way. For the meaning of
+        the different capabilities see <link to="HardDiskFormatCaps"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="configNames" type="wstring" safearray="yes" readonly="yes">
+      <desc>
+        Array of strings containing the supported configuration keys.
       </desc>
     </attribute>
 
