@@ -53,5 +53,53 @@ void HostPowerService::notify(HostPowerEvent event)
         Log(("HostPowerService::notify BATTERY LOW\n"));
         break;
     }
+
+    VirtualBox::SessionMachineVector machines;
+    mVirtualBox->getOpenedMachines (machines);
+
+    for (size_t i = 0; i < machines.size(); i++)
+        processEvent(machines[i], event);
+
+    machines.clear();
 }
 
+HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent event)
+{
+    MachineState_T state;
+    HRESULT        rc;
+
+    rc = machine->COMGETTER(State)(&state);
+    CheckComRCReturnRC (rc);
+
+    if (state == MachineState_Running)
+    {
+        ComPtr<ISession> session;
+
+        /* get the IInternalSessionControl interface */
+        ComPtr <IInternalSessionControl> control = session;
+        ComAssertMsgRet (!!control, ("No IInternalSessionControl interface"),
+                        E_INVALIDARG);
+
+        rc = machine->openExistingSession (control);
+        if (FAILED (rc))
+            return rc;
+
+        /* get the associated console */
+        ComPtr<IConsole> console;
+        rc = session->COMGETTER(Console)(console.asOutParam());
+        if (SUCCEEDED (rc))
+        {
+            switch (event)
+            {
+            case HostPowerEvent_Suspend:
+                rc = console->Pause();
+                break;
+            case HostPowerEvent_Resume:
+            case HostPowerEvent_BatteryLow:
+                break;
+            }
+        }
+        session->Close();
+    }
+    return rc;
+}

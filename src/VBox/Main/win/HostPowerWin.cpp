@@ -54,7 +54,8 @@ HostPowerServiceWin::~HostPowerServiceWin()
 
         /* Is this allowed from another thread? */
         SetWindowLongPtr(mHwnd, 0, 0);
-        PostMessage(mHwnd, WM_QUIT, 0, 0);
+        /* Send the quit message and wait for it be processed. */
+        SendMessage(mHwnd, WM_QUIT, 0, 0);
     }
 }
 
@@ -121,9 +122,7 @@ DECLCALLBACK(int) HostPowerServiceWin::NotificationThread (RTTHREAD ThreadSelf, 
 
     Log(("HostPowerServiceWin::NotificationThread: exit thread\n"));
     if (hwnd)
-    {
         DestroyWindow (hwnd);
-    }
 
     if (atomWindowClass != 0)
     {
@@ -143,31 +142,33 @@ LRESULT CALLBACK HostPowerServiceWin::WndProc(HWND hwnd, UINT msg, WPARAM wParam
             HostPowerServiceWin *pPowerObj;
 
             pPowerObj = (HostPowerServiceWin *)GetWindowLongPtr(hwnd, 0);
-            switch(wParam)
+            if (pPowerObj)
             {
-            case PBT_APMSUSPEND:
-                pPowerObj->notify(HostPowerEvent_Suspend);
-                break;
-
-            case PBT_APMRESUMEAUTOMATIC:
-                pPowerObj->notify(HostPowerEvent_Resume);
-                break;
-
-            case PBT_APMPOWERSTATUSCHANGE:
-            {
-                SYSTEM_POWER_STATUS SystemPowerStatus;
-
-                if (GetSystemPowerStatus(&SystemPowerStatus) == TRUE)
+                switch(wParam)
                 {
-                    if (    SystemPowerStatus.BatteryFlag != 255 /* unknown */
-                        && (SystemPowerStatus.BatteryFlag & 4 /* critical battery status; less than 5% */))
-                    {
-                        pPowerObj->notify(HostPowerEvent_BatteryLow);
-                    }
-                }
-                break;
-            }
+                case PBT_APMSUSPEND:
+                    pPowerObj->notify(HostPowerEvent_Suspend);
+                    break;
 
+                case PBT_APMRESUMEAUTOMATIC:
+                    pPowerObj->notify(HostPowerEvent_Resume);
+                    break;
+
+                case PBT_APMPOWERSTATUSCHANGE:
+                {
+                    SYSTEM_POWER_STATUS SystemPowerStatus;
+
+                    if (GetSystemPowerStatus(&SystemPowerStatus) == TRUE)
+                    {
+                        if (    SystemPowerStatus.BatteryFlag != 255 /* unknown */
+                            && (SystemPowerStatus.BatteryFlag & 4 /* critical battery status; less than 5% */))
+                        {
+                            pPowerObj->notify(HostPowerEvent_BatteryLow);
+                        }
+                    }
+                    break;
+                }
+                }
             }
             return DefWindowProc (hwnd, msg, wParam, lParam);
         }
