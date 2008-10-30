@@ -136,6 +136,7 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int                  vmmR3InitCoreCode(PVM pVM);
+static void                 vmmR3InitRegisterStats(PVM pVM);
 static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser);
@@ -217,7 +218,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
          * The stack pages are also used by the VMM R0 when VMMR0CallHost is invoked.
          * (The page protection is modifed during R3 init completion.)
          */
-        /** @todo SMP: Per vCPU. */
+        /** @todo SMP: Per vCPU, split up into functions. */
 #ifdef VBOX_STRICT_VMM_STACK
         rc = MMHyperAlloc(pVM, VMM_STACK_SIZE + PAGE_SIZE + PAGE_SIZE, PAGE_SIZE, MM_TAG_VMM, (void **)&pVM->vmm.s.pbHCStack);
 #else
@@ -294,63 +295,10 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
                 if (VBOX_SUCCESS(rc))
                 {
                     /*
-                     * Debug info.
+                     * Debug info and statistics.
                      */
                     DBGFR3InfoRegisterInternal(pVM, "ff", "Displays the current Forced actions Flags.", vmmR3InfoFF);
-
-                    /*
-                     * Statistics.
-                     */
-                    STAM_REG(pVM, &pVM->vmm.s.StatRunGC,                    STAMTYPE_COUNTER, "/VMM/RunGC",                     STAMUNIT_OCCURENCES, "Number of context switches.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetNormal,              STAMTYPE_COUNTER, "/VMM/GCRet/Normal",              STAMUNIT_OCCURENCES, "Number of VINF_SUCCESS returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetInterrupt,           STAMTYPE_COUNTER, "/VMM/GCRet/Interrupt",           STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetInterruptHyper,      STAMTYPE_COUNTER, "/VMM/GCRet/InterruptHyper",      STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT_HYPER returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetGuestTrap,           STAMTYPE_COUNTER, "/VMM/GCRet/GuestTrap",           STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_GUEST_TRAP returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetRingSwitch,          STAMTYPE_COUNTER, "/VMM/GCRet/RingSwitch",          STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_RING_SWITCH returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetRingSwitchInt,       STAMTYPE_COUNTER, "/VMM/GCRet/RingSwitchInt",       STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_RING_SWITCH_INT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetExceptionPrivilege,  STAMTYPE_COUNTER, "/VMM/GCRet/ExceptionPrivilege",  STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_EXCEPTION_PRIVILEGED returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetStaleSelector,       STAMTYPE_COUNTER, "/VMM/GCRet/StaleSelector",       STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_STALE_SELECTOR returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetIRETTrap,            STAMTYPE_COUNTER, "/VMM/GCRet/IRETTrap",            STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_IRET_TRAP returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetEmulate,             STAMTYPE_COUNTER, "/VMM/GCRet/Emulate",             STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchEmulate,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchEmulate",        STAMUNIT_OCCURENCES, "Number of VINF_PATCH_EMULATE_INSTR returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetIORead,              STAMTYPE_COUNTER, "/VMM/GCRet/IORead",              STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_READ returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetIOWrite,             STAMTYPE_COUNTER, "/VMM/GCRet/IOWrite",             STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_WRITE returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIORead,            STAMTYPE_COUNTER, "/VMM/GCRet/MMIORead",            STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_READ returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIOWrite,           STAMTYPE_COUNTER, "/VMM/GCRet/MMIOWrite",           STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_WRITE returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIOReadWrite,       STAMTYPE_COUNTER, "/VMM/GCRet/MMIOReadWrite",       STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_READ_WRITE returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIOPatchRead,       STAMTYPE_COUNTER, "/VMM/GCRet/MMIOPatchRead",       STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_PATCH_READ returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetMMIOPatchWrite,      STAMTYPE_COUNTER, "/VMM/GCRet/MMIOPatchWrite",      STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_PATCH_WRITE returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetLDTFault,            STAMTYPE_COUNTER, "/VMM/GCRet/LDTFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_GDT_FAULT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetGDTFault,            STAMTYPE_COUNTER, "/VMM/GCRet/GDTFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_LDT_FAULT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetIDTFault,            STAMTYPE_COUNTER, "/VMM/GCRet/IDTFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_IDT_FAULT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetTSSFault,            STAMTYPE_COUNTER, "/VMM/GCRet/TSSFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_TSS_FAULT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPDFault,             STAMTYPE_COUNTER, "/VMM/GCRet/PDFault",             STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_PD_FAULT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetCSAMTask,            STAMTYPE_COUNTER, "/VMM/GCRet/CSAMTask",            STAMUNIT_OCCURENCES, "Number of VINF_CSAM_PENDING_ACTION returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetSyncCR3,             STAMTYPE_COUNTER, "/VMM/GCRet/SyncCR",              STAMUNIT_OCCURENCES, "Number of VINF_PGM_SYNC_CR3 returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetMisc,                STAMTYPE_COUNTER, "/VMM/GCRet/Misc",                STAMUNIT_OCCURENCES, "Number of misc returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchInt3,           STAMTYPE_COUNTER, "/VMM/GCRet/PatchInt3",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_INT3 returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchPF,             STAMTYPE_COUNTER, "/VMM/GCRet/PatchPF",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_PF returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchGP,             STAMTYPE_COUNTER, "/VMM/GCRet/PatchGP",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_GP returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPatchIretIRQ,        STAMTYPE_COUNTER, "/VMM/GCRet/PatchIret",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PENDING_IRQ_AFTER_IRET returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPageOverflow,        STAMTYPE_COUNTER, "/VMM/GCRet/InvlpgOverflow",      STAMUNIT_OCCURENCES, "Number of VERR_REM_FLUSHED_PAGES_OVERFLOW returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetRescheduleREM,       STAMTYPE_COUNTER, "/VMM/GCRet/ScheduleREM",         STAMUNIT_OCCURENCES, "Number of VINF_EM_RESCHEDULE_REM returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetToR3,                STAMTYPE_COUNTER, "/VMM/GCRet/ToR3",                STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetTimerPending,        STAMTYPE_COUNTER, "/VMM/GCRet/TimerPending",        STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TIMER_PENDING returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetInterruptPending,    STAMTYPE_COUNTER, "/VMM/GCRet/InterruptPending",    STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT_PENDING returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetCallHost,            STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/Misc",       STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPGMGrowRAM,          STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/GrowRAM",    STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPDMLock,             STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/PDMLock",    STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetLogFlush,            STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/LogFlush",   STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPDMQueueFlush,       STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/QueueFlush", STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPGMPoolGrow,         STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/PGMPoolGrow",STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetRemReplay,           STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/REMReplay",  STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetVMSetError,          STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/VMSetError", STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPGMLock,             STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/PGMLock",    STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetHyperAssertion,      STAMTYPE_COUNTER, "/VMM/GCRet/CallHost/HyperAssert", STAMUNIT_OCCURENCES, "Number of VINF_VMM_CALL_HOST returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPATMDuplicateFn,     STAMTYPE_COUNTER, "/VMM/GCRet/PATMDuplicateFn",     STAMUNIT_OCCURENCES, "Number of VINF_PATM_DUPLICATE_FUNCTION returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPGMChangeMode,       STAMTYPE_COUNTER, "/VMM/GCRet/PGMChangeMode",       STAMUNIT_OCCURENCES, "Number of VINF_PGM_CHANGE_MODE returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetEmulHlt,             STAMTYPE_COUNTER, "/VMM/GCRet/EmulHlt",             STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_EMULATE_INSTR_HLT returns.");
-                    STAM_REG(pVM, &pVM->vmm.s.StatGCRetPendingRequest,      STAMTYPE_COUNTER, "/VMM/GCRet/PendingRequest",      STAMUNIT_OCCURENCES, "Number of VINF_EM_PENDING_REQUEST returns.");
+                    vmmR3InitRegisterStats(pVM);
 
                     return VINF_SUCCESS;
                 }
@@ -501,6 +449,74 @@ static int vmmR3InitCoreCode(PVM pVM)
     pVM->vmm.s.pvHCCoreCodeR0 = NIL_RTR0PTR;
     pVM->vmm.s.pvGCCoreCode = 0;
     return rc;
+}
+
+
+/**
+ * VMMR3Init worker that register the statistics with STAM.
+ *
+ * @param   pVM         The shared VM structure.
+ */
+static void vmmR3InitRegisterStats(PVM pVM)
+{
+    /*
+     * Statistics.
+     */
+    STAM_REG(pVM, &pVM->vmm.s.StatRunRC,                    STAMTYPE_COUNTER, "/VMM/RunRC",                     STAMUNIT_OCCURENCES, "Number of context switches.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetNormal,              STAMTYPE_COUNTER, "/VMM/RZRet/Normal",              STAMUNIT_OCCURENCES, "Number of VINF_SUCCESS returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetInterrupt,           STAMTYPE_COUNTER, "/VMM/RZRet/Interrupt",           STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetInterruptHyper,      STAMTYPE_COUNTER, "/VMM/RZRet/InterruptHyper",      STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT_HYPER returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetGuestTrap,           STAMTYPE_COUNTER, "/VMM/RZRet/GuestTrap",           STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_GUEST_TRAP returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetRingSwitch,          STAMTYPE_COUNTER, "/VMM/RZRet/RingSwitch",          STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_RING_SWITCH returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetRingSwitchInt,       STAMTYPE_COUNTER, "/VMM/RZRet/RingSwitchInt",       STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_RING_SWITCH_INT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetExceptionPrivilege,  STAMTYPE_COUNTER, "/VMM/RZRet/ExceptionPrivilege",  STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_EXCEPTION_PRIVILEGED returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetStaleSelector,       STAMTYPE_COUNTER, "/VMM/RZRet/StaleSelector",       STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_STALE_SELECTOR returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetIRETTrap,            STAMTYPE_COUNTER, "/VMM/RZRet/IRETTrap",            STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_IRET_TRAP returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetEmulate,             STAMTYPE_COUNTER, "/VMM/RZRet/Emulate",             STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchEmulate,        STAMTYPE_COUNTER, "/VMM/RZRet/PatchEmulate",        STAMUNIT_OCCURENCES, "Number of VINF_PATCH_EMULATE_INSTR returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetIORead,              STAMTYPE_COUNTER, "/VMM/RZRet/IORead",              STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_READ returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetIOWrite,             STAMTYPE_COUNTER, "/VMM/RZRet/IOWrite",             STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_IOPORT_WRITE returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetMMIORead,            STAMTYPE_COUNTER, "/VMM/RZRet/MMIORead",            STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_READ returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetMMIOWrite,           STAMTYPE_COUNTER, "/VMM/RZRet/MMIOWrite",           STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_WRITE returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetMMIOReadWrite,       STAMTYPE_COUNTER, "/VMM/RZRet/MMIOReadWrite",       STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_READ_WRITE returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetMMIOPatchRead,       STAMTYPE_COUNTER, "/VMM/RZRet/MMIOPatchRead",       STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_PATCH_READ returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetMMIOPatchWrite,      STAMTYPE_COUNTER, "/VMM/RZRet/MMIOPatchWrite",      STAMUNIT_OCCURENCES, "Number of VINF_IOM_HC_MMIO_PATCH_WRITE returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetLDTFault,            STAMTYPE_COUNTER, "/VMM/RZRet/LDTFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_GDT_FAULT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetGDTFault,            STAMTYPE_COUNTER, "/VMM/RZRet/GDTFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_LDT_FAULT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetIDTFault,            STAMTYPE_COUNTER, "/VMM/RZRet/IDTFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_IDT_FAULT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetTSSFault,            STAMTYPE_COUNTER, "/VMM/RZRet/TSSFault",            STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_TSS_FAULT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPDFault,             STAMTYPE_COUNTER, "/VMM/RZRet/PDFault",             STAMUNIT_OCCURENCES, "Number of VINF_EM_EXECUTE_INSTRUCTION_PD_FAULT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetCSAMTask,            STAMTYPE_COUNTER, "/VMM/RZRet/CSAMTask",            STAMUNIT_OCCURENCES, "Number of VINF_CSAM_PENDING_ACTION returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetSyncCR3,             STAMTYPE_COUNTER, "/VMM/RZRet/SyncCR",              STAMUNIT_OCCURENCES, "Number of VINF_PGM_SYNC_CR3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetMisc,                STAMTYPE_COUNTER, "/VMM/RZRet/Misc",                STAMUNIT_OCCURENCES, "Number of misc returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchInt3,           STAMTYPE_COUNTER, "/VMM/RZRet/PatchInt3",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_INT3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchPF,             STAMTYPE_COUNTER, "/VMM/RZRet/PatchPF",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_PF returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchGP,             STAMTYPE_COUNTER, "/VMM/RZRet/PatchGP",             STAMUNIT_OCCURENCES, "Number of VINF_PATM_PATCH_TRAP_GP returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPatchIretIRQ,        STAMTYPE_COUNTER, "/VMM/RZRet/PatchIret",           STAMUNIT_OCCURENCES, "Number of VINF_PATM_PENDING_IRQ_AFTER_IRET returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPageOverflow,        STAMTYPE_COUNTER, "/VMM/RZRet/InvlpgOverflow",      STAMUNIT_OCCURENCES, "Number of VERR_REM_FLUSHED_PAGES_OVERFLOW returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetRescheduleREM,       STAMTYPE_COUNTER, "/VMM/RZRet/ScheduleREM",         STAMUNIT_OCCURENCES, "Number of VINF_EM_RESCHEDULE_REM returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetToR3,                STAMTYPE_COUNTER, "/VMM/RZRet/ToR3",                STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TO_R3 returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetTimerPending,        STAMTYPE_COUNTER, "/VMM/RZRet/TimerPending",        STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_TIMER_PENDING returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetInterruptPending,    STAMTYPE_COUNTER, "/VMM/RZRet/InterruptPending",    STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT_PENDING returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPATMDuplicateFn,     STAMTYPE_COUNTER, "/VMM/RZRet/PATMDuplicateFn",     STAMUNIT_OCCURENCES, "Number of VINF_PATM_DUPLICATE_FUNCTION returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPGMChangeMode,       STAMTYPE_COUNTER, "/VMM/RZRet/PGMChangeMode",       STAMUNIT_OCCURENCES, "Number of VINF_PGM_CHANGE_MODE returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetEmulHlt,             STAMTYPE_COUNTER, "/VMM/RZRet/EmulHlt",             STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_EMULATE_INSTR_HLT returns.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetPendingRequest,      STAMTYPE_COUNTER, "/VMM/RZRet/PendingRequest",      STAMUNIT_OCCURENCES, "Number of VINF_EM_PENDING_REQUEST returns.");
+
+    STAM_REG(pVM, &pVM->vmm.s.StatRZRetCallHost,            STAMTYPE_COUNTER, "/VMM/RZCallR3/Misc",             STAMUNIT_OCCURENCES, "Number of Other ring-3 calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PDM_LOCK calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPDMQueueFlush,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PDMQueueFlush",    STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PDM_QUEUE_FLUSH calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMLock,            STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMLock",          STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_LOCK calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMPoolGrow,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMPoolGrow",      STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_POOL_GROW calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMMapChunk,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMMapChunk",      STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_MAP_CHUNK calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMAllocHandy,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMAllocHandy",    STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES calls.");
+#ifndef VBOX_WITH_NEW_PHYS_CODE
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMGrowRAM,         STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMGrowRAM",       STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_PGM_RAM_GROW_RANGE calls.");
+#endif
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallRemReplay,          STAMTYPE_COUNTER, "/VMM/RZCallR3/REMReplay",        STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallLogFlush,           STAMTYPE_COUNTER, "/VMM/RZCallR3/VMMLogFlush",      STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_VMM_LOGGER_FLUSH calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetError,         STAMTYPE_COUNTER, "/VMM/RZCallR3/VMSetError",       STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_VM_SET_ERROR calls.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLHOST_VM_SET_RUNTIME_ERROR calls.");
 }
 
 
@@ -2210,7 +2226,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
          * Signal a ring 0 hypervisor assertion.
          * Cancel the longjmp operation that's in progress.
          */
-        case VMMCALLHOST_VM_R0_HYPER_ASSERTION:
+        case VMMCALLHOST_VM_R0_ASSERTION:
             pVM->vmm.s.enmCallHostOperation = VMMCALLHOST_INVALID;
             pVM->vmm.s.CallHostR0JmpBuf.fInRing3Call = false;
 #ifdef RT_ARCH_X86
@@ -2220,7 +2236,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
 #endif
             LogRel((pVM->vmm.s.szRing0AssertMsg1));
             LogRel((pVM->vmm.s.szRing0AssertMsg2));
-            return VINF_EM_DBG_HYPER_ASSERTION;
+            return VINF_EM_DBG_HYPER_ASSERTION; /** @todo rename this. */
 
         default:
             AssertMsgFailed(("enmCallHostOperation=%d\n", pVM->vmm.s.enmCallHostOperation));

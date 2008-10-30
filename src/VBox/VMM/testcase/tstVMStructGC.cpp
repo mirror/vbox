@@ -853,8 +853,8 @@ int main()
     GEN_CHECK_OFF(VMM, CallHostR0JmpBuf);
     GEN_CHECK_OFF(VMM, CallHostR0JmpBuf.SpCheck);
     GEN_CHECK_OFF(VMM, CallHostR0JmpBuf.SpResume);
-    GEN_CHECK_OFF(VMM, StatRunGC);
-    GEN_CHECK_OFF(VMM, StatGCRetPGMLock);
+    GEN_CHECK_OFF(VMM, StatRunRC);
+    GEN_CHECK_OFF(VMM, StatRZCallPGMLock);
 
     GEN_CHECK_SIZE(RTPINGPONG);
     GEN_CHECK_SIZE(RTCRITSECT);

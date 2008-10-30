@@ -77,13 +77,13 @@ typedef DECLASMTYPE(int) FNVMMSWITCHERHC(PVM pVM);
 typedef FNVMMSWITCHERHC *PFNVMMSWITCHERHC;
 
 /**
- * Switcher function, GC to HC.
+ * Switcher function, RC to HC.
  *
  * @param   rc          VBox status code.
  */
-typedef DECLASMTYPE(void) FNVMMSWITCHERGC(int rc);
+typedef DECLASMTYPE(void) FNVMMSWITCHERRC(int rc);
 /** Pointer to switcher function. */
-typedef FNVMMSWITCHERGC *PFNVMMSWITCHERGC;
+typedef FNVMMSWITCHERRC *PFNVMMSWITCHERRC;
 
 
 /**
@@ -115,42 +115,44 @@ typedef struct VMMR0JMPBUF
     /** Tranditional jmp_buf stuff
      * @{ */
 #if HC_ARCH_BITS == 32
-    uint32_t    ebx;
-    uint32_t    esi;
-    uint32_t    edi;
-    uint32_t    ebp;
-    uint32_t    esp;
-    uint32_t    eip;
-    uint32_t    u32Padding;
+    uint32_t                    ebx;
+    uint32_t                    esi;
+    uint32_t                    edi;
+    uint32_t                    ebp;
+    uint32_t                    esp;
+    uint32_t                    eip;
+    uint32_t                    u32Padding;
 #endif
 #if HC_ARCH_BITS == 64
-    uint64_t    rbx;
+    uint64_t                    rbx;
 # ifdef RT_OS_WINDOWS
-    uint64_t    rsi;
-    uint64_t    rdi;
+    uint64_t                    rsi;
+    uint64_t                    rdi;
 # endif
-    uint64_t    rbp;
-    uint64_t    r12;
-    uint64_t    r13;
-    uint64_t    r14;
-    uint64_t    r15;
-    uint64_t    rsp;
-    uint64_t    rip;
+    uint64_t                    rbp;
+    uint64_t                    r12;
+    uint64_t                    r13;
+    uint64_t                    r14;
+    uint64_t                    r15;
+    uint64_t                    rsp;
+    uint64_t                    rip;
 #endif
     /** @} */
 
     /** Flag that indicates that we've done a ring-3 call. */
-    bool        fInRing3Call;
+    bool                        fInRing3Call;
     /** The number of bytes we've saved. */
-    uint32_t    cbSavedStack;
+    uint32_t                    cbSavedStack;
     /** Pointer to the buffer used to save the stack.
      * This is assumed to be 8KB. */
-    RTR0PTR     pvSavedStack;
+    RTR0PTR                     pvSavedStack;
     /** Esp we we match against esp on resume to make sure the stack wasn't relocated. */
-    RTHCUINTREG SpCheck;
+    RTHCUINTREG                 SpCheck;
     /** The esp we should resume execution with after the restore. */
-    RTHCUINTREG SpResume;
-} VMMR0JMPBUF, *PVMMR0JMPBUF;
+    RTHCUINTREG                 SpResume;
+} VMMR0JMPBUF;
+/** Pointer to a ring-0 jump buffer. */
+typedef VMMR0JMPBUF *PVMMR0JMPBUF;
 
 
 /**
@@ -191,7 +193,7 @@ typedef struct VMM
     /** Host to guest switcher entry point. */
     R0PTRTYPE(PFNVMMSWITCHERHC) pfnR0HostToGuest;
     /** Guest to host switcher entry point. */
-    RCPTRTYPE(PFNVMMSWITCHERGC) pfnGCGuestToHost;
+    RCPTRTYPE(PFNVMMSWITCHERRC) pfnGCGuestToHost;
     /** Call Trampoline. See vmmGCCallTrampoline(). */
     RTGCPTR32                   pfnGCCallTrampoline;
 
@@ -254,6 +256,7 @@ typedef struct VMM
     uint64_t                    u64LastYield;
 
     /** @name CallHost
+     * @todo SMP: per vCPU
      * @{ */
     /** The pending operation. */
     VMMCALLHOST                 enmCallHostOperation;
@@ -273,64 +276,67 @@ typedef struct VMM
     char                        szRing0AssertMsg2[256];
 
     /** Number of VMMR0_DO_RUN_GC calls. */
-    STAMCOUNTER                 StatRunGC;
+    STAMCOUNTER                 StatRunRC;
 
-    /** Statistics for each of the GC return codes.
+    /** Statistics for each of the RC/R0 return codes.
      * @{ */
-    STAMCOUNTER                 StatGCRetNormal;
-    STAMCOUNTER                 StatGCRetInterrupt;
-    STAMCOUNTER                 StatGCRetInterruptHyper;
-    STAMCOUNTER                 StatGCRetGuestTrap;
-    STAMCOUNTER                 StatGCRetRingSwitch;
-    STAMCOUNTER                 StatGCRetRingSwitchInt;
-    STAMCOUNTER                 StatGCRetExceptionPrivilege;
-    STAMCOUNTER                 StatGCRetStaleSelector;
-    STAMCOUNTER                 StatGCRetIRETTrap;
-    STAMCOUNTER                 StatGCRetEmulate;
-    STAMCOUNTER                 StatGCRetPatchEmulate;
-    STAMCOUNTER                 StatGCRetIORead;
-    STAMCOUNTER                 StatGCRetIOWrite;
-    STAMCOUNTER                 StatGCRetMMIORead;
-    STAMCOUNTER                 StatGCRetMMIOWrite;
-    STAMCOUNTER                 StatGCRetMMIOPatchRead;
-    STAMCOUNTER                 StatGCRetMMIOPatchWrite;
-    STAMCOUNTER                 StatGCRetMMIOReadWrite;
-    STAMCOUNTER                 StatGCRetLDTFault;
-    STAMCOUNTER                 StatGCRetGDTFault;
-    STAMCOUNTER                 StatGCRetIDTFault;
-    STAMCOUNTER                 StatGCRetTSSFault;
-    STAMCOUNTER                 StatGCRetPDFault;
-    STAMCOUNTER                 StatGCRetCSAMTask;
-    STAMCOUNTER                 StatGCRetSyncCR3;
-    STAMCOUNTER                 StatGCRetMisc;
-    STAMCOUNTER                 StatGCRetPatchInt3;
-    STAMCOUNTER                 StatGCRetPatchPF;
-    STAMCOUNTER                 StatGCRetPatchGP;
-    STAMCOUNTER                 StatGCRetPatchIretIRQ;
-    STAMCOUNTER                 StatGCRetPageOverflow;
-    STAMCOUNTER                 StatGCRetRescheduleREM;
-    STAMCOUNTER                 StatGCRetToR3;
-    STAMCOUNTER                 StatGCRetTimerPending;
-    STAMCOUNTER                 StatGCRetInterruptPending;
-    STAMCOUNTER                 StatGCRetCallHost;
-    STAMCOUNTER                 StatGCRetPATMDuplicateFn;
-    STAMCOUNTER                 StatGCRetPGMChangeMode;
-    STAMCOUNTER                 StatGCRetEmulHlt;
-    STAMCOUNTER                 StatGCRetPendingRequest;
-    STAMCOUNTER                 StatGCRetPGMGrowRAM;
-    STAMCOUNTER                 StatGCRetPDMLock;
-    STAMCOUNTER                 StatGCRetHyperAssertion;
-    STAMCOUNTER                 StatGCRetLogFlush;
-    STAMCOUNTER                 StatGCRetPDMQueueFlush;
-    STAMCOUNTER                 StatGCRetPGMPoolGrow;
-    STAMCOUNTER                 StatGCRetRemReplay;
-    STAMCOUNTER                 StatGCRetVMSetError;
-    STAMCOUNTER                 StatGCRetVMSetRuntimeError;
-    STAMCOUNTER                 StatGCRetPGMLock;
+    STAMCOUNTER                 StatRZRetNormal;
+    STAMCOUNTER                 StatRZRetInterrupt;
+    STAMCOUNTER                 StatRZRetInterruptHyper;
+    STAMCOUNTER                 StatRZRetGuestTrap;
+    STAMCOUNTER                 StatRZRetRingSwitch;
+    STAMCOUNTER                 StatRZRetRingSwitchInt;
+    STAMCOUNTER                 StatRZRetExceptionPrivilege;
+    STAMCOUNTER                 StatRZRetStaleSelector;
+    STAMCOUNTER                 StatRZRetIRETTrap;
+    STAMCOUNTER                 StatRZRetEmulate;
+    STAMCOUNTER                 StatRZRetPatchEmulate;
+    STAMCOUNTER                 StatRZRetIORead;
+    STAMCOUNTER                 StatRZRetIOWrite;
+    STAMCOUNTER                 StatRZRetMMIORead;
+    STAMCOUNTER                 StatRZRetMMIOWrite;
+    STAMCOUNTER                 StatRZRetMMIOPatchRead;
+    STAMCOUNTER                 StatRZRetMMIOPatchWrite;
+    STAMCOUNTER                 StatRZRetMMIOReadWrite;
+    STAMCOUNTER                 StatRZRetLDTFault;
+    STAMCOUNTER                 StatRZRetGDTFault;
+    STAMCOUNTER                 StatRZRetIDTFault;
+    STAMCOUNTER                 StatRZRetTSSFault;
+    STAMCOUNTER                 StatRZRetPDFault;
+    STAMCOUNTER                 StatRZRetCSAMTask;
+    STAMCOUNTER                 StatRZRetSyncCR3;
+    STAMCOUNTER                 StatRZRetMisc;
+    STAMCOUNTER                 StatRZRetPatchInt3;
+    STAMCOUNTER                 StatRZRetPatchPF;
+    STAMCOUNTER                 StatRZRetPatchGP;
+    STAMCOUNTER                 StatRZRetPatchIretIRQ;
+    STAMCOUNTER                 StatRZRetPageOverflow;
+    STAMCOUNTER                 StatRZRetRescheduleREM;
+    STAMCOUNTER                 StatRZRetToR3;
+    STAMCOUNTER                 StatRZRetTimerPending;
+    STAMCOUNTER                 StatRZRetInterruptPending;
+    STAMCOUNTER                 StatRZRetCallHost;
+    STAMCOUNTER                 StatRZRetPATMDuplicateFn;
+    STAMCOUNTER                 StatRZRetPGMChangeMode;
+    STAMCOUNTER                 StatRZRetEmulHlt;
+    STAMCOUNTER                 StatRZRetPendingRequest;
+#ifndef VBOX_WITH_NEW_PHYS_CODE
+    STAMCOUNTER                 StatRZCallPGMGrowRAM;
+#endif
+    STAMCOUNTER                 StatRZCallPDMLock;
+    STAMCOUNTER                 StatRZCallLogFlush;
+    STAMCOUNTER                 StatRZCallPDMQueueFlush;
+    STAMCOUNTER                 StatRZCallPGMPoolGrow;
+    STAMCOUNTER                 StatRZCallPGMMapChunk;
+    STAMCOUNTER                 StatRZCallPGMAllocHandy;
+    STAMCOUNTER                 StatRZCallRemReplay;
+    STAMCOUNTER                 StatRZCallVMSetError;
+    STAMCOUNTER                 StatRZCallVMSetRuntimeError;
+    STAMCOUNTER                 StatRZCallPGMLock;
     /** @} */
-
-
-} VMM, *PVMM;
+} VMM;
+/** Pointer to VMM. */
+typedef VMM *PVMM;
 
 
 /**
@@ -473,9 +479,8 @@ VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...);
 VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger);
 
 #endif /* IN_RING0 */
-
-
 #ifdef IN_GC
+
 /**
  * Internal GC logger worker: Logger wrapper.
  */
@@ -493,18 +498,18 @@ VMMRCDECL(void) vmmGCRelLoggerWrapper(const char *pszFormat, ...);
  * @param   pLogger     The logger instance to flush.
  * @remark  This function must be exported!
  */
-VMMRCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger);
+VMMRCDECL(int)  vmmGCLoggerFlush(PRTLOGGERRC pLogger);
 
 /** @name Trap testcases and related labels.
  * @{ */
-DECLASM(void) vmmGCEnableWP(void);
-DECLASM(void) vmmGCDisableWP(void);
-DECLASM(int) vmmGCTestTrap3(void);
-DECLASM(int) vmmGCTestTrap8(void);
-DECLASM(int) vmmGCTestTrap0d(void);
-DECLASM(int) vmmGCTestTrap0e(void);
-DECLASM(int) vmmGCTestTrap0e_FaultEIP(void); /**< a label */
-DECLASM(int) vmmGCTestTrap0e_ResumeEIP(void); /**< a label */
+DECLASM(void)   vmmGCEnableWP(void);
+DECLASM(void)   vmmGCDisableWP(void);
+DECLASM(int)    vmmGCTestTrap3(void);
+DECLASM(int)    vmmGCTestTrap8(void);
+DECLASM(int)    vmmGCTestTrap0d(void);
+DECLASM(int)    vmmGCTestTrap0e(void);
+DECLASM(int)    vmmGCTestTrap0e_FaultEIP(void); /**< a label */
+DECLASM(int)    vmmGCTestTrap0e_ResumeEIP(void); /**< a label */
 /** @} */
 
 #endif /* IN_GC */
