@@ -295,159 +295,165 @@ static void vmmR0RecordRC(PVM pVM, int rc)
     switch (rc)
     {
         case VINF_SUCCESS:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetNormal);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetNormal);
             break;
         case VINF_EM_RAW_INTERRUPT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetInterrupt);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetInterrupt);
             break;
         case VINF_EM_RAW_INTERRUPT_HYPER:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetInterruptHyper);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetInterruptHyper);
             break;
         case VINF_EM_RAW_GUEST_TRAP:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetGuestTrap);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetGuestTrap);
             break;
         case VINF_EM_RAW_RING_SWITCH:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRingSwitch);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetRingSwitch);
             break;
         case VINF_EM_RAW_RING_SWITCH_INT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRingSwitchInt);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetRingSwitchInt);
             break;
         case VINF_EM_RAW_EXCEPTION_PRIVILEGED:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetExceptionPrivilege);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetExceptionPrivilege);
             break;
         case VINF_EM_RAW_STALE_SELECTOR:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetStaleSelector);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetStaleSelector);
             break;
         case VINF_EM_RAW_IRET_TRAP:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIRETTrap);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIRETTrap);
             break;
         case VINF_IOM_HC_IOPORT_READ:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIORead);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIORead);
             break;
         case VINF_IOM_HC_IOPORT_WRITE:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIOWrite);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIOWrite);
             break;
         case VINF_IOM_HC_MMIO_READ:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIORead);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIORead);
             break;
         case VINF_IOM_HC_MMIO_WRITE:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOWrite);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOWrite);
             break;
         case VINF_IOM_HC_MMIO_READ_WRITE:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOReadWrite);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOReadWrite);
             break;
         case VINF_PATM_HC_MMIO_PATCH_READ:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOPatchRead);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOPatchRead);
             break;
         case VINF_PATM_HC_MMIO_PATCH_WRITE:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMMIOPatchWrite);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOPatchWrite);
             break;
         case VINF_EM_RAW_EMULATE_INSTR:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetEmulate);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetEmulate);
             break;
         case VINF_PATCH_EMULATE_INSTR:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchEmulate);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchEmulate);
             break;
         case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetLDTFault);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetLDTFault);
             break;
         case VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetGDTFault);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetGDTFault);
             break;
         case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetIDTFault);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIDTFault);
             break;
         case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetTSSFault);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetTSSFault);
             break;
         case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDFault);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPDFault);
             break;
         case VINF_CSAM_PENDING_ACTION:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetCSAMTask);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetCSAMTask);
             break;
         case VINF_PGM_SYNC_CR3:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetSyncCR3);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetSyncCR3);
             break;
         case VINF_PATM_PATCH_INT3:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchInt3);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchInt3);
             break;
         case VINF_PATM_PATCH_TRAP_PF:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchPF);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchPF);
             break;
         case VINF_PATM_PATCH_TRAP_GP:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchGP);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchGP);
             break;
         case VINF_PATM_PENDING_IRQ_AFTER_IRET:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPatchIretIRQ);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchIretIRQ);
             break;
         case VERR_REM_FLUSHED_PAGES_OVERFLOW:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPageOverflow);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPageOverflow);
             break;
         case VINF_EM_RESCHEDULE_REM:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRescheduleREM);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetRescheduleREM);
             break;
         case VINF_EM_RAW_TO_R3:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetToR3);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3);
             break;
         case VINF_EM_RAW_TIMER_PENDING:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetTimerPending);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetTimerPending);
             break;
         case VINF_EM_RAW_INTERRUPT_PENDING:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetInterruptPending);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetInterruptPending);
             break;
         case VINF_VMM_CALL_HOST:
             switch (pVM->vmm.s.enmCallHostOperation)
             {
                 case VMMCALLHOST_PDM_LOCK:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMLock);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPDMLock);
                     break;
                 case VMMCALLHOST_PDM_QUEUE_FLUSH:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPDMQueueFlush);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPDMQueueFlush);
                     break;
                 case VMMCALLHOST_PGM_POOL_GROW:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMPoolGrow);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMPoolGrow);
                     break;
                 case VMMCALLHOST_PGM_LOCK:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMLock);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMLock);
                     break;
-                case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetRemReplay);
+                case VMMCALLHOST_PGM_MAP_CHUNK:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMMapChunk);
                     break;
+                case VMMCALLHOST_PGM_ALLOCATE_HANDY_PAGES:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMAllocHandy);
+                    break;
+#ifndef VBOX_WITH_NEW_PHYS_CODE
                 case VMMCALLHOST_PGM_RAM_GROW_RANGE:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMGrowRAM);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMGrowRAM);
+                    break;
+#endif
+                case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallRemReplay);
                     break;
                 case VMMCALLHOST_VMM_LOGGER_FLUSH:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetLogFlush);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallLogFlush);
                     break;
                 case VMMCALLHOST_VM_SET_ERROR:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetVMSetError);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallVMSetError);
                     break;
                 case VMMCALLHOST_VM_SET_RUNTIME_ERROR:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetVMSetRuntimeError);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallVMSetRuntimeError);
                     break;
-                case VMMCALLHOST_VM_R0_HYPER_ASSERTION:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetHyperAssertion);
-                    break;
+                case VMMCALLHOST_VM_R0_ASSERTION:
                 default:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetCallHost);
+                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetCallHost);
                     break;
             }
             break;
         case VINF_PATM_DUPLICATE_FUNCTION:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPATMDuplicateFn);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPATMDuplicateFn);
             break;
         case VINF_PGM_CHANGE_MODE:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPGMChangeMode);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPGMChangeMode);
             break;
         case VINF_EM_RAW_EMULATE_INSTR_HLT:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetEmulHlt);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetEmulHlt);
             break;
         case VINF_EM_PENDING_REQUEST:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetPendingRequest);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPendingRequest);
             break;
         default:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatGCRetMisc);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMisc);
             break;
     }
 }
@@ -480,7 +486,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
             if (pVM->vmm.s.fSwitcherDisabled)
                 return VERR_NOT_SUPPORTED;
 
-            STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
             register int rc;
             pVM->vmm.s.iLastGCRc = rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
 
@@ -600,7 +606,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
                 ASMSetFlags(uFlags);
 
 #ifdef VBOX_WITH_STATISTICS
-                STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
                 vmmR0RecordRC(pVM, rc);
 #endif
             }
@@ -623,7 +629,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
         {
             int rc;
 
-            STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
 
 #ifndef RT_OS_WINDOWS /** @todo check other hosts */
             RTCCUINTREG uFlags = ASMIntDisableFlags();
@@ -1133,7 +1139,7 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
         if (pVM->vmm.s.CallHostR0JmpBuf.rip)
 #endif
         {
-            int rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_HYPER_ASSERTION, 0);
+            int rc = VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
             return RT_FAILURE_NP(rc);
         }
     }

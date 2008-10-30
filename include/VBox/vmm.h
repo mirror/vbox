@@ -103,8 +103,8 @@ typedef enum VMMCALLHOST
     VMMCALLHOST_VM_SET_ERROR,
     /** Set the VM runtime error message. */
     VMMCALLHOST_VM_SET_RUNTIME_ERROR,
-    /** Signal a ring 0 hypervisor assertion. */
-    VMMCALLHOST_VM_R0_HYPER_ASSERTION,
+    /** Signal a ring 0 assertion. */
+    VMMCALLHOST_VM_R0_ASSERTION,
     /** The usual 32-bit hack. */
     VMMCALLHOST_32BIT_HACK = 0x7fffffff
 } VMMCALLHOST;
