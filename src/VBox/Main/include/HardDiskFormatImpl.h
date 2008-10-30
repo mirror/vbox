@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 
 /** @file
  *
@@ -42,13 +42,13 @@ public:
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HardDiskFormat)
 
-    DECLARE_NOT_AGGREGATABLE(HardDiskFormat)
+    DECLARE_NOT_AGGREGATABLE (HardDiskFormat)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(HardDiskFormat)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IHardDiskFormat)
+        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY (IHardDiskFormat)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
@@ -59,22 +59,16 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VDBACKENDINFO *aVDInfo);
+    HRESULT init (const VDBACKENDINFO *aVDInfo);
     void uninit();
 
     // IHardDiskFormat properties
     STDMETHOD(COMGETTER(Id)) (BSTR *aId);
-
-    STDMETHOD(COMGETTER(SupportUuid) (BOOL *aBool));
-    STDMETHOD(COMGETTER(SupportCreateFixed) (BOOL *aBool));
-    STDMETHOD(COMGETTER(SupportCreateDynamic) (BOOL *aBool));
-    STDMETHOD(COMGETTER(SupportCreateSplit2G) (BOOL *aBool));
-    STDMETHOD(COMGETTER(SupportDiff) (BOOL *aBool));
-    STDMETHOD(COMGETTER(SupportASync) (BOOL *aBool));
-    STDMETHOD(COMGETTER(SupportFile) (BOOL *aBool));
-    STDMETHOD(COMGETTER(SupportConfig) (BOOL *aBool));
-
+    STDMETHOD(COMGETTER(Name)) (BSTR *aName);
     STDMETHOD(COMGETTER(FileExtensions)) (ComSafeArrayOut (BSTR, aFileExtensions));
+
+    STDMETHOD(COMGETTER(Capabilities)) (ULONG *aCaps);
+    STDMETHOD(COMGETTER(ConfigNames)) (ComSafeArrayOut (BSTR, aConfigNames));
 
     // public methods only for internal purposes
 
@@ -93,8 +87,10 @@ private:
         Data() : capabilities (0) {}
 
         const Bstr id;
-        const uint64_t capabilities;
+        const Bstr name;
         const BstrList fileExtensions;
+        const uint64_t capabilities;
+        const BstrList configNames;
     };
 
     Data mData;

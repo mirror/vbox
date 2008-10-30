@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 
 /** @file
  *
@@ -49,7 +49,7 @@ void HardDiskFormat::FinalRelease()
  *
  * @param aVDInfo  Pointer to a backend info object.
  */
-HRESULT HardDiskFormat::init (VDBACKENDINFO *aVDInfo)
+HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
 {
     LogFlowThisFunc (("aVDInfo=%p\n", aVDInfo));
 
@@ -61,6 +61,10 @@ HRESULT HardDiskFormat::init (VDBACKENDINFO *aVDInfo)
 
     /* The ID of the backend */
     unconst (mData.id) = aVDInfo->pszBackend;
+    /* The Name of the backend */
+    /* Use id for now as long as VDBACKENDINFO hasn't any extra
+     * name/description field. */
+    unconst (mData.name) = aVDInfo->pszBackend;
     /* The capabilities of the backend */
     unconst (mData.capabilities) = aVDInfo->uBackendCaps;
     /* Save the supported file extensions in a list */
@@ -71,6 +75,16 @@ HRESULT HardDiskFormat::init (VDBACKENDINFO *aVDInfo)
         {
             unconst (mData.fileExtensions).push_back (*papsz);
             ++ papsz;
+        }
+    }
+    /* Save a list of config names */
+    if (aVDInfo->paConfigInfo)
+    {
+        PCVDCONFIGINFO pa = aVDInfo->paConfigInfo;
+        while (pa->pszKey != NULL)
+        {
+            unconst (mData.configNames).push_back (*pa->pszKey);
+            ++ pa;
         }
     }
 
@@ -93,8 +107,10 @@ void HardDiskFormat::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
+    unconst (mData.configNames).clear();
     unconst (mData.fileExtensions).clear();
     unconst (mData.capabilities) = 0;
+    unconst (mData.name).setNull();
     unconst (mData.id).setNull();
 }
 
@@ -109,9 +125,22 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Id)(BSTR *aId)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* mData.id is const, no need to lock */
-
+    /* this is const, no need to lock */
     mData.id.cloneTo (aId);
+
+    return S_OK;
+}
+
+STDMETHODIMP HardDiskFormat::COMGETTER(Name)(BSTR *aName)
+{
+    if (!aName)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* this is const, no need to lock */
+    mData.name.cloneTo (aName);
 
     return S_OK;
 }
@@ -125,8 +154,7 @@ COMGETTER(FileExtensions)(ComSafeArrayOut (BSTR, aFileExtensions))
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* mData.fileExtensions is const, no need to lock */
-
+    /* this is const, no need to lock */
     com::SafeArray <BSTR> fileExtentions (mData.fileExtensions.size());
     int i = 0;
     for (BstrList::const_iterator it = mData.fileExtensions.begin();
@@ -137,122 +165,36 @@ COMGETTER(FileExtensions)(ComSafeArrayOut (BSTR, aFileExtensions))
     return S_OK;
 }
 
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportUuid)(BOOL *aBool)
+STDMETHODIMP HardDiskFormat::COMGETTER(Capabilities)(ULONG *aCaps)
 {
-    if (!aBool)
+    if (!aCaps)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_UUID;
+    /* this is const, no need to lock */
+    *aCaps = mData.capabilities;
 
     return S_OK;
 }
 
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportCreateFixed)(BOOL *aBool)
+STDMETHODIMP HardDiskFormat::
+COMGETTER(ConfigNames)(ComSafeArrayOut (BSTR, aConfigNames))
 {
-    if (!aBool)
+    if (ComSafeArrayOutIsNull (aConfigNames))
         return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_CREATE_FIXED;
-
-    return S_OK;
-}
-
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportCreateDynamic)(BOOL *aBool)
-{
-    if (!aBool)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_CREATE_DYNAMIC;
-
-    return S_OK;
-}
-
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportCreateSplit2G)(BOOL *aBool)
-{
-    if (!aBool)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_CREATE_SPLIT_2G;
-
-    return S_OK;
-}
-
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportDiff)(BOOL *aBool)
-{
-    if (!aBool)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_DIFF;
-
-    return S_OK;
-}
-
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportASync)(BOOL *aBool)
-{
-    if (!aBool)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_ASYNC;
-
-    return S_OK;
-}
-
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportFile)(BOOL *aBool)
-{
-    if (!aBool)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_FILE;
-
-    return S_OK;
-}
-
-STDMETHODIMP HardDiskFormat::COMGETTER(SupportConfig)(BOOL *aBool)
-{
-    if (!aBool)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* mData.capabilities is const, no need to lock */
-
-    *aBool = mData.capabilities & VD_CAP_CONFIG;
+    /* this is const, no need to lock */
+    com::SafeArray <BSTR> configNames (mData.configNames.size());
+    int i = 0;
+    for (BstrList::const_iterator it = mData.configNames.begin();
+        it != mData.configNames.end(); ++ it, ++ i)
+        (*it).cloneTo (&configNames [i]);
+    configNames.detachTo (ComSafeArrayOutArg (aConfigNames));
 
     return S_OK;
 }
