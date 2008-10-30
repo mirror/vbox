@@ -779,7 +779,7 @@ static int vmR3InitGC(PVM pVM)
         /*
          * Call the VMMR0 component and let it do the init.
          */
-        rc = VMMR3InitGC(pVM);
+        rc = VMMR3InitRC(pVM);
     }
     else
         Log(("vmR3InitGC: skipping because of VBOX_SUPLIB_FAKE=fake\n"));
