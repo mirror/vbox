@@ -139,5 +139,49 @@ vboxnetflt_SOURCES = VBoxNetFlt.c
 
 endif
 
+ifeq ($(KBUILD_TARGET),linux)
+ #
+ # Install source files for compliation on Linux.
+ # files_vboxnetflt defines VBOX_VBOXNETFLT_SOURCES.
+ #
+ include $(PATH_SUB_CURRENT)/linux/files_vboxnetflt
+ INSTALLS += VBoxNetFlt-src
+ VBoxNetFlt-src_INST    = bin/src/vboxnetflt/
+ VBoxNetFlt-src_MODE    = a+r,u+w
+ VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
+ VBoxNetFlt-src_SOURCES+= $(PATH_VBoxNetFlt-src)/Makefile
+ VBoxNetFlt-src_CLEAN   = $(PATH_VBoxNetFlt-src)/Makefile
+
+includedep $(PATH_TARGET)/VBoxNetFlt-src-1.dep
+$$(PATH_VBoxNetFlt-src)/Makefile: \
+		$(PATH_SUB_CURRENT)/linux/Makefile \
+		$$(if $$(eq $$(VBoxNetFlt/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+		| $$(dir $$@)
+ifndef VBOX_WITH_HARDENING
+	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+else
+	$(QUIET)$(CP) -f $< $@
+endif
+	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/VBoxNetFlt-src-1.dep
+	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxNetFlt-src-1.dep' 'VBoxNetFlt/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
+
+## Scripts needed for building the kernel modules
+### @todo generate these else where and move them from OTHERS to vboxmod-bin (which btw installs NOBIN files contrary to its name).
+#
+#$(PATH_BIN)/src/build_in_tmp: \
+#		$(PATH_SUB_CURRENT)/linux/build_in_tmp \
+#		$(VBOX_VERSION_STAMP)
+#	$(call MSG_TOOL,Creating,,$@)
+#	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxdrv;g" --output $@ $<
+#	$(QUIET)chmod 0755 $@
+#
+#$(PATH_BIN)/src/dkms.conf: \
+#		$(PATH_SUB_CURRENT)/linux/dkms.conf \
+#		$(VBOX_VERSION_STAMP)
+#	$(call MSG_TOOL,Creating,,$@)
+#	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" --output $@ $<
+
+endif # linux
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
